@@ -434,32 +434,53 @@ function Porto({ unidade, isCompleted, isCurrent, index, onSelect, onComplete }:
         </Card>
       </div>
       
-      <div className="col-start-2 relative h-full flex items-center justify-center">
-        <div className={cn(
-          "absolute top-1/2 -translate-y-1/2 h-1 transition-all duration-300",
-          isLeft ? "right-1/2 left-0" : "left-1/2 right-0",
-          expanded ? "bg-gradient-to-r from-amber-600/60 via-amber-500/80 to-amber-600/60" : 
-          isCompleted ? "bg-primary/30" :
-          isCurrent ? "bg-accent/40" : "bg-border/30"
-        )} 
-        style={{ 
-          clipPath: isLeft 
-            ? 'polygon(0 0, 100% 30%, 100% 70%, 0 100%)' 
-            : 'polygon(0 30%, 100% 0, 100% 100%, 0 70%)'
-        }}
-        />
+      <div className="col-start-2 relative h-full flex items-center justify-center min-h-[80px]">
+        <svg 
+          className="absolute inset-0 w-full h-full overflow-visible" 
+          viewBox="0 0 120 80" 
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <linearGradient id={`branch-${unidade.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor={expanded ? "#0891b2" : isCompleted ? "#166534" : isCurrent ? "#c2410c" : "#9ca3af"} stopOpacity="0.6" />
+              <stop offset="50%" stopColor={expanded ? "#22d3ee" : isCompleted ? "#22c55e" : isCurrent ? "#ea580c" : "#d1d5db"} stopOpacity="0.8" />
+              <stop offset="100%" stopColor={expanded ? "#0891b2" : isCompleted ? "#166534" : isCurrent ? "#c2410c" : "#9ca3af"} stopOpacity="0.6" />
+            </linearGradient>
+          </defs>
+          
+          {isLeft ? (
+            <path 
+              d={`M0 40 Q20 40 35 ${expanded ? '35' : '40'} T60 40`}
+              stroke={`url(#branch-${unidade.id})`}
+              strokeWidth={expanded ? "8" : "4"}
+              fill="none"
+              strokeLinecap="round"
+              className="transition-all duration-500"
+            />
+          ) : (
+            <path 
+              d={`M120 40 Q100 40 85 ${expanded ? '35' : '40'} T60 40`}
+              stroke={`url(#branch-${unidade.id})`}
+              strokeWidth={expanded ? "8" : "4"}
+              fill="none"
+              strokeLinecap="round"
+              className="transition-all duration-500"
+            />
+          )}
+        </svg>
         
         <div className={cn(
-          "w-4 h-4 md:w-5 md:h-5 rounded-full border-2 z-10 transition-all",
-          isCompleted ? "bg-primary border-primary" :
-          isCurrent ? "bg-accent border-accent animate-pulse" :
-          "bg-muted border-border"
+          "w-5 h-5 md:w-6 md:h-6 rounded-full border-3 z-10 transition-all duration-300 shadow-md",
+          isCompleted ? "bg-primary border-primary scale-110" :
+          isCurrent ? "bg-accent border-accent scale-125" :
+          expanded ? "bg-cyan-500 border-cyan-400 scale-110" :
+          "bg-white border-border"
         )}>
           {isCompleted && <CheckCircle2 className="w-full h-full text-white p-0.5" />}
         </div>
         
         {isCurrent && (
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-20 h-14 z-20">
+          <div className="absolute -top-14 left-1/2 -translate-x-1/2 w-24 h-16 z-20 animate-boat-navigate">
             <Barquinho className="w-full h-full" />
           </div>
         )}
@@ -617,43 +638,98 @@ export default function Trilha() {
           
           <div className="container mx-auto px-4 py-8 relative z-10">
             <div className="relative max-w-3xl mx-auto">
-              <div className="absolute left-1/2 top-0 bottom-0 w-20 md:w-28 -translate-x-1/2 -z-10 overflow-hidden rounded-full">
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 via-cyan-500/30 to-cyan-400/10" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-sky-300/20 to-transparent" />
+              <svg className="absolute left-1/2 top-0 h-full w-32 md:w-40 -translate-x-1/2 -z-10 overflow-visible" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="riverMain" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.1" />
+                    <stop offset="25%" stopColor="#22d3ee" stopOpacity="0.4" />
+                    <stop offset="50%" stopColor="#67e8f9" stopOpacity="0.55" />
+                    <stop offset="75%" stopColor="#22d3ee" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0.1" />
+                  </linearGradient>
+                  <linearGradient id="riverEdge" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#0891b2" stopOpacity="0.3" />
+                    <stop offset="50%" stopColor="#06b6d4" stopOpacity="0.5" />
+                    <stop offset="100%" stopColor="#0891b2" stopOpacity="0.3" />
+                  </linearGradient>
+                  <filter id="riverGlow">
+                    <feGaussianBlur stdDeviation="2" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
                 
-                <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="riverBlue" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#0891b2" stopOpacity="0.15" />
-                      <stop offset="30%" stopColor="#22d3ee" stopOpacity="0.35" />
-                      <stop offset="50%" stopColor="#67e8f9" stopOpacity="0.45" />
-                      <stop offset="70%" stopColor="#22d3ee" stopOpacity="0.35" />
-                      <stop offset="100%" stopColor="#0891b2" stopOpacity="0.15" />
-                    </linearGradient>
-                    <linearGradient id="riverShine2" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="white" stopOpacity="0.3" />
-                      <stop offset="50%" stopColor="white" stopOpacity="0.1" />
-                      <stop offset="100%" stopColor="white" stopOpacity="0.3" />
-                    </linearGradient>
-                  </defs>
-                  <rect x="0" y="0" width="100%" height="100%" fill="url(#riverBlue)" />
-                </svg>
+                <path 
+                  d="M50 0 
+                     Q70 50 50 100 
+                     Q30 150 50 200 
+                     Q70 250 50 300 
+                     Q30 350 50 400 
+                     Q70 450 50 500
+                     Q30 550 50 600
+                     Q70 650 50 700
+                     Q30 750 50 800
+                     Q70 850 50 900
+                     Q30 950 50 1000
+                     Q70 1050 50 1100
+                     Q30 1150 50 1200
+                     Q70 1250 50 1300
+                     Q30 1350 50 1400
+                     Q70 1450 50 1500"
+                  stroke="url(#riverMain)"
+                  strokeWidth="50"
+                  fill="none"
+                  strokeLinecap="round"
+                  filter="url(#riverGlow)"
+                  vectorEffect="non-scaling-stroke"
+                />
                 
-                <div className="absolute inset-0 overflow-hidden">
-                  <div className="animate-river-flow absolute inset-x-0 -top-20 bottom-0">
-                    <svg className="w-full h-[120%]" viewBox="0 0 100 200" preserveAspectRatio="none">
-                      <path d="M30 0 Q45 20 30 40 Q15 60 30 80 Q45 100 30 120 Q15 140 30 160 Q45 180 30 200" 
-                            stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" fill="none" />
-                      <path d="M50 10 Q65 30 50 50 Q35 70 50 90 Q65 110 50 130 Q35 150 50 170 Q65 190 50 210" 
-                            stroke="rgba(255,255,255,0.3)" strokeWidth="1" fill="none" />
-                      <path d="M70 0 Q85 20 70 40 Q55 60 70 80 Q85 100 70 120 Q55 140 70 160 Q85 180 70 200" 
-                            stroke="rgba(255,255,255,0.35)" strokeWidth="1.2" fill="none" />
-                    </svg>
-                  </div>
-                </div>
+                <path 
+                  d="M50 0 
+                     Q70 50 50 100 
+                     Q30 150 50 200 
+                     Q70 250 50 300 
+                     Q30 350 50 400 
+                     Q70 450 50 500
+                     Q30 550 50 600
+                     Q70 650 50 700
+                     Q30 750 50 800
+                     Q70 850 50 900
+                     Q30 950 50 1000
+                     Q70 1050 50 1100
+                     Q30 1150 50 1200
+                     Q70 1250 50 1300
+                     Q30 1350 50 1400
+                     Q70 1450 50 1500"
+                  stroke="url(#riverEdge)"
+                  strokeWidth="55"
+                  fill="none"
+                  strokeLinecap="round"
+                  opacity="0.3"
+                  vectorEffect="non-scaling-stroke"
+                />
                 
-                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-white/0 via-white/30 to-white/0" />
-              </div>
+                <g className="animate-river-flow" opacity="0.5">
+                  <path 
+                    d="M45 0 Q60 40 45 80 Q30 120 45 160 Q60 200 45 240 Q30 280 45 320"
+                    stroke="rgba(255,255,255,0.5)"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  <path 
+                    d="M55 20 Q70 60 55 100 Q40 140 55 180 Q70 220 55 260 Q40 300 55 340"
+                    stroke="rgba(255,255,255,0.4)"
+                    strokeWidth="1.5"
+                    fill="none"
+                    strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </g>
+              </svg>
             
             {unidadesByParte.map((parte) => (
               <div key={parte.id} className="mb-12">

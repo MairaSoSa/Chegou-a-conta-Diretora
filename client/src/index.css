@@ -287,6 +287,15 @@
   animation: river-flow 4s linear infinite;
 }
 
+@keyframes boat-navigate {
+  0% { transform: translateY(-20px); }
+  100% { transform: translateY(0); }
+}
+
+.animate-boat-navigate {
+  animation: boat-navigate 0.8s ease-out forwards;
+}
+
 /* River Path */
 .river-path {
   background: linear-gradient(180deg, 
