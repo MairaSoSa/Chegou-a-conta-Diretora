@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { useTrilhaProgress } from "@/hooks/useTrilhaProgress";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   CheckCircle2, Clock, ChevronRight, Play, RotateCcw,
-  Ship, Anchor, MapPin, BookOpen, Compass
+  Ship, Anchor, MapPin, BookOpen, Compass, Waves
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
@@ -50,14 +49,24 @@ const PARTES = [
   { id: 5, nome: 'De onde vem o dinheiro', icone: Anchor, cor: 'indigo' },
 ];
 
-const COR_CLASSES: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-  amber: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-800' },
-  sky: { bg: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-700', badge: 'bg-sky-100 text-sky-800' },
-  emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-800' },
-  purple: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700', badge: 'bg-purple-100 text-purple-800' },
-  rose: { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', badge: 'bg-rose-100 text-rose-800' },
-  indigo: { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700', badge: 'bg-indigo-100 text-indigo-800' },
+const COR_CLASSES: Record<string, { bg: string; border: string; text: string; badge: string; wave: string }> = {
+  amber: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-800', wave: '#fef3c7' },
+  sky: { bg: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-700', badge: 'bg-sky-100 text-sky-800', wave: '#e0f2fe' },
+  emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-800', wave: '#d1fae5' },
+  purple: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700', badge: 'bg-purple-100 text-purple-800', wave: '#f3e8ff' },
+  rose: { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', badge: 'bg-rose-100 text-rose-800', wave: '#ffe4e6' },
+  indigo: { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700', badge: 'bg-indigo-100 text-indigo-800', wave: '#e0e7ff' },
 };
+
+function Barquinho({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 40 24" className={className} fill="none">
+      <path d="M4 16 C8 20, 32 20, 36 16 L34 12 L6 12 Z" fill="#8B4513" />
+      <path d="M20 12 L20 4 L30 10 L20 10 Z" fill="#fff" stroke="#ddd" strokeWidth="0.5" />
+      <path d="M18 14 L22 14 L22 12 L18 12 Z" fill="#5D4037" />
+    </svg>
+  );
+}
 
 function UnidadeCard({ 
   unidade, 
@@ -81,13 +90,25 @@ function UnidadeCard({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05 }}
+      className="relative"
     >
+      {isCurrent && !isCompleted && (
+        <div className="absolute -left-10 top-1/2 -translate-y-1/2 z-10">
+          <motion.div
+            animate={{ x: [0, 3, 0] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+          >
+            <Barquinho className="w-8 h-5" />
+          </motion.div>
+        </div>
+      )}
+      
       <Link href={`/trilha/${unidade.id}`}>
         <Card 
           className={cn(
             "group cursor-pointer transition-all duration-300 hover:shadow-md border-2",
             isCompleted && "border-primary/40 bg-primary/5",
-            isCurrent && !isCompleted && "border-accent ring-2 ring-accent/20 shadow-lg",
+            isCurrent && !isCompleted && "border-cyan-400 ring-2 ring-cyan-200 shadow-lg bg-gradient-to-r from-cyan-50/50 to-transparent",
             !isCompleted && !isCurrent && "border-slate-200 hover:border-slate-300"
           )}
           data-testid={`unidade-${unidade.id}`}
@@ -97,7 +118,7 @@ function UnidadeCard({
               <div className={cn(
                 "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-lg transition-all",
                 isCompleted && "bg-primary text-white",
-                isCurrent && !isCompleted && "bg-accent text-white",
+                isCurrent && !isCompleted && "bg-cyan-500 text-white",
                 !isCompleted && !isCurrent && cn(cores.bg, cores.text)
               )}>
                 {isCompleted ? (
@@ -108,7 +129,7 @@ function UnidadeCard({
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <Badge variant="outline" className={cn("text-xs", cores.badge)}>
                     {unidade.id}
                   </Badge>
@@ -117,8 +138,9 @@ function UnidadeCard({
                     {unidade.tempo}
                   </span>
                   {isCurrent && !isCompleted && (
-                    <Badge className="bg-accent/10 text-accent border-0 text-xs animate-pulse">
-                      Você está aqui
+                    <Badge className="bg-cyan-100 text-cyan-700 border-0 text-xs">
+                      <Ship className="w-3 h-3 mr-1" />
+                      Seu barco está aqui
                     </Badge>
                   )}
                 </div>
@@ -140,10 +162,10 @@ function UnidadeCard({
                       e.stopPropagation();
                       onComplete();
                     }}
-                    className="text-xs text-muted-foreground hover:text-primary"
+                    className="text-xs text-muted-foreground hover:text-primary hidden sm:flex"
                     data-testid={`concluir-${unidade.id}`}
                   >
-                    Marcar como concluída
+                    Concluir
                   </Button>
                 )}
                 <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -178,21 +200,33 @@ function ParteSection({
   return (
     <div className="mb-10">
       <div className={cn(
-        "flex items-center gap-4 mb-4 p-4 rounded-xl border-2",
+        "flex items-center gap-4 mb-4 p-4 rounded-xl border-2 relative overflow-hidden",
         cores.bg,
         cores.border
       )}>
+        <svg className="absolute inset-0 w-full h-full opacity-30" preserveAspectRatio="none">
+          <pattern id={`wave-${parte.id}`} patternUnits="userSpaceOnUse" width="100" height="20">
+            <path 
+              d="M0 10 Q25 0, 50 10 T100 10" 
+              fill="none" 
+              stroke={cores.wave} 
+              strokeWidth="2"
+            />
+          </pattern>
+          <rect width="100%" height="100%" fill={`url(#wave-${parte.id})`} />
+        </svg>
+        
         <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center",
+          "w-12 h-12 rounded-xl flex items-center justify-center relative z-10",
           cores.badge
         )}>
           <Icon className="w-6 h-6" />
         </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
+        <div className="flex-1 relative z-10">
+          <div className="flex items-center gap-2 flex-wrap">
             {parte.id > 0 && (
               <Badge variant="outline" className={cores.badge}>
-                Parte {parte.id}
+                Trecho {parte.id}
               </Badge>
             )}
             <h2 className={cn("font-bold text-lg", cores.text)}>
@@ -200,18 +234,27 @@ function ParteSection({
             </h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            {completedInPart} de {unidades.length} concluídas
+            {completedInPart} de {unidades.length} paradas visitadas
           </p>
         </div>
         <div className={cn(
-          "w-16 h-16 rounded-full flex items-center justify-center font-bold text-xl",
+          "w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg relative z-10",
           completedInPart === unidades.length ? "bg-primary text-white" : cores.badge
         )}>
           {Math.round((completedInPart / unidades.length) * 100)}%
         </div>
       </div>
       
-      <div className="space-y-3 pl-4 border-l-4 border-slate-100">
+      <div className="space-y-3 pl-6 ml-2 border-l-2 border-dashed border-cyan-200 relative">
+        <div className="absolute left-0 top-0 w-4 h-full pointer-events-none opacity-20">
+          <svg className="w-full h-full" preserveAspectRatio="none">
+            <pattern id="river-dots" patternUnits="userSpaceOnUse" width="4" height="20">
+              <circle cx="2" cy="10" r="1.5" fill="#06b6d4" />
+            </pattern>
+            <rect width="100%" height="100%" fill="url(#river-dots)" />
+          </svg>
+        </div>
+        
         {unidades.map((unidade, i) => (
           <UnidadeCard
             key={unidade.id}
@@ -229,73 +272,87 @@ function ParteSection({
 }
 
 export default function Trilha() {
-  const { progress, completedCount, totalUnits, completeUnit, setCurrentUnit, isUnitCompleted, resetProgress } = useTrilhaProgress();
+  const { progress, completedCount, totalUnits, completeUnit, isUnitCompleted, resetProgress } = useTrilhaProgress();
   
   const progressPercent = Math.round((completedCount / totalUnits) * 100);
   
   let globalIndex = 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50/50 via-background to-background flex flex-col font-sans">
+    <div className="min-h-screen bg-gradient-to-b from-cyan-50/30 via-background to-background flex flex-col font-sans">
       <Navigation />
       
       <main className="flex-1">
-        <div className="bg-gradient-to-br from-sky-100/50 via-cyan-50/30 to-transparent border-b py-10">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-600 flex items-center justify-center shadow-lg">
-                      <Ship className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                      <h1 className="text-3xl md:text-4xl font-bold font-display text-foreground">
-                        Trilha de Aprendizado
-                      </h1>
-                      <p className="text-muted-foreground">
-                        Navegue pelo conhecimento, um passo de cada vez
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <Card className="bg-white border-slate-200 shadow-sm">
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <div 
-                      className="w-20 h-20 rounded-full flex items-center justify-center relative"
-                      style={{
-                        background: `conic-gradient(#16a34a ${progressPercent}%, #e5e7eb ${progressPercent}%)`
-                      }}
-                    >
-                      <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center">
-                        <span className="text-xl font-bold text-primary">{progressPercent}%</span>
+        <div className="relative border-b overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <svg className="w-full h-full" preserveAspectRatio="none">
+              <pattern id="header-waves" patternUnits="userSpaceOnUse" width="200" height="40">
+                <path d="M0 20 Q50 10, 100 20 T200 20" fill="none" stroke="#06b6d4" strokeWidth="1.5" />
+                <path d="M0 30 Q50 20, 100 30 T200 30" fill="none" stroke="#0ea5e9" strokeWidth="1" />
+              </pattern>
+              <rect width="100%" height="100%" fill="url(#header-waves)" />
+            </svg>
+          </div>
+          
+          <div className="bg-gradient-to-br from-cyan-100/40 via-sky-50/50 to-transparent py-10 relative z-10">
+            <div className="container mx-auto px-4">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-600 flex items-center justify-center shadow-lg relative">
+                        <Ship className="w-7 h-7 text-white" />
+                        <Waves className="w-4 h-4 text-cyan-200 absolute -bottom-1 -right-1" />
+                      </div>
+                      <div>
+                        <h1 className="text-3xl md:text-4xl font-bold font-display text-foreground">
+                          Navegue pelo Rio
+                        </h1>
+                        <p className="text-muted-foreground flex items-center gap-2">
+                          <span>Cada parada é uma nova descoberta</span>
+                        </p>
                       </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Seu progresso</p>
-                      <p className="font-bold text-lg">{completedCount} de {totalUnits}</p>
-                      <p className="text-xs text-muted-foreground">unidades concluídas</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div className="flex flex-wrap gap-3 mt-6">
-                <Link href={`/trilha/${progress.currentUnit}`}>
-                  <Button className="bg-accent hover:bg-accent/90" data-testid="button-continuar">
-                    <Play className="w-4 h-4 mr-2" />
-                    Continuar de onde parei
+                  </div>
+                  
+                  <Card className="bg-white/80 backdrop-blur border-cyan-100 shadow-sm">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div 
+                        className="w-20 h-20 rounded-full flex items-center justify-center relative"
+                        style={{
+                          background: `conic-gradient(#0891b2 ${progressPercent}%, #e5e7eb ${progressPercent}%)`
+                        }}
+                      >
+                        <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center">
+                          <span className="text-xl font-bold text-cyan-600">{progressPercent}%</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Jornada</p>
+                        <p className="font-bold text-lg">{completedCount} de {totalUnits}</p>
+                        <p className="text-xs text-muted-foreground">paradas visitadas</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                <div className="flex flex-wrap gap-3 mt-6">
+                  <Link href={`/trilha/${progress.currentUnit}`}>
+                    <Button className="bg-cyan-600 hover:bg-cyan-700" data-testid="button-continuar">
+                      <Ship className="w-4 h-4 mr-2" />
+                      Continuar navegando
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="outline"
+                    onClick={resetProgress}
+                    className="border-cyan-200 hover:bg-cyan-50"
+                    data-testid="button-reset"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Voltar ao início
                   </Button>
-                </Link>
-                <Button 
-                  variant="outline"
-                  onClick={resetProgress}
-                  data-testid="button-reset"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Recomeçar
-                </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -320,15 +377,24 @@ export default function Trilha() {
               return section;
             })}
             
-            <div className="mt-12 text-center p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-emerald-50 border border-primary/20">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Anchor className="w-8 h-8 text-primary" />
+            <div className="mt-12 text-center p-8 rounded-2xl bg-gradient-to-br from-cyan-50 to-sky-50 border-2 border-cyan-200 relative overflow-hidden">
+              <svg className="absolute inset-0 w-full h-full opacity-20" preserveAspectRatio="none">
+                <pattern id="end-waves" patternUnits="userSpaceOnUse" width="100" height="20">
+                  <path d="M0 10 Q25 5, 50 10 T100 10" fill="none" stroke="#06b6d4" strokeWidth="2" />
+                </pattern>
+                <rect width="100%" height="100%" fill="url(#end-waves)" />
+              </svg>
+              
+              <div className="relative z-10">
+                <div className="w-16 h-16 rounded-full bg-cyan-100 flex items-center justify-center mx-auto mb-4">
+                  <Anchor className="w-8 h-8 text-cyan-600" />
+                </div>
+                <h3 className="text-xl font-bold mb-2 text-cyan-800">Porto Final</h3>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  Quando completar toda a jornada pelo rio, você terá o conhecimento 
+                  pra gerenciar as verbas da escola com confiança e segurança.
+                </p>
               </div>
-              <h3 className="text-xl font-bold mb-2">Fim da Jornada!</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                Quando completar todas as unidades, você terá o conhecimento completo 
-                pra gerenciar as verbas da escola com segurança.
-              </p>
             </div>
           </div>
         </div>
