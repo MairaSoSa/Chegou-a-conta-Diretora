@@ -338,120 +338,136 @@ interface PortoProps {
 function Porto({ unidade, isCompleted, isCurrent, index, onSelect, onComplete }: PortoProps) {
   const [expanded, setExpanded] = useState(false);
   const parte = PARTES.find(p => p.id === unidade.parte);
-  const isEven = index % 2 === 0;
+  const isLeft = index % 2 === 0;
   
   return (
-    <div className={cn(
-      "relative flex items-start gap-4 py-6",
-      isEven ? "flex-row" : "flex-row-reverse"
-    )}>
+    <div className="relative grid grid-cols-[1fr_80px_1fr] md:grid-cols-[1fr_120px_1fr] items-center gap-0 py-4">
       <div className={cn(
-        "w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 border-2 transition-all",
-        isCompleted ? "bg-primary/10 border-primary text-primary" :
-        isCurrent ? "bg-accent/10 border-accent text-accent animate-pulse" :
-        "bg-muted border-border/50 text-muted-foreground"
+        "transition-all duration-300",
+        isLeft ? "col-start-1" : "col-start-3",
+        isLeft ? "pr-2" : "pl-2"
       )}>
-        {isCompleted ? (
-          <CheckCircle2 className="w-7 h-7" />
-        ) : isCurrent ? (
-          <div className="relative">
-            <Anchor className="w-6 h-6" />
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-ping" />
+        <Card 
+          className={cn(
+            "cursor-pointer transition-all hover:shadow-lg border-2 relative",
+            isCompleted ? "border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10" :
+            isCurrent ? "border-accent/40 bg-gradient-to-br from-accent/5 to-accent/15 shadow-lg" :
+            "border-border/50 hover:border-accent/30 bg-card"
+          )}
+          onClick={() => setExpanded(!expanded)}
+          data-testid={`porto-${unidade.id}`}
+        >
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                  <Badge variant="outline" className={cn("text-xs font-medium", parte?.cor)}>
+                    {unidade.id}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> {unidade.tempo}
+                  </span>
+                </div>
+                <h3 className={cn(
+                  "font-bold text-sm md:text-base mb-0.5 leading-tight",
+                  isCurrent && !isCompleted ? "text-accent" : ""
+                )}>{unidade.titulo}</h3>
+                <p className="text-xs text-muted-foreground line-clamp-2">{unidade.subtitulo}</p>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                {isCompleted && <CheckCircle2 className="w-5 h-5 text-primary" />}
+                {isCurrent && !isCompleted && (
+                  <div className="w-3 h-3 bg-accent rounded-full animate-pulse" />
+                )}
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="h-7 w-7"
+                  data-testid={`toggle-porto-${unidade.id}`}
+                >
+                  {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+            
+            {expanded && (
+              <div className="mt-3 pt-3 border-t border-border/30 space-y-3">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">Você vai aprender:</p>
+                  <ul className="space-y-1">
+                    {unidade.aprendizados.map((item, i) => (
+                      <li key={i} className="flex items-start gap-1.5 text-xs">
+                        <CheckCircle2 className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="flex gap-2 flex-wrap">
+                  <Link href={`/trilha/${unidade.id}`}>
+                    <Button 
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); onSelect(); }}
+                      className={isCurrent ? "bg-accent hover:bg-accent/90" : ""}
+                      data-testid={`abrir-${unidade.id}`}
+                    >
+                      <Play className="w-3 h-3 mr-1" />
+                      {isCompleted ? 'Revisar' : isCurrent ? 'Continuar' : 'Começar'}
+                    </Button>
+                  </Link>
+                  {!isCompleted && (
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); onComplete(); }}
+                      data-testid={`concluir-${unidade.id}`}
+                    >
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      Concluída
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="col-start-2 relative h-full flex items-center justify-center">
+        <div className={cn(
+          "absolute top-1/2 -translate-y-1/2 h-1 transition-all duration-300",
+          isLeft ? "right-1/2 left-0" : "left-1/2 right-0",
+          expanded ? "bg-gradient-to-r from-amber-600/60 via-amber-500/80 to-amber-600/60" : 
+          isCompleted ? "bg-primary/30" :
+          isCurrent ? "bg-accent/40" : "bg-border/30"
+        )} 
+        style={{ 
+          clipPath: isLeft 
+            ? 'polygon(0 0, 100% 30%, 100% 70%, 0 100%)' 
+            : 'polygon(0 30%, 100% 0, 100% 100%, 0 70%)'
+        }}
+        />
+        
+        <div className={cn(
+          "w-4 h-4 md:w-5 md:h-5 rounded-full border-2 z-10 transition-all",
+          isCompleted ? "bg-primary border-primary" :
+          isCurrent ? "bg-accent border-accent animate-pulse" :
+          "bg-muted border-border"
+        )}>
+          {isCompleted && <CheckCircle2 className="w-full h-full text-white p-0.5" />}
+        </div>
+        
+        {isCurrent && (
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-20 h-14 z-20">
+            <Barquinho className="w-full h-full" />
           </div>
-        ) : (
-          <Circle className="w-6 h-6" />
         )}
       </div>
       
-      <Card 
-        className={cn(
-          "flex-1 cursor-pointer transition-all hover:shadow-lg border-2",
-          isCompleted ? "border-primary/20 bg-primary/5" :
-          isCurrent ? "border-accent/30 bg-accent/5 shadow-md" :
-          "border-border/50 hover:border-accent/20"
-        )}
-        onClick={() => setExpanded(!expanded)}
-        data-testid={`porto-${unidade.id}`}
-      >
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between gap-3 mb-2">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <Badge variant="outline" className={cn("text-xs font-medium", parte?.cor)}>
-                  {unidade.id}
-                </Badge>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> {unidade.tempo}
-                </span>
-                {isCompleted && (
-                  <Badge className="bg-primary text-primary-foreground text-xs">Concluída</Badge>
-                )}
-                {isCurrent && !isCompleted && (
-                  <Badge className="bg-accent text-accent-foreground text-xs">Você está aqui</Badge>
-                )}
-              </div>
-              <h3 className={cn(
-                "font-bold text-lg mb-1",
-                isCurrent && !isCompleted ? "text-accent" : ""
-              )}>{unidade.titulo}</h3>
-              <p className="text-sm text-muted-foreground">{unidade.subtitulo}</p>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="flex-shrink-0"
-              data-testid={`toggle-porto-${unidade.id}`}
-            >
-              {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-            </Button>
-          </div>
-          
-          {expanded && (
-            <div className="mt-4 pt-4 border-t border-border/30 space-y-4">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">Você vai sair sabendo:</p>
-                <ul className="space-y-1.5">
-                  {unidade.aprendizados.map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className="flex gap-2 flex-wrap">
-                <Link href={`/trilha/${unidade.id}`}>
-                  <Button 
-                    onClick={(e) => { e.stopPropagation(); onSelect(); }}
-                    className={isCurrent ? "bg-accent hover:bg-accent/90" : ""}
-                    data-testid={`abrir-${unidade.id}`}
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    {isCompleted ? 'Revisar' : isCurrent ? 'Continuar' : 'Começar'}
-                  </Button>
-                </Link>
-                {!isCompleted && (
-                  <Button 
-                    variant="outline"
-                    onClick={(e) => { e.stopPropagation(); onComplete(); }}
-                    data-testid={`concluir-${unidade.id}`}
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Marcar como Concluída
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {isCurrent && (
-        <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-24 h-16 z-10">
-          <Barquinho className="w-full h-full" />
-        </div>
-      )}
+      <div className={cn(
+        isLeft ? "col-start-3" : "col-start-1"
+      )} />
     </div>
   );
 }
@@ -601,36 +617,43 @@ export default function Trilha() {
           
           <div className="container mx-auto px-4 py-8 relative z-10">
             <div className="relative max-w-3xl mx-auto">
-              <svg className="absolute left-1/2 top-0 h-full w-32 md:w-44 -translate-x-1/2 -z-10" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="riverWater" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#8B7355" stopOpacity="0.1" />
-                    <stop offset="20%" stopColor="#A08060" stopOpacity="0.25" />
-                    <stop offset="35%" stopColor="#B8956A" stopOpacity="0.35" />
-                    <stop offset="50%" stopColor="#C9A87C" stopOpacity="0.4" />
-                    <stop offset="65%" stopColor="#B8956A" stopOpacity="0.35" />
-                    <stop offset="80%" stopColor="#A08060" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#8B7355" stopOpacity="0.1" />
-                  </linearGradient>
-                  <linearGradient id="riverShine" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="transparent" />
-                    <stop offset="45%" stopColor="rgba(255,255,255,0.15)" />
-                    <stop offset="55%" stopColor="rgba(255,255,255,0.2)" />
-                    <stop offset="100%" stopColor="transparent" />
-                  </linearGradient>
-                  <filter id="riverBlur">
-                    <feGaussianBlur stdDeviation="1" />
-                  </filter>
-                </defs>
-                <rect x="0" y="0" width="100%" height="100%" fill="url(#riverWater)" rx="60" />
-                <rect x="30%" y="0" width="40%" height="100%" fill="url(#riverShine)" rx="20" opacity="0.6" />
+              <div className="absolute left-1/2 top-0 bottom-0 w-20 md:w-28 -translate-x-1/2 -z-10 overflow-hidden rounded-full">
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 via-cyan-500/30 to-cyan-400/10" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-sky-300/20 to-transparent" />
                 
-                <g className="animate-river-flow" opacity="0.3">
-                  <path d="M50 0 Q60 30 50 60 Q40 90 50 120 Q60 150 50 180" stroke="#D4C4A8" strokeWidth="1" fill="none" filter="url(#riverBlur)" />
-                  <path d="M70 20 Q80 50 70 80 Q60 110 70 140 Q80 170 70 200" stroke="#D4C4A8" strokeWidth="0.8" fill="none" filter="url(#riverBlur)" />
-                  <path d="M90 40 Q100 70 90 100 Q80 130 90 160 Q100 190 90 220" stroke="#D4C4A8" strokeWidth="0.6" fill="none" filter="url(#riverBlur)" />
-                </g>
-              </svg>
+                <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="riverBlue" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#0891b2" stopOpacity="0.15" />
+                      <stop offset="30%" stopColor="#22d3ee" stopOpacity="0.35" />
+                      <stop offset="50%" stopColor="#67e8f9" stopOpacity="0.45" />
+                      <stop offset="70%" stopColor="#22d3ee" stopOpacity="0.35" />
+                      <stop offset="100%" stopColor="#0891b2" stopOpacity="0.15" />
+                    </linearGradient>
+                    <linearGradient id="riverShine2" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="white" stopOpacity="0.3" />
+                      <stop offset="50%" stopColor="white" stopOpacity="0.1" />
+                      <stop offset="100%" stopColor="white" stopOpacity="0.3" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="0" y="0" width="100%" height="100%" fill="url(#riverBlue)" />
+                </svg>
+                
+                <div className="absolute inset-0 overflow-hidden">
+                  <div className="animate-river-flow absolute inset-x-0 -top-20 bottom-0">
+                    <svg className="w-full h-[120%]" viewBox="0 0 100 200" preserveAspectRatio="none">
+                      <path d="M30 0 Q45 20 30 40 Q15 60 30 80 Q45 100 30 120 Q15 140 30 160 Q45 180 30 200" 
+                            stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" fill="none" />
+                      <path d="M50 10 Q65 30 50 50 Q35 70 50 90 Q65 110 50 130 Q35 150 50 170 Q65 190 50 210" 
+                            stroke="rgba(255,255,255,0.3)" strokeWidth="1" fill="none" />
+                      <path d="M70 0 Q85 20 70 40 Q55 60 70 80 Q85 100 70 120 Q55 140 70 160 Q85 180 70 200" 
+                            stroke="rgba(255,255,255,0.35)" strokeWidth="1.2" fill="none" />
+                    </svg>
+                  </div>
+                </div>
+                
+                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-white/0 via-white/30 to-white/0" />
+              </div>
             
             {unidadesByParte.map((parte) => (
               <div key={parte.id} className="mb-12">
