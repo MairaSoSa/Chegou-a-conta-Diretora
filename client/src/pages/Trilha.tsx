@@ -341,7 +341,7 @@ function Porto({ unidade, isCompleted, isCurrent, index, onSelect, onComplete }:
   const isLeft = index % 2 === 0;
   
   return (
-    <div className="relative grid grid-cols-[1fr_80px_1fr] md:grid-cols-[1fr_120px_1fr] items-center gap-0 py-4">
+    <div className="relative grid grid-cols-[1fr_100px_1fr] md:grid-cols-[1fr_160px_1fr] items-center gap-0 py-4">
       <div className={cn(
         "transition-all duration-300",
         isLeft ? "col-start-1" : "col-start-3",
@@ -638,7 +638,7 @@ export default function Trilha() {
           
           <div className="container mx-auto px-4 py-8 relative z-10">
             <div className="relative max-w-3xl mx-auto">
-              <svg className="absolute left-1/2 top-0 h-full w-32 md:w-40 -translate-x-1/2 -z-10 overflow-visible" preserveAspectRatio="none">
+              <svg className="absolute left-1/2 top-0 h-full w-24 md:w-36 -translate-x-1/2 -z-10 overflow-visible" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="riverMain" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.1" />
