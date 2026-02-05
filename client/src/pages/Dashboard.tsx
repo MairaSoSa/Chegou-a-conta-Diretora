@@ -90,12 +90,60 @@ const ACOES_PDDE = [
   { nome: 'Educação Conectada', status: 'Ativo', valor: 2800 },
 ];
 
-// Prazos
-const PRAZOS = [
-  { data: '28/02/2025', evento: 'Entregar contas do PDDE de 2024', urgente: true },
-  { data: '31/03/2025', evento: 'Atualizar cadastro no PDDE Interativo', urgente: false },
-  { data: '30/04/2025', evento: 'Começa o Censo Escolar', urgente: false },
-  { data: '31/05/2025', evento: 'Renovar Conselho Escolar', urgente: false },
+// Prazos e Calendário Completo
+const CALENDARIO_EVENTOS = [
+  // Fevereiro
+  { mes: 2, ano: 2025, dia: 28, evento: 'Entregar contas do PDDE de 2024', tipo: 'prestacao', urgente: true },
+  // Março
+  { mes: 3, ano: 2025, dia: 15, evento: 'Adesão PDDE Qualidade', tipo: 'adesao', urgente: false },
+  { mes: 3, ano: 2025, dia: 31, evento: 'Atualizar cadastro no PDDE Interativo', tipo: 'cadastro', urgente: false },
+  // Abril
+  { mes: 4, ano: 2025, dia: 15, evento: 'Adesão Escola Conectada', tipo: 'adesao', urgente: false },
+  { mes: 4, ano: 2025, dia: 30, evento: 'Começa o Censo Escolar', tipo: 'censo', urgente: false },
+  // Maio
+  { mes: 5, ano: 2025, dia: 31, evento: 'Renovar Conselho Escolar', tipo: 'conselho', urgente: false },
+  // Junho
+  { mes: 6, ano: 2025, dia: 15, evento: 'Adesão PDDE Estrutura', tipo: 'adesao', urgente: false },
+  { mes: 6, ano: 2025, dia: 30, evento: 'Encerra 1ª etapa Censo', tipo: 'censo', urgente: false },
+  // Julho
+  { mes: 7, ano: 2025, dia: 31, evento: 'Conferência dados Censo', tipo: 'censo', urgente: false },
+  // Agosto
+  { mes: 8, ano: 2025, dia: 15, evento: 'Adesão Escola Acessível', tipo: 'adesao', urgente: false },
+  { mes: 8, ano: 2025, dia: 31, evento: 'Encerra coleta Censo', tipo: 'censo', urgente: true },
+  // Setembro
+  { mes: 9, ano: 2025, dia: 30, evento: 'Adesão Mais Alfabetização', tipo: 'adesao', urgente: false },
+  // Outubro
+  { mes: 10, ano: 2025, dia: 15, evento: 'Publicação dados Censo', tipo: 'censo', urgente: false },
+  // Novembro
+  { mes: 11, ano: 2025, dia: 30, evento: 'Adesão programas 2026', tipo: 'adesao', urgente: false },
+  // Dezembro
+  { mes: 12, ano: 2025, dia: 31, evento: 'Fechamento exercício', tipo: 'prestacao', urgente: true },
+];
+
+const MESES_NOMES = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+const TIPO_CORES: Record<string, { bg: string; text: string; border: string }> = {
+  prestacao: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+  adesao: { bg: 'bg-sky-100', text: 'text-sky-700', border: 'border-sky-200' },
+  cadastro: { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200' },
+  censo: { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' },
+  conselho: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
+};
+
+const TIPO_LABELS: Record<string, string> = {
+  prestacao: 'Prestação de Contas',
+  adesao: 'Adesão a Programa',
+  cadastro: 'Atualização Cadastro',
+  censo: 'Censo Escolar',
+  conselho: 'Conselho Escolar',
+};
+
+// Links dos programas
+const LINKS_PROGRAMAS = [
+  { nome: 'PDDE Interativo', descricao: 'Onde você faz cadastros e adesões', url: 'https://pddeinterativo.mec.gov.br' },
+  { nome: 'SIGPC', descricao: 'Onde você presta contas', url: 'https://www.fnde.gov.br/sigpc' },
+  { nome: 'Portal FNDE', descricao: 'Tudo sobre as verbas federais', url: 'https://www.fnde.gov.br' },
+  { nome: 'Consulta Escola', descricao: 'Dados da sua escola no INEP', url: 'https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/inep-data/consulta-matricula' },
 ];
 
 // Benchmark
@@ -689,17 +737,17 @@ export default function Dashboard() {
                 <CardDescription>Veja quais verbas extras a escola pode receber do governo federal</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                   {ELEGIBILIDADE_PROGRAMAS.map((programa) => (
                     <div key={programa.nome} className={`p-4 rounded-xl border ${
-                      programa.status === 'Ativo' ? 'bg-primary/5 border-primary/20' :
+                      programa.status === 'Já participa' ? 'bg-primary/5 border-primary/20' :
                       programa.elegivel ? 'bg-sky-50 border-sky-200' : 
                       'bg-muted/30 border-border/50'
                     }`}>
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-medium text-sm">{programa.nome}</h4>
                         <Badge className={
-                          programa.status === 'Ativo' ? 'bg-primary text-primary-foreground' :
+                          programa.status === 'Já participa' ? 'bg-primary text-primary-foreground' :
                           programa.elegivel ? 'bg-sky-100 text-sky-700' :
                           'bg-muted text-muted-foreground'
                         }>
@@ -725,6 +773,32 @@ export default function Dashboard() {
                       )}
                     </div>
                   ))}
+                </div>
+                
+                {/* Links dos Sistemas */}
+                <div className="border-t border-border/30 pt-5">
+                  <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <Link2 className="w-4 h-4 text-sky-600" />
+                    Sites pra você acessar
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {LINKS_PROGRAMAS.map((link) => (
+                      <a
+                        key={link.nome}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-3 rounded-xl bg-muted/30 hover:bg-accent/10 border border-transparent hover:border-accent/20 transition-all group"
+                        data-testid={`link-${link.nome.toLowerCase().replace(/\s/g, '-')}`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-sm group-hover:text-accent transition-colors">{link.nome}</span>
+                          <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-accent transition-colors" />
+                        </div>
+                        <p className="text-xs text-muted-foreground">{link.descricao}</p>
+                      </a>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -828,31 +902,117 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* 13. Calendário de Prazos */}
+            {/* 13. Calendário Interativo */}
             <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <CalendarDays className="w-5 h-5 text-amber-600" />
-                  Datas Importantes
+                  Calendário do Ano - Fique de Olho!
                 </CardTitle>
-                <CardDescription>Não perca esses prazos!</CardDescription>
+                <CardDescription>Todas as datas importantes de adesão, censo e prestação de contas</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {PRAZOS.map((prazo, i) => (
-                    <div key={i} className={`flex items-center gap-4 p-4 rounded-xl ${prazo.urgente ? 'bg-amber-50 border border-amber-200' : 'bg-muted/30'}`}>
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${prazo.urgente ? 'bg-amber-100' : 'bg-muted'}`}>
-                        <Calendar className={`w-5 h-5 ${prazo.urgente ? 'text-amber-600' : 'text-muted-foreground'}`} />
-                      </div>
-                      <div className="flex-1">
-                        <p className={`font-medium ${prazo.urgente ? 'text-amber-800' : ''}`}>{prazo.evento}</p>
-                        <p className={`text-sm ${prazo.urgente ? 'text-amber-600' : 'text-muted-foreground'}`}>{prazo.data}</p>
-                      </div>
-                      {prazo.urgente && (
-                        <Badge className="bg-amber-100 text-amber-700 border-0">Urgente</Badge>
-                      )}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Calendário Visual */}
+                  <div className="lg:col-span-2">
+                    {/* Legenda */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {Object.entries(TIPO_LABELS).map(([tipo, label]) => (
+                        <div key={tipo} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg ${TIPO_CORES[tipo].bg} ${TIPO_CORES[tipo].text} text-xs`}>
+                          <div className={`w-2 h-2 rounded-full ${TIPO_CORES[tipo].bg} border ${TIPO_CORES[tipo].border}`} />
+                          {label}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                    
+                    {/* Grade de Meses */}
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((mes) => {
+                        const eventosMes = CALENDARIO_EVENTOS.filter(e => e.mes === mes);
+                        const temUrgente = eventosMes.some(e => e.urgente);
+                        return (
+                          <div 
+                            key={mes} 
+                            className={`p-3 rounded-xl border ${temUrgente ? 'border-red-300 bg-red-50' : 'border-border/50 bg-muted/30'} relative`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className={`font-bold text-sm ${temUrgente ? 'text-red-700' : ''}`}>{MESES_NOMES[mes]}</span>
+                              {eventosMes.length > 0 && (
+                                <span className={`text-xs px-1.5 py-0.5 rounded-full ${temUrgente ? 'bg-red-200 text-red-700' : 'bg-muted text-muted-foreground'}`}>
+                                  {eventosMes.length}
+                                </span>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              {eventosMes.slice(0, 2).map((evento, i) => (
+                                <div 
+                                  key={i} 
+                                  className={`text-xs p-1.5 rounded-lg ${TIPO_CORES[evento.tipo].bg} ${TIPO_CORES[evento.tipo].text} truncate`}
+                                  title={`${evento.dia}/${evento.mes} - ${evento.evento}`}
+                                >
+                                  <span className="font-medium">{evento.dia}</span> - {evento.evento.split(' ').slice(0, 2).join(' ')}...
+                                </div>
+                              ))}
+                              {eventosMes.length > 2 && (
+                                <p className="text-xs text-muted-foreground text-center">+{eventosMes.length - 2} mais</p>
+                              )}
+                              {eventosMes.length === 0 && (
+                                <p className="text-xs text-muted-foreground italic">Sem eventos</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                  {/* Lista de Próximos Eventos e Alertas */}
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                        Próximos Prazos Urgentes
+                      </p>
+                      <div className="space-y-2">
+                        {CALENDARIO_EVENTOS.filter(e => e.urgente).slice(0, 3).map((evento, i) => (
+                          <div key={i} className="p-3 rounded-xl bg-red-50 border border-red-200">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                                <span className="text-xs font-bold text-red-700">{evento.dia}</span>
+                              </div>
+                              <div>
+                                <p className="text-xs text-red-600">{MESES_NOMES[evento.mes]}/{evento.ano}</p>
+                                <p className="text-sm font-medium text-red-800">{evento.evento}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="border-t border-border/30 pt-4">
+                      <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                        <Info className="w-4 h-4 text-sky-600" />
+                        Avisos Importantes
+                      </p>
+                      <div className="space-y-2 text-sm">
+                        <div className="p-3 rounded-xl bg-muted/50">
+                          <p className="text-muted-foreground">Último dinheiro PDDE: <strong className="text-foreground">2024</strong></p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-muted/50">
+                          <p className="text-muted-foreground">Última conta prestada: <strong className="text-foreground">2023</strong></p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-amber-50 border border-amber-200">
+                          <p className="text-amber-700">Anos pendentes: <strong>{defasagemCiclos}</strong></p>
+                        </div>
+                        <div className={`p-3 rounded-xl ${parseFloat(enrollmentVariation) < -5 ? 'bg-amber-50 border border-amber-200' : 'bg-muted/50'}`}>
+                          <p className={parseFloat(enrollmentVariation) < -5 ? 'text-amber-700' : 'text-muted-foreground'}>
+                            Alunos: <strong className={parseFloat(enrollmentVariation) < -5 ? '' : 'text-foreground'}>{enrollmentVariation}%</strong> vs ano passado
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -876,44 +1036,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* 15. Alertas Neutros */}
-            <Card className="card-clay">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-amber-600" />
-                  Coisas pra Ficar de Olho
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <AlertItem text="Último dinheiro do PDDE chegou em: 2024" source="FNDE - Liberações" />
-                  <AlertItem text="Última prestação de contas com situação: 2023" source="FNDE - SIGPC" />
-                  <AlertItem text={`Anos sem prestar contas: ${defasagemCiclos}`} source="Calculamos pra você" type="warning" />
-                  <AlertItem text={`Mudança no número de alunos: ${enrollmentVariation}%`} source="INEP - Censo Escolar" type={parseFloat(enrollmentVariation) < -5 ? 'warning' : 'info'} />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 16. Links Úteis */}
-            <Card className="card-clay">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
-                  <Link2 className="w-5 h-5 text-sky-600" />
-                  Sites Importantes
-                </CardTitle>
-                <CardDescription>Acesse os sistemas do governo por aqui</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <LinkCard name="PDDE Interativo (onde cadastra)" url="https://pddeinterativo.mec.gov.br" />
-                  <LinkCard name="SIGPC (onde presta contas)" url="https://www.fnde.gov.br/sigpc" />
-                  <LinkCard name="Portal FNDE (tudo sobre verbas)" url="https://www.fnde.gov.br" />
-                  <LinkCard name="Dados da Escola (INEP)" url="https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/inep-data/consulta-matricula" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 17. Fontes e Transparência */}
+            {/* 15. Fontes e Transparência */}
             <Card className="card-clay bg-muted/30">
               <CardContent className="p-6">
                 <div className="flex items-start gap-3 mb-4">
