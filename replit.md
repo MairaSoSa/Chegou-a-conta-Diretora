@@ -1,4 +1,4 @@
-# A Conta Chegou, Diretora!
+# Chegou a Conta, Diretora!
 
 ## Overview
 
