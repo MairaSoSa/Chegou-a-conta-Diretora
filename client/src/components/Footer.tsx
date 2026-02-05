@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { Settings } from "lucide-react";
 
 export function Footer() {
   return (
@@ -11,11 +12,15 @@ export function Footer() {
             <span>Gratuito para escolas públicas</span>
           </div>
           
-          <div className="flex gap-6">
+          <div className="flex flex-wrap items-center gap-6">
             <Link href="/trilha" className="hover:text-primary transition-colors">Trilha</Link>
             <Link href="/programas" className="hover:text-primary transition-colors">Programas</Link>
             <Link href="/ferramentas" className="hover:text-primary transition-colors">Ferramentas</Link>
             <Link href="/chat" className="hover:text-primary transition-colors">Chat IA</Link>
+            <Link href="/admin" className="inline-flex items-center gap-1 hover:text-primary transition-colors" data-testid="link-admin">
+              <Settings className="w-3.5 h-3.5" />
+              Admin
+            </Link>
           </div>
         </div>
       </div>
