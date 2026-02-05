@@ -287,7 +287,7 @@ export default function Dashboard() {
       
       <main className="flex-1 container mx-auto px-4 py-8 space-y-6">
         {/* 1. Cabeçalho com busca */}
-        <Card className="card-clay sticky top-20 z-40 bg-card/98 backdrop-blur-sm">
+        <Card className="card-clay">
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4 items-center">
               <div className="relative flex-1 w-full">
@@ -443,7 +443,7 @@ export default function Dashboard() {
             {viewMode === 'resumido' && (
               <Card className="card-clay">
                 <CardHeader className="pb-3">
-                  <CardTitle className="font-display flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-amber-600" />
                     Próximos Prazos
                   </CardTitle>
@@ -477,7 +477,7 @@ export default function Dashboard() {
             {viewMode === 'completo' && (
               <Card className="card-clay">
                 <CardHeader className="pb-3">
-                  <CardTitle className="font-display flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2">
                     <School className="w-5 h-5 text-accent" />
                     Dados da Escola
                   </CardTitle>
@@ -502,7 +502,7 @@ export default function Dashboard() {
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="font-display flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2">
                     <Users className="w-5 h-5 text-primary" />
                     Quantos Alunos Estudam Aqui
                   </CardTitle>
@@ -560,7 +560,7 @@ export default function Dashboard() {
             {/* 4. Taxas Educacionais */}
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-sky-600" />
                   Como os Alunos Estão Indo
                 </CardTitle>
@@ -580,7 +580,7 @@ export default function Dashboard() {
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="font-display flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2">
                     <GraduationCap className="w-5 h-5 text-sky-600" />
                     Nota da Escola (IDEB)
                   </CardTitle>
@@ -629,7 +629,7 @@ export default function Dashboard() {
             {/* 6. Infraestrutura */}
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <Building2 className="w-5 h-5 text-purple-600" />
                   O Que a Escola Tem
                 </CardTitle>
@@ -654,7 +654,7 @@ export default function Dashboard() {
             {/* 7. Repasses Públicos (FNDE) */}
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <Banknote className="w-5 h-5 text-accent" />
                   Dinheiro que a Escola Recebeu do Governo
                 </CardTitle>
@@ -697,7 +697,7 @@ export default function Dashboard() {
             {/* 8. Ações do PDDE */}
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <Award className="w-5 h-5 text-primary" />
                   Verbas Extras do PDDE
                 </CardTitle>
@@ -725,7 +725,7 @@ export default function Dashboard() {
             {/* 9. Regularidade e Prestação de Contas */}
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
                   Contas Prestadas ao Governo
                 </CardTitle>
@@ -767,7 +767,7 @@ export default function Dashboard() {
             {/* 10. Conselho Escolar */}
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <Users2 className="w-5 h-5 text-accent" />
                   Conselho Escolar
                 </CardTitle>
@@ -801,7 +801,7 @@ export default function Dashboard() {
             {/* 11. VAAR */}
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <Target className="w-5 h-5 text-sky-600" />
                   VAAR - Bônus por Bons Resultados
                 </CardTitle>
@@ -840,7 +840,7 @@ export default function Dashboard() {
             {/* 12. Elegibilidade a Programas Federais */}
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <Award className="w-5 h-5 text-primary" />
                   Outros Programas que a Escola Pode Participar
                 </CardTitle>
@@ -916,7 +916,7 @@ export default function Dashboard() {
             {/* 13. Conectividade (Escola Conectada) */}
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <Wifi className="w-5 h-5 text-sky-600" />
                   Internet na Escola
                 </CardTitle>
@@ -977,7 +977,7 @@ export default function Dashboard() {
             {/* 14. Comparadores (Benchmark) */}
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <Scale className="w-5 h-5 text-accent" />
                   Comparando com Outras Escolas
                 </CardTitle>
@@ -1015,7 +1015,7 @@ export default function Dashboard() {
             {/* 15. Calendário Interativo */}
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <CalendarDays className="w-5 h-5 text-amber-600" />
                   Calendário do Ano - Fique de Olho!
                 </CardTitle>
@@ -1130,7 +1130,7 @@ export default function Dashboard() {
             {/* 16. Indicadores Derivados */}
             {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-primary" />
                   Resumo em Números
                 </CardTitle>
@@ -1152,7 +1152,7 @@ export default function Dashboard() {
                 <div className="flex items-start gap-3 mb-4">
                   <Info className="w-5 h-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <h4 className="font-display font-bold mb-2">De Onde Tiramos Esses Dados</h4>
+                    <h4 className="font-bold mb-2">De Onde Tiramos Esses Dados</h4>
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p>• <strong>Alunos e Estrutura:</strong> Censo Escolar do INEP (vimos em Fev/2025)</p>
                       <p>• <strong>Notas e Aprovação:</strong> INEP (vimos em Fev/2025)</p>
@@ -1183,7 +1183,7 @@ export default function Dashboard() {
             <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-6">
               <Search className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-display font-bold mb-2">Coloque o Código da Escola</h3>
+            <h3 className="text-xl font-bold mb-2">Coloque o Código da Escola</h3>
             <p className="text-muted-foreground max-w-sm">Coloque os 8 números do código INEP da escola pra ver os dados públicos.</p>
           </div>
         )}

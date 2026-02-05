@@ -43,21 +43,24 @@ export function Navigation() {
           </span>
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-1">
-          {navItems.map((item) => (
-            <NavLink key={item.href} item={item} />
-          ))}
-        </nav>
+        {/* Desktop Nav - esconde na home porque já tem cards de navegação */}
+        {location !== "/" && (
+          <nav className="hidden md:flex items-center gap-1">
+            {navItems.map((item) => (
+              <NavLink key={item.href} item={item} />
+            ))}
+          </nav>
+        )}
 
-        {/* Mobile Nav */}
-        <div className="md:hidden">
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-muted-foreground">
-                <Menu className="w-5 h-5" />
-              </Button>
-            </SheetTrigger>
+        {/* Mobile Nav - esconde na home */}
+        {location !== "/" && (
+          <div className="md:hidden">
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-muted-foreground">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
             <SheetContent side="right" className="bg-background border-l border-border w-[80%] sm:w-[350px]">
               <div className="flex flex-col gap-6 mt-10">
                 <Link href="/" onClick={() => setIsOpen(false)} className="text-xl font-bold px-4">
@@ -76,7 +79,8 @@ export function Navigation() {
               </div>
             </SheetContent>
           </Sheet>
-        </div>
+          </div>
+        )}
       </div>
     </header>
   );
