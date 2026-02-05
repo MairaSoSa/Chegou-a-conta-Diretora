@@ -568,9 +568,45 @@ export default function Trilha() {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
-          <div className="relative max-w-3xl mx-auto">
-            <div className="absolute left-1/2 top-0 bottom-0 w-8 -translate-x-1/2 river-path rounded-full opacity-30" />
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none">
+            <svg className="absolute left-0 top-0 w-24 h-24 text-green-700/20" viewBox="0 0 100 100">
+              <path d="M20 80 Q30 60 25 40 Q20 20 35 10" stroke="currentColor" strokeWidth="8" fill="none" />
+              <circle cx="35" cy="10" r="15" fill="currentColor" />
+              <circle cx="20" cy="25" r="10" fill="currentColor" />
+            </svg>
+            <svg className="absolute right-0 top-20 w-20 h-20 text-green-700/15" viewBox="0 0 100 100">
+              <path d="M80 80 Q70 60 75 40 Q80 20 65 10" stroke="currentColor" strokeWidth="8" fill="none" />
+              <circle cx="65" cy="10" r="12" fill="currentColor" />
+              <circle cx="80" cy="30" r="8" fill="currentColor" />
+            </svg>
+            <svg className="absolute left-4 bottom-1/3 w-16 h-16 text-green-600/10" viewBox="0 0 100 100">
+              <ellipse cx="50" cy="50" rx="40" ry="30" fill="currentColor" />
+            </svg>
+            <svg className="absolute right-8 bottom-1/2 w-14 h-14 text-green-600/10" viewBox="0 0 100 100">
+              <ellipse cx="50" cy="50" rx="35" ry="25" fill="currentColor" />
+            </svg>
+          </div>
+          
+          <div className="container mx-auto px-4 py-8 relative z-10">
+            <div className="relative max-w-3xl mx-auto">
+              <svg className="absolute left-1/2 top-0 h-full w-16 -translate-x-1/2 -z-10" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="riverGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="rgba(139,90,43,0.08)" />
+                    <stop offset="50%" stopColor="rgba(139,90,43,0.15)" />
+                    <stop offset="100%" stopColor="rgba(139,90,43,0.08)" />
+                  </linearGradient>
+                </defs>
+                <rect x="0" y="0" width="100%" height="100%" fill="url(#riverGrad)" rx="30" />
+                <path 
+                  d="M30 0 Q40 50 30 100 Q20 150 35 200 Q50 250 30 300 Q10 350 35 400 Q60 450 30 500 Q0 550 35 600 Q60 650 30 700 Q0 750 35 800 Q60 850 30 900 Q0 950 35 1000" 
+                  stroke="rgba(139,90,43,0.2)" 
+                  strokeWidth="2" 
+                  fill="none"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
             
             {unidadesByParte.map((parte) => (
               <div key={parte.id} className="mb-12">
@@ -604,13 +640,10 @@ export default function Trilha() {
                   <MapPin className="w-8 h-8 text-amber-700" />
                 </div>
                 <h3 className="font-bold text-xl text-amber-900 mb-2">Fim da Jornada!</h3>
-                <p className="text-amber-700 mb-4">Parabéns! Você navegou por todos os portos.</p>
-                <Button className="bg-amber-600 hover:bg-amber-700" data-testid="button-certificado">
-                  <Download className="w-4 h-4 mr-2" />
-                  Baixar Certificado
-                </Button>
+                <p className="text-amber-700">Parabéns! Você navegou por todos os portos e agora domina a gestão financeira escolar.</p>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </main>

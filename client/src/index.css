@@ -260,6 +260,24 @@
   animation: wave-3 2s ease-in-out infinite 0.6s;
 }
 
+@keyframes wave-flow {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-25px); }
+}
+
+@keyframes wave-flow-2 {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-20px); }
+}
+
+.animate-wave-flow {
+  animation: wave-flow 1.5s linear infinite;
+}
+
+.animate-wave-flow-2 {
+  animation: wave-flow-2 2s linear infinite;
+}
+
 /* River Path */
 .river-path {
   background: linear-gradient(180deg, 
