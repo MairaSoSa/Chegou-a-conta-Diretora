@@ -37,11 +37,8 @@ export function Navigation() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-xl">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-600 to-amber-700 flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:shadow-md group-hover:shadow-accent/20 transition-all" style={{ fontFamily: 'Quicksand' }}>
-            C
-          </div>
-          <span className="font-bold text-lg tracking-tight hidden sm:block text-foreground" style={{ fontFamily: 'Quicksand' }}>
+        <Link href="/" className="flex items-center group">
+          <span className="font-bold text-lg tracking-tight text-foreground" style={{ fontFamily: 'Quicksand' }}>
             Chegou a Conta<span className="text-accent">, Diretora!</span>
           </span>
         </Link>
