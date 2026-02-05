@@ -1,16 +1,20 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { 
   ArrowRight, BookOpen, GraduationCap, Utensils, Bus, 
   Coins, ChevronDown, ChevronUp, FileText, Calculator,
   CheckCircle2, AlertCircle, HelpCircle, Landmark, Users,
   Accessibility, Sparkles, BookMarked, Laptop, Palette,
   TreePine, School, BookText, MessageCircleQuestion,
-  Banknote, Building2, FileCheck, Clock, Folder
+  Banknote, Building2, FileCheck, Clock, Folder,
+  Search, Scale, Receipt, Handshake, ShieldCheck,
+  Percent, ClipboardList, PiggyBank, Gavel, CalendarDays,
+  FileSignature, Package, Truck, CircleDollarSign, Hash
 } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,44 +22,166 @@ import { cn } from "@/lib/utils";
 
 const GLOSSARIO = [
   {
-    termo: 'FNDE',
-    explicacao: 'Fundo Nacional de Desenvolvimento da Educação. É o órgão do governo federal que manda o dinheiro pra escola. Pense nele como o "banco" que libera as verbas.',
-    icone: <Building2 className="w-5 h-5" />
+    termo: 'Adesão',
+    explicacao: 'Quando a escola "se inscreve" pra receber um dinheiro. Nem toda verba cai automaticamente — pra algumas, você precisa fazer a adesão no sistema do FNDE.',
+    icone: <Handshake className="w-5 h-5" />,
+    letra: 'A'
   },
   {
-    termo: 'UEx',
-    explicacao: 'Unidade Executora. É a entidade que recebe e gerencia o dinheiro em nome da escola. Geralmente é a APM (Associação de Pais e Mestres) ou o Conselho Escolar.',
-    icone: <Users className="w-5 h-5" />
-  },
-  {
-    termo: 'Conselho Escolar',
-    explicacao: 'Grupo formado por pais, professores, funcionários e alunos que decide junto com a diretora como usar o dinheiro da escola. Todas as compras precisam da aprovação deles.',
-    icone: <Users className="w-5 h-5" />
-  },
-  {
-    termo: 'Prestação de Contas',
-    explicacao: 'Documentos que você manda pro governo mostrando como o dinheiro foi usado. É como um "recibo" de tudo que comprou e pagou.',
-    icone: <FileCheck className="w-5 h-5" />
+    termo: 'APM',
+    explicacao: 'Associação de Pais e Mestres. É uma das formas de UEx (Unidade Executora) que pode receber o dinheiro em nome da escola.',
+    icone: <Users className="w-5 h-5" />,
+    letra: 'A'
   },
   {
     termo: 'Ata',
     explicacao: 'Documento que registra o que foi decidido numa reunião. Toda vez que o Conselho se reúne pra aprovar uma compra, precisa fazer uma ata.',
-    icone: <FileText className="w-5 h-5" />
-  },
-  {
-    termo: 'Custeio',
-    explicacao: 'Dinheiro pra gastar com coisas do dia a dia: material de limpeza, papel, caneta, pequenos reparos. São coisas que "acabam" ou "gastam".',
-    icone: <Banknote className="w-5 h-5" />
+    icone: <FileText className="w-5 h-5" />,
+    letra: 'A'
   },
   {
     termo: 'Capital',
     explicacao: 'Dinheiro pra comprar coisas que duram: móveis, computadores, ventiladores. São bens permanentes que ficam na escola por anos.',
-    icone: <Laptop className="w-5 h-5" />
+    icone: <Laptop className="w-5 h-5" />,
+    letra: 'C'
+  },
+  {
+    termo: 'Censo Escolar',
+    explicacao: 'Pesquisa anual obrigatória que toda escola preenche. Os números do Censo definem quanto dinheiro sua escola vai receber — por isso é tão importante preencher direitinho!',
+    icone: <ClipboardList className="w-5 h-5" />,
+    letra: 'C'
+  },
+  {
+    termo: 'CNPJ',
+    explicacao: 'Cadastro Nacional de Pessoa Jurídica. Sua UEx (APM ou Conselho Escolar) precisa ter um CNPJ pra poder receber o dinheiro na conta bancária.',
+    icone: <Hash className="w-5 h-5" />,
+    letra: 'C'
+  },
+  {
+    termo: 'Conselho Escolar',
+    explicacao: 'Grupo formado por pais, professores, funcionários e alunos que decide junto com a diretora como usar o dinheiro da escola. Todas as compras precisam da aprovação deles.',
+    icone: <Users className="w-5 h-5" />,
+    letra: 'C'
+  },
+  {
+    termo: 'Custeio',
+    explicacao: 'Dinheiro pra gastar com coisas do dia a dia: material de limpeza, papel, caneta, pequenos reparos. São coisas que "acabam" ou "gastam".',
+    icone: <Banknote className="w-5 h-5" />,
+    letra: 'C'
+  },
+  {
+    termo: 'Empenho',
+    explicacao: 'Quando o governo "reserva" o dinheiro pra mandar pra escola. É como uma promessa: "esse valor vai ser liberado pra vocês".',
+    icone: <PiggyBank className="w-5 h-5" />,
+    letra: 'E'
+  },
+  {
+    termo: 'FNDE',
+    explicacao: 'Fundo Nacional de Desenvolvimento da Educação. É o órgão do governo federal que manda o dinheiro pra escola. Pense nele como o "banco" que libera as verbas.',
+    icone: <Building2 className="w-5 h-5" />,
+    letra: 'F'
+  },
+  {
+    termo: 'IDEB',
+    explicacao: 'Índice de Desenvolvimento da Educação Básica. É a "nota" da sua escola, calculada com base na aprovação dos alunos e nas provas do Saeb. Vai de 0 a 10.',
+    icone: <GraduationCap className="w-5 h-5" />,
+    letra: 'I'
+  },
+  {
+    termo: 'INEP',
+    explicacao: 'Instituto Nacional de Estudos e Pesquisas Educacionais. É quem faz o Censo Escolar e calcula o IDEB. Cada escola tem um código INEP de 8 números.',
+    icone: <School className="w-5 h-5" />,
+    letra: 'I'
+  },
+  {
+    termo: 'Licitação',
+    explicacao: 'Processo de compra que segue regras públicas pra garantir o melhor preço. Pra compras com dinheiro do PDDE, em geral basta pesquisa de preço (3 orçamentos).',
+    icone: <Gavel className="w-5 h-5" />,
+    letra: 'L'
+  },
+  {
+    termo: 'Nota Fiscal',
+    explicacao: 'Documento que comprova a compra. Toda compra feita com dinheiro público PRECISA de nota fiscal — sem ela, a prestação de contas não é aprovada.',
+    icone: <Receipt className="w-5 h-5" />,
+    letra: 'N'
+  },
+  {
+    termo: 'PAR',
+    explicacao: 'Plano de Ações Articuladas. É o plano que o município faz junto com o MEC. Algumas verbas dependem do PAR estar atualizado.',
+    icone: <ClipboardList className="w-5 h-5" />,
+    letra: 'P'
+  },
+  {
+    termo: 'PDDEWeb',
+    explicacao: 'Sistema online do FNDE onde você faz a prestação de contas do PDDE. É pelo site pddeinterativo.mec.gov.br.',
+    icone: <Laptop className="w-5 h-5" />,
+    letra: 'P'
+  },
+  {
+    termo: 'Pesquisa de Preço',
+    explicacao: 'Antes de comprar, você precisa pegar pelo menos 3 orçamentos de fornecedores diferentes. Isso prova que você escolheu o melhor preço.',
+    icone: <Search className="w-5 h-5" />,
+    letra: 'P'
+  },
+  {
+    termo: 'Plano de Aplicação',
+    explicacao: 'Documento onde você lista TUDO que pretende comprar com o dinheiro recebido. É como uma "lista de compras" aprovada pelo Conselho Escolar.',
+    icone: <FileSignature className="w-5 h-5" />,
+    letra: 'P'
+  },
+  {
+    termo: 'Prestação de Contas',
+    explicacao: 'Documentos que você manda pro governo mostrando como o dinheiro foi usado. É como um "recibo" de tudo que comprou e pagou.',
+    icone: <FileCheck className="w-5 h-5" />,
+    letra: 'P'
+  },
+  {
+    termo: 'Pregão',
+    explicacao: 'Tipo de licitação. Pra valores maiores, a compra precisa ser por pregão. No PDDE básico, geralmente não precisa — basta a pesquisa de preço.',
+    icone: <Gavel className="w-5 h-5" />,
+    letra: 'P'
   },
   {
     termo: 'Repasse',
     explicacao: 'Quando o dinheiro sai do governo e cai na conta da escola. Também chamado de "transferência" ou "liberação".',
-    icone: <Coins className="w-5 h-5" />
+    icone: <Coins className="w-5 h-5" />,
+    letra: 'R'
+  },
+  {
+    termo: 'Saldo',
+    explicacao: 'Dinheiro que sobrou na conta e não foi usado. Atenção: saldo alto pode significar que a escola não está usando o recurso — e isso pode gerar problemas na prestação de contas.',
+    icone: <CircleDollarSign className="w-5 h-5" />,
+    letra: 'S'
+  },
+  {
+    termo: 'SIGPC',
+    explicacao: 'Sistema de Gestão de Prestação de Contas. É o sistema online onde você envia a prestação de contas do PDDE pro FNDE.',
+    icone: <Laptop className="w-5 h-5" />,
+    letra: 'S'
+  },
+  {
+    termo: 'TCE',
+    explicacao: 'Tribunal de Contas do Estado. É o órgão que fiscaliza se o dinheiro público está sendo usado direitinho. Pode auditar as contas da escola.',
+    icone: <ShieldCheck className="w-5 h-5" />,
+    letra: 'T'
+  },
+  {
+    termo: 'Tombamento',
+    explicacao: 'Registrar os bens comprados com dinheiro público. Todo equipamento (computador, ventilador etc.) precisa receber uma etiqueta com número de patrimônio.',
+    icone: <Package className="w-5 h-5" />,
+    letra: 'T'
+  },
+  {
+    termo: 'UEx',
+    explicacao: 'Unidade Executora. É a entidade que recebe e gerencia o dinheiro em nome da escola. Geralmente é a APM (Associação de Pais e Mestres) ou o Conselho Escolar.',
+    icone: <Users className="w-5 h-5" />,
+    letra: 'U'
+  },
+  {
+    termo: 'Verba de Custeio e Capital',
+    explicacao: 'O dinheiro do PDDE vem dividido: parte é pra custeio (material do dia a dia) e parte é pra capital (bens permanentes). Você NÃO pode misturar.',
+    icone: <Scale className="w-5 h-5" />,
+    letra: 'V'
   }
 ];
 
@@ -164,67 +290,188 @@ const PROGRAMAS: Programa[] = [
 
 function GlossarioSection() {
   const [expanded, setExpanded] = useState(false);
-  const termosVisiveis = expanded ? GLOSSARIO : GLOSSARIO.slice(0, 4);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeLetra, setActiveLetra] = useState<string | null>(null);
+
+  const letrasDisponiveis = useMemo(() => {
+    const letraSet = new Set(GLOSSARIO.map(g => g.letra));
+    const letras = Array.from(letraSet);
+    return letras.sort();
+  }, []);
+
+  const termosFiltrados = useMemo(() => {
+    let filtered = GLOSSARIO;
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(g =>
+        g.termo.toLowerCase().includes(term) ||
+        g.explicacao.toLowerCase().includes(term)
+      );
+    }
+    if (activeLetra) {
+      filtered = filtered.filter(g => g.letra === activeLetra);
+    }
+    return filtered;
+  }, [searchTerm, activeLetra]);
+
+  const termosAgrupados = useMemo(() => {
+    const grupos: Record<string, typeof GLOSSARIO> = {};
+    termosFiltrados.forEach(g => {
+      if (!grupos[g.letra]) grupos[g.letra] = [];
+      grupos[g.letra].push(g);
+    });
+    return grupos;
+  }, [termosFiltrados]);
+
+  const isFiltering = searchTerm.trim() !== '' || activeLetra !== null;
+  const termosVisiveis = isFiltering ? termosFiltrados : (expanded ? GLOSSARIO : GLOSSARIO.slice(0, 6));
 
   return (
     <div className="bg-gradient-to-br from-emerald-50/80 to-green-50/50 rounded-2xl border border-emerald-200/50 overflow-hidden">
       <div className="p-6 pb-4">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
             <BookText className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
             <h2 className="font-bold text-xl text-emerald-900">Glossário: Palavras que você vai encontrar</h2>
-            <p className="text-sm text-emerald-700">Não se preocupe se não conhecer esses termos - é normal!</p>
+            <p className="text-sm text-emerald-700">
+              {GLOSSARIO.length} termos explicados em linguagem simples
+            </p>
           </div>
         </div>
-      </div>
-      
-      <div className="px-6 pb-2">
-        <div className="grid sm:grid-cols-2 gap-3">
-          {termosVisiveis.map((item, idx) => (
-            <motion.div
-              key={item.termo}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className="bg-white/80 rounded-xl p-4 border border-emerald-100 hover:border-emerald-200 hover:shadow-sm transition-all"
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
+          <Input
+            placeholder="Buscar termo... (ex: prestação de contas)"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              if (e.target.value.trim()) setActiveLetra(null);
+            }}
+            className="pl-10 bg-white border-emerald-200 focus:border-emerald-400 rounded-xl"
+            data-testid="input-glossario-search"
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-1 mt-3">
+          {letrasDisponiveis.map(letra => (
+            <button
+              key={letra}
+              onClick={() => {
+                setActiveLetra(activeLetra === letra ? null : letra);
+                setSearchTerm('');
+              }}
+              className={cn(
+                "w-8 h-8 rounded-lg text-sm font-bold transition-all flex items-center justify-center",
+                activeLetra === letra
+                  ? "bg-emerald-600 text-white"
+                  : "bg-white text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+              )}
+              data-testid={`btn-letra-${letra}`}
             >
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 text-emerald-600">
-                  {item.icone}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-emerald-900 mb-1">{item.termo}</h4>
-                  <p className="text-sm text-emerald-700/80 leading-relaxed">{item.explicacao}</p>
-                </div>
-              </div>
-            </motion.div>
+              {letra}
+            </button>
           ))}
+          {(activeLetra || searchTerm) && (
+            <button
+              onClick={() => { setActiveLetra(null); setSearchTerm(''); }}
+              className="h-8 px-3 rounded-lg text-xs font-medium bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all flex items-center gap-1"
+              data-testid="btn-limpar-filtro"
+            >
+              Limpar filtro
+            </button>
+          )}
         </div>
       </div>
-      
-      <div className="p-4 pt-2">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => setExpanded(!expanded)}
-          className="text-emerald-700 hover:text-emerald-900 hover:bg-emerald-100/50 w-full"
-          data-testid="toggle-glossario"
-        >
-          {expanded ? (
-            <>
-              <ChevronUp className="w-4 h-4 mr-2" />
-              Mostrar menos
-            </>
-          ) : (
-            <>
-              <ChevronDown className="w-4 h-4 mr-2" />
-              Ver mais {GLOSSARIO.length - 4} termos
-            </>
-          )}
-        </Button>
+
+      <div className="px-6 pb-2">
+        {isFiltering && termosFiltrados.length === 0 && (
+          <div className="text-center py-8 text-emerald-600">
+            <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p className="font-medium">Nenhum termo encontrado</p>
+            <p className="text-sm text-emerald-500">Tente buscar por outra palavra</p>
+          </div>
+        )}
+
+        {isFiltering ? (
+          Object.entries(termosAgrupados).sort(([a], [b]) => a.localeCompare(b)).map(([letra, termos]) => (
+            <div key={letra} className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-8 h-8 rounded-lg bg-emerald-600 text-white font-bold flex items-center justify-center text-sm">
+                  {letra}
+                </span>
+                <div className="flex-1 h-px bg-emerald-200" />
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {termos.map((item) => (
+                  <div
+                    key={item.termo}
+                    className="bg-white/80 rounded-xl p-4 border border-emerald-100 transition-all"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 text-emerald-600">
+                        {item.icone}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-emerald-900 mb-1">{item.termo}</h4>
+                        <p className="text-sm text-emerald-700/80 leading-relaxed">{item.explicacao}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-3">
+            {termosVisiveis.map((item, idx) => (
+              <motion.div
+                key={item.termo}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.03 }}
+                className="bg-white/80 rounded-xl p-4 border border-emerald-100 transition-all"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 text-emerald-600">
+                    {item.icone}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-emerald-900 mb-1">{item.termo}</h4>
+                    <p className="text-sm text-emerald-700/80 leading-relaxed">{item.explicacao}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {!isFiltering && (
+        <div className="p-4 pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setExpanded(!expanded)}
+            className="text-emerald-700 hover:text-emerald-900 hover:bg-emerald-100/50 w-full"
+            data-testid="toggle-glossario"
+          >
+            {expanded ? (
+              <>
+                <ChevronUp className="w-4 h-4 mr-2" />
+                Mostrar menos
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-4 h-4 mr-2" />
+                Ver todos os {GLOSSARIO.length} termos
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, MessagesSquare, GraduationCap, BookOpen, Wrench, LayoutDashboard } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { AccessibilityMenu } from "@/components/AccessibilityMenu";
-
 export default function Home() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -63,7 +61,6 @@ export default function Home() {
         </footer>
       </main>
       
-      <AccessibilityMenu />
     </div>
   );
 }
