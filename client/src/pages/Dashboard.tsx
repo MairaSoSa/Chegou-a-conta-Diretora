@@ -118,6 +118,88 @@ const VAAR = {
   ],
 };
 
+// Elegibilidade a Programas Federais
+const ELEGIBILIDADE_PROGRAMAS = [
+  {
+    nome: 'Escola Conectada',
+    elegivel: true,
+    status: 'Ativo',
+    criterios: [
+      { nome: 'Escola pública', atendido: true },
+      { nome: 'Ensino Fundamental ou Médio', atendido: true },
+      { nome: 'Infraestrutura mínima', atendido: true },
+      { nome: 'Adesão no PDDE Interativo', atendido: true },
+    ],
+    observacao: 'Recebendo recursos desde 2022',
+  },
+  {
+    nome: 'Tempo de Aprender',
+    elegivel: true,
+    status: 'Elegível',
+    criterios: [
+      { nome: 'Anos Iniciais do Fundamental', atendido: true },
+      { nome: 'IDEB abaixo da meta', atendido: false },
+      { nome: 'Adesão municipal', atendido: true },
+    ],
+    observacao: 'Meta IDEB atingida, mas elegível por outros critérios',
+  },
+  {
+    nome: 'Brasil na Escola',
+    elegivel: true,
+    status: 'Elegível',
+    criterios: [
+      { nome: 'Anos Finais do Fundamental', atendido: true },
+      { nome: 'Vulnerabilidade socioeconômica', atendido: true },
+      { nome: 'Adesão estadual/municipal', atendido: true },
+    ],
+    observacao: null,
+  },
+  {
+    nome: 'PDDE Emergencial',
+    elegivel: false,
+    status: 'Não elegível',
+    criterios: [
+      { nome: 'Situação de emergência declarada', atendido: false },
+      { nome: 'Decreto municipal/estadual', atendido: false },
+    ],
+    observacao: 'Programa acionado apenas em situações emergenciais',
+  },
+  {
+    nome: 'Escola Acessível',
+    elegivel: true,
+    status: 'Elegível',
+    criterios: [
+      { nome: 'Matrícula de alunos com deficiência', atendido: true },
+      { nome: 'Plano de adequação', atendido: true },
+      { nome: 'Adesão no PDDE Interativo', atendido: true },
+    ],
+    observacao: '12 alunos PCD matriculados',
+  },
+  {
+    nome: 'Mais Alfabetização',
+    elegivel: true,
+    status: 'Elegível',
+    criterios: [
+      { nome: '1º e 2º ano do Fundamental', atendido: true },
+      { nome: 'Adesão municipal', atendido: true },
+    ],
+    observacao: null,
+  },
+];
+
+// Dados de conectividade
+const CONECTIVIDADE = {
+  temInternet: true,
+  tipoConexao: 'Fibra Óptica',
+  velocidade: '100 Mbps',
+  fonteConexao: 'PBLE (Programa Banda Larga nas Escolas)',
+  dataInstalacao: '03/2022',
+  operadora: 'Oi/Algar',
+  situacaoGIGA: 'Conectada',
+  pontosWifi: 8,
+  computadoresConectados: 25,
+};
+
 // Conselho Escolar
 const CONSELHO = {
   situacao: 'Regular',
@@ -590,7 +672,118 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* 12. Comparadores (Benchmark) */}
+            {/* 12. Elegibilidade a Programas Federais */}
+            <Card className="card-clay">
+              <CardHeader className="pb-3">
+                <CardTitle className="font-display flex items-center gap-2">
+                  <Award className="w-5 h-5 text-primary" />
+                  Elegibilidade a Programas Federais
+                </CardTitle>
+                <CardDescription>Status e critérios para participação em programas do FNDE/MEC</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {ELEGIBILIDADE_PROGRAMAS.map((programa) => (
+                    <div key={programa.nome} className={`p-4 rounded-xl border ${
+                      programa.status === 'Ativo' ? 'bg-primary/5 border-primary/20' :
+                      programa.elegivel ? 'bg-sky-50 border-sky-200' : 
+                      'bg-muted/30 border-border/50'
+                    }`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium text-sm">{programa.nome}</h4>
+                        <Badge className={
+                          programa.status === 'Ativo' ? 'bg-primary text-primary-foreground' :
+                          programa.elegivel ? 'bg-sky-100 text-sky-700' :
+                          'bg-muted text-muted-foreground'
+                        }>
+                          {programa.status}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1.5 mb-3">
+                        {programa.criterios.map((c) => (
+                          <div key={c.nome} className="flex items-center gap-2 text-xs">
+                            {c.atendido ? (
+                              <CheckCircle2 className="w-3 h-3 text-primary flex-shrink-0" />
+                            ) : (
+                              <AlertCircle className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                            )}
+                            <span className={c.atendido ? 'text-muted-foreground' : 'text-amber-600'}>{c.nome}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {programa.observacao && (
+                        <p className="text-xs text-muted-foreground italic border-t border-border/30 pt-2">
+                          {programa.observacao}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 13. Conectividade (Escola Conectada) */}
+            <Card className="card-clay">
+              <CardHeader className="pb-3">
+                <CardTitle className="font-display flex items-center gap-2">
+                  <Wifi className="w-5 h-5 text-sky-600" />
+                  Conectividade (Escola Conectada / GIGA)
+                </CardTitle>
+                <CardDescription>Situação de internet e infraestrutura digital</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Wifi className="w-5 h-5 text-primary" />
+                      <p className="text-xs text-muted-foreground">Status</p>
+                    </div>
+                    <p className="text-lg font-bold text-primary">{CONECTIVIDADE.situacaoGIGA}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-muted/50">
+                    <p className="text-xs text-muted-foreground mb-1">Tipo de Conexão</p>
+                    <p className="text-lg font-bold">{CONECTIVIDADE.tipoConexao}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-muted/50">
+                    <p className="text-xs text-muted-foreground mb-1">Velocidade</p>
+                    <p className="text-lg font-bold">{CONECTIVIDADE.velocidade}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-muted/50">
+                    <p className="text-xs text-muted-foreground mb-1">Pontos Wi-Fi</p>
+                    <p className="text-lg font-bold">{CONECTIVIDADE.pontosWifi}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-3 rounded-xl bg-muted/30">
+                    <p className="text-xs text-muted-foreground mb-1">Fonte da Conexão</p>
+                    <p className="text-sm font-medium">{CONECTIVIDADE.fonteConexao}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-muted/30">
+                    <p className="text-xs text-muted-foreground mb-1">Operadora</p>
+                    <p className="text-sm font-medium">{CONECTIVIDADE.operadora}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-muted/30">
+                    <p className="text-xs text-muted-foreground mb-1">Instalação</p>
+                    <p className="text-sm font-medium">{CONECTIVIDADE.dataInstalacao}</p>
+                  </div>
+                </div>
+                <div className="mt-4 p-4 rounded-xl bg-sky-50 border border-sky-200">
+                  <div className="flex items-start gap-3">
+                    <Monitor className="w-5 h-5 text-sky-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-sky-800">
+                        {CONECTIVIDADE.computadoresConectados} computadores com acesso à internet
+                      </p>
+                      <p className="text-xs text-sky-600 mt-1">
+                        Programa Educação Conectada ativo desde 2022
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 14. Comparadores (Benchmark) */}
             <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
