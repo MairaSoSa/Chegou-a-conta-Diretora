@@ -326,7 +326,7 @@ const PARTES = [
   { id: 5, nome: 'Parte V: De onde vem o dinheiro', cor: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
 ];
 
-interface PortoProps {
+interface TrapicheProps {
   unidade: typeof UNIDADES[0];
   isCompleted: boolean;
   isCurrent: boolean;
@@ -335,7 +335,7 @@ interface PortoProps {
   onComplete: () => void;
 }
 
-function Porto({ unidade, isCompleted, isCurrent, index, onSelect, onComplete }: PortoProps) {
+function Trapiche({ unidade, isCompleted, isCurrent, index, onSelect, onComplete }: TrapicheProps) {
   const [expanded, setExpanded] = useState(false);
   const parte = PARTES.find(p => p.id === unidade.parte);
   const isLeft = index % 2 === 0;
@@ -505,7 +505,7 @@ export default function Trilha() {
                   <h1 className="text-3xl md:text-4xl font-bold font-display">Mapa do Rio</h1>
                 </div>
                 <p className="text-muted-foreground max-w-xl">
-                  Navegue pelo igarapé do conhecimento! Cada porto é uma parada pra você aprender algo novo sobre gestão escolar.
+                  Navegue pelo igarapé do conhecimento! Cada trapiche é uma parada pra você aprender algo novo sobre gestão escolar.
                 </p>
               </div>
               
@@ -517,7 +517,7 @@ export default function Trilha() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Progresso</p>
-                      <p className="font-bold">{completedCount} de {totalUnits} portos</p>
+                      <p className="font-bold">{completedCount} de {totalUnits} trapiches</p>
                       <div className="w-32 h-2 bg-muted rounded-full mt-1 overflow-hidden">
                         <div 
                           className="h-full bg-primary rounded-full transition-all duration-500" 
@@ -730,7 +730,7 @@ export default function Trilha() {
                 
                 <div className="space-y-2">
                   {parte.unidades.map((unidade, idx) => (
-                    <Porto
+                    <Trapiche
                       key={unidade.id}
                       unidade={unidade}
                       isCompleted={isUnitCompleted(unidade.id)}
@@ -750,7 +750,7 @@ export default function Trilha() {
                   <MapPin className="w-8 h-8 text-amber-700" />
                 </div>
                 <h3 className="font-bold text-xl text-amber-900 mb-2">Fim da Jornada!</h3>
-                <p className="text-amber-700">Parabéns! Você navegou por todos os portos e agora domina a gestão financeira escolar.</p>
+                <p className="text-amber-700">Parabéns! Você navegou por todos os trapiches e agora domina a gestão financeira escolar.</p>
               </div>
             </div>
           </div>
