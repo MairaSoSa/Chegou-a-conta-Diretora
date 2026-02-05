@@ -38,7 +38,7 @@ export function Navigation() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center group">
-          <span className="font-bold text-lg tracking-tight text-foreground" style={{ fontFamily: 'Quicksand' }}>
+          <span className="font-bold text-lg tracking-tight text-foreground">
             Chegou a Conta<span className="text-accent">, Diretora!</span>
           </span>
         </Link>

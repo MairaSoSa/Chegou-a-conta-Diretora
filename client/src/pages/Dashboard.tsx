@@ -8,7 +8,8 @@ import {
   MapPin, Building, CheckCircle2, Calendar, FileText, Banknote, Clock, 
   GraduationCap, BookOpen, BarChart3, AlertTriangle, Info, Download, ExternalLink,
   School, Loader2, Wifi, Library, Dumbbell, Accessibility, Monitor, 
-  Users2, CalendarDays, Link2, Award, Target, Scale, Building2, ShieldCheck
+  Users2, CalendarDays, Link2, Award, Target, Scale, Building2, ShieldCheck,
+  ChevronDown, ChevronUp, LayoutGrid, List
 } from "lucide-react";
 import { useSchoolSearch, useSchool } from "@/hooks/use-schools";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -261,6 +262,7 @@ export default function Dashboard() {
   const [selectedInep, setSelectedInep] = useState<string | null>(null);
   const [showDemo, setShowDemo] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<'resumido' | 'completo'>('resumido');
   
   const { data: searchResults } = useSchoolSearch(searchQuery);
   const { data: school } = useSchool(selectedInep || "");
@@ -348,6 +350,28 @@ export default function Dashboard() {
                 {showDemo && (
                   <Badge className="bg-amber-100 text-amber-700 border-0">Demonstração</Badge>
                 )}
+                <div className="ml-auto flex items-center gap-2">
+                  <Button
+                    variant={viewMode === 'resumido' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('resumido')}
+                    className="text-xs"
+                    data-testid="btn-view-resumido"
+                  >
+                    <List className="w-3 h-3 mr-1" />
+                    Resumido
+                  </Button>
+                  <Button
+                    variant={viewMode === 'completo' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('completo')}
+                    className="text-xs"
+                    data-testid="btn-view-completo"
+                  >
+                    <LayoutGrid className="w-3 h-3 mr-1" />
+                    Completo
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
@@ -365,31 +389,117 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* 2. Identidade da Escola */}
-            <Card className="card-clay">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-display flex items-center gap-2">
-                  <School className="w-5 h-5 text-accent" />
-                  Dados da Escola
-                </CardTitle>
-                <CardDescription>Informações básicas que aparecem no Censo</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <InfoItem label="Nome" value={displaySchool.name} />
-                  <InfoItem label="Código INEP" value={displaySchool.inep} mono />
-                  <InfoItem label="Cidade/Estado" value={`${displaySchool.city}/${displaySchool.state}`} />
-                  <InfoItem label="Rede" value={displaySchool.network} />
-                  <InfoItem label="Área" value={displaySchool.location} />
-                  <InfoItem label="O que a escola oferece" value={DEMO_SCHOOL.etapas.join(", ")} />
-                  <InfoItem label="Quantos alunos (2024)" value={displaySchool.enrollmentCount.toString()} highlight />
-                  <InfoItem label="Bairro/Comunidade" value={DEMO_SCHOOL.bairro} />
-                </div>
-              </CardContent>
-            </Card>
+            {/* MODO RESUMIDO: Cards rápidos com números principais */}
+            {viewMode === 'resumido' && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card className="card-clay p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-primary">{displaySchool.enrollmentCount}</p>
+                      <p className="text-xs text-muted-foreground">Alunos</p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="card-clay p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-sky-100 flex items-center justify-center">
+                      <GraduationCap className="w-5 h-5 text-sky-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-sky-600">{lastIdeb.escola}</p>
+                      <p className="text-xs text-muted-foreground">IDEB 2023</p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="card-clay p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                      <Banknote className="w-5 h-5 text-accent" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-accent">R$ {(lastRepasse.total / 1000).toFixed(1)}k</p>
+                      <p className="text-xs text-muted-foreground">Recebido 2024</p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="card-clay p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-amber-700">28/Fev</p>
+                      <p className="text-xs text-muted-foreground">Próximo prazo</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* MODO RESUMIDO: Próximos prazos */}
+            {viewMode === 'resumido' && (
+              <Card className="card-clay">
+                <CardHeader className="pb-3">
+                  <CardTitle className="font-display flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-amber-600" />
+                    Próximos Prazos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {CALENDARIO_EVENTOS.filter(e => e.urgente || new Date(e.ano, e.mes - 1, e.dia) > new Date()).slice(0, 4).map((evento, i) => (
+                      <div key={i} className={`flex items-center gap-3 p-3 rounded-xl ${evento.urgente ? 'bg-red-50 border border-red-200' : 'bg-muted/30'}`}>
+                        <span className={`text-sm font-mono font-bold ${evento.urgente ? 'text-red-600' : 'text-muted-foreground'}`}>
+                          {evento.dia}/{MESES_NOMES[evento.mes]}
+                        </span>
+                        <span className="text-sm flex-1">{evento.evento}</span>
+                        {evento.urgente && <Badge className="bg-red-100 text-red-700 border-0 text-xs">Urgente</Badge>}
+                      </div>
+                    ))}
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full mt-4 text-muted-foreground"
+                    onClick={() => setViewMode('completo')}
+                    data-testid="btn-ver-calendario-completo"
+                  >
+                    Ver calendário completo
+                    <ChevronDown className="w-4 h-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* MODO COMPLETO: Identidade da Escola */}
+            {viewMode === 'completo' && (
+              <Card className="card-clay">
+                <CardHeader className="pb-3">
+                  <CardTitle className="font-display flex items-center gap-2">
+                    <School className="w-5 h-5 text-accent" />
+                    Dados da Escola
+                  </CardTitle>
+                  <CardDescription>Informações básicas que aparecem no Censo</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <InfoItem label="Nome" value={displaySchool.name} />
+                    <InfoItem label="Código INEP" value={displaySchool.inep} mono />
+                    <InfoItem label="Cidade/Estado" value={`${displaySchool.city}/${displaySchool.state}`} />
+                    <InfoItem label="Rede" value={displaySchool.network} />
+                    <InfoItem label="Área" value={displaySchool.location} />
+                    <InfoItem label="O que a escola oferece" value={DEMO_SCHOOL.etapas.join(", ")} />
+                    <InfoItem label="Quantos alunos (2024)" value={displaySchool.enrollmentCount.toString()} highlight />
+                    <InfoItem label="Bairro/Comunidade" value={DEMO_SCHOOL.bairro} />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* 3. Matrículas e Perfil */}
-            <Card className="card-clay">
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="font-display flex items-center gap-2">
@@ -445,10 +555,10 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* 4. Taxas Educacionais */}
-            <Card className="card-clay">
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-sky-600" />
@@ -464,10 +574,10 @@ export default function Dashboard() {
                   <TaxaCard label="Atrasados na série" value={TAXAS_EDUCACIONAIS.distorcao} suffix="%" />
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* 5. IDEB */}
-            <Card className="card-clay">
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="font-display flex items-center gap-2">
@@ -514,10 +624,10 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* 6. Infraestrutura */}
-            <Card className="card-clay">
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Building2 className="w-5 h-5 text-purple-600" />
@@ -539,10 +649,10 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* 7. Repasses Públicos (FNDE) */}
-            <Card className="card-clay">
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Banknote className="w-5 h-5 text-accent" />
@@ -582,10 +692,10 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* 8. Ações do PDDE */}
-            <Card className="card-clay">
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Award className="w-5 h-5 text-primary" />
@@ -610,10 +720,10 @@ export default function Dashboard() {
                   ))}
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* 9. Regularidade e Prestação de Contas */}
-            <Card className="card-clay">
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
@@ -652,10 +762,10 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* 10. Conselho Escolar */}
-            <Card className="card-clay">
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Users2 className="w-5 h-5 text-accent" />
@@ -686,10 +796,10 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* 11. VAAR */}
-            <Card className="card-clay">
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Target className="w-5 h-5 text-sky-600" />
@@ -725,10 +835,10 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* 12. Elegibilidade a Programas Federais */}
-            <Card className="card-clay">
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Award className="w-5 h-5 text-primary" />
@@ -801,10 +911,10 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* 13. Conectividade (Escola Conectada) */}
-            <Card className="card-clay">
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Wifi className="w-5 h-5 text-sky-600" />
@@ -862,10 +972,10 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* 14. Comparadores (Benchmark) */}
-            <Card className="card-clay">
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Scale className="w-5 h-5 text-accent" />
@@ -900,10 +1010,10 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
-            {/* 13. Calendário Interativo */}
-            <Card className="card-clay">
+            {/* 15. Calendário Interativo */}
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <CalendarDays className="w-5 h-5 text-amber-600" />
@@ -1015,10 +1125,10 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
-            {/* 14. Indicadores Derivados */}
-            <Card className="card-clay">
+            {/* 16. Indicadores Derivados */}
+            {viewMode === 'completo' && <Card className="card-clay">
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-primary" />
@@ -1034,10 +1144,10 @@ export default function Dashboard() {
                   <IndicatorCard label="Alunos comparando com ano passado" value={`${enrollmentVariation}%`} subtitle="2024 vs 2023" negative={parseFloat(enrollmentVariation) < 0} />
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
-            {/* 15. Fontes e Transparência */}
-            <Card className="card-clay bg-muted/30">
+            {/* 17. Fontes e Transparência */}
+            {viewMode === 'completo' && <Card className="card-clay bg-muted/30">
               <CardContent className="p-6">
                 <div className="flex items-start gap-3 mb-4">
                   <Info className="w-5 h-5 text-muted-foreground mt-0.5" />
@@ -1066,7 +1176,7 @@ export default function Dashboard() {
                   </Button>
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
