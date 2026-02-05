@@ -278,6 +278,15 @@
   animation: wave-flow-2 2s linear infinite;
 }
 
+@keyframes river-flow {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(60px); }
+}
+
+.animate-river-flow {
+  animation: river-flow 4s linear infinite;
+}
+
 /* River Path */
 .river-path {
   background: linear-gradient(180deg, 

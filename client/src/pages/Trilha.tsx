@@ -570,49 +570,67 @@ export default function Trilha() {
 
         <div className="trilha-amazonia relative">
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute left-0 top-0 w-20 md:w-32 h-full bg-gradient-to-r from-green-800/30 via-green-700/20 to-transparent" />
-            <div className="absolute right-0 top-0 w-20 md:w-32 h-full bg-gradient-to-l from-green-800/30 via-green-700/20 to-transparent" />
+            <div className="absolute left-0 top-0 w-24 md:w-40 h-full">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#1a4d1a]/40 via-[#2d5a27]/25 to-transparent" />
+              <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                <pattern id="forestLeft" patternUnits="userSpaceOnUse" width="80" height="120">
+                  <ellipse cx="40" cy="25" rx="35" ry="20" fill="#2d5a27" opacity="0.7" />
+                  <ellipse cx="25" cy="35" rx="25" ry="15" fill="#3d7a37" opacity="0.6" />
+                  <ellipse cx="55" cy="40" rx="22" ry="14" fill="#4a8a47" opacity="0.5" />
+                  <ellipse cx="20" cy="50" rx="18" ry="12" fill="#2d5a27" opacity="0.4" />
+                  <rect x="35" y="50" width="8" height="50" fill="#5d4037" opacity="0.3" />
+                </pattern>
+                <rect width="100%" height="100%" fill="url(#forestLeft)" />
+              </svg>
+            </div>
             
-            <svg className="absolute left-2 top-12 w-16 md:w-24 opacity-60" viewBox="0 0 60 80">
-              <ellipse cx="30" cy="15" rx="25" ry="15" fill="#2d5a27" />
-              <ellipse cx="20" cy="25" rx="18" ry="12" fill="#3d7a37" />
-              <ellipse cx="40" cy="28" rx="16" ry="10" fill="#2d5a27" />
-              <rect x="27" y="30" width="6" height="35" fill="#5d4037" />
-            </svg>
-            <svg className="absolute left-6 top-48 w-12 md:w-20 opacity-50" viewBox="0 0 60 80">
-              <ellipse cx="30" cy="20" rx="20" ry="12" fill="#3d7a37" />
-              <ellipse cx="25" cy="28" rx="15" ry="10" fill="#4a8a47" />
-              <rect x="27" y="32" width="5" height="30" fill="#6d5047" />
-            </svg>
-            <svg className="absolute left-0 top-96 w-14 md:w-24 opacity-55" viewBox="0 0 60 80">
-              <ellipse cx="35" cy="18" rx="22" ry="14" fill="#2d5a27" />
-              <ellipse cx="25" cy="26" rx="18" ry="11" fill="#3d7a37" />
-              <rect x="28" y="30" width="5" height="32" fill="#5d4037" />
-            </svg>
-            
-            <svg className="absolute right-2 top-24 w-14 md:w-22 opacity-55" viewBox="0 0 60 80">
-              <ellipse cx="28" cy="16" rx="22" ry="14" fill="#3d7a37" />
-              <ellipse cx="35" cy="24" rx="16" ry="10" fill="#2d5a27" />
-              <rect x="26" y="28" width="5" height="30" fill="#5d4037" />
-            </svg>
-            <svg className="absolute right-4 top-64 w-16 md:w-24 opacity-50" viewBox="0 0 60 80">
-              <ellipse cx="30" cy="18" rx="24" ry="15" fill="#2d5a27" />
-              <ellipse cx="22" cy="26" rx="17" ry="11" fill="#4a8a47" />
-              <rect x="27" y="30" width="6" height="35" fill="#6d5047" />
-            </svg>
-            <svg className="absolute right-0 top-[500px] w-12 md:w-20 opacity-60" viewBox="0 0 60 80">
-              <ellipse cx="25" cy="15" rx="20" ry="13" fill="#3d7a37" />
-              <ellipse cx="32" cy="23" rx="15" ry="10" fill="#2d5a27" />
-              <rect x="25" y="27" width="5" height="28" fill="#5d4037" />
-            </svg>
+            <div className="absolute right-0 top-0 w-24 md:w-40 h-full">
+              <div className="absolute inset-0 bg-gradient-to-l from-[#1a4d1a]/40 via-[#2d5a27]/25 to-transparent" />
+              <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                <pattern id="forestRight" patternUnits="userSpaceOnUse" width="80" height="120">
+                  <ellipse cx="40" cy="30" rx="32" ry="18" fill="#3d7a37" opacity="0.7" />
+                  <ellipse cx="55" cy="40" rx="28" ry="16" fill="#2d5a27" opacity="0.6" />
+                  <ellipse cx="25" cy="45" rx="20" ry="13" fill="#4a8a47" opacity="0.5" />
+                  <ellipse cx="60" cy="55" rx="16" ry="11" fill="#3d7a37" opacity="0.4" />
+                  <rect x="38" y="52" width="7" height="48" fill="#6d5047" opacity="0.3" />
+                </pattern>
+                <rect width="100%" height="100%" fill="url(#forestRight)" />
+              </svg>
+            </div>
           </div>
           
           <div className="container mx-auto px-4 py-8 relative z-10">
             <div className="relative max-w-3xl mx-auto">
-              <div className="absolute left-1/2 top-0 bottom-0 w-20 md:w-28 -translate-x-1/2 -z-10 rounded-full"
-                   style={{
-                     background: 'linear-gradient(90deg, rgba(101,67,33,0.05) 0%, rgba(139,90,43,0.15) 30%, rgba(160,120,60,0.2) 50%, rgba(139,90,43,0.15) 70%, rgba(101,67,33,0.05) 100%)'
-                   }} />
+              <svg className="absolute left-1/2 top-0 h-full w-32 md:w-44 -translate-x-1/2 -z-10" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="riverWater" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#8B7355" stopOpacity="0.1" />
+                    <stop offset="20%" stopColor="#A08060" stopOpacity="0.25" />
+                    <stop offset="35%" stopColor="#B8956A" stopOpacity="0.35" />
+                    <stop offset="50%" stopColor="#C9A87C" stopOpacity="0.4" />
+                    <stop offset="65%" stopColor="#B8956A" stopOpacity="0.35" />
+                    <stop offset="80%" stopColor="#A08060" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#8B7355" stopOpacity="0.1" />
+                  </linearGradient>
+                  <linearGradient id="riverShine" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="transparent" />
+                    <stop offset="45%" stopColor="rgba(255,255,255,0.15)" />
+                    <stop offset="55%" stopColor="rgba(255,255,255,0.2)" />
+                    <stop offset="100%" stopColor="transparent" />
+                  </linearGradient>
+                  <filter id="riverBlur">
+                    <feGaussianBlur stdDeviation="1" />
+                  </filter>
+                </defs>
+                <rect x="0" y="0" width="100%" height="100%" fill="url(#riverWater)" rx="60" />
+                <rect x="30%" y="0" width="40%" height="100%" fill="url(#riverShine)" rx="20" opacity="0.6" />
+                
+                <g className="animate-river-flow" opacity="0.3">
+                  <path d="M50 0 Q60 30 50 60 Q40 90 50 120 Q60 150 50 180" stroke="#D4C4A8" strokeWidth="1" fill="none" filter="url(#riverBlur)" />
+                  <path d="M70 20 Q80 50 70 80 Q60 110 70 140 Q80 170 70 200" stroke="#D4C4A8" strokeWidth="0.8" fill="none" filter="url(#riverBlur)" />
+                  <path d="M90 40 Q100 70 90 100 Q80 130 90 160 Q100 190 90 220" stroke="#D4C4A8" strokeWidth="0.6" fill="none" filter="url(#riverBlur)" />
+                </g>
+              </svg>
             
             {unidadesByParte.map((parte) => (
               <div key={parte.id} className="mb-12">
