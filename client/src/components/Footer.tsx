@@ -33,9 +33,8 @@ export function Footer() {
             <Link href="/programas" className="hover:text-primary transition-colors">Programas</Link>
             <Link href="/ferramentas" className="hover:text-primary transition-colors">Ferramentas</Link>
             <Link href="/chat" className="hover:text-primary transition-colors">Chat IA</Link>
-            <Link href="/admin" className="inline-flex items-center gap-1 hover:text-primary transition-colors" data-testid="link-admin">
+            <Link href="/admin" className="hover:text-primary transition-colors" data-testid="link-admin" aria-label="Admin">
               <Settings className="w-3.5 h-3.5" />
-              Admin
             </Link>
           </div>
         </div>

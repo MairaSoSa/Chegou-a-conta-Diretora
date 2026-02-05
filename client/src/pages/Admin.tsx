@@ -1271,13 +1271,17 @@ function SettingsManager({ token }: { token: string }) {
     footer_text: "",
     footer_slogan: "",
     site_title: "",
+    hero_subtitle: "",
+    home_footer_text: "",
   });
   const [loaded, setLoaded] = useState(false);
 
   const FIELDS = [
     { key: "site_title", label: "Título do Site", type: "input" },
-    { key: "footer_text", label: "Texto do Rodapé", type: "textarea" },
-    { key: "footer_slogan", label: "Slogan do Rodapé", type: "input" },
+    { key: "hero_subtitle", label: "Subtítulo da Página Inicial", type: "textarea" },
+    { key: "home_footer_text", label: "Texto no rodapé da Página Inicial", type: "input" },
+    { key: "footer_slogan", label: "Slogan do Rodapé (geral)", type: "input" },
+    { key: "footer_text", label: "Texto extra do Rodapé (geral)", type: "textarea" },
   ];
 
   const { data: currentSettings, isLoading } = useQuery<Record<string, string>>({

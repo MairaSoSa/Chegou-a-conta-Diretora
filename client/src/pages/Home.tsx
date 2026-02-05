@@ -3,7 +3,12 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, MessagesSquare, GraduationCap, BookOpen, Wrench, LayoutDashboard } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 export default function Home() {
+  const { data: settings } = useQuery<Record<string, string>>({
+    queryKey: ["/api/settings"],
+  });
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
@@ -22,8 +27,7 @@ export default function Home() {
               </h1>
               
               <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
-                O caminho do dinheiro público na escola, explicado de forma simples. 
-                Trilhas, modelos e apoio para quem cuida da educação.
+                {settings?.hero_subtitle || "O caminho do dinheiro público na escola, explicado de forma simples. Trilhas, modelos e apoio para quem cuida da educação."}
               </p>
               
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
@@ -57,7 +61,7 @@ export default function Home() {
         </section>
 
         <footer className="w-full py-6 border-t text-center text-sm text-muted-foreground mt-auto">
-          <p>Gratuito para diretores de escolas públicas</p>
+          <p>{settings?.home_footer_text || "Gratuito para diretores de escolas públicas"}</p>
         </footer>
       </main>
       
