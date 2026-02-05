@@ -435,40 +435,6 @@ function Porto({ unidade, isCompleted, isCurrent, index, onSelect, onComplete }:
       </div>
       
       <div className="col-start-2 relative h-full flex items-center justify-center min-h-[80px]">
-        <svg 
-          className="absolute inset-0 w-full h-full overflow-visible" 
-          viewBox="0 0 120 80" 
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient id={`branch-${unidade.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor={expanded ? "#0891b2" : isCompleted ? "#166534" : isCurrent ? "#c2410c" : "#9ca3af"} stopOpacity="0.6" />
-              <stop offset="50%" stopColor={expanded ? "#22d3ee" : isCompleted ? "#22c55e" : isCurrent ? "#ea580c" : "#d1d5db"} stopOpacity="0.8" />
-              <stop offset="100%" stopColor={expanded ? "#0891b2" : isCompleted ? "#166534" : isCurrent ? "#c2410c" : "#9ca3af"} stopOpacity="0.6" />
-            </linearGradient>
-          </defs>
-          
-          {isLeft ? (
-            <path 
-              d={`M0 40 Q20 40 35 ${expanded ? '35' : '40'} T60 40`}
-              stroke={`url(#branch-${unidade.id})`}
-              strokeWidth={expanded ? "8" : "4"}
-              fill="none"
-              strokeLinecap="round"
-              className="transition-all duration-500"
-            />
-          ) : (
-            <path 
-              d={`M120 40 Q100 40 85 ${expanded ? '35' : '40'} T60 40`}
-              stroke={`url(#branch-${unidade.id})`}
-              strokeWidth={expanded ? "8" : "4"}
-              fill="none"
-              strokeLinecap="round"
-              className="transition-all duration-500"
-            />
-          )}
-        </svg>
-        
         <div className={cn(
           "w-5 h-5 md:w-6 md:h-6 rounded-full border-3 z-10 transition-all duration-300 shadow-md",
           isCompleted ? "bg-primary border-primary scale-110" :
