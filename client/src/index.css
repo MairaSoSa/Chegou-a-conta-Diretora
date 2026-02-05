@@ -348,43 +348,170 @@
 /* Accessibility - High Contrast Mode */
 .high-contrast {
   --background: 0 0% 100%;
-  --foreground: 0 0% 0%;
-  --muted: 0 0% 95%;
-  --muted-foreground: 0 0% 15%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 0%;
+  --foreground: 0 0% 5%;
+  --muted: 0 0% 94%;
+  --muted-foreground: 0 0% 20%;
+  --card: 0 0% 98%;
+  --card-foreground: 0 0% 5%;
+  --card-border: 0 0% 50%;
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 0%;
-  --border: 0 0% 20%;
-  --input: 0 0% 20%;
-  --ring: 0 0% 0%;
-  --primary: 0 0% 0%;
+  --popover-foreground: 0 0% 5%;
+  --popover-border: 0 0% 50%;
+  --border: 0 0% 40%;
+  --input: 0 0% 40%;
+  --ring: 142 80% 25%;
+  --primary: 142 80% 22%;
   --primary-foreground: 0 0% 100%;
   --secondary: 0 0% 90%;
-  --secondary-foreground: 0 0% 0%;
-  --accent: 0 0% 0%;
+  --secondary-foreground: 0 0% 5%;
+  --accent: 20 70% 35%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 0 100% 40%;
+  --destructive: 0 90% 40%;
   --destructive-foreground: 0 0% 100%;
-  --sidebar: 0 0% 100%;
-  --sidebar-foreground: 0 0% 0%;
-  --sidebar-border: 0 0% 20%;
-  --sidebar-primary: 0 0% 0%;
+  --sidebar: 0 0% 96%;
+  --sidebar-foreground: 0 0% 5%;
+  --sidebar-border: 0 0% 40%;
+  --sidebar-primary: 142 80% 22%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 90%;
-  --sidebar-accent-foreground: 0 0% 0%;
-  --sidebar-ring: 0 0% 0%;
+  --sidebar-accent: 0 0% 88%;
+  --sidebar-accent-foreground: 0 0% 5%;
+  --sidebar-ring: 142 80% 25%;
+
+  --elevate-1: rgba(0, 0, 0, 0.06);
+  --elevate-2: rgba(0, 0, 0, 0.12);
+  --button-outline: rgba(0, 0, 0, 0.25);
+  --badge-outline: rgba(0, 0, 0, 0.15);
+}
+
+.high-contrast body {
+  background-image: none !important;
 }
 
 .high-contrast a:not([class*="button"]) {
   text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.high-contrast .card-clay,
+.high-contrast .glass-card {
+  border-width: 2px;
+  border-color: hsl(0 0% 40%);
+  box-shadow: none;
+}
+
+.high-contrast .card-clay:hover,
+.high-contrast .glass-card-hover:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: hsl(0 0% 20%);
+}
+
+.high-contrast .bg-emerald-50,
+.high-contrast .from-emerald-50,
+.high-contrast .to-green-50,
+.high-contrast .from-emerald-50\/80,
+.high-contrast .to-green-50\/50 {
+  background-color: hsl(142 20% 95%) !important;
+}
+
+.high-contrast .text-emerald-600,
+.high-contrast .text-emerald-700,
+.high-contrast .text-emerald-800,
+.high-contrast .text-emerald-900,
+.high-contrast .text-green-600,
+.high-contrast .text-green-700 {
+  color: hsl(142 80% 18%) !important;
+}
+
+.high-contrast .border-emerald-200,
+.high-contrast .border-emerald-100,
+.high-contrast .border-emerald-200\/50 {
+  border-color: hsl(142 40% 50%) !important;
+}
+
+.high-contrast .bg-amber-50,
+.high-contrast .from-amber-50,
+.high-contrast .bg-amber-100,
+.high-contrast .bg-orange-50 {
+  background-color: hsl(35 60% 92%) !important;
+}
+
+.high-contrast .text-amber-600,
+.high-contrast .text-amber-700,
+.high-contrast .text-amber-800 {
+  color: hsl(25 80% 28%) !important;
+}
+
+.high-contrast .bg-red-50 {
+  background-color: hsl(0 50% 94%) !important;
+}
+
+.high-contrast .text-red-600,
+.high-contrast .text-red-700,
+.high-contrast .text-red-800 {
+  color: hsl(0 80% 30%) !important;
+}
+
+.high-contrast .bg-sky-100,
+.high-contrast .bg-sky-50 {
+  background-color: hsl(200 40% 92%) !important;
+}
+
+.high-contrast .text-sky-600,
+.high-contrast .text-sky-700 {
+  color: hsl(200 80% 25%) !important;
+}
+
+.high-contrast .watercolor-bg {
+  background: hsl(0 0% 98%) !important;
+  animation: none;
+}
+
+.high-contrast .stone-badge {
+  background: hsl(0 0% 92%) !important;
+  border-color: hsl(0 0% 40%) !important;
+  border-width: 2px;
+}
+
+.high-contrast img {
+  filter: contrast(1.1);
+}
+
+.high-contrast *:focus-visible {
+  outline: 3px solid hsl(142 80% 25%) !important;
+  outline-offset: 2px !important;
 }
 
 /* Accessibility - Dyslexia-friendly font */
 .dyslexia-font,
 .dyslexia-font * {
-  font-family: 'Lexend', 'Comic Sans MS', sans-serif !important;
-  letter-spacing: 0.05em;
-  word-spacing: 0.1em;
-  line-height: 1.8;
+  font-family: 'Lexend', sans-serif !important;
+  letter-spacing: 0.04em;
+  word-spacing: 0.12em;
+}
+
+.dyslexia-font p,
+.dyslexia-font li,
+.dyslexia-font span,
+.dyslexia-font label,
+.dyslexia-font td,
+.dyslexia-font th {
+  line-height: 1.8 !important;
+}
+
+.dyslexia-font h1,
+.dyslexia-font h2,
+.dyslexia-font h3,
+.dyslexia-font h4 {
+  line-height: 1.4 !important;
+  letter-spacing: 0.02em;
+}
+
+.dyslexia-font .text-xs {
+  font-size: 0.8rem !important;
+}
+
+.dyslexia-font .text-sm {
+  font-size: 0.925rem !important;
 }

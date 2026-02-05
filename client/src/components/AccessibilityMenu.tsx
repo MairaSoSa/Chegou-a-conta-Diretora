@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { 
-  Accessibility, 
+  SlidersHorizontal,
   ZoomIn, 
   ZoomOut, 
   Contrast, 
@@ -11,7 +11,8 @@ import {
   Volume2,
   VolumeX,
   Pause,
-  Play
+  Play,
+  Square
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -20,33 +21,119 @@ const HIGH_CONTRAST_KEY = "accessibility-high-contrast";
 const DYSLEXIA_FONT_KEY = "accessibility-dyslexia-font";
 const SCREEN_READER_KEY = "accessibility-screen-reader";
 
-function getPageText(): string {
-  const main = document.querySelector('main') || document.body;
-  const walker = document.createTreeWalker(
-    main,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode(node) {
-        const parent = node.parentElement;
-        if (!parent) return NodeFilter.FILTER_REJECT;
-        const tag = parent.tagName.toLowerCase();
-        if (['script', 'style', 'noscript', 'svg'].includes(tag)) return NodeFilter.FILTER_REJECT;
-        const style = window.getComputedStyle(parent);
-        if (style.display === 'none' || style.visibility === 'hidden') return NodeFilter.FILTER_REJECT;
-        if (node.textContent && node.textContent.trim().length > 0) return NodeFilter.FILTER_ACCEPT;
-        return NodeFilter.FILTER_REJECT;
+function getStructuredPageText(): string {
+  const root = document.querySelector('main') || document.body;
+  const parts: string[] = [];
+
+  function walkNode(node: Node) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const el = node as HTMLElement;
+      const tag = el.tagName.toLowerCase();
+      const role = el.getAttribute('role');
+
+      if (['script', 'style', 'noscript', 'svg', 'path', 'iframe'].includes(tag)) return;
+      const style = window.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') return;
+      if (el.getAttribute('aria-hidden') === 'true') return;
+
+      if (tag === 'nav' || role === 'navigation') {
+        parts.push('Navegação.');
+        for (const child of Array.from(el.childNodes)) walkNode(child);
+        parts.push('Fim da navegação.');
+        return;
+      }
+
+      if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
+        const level = tag.charAt(1);
+        const text = el.textContent?.trim();
+        if (text) parts.push(`Título nível ${level}: ${text}.`);
+        return;
+      }
+
+      if (tag === 'button' || role === 'button') {
+        const label = el.getAttribute('aria-label') || el.textContent?.trim();
+        if (label) parts.push(`Botão: ${label}.`);
+        return;
+      }
+
+      if (tag === 'a' && el.getAttribute('href')) {
+        const label = el.getAttribute('aria-label') || el.textContent?.trim();
+        if (label) parts.push(`Link: ${label}.`);
+        return;
+      }
+
+      if (tag === 'input' || tag === 'textarea') {
+        const label = el.getAttribute('aria-label') || el.getAttribute('placeholder') || '';
+        if (label) parts.push(`Campo de texto: ${label}.`);
+        return;
+      }
+
+      if (tag === 'img') {
+        const alt = el.getAttribute('alt');
+        if (alt) parts.push(`Imagem: ${alt}.`);
+        return;
+      }
+
+      if (tag === 'section' || role === 'region') {
+        const ariaLabel = el.getAttribute('aria-label');
+        if (ariaLabel) parts.push(`Seção: ${ariaLabel}.`);
+      }
+
+      if (tag === 'footer') {
+        parts.push('Rodapé.');
+      }
+
+      for (const child of Array.from(el.childNodes)) {
+        walkNode(child);
+      }
+
+      if (tag === 'footer') {
+        parts.push('Fim do rodapé.');
+      }
+
+    } else if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent?.trim();
+      if (text && text.length > 1) {
+        parts.push(text);
       }
     }
-  );
-
-  const texts: string[] = [];
-  while (walker.nextNode()) {
-    const text = walker.currentNode.textContent?.trim();
-    if (text && text.length > 0) {
-      texts.push(text);
-    }
   }
-  return texts.join('. ').replace(/\.{2,}/g, '.').replace(/\s+/g, ' ');
+
+  walkNode(root);
+
+  return parts
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\.\s*\./g, '.')
+    .replace(/\.\s*,/g, ',')
+    .trim();
+}
+
+function findFeminineVoice(): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis.getVoices();
+
+  const ptBrFeminine = voices.find(v =>
+    v.lang === 'pt-BR' &&
+    (v.name.toLowerCase().includes('female') ||
+     v.name.toLowerCase().includes('feminino') ||
+     v.name.toLowerCase().includes('woman') ||
+     v.name.toLowerCase().includes('mulher') ||
+     v.name.toLowerCase().includes('luciana') ||
+     v.name.toLowerCase().includes('vitória') ||
+     v.name.toLowerCase().includes('francisca') ||
+     v.name.toLowerCase().includes('maria') ||
+     v.name.toLowerCase().includes('google') ||
+     v.name.toLowerCase().includes('microsoft') && !v.name.toLowerCase().includes('daniel'))
+  );
+  if (ptBrFeminine) return ptBrFeminine;
+
+  const ptBr = voices.find(v => v.lang === 'pt-BR');
+  if (ptBr) return ptBr;
+
+  const ptAny = voices.find(v => v.lang.startsWith('pt'));
+  if (ptAny) return ptAny;
+
+  return null;
 }
 
 export function AccessibilityMenu() {
@@ -85,9 +172,16 @@ export function AccessibilityMenu() {
   }, []);
 
   useEffect(() => {
+    if (speechSupported) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
     return () => {
       if (speechSupported) {
         window.speechSynthesis.cancel();
+        window.speechSynthesis.onvoiceschanged = null;
       }
     };
   }, []);
@@ -105,17 +199,16 @@ export function AccessibilityMenu() {
     if (!speechSupported) return;
     stopSpeaking();
 
-    const text = getPageText();
+    const text = getStructuredPageText();
     if (!text.trim()) return;
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'pt-BR';
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
+    utterance.rate = 0.85;
+    utterance.pitch = 1.1;
 
-    const voices = window.speechSynthesis.getVoices();
-    const ptVoice = voices.find(v => v.lang.startsWith('pt'));
-    if (ptVoice) utterance.voice = ptVoice;
+    const voice = findFeminineVoice();
+    if (voice) utterance.voice = voice;
 
     utterance.onend = () => {
       setIsSpeaking(false);
@@ -203,11 +296,11 @@ export function AccessibilityMenu() {
         onClick={() => setIsOpen(!isOpen)}
         size="icon"
         variant="outline"
-        className="fixed bottom-4 right-4 z-50 rounded-full shadow-lg"
-        aria-label="Menu de acessibilidade"
+        className="fixed bottom-4 right-4 z-50 rounded-full shadow-lg bg-emerald-600 border-emerald-700 text-white hover:bg-emerald-700"
+        aria-label="Ajustes de visualização e leitura"
         data-testid="button-accessibility-menu"
       >
-        <Accessibility className="w-5 h-5" />
+        <SlidersHorizontal className="w-5 h-5" />
       </Button>
 
       <AnimatePresence>
@@ -218,12 +311,12 @@ export function AccessibilityMenu() {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className="fixed bottom-20 right-4 z-50 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 w-72"
             role="dialog"
-            aria-label="Opções de acessibilidade"
+            aria-label="Ajustes de visualização e leitura"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <Accessibility className="w-4 h-4 text-emerald-600" />
-                Acessibilidade
+                <SlidersHorizontal className="w-4 h-4 text-emerald-600" />
+                Ajustes do Site
               </h3>
               <Button 
                 size="icon" 
@@ -311,7 +404,7 @@ export function AccessibilityMenu() {
                     data-testid="button-screen-reader"
                   >
                     {screenReaderEnabled ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
-                    Leitor de tela
+                    Ouvir a página
                     {screenReaderEnabled && <span className="ml-auto text-xs">Ativo</span>}
                   </Button>
 
@@ -320,7 +413,7 @@ export function AccessibilityMenu() {
                       <Button
                         size="sm"
                         variant={isSpeaking && !isPaused ? "default" : "outline"}
-                        onClick={isSpeaking ? (isPaused ? togglePause : togglePause) : startSpeaking}
+                        onClick={isSpeaking ? togglePause : startSpeaking}
                         className="flex-1"
                         data-testid="button-read-page"
                         aria-label={isSpeaking ? (isPaused ? "Continuar leitura" : "Pausar leitura") : "Ler página"}
@@ -343,7 +436,7 @@ export function AccessibilityMenu() {
                           data-testid="button-stop-reading"
                           aria-label="Parar leitura"
                         >
-                          <VolumeX className="w-4 h-4" />
+                          <Square className="w-3 h-3" />
                         </Button>
                       )}
                     </div>
@@ -351,7 +444,7 @@ export function AccessibilityMenu() {
 
                   {screenReaderEnabled && (
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      O computador vai ler o texto da página em voz alta pra você
+                      Uma voz feminina vai ler a página, dizendo o que é cada parte (botão, título, link)
                     </p>
                   )}
                 </div>
