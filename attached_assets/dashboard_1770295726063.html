@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Dashboard — A Conta Chegou, Diretora!</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<header>
+  <div class="container nav">
+    <a class="brand" href="index.html" aria-label="Ir para a página inicial">
+      <span class="logo" aria-hidden="true"></span>
+      <span>A Conta Chegou, Diretora!</span>
+    </a>
+    <nav class="navlinks" aria-label="Navegação principal">
+      <a class="chip" data-nav href="trilha.html">Trilha</a>
+<a class="chip" data-nav href="programas.html">Programas & Políticas</a>
+<a class="chip" data-nav href="chat.html">Chat IA</a>
+<a class="chip" data-nav href="ferramentas.html">Caixa de Ferramentas</a>
+<a class="chip" data-nav href="dashboard.html">Dashboard</a>
+<a class="chip" data-nav href="quem-somos.html">Quem somos & Contato</a>
+      <a class="cta" href="trilha.html">Começar agora</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+<div class="panel" style="padding:18px">
+  <div class="section-title">
+    <h2>Dashboard da escola (somente dados públicos)</h2>
+    <span class="badge">protótipo</span>
+  </div>
+  <p class="small">Busca por INEP/nome/município. Alertas explicam <em>por que</em> algo pode estar estranho e <em>como conferir</em> nas fontes oficiais.</p>
+</div>
+
+<div class="panel" style="margin-top:16px; padding:12px">
+  <div class="searchbar">
+    <input style="flex:1; min-width:240px" placeholder="Buscar por INEP, nome da escola ou município (ex.: 12345678)"/>
+    <button class="btn primary" type="button">Buscar</button>
+    <span class="small" style="align-self:center">Exemplo: Escola Municipal “Rio Verde”</span>
+  </div>
+
+  <div class="kv" style="margin-top:10px">
+    <div class="kvcard"><div class="small">Rede</div><div><strong>Municipal</strong></div></div>
+    <div class="kvcard"><div class="small">Localização</div><div><strong>Rural</strong></div></div>
+    <div class="kvcard"><div class="small">Matrículas (ref.)</div><div><strong>312</strong></div></div>
+    <div class="kvcard"><div class="small">Status de dados</div><div><strong>Parcial</strong> <span class="small">(bases atrasadas)</span></div></div>
+  </div>
+
+  <div class="tabs" style="margin-top:10px">
+    <button class="tab active" data-tab="geral">Visão geral</button>
+    <button class="tab" data-tab="pdde">PDDE</button>
+    <button class="tab" data-tab="pnae">PNAE</button>
+    <button class="tab" data-tab="pnate">PNATE</button>
+    <button class="tab" data-tab="alertas">Alertas explicados</button>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:16px; padding:16px" data-panel="geral">
+  <div class="section-title" style="margin:0 0 10px"><h2>Visão geral</h2><span class="badge">exemplo</span></div>
+  <table class="table">
+    <thead><tr><th>Programa</th><th>Última referência</th><th>Observação</th></tr></thead>
+    <tbody>
+      <tr><td>PDDE</td><td>2025</td><td>Consta em base pública (placeholder)</td></tr>
+      <tr><td>PNAE</td><td>2025</td><td>Dado disponível (placeholder)</td></tr>
+      <tr><td>PNATE</td><td>2024</td><td>Dado possivelmente atrasado (placeholder)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="panel" style="margin-top:16px; padding:16px; display:none" data-panel="pdde">
+  <div class="section-title" style="margin:0 0 10px"><h2>PDDE</h2><span class="badge">exemplo</span></div>
+  <div class="note">No produto final: repasses por período + links oficiais + checklist mínimo.</div>
+</div>
+
+<div class="panel" style="margin-top:16px; padding:16px; display:none" data-panel="pnae">
+  <div class="section-title" style="margin:0 0 10px"><h2>PNAE</h2><span class="badge">exemplo</span></div>
+  <div class="note">No produto final: indicadores + registros mínimos + link oficial.</div>
+</div>
+
+<div class="panel" style="margin-top:16px; padding:16px; display:none" data-panel="pnate">
+  <div class="section-title" style="margin:0 0 10px"><h2>PNATE</h2><span class="badge">exemplo</span></div>
+  <div class="note">No produto final: elegibilidade/rotas + referências e alertas.</div>
+</div>
+
+<div class="panel" style="margin-top:16px; padding:16px; display:none" data-panel="alertas">
+  <div class="section-title" style="margin:0 0 10px"><h2>Alertas explicados</h2><span class="badge">ação</span></div>
+
+  <div class="alert">
+    <h4>🟡 Dado possivelmente atrasado (PNATE)</h4>
+    <div class="small"><strong>O que vimos:</strong> última atualização pública em 2024 (placeholder).</div>
+    <div class="small" style="margin-top:6px"><strong>Motivos comuns:</strong> atraso do portal; mudança cadastral; registro em outra rubrica/ação; escola inelegível naquele ciclo.</div>
+    <div class="small" style="margin-top:6px"><strong>Como conferir:</strong> abrir o link oficial, buscar por INEP/município, comparar períodos e registrar data.</div>
+    <div class="small" style="margin-top:6px"><strong>O que registrar:</strong> print + data + caminho de consulta + nota curta.</div>
+    <div style="margin-top:10px"><button class="btn">Gerar nota de verificação</button></div>
+  </div>
+
+  <div class="alert" style="border-color:rgba(251,113,133,.55); background:rgba(251,113,133,.08)">
+    <h4>🔴 Divergência de matrícula vs referência</h4>
+    <div class="small"><strong>Motivos comuns:</strong> ano de referência diferente; atualização do censo; erro de cadastro; etapa/modalidade não considerada.</div>
+    <div style="margin-top:10px"><button class="btn">Gerar checklist de conferência</button></div>
+  </div>
+
+  <div class="note warn"><strong>Importante:</strong> alertas são “sinalizadores”. Eles não afirmam irregularidade — só pedem checagem e registro.</div>
+</div>
+
+<footer class="site container">
+  <div>Protótipo estático (HTML/CSS/JS). Conteúdo e dados são ilustrativos — no produto final, o Dashboard usaria <strong>somente dados públicos</strong> e sempre explicaria limitações e possíveis divergências.</div>
+</footer>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
