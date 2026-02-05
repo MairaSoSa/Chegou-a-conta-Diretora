@@ -568,45 +568,51 @@ export default function Trilha() {
           </div>
         </div>
 
-        <div className="relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <svg className="absolute left-0 top-0 w-24 h-24 text-green-700/20" viewBox="0 0 100 100">
-              <path d="M20 80 Q30 60 25 40 Q20 20 35 10" stroke="currentColor" strokeWidth="8" fill="none" />
-              <circle cx="35" cy="10" r="15" fill="currentColor" />
-              <circle cx="20" cy="25" r="10" fill="currentColor" />
+        <div className="trilha-amazonia relative">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute left-0 top-0 w-20 md:w-32 h-full bg-gradient-to-r from-green-800/30 via-green-700/20 to-transparent" />
+            <div className="absolute right-0 top-0 w-20 md:w-32 h-full bg-gradient-to-l from-green-800/30 via-green-700/20 to-transparent" />
+            
+            <svg className="absolute left-2 top-12 w-16 md:w-24 opacity-60" viewBox="0 0 60 80">
+              <ellipse cx="30" cy="15" rx="25" ry="15" fill="#2d5a27" />
+              <ellipse cx="20" cy="25" rx="18" ry="12" fill="#3d7a37" />
+              <ellipse cx="40" cy="28" rx="16" ry="10" fill="#2d5a27" />
+              <rect x="27" y="30" width="6" height="35" fill="#5d4037" />
             </svg>
-            <svg className="absolute right-0 top-20 w-20 h-20 text-green-700/15" viewBox="0 0 100 100">
-              <path d="M80 80 Q70 60 75 40 Q80 20 65 10" stroke="currentColor" strokeWidth="8" fill="none" />
-              <circle cx="65" cy="10" r="12" fill="currentColor" />
-              <circle cx="80" cy="30" r="8" fill="currentColor" />
+            <svg className="absolute left-6 top-48 w-12 md:w-20 opacity-50" viewBox="0 0 60 80">
+              <ellipse cx="30" cy="20" rx="20" ry="12" fill="#3d7a37" />
+              <ellipse cx="25" cy="28" rx="15" ry="10" fill="#4a8a47" />
+              <rect x="27" y="32" width="5" height="30" fill="#6d5047" />
             </svg>
-            <svg className="absolute left-4 bottom-1/3 w-16 h-16 text-green-600/10" viewBox="0 0 100 100">
-              <ellipse cx="50" cy="50" rx="40" ry="30" fill="currentColor" />
+            <svg className="absolute left-0 top-96 w-14 md:w-24 opacity-55" viewBox="0 0 60 80">
+              <ellipse cx="35" cy="18" rx="22" ry="14" fill="#2d5a27" />
+              <ellipse cx="25" cy="26" rx="18" ry="11" fill="#3d7a37" />
+              <rect x="28" y="30" width="5" height="32" fill="#5d4037" />
             </svg>
-            <svg className="absolute right-8 bottom-1/2 w-14 h-14 text-green-600/10" viewBox="0 0 100 100">
-              <ellipse cx="50" cy="50" rx="35" ry="25" fill="currentColor" />
+            
+            <svg className="absolute right-2 top-24 w-14 md:w-22 opacity-55" viewBox="0 0 60 80">
+              <ellipse cx="28" cy="16" rx="22" ry="14" fill="#3d7a37" />
+              <ellipse cx="35" cy="24" rx="16" ry="10" fill="#2d5a27" />
+              <rect x="26" y="28" width="5" height="30" fill="#5d4037" />
+            </svg>
+            <svg className="absolute right-4 top-64 w-16 md:w-24 opacity-50" viewBox="0 0 60 80">
+              <ellipse cx="30" cy="18" rx="24" ry="15" fill="#2d5a27" />
+              <ellipse cx="22" cy="26" rx="17" ry="11" fill="#4a8a47" />
+              <rect x="27" y="30" width="6" height="35" fill="#6d5047" />
+            </svg>
+            <svg className="absolute right-0 top-[500px] w-12 md:w-20 opacity-60" viewBox="0 0 60 80">
+              <ellipse cx="25" cy="15" rx="20" ry="13" fill="#3d7a37" />
+              <ellipse cx="32" cy="23" rx="15" ry="10" fill="#2d5a27" />
+              <rect x="25" y="27" width="5" height="28" fill="#5d4037" />
             </svg>
           </div>
           
           <div className="container mx-auto px-4 py-8 relative z-10">
             <div className="relative max-w-3xl mx-auto">
-              <svg className="absolute left-1/2 top-0 h-full w-16 -translate-x-1/2 -z-10" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="riverGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="rgba(139,90,43,0.08)" />
-                    <stop offset="50%" stopColor="rgba(139,90,43,0.15)" />
-                    <stop offset="100%" stopColor="rgba(139,90,43,0.08)" />
-                  </linearGradient>
-                </defs>
-                <rect x="0" y="0" width="100%" height="100%" fill="url(#riverGrad)" rx="30" />
-                <path 
-                  d="M30 0 Q40 50 30 100 Q20 150 35 200 Q50 250 30 300 Q10 350 35 400 Q60 450 30 500 Q0 550 35 600 Q60 650 30 700 Q0 750 35 800 Q60 850 30 900 Q0 950 35 1000" 
-                  stroke="rgba(139,90,43,0.2)" 
-                  strokeWidth="2" 
-                  fill="none"
-                  vectorEffect="non-scaling-stroke"
-                />
-              </svg>
+              <div className="absolute left-1/2 top-0 bottom-0 w-20 md:w-28 -translate-x-1/2 -z-10 rounded-full"
+                   style={{
+                     background: 'linear-gradient(90deg, rgba(101,67,33,0.05) 0%, rgba(139,90,43,0.15) 30%, rgba(160,120,60,0.2) 50%, rgba(139,90,43,0.15) 70%, rgba(101,67,33,0.05) 100%)'
+                   }} />
             
             {unidadesByParte.map((parte) => (
               <div key={parte.id} className="mb-12">
