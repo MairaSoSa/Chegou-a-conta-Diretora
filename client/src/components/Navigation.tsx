@@ -23,8 +23,8 @@ export function Navigation() {
       <Link href={item.href} className={cn(
         "flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 text-sm font-medium",
         isActive 
-          ? "bg-primary/10 text-primary hover:bg-primary/20" 
-          : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+          ? "bg-primary/10 text-primary hover:bg-primary/15" 
+          : "text-muted-foreground hover:text-foreground hover:bg-muted",
         mobile ? "w-full text-base py-3" : ""
       )} onClick={() => mobile && setIsOpen(false)}>
         <item.icon className={cn("w-4 h-4", isActive ? "text-primary" : "text-muted-foreground")} />
@@ -34,14 +34,14 @@ export function Navigation() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/90 backdrop-blur-xl">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-400 to-teal-500 flex items-center justify-center text-background font-bold text-lg group-hover:shadow-lg group-hover:shadow-emerald-500/20 transition-all">
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:shadow-md group-hover:shadow-primary/20 transition-all">
             A
           </div>
-          <span className="font-bold text-lg tracking-tight hidden sm:block">
+          <span className="font-bold text-lg tracking-tight hidden sm:block text-foreground">
             A Conta Chegou<span className="text-primary">, Diretora!</span>
           </span>
         </Link>
@@ -61,7 +61,7 @@ export function Navigation() {
                 <Menu className="w-5 h-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="bg-background border-l border-white/10 w-[80%] sm:w-[350px]">
+            <SheetContent side="right" className="bg-background border-l border-border w-[80%] sm:w-[350px]">
               <div className="flex flex-col gap-6 mt-10">
                 <Link href="/" onClick={() => setIsOpen(false)} className="text-xl font-bold px-4">
                   Menu
@@ -70,7 +70,7 @@ export function Navigation() {
                   {navItems.map((item) => (
                     <NavLink key={item.href} item={item} mobile />
                   ))}
-                  <div className="h-px bg-white/5 my-2 mx-4" />
+                  <div className="h-px bg-border my-2 mx-4" />
                   <Link href="/quem-somos" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 text-muted-foreground hover:text-foreground text-base font-medium">
                     <BookOpen className="w-4 h-4" />
                     Quem Somos
