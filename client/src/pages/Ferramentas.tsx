@@ -273,21 +273,11 @@ export default function Ferramentas() {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
-          <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                <Pin className="w-6 h-6 text-amber-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-lg text-amber-800 mb-2">Dica: Cole na parede!</h3>
-                <p className="text-amber-700 text-sm leading-relaxed">
-                  Os checklists funcionam melhor impressos. Cole no mural da secretaria 
-                  e vá marcando cada item. Assim você não esquece de nada!
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="container mx-auto px-4 py-6">
+          <p className="text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+            <Pin className="w-4 h-4" />
+            Dica: os checklists funcionam melhor impressos e colados no mural da secretaria!
+          </p>
         </div>
       </main>
 

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   CheckCircle2, Clock, ChevronRight, Play, RotateCcw,
-  Ship, Anchor, MapPin, BookOpen, Compass, Waves
+  Ship, Anchor, MapPin, BookOpen, Compass
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
@@ -294,64 +294,53 @@ export default function Trilha() {
             </svg>
           </div>
           
-          <div className="bg-gradient-to-br from-cyan-100/40 via-sky-50/50 to-transparent py-10 relative z-10">
+          <div className="bg-gradient-to-br from-cyan-100/40 via-sky-50/50 to-transparent py-8 relative z-10">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-600 flex items-center justify-center shadow-lg relative">
-                        <Ship className="w-7 h-7 text-white" />
-                        <Waves className="w-4 h-4 text-cyan-200 absolute -bottom-1 -right-1" />
-                      </div>
-                      <div>
-                        <h1 className="text-3xl md:text-4xl font-bold font-display text-foreground">
-                          Navegue pelo Rio
-                        </h1>
-                        <p className="text-muted-foreground flex items-center gap-2">
-                          <span>Cada parada é uma nova descoberta</span>
-                        </p>
-                      </div>
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-sky-600 flex items-center justify-center shadow-lg">
+                      <Ship className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h1 className="text-2xl md:text-3xl font-bold font-display text-foreground">
+                        Navegue pelo Rio
+                      </h1>
+                      <p className="text-sm text-muted-foreground">
+                        {completedCount} de {totalUnits} paradas visitadas
+                      </p>
                     </div>
                   </div>
                   
-                  <Card className="bg-white/80 backdrop-blur border-cyan-100 shadow-sm">
-                    <CardContent className="p-4 flex items-center gap-4">
-                      <div 
-                        className="w-20 h-20 rounded-full flex items-center justify-center relative"
-                        style={{
-                          background: `conic-gradient(#0891b2 ${progressPercent}%, #e5e7eb ${progressPercent}%)`
-                        }}
-                      >
-                        <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center">
-                          <span className="text-xl font-bold text-cyan-600">{progressPercent}%</span>
-                        </div>
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-14 h-14 rounded-full flex items-center justify-center"
+                      style={{
+                        background: `conic-gradient(#0891b2 ${progressPercent}%, #e5e7eb ${progressPercent}%)`
+                      }}
+                    >
+                      <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+                        <span className="text-lg font-bold text-cyan-600">{progressPercent}%</span>
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Jornada</p>
-                        <p className="font-bold text-lg">{completedCount} de {totalUnits}</p>
-                        <p className="text-xs text-muted-foreground">paradas visitadas</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <div className="flex flex-wrap gap-3 mt-6">
-                  <Link href={`/trilha/${progress.currentUnit}`}>
-                    <Button className="bg-cyan-600 hover:bg-cyan-700" data-testid="button-continuar">
-                      <Ship className="w-4 h-4 mr-2" />
-                      Continuar navegando
+                    </div>
+                    
+                    <Link href={`/trilha/${progress.currentUnit}`}>
+                      <Button className="bg-cyan-600 hover:bg-cyan-700" data-testid="button-continuar">
+                        <Play className="w-4 h-4 mr-2" />
+                        Continuar
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="outline"
+                      size="icon"
+                      onClick={resetProgress}
+                      className="border-cyan-200 hover:bg-cyan-50"
+                      data-testid="button-reset"
+                      title="Recomeçar do início"
+                    >
+                      <RotateCcw className="w-4 h-4" />
                     </Button>
-                  </Link>
-                  <Button 
-                    variant="outline"
-                    onClick={resetProgress}
-                    className="border-cyan-200 hover:bg-cyan-50"
-                    data-testid="button-reset"
-                  >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Voltar ao início
-                  </Button>
+                  </div>
                 </div>
               </div>
             </div>

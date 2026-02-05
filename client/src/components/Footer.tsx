@@ -41,7 +41,7 @@ export function Footer() {
         <div className="pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} Chegou a Conta, Diretora! Todos os direitos reservados.</p>
           <div className="flex gap-4">
-            <span>Feito com ❤️ pela educação</span>
+            <span>Feito com carinho pela educação brasileira</span>
           </div>
         </div>
       </div>
