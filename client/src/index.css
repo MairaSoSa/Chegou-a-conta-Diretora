@@ -217,3 +217,69 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(160, 82, 45, 0.3);
 }
+
+/* Barquinho Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-6px) rotate(1deg); }
+}
+
+@keyframes wave-1 {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(-3px); opacity: 0.3; }
+}
+
+@keyframes wave-2 {
+  0%, 100% { transform: translateY(-2px); opacity: 0.5; }
+  50% { transform: translateY(1px); opacity: 0.4; }
+}
+
+@keyframes wave-3 {
+  0%, 100% { transform: translateY(1px); opacity: 0.6; }
+  50% { transform: translateY(-4px); opacity: 0.3; }
+}
+
+@keyframes boat-sail {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-wave-1 {
+  animation: wave-1 2s ease-in-out infinite;
+}
+
+.animate-wave-2 {
+  animation: wave-2 2.5s ease-in-out infinite 0.3s;
+}
+
+.animate-wave-3 {
+  animation: wave-3 2s ease-in-out infinite 0.6s;
+}
+
+/* River Path */
+.river-path {
+  background: linear-gradient(180deg, 
+    hsl(var(--river-deep) / 0.1) 0%,
+    hsl(var(--river-deep) / 0.2) 50%,
+    hsl(var(--river-deep) / 0.1) 100%
+  );
+}
+
+.porto-marker {
+  position: relative;
+}
+
+.porto-marker::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 40px;
+  background: linear-gradient(to bottom, hsl(var(--accent)), transparent);
+}

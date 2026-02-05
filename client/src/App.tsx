@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
 import Trilha from "@/pages/Trilha";
+import TrilhaUnidade from "@/pages/TrilhaUnidade";
 import Programas from "@/pages/Programas";
 import Ferramentas from "@/pages/Ferramentas";
 import Chat from "@/pages/Chat";
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/trilha" component={Trilha} />
+      <Route path="/trilha/:unitId" component={TrilhaUnidade} />
       <Route path="/programas" component={Programas} />
       {/* Dynamic route for program details if we had the component ready, handled generically for now or added later */}
       <Route path="/programas/:code" component={Programas} /> 
