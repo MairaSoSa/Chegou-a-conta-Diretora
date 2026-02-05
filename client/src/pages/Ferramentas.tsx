@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -6,20 +7,12 @@ import { Button } from "@/components/ui/button";
 import { 
   Download, FileSpreadsheet, CheckSquare, FileText, 
   Wrench, Search, ShoppingCart, FolderCheck, Calendar,
-  FileCheck, Filter, Pin
+  FileCheck, Filter, Pin, Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-
-interface Ferramenta {
-  id: string;
-  nome: string;
-  descricao: string;
-  tipo: 'excel' | 'word' | 'checklist' | 'pdf';
-  categoria: string;
-  destaque?: boolean;
-}
+import type { Tool } from "@shared/schema";
 
 const CATEGORIAS = [
   { id: 'planejar', nome: 'Planejar', icone: Calendar, corPostIt: 'bg-violet-100', corTexto: 'text-violet-800', corBorda: 'border-violet-300', corFundo: '#ede9fe' },
@@ -29,32 +22,7 @@ const CATEGORIAS = [
   { id: 'prestar', nome: 'Prestar Contas', icone: FileCheck, corPostIt: 'bg-rose-100', corTexto: 'text-rose-800', corBorda: 'border-rose-300', corFundo: '#ffe4e6' }
 ];
 
-const FERRAMENTAS: Ferramenta[] = [
-  { id: 'plano-aplicacao', nome: 'Plano de Aplicação', descricao: 'Planilha pra planejar como usar o dinheiro do PDDE', tipo: 'excel', categoria: 'planejar', destaque: true },
-  { id: 'ata-reuniao', nome: 'Ata de Reunião', descricao: 'Documento pra registrar decisões do Conselho', tipo: 'word', categoria: 'planejar' },
-  { id: 'calendario-anual', nome: 'Calendário de Prazos', descricao: 'Todos os prazos importantes do ano', tipo: 'excel', categoria: 'planejar' },
-  { id: 'lista-prioridades', nome: 'Lista de Prioridades', descricao: 'O que a escola mais precisa antes de gastar', tipo: 'checklist', categoria: 'planejar' },
-  { id: 'convocacao-conselho', nome: 'Convocação de Reunião', descricao: 'Modelo pra convocar o Conselho Escolar', tipo: 'word', categoria: 'planejar' },
-  { id: 'pesquisa-precos', nome: 'Pesquisa de Preços', descricao: 'Compare até 5 fornecedores lado a lado', tipo: 'excel', categoria: 'pesquisar', destaque: true },
-  { id: 'mapa-fornecedores', nome: 'Cadastro de Fornecedores', descricao: 'Contatos organizados com CNPJ e telefone', tipo: 'excel', categoria: 'pesquisar' },
-  { id: 'checklist-fornecedor', nome: 'Análise de Fornecedor', descricao: 'Verificação antes de escolher fornecedor', tipo: 'checklist', categoria: 'pesquisar' },
-  { id: 'solicitacao-orcamento', nome: 'Pedido de Orçamento', descricao: 'Carta formal pra pedir orçamento', tipo: 'word', categoria: 'pesquisar' },
-  { id: 'autorizacao-compra', nome: 'Autorização de Compra', descricao: 'Autoriza a compra após aprovação do Conselho', tipo: 'word', categoria: 'comprar', destaque: true },
-  { id: 'controle-pagamentos', nome: 'Controle de Pagamentos', descricao: 'Registra cada pagamento: data, valor, NF', tipo: 'excel', categoria: 'comprar' },
-  { id: 'checklist-nota-fiscal', nome: 'Checklist de NF', descricao: 'Confira a nota fiscal antes de pagar', tipo: 'checklist', categoria: 'comprar' },
-  { id: 'termo-contratacao', nome: 'Contratação de Serviço', descricao: 'Modelo pra contratar manutenção, pintura', tipo: 'word', categoria: 'comprar' },
-  { id: 'termo-recebimento', nome: 'Recebimento de Material', descricao: 'Documento pra assinar quando material chegar', tipo: 'word', categoria: 'receber', destaque: true },
-  { id: 'checklist-conferencia', nome: 'Checklist de Conferência', descricao: 'Conferir se chegou igual ao pedido', tipo: 'checklist', categoria: 'receber' },
-  { id: 'ateste-servico', nome: 'Atestado de Serviço', descricao: 'Atestar que serviço foi executado', tipo: 'word', categoria: 'receber' },
-  { id: 'controle-patrimonio', nome: 'Controle de Patrimônio', descricao: 'Registrar bens: móveis, equipamentos', tipo: 'excel', categoria: 'receber' },
-  { id: 'demonstrativo-execucao', nome: 'Demonstrativo', descricao: 'Resumo de tudo que foi gasto no período', tipo: 'excel', categoria: 'prestar', destaque: true },
-  { id: 'relacao-pagamentos', nome: 'Relação de Pagamentos', descricao: 'Lista todos os pagamentos por data', tipo: 'excel', categoria: 'prestar' },
-  { id: 'conciliacao-bancaria', nome: 'Conciliação Bancária', descricao: 'Conferir se extrato bate com registros', tipo: 'excel', categoria: 'prestar' },
-  { id: 'checklist-prestacao', nome: 'Checklist Final', descricao: 'Todos os documentos antes de enviar', tipo: 'checklist', categoria: 'prestar' },
-  { id: 'declaracao-parentes', nome: 'Declaração de Parentes', descricao: 'Não houve contratação de familiares', tipo: 'word', categoria: 'prestar' }
-];
-
-const TIPOS_ARQUIVO = {
+const TIPOS_ARQUIVO: Record<string, { icone: typeof FileSpreadsheet; nome: string; cor: string; extensao: string }> = {
   excel: { icone: FileSpreadsheet, nome: 'Excel', cor: 'text-emerald-600', extensao: '.xlsx' },
   word: { icone: FileText, nome: 'Word', cor: 'text-blue-600', extensao: '.docx' },
   checklist: { icone: CheckSquare, nome: 'Checklist', cor: 'text-amber-600', extensao: '.pdf' },
@@ -64,26 +32,30 @@ const TIPOS_ARQUIVO = {
 const ROTACOES = ['-rotate-1', 'rotate-1', '-rotate-2', 'rotate-2', 'rotate-0'];
 
 function PostIt({ 
-  ferramenta, 
+  tool, 
   index, 
   categoria 
 }: { 
-  ferramenta: Ferramenta; 
+  tool: Tool; 
   index: number;
   categoria: typeof CATEGORIAS[0];
 }) {
   const { toast } = useToast();
-  const tipoInfo = TIPOS_ARQUIVO[ferramenta.tipo];
+  const tipoInfo = TIPOS_ARQUIVO[tool.type] || TIPOS_ARQUIVO.pdf;
   const TipoIcone = tipoInfo.icone;
   const rotacao = ROTACOES[index % ROTACOES.length];
 
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toast({
-      title: "Download iniciado",
-      description: `Baixando ${ferramenta.nome}${tipoInfo.extensao}...`,
-      duration: 3000,
-    });
+    if (tool.downloadUrl) {
+      window.open(tool.downloadUrl, '_blank');
+    } else {
+      toast({
+        title: "Download iniciado",
+        description: `Baixando ${tool.title}${tipoInfo.extensao}...`,
+        duration: 3000,
+      });
+    }
   };
 
   return (
@@ -107,7 +79,7 @@ function PostIt({
           background: `linear-gradient(145deg, ${categoria.corFundo} 0%, white 100%)`
         }}
       >
-        {ferramenta.destaque && (
+        {tool.featured && (
           <Badge className="absolute top-2 right-2 bg-white/80 text-amber-700 border-0 text-[10px] shadow-sm">
             Essencial
           </Badge>
@@ -121,22 +93,22 @@ function PostIt({
         </div>
         
         <h3 className={cn("font-bold text-sm mb-1.5 leading-tight", categoria.corTexto)}>
-          {ferramenta.nome}
+          {tool.title}
         </h3>
         
         <p className="text-xs text-slate-600 leading-relaxed flex-1 mb-3">
-          {ferramenta.descricao}
+          {tool.description}
         </p>
         
         <Button 
           size="sm"
           variant="ghost"
           className={cn(
-            "w-full justify-center gap-1.5 text-xs h-8 bg-white/60 hover:bg-white/90",
+            "w-full justify-center gap-1.5 text-xs h-8 bg-white/60",
             categoria.corTexto
           )}
           onClick={handleDownload}
-          data-testid={`download-${ferramenta.id}`}
+          data-testid={`download-tool-${tool.id}`}
         >
           <Download className="w-3.5 h-3.5" />
           Baixar
@@ -146,7 +118,7 @@ function PostIt({
   );
 }
 
-function CategoriaSection({ categoria, ferramentas }: { categoria: typeof CATEGORIAS[0]; ferramentas: Ferramenta[] }) {
+function CategoriaSection({ categoria, ferramentas }: { categoria: typeof CATEGORIAS[0]; ferramentas: Tool[] }) {
   const Icon = categoria.icone;
   
   if (ferramentas.length === 0) return null;
@@ -168,10 +140,10 @@ function CategoriaSection({ categoria, ferramentas }: { categoria: typeof CATEGO
       </div>
       
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {ferramentas.map((ferramenta, index) => (
+        {ferramentas.map((tool, index) => (
           <PostIt 
-            key={ferramenta.id} 
-            ferramenta={ferramenta} 
+            key={tool.id} 
+            tool={tool} 
             index={index}
             categoria={categoria}
           />
@@ -184,13 +156,17 @@ function CategoriaSection({ categoria, ferramentas }: { categoria: typeof CATEGO
 export default function Ferramentas() {
   const [filtroTipo, setFiltroTipo] = useState<string | null>(null);
 
+  const { data: tools = [], isLoading } = useQuery<Tool[]>({
+    queryKey: ["/api/tools"],
+  });
+
   const ferramentasFiltradas = filtroTipo 
-    ? FERRAMENTAS.filter(f => f.tipo === filtroTipo)
-    : FERRAMENTAS;
+    ? tools.filter(f => f.type === filtroTipo)
+    : tools;
 
   const categoriasComFerramentas = CATEGORIAS.map(cat => ({
     ...cat,
-    ferramentas: ferramentasFiltradas.filter(f => f.categoria === cat.id)
+    ferramentas: ferramentasFiltradas.filter(f => f.category === cat.id)
   }));
 
   return (
@@ -210,7 +186,7 @@ export default function Ferramentas() {
                     Mural de Ferramentas
                   </h1>
                   <p className="text-muted-foreground">
-                    {FERRAMENTAS.length} modelos prontos pra baixar e usar
+                    {isLoading ? "Carregando..." : `${tools.length} modelos prontos pra baixar e usar`}
                   </p>
                 </div>
               </div>
@@ -260,18 +236,24 @@ export default function Ferramentas() {
           </div>
         </div>
 
-        <div 
-          className="py-8"
-          style={{
-            background: 'linear-gradient(to bottom, #f5f0e8 0%, #ebe6de 50%, #f5f0e8 100%)'
-          }}
-        >
-          <div className="container mx-auto px-4">
-            {categoriasComFerramentas.map((categoria) => (
-              <CategoriaSection key={categoria.id} categoria={categoria} ferramentas={categoria.ferramentas} />
-            ))}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
           </div>
-        </div>
+        ) : (
+          <div 
+            className="py-8"
+            style={{
+              background: 'linear-gradient(to bottom, #f5f0e8 0%, #ebe6de 50%, #f5f0e8 100%)'
+            }}
+          >
+            <div className="container mx-auto px-4">
+              {categoriasComFerramentas.map((categoria) => (
+                <CategoriaSection key={categoria.id} categoria={categoria} ferramentas={categoria.ferramentas} />
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="container mx-auto px-4 py-6">
           <p className="text-center text-sm text-muted-foreground flex items-center justify-center gap-2">

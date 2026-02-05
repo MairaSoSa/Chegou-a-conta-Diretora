@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { useTrilhaProgress } from "@/hooks/useTrilhaProgress";
@@ -6,39 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   CheckCircle2, Clock, ChevronRight, Play, RotateCcw,
-  Ship, Anchor, MapPin, BookOpen, Compass
+  Ship, Anchor, MapPin, BookOpen, Compass, Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-
-const UNIDADES = [
-  { id: 'U00', parte: 0, titulo: 'Boas-vindas: o mapa do rio', subtitulo: 'Entenda como usar a trilha', tempo: '10 min' },
-  { id: 'U01', parte: 0, titulo: 'Checklist de 30 dias', subtitulo: 'Organize a escola em um mês', tempo: '30 min' },
-  { id: 'U02', parte: 0, titulo: 'Pôster: Caminho do Dinheiro', subtitulo: 'Do pedido à prestação de contas', tempo: '15 min' },
-  { id: 'U03', parte: 1, titulo: 'Da cabaça ao carimbo', subtitulo: 'Por que prestamos contas', tempo: '20 min' },
-  { id: 'U04', parte: 1, titulo: 'O nascimento do orçamento', subtitulo: 'Planejar antes de gastar', tempo: '25 min' },
-  { id: 'U05', parte: 1, titulo: 'Transparência e confiança', subtitulo: 'O que a sociedade espera', tempo: '20 min' },
-  { id: 'U06', parte: 2, titulo: 'Do PPP ao PAF', subtitulo: 'Transforme o plano em ação', tempo: '30 min' },
-  { id: 'U07', parte: 2, titulo: 'Pesquisa de preços sem dor', subtitulo: '3 propostas, 0 dor de cabeça', tempo: '25 min' },
-  { id: 'U08', parte: 2, titulo: 'Rito mínimo para serviços', subtitulo: 'Serviço não é "qualquer coisa"', tempo: '25 min' },
-  { id: 'U09', parte: 2, titulo: 'Do pedido ao pagamento', subtitulo: 'A rotina completa', tempo: '30 min' },
-  { id: 'U10', parte: 2, titulo: 'Estoque e patrimônio', subtitulo: 'O que entra vira responsabilidade', tempo: '20 min' },
-  { id: 'U11', parte: 2, titulo: 'Rotina mensal', subtitulo: '15 minutos por mês', tempo: '20 min' },
-  { id: 'U12', parte: 2, titulo: 'Mapa de decisão', subtitulo: '"Quero comprar X, faço o quê?"', tempo: '25 min' },
-  { id: 'U13', parte: 2, titulo: 'Erros caros (e como evitar)', subtitulo: 'Armadilhas que custam caro', tempo: '25 min' },
-  { id: 'U14', parte: 3, titulo: 'Documentar é amar o futuro', subtitulo: 'A pasta da história', tempo: '25 min' },
-  { id: 'U15', parte: 3, titulo: 'Relatórios que alguém quer ler', subtitulo: '1 página trimestral', tempo: '20 min' },
-  { id: 'U16', parte: 3, titulo: 'Quando algo saiu torto', subtitulo: 'Correção e aprendizado', tempo: '25 min' },
-  { id: 'U17', parte: 4, titulo: 'Conselho Escolar', subtitulo: 'Controle social com pé no chão', tempo: '30 min' },
-  { id: 'U18', parte: 4, titulo: 'Casos reais', subtitulo: 'Merenda, transporte, reparos', tempo: '25 min' },
-  { id: 'U19', parte: 4, titulo: 'Exceções & emergências', subtitulo: 'Cano estourado, geladeira quebrou', tempo: '20 min' },
-  { id: 'U20', parte: 4, titulo: 'Cultura de integridade', subtitulo: 'Conflito de interesse na prática', tempo: '20 min' },
-  { id: 'U21', parte: 5, titulo: 'Panorama das fontes federais', subtitulo: 'PDDE, PNAE, PNATE e mais', tempo: '25 min' },
-  { id: 'U22', parte: 5, titulo: 'Onde procurar (e em que ordem)', subtitulo: 'SEDUC, portais, diários oficiais', tempo: '20 min' },
-  { id: 'U23', parte: 5, titulo: 'Cartões dos Programas', subtitulo: 'Pode, não pode, dica', tempo: '30 min' },
-  { id: 'U24', parte: 5, titulo: 'Como aderir a programas', subtitulo: 'Da adesão à prestação', tempo: '25 min' },
-];
+import type { TrilhaUnit } from "@shared/schema";
 
 const PARTES = [
   { id: 0, nome: 'Antes de Começar', icone: Compass, cor: 'amber' },
@@ -76,7 +50,7 @@ function UnidadeCard({
   corParte,
   onComplete 
 }: { 
-  unidade: typeof UNIDADES[0];
+  unidade: TrilhaUnit;
   index: number;
   isCompleted: boolean;
   isCurrent: boolean;
@@ -103,7 +77,7 @@ function UnidadeCard({
         </div>
       )}
       
-      <Link href={`/trilha/${unidade.id}`}>
+      <Link href={`/trilha/${unidade.unitId}`}>
         <Card 
           className={cn(
             "group cursor-pointer transition-all duration-300 hover:shadow-md border-2",
@@ -111,7 +85,7 @@ function UnidadeCard({
             isCurrent && !isCompleted && "border-emerald-400 ring-2 ring-emerald-200 shadow-lg bg-gradient-to-r from-emerald-50/50 to-transparent",
             !isCompleted && !isCurrent && "border-slate-200 hover:border-slate-300"
           )}
-          data-testid={`unidade-${unidade.id}`}
+          data-testid={`unidade-${unidade.unitId}`}
         >
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
@@ -131,11 +105,11 @@ function UnidadeCard({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <Badge variant="outline" className={cn("text-xs", cores.badge)}>
-                    {unidade.id}
+                    {unidade.unitId}
                   </Badge>
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    {unidade.tempo}
+                    {unidade.duration}
                   </span>
                   {isCurrent && !isCompleted && (
                     <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">
@@ -145,10 +119,10 @@ function UnidadeCard({
                   )}
                 </div>
                 <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                  {unidade.titulo}
+                  {unidade.title}
                 </h3>
                 <p className="text-sm text-muted-foreground line-clamp-1">
-                  {unidade.subtitulo}
+                  {unidade.subtitle}
                 </p>
               </div>
               
@@ -163,7 +137,7 @@ function UnidadeCard({
                       onComplete();
                     }}
                     className="text-xs text-muted-foreground hover:text-primary hidden sm:flex"
-                    data-testid={`concluir-${unidade.id}`}
+                    data-testid={`concluir-${unidade.unitId}`}
                   >
                     Concluir
                   </Button>
@@ -187,7 +161,7 @@ function ParteSection({
   globalIndex 
 }: { 
   parte: typeof PARTES[0];
-  unidades: typeof UNIDADES;
+  unidades: TrilhaUnit[];
   progress: { currentUnit: string };
   isUnitCompleted: (id: string) => boolean;
   completeUnit: (id: string) => void;
@@ -195,7 +169,7 @@ function ParteSection({
 }) {
   const Icon = parte.icone;
   const cores = COR_CLASSES[parte.cor];
-  const completedInPart = unidades.filter(u => isUnitCompleted(u.id)).length;
+  const completedInPart = unidades.filter(u => isUnitCompleted(u.unitId)).length;
   
   return (
     <div className="mb-10">
@@ -241,7 +215,7 @@ function ParteSection({
           "w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg relative z-10",
           completedInPart === unidades.length ? "bg-primary text-white" : cores.badge
         )}>
-          {Math.round((completedInPart / unidades.length) * 100)}%
+          {unidades.length > 0 ? Math.round((completedInPart / unidades.length) * 100) : 0}%
         </div>
       </div>
       
@@ -257,13 +231,13 @@ function ParteSection({
         
         {unidades.map((unidade, i) => (
           <UnidadeCard
-            key={unidade.id}
+            key={unidade.unitId}
             unidade={unidade}
             index={globalIndex + i}
-            isCompleted={isUnitCompleted(unidade.id)}
-            isCurrent={progress.currentUnit === unidade.id}
+            isCompleted={isUnitCompleted(unidade.unitId)}
+            isCurrent={progress.currentUnit === unidade.unitId}
             corParte={parte.cor}
-            onComplete={() => completeUnit(unidade.id)}
+            onComplete={() => completeUnit(unidade.unitId)}
           />
         ))}
       </div>
@@ -274,7 +248,12 @@ function ParteSection({
 export default function Trilha() {
   const { progress, completedCount, totalUnits, completeUnit, isUnitCompleted, resetProgress } = useTrilhaProgress();
   
-  const progressPercent = Math.round((completedCount / totalUnits) * 100);
+  const { data: units = [], isLoading } = useQuery<TrilhaUnit[]>({
+    queryKey: ["/api/trilha"],
+  });
+
+  const unitCount = units.length || totalUnits;
+  const progressPercent = unitCount > 0 ? Math.round((completedCount / unitCount) * 100) : 0;
   
   let globalIndex = 0;
 
@@ -307,7 +286,7 @@ export default function Trilha() {
                         Navegue pelo Rio
                       </h1>
                       <p className="text-sm text-muted-foreground">
-                        {completedCount} de {totalUnits} paradas visitadas
+                        {completedCount} de {unitCount} paradas visitadas
                       </p>
                     </div>
                   </div>
@@ -349,22 +328,31 @@ export default function Trilha() {
 
         <div className="container mx-auto px-4 py-10">
           <div className="max-w-4xl mx-auto">
-            {PARTES.map((parte) => {
-              const unidadesDaParte = UNIDADES.filter(u => u.parte === parte.id);
-              const section = (
-                <ParteSection
-                  key={parte.id}
-                  parte={parte}
-                  unidades={unidadesDaParte}
-                  progress={progress}
-                  isUnitCompleted={isUnitCompleted}
-                  completeUnit={completeUnit}
-                  globalIndex={globalIndex}
-                />
-              );
-              globalIndex += unidadesDaParte.length;
-              return section;
-            })}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+              </div>
+            ) : (
+              <>
+                {PARTES.map((parte) => {
+                  const unidadesDaParte = units.filter(u => u.part === parte.id);
+                  if (unidadesDaParte.length === 0) return null;
+                  const section = (
+                    <ParteSection
+                      key={parte.id}
+                      parte={parte}
+                      unidades={unidadesDaParte}
+                      progress={progress}
+                      isUnitCompleted={isUnitCompleted}
+                      completeUnit={completeUnit}
+                      globalIndex={globalIndex}
+                    />
+                  );
+                  globalIndex += unidadesDaParte.length;
+                  return section;
+                })}
+              </>
+            )}
             
             <div className="mt-12 text-center p-8 rounded-2xl bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 relative overflow-hidden">
               <svg className="absolute inset-0 w-full h-full opacity-20" preserveAspectRatio="none">

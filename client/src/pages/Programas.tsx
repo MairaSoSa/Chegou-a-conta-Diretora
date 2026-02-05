@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,176 +15,32 @@ import {
   Banknote, Building2, FileCheck, Clock, Folder,
   Search, Scale, Receipt, Handshake, ShieldCheck,
   Percent, ClipboardList, PiggyBank, Gavel, CalendarDays,
-  FileSignature, Package, Truck, CircleDollarSign, Hash
+  FileSignature, Package, Truck, CircleDollarSign, Hash,
+  Loader2, type LucideIcon
 } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import type { GlossaryItem } from "@shared/schema";
 
-const GLOSSARIO = [
-  {
-    termo: 'Adesão',
-    explicacao: 'Quando a escola "se inscreve" pra receber um dinheiro. Nem toda verba cai automaticamente — pra algumas, você precisa fazer a adesão no sistema do FNDE.',
-    icone: <Handshake className="w-5 h-5" />,
-    letra: 'A'
-  },
-  {
-    termo: 'APM',
-    explicacao: 'Associação de Pais e Mestres. É uma das formas de UEx (Unidade Executora) que pode receber o dinheiro em nome da escola.',
-    icone: <Users className="w-5 h-5" />,
-    letra: 'A'
-  },
-  {
-    termo: 'Ata',
-    explicacao: 'Documento que registra o que foi decidido numa reunião. Toda vez que o Conselho se reúne pra aprovar uma compra, precisa fazer uma ata.',
-    icone: <FileText className="w-5 h-5" />,
-    letra: 'A'
-  },
-  {
-    termo: 'Capital',
-    explicacao: 'Dinheiro pra comprar coisas que duram: móveis, computadores, ventiladores. São bens permanentes que ficam na escola por anos.',
-    icone: <Laptop className="w-5 h-5" />,
-    letra: 'C'
-  },
-  {
-    termo: 'Censo Escolar',
-    explicacao: 'Pesquisa anual obrigatória que toda escola preenche. Os números do Censo definem quanto dinheiro sua escola vai receber — por isso é tão importante preencher direitinho!',
-    icone: <ClipboardList className="w-5 h-5" />,
-    letra: 'C'
-  },
-  {
-    termo: 'CNPJ',
-    explicacao: 'Cadastro Nacional de Pessoa Jurídica. Sua UEx (APM ou Conselho Escolar) precisa ter um CNPJ pra poder receber o dinheiro na conta bancária.',
-    icone: <Hash className="w-5 h-5" />,
-    letra: 'C'
-  },
-  {
-    termo: 'Conselho Escolar',
-    explicacao: 'Grupo formado por pais, professores, funcionários e alunos que decide junto com a diretora como usar o dinheiro da escola. Todas as compras precisam da aprovação deles.',
-    icone: <Users className="w-5 h-5" />,
-    letra: 'C'
-  },
-  {
-    termo: 'Custeio',
-    explicacao: 'Dinheiro pra gastar com coisas do dia a dia: material de limpeza, papel, caneta, pequenos reparos. São coisas que "acabam" ou "gastam".',
-    icone: <Banknote className="w-5 h-5" />,
-    letra: 'C'
-  },
-  {
-    termo: 'Empenho',
-    explicacao: 'Quando o governo "reserva" o dinheiro pra mandar pra escola. É como uma promessa: "esse valor vai ser liberado pra vocês".',
-    icone: <PiggyBank className="w-5 h-5" />,
-    letra: 'E'
-  },
-  {
-    termo: 'FNDE',
-    explicacao: 'Fundo Nacional de Desenvolvimento da Educação. É o órgão do governo federal que manda o dinheiro pra escola. Pense nele como o "banco" que libera as verbas.',
-    icone: <Building2 className="w-5 h-5" />,
-    letra: 'F'
-  },
-  {
-    termo: 'IDEB',
-    explicacao: 'Índice de Desenvolvimento da Educação Básica. É a "nota" da sua escola, calculada com base na aprovação dos alunos e nas provas do Saeb. Vai de 0 a 10.',
-    icone: <GraduationCap className="w-5 h-5" />,
-    letra: 'I'
-  },
-  {
-    termo: 'INEP',
-    explicacao: 'Instituto Nacional de Estudos e Pesquisas Educacionais. É quem faz o Censo Escolar e calcula o IDEB. Cada escola tem um código INEP de 8 números.',
-    icone: <School className="w-5 h-5" />,
-    letra: 'I'
-  },
-  {
-    termo: 'Licitação',
-    explicacao: 'Processo de compra que segue regras públicas pra garantir o melhor preço. Pra compras com dinheiro do PDDE, em geral basta pesquisa de preço (3 orçamentos).',
-    icone: <Gavel className="w-5 h-5" />,
-    letra: 'L'
-  },
-  {
-    termo: 'Nota Fiscal',
-    explicacao: 'Documento que comprova a compra. Toda compra feita com dinheiro público PRECISA de nota fiscal — sem ela, a prestação de contas não é aprovada.',
-    icone: <Receipt className="w-5 h-5" />,
-    letra: 'N'
-  },
-  {
-    termo: 'PAR',
-    explicacao: 'Plano de Ações Articuladas. É o plano que o município faz junto com o MEC. Algumas verbas dependem do PAR estar atualizado.',
-    icone: <ClipboardList className="w-5 h-5" />,
-    letra: 'P'
-  },
-  {
-    termo: 'PDDEWeb',
-    explicacao: 'Sistema online do FNDE onde você faz a prestação de contas do PDDE. É pelo site pddeinterativo.mec.gov.br.',
-    icone: <Laptop className="w-5 h-5" />,
-    letra: 'P'
-  },
-  {
-    termo: 'Pesquisa de Preço',
-    explicacao: 'Antes de comprar, você precisa pegar pelo menos 3 orçamentos de fornecedores diferentes. Isso prova que você escolheu o melhor preço.',
-    icone: <Search className="w-5 h-5" />,
-    letra: 'P'
-  },
-  {
-    termo: 'Plano de Aplicação',
-    explicacao: 'Documento onde você lista TUDO que pretende comprar com o dinheiro recebido. É como uma "lista de compras" aprovada pelo Conselho Escolar.',
-    icone: <FileSignature className="w-5 h-5" />,
-    letra: 'P'
-  },
-  {
-    termo: 'Prestação de Contas',
-    explicacao: 'Documentos que você manda pro governo mostrando como o dinheiro foi usado. É como um "recibo" de tudo que comprou e pagou.',
-    icone: <FileCheck className="w-5 h-5" />,
-    letra: 'P'
-  },
-  {
-    termo: 'Pregão',
-    explicacao: 'Tipo de licitação. Pra valores maiores, a compra precisa ser por pregão. No PDDE básico, geralmente não precisa — basta a pesquisa de preço.',
-    icone: <Gavel className="w-5 h-5" />,
-    letra: 'P'
-  },
-  {
-    termo: 'Repasse',
-    explicacao: 'Quando o dinheiro sai do governo e cai na conta da escola. Também chamado de "transferência" ou "liberação".',
-    icone: <Coins className="w-5 h-5" />,
-    letra: 'R'
-  },
-  {
-    termo: 'Saldo',
-    explicacao: 'Dinheiro que sobrou na conta e não foi usado. Atenção: saldo alto pode significar que a escola não está usando o recurso — e isso pode gerar problemas na prestação de contas.',
-    icone: <CircleDollarSign className="w-5 h-5" />,
-    letra: 'S'
-  },
-  {
-    termo: 'SIGPC',
-    explicacao: 'Sistema de Gestão de Prestação de Contas. É o sistema online onde você envia a prestação de contas do PDDE pro FNDE.',
-    icone: <Laptop className="w-5 h-5" />,
-    letra: 'S'
-  },
-  {
-    termo: 'TCE',
-    explicacao: 'Tribunal de Contas do Estado. É o órgão que fiscaliza se o dinheiro público está sendo usado direitinho. Pode auditar as contas da escola.',
-    icone: <ShieldCheck className="w-5 h-5" />,
-    letra: 'T'
-  },
-  {
-    termo: 'Tombamento',
-    explicacao: 'Registrar os bens comprados com dinheiro público. Todo equipamento (computador, ventilador etc.) precisa receber uma etiqueta com número de patrimônio.',
-    icone: <Package className="w-5 h-5" />,
-    letra: 'T'
-  },
-  {
-    termo: 'UEx',
-    explicacao: 'Unidade Executora. É a entidade que recebe e gerencia o dinheiro em nome da escola. Geralmente é a APM (Associação de Pais e Mestres) ou o Conselho Escolar.',
-    icone: <Users className="w-5 h-5" />,
-    letra: 'U'
-  },
-  {
-    termo: 'Verba de Custeio e Capital',
-    explicacao: 'O dinheiro do PDDE vem dividido: parte é pra custeio (material do dia a dia) e parte é pra capital (bens permanentes). Você NÃO pode misturar.',
-    icone: <Scale className="w-5 h-5" />,
-    letra: 'V'
+const ICON_MAP: Record<string, LucideIcon> = {
+  Handshake, Users, FileText, Laptop, ClipboardList, Hash,
+  Banknote, PiggyBank, Building2, GraduationCap, School,
+  Gavel, Receipt, Search, FileSignature, FileCheck,
+  Coins, CircleDollarSign, ShieldCheck, Package, Scale,
+  BookOpen, BookText, BookMarked, Calculator, Sparkles,
+  Utensils, Bus, Accessibility, Palette, TreePine,
+  Percent, Truck, CalendarDays, Folder, Clock,
+  AlertCircle, CheckCircle2, HelpCircle, Landmark,
+};
+
+function renderIcon(iconName: string, className: string = "w-5 h-5") {
+  const IconComponent = ICON_MAP[iconName];
+  if (IconComponent) {
+    return <IconComponent className={className} />;
   }
-];
+  return <BookText className={className} />;
+}
 
 interface Programa {
   id: string;
@@ -293,14 +150,27 @@ function GlossarioSection() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeLetra, setActiveLetra] = useState<string | null>(null);
 
+  const { data: glossaryItems = [], isLoading } = useQuery<GlossaryItem[]>({
+    queryKey: ["/api/glossary"],
+  });
+
+  const glossario = useMemo(() => {
+    return glossaryItems.map(item => ({
+      termo: item.term,
+      explicacao: item.explanation,
+      icone: item.iconName || 'BookText',
+      letra: item.letter,
+    }));
+  }, [glossaryItems]);
+
   const letrasDisponiveis = useMemo(() => {
-    const letraSet = new Set(GLOSSARIO.map(g => g.letra));
+    const letraSet = new Set(glossario.map(g => g.letra));
     const letras = Array.from(letraSet);
     return letras.sort();
-  }, []);
+  }, [glossario]);
 
   const termosFiltrados = useMemo(() => {
-    let filtered = GLOSSARIO;
+    let filtered = glossario;
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(g =>
@@ -312,10 +182,10 @@ function GlossarioSection() {
       filtered = filtered.filter(g => g.letra === activeLetra);
     }
     return filtered;
-  }, [searchTerm, activeLetra]);
+  }, [glossario, searchTerm, activeLetra]);
 
   const termosAgrupados = useMemo(() => {
-    const grupos: Record<string, typeof GLOSSARIO> = {};
+    const grupos: Record<string, typeof glossario> = {};
     termosFiltrados.forEach(g => {
       if (!grupos[g.letra]) grupos[g.letra] = [];
       grupos[g.letra].push(g);
@@ -324,7 +194,15 @@ function GlossarioSection() {
   }, [termosFiltrados]);
 
   const isFiltering = searchTerm.trim() !== '' || activeLetra !== null;
-  const termosVisiveis = isFiltering ? termosFiltrados : (expanded ? GLOSSARIO : GLOSSARIO.slice(0, 6));
+  const termosVisiveis = isFiltering ? termosFiltrados : (expanded ? glossario : glossario.slice(0, 6));
+
+  if (isLoading) {
+    return (
+      <div className="bg-gradient-to-br from-emerald-50/80 to-green-50/50 rounded-2xl border border-emerald-200/50 p-12 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gradient-to-br from-emerald-50/80 to-green-50/50 rounded-2xl border border-emerald-200/50 overflow-hidden">
@@ -336,7 +214,7 @@ function GlossarioSection() {
           <div>
             <h2 className="font-bold text-xl text-emerald-900">Glossário: Palavras que você vai encontrar</h2>
             <p className="text-sm text-emerald-700">
-              {GLOSSARIO.length} termos explicados em linguagem simples
+              {glossario.length} termos explicados em linguagem simples
             </p>
           </div>
         </div>
@@ -412,7 +290,7 @@ function GlossarioSection() {
                   >
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 text-emerald-600">
-                        {item.icone}
+                        {renderIcon(item.icone)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-emerald-900 mb-1">{item.termo}</h4>
@@ -436,7 +314,7 @@ function GlossarioSection() {
               >
                 <div className="flex items-start gap-3">
                   <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 text-emerald-600">
-                    {item.icone}
+                    {renderIcon(item.icone)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-emerald-900 mb-1">{item.termo}</h4>
@@ -466,7 +344,7 @@ function GlossarioSection() {
             ) : (
               <>
                 <ChevronDown className="w-4 h-4 mr-2" />
-                Ver todos os {GLOSSARIO.length} termos
+                Ver todos os {glossario.length} termos
               </>
             )}
           </Button>

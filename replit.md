@@ -9,8 +9,18 @@ A web application designed to help Brazilian school principals manage public sch
 - **Programs Library**: Documentation for government education funding programs
 - **Tools (Ferramentas)**: Templates, checklists, and spreadsheets organized by action verbs
 - **AI Chat**: Question-answering assistant for financial management queries
+- **Admin Panel**: Password-protected content management system at /admin
 
 The interface uses a warm, nature-inspired "Ghibli/territorial" visual style with earthy colors and hand-drawn aesthetics.
+
+## Recent Changes
+
+### Admin Panel & CMS (Feb 2026)
+- Added admin panel at `/admin` with password authentication (Bearer token, default password: "admin2024")
+- Full CRUD operations for Glossary, Tools, and Trilha content types
+- Database seeding on server startup with 27 glossary terms, 22 tools, and 25 learning trail units
+- All frontend pages now fetch content from the database API instead of hardcoded arrays
+- Admin routes protected under `/api/admin/*` prefix
 
 ## User Preferences
 
@@ -29,14 +39,27 @@ Preferred communication style: Simple, everyday language.
 ### Backend Architecture
 - **Runtime**: Node.js with Express 5
 - **Language**: TypeScript with ESM modules
-- **API Design**: REST endpoints defined in `shared/routes.ts` with Zod validation
+- **API Design**: REST endpoints defined in `server/routes.ts` with Zod validation
 - **Build**: Custom esbuild script bundles server; Vite builds client
+- **Admin Auth**: Bearer token authentication via `ADMIN_PASSWORD` env var (defaults to "admin2024")
 
 ### Data Storage
 - **Database**: PostgreSQL via Drizzle ORM
 - **Schema Location**: `shared/schema.ts` defines all tables
 - **Migrations**: Drizzle Kit handles schema pushes (`db:push`)
-- **Tables**: schools, programs, program_details, tools, conversations, messages
+- **Tables**: schools, programs, program_details, tools, glossary, trilha_units, conversations, messages
+- **Seeding**: `server/seed.ts` auto-seeds on startup if tables are empty
+
+### Content Management
+- **Glossary**: Terms with definitions, letter grouping, and icon names (Lucide icon names stored as strings)
+- **Tools**: Documents/templates with category, type, featured flag, and sort order
+- **Trilha Units**: Learning units with JSON sections (text, checklist, tips, practice) and materials
+- **Icon Rendering**: Frontend uses ICON_MAP to convert icon name strings to Lucide React components
+
+### API Routes
+- **Public**: `/api/glossary`, `/api/tools`, `/api/trilha`, `/api/trilha/:unitId`
+- **Admin** (requires Bearer token): `/api/admin/glossary`, `/api/admin/tools`, `/api/admin/trilha` (CRUD)
+- **Auth**: `/api/admin/login` (POST with password)
 
 ### AI Integration
 - **Provider**: OpenAI API (configured via environment variables)
@@ -48,11 +71,15 @@ Preferred communication style: Simple, everyday language.
 client/           # React frontend
   src/
     components/   # Reusable UI components
-    pages/        # Route pages
+    pages/        # Route pages (including Admin.tsx)
     hooks/        # Custom React hooks
 server/           # Express backend
+  seed.ts         # Database seeding logic
+  storage.ts      # Storage interface with CRUD operations
+  routes.ts       # API routes (public + admin)
   replit_integrations/  # AI chat and audio modules
 shared/           # Shared types, schemas, and API contracts
+  schema.ts       # Drizzle ORM schema definitions
 ```
 
 ## External Dependencies

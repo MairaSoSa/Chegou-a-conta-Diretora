@@ -1,14 +1,13 @@
 import { z } from 'zod';
-import { insertSchoolSchema, insertProgramSchema, insertToolSchema, schools, programs, tools, programDetails } from './schema';
+import { insertSchoolSchema, insertProgramSchema, insertToolSchema, insertGlossarySchema, insertTrilhaUnitSchema, schools, programs, tools, programDetails, glossary, trilhaUnits } from './schema';
 
-// === API CONTRACT ===
 export const api = {
   schools: {
     search: {
       method: 'GET' as const,
       path: '/api/schools',
       input: z.object({
-        q: z.string().optional(), // Search by INEP, name, city
+        q: z.string().optional(),
       }),
       responses: {
         200: z.array(z.custom<typeof schools.$inferSelect>()),
@@ -52,7 +51,32 @@ export const api = {
       },
     },
   },
-  // Chat is handled by the integration routes registerChatRoutes
+  glossary: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/glossary',
+      responses: {
+        200: z.array(z.custom<typeof glossary.$inferSelect>()),
+      },
+    },
+  },
+  trilha: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/trilha',
+      responses: {
+        200: z.array(z.custom<typeof trilhaUnits.$inferSelect>()),
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/trilha/:unitId',
+      responses: {
+        200: z.custom<typeof trilhaUnits.$inferSelect>(),
+        404: z.object({ message: z.string() }),
+      },
+    },
+  },
 };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {

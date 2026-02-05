@@ -13,6 +13,7 @@ import Programas from "@/pages/Programas";
 import Ferramentas from "@/pages/Ferramentas";
 import Chat from "@/pages/Chat";
 import QuemSomos from "@/pages/QuemSomos";
+import Admin from "@/pages/Admin";
 
 function Router() {
   return (
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/ferramentas" component={Ferramentas} />
       <Route path="/chat" component={Chat} />
       <Route path="/quem-somos" component={QuemSomos} />
+      <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
   );

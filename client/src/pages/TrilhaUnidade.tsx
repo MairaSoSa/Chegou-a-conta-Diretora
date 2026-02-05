@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { useTrilhaProgress } from "@/hooks/useTrilhaProgress";
@@ -11,218 +12,11 @@ import { Barquinho } from "@/components/Barquinho";
 import { 
   CheckCircle2, ChevronLeft, ChevronRight, Clock, 
   FileText, Download, MapPin, ListChecks,
-  Lightbulb, BookOpen, Sparkles, Anchor, Ship, Paperclip
+  Lightbulb, BookOpen, Sparkles, Anchor, Ship, Paperclip, Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-
-const UNIDADES_CONTEUDO: Record<string, {
-  id: string;
-  titulo: string;
-  subtitulo: string;
-  tempo: string;
-  intro: string;
-  secoes: Array<{
-    tipo: 'texto' | 'checklist' | 'modelo' | 'dica' | 'pratica';
-    titulo: string;
-    conteudo: string | string[];
-  }>;
-  materiais?: Array<{
-    nome: string;
-    descricao: string;
-    tipo: 'pdf' | 'planilha' | 'modelo';
-  }>;
-  anterior?: string;
-  proximo?: string;
-}> = {
-  'U00': {
-    id: 'U00',
-    titulo: 'Boas-vindas: o mapa do rio',
-    subtitulo: 'Entenda como usar a trilha de aprendizagem',
-    tempo: '10 min',
-    intro: 'Bem-vinda ao Mapa do Rio! Aqui você vai aprender tudo sobre gestão de recursos da escola, navegando de trapiche em trapiche. Cada trapiche é uma parada pra você aprender algo novo e levar conhecimento pro seu dia a dia na escola.',
-    secoes: [
-      {
-        tipo: 'texto',
-        titulo: 'Como navegar pelo mapa',
-        conteudo: 'O mapa mostra todos os trapiches (unidades) que você vai visitar ao longo da sua jornada de aprendizado. O barquinho mostra onde você está agora. Quando terminar um trapiche, o barquinho navega pro próximo automaticamente!'
-      },
-      {
-        tipo: 'dica',
-        titulo: 'Seu progresso é salvo automaticamente',
-        conteudo: 'Não se preocupe em perder onde parou. O sistema guarda seu progresso direitinho, então você pode fechar o navegador e voltar quando quiser que tudo vai estar lá esperando por você.'
-      },
-      {
-        tipo: 'texto',
-        titulo: 'O que você vai encontrar em cada trapiche',
-        conteudo: 'Ao longo da trilha você vai encontrar diferentes tipos de conteúdo: textos explicando os conceitos de forma simples, checklists pra você seguir passo a passo, modelos prontos pra baixar e usar na escola, e dicas práticas do dia a dia.'
-      },
-      {
-        tipo: 'pratica',
-        titulo: 'Mãos à obra!',
-        conteudo: 'Ao final de cada unidade, marque como concluída pra avançar no mapa. Você pode voltar a qualquer trapiche depois pra revisar o conteúdo sempre que precisar!'
-      }
-    ],
-    materiais: [
-      { nome: 'Guia de Navegação', descricao: 'PDF explicando como usar a plataforma', tipo: 'pdf' }
-    ],
-    proximo: 'U01'
-  },
-  'U01': {
-    id: 'U01',
-    titulo: 'Checklist de 30 dias (Piloto)',
-    subtitulo: 'Organize a gestão financeira da escola em um mês',
-    tempo: '30 min',
-    intro: 'Nos primeiros 30 dias como gestora, você vai organizar a casa! Este checklist te guia semana a semana pra criar uma rotina que funciona de verdade. Não precisa fazer tudo de uma vez - vá no seu ritmo.',
-    secoes: [
-      {
-        tipo: 'texto',
-        titulo: 'Por que organizar nos primeiros 30 dias?',
-        conteudo: 'O primeiro mês é fundamental pra entender como as coisas funcionam na escola. É nesse período que você vai conhecer os programas, os documentos e as pessoas que fazem a gestão financeira acontecer. Organizando tudo desde o início, você evita problemas lá na frente.'
-      },
-      {
-        tipo: 'checklist',
-        titulo: 'Semana 1 - Conhecer o terreno',
-        conteudo: [
-          'Levantar todos os programas que a escola participa (PDDE, PNAE, PNATE)',
-          'Verificar se há prestações de contas pendentes de anos anteriores',
-          'Localizar documentos importantes (atas, notas fiscais, extratos bancários)',
-          'Conhecer os membros do Conselho Escolar e suas funções'
-        ]
-      },
-      {
-        tipo: 'checklist',
-        titulo: 'Semana 2 - Organizar os documentos',
-        conteudo: [
-          'Criar uma pasta física para cada programa (PDDE, PNAE, etc)',
-          'Criar pasta digital no computador espelhando a organização física',
-          'Padronizar nomes de arquivos (ex: 2024_PDDE_NF001_material_escolar)',
-          'Separar documentos por ano para facilitar a busca'
-        ]
-      },
-      {
-        tipo: 'checklist',
-        titulo: 'Semana 3 - Estabelecer rotinas',
-        conteudo: [
-          'Definir um dia fixo da semana para verificar extratos bancários',
-          'Agendar reunião mensal do Conselho Escolar no calendário',
-          'Criar checklist de conferência de notas fiscais antes de pagar',
-          'Definir quem é responsável por cada tarefa financeira'
-        ]
-      },
-      {
-        tipo: 'checklist',
-        titulo: 'Semana 4 - Consolidar e avaliar',
-        conteudo: [
-          'Fazer primeira reunião do Conselho com a nova rotina estabelecida',
-          'Revisar o que funcionou bem e o que precisa de ajuste',
-          'Documentar todas as decisões tomadas em ata',
-          'Planejar as ações do próximo mês com base no aprendizado'
-        ]
-      },
-      {
-        tipo: 'dica',
-        titulo: 'Dica de ouro',
-        conteudo: 'Não tente fazer tudo sozinha! Envolva a equipe e o Conselho Escolar desde o início. Gestão financeira é trabalho em equipe e a transparência é sua maior aliada.'
-      }
-    ],
-    materiais: [
-      { nome: 'Modelo de Agenda de Reunião', descricao: 'Pauta pronta pra reunião do Conselho Escolar', tipo: 'modelo' },
-      { nome: 'Planilha de Controle Mensal', descricao: 'Acompanhe receitas e despesas de cada programa', tipo: 'planilha' },
-      { nome: 'Lista de Padronizações', descricao: 'Sugestões de nomes pra arquivos e pastas', tipo: 'pdf' }
-    ],
-    anterior: 'U00',
-    proximo: 'U02'
-  },
-  'U02': {
-    id: 'U02',
-    titulo: 'Pôster: Caminho do Dinheiro',
-    subtitulo: 'Do pedido até a prestação de contas - as 8 etapas',
-    tempo: '15 min',
-    intro: 'Entenda o caminho completo que o dinheiro faz: desde quando você decide comprar algo até prestar contas pro governo. São 8 etapas simples que, quando seguidas direitinho, garantem uma gestão transparente e sem problemas.',
-    secoes: [
-      {
-        tipo: 'texto',
-        titulo: 'Etapa 1: O Pedido',
-        conteudo: 'Tudo começa com alguém identificando uma necessidade. Pode ser material escolar, serviço de manutenção, ou reparo urgente. O importante é que o pedido esteja por escrito, explicando o que precisa e por quê. Isso evita compras por impulso e garante que o dinheiro seja usado pro que realmente importa.'
-      },
-      {
-        tipo: 'texto',
-        titulo: 'Etapa 2: Pesquisa de Preços',
-        conteudo: 'Antes de comprar qualquer coisa, pesquise pelo menos 3 preços diferentes de fornecedores. Anote tudo: nome da loja, valor, condições de pagamento. Isso garante que você está pagando um preço justo e mostra transparência na hora de prestar contas.'
-      },
-      {
-        tipo: 'texto',
-        titulo: 'Etapa 3: Autorização do Conselho',
-        conteudo: 'O Conselho Escolar precisa aprovar a compra antes de você gastar. Apresente o pedido, mostre a pesquisa de preços e deixe o grupo decidir. Registre tudo em ata! Essa é uma das etapas mais importantes pra garantir que a decisão foi coletiva.'
-      },
-      {
-        tipo: 'texto',
-        titulo: 'Etapa 4: Compra ou Contratação',
-        conteudo: 'Com a aprovação do Conselho, faça a compra ou contrate o serviço. Guarde todos os comprovantes: orçamentos, e-mails, conversas por mensagem. Quanto mais documentação, melhor!'
-      },
-      {
-        tipo: 'texto',
-        titulo: 'Etapa 5: Recebimento e Conferência',
-        conteudo: 'Quando o material chegar ou o serviço for executado, confira tudo com calma. O que foi entregue é exatamente o que foi pedido? A quantidade está certa? A qualidade é boa? Só assine o recebimento depois de conferir.'
-      },
-      {
-        tipo: 'texto',
-        titulo: 'Etapa 6: Nota Fiscal Completa',
-        conteudo: 'A nota fiscal precisa estar completa e correta: nome da escola, CNPJ, descrição detalhada do que foi comprado, valores unitários e totais. Uma nota fiscal incompleta pode dar problema na prestação de contas!'
-      },
-      {
-        tipo: 'texto',
-        titulo: 'Etapa 7: Pagamento',
-        conteudo: 'Pague somente DEPOIS de receber o material ou serviço. Nunca pague antes! O pagamento deve ser feito diretamente da conta do programa (PDDE, PNAE, etc) para a conta do fornecedor. Nada de pagar em dinheiro vivo!'
-      },
-      {
-        tipo: 'texto',
-        titulo: 'Etapa 8: Arquivo e Prestação de Contas',
-        conteudo: 'Guarde todos os documentos organizados na pasta do programa. Quando chegar a hora de prestar contas, você vai precisar de tudo: pedido, pesquisa de preços, ata, nota fiscal, comprovante de pagamento. Com tudo organizado, a prestação de contas fica muito mais fácil!'
-      },
-      {
-        tipo: 'pratica',
-        titulo: 'Coloque na parede!',
-        conteudo: 'Imprima o pôster do Caminho do Dinheiro e cole num lugar visível da secretaria. Toda vez que for fazer uma compra, siga as 8 etapas. Com o tempo, isso vira automático!'
-      }
-    ],
-    materiais: [
-      { nome: 'Pôster Caminho do Dinheiro', descricao: 'Versão pra imprimir e colar na parede', tipo: 'pdf' },
-      { nome: 'Checklist de Conferência', descricao: 'Lista pra conferir cada etapa antes de pagar', tipo: 'modelo' }
-    ],
-    anterior: 'U01',
-    proximo: 'U03'
-  }
-};
-
-for (let i = 3; i <= 24; i++) {
-  const id = `U${i.toString().padStart(2, '0')}`;
-  const anterior = `U${(i-1).toString().padStart(2, '0')}`;
-  const proximo = i < 24 ? `U${(i+1).toString().padStart(2, '0')}` : undefined;
-  
-  UNIDADES_CONTEUDO[id] = {
-    id,
-    titulo: `Unidade ${i}`,
-    subtitulo: 'Conteúdo em desenvolvimento',
-    tempo: '20 min',
-    intro: 'Esta unidade está sendo desenvolvida com muito carinho. Em breve você terá acesso ao conteúdo completo com textos, checklists e materiais de apoio!',
-    secoes: [
-      {
-        tipo: 'texto',
-        titulo: 'Aguarde novidades',
-        conteudo: 'Estamos trabalhando neste conteúdo pra trazer informações práticas e úteis pro seu dia a dia na escola. Volte em breve para ver as atualizações!'
-      },
-      {
-        tipo: 'dica',
-        titulo: 'Continue sua jornada',
-        conteudo: 'Enquanto isso, você pode continuar explorando os trapiches anteriores ou revisar o que já aprendeu. Cada revisão fortalece o conhecimento!'
-      }
-    ],
-    anterior,
-    proximo
-  };
-}
+import type { TrilhaUnit } from "@shared/schema";
 
 function NotebookLines() {
   return (
@@ -293,7 +87,10 @@ export default function TrilhaUnidade() {
   const { completeUnit, isUnitCompleted, totalUnits } = useTrilhaProgress();
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   
-  const unidade = UNIDADES_CONTEUDO[unitId] || UNIDADES_CONTEUDO['U00'];
+  const { data: unidade, isLoading } = useQuery<TrilhaUnit>({
+    queryKey: ["/api/trilha", unitId],
+  });
+
   const isCompleted = isUnitCompleted(unitId);
   const unitNumber = parseInt(unitId.replace('U', ''));
   const progressPercent = Math.round(((unitNumber + 1) / totalUnits) * 100);
@@ -302,7 +99,7 @@ export default function TrilhaUnidade() {
     setCheckedItems(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const renderSecao = (secao: typeof unidade.secoes[0], idx: number) => {
+  const renderSecao = (secao: { tipo: string; titulo: string; conteudo: string | string[] }, idx: number) => {
     const variants = {
       hidden: { opacity: 0, y: 20 },
       visible: { opacity: 1, y: 0 }
@@ -452,6 +249,39 @@ export default function TrilhaUnidade() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans">
+        <Navigation />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!unidade) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans">
+        <Navigation />
+        <div className="flex-1 flex items-center justify-center flex-col gap-4">
+          <p className="text-muted-foreground">Unidade não encontrada</p>
+          <Link href="/trilha">
+            <Button variant="outline">
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Voltar ao Mapa
+            </Button>
+          </Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const sections = (unidade.sections || []) as Array<{ tipo: string; titulo: string; conteudo: string | string[] }>;
+  const materials = (unidade.materials || []) as Array<{ nome: string; descricao: string; tipo: string }>;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans overflow-hidden">
       <Navigation />
@@ -498,7 +328,7 @@ export default function TrilhaUnidade() {
               
               <Badge variant="outline" className="bg-white/80 backdrop-blur-sm border-emerald-200 px-3 py-1">
                 <Clock className="w-3.5 h-3.5 mr-2 text-emerald-500" />
-                <span className="text-emerald-700">{unidade.tempo}</span>
+                <span className="text-emerald-700">{unidade.duration}</span>
               </Badge>
               
               {isCompleted && (
@@ -517,7 +347,7 @@ export default function TrilhaUnidade() {
             >
               <div className="relative">
                 <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-gradient-to-br from-accent via-orange-500 to-amber-500 flex items-center justify-center shadow-xl shadow-accent/30">
-                  <span className="font-bold text-white text-2xl md:text-3xl">{unidade.id}</span>
+                  <span className="font-bold text-white text-2xl md:text-3xl">{unidade.unitId}</span>
                 </div>
                 <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center border-2 border-accent/20">
                   <MapPin className="w-5 h-5 text-accent" />
@@ -526,9 +356,9 @@ export default function TrilhaUnidade() {
               
               <div className="flex-1">
                 <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-display mb-3 text-foreground/90 leading-tight">
-                  {unidade.titulo}
+                  {unidade.title}
                 </h1>
-                <p className="text-lg md:text-xl text-muted-foreground mb-6">{unidade.subtitulo}</p>
+                <p className="text-lg md:text-xl text-muted-foreground mb-6">{unidade.subtitle}</p>
                 
                 <div className="flex items-center gap-4">
                   <div className="flex-1 max-w-sm h-3 bg-emerald-100 rounded-full overflow-hidden shadow-inner">
@@ -582,10 +412,10 @@ export default function TrilhaUnidade() {
             </motion.div>
 
             <div className="space-y-8">
-              {unidade.secoes.map((secao, idx) => renderSecao(secao, idx))}
+              {sections.map((secao, idx) => renderSecao(secao, idx))}
             </div>
 
-            {unidade.materiais && unidade.materiais.length > 0 && (
+            {materials.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -601,7 +431,7 @@ export default function TrilhaUnidade() {
                   </div>
                   <div className="p-6">
                     <div className="grid gap-4">
-                      {unidade.materiais.map((material, idx) => (
+                      {materials.map((material, idx) => (
                         <motion.div
                           key={idx}
                           className="relative group"
@@ -659,8 +489,8 @@ export default function TrilhaUnidade() {
               <div className="pt-12">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                   <div>
-                    {unidade.anterior && (
-                      <Link href={`/trilha/${unidade.anterior}`}>
+                    {unidade.previousUnit && (
+                      <Link href={`/trilha/${unidade.previousUnit}`}>
                         <Button variant="outline" size="lg" className="group" data-testid="button-anterior">
                           <ChevronLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
                           Trapiche Anterior
@@ -687,8 +517,8 @@ export default function TrilhaUnidade() {
                         Trapiche Visitado
                       </Badge>
                     )}
-                    {unidade.proximo && (
-                      <Link href={`/trilha/${unidade.proximo}`}>
+                    {unidade.nextUnit && (
+                      <Link href={`/trilha/${unidade.nextUnit}`}>
                         <Button 
                           size="lg"
                           className="bg-gradient-to-r from-accent to-orange-500 hover:from-accent/90 hover:to-orange-500/90 shadow-lg shadow-accent/25 group" 
