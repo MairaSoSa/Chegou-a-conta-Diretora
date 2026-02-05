@@ -1,0 +1,576 @@
+Crie uma trilha de aprendizagem para o projeto “A Conta Chegou, Diretora!” em formato de mapa navegável: um rio paraense (visual inspirado em igarapé/baía amazônica) com “portos” (unidades). Um barquinho bem paraense navega pelas unidades conforme o progresso.
+
+1) Conceito visual (obrigatório)
+
+O mapa é um rio vertical (scroll), com curvas suaves.
+
+Cada unidade é um porto (ex.: trapiche de madeira, boia, pequena ilha com palafita, placa de porto).
+
+O marcador de progresso é um barquinho paraense (não genérico):
+
+Sugestão de estilo: casco de madeira, “rabeta”/motor pequeno, lona/encerado, corda, e um detalhe tipo “caixa de isopor” ou paneiro (bem sutil, sem caricato).
+
+O barquinho flutua (animação leve) e deixa ondinhas.
+
+A trilha tem clima lúdico-profissional (bonito e leve, mas não infantil).
+
+2) Página 1 — “Mapa do Rio” (visão geral da trilha)
+
+Na tela inicial, mostrar:
+
+Campo “Voltar para o mapa” sempre acessível.
+
+Um card “Como usar a trilha” com legendas de ícones e caixas (ex.: Na prática, Checklist, Modelos). 
+
+A Conta Chegou, Diretora! V1
+
+Um botão “Continuar de onde parei”.
+
+Progresso: “X de Y portos concluídos”.
+
+Cada porto (unidade) deve ter:
+
+Título curto e chamativo
+
+Subtítulo “o que resolve na vida real”
+
+Tempo estimado
+
+Tags: Começar / Em andamento / Concluída
+
+Tooltip com: “Você vai sair sabendo…” (3 bullets)
+
+Persistência:
+
+Salvar progresso em localStorage (unidades concluídas + última unidade aberta).
+
+3) Interação do barquinho
+
+O barquinho fica ancorado no porto atual.
+
+Ao concluir uma unidade, o barquinho “navega” (animação suave) até o próximo porto.
+
+Se o usuário clicar em um porto futuro, permitir abrir (sem bloquear), mas o barquinho só muda de lugar quando concluir.
+
+4) Estrutura das UNIDADES (sem conteúdo completo, mas com “molde bonito”)
+Antes da Parte I: A “Frente do Livro” vira 3 portos iniciais
+
+U00 — Boas-vindas: o mapa do rio
+
+Objetivo: explicar como usar a trilha, o que significam as caixas e como salvar progresso.
+
+Componentes da página:
+
+“Como navegar”
+
+“Ícones e legendas”
+
+“O que você vai construir”
+
+Bloco modelo (placeholder): “Mensagem de boas-vindas da Diretora Lúcia”
+
+U01 — Checklist de 30 dias (Piloto)
+
+Base: checklist 30 dias do seu sumário. 
+
+A Conta Chegou, Diretora! V1
+
+Componentes:
+
+Checklist interativo por semana (Semana 1–4)
+
+Botão “Marcar semana como concluída”
+
+Modelos (placeholders):
+
+“Agenda de reunião do Conselho”
+
+“Lista de padronizações rápidas” (nomes de arquivos, pastas, rotina)
+
+U02 — Pôster ‘Caminho do Dinheiro’ (1 página)
+
+Base: fluxo visual “Pedido → Pesquisa → Autorização → Entrega → NF → Pagamento → Arquivo → Prestação → Controle social”. 
+
+A Conta Chegou, Diretora! V1
+
+Componentes:
+
+O pôster em versão interativa: cada etapa clicável abre “o que precisa existir” (checklist mínimo).
+
+Modelos (placeholders):
+
+Mini-checklist por etapa (ex.: “Entrega/Termo”, “NF detalhada”, “Arquivo”)
+
+Parte I — De onde veio essa história de contar dinheiro
+
+(3 portos, com vibe narrativa)
+U03 — Da cabaça ao carimbo
+
+Base: “por que prestamos contas” + confiança/controle social. 
+
+A Conta Chegou, Diretora! V1
+
+Página (molde):
+
+“Por que existe prestação de contas”
+
+“O que muda quando a escola organiza isso”
+
+Caixa “Na prática: o que a escola precisa garantir”
+
+Entregável placeholder: mini-texto institucional “Como cuidamos do dinheiro da escola”. 
+
+A Conta Chegou, Diretora! V1
+
+U04 — O nascimento do orçamento (planejar antes de gastar)
+
+Base: planejar e sobreviver ao mês. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+“O que é planejar na vida real”
+
+“O que dá errado quando não planeja”
+
+Checklist “antes de comprar”
+
+Modelo placeholder: “Lista de prioridades” (formulário simples)
+
+U05 — Transparência e confiança
+
+Base: o que a sociedade espera. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+“O que publicar / o que guardar / o que registrar”
+
+Caixa “Controle social sem medo”
+
+Modelo placeholder: “Painel 1 página: Dinheiro bem explicado” (estrutura)
+
+Parte II — Como o dinheiro chega e como deve ser usado
+
+(8 portos de execução básica)
+U06 — Do PPP ao PAF
+
+Base: Canvas PPP→PAF + checklist + cronograma. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+“PPP vira plano anual”
+
+“Cronograma de execução e desembolso”
+
+Modelos:
+
+Canvas PPP→PAF (template)
+
+Checklist PAF (template)
+
+U07 — Pesquisa de preços sem dor
+
+Base: 3 propostas, modelo de cotação, vantajosidade. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+“Como padronizar a especificação”
+
+“Como comparar maçã com maçã”
+
+Modelos:
+
+E-mail de cotação (placeholder)
+
+Planilha pesquisa de preços (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+U08 — Rito mínimo para serviços (intangíveis)
+
+Base: escopo, OS, antes-depois, termo, pagamento após aceite, NF que fala. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+“Serviço não é ‘qualquer coisa’”
+
+Checklist “antes / durante / depois”
+
+Modelos:
+
+Ordem de serviço (OS) (placeholder)
+
+Termo de recebimento (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+U09 — Do pedido ao pagamento
+
+Base: solicitação → entrega → NF → pagamento → indexação. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+“A rotina completa (sem pular etapa)”
+
+Caixa “Erros caros mais comuns”
+
+Modelos:
+
+Solicitação interna (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+Checklist de pagamento (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+U10 — Estoque e patrimônio
+
+Base: inventário, tombamento, termo, manutenção. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+“O que entra vira responsabilidade”
+
+“Como evitar perda e sumiço”
+
+Modelos:
+
+Termo de responsabilidade (placeholder)
+
+U11 — Rotina mensal de 15 minutos + Painel ‘5 peças’
+
+Base: pedido, pesquisa, autorização, recebimento, pagamento & registro. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+Checklist mensal (clicável)
+
+Painel “5 peças” (visual)
+
+Modelo:
+
+Mapa mensal de conciliação (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+U12 — Mapa de decisão: “Quero comprar X, faço o quê?”
+
+Base: identificar finalidade → escolher programa → checar documentos. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+Um “assistente” de decisão (wizard): item → finalidade → programa → documentos mínimos
+
+Modelo:
+
+Matriz ação→programa→documentos (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+U13 — Erros caros (e como evitar)
+
+Base: conta errada, NF genérica, pagar antes, sem ata, PIX CPF etc. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+Lista de “armadilhas”
+
+“Como corrigir rota”
+
+Modelo:
+
+Checklist pré-auditoria (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+Parte III — Prestação de contas sem pânico
+
+(3 portos)
+U14 — Documentar é amar o futuro
+
+Base: pasta da história, padrão de nomes, versionamento. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+“Estrutura da pasta da história (índice 0–7)”
+
+“Padrão de nomenclatura”
+
+Modelo:
+
+Índice da pasta (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+U15 — Relatórios que alguém quer ler
+
+Base: 1 página trimestral “Dinheiro bem explicado”, evidências e fotos. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+Template de relatório 1 página
+
+Bloco “foto que prova”
+
+Modelos:
+
+Mini-guia de fotos/evidências (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+U16 — Quando algo saiu torto
+
+Base: correção, justificativa, aprendizado. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+“Como escrever justificativa”
+
+“Como registrar aprendizado”
+
+Modelos:
+
+Resposta N1/N2/N3 (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+Quadro de saneamento (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+Parte IV — Gente que faz
+
+(4 portos)
+U17 — Conselho Escolar (controle social com pé no chão)
+
+Base: papel decisório, roteiro, ata padronizada. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+Roteiro de reunião 45–60 min
+
+“Como transformar prioridade em decisão registrada”
+
+Modelos:
+
+Roteiro do conselho (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+U18 — Casos reais: merenda, transporte, pequenos reparos
+
+Base: micro-checklists PNAE/PNATE/manutenção. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+3 cards de casos com checklists mínimos
+
+Modelos:
+
+Checklist por caso (placeholder)
+
+U19 — Exceções & emergências
+
+Base: cano estourado, geladeira da merenda, atraso de repasse → rito mínimo e provas. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+“Rito mínimo em emergência”
+
+“Como provar o necessário”
+
+Modelos:
+
+Caixa “emergências” (placeholder)
+
+U20 — Cultura de integridade
+
+Base: conflitos de interesse, transparência simples. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+“O que é conflito de interesse na prática”
+
+“Como reduzir risco sem burocracia”
+
+Modelos:
+
+Declaração de conflito (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+Parte V — De onde vem o dinheiro: fundos, programas e regras
+
+(4 portos)
+U21 — Panorama das fontes federais
+
+Base: visão de fluxo e categorias (PDDE/PNAE/PNATE etc). 
+
+A Conta Chegou, Diretora! V1
+
+ 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+Mapa visual “fontes e para quê”
+
+“Regras de ouro” (sem juridiquês) 
+
+A Conta Chegou, Diretora! V1
+
+U22 — Onde procurar (e em que ordem)
+
+Base: SEDUC/SEMED, portais, diários oficiais, conselhos, protocolos. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+Passo a passo de busca de informação
+
+“Guarde protocolo” (bloco destaque)
+
+Modelo:
+
+Checklist “7 passos” (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+U23 — Cartões dos Programas + Matriz ação→programa→documentos
+
+Base: cartões PDDE/PNAE/PNATE etc + matriz. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+Cards “PDDE / PNAE / PNATE…” com “pode / não pode / dica”
+
+Modelo:
+
+Matriz ação→programa→documentos imprimível 
+
+A Conta Chegou, Diretora! V1
+
+U24 — Como aderir a programas
+
+Base: edital, elegibilidade, cadastro, acompanhamento, deferimento, repasse, execução, prestação. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+Linha do tempo “adesão → execução → prestação”
+
+Modelo:
+
+Pasta 0 “dossiê mínimo” (placeholder) 
+
+A Conta Chegou, Diretora! V1
+
+Parte “Tecnologia e IA aplicada”
+
+(2 portos finais, com cuidado)
+U25 — Piloto de 30 dias (IA aplicada na rotina)
+
+Base: semana 1–4. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+Plano por semana
+
+Checklist de implementação
+
+Modelo:
+
+“Registro de uso de IA” (placeholder)
+
+U26 — Riscos, controles, ética e transparência
+
+Base: alucinação, privacidade, viés, dependência; transparência “texto assistido por IA…”. 
+
+A Conta Chegou, Diretora! V1
+
+Página:
+
+Tabela “risco → controle”
+
+Modelo de nota de transparência
+
+Modelos:
+
+Política simples (placeholder)
+
+Changelog (placeholder)
+
+5) Modelo de página interna da Unidade (layout bonito)
+
+Toda unidade, ao abrir, deve ter esta estrutura:
+
+Hero
+
+Título da unidade
+
+Subtítulo (o problema que resolve)
+
+Tempo estimado
+
+Botões: “Voltar ao mapa” | “Marcar como concluída”
+
+Caixas padrão
+
+“Na prática” (passos)
+
+“Checklist” (clicável)
+
+“Modelos prontos” (cards para copiar/baixar placeholder)
+
+“Erros caros” (se aplicável)
+
+“Personagens em cena” (falas curtas: Dona Cida / Diretora Lúcia / Bianca etc.) 
+
+A Conta Chegou, Diretora! V1
+
+Rodapé da unidade
+
+“Anterior” | “Próxima”
+
+“Voltar ao porto”
