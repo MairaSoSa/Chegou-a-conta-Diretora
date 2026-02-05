@@ -480,8 +480,10 @@ function Porto({ unidade, isCompleted, isCurrent, index, onSelect, onComplete }:
         </div>
         
         {isCurrent && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-20 z-20 animate-boat-navigate">
-            <Barquinho className="w-full h-full" />
+          <div className="absolute inset-0 flex items-center justify-center z-20">
+            <div className="w-32 h-24 boat-in-river">
+              <Barquinho className="w-full h-full" floating={true} />
+            </div>
           </div>
         )}
       </div>

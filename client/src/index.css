@@ -287,26 +287,26 @@
   animation: river-flow 4s linear infinite;
 }
 
-@keyframes boat-navigate {
+@keyframes boat-arrive {
   0% { 
-    transform: translate(-50%, -150%) scale(0.7);
+    transform: translateY(-60px) scale(0.6);
     opacity: 0;
   }
-  20% {
+  30% {
     opacity: 1;
-    transform: translate(-50%, -100%) scale(0.85);
+    transform: translateY(-30px) scale(0.8);
   }
-  60% {
-    transform: translate(-50%, -60%) scale(0.95);
+  70% {
+    transform: translateY(-5px) scale(0.95);
   }
   100% { 
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
 
-.animate-boat-navigate {
-  animation: boat-navigate 3s ease-out forwards;
+.boat-in-river {
+  animation: boat-arrive 2.5s ease-out forwards;
 }
 
 /* River Path */
