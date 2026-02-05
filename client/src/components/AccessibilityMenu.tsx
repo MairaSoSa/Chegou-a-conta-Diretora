@@ -21,7 +21,7 @@ const HIGH_CONTRAST_KEY = "accessibility-high-contrast";
 const DYSLEXIA_FONT_KEY = "accessibility-dyslexia-font";
 const SCREEN_READER_KEY = "accessibility-screen-reader";
 
-function getStructuredPageText(): string {
+function getStructuredPageChunks(): string[] {
   const root = document.querySelector('main') || document.body;
   const parts: string[] = [];
 
@@ -101,12 +101,21 @@ function getStructuredPageText(): string {
 
   walkNode(root);
 
-  return parts
-    .join(' ')
-    .replace(/\s+/g, ' ')
-    .replace(/\.\s*\./g, '.')
-    .replace(/\.\s*,/g, ',')
-    .trim();
+  const chunks: string[] = [];
+  let current = '';
+  for (const part of parts) {
+    const cleaned = part.replace(/\s+/g, ' ').trim();
+    if (!cleaned) continue;
+    if (current.length + cleaned.length > 150) {
+      if (current.trim()) chunks.push(current.trim());
+      current = cleaned;
+    } else {
+      current += (current ? ' ' : '') + cleaned;
+    }
+  }
+  if (current.trim()) chunks.push(current.trim());
+
+  return chunks;
 }
 
 function findFeminineVoice(): SpeechSynthesisVoice | null {
@@ -144,7 +153,9 @@ export function AccessibilityMenu() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [screenReaderEnabled, setScreenReaderEnabled] = useState(false);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const chunksRef = useRef<string[]>([]);
+  const chunkIndexRef = useRef(0);
+  const stoppedRef = useRef(false);
   const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   useEffect(() => {
@@ -186,46 +197,69 @@ export function AccessibilityMenu() {
     };
   }, []);
 
+  const speakNextChunk = useCallback(() => {
+    if (!speechSupported || stoppedRef.current) return;
+
+    const chunks = chunksRef.current;
+    const idx = chunkIndexRef.current;
+
+    if (idx >= chunks.length) {
+      setIsSpeaking(false);
+      setIsPaused(false);
+      chunksRef.current = [];
+      chunkIndexRef.current = 0;
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(chunks[idx]);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+
+    const voice = findFeminineVoice();
+    if (voice) utterance.voice = voice;
+
+    utterance.onend = () => {
+      if (stoppedRef.current) return;
+      chunkIndexRef.current = idx + 1;
+      speakNextChunk();
+    };
+
+    utterance.onerror = (e) => {
+      if (e.error === 'interrupted' || stoppedRef.current) return;
+      chunkIndexRef.current = idx + 1;
+      speakNextChunk();
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }, [speechSupported]);
+
   const stopSpeaking = useCallback(() => {
+    stoppedRef.current = true;
     if (speechSupported) {
       window.speechSynthesis.cancel();
     }
     setIsSpeaking(false);
     setIsPaused(false);
-    utteranceRef.current = null;
+    chunksRef.current = [];
+    chunkIndexRef.current = 0;
   }, [speechSupported]);
 
   const startSpeaking = useCallback(() => {
     if (!speechSupported) return;
     stopSpeaking();
 
-    const text = getStructuredPageText();
-    if (!text.trim()) return;
+    const chunks = getStructuredPageChunks();
+    if (chunks.length === 0) return;
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'pt-BR';
-    utterance.rate = 0.85;
-    utterance.pitch = 1.1;
-
-    const voice = findFeminineVoice();
-    if (voice) utterance.voice = voice;
-
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      setIsPaused(false);
-      utteranceRef.current = null;
-    };
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-      setIsPaused(false);
-      utteranceRef.current = null;
-    };
-
-    utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    stoppedRef.current = false;
+    chunksRef.current = chunks;
+    chunkIndexRef.current = 0;
     setIsSpeaking(true);
     setIsPaused(false);
-  }, [speechSupported, stopSpeaking]);
+
+    speakNextChunk();
+  }, [speechSupported, stopSpeaking, speakNextChunk]);
 
   const togglePause = useCallback(() => {
     if (!speechSupported) return;
