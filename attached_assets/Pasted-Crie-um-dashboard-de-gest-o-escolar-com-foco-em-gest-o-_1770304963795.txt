@@ -1,0 +1,176 @@
+Crie um dashboard de gestão escolar com foco em gestão financeira e regularidade administrativa, usando somente dados públicos do governo.
+O usuário digita o código INEP da escola e o sistema carrega tudo automaticamente.
+
+A interface deve ser uma única página (single page), com rolagem vertical, organizada em blocos (cards), com linguagem simples e direta.
+Não deve afirmar coisas que dependem de dados internos (ex.: saldo bancário, despesas, “atraso” no envio). Só pode mostrar o que é público e cálculos derivados.
+
+1) Cabeçalho fixo com busca
+
+No topo, colocar:
+
+Campo para inserir Código INEP
+
+Botão “Carregar escola”
+
+Indicador de status do carregamento (carregando / ok / erro)
+
+Um mini-resumo quando carregar: Nome da escola + município/UF + rede + zona
+
+2) Card “Identidade da escola”
+
+Mostrar:
+
+Nome da escola
+
+Código INEP
+
+Município/UF
+
+Rede (municipal/estadual/federal/privada)
+
+Zona (urbana/rural)
+
+Etapas atendidas (ex.: anos iniciais, finais, médio, EJA etc.)
+
+Matrículas mais recentes disponíveis (Censo Escolar)
+
+Se possível: dependência administrativa e localização (bairro/distrito se houver)
+
+3) Card “Matrículas e perfil”
+
+Mostrar:
+
+Matrículas totais
+
+Matrículas por etapa/série (se disponível publicamente)
+
+Evolução das matrículas por ano (últimos 3–5 anos)
+
+Indicador calculado: variação percentual de matrículas (último ano vs anterior)
+
+4) Card “Qualidade e contexto (para leitura financeira)”
+
+Mostrar indicadores educacionais (sem julgamento):
+
+IDEB mais recente e IDEB anterior (por etapa quando existir)
+
+Meta (quando existir)
+
+Taxas públicas disponíveis (aprovação/abandono/distorção idade-série) se houver em bases abertas
+
+Gráfico de linha da evolução do IDEB
+
+Comparação simples: IDEB escola vs média municipal e estadual (quando disponível)
+
+5) Card “Repasses públicos recebidos (FNDE)”
+
+Este é o núcleo financeiro, mas sem saldo.
+Mostrar somente transferências/repasses registrados.
+Precisa ter:
+
+Tabela ou cards por programa com:
+
+Nome do programa (ex.: PDDE, PNAE, PNATE, VAAR e outros que você conseguir)
+
+Ano do último repasse registrado
+
+Valor do último repasse registrado
+
+Total por ano (últimos 5 anos)
+
+Gráfico de barras por ano com o total de repasses (somando programas disponíveis)
+
+Filtros: “ver por programa” / “ver tudo somado”
+
+6) Card “Regularidade e prestação de contas (status público)”
+
+Mostrar apenas o que for público sobre situação administrativa:
+
+Situação/estado da prestação de contas por exercício (ex.: aprovada / em análise / rejeitada / não encontrada, conforme a fonte permitir)
+
+Situação cadastral/regularidade do PDDE (se a fonte pública mostrar)
+
+Último exercício com status registrado
+
+Indicador calculado: defasagem de ciclo
+
+Ex.: “Último exercício com status registrado: 2022”
+
+“Defasagem: 2 ciclos” (ano atual – último ano registrado)
+Importante: não usar a palavra “atraso”. Só “defasagem”, “último registro”, “ciclo”.
+
+7) Card “VAAR e elegibilidade (se disponível em dados públicos)”
+
+Mostrar:
+
+Status de elegibilidade / participação no VAAR
+
+Critérios atendidos vs pendentes (se existir base pública)
+
+Recomendações neutras baseadas em regra simples:
+
+“Para manter elegibilidade, mantenha regularidade administrativa registrada”
+Nunca dizer que a escola “descumpriu”, apenas “não consta registro” ou “pendente conforme base X”.
+
+8) Card “Indicadores financeiros derivados (cálculos)”
+
+Criar métricas úteis sem depender de saldo:
+
+Repasse por aluno (por ano) = total de repasses no ano ÷ matrículas do ano
+
+Tendência de repasses: aumentou/diminuiu (%) no último ano disponível
+
+Tempo desde o último repasse: ano do último repasse → “há X anos”
+
+Comparação per capita: escola vs média municipal (se houver como calcular)
+
+9) Card “Comparadores (benchmark leve)”
+
+Trazer referência contextual:
+
+Média municipal e estadual de IDEB
+
+Média municipal de repasse por aluno (se você conseguir calcular com dados abertos)
+
+Posição relativa simples: acima / próximo / abaixo (sem ranking duro)
+
+10) Card “Alertas neutros (sem acusação)”
+
+Gerar alertas automáticos, sempre baseados em evidência pública:
+
+“Último repasse registrado em: ANO”
+
+“Último exercício de prestação com status registrado: ANO”
+
+“Defasagem de ciclos: X”
+
+“Queda de repasse por aluno no último ano disponível: Y%”
+
+“Matrículas em queda: Y%”
+Cada alerta deve mostrar a fonte e o ano.
+
+11) Rodapé “Fontes e transparência”
+
+No final, listar:
+
+Quais bases foram usadas (com nome e data de consulta)
+
+Observação fixa:
+
+“Este painel usa apenas dados públicos; não reflete saldo bancário, despesas internas ou extratos.”
+
+“Indicadores derivados são cálculos a partir de repasses e matrículas.”
+
+12) Requisitos técnicos do app
+
+Deve ter camada de “conector” para múltiplas fontes (FNDE/INEP/QEdu ou equivalentes)
+
+Deve tratar erros e ausência de dados:
+
+“Não consta registro público para este item”
+
+Deve salvar cache local por INEP para não bater API toda hora
+
+Deve permitir exportar:
+
+PDF simples da página ou JSON dos dados consolidados (pra auditoria e debug
