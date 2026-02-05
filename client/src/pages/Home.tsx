@@ -3,15 +3,16 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, MessagesSquare, GraduationCap, BookOpen, Wrench, LayoutDashboard } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
+import { AccessibilityMenu } from "@/components/AccessibilityMenu";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
       
-      <main className="flex-1 flex flex-col">
-        <section className="flex-1 flex items-center justify-center py-16 px-4">
-          <div className="max-w-2xl mx-auto text-center">
+      <main className="flex-1 flex flex-col items-center justify-center">
+        <section className="w-full max-w-3xl mx-auto px-6 py-12 md:py-16">
+          <div className="text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -29,13 +30,13 @@ export default function Home() {
               
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
                 <Link href="/trilha">
-                  <Button size="lg" className="h-12 px-8 text-base rounded-xl">
+                  <Button size="lg" className="h-12 px-8 text-base rounded-xl" data-testid="button-comecar-jornada">
                     Começar a Jornada
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
                 <Link href="/dashboard">
-                  <Button size="lg" variant="outline" className="h-12 px-8 text-base rounded-xl">
+                  <Button size="lg" variant="outline" className="h-12 px-8 text-base rounded-xl" data-testid="button-ver-escola">
                     Ver minha escola
                   </Button>
                 </Link>
@@ -46,7 +47,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="grid grid-cols-2 md:grid-cols-5 gap-3"
+              className="grid grid-cols-2 md:grid-cols-5 gap-3 max-w-2xl mx-auto"
             >
               <NavCard href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
               <NavCard href="/trilha" icon={GraduationCap} label="Trilha" />
@@ -57,10 +58,12 @@ export default function Home() {
           </div>
         </section>
 
-        <footer className="py-6 border-t text-center text-sm text-muted-foreground">
+        <footer className="w-full py-6 border-t text-center text-sm text-muted-foreground mt-auto">
           <p>Gratuito para diretores de escolas públicas</p>
         </footer>
       </main>
+      
+      <AccessibilityMenu />
     </div>
   );
 }
