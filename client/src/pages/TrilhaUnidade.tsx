@@ -232,7 +232,7 @@ function NotebookLines() {
       {Array.from({ length: 40 }).map((_, i) => (
         <div 
           key={i} 
-          className="absolute left-0 right-0 h-px bg-sky-200/50" 
+          className="absolute left-0 right-0 h-px bg-emerald-200/50" 
           style={{ top: `${(i + 1) * 28}px` }}
         />
       ))}
@@ -453,7 +453,7 @@ export default function TrilhaUnidade() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50/30 via-background to-background flex flex-col font-sans overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans overflow-hidden">
       <Navigation />
       
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -463,7 +463,7 @@ export default function TrilhaUnidade() {
       </div>
       
       <main className="flex-1 relative z-10">
-        <div className="relative overflow-hidden bg-gradient-to-br from-sky-100/50 via-cyan-50/30 to-transparent">
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-100/50 via-green-50/30 to-transparent">
           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
           
           <svg className="absolute bottom-0 left-0 right-0 w-full h-6" preserveAspectRatio="none" viewBox="0 0 1200 30">
@@ -474,9 +474,9 @@ export default function TrilhaUnidade() {
             />
             <defs>
               <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#22d3ee" />
-                <stop offset="50%" stopColor="#0ea5e9" />
-                <stop offset="100%" stopColor="#22d3ee" />
+                <stop offset="0%" stopColor="#34d399" />
+                <stop offset="50%" stopColor="#10b981" />
+                <stop offset="100%" stopColor="#34d399" />
               </linearGradient>
             </defs>
           </svg>
@@ -496,9 +496,9 @@ export default function TrilhaUnidade() {
               
               <div className="h-5 w-px bg-border/50" />
               
-              <Badge variant="outline" className="bg-white/80 backdrop-blur-sm border-sky-200 px-3 py-1">
-                <Clock className="w-3.5 h-3.5 mr-2 text-sky-500" />
-                <span className="text-sky-700">{unidade.tempo}</span>
+              <Badge variant="outline" className="bg-white/80 backdrop-blur-sm border-emerald-200 px-3 py-1">
+                <Clock className="w-3.5 h-3.5 mr-2 text-emerald-500" />
+                <span className="text-emerald-700">{unidade.tempo}</span>
               </Badge>
               
               {isCompleted && (
@@ -531,9 +531,9 @@ export default function TrilhaUnidade() {
                 <p className="text-lg md:text-xl text-muted-foreground mb-6">{unidade.subtitulo}</p>
                 
                 <div className="flex items-center gap-4">
-                  <div className="flex-1 max-w-sm h-3 bg-sky-100 rounded-full overflow-hidden shadow-inner">
+                  <div className="flex-1 max-w-sm h-3 bg-emerald-100 rounded-full overflow-hidden shadow-inner">
                     <motion.div 
-                      className="h-full bg-gradient-to-r from-cyan-400 via-sky-500 to-cyan-400 rounded-full"
+                      className="h-full bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-400 rounded-full"
                       initial={{ width: 0 }}
                       animate={{ width: `${progressPercent}%` }}
                       transition={{ duration: 1, delay: 0.3 }}

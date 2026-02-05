@@ -194,19 +194,19 @@ export default function Ferramentas() {
   }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50/50 via-background to-background flex flex-col font-sans">
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans">
       <Navigation />
       
       <main className="flex-1">
-        <div className="bg-gradient-to-br from-amber-100/30 via-orange-50/20 to-transparent py-10 border-b">
+        <div className="bg-gradient-to-br from-emerald-100/30 via-green-50/20 to-transparent py-10 border-b">
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg">
                   <Wrench className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl md:text-4xl font-bold font-display text-foreground">
+                  <h1 className="text-3xl md:text-4xl font-bold text-foreground">
                     Mural de Ferramentas
                   </h1>
                   <p className="text-muted-foreground">

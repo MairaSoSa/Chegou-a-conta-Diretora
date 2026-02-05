@@ -108,7 +108,7 @@ function UnidadeCard({
           className={cn(
             "group cursor-pointer transition-all duration-300 hover:shadow-md border-2",
             isCompleted && "border-primary/40 bg-primary/5",
-            isCurrent && !isCompleted && "border-cyan-400 ring-2 ring-cyan-200 shadow-lg bg-gradient-to-r from-cyan-50/50 to-transparent",
+            isCurrent && !isCompleted && "border-emerald-400 ring-2 ring-emerald-200 shadow-lg bg-gradient-to-r from-emerald-50/50 to-transparent",
             !isCompleted && !isCurrent && "border-slate-200 hover:border-slate-300"
           )}
           data-testid={`unidade-${unidade.id}`}
@@ -118,7 +118,7 @@ function UnidadeCard({
               <div className={cn(
                 "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-lg transition-all",
                 isCompleted && "bg-primary text-white",
-                isCurrent && !isCompleted && "bg-cyan-500 text-white",
+                isCurrent && !isCompleted && "bg-emerald-500 text-white",
                 !isCompleted && !isCurrent && cn(cores.bg, cores.text)
               )}>
                 {isCompleted ? (
@@ -138,7 +138,7 @@ function UnidadeCard({
                     {unidade.tempo}
                   </span>
                   {isCurrent && !isCompleted && (
-                    <Badge className="bg-cyan-100 text-cyan-700 border-0 text-xs">
+                    <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">
                       <Ship className="w-3 h-3 mr-1" />
                       Seu barco está aqui
                     </Badge>
@@ -245,11 +245,11 @@ function ParteSection({
         </div>
       </div>
       
-      <div className="space-y-3 pl-6 ml-2 border-l-2 border-dashed border-cyan-200 relative">
+      <div className="space-y-3 pl-6 ml-2 border-l-2 border-dashed border-emerald-200 relative">
         <div className="absolute left-0 top-0 w-4 h-full pointer-events-none opacity-20">
           <svg className="w-full h-full" preserveAspectRatio="none">
             <pattern id="river-dots" patternUnits="userSpaceOnUse" width="4" height="20">
-              <circle cx="2" cy="10" r="1.5" fill="#06b6d4" />
+              <circle cx="2" cy="10" r="1.5" fill="#10b981" />
             </pattern>
             <rect width="100%" height="100%" fill="url(#river-dots)" />
           </svg>
@@ -279,7 +279,7 @@ export default function Trilha() {
   let globalIndex = 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-cyan-50/30 via-background to-background flex flex-col font-sans">
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans">
       <Navigation />
       
       <main className="flex-1">
@@ -287,19 +287,19 @@ export default function Trilha() {
           <div className="absolute inset-0 opacity-10">
             <svg className="w-full h-full" preserveAspectRatio="none">
               <pattern id="header-waves" patternUnits="userSpaceOnUse" width="200" height="40">
-                <path d="M0 20 Q50 10, 100 20 T200 20" fill="none" stroke="#06b6d4" strokeWidth="1.5" />
-                <path d="M0 30 Q50 20, 100 30 T200 30" fill="none" stroke="#0ea5e9" strokeWidth="1" />
+                <path d="M0 20 Q50 10, 100 20 T200 20" fill="none" stroke="#10b981" strokeWidth="1.5" />
+                <path d="M0 30 Q50 20, 100 30 T200 30" fill="none" stroke="#34d399" strokeWidth="1" />
               </pattern>
               <rect width="100%" height="100%" fill="url(#header-waves)" />
             </svg>
           </div>
           
-          <div className="bg-gradient-to-br from-cyan-100/40 via-sky-50/50 to-transparent py-8 relative z-10">
+          <div className="bg-gradient-to-br from-emerald-100/40 via-green-50/50 to-transparent py-8 relative z-10">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto">
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-sky-600 flex items-center justify-center shadow-lg">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg">
                       <Ship className="w-6 h-6 text-white" />
                     </div>
                     <div>
@@ -316,16 +316,16 @@ export default function Trilha() {
                     <div 
                       className="w-14 h-14 rounded-full flex items-center justify-center"
                       style={{
-                        background: `conic-gradient(#0891b2 ${progressPercent}%, #e5e7eb ${progressPercent}%)`
+                        background: `conic-gradient(#10b981 ${progressPercent}%, #e5e7eb ${progressPercent}%)`
                       }}
                     >
                       <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
-                        <span className="text-lg font-bold text-cyan-600">{progressPercent}%</span>
+                        <span className="text-lg font-bold text-emerald-600">{progressPercent}%</span>
                       </div>
                     </div>
                     
                     <Link href={`/trilha/${progress.currentUnit}`}>
-                      <Button className="bg-cyan-600 hover:bg-cyan-700" data-testid="button-continuar">
+                      <Button className="bg-emerald-600 hover:bg-emerald-700" data-testid="button-continuar">
                         <Play className="w-4 h-4 mr-2" />
                         Continuar
                       </Button>
@@ -334,7 +334,7 @@ export default function Trilha() {
                       variant="outline"
                       size="icon"
                       onClick={resetProgress}
-                      className="border-cyan-200 hover:bg-cyan-50"
+                      className="border-emerald-200 hover:bg-emerald-50"
                       data-testid="button-reset"
                       title="Recomeçar do início"
                     >
@@ -366,19 +366,19 @@ export default function Trilha() {
               return section;
             })}
             
-            <div className="mt-12 text-center p-8 rounded-2xl bg-gradient-to-br from-cyan-50 to-sky-50 border-2 border-cyan-200 relative overflow-hidden">
+            <div className="mt-12 text-center p-8 rounded-2xl bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 relative overflow-hidden">
               <svg className="absolute inset-0 w-full h-full opacity-20" preserveAspectRatio="none">
                 <pattern id="end-waves" patternUnits="userSpaceOnUse" width="100" height="20">
-                  <path d="M0 10 Q25 5, 50 10 T100 10" fill="none" stroke="#06b6d4" strokeWidth="2" />
+                  <path d="M0 10 Q25 5, 50 10 T100 10" fill="none" stroke="#10b981" strokeWidth="2" />
                 </pattern>
                 <rect width="100%" height="100%" fill="url(#end-waves)" />
               </svg>
               
               <div className="relative z-10">
-                <div className="w-16 h-16 rounded-full bg-cyan-100 flex items-center justify-center mx-auto mb-4">
-                  <Anchor className="w-8 h-8 text-cyan-600" />
+                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+                  <Anchor className="w-8 h-8 text-emerald-600" />
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-cyan-800">Porto Final</h3>
+                <h3 className="text-xl font-bold mb-2 text-emerald-800">Porto Final</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
                   Quando completar toda a jornada pelo rio, você terá o conhecimento 
                   pra gerenciar as verbas da escola com confiança e segurança.

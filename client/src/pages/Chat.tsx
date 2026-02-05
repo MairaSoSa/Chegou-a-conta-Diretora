@@ -53,7 +53,7 @@ function MensagemAssistente({ conteudo }: { conteudo: string }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex gap-3 max-w-[90%] mr-auto"
     >
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/20">
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/20">
         <Bot className="w-5 h-5 text-white" />
       </div>
       <div className="bg-white border border-slate-200 p-4 rounded-2xl rounded-tl-sm shadow-sm">
@@ -87,22 +87,22 @@ function IndicadorDigitando() {
       animate={{ opacity: 1, y: 0 }}
       className="flex gap-3 max-w-[90%] mr-auto"
     >
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/20">
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/20">
         <Bot className="w-5 h-5 text-white" />
       </div>
       <div className="bg-white border border-slate-200 px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm flex items-center gap-1.5">
         <motion.span 
-          className="w-2 h-2 bg-amber-400 rounded-full"
+          className="w-2 h-2 bg-emerald-400 rounded-full"
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
         />
         <motion.span 
-          className="w-2 h-2 bg-amber-400 rounded-full"
+          className="w-2 h-2 bg-emerald-400 rounded-full"
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
         />
         <motion.span 
-          className="w-2 h-2 bg-amber-400 rounded-full"
+          className="w-2 h-2 bg-emerald-400 rounded-full"
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }}
         />
@@ -118,8 +118,8 @@ function TelaBoasVindas({ onSugestao }: { onSugestao: (texto: string) => void })
       animate={{ opacity: 1 }}
       className="flex flex-col items-center justify-center h-full text-center px-4 py-8"
     >
-      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center mb-6">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-100 to-green-100 flex items-center justify-center mb-6">
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg">
           <Sparkles className="w-7 h-7 text-white" />
         </div>
       </div>
@@ -149,7 +149,7 @@ function TelaBoasVindas({ onSugestao }: { onSugestao: (texto: string) => void })
               className="group flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-200 hover:border-primary/30 hover:shadow-md transition-all text-left"
               data-testid={`sugestao-${i}`}
             >
-              <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0 group-hover:bg-amber-100 transition-colors">
+              <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-100 transition-colors">
                 {sugestao.icone}
               </div>
               <div className="flex-1 min-w-0">
@@ -208,14 +208,14 @@ export default function Chat() {
   const temMensagens = conversationData?.messages && conversationData.messages.length > 0;
 
   return (
-    <div className="h-screen bg-gradient-to-b from-amber-50/50 via-background to-background flex flex-col font-sans overflow-hidden">
+    <div className="h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans overflow-hidden">
       <Navigation />
       
       <main className="flex-1 container mx-auto px-4 py-4 flex flex-col max-w-4xl overflow-hidden">
         <Card className="flex-1 flex flex-col overflow-hidden border-slate-200">
           {/* Header */}
-          <div className="px-4 py-3 border-b bg-gradient-to-r from-amber-50 to-orange-50 flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+          <div className="px-4 py-3 border-b bg-gradient-to-r from-emerald-50 to-green-50 flex items-center gap-3">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
               <Bot className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1">

@@ -167,15 +167,15 @@ function GlossarioSection() {
   const termosVisiveis = expanded ? GLOSSARIO : GLOSSARIO.slice(0, 4);
 
   return (
-    <div className="bg-gradient-to-br from-amber-50/80 to-orange-50/50 rounded-2xl border border-amber-200/50 overflow-hidden">
+    <div className="bg-gradient-to-br from-emerald-50/80 to-green-50/50 rounded-2xl border border-emerald-200/50 overflow-hidden">
       <div className="p-6 pb-4">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-            <BookText className="w-5 h-5 text-amber-600" />
+          <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+            <BookText className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
-            <h2 className="font-bold text-xl text-amber-900">Glossário: Palavras que você vai encontrar</h2>
-            <p className="text-sm text-amber-700">Não se preocupe se não conhecer esses termos - é normal!</p>
+            <h2 className="font-bold text-xl text-emerald-900">Glossário: Palavras que você vai encontrar</h2>
+            <p className="text-sm text-emerald-700">Não se preocupe se não conhecer esses termos - é normal!</p>
           </div>
         </div>
       </div>
@@ -188,15 +188,15 @@ function GlossarioSection() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
-              className="bg-white/80 rounded-xl p-4 border border-amber-100 hover:border-amber-200 hover:shadow-sm transition-all"
+              className="bg-white/80 rounded-xl p-4 border border-emerald-100 hover:border-emerald-200 hover:shadow-sm transition-all"
             >
               <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0 text-amber-600">
+                <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 text-emerald-600">
                   {item.icone}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-amber-900 mb-1">{item.termo}</h4>
-                  <p className="text-sm text-amber-700/80 leading-relaxed">{item.explicacao}</p>
+                  <h4 className="font-semibold text-emerald-900 mb-1">{item.termo}</h4>
+                  <p className="text-sm text-emerald-700/80 leading-relaxed">{item.explicacao}</p>
                 </div>
               </div>
             </motion.div>
@@ -209,7 +209,7 @@ function GlossarioSection() {
           variant="ghost" 
           size="sm" 
           onClick={() => setExpanded(!expanded)}
-          className="text-amber-700 hover:text-amber-900 hover:bg-amber-100/50 w-full"
+          className="text-emerald-700 hover:text-emerald-900 hover:bg-emerald-100/50 w-full"
           data-testid="toggle-glossario"
         >
           {expanded ? (
@@ -501,23 +501,23 @@ function DicasRapidasSection() {
 
 export default function Programas() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50/30 via-background to-background flex flex-col font-sans">
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans">
       <Navigation />
       
       <main className="flex-1">
-        <div className="bg-gradient-to-br from-accent/5 via-orange-50/50 to-transparent py-12 border-b">
+        <div className="bg-gradient-to-br from-emerald-100/30 via-green-50/20 to-transparent py-12 border-b">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                  <Landmark className="w-6 h-6 text-accent" />
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Landmark className="w-6 h-6 text-primary" />
                 </div>
-                <Badge variant="outline" className="border-accent/30 text-accent">
+                <Badge variant="outline" className="border-primary/30 text-primary">
                   Verbas Federais
                 </Badge>
               </div>
               
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-display mb-4 text-foreground">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-foreground">
                 Programas e Políticas
               </h1>
               
@@ -535,7 +535,7 @@ export default function Programas() {
 
         <div className="container mx-auto px-4 pb-10">
           <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-            <HelpCircle className="w-6 h-6 text-accent" />
+            <HelpCircle className="w-6 h-6 text-primary" />
             Dicas de Ouro
           </h2>
           <DicasRapidasSection />
@@ -547,7 +547,7 @@ export default function Programas() {
 
         <div className="container mx-auto px-4 pb-16">
           <div className="flex items-center gap-3 mb-8">
-            <School className="w-6 h-6 text-accent" />
+            <School className="w-6 h-6 text-primary" />
             <h2 className="text-2xl font-bold">Verbas que a Escola Gerencia</h2>
           </div>
           
@@ -558,7 +558,7 @@ export default function Programas() {
           </div>
 
           <div className="flex items-center gap-3 mb-8">
-            <Users className="w-6 h-6 text-accent" />
+            <Users className="w-6 h-6 text-primary" />
             <h2 className="text-2xl font-bold">Verbas Compartilhadas</h2>
             <Badge variant="outline" className="text-muted-foreground">
               Geridas pela Secretaria
