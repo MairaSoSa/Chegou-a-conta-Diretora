@@ -29,12 +29,22 @@ const VALID_DASHBOARD_CATEGORIES = [
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin2024";
 const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
-const activeTokens = new Map<string, number>();
 
 function generateToken(): string {
-  const token = crypto.randomBytes(32).toString("hex");
-  activeTokens.set(token, Date.now() + TOKEN_EXPIRY_MS);
-  return token;
+  const timestamp = Date.now().toString();
+  const hmac = crypto.createHmac("sha256", ADMIN_PASSWORD).update(timestamp).digest("hex");
+  return `${timestamp}.${hmac}`;
+}
+
+function verifyToken(token: string): boolean {
+  const parts = token.split(".");
+  if (parts.length !== 2) return false;
+  const [timestamp, hmac] = parts;
+  const expectedHmac = crypto.createHmac("sha256", ADMIN_PASSWORD).update(timestamp).digest("hex");
+  if (hmac !== expectedHmac) return false;
+  const createdAt = parseInt(timestamp, 10);
+  if (isNaN(createdAt)) return false;
+  return Date.now() - createdAt < TOKEN_EXPIRY_MS;
 }
 
 function adminAuth(req: Request, res: Response, next: NextFunction) {
@@ -43,9 +53,7 @@ function adminAuth(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ message: "Não autorizado" });
   }
   const token = authHeader.slice(7);
-  const expiry = activeTokens.get(token);
-  if (!expiry || Date.now() > expiry) {
-    activeTokens.delete(token);
+  if (!verifyToken(token)) {
     return res.status(401).json({ message: "Sessão expirada" });
   }
   next();

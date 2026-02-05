@@ -48,6 +48,11 @@ async function adminFetch(url: string, method: string, token: string, data?: unk
     body: data ? JSON.stringify(data) : undefined,
   });
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem("admin_token");
+      window.location.reload();
+      throw new Error("Sessão expirada. Faça login novamente.");
+    }
     const err = await res.json().catch(() => ({ message: "Erro desconhecido" }));
     throw new Error(err.message || "Erro na requisição");
   }
