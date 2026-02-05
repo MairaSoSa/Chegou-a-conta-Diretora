@@ -1,10 +1,31 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import crypto from "crypto";
+import Papa from "papaparse";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { registerChatRoutes } from "./replit_integrations/chat";
-import { insertToolSchema, insertGlossarySchema, insertTrilhaUnitSchema, insertProgramSchema, insertProgramDetailSchema } from "@shared/schema";
+import { z } from "zod";
+import {
+  insertToolSchema, insertGlossarySchema, insertTrilhaUnitSchema,
+  insertProgramSchema, insertProgramDetailSchema,
+  insertAiDocumentSchema
+} from "@shared/schema";
+
+const settingsEntrySchema = z.object({
+  key: z.string().min(1),
+  value: z.string(),
+  label: z.string().optional(),
+});
+
+const csvUploadSchema = z.object({
+  csvData: z.string().min(1, "Dados CSV não fornecidos"),
+});
+
+const VALID_DASHBOARD_CATEGORIES = [
+  "enrollment", "ideb", "repasses", "prestacao", "taxas",
+  "infraestrutura", "acoes_pdde", "calendario", "escola",
+] as const;
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin2024";
 const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
@@ -253,6 +274,134 @@ export async function registerRoutes(
     const id = parseInt(req.params.id);
     const deleted = await storage.deleteProgramDetail(id);
     if (!deleted) return res.status(404).json({ message: "Detalhe não encontrado" });
+    res.json({ success: true });
+  });
+
+  // === PUBLIC: SITE SETTINGS ===
+  app.get("/api/settings", async (_req, res) => {
+    const settings = await storage.getSiteSettings();
+    const result: Record<string, string> = {};
+    for (const s of settings) result[s.key] = s.value;
+    res.json(result);
+  });
+
+  // === ADMIN: SITE SETTINGS ===
+  app.put("/api/admin/settings", adminAuth, async (req, res) => {
+    try {
+      const entries = z.array(settingsEntrySchema).parse(req.body);
+      const results = [];
+      for (const entry of entries) {
+        const setting = await storage.upsertSiteSetting(entry.key, entry.value, entry.label);
+        results.push(setting);
+      }
+      res.json(results);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  // === PUBLIC: DASHBOARD DATASETS ===
+  app.get("/api/dashboard/datasets", async (_req, res) => {
+    const datasets = await storage.getDashboardDatasets();
+    res.json(datasets);
+  });
+
+  app.get("/api/dashboard/datasets/:category", async (req, res) => {
+    const dataset = await storage.getDashboardDatasetByCategory(req.params.category as string);
+    if (!dataset) return res.status(404).json({ message: "Dados não encontrados" });
+    res.json(dataset);
+  });
+
+  // === ADMIN: DASHBOARD CSV UPLOAD ===
+  const DASHBOARD_CATEGORIES: Record<string, { label: string; columns: string[] }> = {
+    enrollment: { label: "Matrículas", columns: ["year", "total", "iniciais", "finais"] },
+    ideb: { label: "IDEB", columns: ["year", "escola", "municipal", "estadual", "meta"] },
+    repasses: { label: "Repasses", columns: ["year", "pdde", "pnae", "pnate", "total"] },
+    prestacao: { label: "Prestação de Contas", columns: ["exercicio", "status", "programa"] },
+    taxas: { label: "Taxas Educacionais", columns: ["aprovacao", "reprovacao", "abandono", "distorcao"] },
+    infraestrutura: { label: "Infraestrutura", columns: ["item", "valor"] },
+    acoes_pdde: { label: "Ações PDDE", columns: ["nome", "status", "valor"] },
+    calendario: { label: "Calendário", columns: ["mes", "ano", "dia", "evento", "tipo", "urgente"] },
+    escola: { label: "Dados da Escola", columns: ["campo", "valor"] },
+  };
+
+  app.get("/api/admin/dashboard/categories", adminAuth, async (_req, res) => {
+    res.json(DASHBOARD_CATEGORIES);
+  });
+
+  app.get("/api/admin/dashboard/template/:category", adminAuth, async (req, res) => {
+    const category = req.params.category as string;
+    const config = DASHBOARD_CATEGORIES[category];
+    if (!config) return res.status(404).json({ message: "Categoria não encontrada" });
+    const csv = Papa.unparse({ fields: config.columns, data: [] });
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename=modelo_${category}.csv`);
+    res.send(csv);
+  });
+
+  app.post("/api/admin/dashboard/upload/:category", adminAuth, async (req, res) => {
+    try {
+      const category = req.params.category as string;
+      if (!VALID_DASHBOARD_CATEGORIES.includes(category as any)) {
+        return res.status(400).json({ message: "Categoria inválida" });
+      }
+      const config = DASHBOARD_CATEGORIES[category];
+      if (!config) return res.status(404).json({ message: "Categoria não encontrada" });
+
+      const { csvData } = csvUploadSchema.parse(req.body);
+
+      const parsed = Papa.parse(csvData, { header: true, skipEmptyLines: true, dynamicTyping: true });
+      if (parsed.errors.length > 0) {
+        return res.status(400).json({ message: "Erro no CSV", errors: parsed.errors });
+      }
+
+      const dataset = await storage.upsertDashboardDataset(category, parsed.data);
+      res.json(dataset);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.delete("/api/admin/dashboard/:id", adminAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteDashboardDataset(id);
+    if (!deleted) return res.status(404).json({ message: "Dataset não encontrado" });
+    res.json({ success: true });
+  });
+
+  // === PUBLIC: AI DOCUMENTS ===
+  app.get("/api/ai-documents", async (_req, res) => {
+    const docs = await storage.getAiDocuments();
+    res.json(docs);
+  });
+
+  // === ADMIN: AI DOCUMENTS ===
+  app.post("/api/admin/ai-documents", adminAuth, async (req, res) => {
+    try {
+      const data = insertAiDocumentSchema.parse(req.body);
+      const doc = await storage.createAiDocument(data);
+      res.json(doc);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.put("/api/admin/ai-documents/:id", adminAuth, async (req, res) => {
+    try {
+      const data = insertAiDocumentSchema.partial().parse(req.body);
+      const id = parseInt(req.params.id);
+      const updated = await storage.updateAiDocument(id, data);
+      if (!updated) return res.status(404).json({ message: "Documento não encontrado" });
+      res.json(updated);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.delete("/api/admin/ai-documents/:id", adminAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteAiDocument(id);
+    if (!deleted) return res.status(404).json({ message: "Documento não encontrado" });
     res.json({ success: true });
   });
 

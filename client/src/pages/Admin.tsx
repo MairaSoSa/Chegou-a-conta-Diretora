@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,10 +10,11 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Lock, LogOut, Plus, Pencil, Trash2, Save, X,
   BookText, Wrench, Ship, FileText, ChevronLeft,
-  GraduationCap, Settings
+  ChevronDown, ChevronUp, GraduationCap, Settings,
+  Building2, BarChart3, Brain, Upload, Download, Check
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { GlossaryItem, Tool, TrilhaUnit } from "@shared/schema";
+import type { GlossaryItem, Tool, TrilhaUnit, Program, ProgramDetail, DashboardDataset, AiDocument } from "@shared/schema";
 
 function useAdminAuth() {
   const [token, setToken] = useState<string | null>(() =>
@@ -630,12 +631,728 @@ function TrilhaManager({ token }: { token: string }) {
   );
 }
 
-type TabId = "glossary" | "tools" | "trilha";
+function ProgramsManager({ token }: { token: string }) {
+  const { toast } = useToast();
+  const [editing, setEditing] = useState<number | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [form, setForm] = useState({ code: "", name: "", description: "", lastReferenceYear: 0, status: "ativo", observation: "" });
+  const [detailEditing, setDetailEditing] = useState<number | null>(null);
+  const [detailCreating, setDetailCreating] = useState<string | null>(null);
+  const [detailForm, setDetailForm] = useState({ programCode: "", type: "allowed", content: "", category: "" });
+
+  const { data: programsList = [], isLoading } = useQuery<Program[]>({
+    queryKey: ["/api/programs"],
+  });
+
+  const [detailsCache, setDetailsCache] = useState<Record<string, ProgramDetail[]>>({});
+
+  const fetchDetails = async (code: string) => {
+    try {
+      const res = await fetch(`/api/programs/${code}`);
+      const data = await res.json();
+      setDetailsCache(prev => ({ ...prev, [code]: data.details || [] }));
+    } catch {
+      // ignore
+    }
+  };
+
+  const toggleExpand = (program: Program) => {
+    const newExpanded = new Set(expanded);
+    if (newExpanded.has(program.id)) {
+      newExpanded.delete(program.id);
+    } else {
+      newExpanded.add(program.id);
+      if (!detailsCache[program.code]) {
+        fetchDetails(program.code);
+      }
+    }
+    setExpanded(newExpanded);
+  };
+
+  const createMutation = useMutation({
+    mutationFn: (data: typeof form) =>
+      adminFetch("/api/admin/programs", "POST", token, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/programs"] });
+      setCreating(false);
+      setForm({ code: "", name: "", description: "", lastReferenceYear: 0, status: "ativo", observation: "" });
+      toast({ title: "Programa criado" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<typeof form> }) =>
+      adminFetch(`/api/admin/programs/${id}`, "PUT", token, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/programs"] });
+      setEditing(null);
+      toast({ title: "Programa atualizado" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => adminFetch(`/api/admin/programs/${id}`, "DELETE", token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/programs"] });
+      toast({ title: "Programa excluído" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const createDetailMutation = useMutation({
+    mutationFn: (data: typeof detailForm) =>
+      adminFetch("/api/admin/program-details", "POST", token, data),
+    onSuccess: (_: unknown, variables: typeof detailForm) => {
+      fetchDetails(variables.programCode);
+      setDetailCreating(null);
+      setDetailForm({ programCode: "", type: "allowed", content: "", category: "" });
+      toast({ title: "Detalhe criado" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const updateDetailMutation = useMutation({
+    mutationFn: ({ id, data, programCode }: { id: number; data: Partial<typeof detailForm>; programCode: string }) =>
+      adminFetch(`/api/admin/program-details/${id}`, "PUT", token, data),
+    onSuccess: (_: unknown, variables: { id: number; data: Partial<typeof detailForm>; programCode: string }) => {
+      fetchDetails(variables.programCode);
+      setDetailEditing(null);
+      toast({ title: "Detalhe atualizado" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteDetailMutation = useMutation({
+    mutationFn: ({ id, programCode }: { id: number; programCode: string }) =>
+      adminFetch(`/api/admin/program-details/${id}`, "DELETE", token),
+    onSuccess: (_: unknown, variables: { id: number; programCode: string }) => {
+      fetchDetails(variables.programCode);
+      toast({ title: "Detalhe excluído" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const startEdit = (item: Program) => {
+    setEditing(item.id);
+    setForm({
+      code: item.code,
+      name: item.name,
+      description: item.description,
+      lastReferenceYear: item.lastReferenceYear || 0,
+      status: item.status,
+      observation: item.observation || "",
+    });
+  };
+
+  const startDetailEdit = (detail: ProgramDetail) => {
+    setDetailEditing(detail.id);
+    setDetailForm({
+      programCode: detail.programCode,
+      type: detail.type,
+      content: detail.content,
+      category: detail.category || "",
+    });
+  };
+
+  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Carregando...</div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Building2 className="w-5 h-5 text-emerald-600" />
+          Programas ({programsList.length})
+        </h2>
+        <Button onClick={() => { setCreating(true); setForm({ code: "", name: "", description: "", lastReferenceYear: new Date().getFullYear(), status: "ativo", observation: "" }); }} data-testid="button-add-program">
+          <Plus className="w-4 h-4 mr-2" />
+          Novo Programa
+        </Button>
+      </div>
+
+      {creating && (
+        <Card className="border-emerald-200">
+          <CardContent className="p-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Input placeholder="Código (ex: PDDE)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} data-testid="input-program-code" />
+              <Input placeholder="Nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} data-testid="input-program-name" />
+              <Input placeholder="Ano referência" type="number" value={form.lastReferenceYear || ""} onChange={(e) => setForm({ ...form, lastReferenceYear: parseInt(e.target.value) || 0 })} data-testid="input-program-year" />
+            </div>
+            <Textarea placeholder="Descrição do programa..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} data-testid="input-program-description" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <select className="border rounded-md px-3 py-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} data-testid="select-program-status">
+                <option value="ativo">Ativo</option>
+                <option value="inativo">Inativo</option>
+                <option value="suspenso">Suspenso</option>
+              </select>
+              <Input placeholder="Observação (opcional)" value={form.observation} onChange={(e) => setForm({ ...form, observation: e.target.value })} data-testid="input-program-observation" />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setCreating(false)}>
+                <X className="w-4 h-4 mr-1" /> Cancelar
+              </Button>
+              <Button onClick={() => createMutation.mutate(form)} disabled={!form.code || !form.name || !form.description}>
+                <Save className="w-4 h-4 mr-1" /> Salvar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="space-y-2">
+        {programsList.map((program) => (
+          <Card key={program.id} className={cn(editing === program.id && "border-emerald-300 ring-1 ring-emerald-200")}>
+            <CardContent className="p-4">
+              {editing === program.id ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="Código" />
+                    <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nome" />
+                    <Input type="number" value={form.lastReferenceYear || ""} onChange={(e) => setForm({ ...form, lastReferenceYear: parseInt(e.target.value) || 0 })} placeholder="Ano" />
+                  </div>
+                  <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} placeholder="Descrição" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <select className="border rounded-md px-3 py-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                      <option value="ativo">Ativo</option>
+                      <option value="inativo">Inativo</option>
+                      <option value="suspenso">Suspenso</option>
+                    </select>
+                    <Input value={form.observation} onChange={(e) => setForm({ ...form, observation: e.target.value })} placeholder="Observação" />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" onClick={() => setEditing(null)}>
+                      <X className="w-4 h-4 mr-1" /> Cancelar
+                    </Button>
+                    <Button onClick={() => updateMutation.mutate({ id: program.id, data: form })}>
+                      <Save className="w-4 h-4 mr-1" /> Salvar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-start gap-3">
+                    <Button variant="ghost" size="icon" onClick={() => toggleExpand(program)} data-testid={`button-expand-program-${program.id}`}>
+                      {expanded.has(program.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <Badge variant="outline">{program.code}</Badge>
+                        <h3 className="font-semibold">{program.name}</h3>
+                        <Badge variant={program.status === "ativo" ? "default" : "secondary"} className="text-xs">{program.status}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{program.description}</p>
+                      {program.lastReferenceYear && (
+                        <p className="text-xs text-muted-foreground mt-1">Ano: {program.lastReferenceYear}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <Button variant="ghost" size="icon" onClick={() => startEdit(program)} data-testid={`button-edit-program-${program.id}`}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir este programa?")) deleteMutation.mutate(program.id); }} data-testid={`button-delete-program-${program.id}`}>
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {expanded.has(program.id) && (
+                    <div className="mt-4 ml-10 space-y-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <h4 className="text-sm font-semibold text-muted-foreground">Detalhes do Programa</h4>
+                        <Button size="sm" variant="outline" onClick={() => { setDetailCreating(program.code); setDetailForm({ programCode: program.code, type: "allowed", content: "", category: "" }); }} data-testid={`button-add-detail-${program.id}`}>
+                          <Plus className="w-3 h-3 mr-1" /> Detalhe
+                        </Button>
+                      </div>
+
+                      {detailCreating === program.code && (
+                        <Card className="border-emerald-200">
+                          <CardContent className="p-3 space-y-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <select className="border rounded-md px-3 py-2 text-sm" value={detailForm.type} onChange={(e) => setDetailForm({ ...detailForm, type: e.target.value })} data-testid="select-detail-type">
+                                <option value="allowed">Permitido</option>
+                                <option value="forbidden">Proibido</option>
+                              </select>
+                              <Input placeholder="Categoria (opcional)" value={detailForm.category} onChange={(e) => setDetailForm({ ...detailForm, category: e.target.value })} data-testid="input-detail-category" />
+                            </div>
+                            <Input placeholder="Conteúdo" value={detailForm.content} onChange={(e) => setDetailForm({ ...detailForm, content: e.target.value })} data-testid="input-detail-content" />
+                            <div className="flex gap-2 justify-end">
+                              <Button variant="outline" size="sm" onClick={() => setDetailCreating(null)}>
+                                <X className="w-3 h-3 mr-1" /> Cancelar
+                              </Button>
+                              <Button size="sm" onClick={() => createDetailMutation.mutate(detailForm)} disabled={!detailForm.content}>
+                                <Save className="w-3 h-3 mr-1" /> Salvar
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {(detailsCache[program.code] || []).map((detail) => (
+                        <Card key={detail.id}>
+                          <CardContent className="p-3">
+                            {detailEditing === detail.id ? (
+                              <div className="space-y-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <select className="border rounded-md px-3 py-2 text-sm" value={detailForm.type} onChange={(e) => setDetailForm({ ...detailForm, type: e.target.value })}>
+                                    <option value="allowed">Permitido</option>
+                                    <option value="forbidden">Proibido</option>
+                                  </select>
+                                  <Input placeholder="Categoria" value={detailForm.category} onChange={(e) => setDetailForm({ ...detailForm, category: e.target.value })} />
+                                </div>
+                                <Input value={detailForm.content} onChange={(e) => setDetailForm({ ...detailForm, content: e.target.value })} placeholder="Conteúdo" />
+                                <div className="flex gap-2 justify-end">
+                                  <Button variant="outline" size="sm" onClick={() => setDetailEditing(null)}>
+                                    <X className="w-3 h-3 mr-1" /> Cancelar
+                                  </Button>
+                                  <Button size="sm" onClick={() => updateDetailMutation.mutate({ id: detail.id, data: detailForm, programCode: program.code })}>
+                                    <Save className="w-3 h-3 mr-1" /> Salvar
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <Badge variant={detail.type === "allowed" ? "default" : "destructive"} className="text-xs flex-shrink-0">
+                                  {detail.type === "allowed" ? "Permitido" : "Proibido"}
+                                </Badge>
+                                {detail.category && <Badge variant="outline" className="text-xs flex-shrink-0">{detail.category}</Badge>}
+                                <span className="text-sm flex-1 min-w-0">{detail.content}</span>
+                                <div className="flex gap-1 flex-shrink-0">
+                                  <Button variant="ghost" size="icon" onClick={() => startDetailEdit(detail)} data-testid={`button-edit-detail-${detail.id}`}>
+                                    <Pencil className="w-3 h-3" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir este detalhe?")) deleteDetailMutation.mutate({ id: detail.id, programCode: program.code }); }} data-testid={`button-delete-detail-${detail.id}`}>
+                                    <Trash2 className="w-3 h-3 text-red-500" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+
+                      {detailsCache[program.code]?.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-2">Nenhum detalhe cadastrado.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const DASHBOARD_CATEGORIES: Record<string, string> = {
+  enrollment: "Matrículas",
+  ideb: "IDEB",
+  repasses: "Repasses",
+  prestacao: "Prestação de Contas",
+  taxas: "Taxas Educacionais",
+  infraestrutura: "Infraestrutura",
+  acoes_pdde: "Ações PDDE",
+  calendario: "Calendário",
+  escola: "Dados da Escola",
+};
+
+function DashboardManager({ token }: { token: string }) {
+  const { toast } = useToast();
+  const [csvInputs, setCsvInputs] = useState<Record<string, string>>({});
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const { data: datasets = [], isLoading } = useQuery<DashboardDataset[]>({
+    queryKey: ["/api/dashboard/datasets"],
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: ({ category, csvData }: { category: string; csvData: string }) =>
+      adminFetch(`/api/admin/dashboard/upload/${category}`, "POST", token, { csvData }),
+    onSuccess: (_: unknown, variables: { category: string; csvData: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/datasets"] });
+      setCsvInputs(prev => ({ ...prev, [variables.category]: "" }));
+      toast({ title: "Dados enviados" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => adminFetch(`/api/admin/dashboard/${id}`, "DELETE", token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/datasets"] });
+      toast({ title: "Dataset excluído" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const handleFileSelect = (category: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      setCsvInputs(prev => ({ ...prev, [category]: text }));
+    };
+    reader.readAsText(file);
+  };
+
+  const handleTemplateDownload = (category: string) => {
+    const a = document.createElement("a");
+    a.href = `/api/admin/dashboard/template/${category}`;
+    a.download = `modelo_${category}.csv`;
+    const tokenValue = token;
+    fetch(`/api/admin/dashboard/template/${category}`, {
+      headers: authHeaders(tokenValue),
+    })
+      .then(res => res.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        a.href = url;
+        a.click();
+        URL.revokeObjectURL(url);
+      })
+      .catch(() => toast({ title: "Erro ao baixar template", variant: "destructive" }));
+  };
+
+  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Carregando...</div>;
+
+  const datasetMap: Record<string, DashboardDataset> = {};
+  for (const ds of datasets) {
+    datasetMap[ds.category] = ds;
+  }
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold flex items-center gap-2">
+        <BarChart3 className="w-5 h-5 text-emerald-600" />
+        Dashboard - Dados CSV
+      </h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Object.entries(DASHBOARD_CATEGORIES).map(([category, label]) => {
+          const existing = datasetMap[category];
+          const csvText = csvInputs[category] || "";
+
+          return (
+            <Card key={category}>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <h3 className="font-semibold text-sm">{label}</h3>
+                  {existing ? (
+                    <Badge variant="default" className="text-xs bg-emerald-100 text-emerald-800 border-0">
+                      <Check className="w-3 h-3 mr-1" /> Dados
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-xs">Vazio</Badge>
+                  )}
+                </div>
+
+                {existing && (
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <p className="text-xs text-muted-foreground">
+                      Atualizado: {existing.lastUpdated ? new Date(existing.lastUpdated).toLocaleDateString("pt-BR") : "—"}
+                    </p>
+                    <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir este dataset?")) deleteMutation.mutate(existing.id); }} data-testid={`button-delete-dataset-${category}`}>
+                      <Trash2 className="w-3 h-3 text-red-500" />
+                    </Button>
+                  </div>
+                )}
+
+                <div className="flex gap-2 flex-wrap">
+                  <Button variant="outline" size="sm" onClick={() => handleTemplateDownload(category)} data-testid={`button-template-${category}`}>
+                    <Download className="w-3 h-3 mr-1" /> Template
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => fileInputRefs.current[category]?.click()} data-testid={`button-upload-${category}`}>
+                    <Upload className="w-3 h-3 mr-1" /> Arquivo
+                  </Button>
+                  <input
+                    ref={(el) => { fileInputRefs.current[category] = el; }}
+                    type="file"
+                    accept=".csv"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileSelect(category, file);
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
+
+                <Textarea
+                  placeholder="Cole o CSV aqui..."
+                  value={csvText}
+                  onChange={(e) => setCsvInputs(prev => ({ ...prev, [category]: e.target.value }))}
+                  rows={3}
+                  className="text-xs font-mono"
+                  data-testid={`input-csv-${category}`}
+                />
+
+                {csvText && (
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    onClick={() => uploadMutation.mutate({ category, csvData: csvText })}
+                    disabled={uploadMutation.isPending}
+                    data-testid={`button-send-csv-${category}`}
+                  >
+                    <Save className="w-3 h-3 mr-1" /> Enviar
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AiDocsManager({ token }: { token: string }) {
+  const { toast } = useToast();
+  const [editing, setEditing] = useState<number | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState({ title: "", content: "", category: "", sortOrder: 0 });
+
+  const { data: items = [], isLoading } = useQuery<AiDocument[]>({
+    queryKey: ["/api/ai-documents"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: typeof form) =>
+      adminFetch("/api/admin/ai-documents", "POST", token, {
+        ...data,
+        sortOrder: data.sortOrder || items.length + 1,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/ai-documents"] });
+      setCreating(false);
+      setForm({ title: "", content: "", category: "", sortOrder: 0 });
+      toast({ title: "Documento criado" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<typeof form> }) =>
+      adminFetch(`/api/admin/ai-documents/${id}`, "PUT", token, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/ai-documents"] });
+      setEditing(null);
+      toast({ title: "Documento atualizado" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => adminFetch(`/api/admin/ai-documents/${id}`, "DELETE", token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/ai-documents"] });
+      toast({ title: "Documento excluído" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const startEdit = (item: AiDocument) => {
+    setEditing(item.id);
+    setForm({
+      title: item.title,
+      content: item.content,
+      category: item.category || "",
+      sortOrder: item.sortOrder || 0,
+    });
+  };
+
+  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Carregando...</div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Brain className="w-5 h-5 text-emerald-600" />
+          Base de Conhecimento IA ({items.length} docs)
+        </h2>
+        <Button onClick={() => { setCreating(true); setForm({ title: "", content: "", category: "", sortOrder: items.length + 1 }); }} data-testid="button-add-ai-doc">
+          <Plus className="w-4 h-4 mr-2" />
+          Novo Documento
+        </Button>
+      </div>
+
+      {creating && (
+        <Card className="border-emerald-200">
+          <CardContent className="p-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input placeholder="Título do documento" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} data-testid="input-ai-doc-title" />
+              <Input placeholder="Categoria (opcional)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} data-testid="input-ai-doc-category" />
+            </div>
+            <Textarea
+              placeholder="Conteúdo do documento..."
+              value={form.content}
+              onChange={(e) => setForm({ ...form, content: e.target.value })}
+              rows={12}
+              data-testid="input-ai-doc-content"
+            />
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setCreating(false)}>
+                <X className="w-4 h-4 mr-1" /> Cancelar
+              </Button>
+              <Button onClick={() => createMutation.mutate(form)} disabled={!form.title || !form.content} data-testid="button-save-ai-doc">
+                <Save className="w-4 h-4 mr-1" /> Salvar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="space-y-2">
+        {items.map((item) => (
+          <Card key={item.id} className={cn(editing === item.id && "border-emerald-300 ring-1 ring-emerald-200")}>
+            <CardContent className="p-4">
+              {editing === item.id ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Título" />
+                    <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Categoria" />
+                  </div>
+                  <Textarea
+                    value={form.content}
+                    onChange={(e) => setForm({ ...form, content: e.target.value })}
+                    rows={12}
+                    placeholder="Conteúdo"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" onClick={() => setEditing(null)}>
+                      <X className="w-4 h-4 mr-1" /> Cancelar
+                    </Button>
+                    <Button onClick={() => updateMutation.mutate({ id: item.id, data: form })}>
+                      <Save className="w-4 h-4 mr-1" /> Salvar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <h3 className="font-semibold">{item.title}</h3>
+                      {item.category && <Badge variant="outline" className="text-xs">{item.category}</Badge>}
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-3">{item.content}</p>
+                  </div>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <Button variant="ghost" size="icon" onClick={() => startEdit(item)} data-testid={`button-edit-ai-doc-${item.id}`}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir este documento?")) deleteMutation.mutate(item.id); }} data-testid={`button-delete-ai-doc-${item.id}`}>
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <p className="text-sm text-muted-foreground text-center pt-4">
+        A IA só vai responder com base nestes documentos e no conteúdo do site.
+      </p>
+    </div>
+  );
+}
+
+function SettingsManager({ token }: { token: string }) {
+  const { toast } = useToast();
+  const [settings, setSettings] = useState<Record<string, string>>({
+    footer_text: "",
+    footer_slogan: "",
+    site_title: "",
+  });
+  const [loaded, setLoaded] = useState(false);
+
+  const FIELDS = [
+    { key: "site_title", label: "Título do Site", type: "input" },
+    { key: "footer_text", label: "Texto do Rodapé", type: "textarea" },
+    { key: "footer_slogan", label: "Slogan do Rodapé", type: "input" },
+  ];
+
+  const { data: currentSettings, isLoading } = useQuery<Record<string, string>>({
+    queryKey: ["/api/settings"],
+  });
+
+  if (currentSettings && !loaded) {
+    setSettings(prev => ({ ...prev, ...currentSettings }));
+    setLoaded(true);
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: () => {
+      const entries = FIELDS.map(f => ({
+        key: f.key,
+        value: settings[f.key] || "",
+        label: f.label,
+      }));
+      return adminFetch("/api/admin/settings", "PUT", token, entries);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      toast({ title: "Configurações salvas" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Carregando...</div>;
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold flex items-center gap-2">
+        <Settings className="w-5 h-5 text-emerald-600" />
+        Configurações do Site
+      </h2>
+
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          {FIELDS.map((field) => (
+            <div key={field.key}>
+              <label className="text-sm font-medium mb-2 block">{field.label}</label>
+              {field.type === "textarea" ? (
+                <Textarea
+                  value={settings[field.key] || ""}
+                  onChange={(e) => setSettings(prev => ({ ...prev, [field.key]: e.target.value }))}
+                  rows={3}
+                  data-testid={`input-setting-${field.key}`}
+                />
+              ) : (
+                <Input
+                  value={settings[field.key] || ""}
+                  onChange={(e) => setSettings(prev => ({ ...prev, [field.key]: e.target.value }))}
+                  data-testid={`input-setting-${field.key}`}
+                />
+              )}
+            </div>
+          ))}
+
+          <div className="flex justify-end pt-2">
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} data-testid="button-save-settings">
+              <Save className="w-4 h-4 mr-2" />
+              {saveMutation.isPending ? "Salvando..." : "Salvar Configurações"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+type TabId = "glossary" | "tools" | "trilha" | "programs" | "dashboard" | "ai-docs" | "settings";
 
 const TABS: Array<{ id: TabId; label: string; icon: typeof BookText }> = [
   { id: "glossary", label: "Glossário", icon: BookText },
   { id: "tools", label: "Ferramentas", icon: Wrench },
   { id: "trilha", label: "Trilha", icon: Ship },
+  { id: "programs", label: "Programas", icon: Building2 },
+  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+  { id: "ai-docs", label: "Base IA", icon: Brain },
+  { id: "settings", label: "Configurações", icon: Settings },
 ];
 
 export default function Admin() {
@@ -690,6 +1407,10 @@ export default function Admin() {
         {activeTab === "glossary" && token && <GlossaryManager token={token} />}
         {activeTab === "tools" && token && <ToolsManager token={token} />}
         {activeTab === "trilha" && token && <TrilhaManager token={token} />}
+        {activeTab === "programs" && token && <ProgramsManager token={token} />}
+        {activeTab === "dashboard" && token && <DashboardManager token={token} />}
+        {activeTab === "ai-docs" && token && <AiDocsManager token={token} />}
+        {activeTab === "settings" && token && <SettingsManager token={token} />}
       </div>
     </div>
   );

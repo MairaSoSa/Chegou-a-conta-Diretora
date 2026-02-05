@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { DashboardDataset } from "@shared/schema";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Input } from "@/components/ui/input";
@@ -32,8 +34,8 @@ const DEMO_SCHOOL = {
   bairro: "Centro",
 };
 
-// Dados de matrículas históricos
-const ENROLLMENT_HISTORY = [
+// Dados de matrículas históricos (fallback)
+const DEFAULT_ENROLLMENT_HISTORY = [
   { year: '2020', total: 380, iniciais: 220, finais: 160 },
   { year: '2021', total: 365, iniciais: 210, finais: 155 },
   { year: '2022', total: 358, iniciais: 205, finais: 153 },
@@ -41,16 +43,16 @@ const ENROLLMENT_HISTORY = [
   { year: '2024', total: 342, iniciais: 195, finais: 147 },
 ];
 
-// Dados do IDEB
-const IDEB_DATA = [
+// Dados do IDEB (fallback)
+const DEFAULT_IDEB_DATA = [
   { year: '2017', escola: 5.2, municipal: 5.0, estadual: 5.4, meta: 5.0 },
   { year: '2019', escola: 5.5, municipal: 5.2, estadual: 5.6, meta: 5.3 },
   { year: '2021', escola: 5.1, municipal: 4.9, estadual: 5.3, meta: 5.5 },
   { year: '2023', escola: 5.7, municipal: 5.3, estadual: 5.8, meta: 5.7 },
 ];
 
-// Repasses por programa
-const REPASSES_DATA = [
+// Repasses por programa (fallback)
+const DEFAULT_REPASSES_DATA = [
   { year: '2020', pdde: 8400, pnae: 28000, pnate: 0, total: 36400 },
   { year: '2021', pdde: 8400, pnae: 29200, pnate: 0, total: 37600 },
   { year: '2022', pdde: 9200, pnae: 30100, pnate: 0, total: 39300 },
@@ -58,23 +60,23 @@ const REPASSES_DATA = [
   { year: '2024', pdde: 8400, pnae: 16800, pnate: 0, total: 25200 },
 ];
 
-// Status de prestação de contas
-const PRESTACAO_STATUS = [
+// Status de prestação de contas (fallback)
+const DEFAULT_PRESTACAO_STATUS = [
   { exercicio: '2021', status: 'Aprovada', programa: 'PDDE' },
   { exercicio: '2022', status: 'Aprovada', programa: 'PDDE' },
   { exercicio: '2023', status: 'Em análise', programa: 'PDDE' },
 ];
 
-// Taxas educacionais
-const TAXAS_EDUCACIONAIS = {
+// Taxas educacionais (fallback)
+const DEFAULT_TAXAS_EDUCACIONAIS = {
   aprovacao: 94.2,
   reprovacao: 3.1,
   abandono: 2.7,
   distorcao: 8.5,
 };
 
-// Infraestrutura
-const INFRAESTRUTURA = {
+// Infraestrutura (fallback)
+const DEFAULT_INFRAESTRUTURA = {
   biblioteca: true,
   quadra: true,
   laboratorio: false,
@@ -83,16 +85,16 @@ const INFRAESTRUTURA = {
   computadores: 25,
 };
 
-// Ações PDDE
-const ACOES_PDDE = [
+// Ações PDDE (fallback)
+const DEFAULT_ACOES_PDDE = [
   { nome: 'PDDE Básico', status: 'Ativo', valor: 8400 },
   { nome: 'PDDE Qualidade', status: 'Ativo', valor: 3200 },
   { nome: 'PDDE Estrutura', status: 'Não aderiu', valor: 0 },
   { nome: 'Educação Conectada', status: 'Ativo', valor: 2800 },
 ];
 
-// Prazos e Calendário Completo
-const CALENDARIO_EVENTOS = [
+// Prazos e Calendário Completo (fallback)
+const DEFAULT_CALENDARIO_EVENTOS = [
   // Fevereiro
   { mes: 2, ano: 2025, dia: 28, evento: 'Entregar contas do PDDE de 2024', tipo: 'prestacao', urgente: true },
   // Março
@@ -267,18 +269,43 @@ export default function Dashboard() {
   const { data: searchResults } = useSchoolSearch(searchQuery);
   const { data: school } = useSchool(selectedInep || "");
 
+  const { data: datasets = [] } = useQuery<DashboardDataset[]>({
+    queryKey: ["/api/dashboard/datasets"],
+  });
+
+  function getDataset(category: string) {
+    return datasets.find(d => d.category === category);
+  }
+
+  const enrollmentData = getDataset('enrollment')?.data as any[] || DEFAULT_ENROLLMENT_HISTORY;
+  const idebData = getDataset('ideb')?.data as any[] || DEFAULT_IDEB_DATA;
+  const repassesData = getDataset('repasses')?.data as any[] || DEFAULT_REPASSES_DATA;
+  const prestacaoData = getDataset('prestacao')?.data as any[] || DEFAULT_PRESTACAO_STATUS;
+  const taxasRaw = getDataset('taxas')?.data as any;
+  const taxasData = Array.isArray(taxasRaw) ? (taxasRaw[0] || DEFAULT_TAXAS_EDUCACIONAIS) : (taxasRaw || DEFAULT_TAXAS_EDUCACIONAIS);
+  const infraRaw = getDataset('infraestrutura')?.data as any;
+  const infraData = Array.isArray(infraRaw) ? (infraRaw[0] || DEFAULT_INFRAESTRUTURA) : (infraRaw || DEFAULT_INFRAESTRUTURA);
+  const acoesPddeData = getDataset('acoes_pdde')?.data as any[] || DEFAULT_ACOES_PDDE;
+  const calendarioData = getDataset('calendario')?.data as any[] || DEFAULT_CALENDARIO_EVENTOS;
+
+  const latestUpdate = datasets.length > 0
+    ? datasets.reduce((latest, d) => {
+        const dt = d.lastUpdated ? new Date(d.lastUpdated) : new Date(0);
+        return dt > latest ? dt : latest;
+      }, new Date(0))
+    : null;
+
   const displaySchool = selectedInep && school ? school : (showDemo ? DEMO_SCHOOL : null);
 
-  // Cálculos derivados
-  const lastEnrollment = ENROLLMENT_HISTORY[ENROLLMENT_HISTORY.length - 1];
-  const prevEnrollment = ENROLLMENT_HISTORY[ENROLLMENT_HISTORY.length - 2];
+  const lastEnrollment = enrollmentData[enrollmentData.length - 1];
+  const prevEnrollment = enrollmentData[enrollmentData.length - 2];
   const enrollmentVariation = ((lastEnrollment.total - prevEnrollment.total) / prevEnrollment.total * 100).toFixed(1);
 
-  const lastRepasse = REPASSES_DATA[REPASSES_DATA.length - 1];
+  const lastRepasse = repassesData[repassesData.length - 1];
   const repassePerAluno = (lastRepasse.total / lastEnrollment.total).toFixed(2);
 
-  const lastIdeb = IDEB_DATA[IDEB_DATA.length - 1];
-  const ultimoPrestacao = PRESTACAO_STATUS[PRESTACAO_STATUS.length - 1];
+  const lastIdeb = idebData[idebData.length - 1];
+  const ultimoPrestacao = prestacaoData[prestacaoData.length - 1];
   const defasagemCiclos = 2025 - parseInt(ultimoPrestacao.exercicio);
 
   return (
@@ -349,6 +376,11 @@ export default function Dashboard() {
                 <Badge variant="outline">{displaySchool.location}</Badge>
                 {showDemo && (
                   <Badge className="bg-amber-100 text-amber-700 border-0">Demonstração</Badge>
+                )}
+                {latestUpdate && latestUpdate.getTime() > 0 && (
+                  <span className="text-xs text-muted-foreground" data-testid="text-dashboard-last-update">
+                    Dados atualizados em: {latestUpdate.toLocaleDateString('pt-BR')}
+                  </span>
                 )}
                 <div className="ml-auto flex items-center gap-2">
                   <Button
@@ -445,7 +477,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {CALENDARIO_EVENTOS.filter(e => e.urgente || new Date(e.ano, e.mes - 1, e.dia) > new Date()).slice(0, 3).map((evento, i) => (
+                    {calendarioData.filter(e => e.urgente || new Date(e.ano, e.mes - 1, e.dia) > new Date()).slice(0, 3).map((evento, i) => (
                       <div key={i} className={`p-4 rounded-xl ${evento.urgente ? 'bg-red-50 border-2 border-red-200' : 'bg-muted/30 border border-transparent'}`}>
                         <div className="flex items-start gap-3">
                           <div className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center flex-shrink-0 ${evento.urgente ? 'bg-red-100' : 'bg-white border'}`}>
@@ -560,7 +592,7 @@ export default function Dashboard() {
                     <p className="text-sm text-muted-foreground mb-3">Como foi nos últimos anos</p>
                     <div className="h-[200px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={ENROLLMENT_HISTORY}>
+                        <AreaChart data={enrollmentData}>
                           <defs>
                             <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#166534" stopOpacity={0.3}/>
@@ -610,10 +642,10 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <TaxaCard label="Passaram de ano" value={TAXAS_EDUCACIONAIS.aprovacao} suffix="%" good />
-                  <TaxaCard label="Reprovaram" value={TAXAS_EDUCACIONAIS.reprovacao} suffix="%" />
-                  <TaxaCard label="Desistiram" value={TAXAS_EDUCACIONAIS.abandono} suffix="%" />
-                  <TaxaCard label="Atrasados na série" value={TAXAS_EDUCACIONAIS.distorcao} suffix="%" />
+                  <TaxaCard label="Passaram de ano" value={taxasData.aprovacao} suffix="%" good />
+                  <TaxaCard label="Reprovaram" value={taxasData.reprovacao} suffix="%" />
+                  <TaxaCard label="Desistiram" value={taxasData.abandono} suffix="%" />
+                  <TaxaCard label="Atrasados na série" value={taxasData.distorcao} suffix="%" />
                 </div>
               </CardContent>
             </Card>}
@@ -638,7 +670,7 @@ export default function Dashboard() {
                     <p className="text-sm text-muted-foreground mb-3">Como a nota foi mudando</p>
                     <div className="h-[220px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={IDEB_DATA}>
+                        <LineChart data={idebData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                           <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                           <YAxis domain={[4, 7]} stroke="hsl(var(--muted-foreground))" fontSize={12} />
@@ -679,14 +711,14 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                  <InfraItem icon={Library} label="Biblioteca" available={INFRAESTRUTURA.biblioteca} />
-                  <InfraItem icon={Dumbbell} label="Quadra" available={INFRAESTRUTURA.quadra} />
-                  <InfraItem icon={Monitor} label="Sala de Computadores" available={INFRAESTRUTURA.laboratorio} />
-                  <InfraItem icon={Wifi} label="Internet" available={INFRAESTRUTURA.internet} />
-                  <InfraItem icon={Accessibility} label="Acesso para cadeirantes" available={INFRAESTRUTURA.acessibilidade} />
+                  <InfraItem icon={Library} label="Biblioteca" available={infraData.biblioteca} />
+                  <InfraItem icon={Dumbbell} label="Quadra" available={infraData.quadra} />
+                  <InfraItem icon={Monitor} label="Sala de Computadores" available={infraData.laboratorio} />
+                  <InfraItem icon={Wifi} label="Internet" available={infraData.internet} />
+                  <InfraItem icon={Accessibility} label="Acesso para cadeirantes" available={infraData.acessibilidade} />
                   <div className="p-4 rounded-xl bg-muted/50 text-center">
                     <Monitor className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-2xl font-bold">{INFRAESTRUTURA.computadores}</p>
+                    <p className="text-2xl font-bold">{infraData.computadores}</p>
                     <p className="text-xs text-muted-foreground">Computadores</p>
                   </div>
                 </div>
@@ -708,7 +740,7 @@ export default function Dashboard() {
                     <p className="text-sm text-muted-foreground mb-3">Quanto veio por ano</p>
                     <div className="h-[220px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={REPASSES_DATA}>
+                        <BarChart data={repassesData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                           <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                           <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(v) => `R$${(v/1000).toFixed(0)}k`} />
@@ -747,7 +779,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {ACOES_PDDE.map((acao) => (
+                  {acoesPddeData.map((acao) => (
                     <div key={acao.nome} className={`p-4 rounded-xl border ${acao.status === 'Ativo' ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-border/50'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">{acao.nome}</span>
@@ -778,7 +810,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm text-muted-foreground mb-3">Como estão as contas dos últimos anos</p>
                     <div className="space-y-2">
-                      {PRESTACAO_STATUS.map((item) => (
+                      {prestacaoData.map((item) => (
                         <div key={item.exercicio} className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
                           <span className="font-medium">Ano de {item.exercicio}</span>
                           <Badge className={
@@ -1080,7 +1112,7 @@ export default function Dashboard() {
                     {/* Grade de Meses */}
                     <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((mes) => {
-                        const eventosMes = CALENDARIO_EVENTOS.filter(e => e.mes === mes);
+                        const eventosMes = calendarioData.filter(e => e.mes === mes);
                         const temUrgente = eventosMes.some(e => e.urgente);
                         return (
                           <div 
@@ -1126,7 +1158,7 @@ export default function Dashboard() {
                         Próximos Prazos Urgentes
                       </p>
                       <div className="space-y-2">
-                        {CALENDARIO_EVENTOS.filter(e => e.urgente).slice(0, 3).map((evento, i) => (
+                        {calendarioData.filter(e => e.urgente).slice(0, 3).map((evento, i) => (
                           <div key={i} className="p-3 rounded-xl bg-red-50 border border-red-200">
                             <div className="flex items-center gap-2 mb-1">
                               <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">

@@ -1,6 +1,7 @@
 import express, { type Express, type Request, type Response } from "express";
 import { chatStorage } from "../chat/storage";
 import { openai, speechToText, ensureCompatibleFormat } from "./client";
+import { storage } from "../../storage";
 
 // Body parser with 50MB limit for audio payloads
 const audioBodyParser = express.json({ limit: "50mb" });
@@ -81,10 +82,60 @@ export function registerAudioRoutes(app: Express): void {
 
       // 4. Get conversation history
       const existingMessages = await chatStorage.getMessagesByConversation(conversationId);
-      const chatHistory = existingMessages.map((m) => ({
-        role: m.role as "user" | "assistant",
-        content: m.content,
-      }));
+
+      const aiDocs = await storage.getAiDocuments();
+      const glossaryItems = await storage.getGlossary();
+      const toolItems = await storage.getTools();
+      const trilhaItems = await storage.getTrilhaUnits();
+
+      let knowledgeBase = "";
+
+      if (aiDocs.length > 0) {
+        knowledgeBase += "=== DOCUMENTOS DA BASE DE CONHECIMENTO ===\n";
+        for (const doc of aiDocs) {
+          knowledgeBase += `\n--- ${doc.title} ---\n${doc.content}\n`;
+        }
+      }
+
+      if (glossaryItems.length > 0) {
+        knowledgeBase += "\n=== GLOSSÁRIO DE TERMOS ===\n";
+        for (const item of glossaryItems) {
+          knowledgeBase += `${item.term}: ${item.explanation}\n`;
+        }
+      }
+
+      if (toolItems.length > 0) {
+        knowledgeBase += "\n=== FERRAMENTAS DISPONÍVEIS ===\n";
+        for (const tool of toolItems) {
+          knowledgeBase += `${tool.title} (${tool.category}): ${tool.description}\n`;
+        }
+      }
+
+      if (trilhaItems.length > 0) {
+        knowledgeBase += "\n=== TRILHA DE APRENDIZAGEM ===\n";
+        for (const unit of trilhaItems) {
+          knowledgeBase += `${unit.unitId} - ${unit.title}: ${unit.subtitle}\n`;
+        }
+      }
+
+      const systemPrompt = `Você é a assistente virtual do site "Chegou a Conta, Diretora!", uma plataforma que ajuda diretoras de escolas públicas brasileiras a gerenciar recursos financeiros (PDDE, PNAE, PNATE e outros programas).
+
+REGRAS IMPORTANTES:
+1. Responda APENAS com base nas informações fornecidas abaixo (documentos da base de conhecimento e conteúdo do site).
+2. Se a pergunta não puder ser respondida com as informações disponíveis, diga educadamente que não tem essa informação na base de dados e sugira consultar o FNDE ou a secretaria de educação.
+3. Use linguagem simples e acessível, como se estivesse conversando com uma diretora de escola.
+4. Seja direta e prática nas respostas.
+5. Quando relevante, mencione as ferramentas e materiais disponíveis no site.
+
+${knowledgeBase}`;
+
+      const chatHistory = [
+        { role: "system" as const, content: systemPrompt },
+        ...existingMessages.map((m) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
+      ];
 
       // 5. Set up SSE
       res.setHeader("Content-Type", "text/event-stream");

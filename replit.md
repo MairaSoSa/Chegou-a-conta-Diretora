@@ -15,6 +15,18 @@ The interface uses a warm, nature-inspired "Ghibli/territorial" visual style wit
 
 ## Recent Changes
 
+### Expanded Admin Panel (Feb 2026)
+- Admin panel expanded from 3 to 7 tabs: Glossário, Ferramentas, Trilha, Programas, Dashboard, Base IA, Configurações
+- Programs tab: CRUD for PDDE/PNAE/PNATE programs and their details
+- Dashboard tab: CSV upload system with downloadable templates for 9 data categories (enrollment, IDEB, repasses, etc.)
+- Base IA tab: AI knowledge base document management - uploaded docs restrict chatbot responses
+- Configurações tab: Editable site settings (site_title, footer_slogan, footer_text) fetched dynamically
+- Dashboard page uses database data with fallback to hardcoded demo constants
+- AI chat system prompt now injects knowledge base + glossary + tools + trilha content
+- Footer dynamically fetches settings from database
+- All new admin routes validated with Zod schemas
+- Insert schemas properly omit auto-generated fields (id, lastUpdated)
+
 ### Admin Panel & CMS (Feb 2026)
 - Added admin panel at `/admin` with password authentication (Bearer token, default password: "admin2024")
 - Full CRUD operations for Glossary, Tools, and Trilha content types
@@ -47,7 +59,7 @@ Preferred communication style: Simple, everyday language.
 - **Database**: PostgreSQL via Drizzle ORM
 - **Schema Location**: `shared/schema.ts` defines all tables
 - **Migrations**: Drizzle Kit handles schema pushes (`db:push`)
-- **Tables**: schools, programs, program_details, tools, glossary, trilha_units, conversations, messages
+- **Tables**: schools, programs, program_details, tools, glossary, trilha_units, conversations, messages, site_settings, dashboard_datasets, ai_documents
 - **Seeding**: `server/seed.ts` auto-seeds on startup if tables are empty
 
 ### Content Management

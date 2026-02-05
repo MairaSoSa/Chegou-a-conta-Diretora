@@ -61,6 +61,31 @@ export const glossary = pgTable("glossary", {
   sortOrder: integer("sort_order").default(0),
 });
 
+// === SITE SETTINGS ===
+export const siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  label: text("label"),
+});
+
+// === DASHBOARD DATASETS ===
+export const dashboardDatasets = pgTable("dashboard_datasets", {
+  id: serial("id").primaryKey(),
+  category: text("category").notNull(),
+  data: jsonb("data").notNull(),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
+// === AI KNOWLEDGE BASE ===
+export const aiDocuments = pgTable("ai_documents", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category"),
+  sortOrder: integer("sort_order").default(0),
+});
+
 // === TRILHA UNITS ===
 export const trilhaUnits = pgTable("trilha_units", {
   id: serial("id").primaryKey(),
@@ -86,12 +111,15 @@ export const trilhaUnits = pgTable("trilha_units", {
 });
 
 // === ZOD SCHEMAS ===
-export const insertSchoolSchema = createInsertSchema(schools);
-export const insertProgramSchema = createInsertSchema(programs);
-export const insertProgramDetailSchema = createInsertSchema(programDetails);
-export const insertToolSchema = createInsertSchema(tools);
-export const insertGlossarySchema = createInsertSchema(glossary);
-export const insertTrilhaUnitSchema = createInsertSchema(trilhaUnits);
+export const insertSchoolSchema = createInsertSchema(schools).omit({ id: true });
+export const insertProgramSchema = createInsertSchema(programs).omit({ id: true });
+export const insertProgramDetailSchema = createInsertSchema(programDetails).omit({ id: true });
+export const insertToolSchema = createInsertSchema(tools).omit({ id: true });
+export const insertGlossarySchema = createInsertSchema(glossary).omit({ id: true });
+export const insertTrilhaUnitSchema = createInsertSchema(trilhaUnits).omit({ id: true });
+export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({ id: true });
+export const insertDashboardDatasetSchema = createInsertSchema(dashboardDatasets).omit({ id: true, lastUpdated: true });
+export const insertAiDocumentSchema = createInsertSchema(aiDocuments).omit({ id: true });
 
 // === TYPES ===
 export type School = typeof schools.$inferSelect;
@@ -111,5 +139,14 @@ export type InsertGlossaryItem = z.infer<typeof insertGlossarySchema>;
 
 export type TrilhaUnit = typeof trilhaUnits.$inferSelect;
 export type InsertTrilhaUnit = z.infer<typeof insertTrilhaUnitSchema>;
+
+export type SiteSetting = typeof siteSettings.$inferSelect;
+export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
+
+export type DashboardDataset = typeof dashboardDatasets.$inferSelect;
+export type InsertDashboardDataset = z.infer<typeof insertDashboardDatasetSchema>;
+
+export type AiDocument = typeof aiDocuments.$inferSelect;
+export type InsertAiDocument = z.infer<typeof insertAiDocumentSchema>;
 
 export type SchoolSearchRequest = { query: string };
