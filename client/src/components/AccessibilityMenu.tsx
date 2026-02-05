@@ -106,7 +106,7 @@ function getStructuredPageChunks(): string[] {
   for (const part of parts) {
     const cleaned = part.replace(/\s+/g, ' ').trim();
     if (!cleaned) continue;
-    if (current.length + cleaned.length > 150) {
+    if (current.length + cleaned.length > 80) {
       if (current.trim()) chunks.push(current.trim());
       current = cleaned;
     } else {
@@ -156,6 +156,7 @@ export function AccessibilityMenu() {
   const chunksRef = useRef<string[]>([]);
   const chunkIndexRef = useRef(0);
   const stoppedRef = useRef(false);
+  const keepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   useEffect(() => {
@@ -194,8 +195,28 @@ export function AccessibilityMenu() {
         window.speechSynthesis.cancel();
         window.speechSynthesis.onvoiceschanged = null;
       }
+      if (keepAliveRef.current) {
+        clearInterval(keepAliveRef.current);
+      }
     };
   }, []);
+
+  const clearKeepAlive = useCallback(() => {
+    if (keepAliveRef.current) {
+      clearInterval(keepAliveRef.current);
+      keepAliveRef.current = null;
+    }
+  }, []);
+
+  const startKeepAlive = useCallback(() => {
+    clearKeepAlive();
+    keepAliveRef.current = setInterval(() => {
+      if (speechSupported && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, 5000);
+  }, [speechSupported, clearKeepAlive]);
 
   const speakNextChunk = useCallback(() => {
     if (!speechSupported || stoppedRef.current) return;
@@ -208,13 +229,15 @@ export function AccessibilityMenu() {
       setIsPaused(false);
       chunksRef.current = [];
       chunkIndexRef.current = 0;
+      clearKeepAlive();
       return;
     }
 
     const utterance = new SpeechSynthesisUtterance(chunks[idx]);
     utterance.lang = 'pt-BR';
-    utterance.rate = 0.95;
+    utterance.rate = 1.0;
     utterance.pitch = 1.0;
+    utterance.volume = 1.0;
 
     const voice = findFeminineVoice();
     if (voice) utterance.voice = voice;
@@ -222,20 +245,21 @@ export function AccessibilityMenu() {
     utterance.onend = () => {
       if (stoppedRef.current) return;
       chunkIndexRef.current = idx + 1;
-      speakNextChunk();
+      setTimeout(() => speakNextChunk(), 80);
     };
 
     utterance.onerror = (e) => {
-      if (e.error === 'interrupted' || stoppedRef.current) return;
+      if (e.error === 'interrupted' || e.error === 'canceled' || stoppedRef.current) return;
       chunkIndexRef.current = idx + 1;
-      speakNextChunk();
+      setTimeout(() => speakNextChunk(), 80);
     };
 
     window.speechSynthesis.speak(utterance);
-  }, [speechSupported]);
+  }, [speechSupported, clearKeepAlive]);
 
   const stopSpeaking = useCallback(() => {
     stoppedRef.current = true;
+    clearKeepAlive();
     if (speechSupported) {
       window.speechSynthesis.cancel();
     }
@@ -243,7 +267,7 @@ export function AccessibilityMenu() {
     setIsPaused(false);
     chunksRef.current = [];
     chunkIndexRef.current = 0;
-  }, [speechSupported]);
+  }, [speechSupported, clearKeepAlive]);
 
   const startSpeaking = useCallback(() => {
     if (!speechSupported) return;
@@ -258,19 +282,22 @@ export function AccessibilityMenu() {
     setIsSpeaking(true);
     setIsPaused(false);
 
+    startKeepAlive();
     speakNextChunk();
-  }, [speechSupported, stopSpeaking, speakNextChunk]);
+  }, [speechSupported, stopSpeaking, speakNextChunk, startKeepAlive]);
 
   const togglePause = useCallback(() => {
     if (!speechSupported) return;
     if (isPaused) {
       window.speechSynthesis.resume();
+      startKeepAlive();
       setIsPaused(false);
     } else {
+      clearKeepAlive();
       window.speechSynthesis.pause();
       setIsPaused(true);
     }
-  }, [speechSupported, isPaused]);
+  }, [speechSupported, isPaused, startKeepAlive, clearKeepAlive]);
 
   const toggleScreenReader = useCallback(() => {
     const newValue = !screenReaderEnabled;
