@@ -92,10 +92,10 @@ const ACOES_PDDE = [
 
 // Prazos
 const PRAZOS = [
-  { data: '28/02/2025', evento: 'Prestação de Contas PDDE 2024', urgente: true },
-  { data: '31/03/2025', evento: 'Atualização Cadastral PDDE Interativo', urgente: false },
-  { data: '30/04/2025', evento: 'Censo Escolar - Início coleta', urgente: false },
-  { data: '31/05/2025', evento: 'Renovação Conselho Escolar', urgente: false },
+  { data: '28/02/2025', evento: 'Entregar contas do PDDE de 2024', urgente: true },
+  { data: '31/03/2025', evento: 'Atualizar cadastro no PDDE Interativo', urgente: false },
+  { data: '30/04/2025', evento: 'Começa o Censo Escolar', urgente: false },
+  { data: '31/05/2025', evento: 'Renovar Conselho Escolar', urgente: false },
 ];
 
 // Benchmark
@@ -111,10 +111,10 @@ const BENCHMARK = {
 const VAAR = {
   elegivel: true,
   criterios: [
-    { nome: 'Regularidade PDDE', atendido: true },
-    { nome: 'Censo atualizado', atendido: true },
-    { nome: 'IDEB calculado', atendido: true },
-    { nome: 'Conselho ativo', atendido: true },
+    { nome: 'Contas do PDDE em dia', atendido: true },
+    { nome: 'Censo preenchido', atendido: true },
+    { nome: 'Nota IDEB calculada', atendido: true },
+    { nome: 'Conselho funcionando', atendido: true },
   ],
 };
 
@@ -123,65 +123,65 @@ const ELEGIBILIDADE_PROGRAMAS = [
   {
     nome: 'Escola Conectada',
     elegivel: true,
-    status: 'Ativo',
+    status: 'Já participa',
     criterios: [
-      { nome: 'Escola pública', atendido: true },
-      { nome: 'Ensino Fundamental ou Médio', atendido: true },
-      { nome: 'Infraestrutura mínima', atendido: true },
-      { nome: 'Adesão no PDDE Interativo', atendido: true },
+      { nome: 'É escola pública', atendido: true },
+      { nome: 'Tem ensino fundamental ou médio', atendido: true },
+      { nome: 'Tem estrutura básica', atendido: true },
+      { nome: 'Fez cadastro no PDDE Interativo', atendido: true },
     ],
-    observacao: 'Recebendo recursos desde 2022',
+    observacao: 'Recebendo verba desde 2022',
   },
   {
     nome: 'Tempo de Aprender',
     elegivel: true,
-    status: 'Elegível',
+    status: 'Pode participar',
     criterios: [
-      { nome: 'Anos Iniciais do Fundamental', atendido: true },
-      { nome: 'IDEB abaixo da meta', atendido: false },
-      { nome: 'Adesão municipal', atendido: true },
+      { nome: 'Tem do 1º ao 5º ano', atendido: true },
+      { nome: 'Nota IDEB baixa', atendido: false },
+      { nome: 'Prefeitura aderiu', atendido: true },
     ],
-    observacao: 'Meta IDEB atingida, mas elegível por outros critérios',
+    observacao: 'Nota IDEB boa, mas pode participar por outros motivos',
   },
   {
     nome: 'Brasil na Escola',
     elegivel: true,
-    status: 'Elegível',
+    status: 'Pode participar',
     criterios: [
-      { nome: 'Anos Finais do Fundamental', atendido: true },
-      { nome: 'Vulnerabilidade socioeconômica', atendido: true },
-      { nome: 'Adesão estadual/municipal', atendido: true },
+      { nome: 'Tem do 6º ao 9º ano', atendido: true },
+      { nome: 'Comunidade de baixa renda', atendido: true },
+      { nome: 'Estado/Prefeitura aderiu', atendido: true },
     ],
     observacao: null,
   },
   {
     nome: 'PDDE Emergencial',
     elegivel: false,
-    status: 'Não elegível',
+    status: 'Não precisa',
     criterios: [
-      { nome: 'Situação de emergência declarada', atendido: false },
-      { nome: 'Decreto municipal/estadual', atendido: false },
+      { nome: 'Tem emergência (enchente, etc)', atendido: false },
+      { nome: 'Prefeitura declarou emergência', atendido: false },
     ],
-    observacao: 'Programa acionado apenas em situações emergenciais',
+    observacao: 'Só quando tem desastre ou emergência',
   },
   {
     nome: 'Escola Acessível',
     elegivel: true,
-    status: 'Elegível',
+    status: 'Pode participar',
     criterios: [
-      { nome: 'Matrícula de alunos com deficiência', atendido: true },
-      { nome: 'Plano de adequação', atendido: true },
-      { nome: 'Adesão no PDDE Interativo', atendido: true },
+      { nome: 'Tem alunos com deficiência', atendido: true },
+      { nome: 'Tem plano de melhorias', atendido: true },
+      { nome: 'Fez cadastro no PDDE Interativo', atendido: true },
     ],
-    observacao: '12 alunos PCD matriculados',
+    observacao: '12 alunos com deficiência matriculados',
   },
   {
     nome: 'Mais Alfabetização',
     elegivel: true,
-    status: 'Elegível',
+    status: 'Pode participar',
     criterios: [
-      { nome: '1º e 2º ano do Fundamental', atendido: true },
-      { nome: 'Adesão municipal', atendido: true },
+      { nome: 'Tem 1º e 2º ano', atendido: true },
+      { nome: 'Prefeitura aderiu', atendido: true },
     ],
     observacao: null,
   },
@@ -243,7 +243,7 @@ export default function Dashboard() {
               <div className="relative flex-1 w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input 
-                  placeholder="Digite o código INEP da escola..." 
+                  placeholder="Coloque aqui o código da escola (8 números)..." 
                   className="pl-10 bg-background border-border/50 focus:border-accent/50 h-12 rounded-xl font-mono"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -284,7 +284,7 @@ export default function Dashboard() {
                 data-testid="button-load-school"
               >
                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <School className="w-4 h-4 mr-2" />}
-                Carregar Escola
+                Buscar Escola
               </Button>
             </div>
 
@@ -311,8 +311,8 @@ export default function Dashboard() {
               <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 flex items-start gap-3">
                 <Info className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-amber-800">Dados de Demonstração</p>
-                  <p className="text-sm text-amber-700">Este é um exemplo fictício. Digite um código INEP real para ver dados públicos.</p>
+                  <p className="font-medium text-amber-800">Exemplo para você conhecer</p>
+                  <p className="text-sm text-amber-700">Isso aqui é só um exemplo. Coloque o código da sua escola para ver os dados de verdade.</p>
                 </div>
               </div>
             )}
@@ -322,19 +322,20 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <School className="w-5 h-5 text-accent" />
-                  Identidade da Escola
+                  Dados da Escola
                 </CardTitle>
+                <CardDescription>Informações básicas que aparecem no Censo</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <InfoItem label="Nome" value={displaySchool.name} />
                   <InfoItem label="Código INEP" value={displaySchool.inep} mono />
-                  <InfoItem label="Município/UF" value={`${displaySchool.city}/${displaySchool.state}`} />
+                  <InfoItem label="Cidade/Estado" value={`${displaySchool.city}/${displaySchool.state}`} />
                   <InfoItem label="Rede" value={displaySchool.network} />
-                  <InfoItem label="Zona" value={displaySchool.location} />
-                  <InfoItem label="Etapas Atendidas" value={DEMO_SCHOOL.etapas.join(", ")} />
-                  <InfoItem label="Matrículas (2024)" value={displaySchool.enrollmentCount.toString()} highlight />
-                  <InfoItem label="Localização" value={DEMO_SCHOOL.bairro} />
+                  <InfoItem label="Área" value={displaySchool.location} />
+                  <InfoItem label="O que a escola oferece" value={DEMO_SCHOOL.etapas.join(", ")} />
+                  <InfoItem label="Quantos alunos (2024)" value={displaySchool.enrollmentCount.toString()} highlight />
+                  <InfoItem label="Bairro/Comunidade" value={DEMO_SCHOOL.bairro} />
                 </div>
               </CardContent>
             </Card>
@@ -345,17 +346,18 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="font-display flex items-center gap-2">
                     <Users className="w-5 h-5 text-primary" />
-                    Matrículas e Perfil
+                    Quantos Alunos Estudam Aqui
                   </CardTitle>
                   <Badge className={parseFloat(enrollmentVariation) < 0 ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}>
-                    {parseFloat(enrollmentVariation) > 0 ? '+' : ''}{enrollmentVariation}% vs ano anterior
+                    {parseFloat(enrollmentVariation) < 0 ? 'Diminuiu' : 'Aumentou'} {Math.abs(parseFloat(enrollmentVariation))}%
                   </Badge>
                 </div>
+                <CardDescription>Comparando com o ano passado</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-3">Evolução das Matrículas (Censo Escolar)</p>
+                    <p className="text-sm text-muted-foreground mb-3">Como foi nos últimos anos</p>
                     <div className="h-[200px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={ENROLLMENT_HISTORY}>
@@ -375,18 +377,18 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-3">Matrículas por Etapa (2024)</p>
+                    <p className="text-sm text-muted-foreground mb-3">Por série em 2024</p>
                     <div className="space-y-4">
                       <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
                         <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-medium">Anos Iniciais</span>
+                          <span className="text-sm font-medium">1º ao 5º ano</span>
                           <span className="font-bold text-primary">{lastEnrollment.iniciais}</span>
                         </div>
                         <Progress value={(lastEnrollment.iniciais / lastEnrollment.total) * 100} className="h-2" />
                       </div>
                       <div className="p-4 rounded-xl bg-accent/5 border border-accent/10">
                         <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-medium">Anos Finais</span>
+                          <span className="text-sm font-medium">6º ao 9º ano</span>
                           <span className="font-bold text-accent">{lastEnrollment.finais}</span>
                         </div>
                         <Progress value={(lastEnrollment.finais / lastEnrollment.total) * 100} className="h-2" />
@@ -402,16 +404,16 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-sky-600" />
-                  Taxas Educacionais
+                  Como os Alunos Estão Indo
                 </CardTitle>
-                <CardDescription>Indicadores de rendimento escolar (Censo Escolar)</CardDescription>
+                <CardDescription>De cada 100 alunos, quantos passam, reprovam ou desistem</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <TaxaCard label="Aprovação" value={TAXAS_EDUCACIONAIS.aprovacao} suffix="%" good />
-                  <TaxaCard label="Reprovação" value={TAXAS_EDUCACIONAIS.reprovacao} suffix="%" />
-                  <TaxaCard label="Abandono" value={TAXAS_EDUCACIONAIS.abandono} suffix="%" />
-                  <TaxaCard label="Distorção Idade-Série" value={TAXAS_EDUCACIONAIS.distorcao} suffix="%" />
+                  <TaxaCard label="Passaram de ano" value={TAXAS_EDUCACIONAIS.aprovacao} suffix="%" good />
+                  <TaxaCard label="Reprovaram" value={TAXAS_EDUCACIONAIS.reprovacao} suffix="%" />
+                  <TaxaCard label="Desistiram" value={TAXAS_EDUCACIONAIS.abandono} suffix="%" />
+                  <TaxaCard label="Atrasados na série" value={TAXAS_EDUCACIONAIS.distorcao} suffix="%" />
                 </div>
               </CardContent>
             </Card>
@@ -422,17 +424,18 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="font-display flex items-center gap-2">
                     <GraduationCap className="w-5 h-5 text-sky-600" />
-                    Qualidade e Contexto (IDEB)
+                    Nota da Escola (IDEB)
                   </CardTitle>
                   <Badge className={lastIdeb.escola >= lastIdeb.meta ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}>
-                    {lastIdeb.escola >= lastIdeb.meta ? "Meta atingida" : "Abaixo da meta"}
+                    {lastIdeb.escola >= lastIdeb.meta ? "Chegou na meta" : "Precisa melhorar"}
                   </Badge>
                 </div>
+                <CardDescription>O IDEB é a nota que o governo dá para a escola, de 0 a 10</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2">
-                    <p className="text-sm text-muted-foreground mb-3">Evolução do IDEB</p>
+                    <p className="text-sm text-muted-foreground mb-3">Como a nota foi mudando</p>
                     <div className="h-[220px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={IDEB_DATA}>
@@ -449,15 +452,15 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-4">
                     <div className="p-4 rounded-xl bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">IDEB 2023</p>
+                      <p className="text-xs text-muted-foreground mb-1">Nota da escola em 2023</p>
                       <p className="text-3xl font-bold text-primary">{lastIdeb.escola}</p>
                     </div>
                     <div className="p-4 rounded-xl bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">Meta 2023</p>
+                      <p className="text-xs text-muted-foreground mb-1">Meta que precisava atingir</p>
                       <p className="text-2xl font-bold">{lastIdeb.meta}</p>
                     </div>
                     <div className="p-4 rounded-xl bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">Média Municipal</p>
+                      <p className="text-xs text-muted-foreground mb-1">Média das outras escolas da cidade</p>
                       <p className="text-2xl font-bold">{lastIdeb.municipal}</p>
                     </div>
                   </div>
@@ -470,17 +473,17 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Building2 className="w-5 h-5 text-purple-600" />
-                  Infraestrutura
+                  O Que a Escola Tem
                 </CardTitle>
-                <CardDescription>Dados do Censo Escolar</CardDescription>
+                <CardDescription>Estrutura registrada no Censo</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                   <InfraItem icon={Library} label="Biblioteca" available={INFRAESTRUTURA.biblioteca} />
                   <InfraItem icon={Dumbbell} label="Quadra" available={INFRAESTRUTURA.quadra} />
-                  <InfraItem icon={Monitor} label="Lab. Informática" available={INFRAESTRUTURA.laboratorio} />
+                  <InfraItem icon={Monitor} label="Sala de Computadores" available={INFRAESTRUTURA.laboratorio} />
                   <InfraItem icon={Wifi} label="Internet" available={INFRAESTRUTURA.internet} />
-                  <InfraItem icon={Accessibility} label="Acessibilidade" available={INFRAESTRUTURA.acessibilidade} />
+                  <InfraItem icon={Accessibility} label="Acesso para cadeirantes" available={INFRAESTRUTURA.acessibilidade} />
                   <div className="p-4 rounded-xl bg-muted/50 text-center">
                     <Monitor className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-2xl font-bold">{INFRAESTRUTURA.computadores}</p>
@@ -495,13 +498,14 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Banknote className="w-5 h-5 text-accent" />
-                  Repasses Públicos Recebidos (FNDE)
+                  Dinheiro que a Escola Recebeu do Governo
                 </CardTitle>
+                <CardDescription>Valores enviados pelo FNDE (governo federal)</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2">
-                    <p className="text-sm text-muted-foreground mb-3">Total de Repasses por Ano</p>
+                    <p className="text-sm text-muted-foreground mb-3">Quanto veio por ano</p>
                     <div className="h-[220px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={REPASSES_DATA}>
@@ -519,12 +523,12 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <p className="text-sm text-muted-foreground">Por Programa (2024)</p>
+                    <p className="text-sm text-muted-foreground">Por tipo de verba (2024)</p>
                     <ProgramCard name="PDDE" value={lastRepasse.pdde} year="2024" />
                     <ProgramCard name="PNAE" value={lastRepasse.pnae} year="2024" />
                     <ProgramCard name="PNATE" value={lastRepasse.pnate} year="—" empty />
                     <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 mt-4">
-                      <p className="text-xs text-muted-foreground">Total 2024</p>
+                      <p className="text-xs text-muted-foreground">Total recebido em 2024</p>
                       <p className="text-xl font-bold text-primary">R$ {lastRepasse.total.toLocaleString('pt-BR')}</p>
                     </div>
                   </div>
@@ -537,9 +541,9 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Award className="w-5 h-5 text-primary" />
-                  Ações do PDDE
+                  Verbas Extras do PDDE
                 </CardTitle>
-                <CardDescription>Programas específicos e status de adesão</CardDescription>
+                <CardDescription>Programas que a escola participa e quanto recebe de cada um</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -565,17 +569,18 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
-                  Regularidade e Prestação de Contas
+                  Contas Prestadas ao Governo
                 </CardTitle>
+                <CardDescription>Situação das prestações de contas do dinheiro recebido</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-3">Histórico de Prestações (PDDE)</p>
+                    <p className="text-sm text-muted-foreground mb-3">Como estão as contas dos últimos anos</p>
                     <div className="space-y-2">
                       {PRESTACAO_STATUS.map((item) => (
                         <div key={item.exercicio} className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
-                          <span className="font-medium">Exercício {item.exercicio}</span>
+                          <span className="font-medium">Ano de {item.exercicio}</span>
                           <Badge className={
                             item.status === 'Aprovada' ? 'bg-green-100 text-green-700' :
                             item.status === 'Em análise' ? 'bg-amber-100 text-amber-700' :
@@ -589,12 +594,12 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-4">
                     <div className="p-4 rounded-xl bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">Último exercício com status</p>
+                      <p className="text-xs text-muted-foreground mb-1">Último ano com situação</p>
                       <p className="text-2xl font-bold">{ultimoPrestacao.exercicio}</p>
                     </div>
                     <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
-                      <p className="text-xs text-amber-700 mb-1">Defasagem de ciclos</p>
-                      <p className="text-2xl font-bold text-amber-700">{defasagemCiclos} {defasagemCiclos === 1 ? 'ciclo' : 'ciclos'}</p>
+                      <p className="text-xs text-amber-700 mb-1">Anos pendentes</p>
+                      <p className="text-2xl font-bold text-amber-700">{defasagemCiclos} {defasagemCiclos === 1 ? 'ano' : 'anos'}</p>
                     </div>
                   </div>
                 </div>
@@ -608,26 +613,27 @@ export default function Dashboard() {
                   <Users2 className="w-5 h-5 text-accent" />
                   Conselho Escolar
                 </CardTitle>
+                <CardDescription>Grupo de pais, professores e funcionários que cuida da escola</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-                    <p className="text-xs text-muted-foreground mb-1">Situação</p>
+                    <p className="text-xs text-muted-foreground mb-1">Como está</p>
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="w-5 h-5 text-primary" />
                       <p className="text-lg font-bold text-primary">{CONSELHO.situacao}</p>
                     </div>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50">
-                    <p className="text-xs text-muted-foreground mb-1">Última Atualização</p>
+                    <p className="text-xs text-muted-foreground mb-1">Última vez que atualizou</p>
                     <p className="text-lg font-bold">{CONSELHO.ultimaAtualizacao}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50">
-                    <p className="text-xs text-muted-foreground mb-1">Próxima Renovação</p>
+                    <p className="text-xs text-muted-foreground mb-1">Quando precisa renovar</p>
                     <p className="text-lg font-bold">{CONSELHO.proximaRenovacao}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50">
-                    <p className="text-xs text-muted-foreground mb-1">Membros</p>
+                    <p className="text-xs text-muted-foreground mb-1">Quantas pessoas</p>
                     <p className="text-lg font-bold">{CONSELHO.membros}</p>
                   </div>
                 </div>
@@ -639,8 +645,9 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Target className="w-5 h-5 text-sky-600" />
-                  VAAR (Valor Aluno Ano por Resultado)
+                  VAAR - Bônus por Bons Resultados
                 </CardTitle>
+                <CardDescription>Dinheiro extra que a escola pode ganhar se atingir metas</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -648,13 +655,13 @@ export default function Dashboard() {
                     <div className="flex items-center gap-3 mb-3">
                       <CheckCircle2 className="w-6 h-6 text-primary" />
                       <div>
-                        <p className="font-bold text-lg">Elegível</p>
-                        <p className="text-sm text-muted-foreground">A escola atende aos critérios</p>
+                        <p className="font-bold text-lg">Pode participar</p>
+                        <p className="text-sm text-muted-foreground">A escola cumpre o que precisa</p>
                       </div>
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-3">Critérios de Elegibilidade</p>
+                    <p className="text-sm text-muted-foreground mb-3">O que a escola precisa ter</p>
                     <div className="space-y-2">
                       {VAAR.criterios.map((criterio) => (
                         <div key={criterio.nome} className="flex items-center gap-2 text-sm">
@@ -677,9 +684,9 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Award className="w-5 h-5 text-primary" />
-                  Elegibilidade a Programas Federais
+                  Outros Programas que a Escola Pode Participar
                 </CardTitle>
-                <CardDescription>Status e critérios para participação em programas do FNDE/MEC</CardDescription>
+                <CardDescription>Veja quais verbas extras a escola pode receber do governo federal</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -727,21 +734,21 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Wifi className="w-5 h-5 text-sky-600" />
-                  Conectividade (Escola Conectada / GIGA)
+                  Internet na Escola
                 </CardTitle>
-                <CardDescription>Situação de internet e infraestrutura digital</CardDescription>
+                <CardDescription>Como está a conexão com a internet e os computadores</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
                     <div className="flex items-center gap-2 mb-2">
                       <Wifi className="w-5 h-5 text-primary" />
-                      <p className="text-xs text-muted-foreground">Status</p>
+                      <p className="text-xs text-muted-foreground">Situação</p>
                     </div>
                     <p className="text-lg font-bold text-primary">{CONECTIVIDADE.situacaoGIGA}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50">
-                    <p className="text-xs text-muted-foreground mb-1">Tipo de Conexão</p>
+                    <p className="text-xs text-muted-foreground mb-1">Tipo de internet</p>
                     <p className="text-lg font-bold">{CONECTIVIDADE.tipoConexao}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50">
@@ -749,21 +756,21 @@ export default function Dashboard() {
                     <p className="text-lg font-bold">{CONECTIVIDADE.velocidade}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50">
-                    <p className="text-xs text-muted-foreground mb-1">Pontos Wi-Fi</p>
+                    <p className="text-xs text-muted-foreground mb-1">Quantos Wi-Fi</p>
                     <p className="text-lg font-bold">{CONECTIVIDADE.pontosWifi}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-3 rounded-xl bg-muted/30">
-                    <p className="text-xs text-muted-foreground mb-1">Fonte da Conexão</p>
+                    <p className="text-xs text-muted-foreground mb-1">De onde vem a internet</p>
                     <p className="text-sm font-medium">{CONECTIVIDADE.fonteConexao}</p>
                   </div>
                   <div className="p-3 rounded-xl bg-muted/30">
-                    <p className="text-xs text-muted-foreground mb-1">Operadora</p>
+                    <p className="text-xs text-muted-foreground mb-1">Empresa</p>
                     <p className="text-sm font-medium">{CONECTIVIDADE.operadora}</p>
                   </div>
                   <div className="p-3 rounded-xl bg-muted/30">
-                    <p className="text-xs text-muted-foreground mb-1">Instalação</p>
+                    <p className="text-xs text-muted-foreground mb-1">Quando foi instalado</p>
                     <p className="text-sm font-medium">{CONECTIVIDADE.dataInstalacao}</p>
                   </div>
                 </div>
@@ -772,10 +779,10 @@ export default function Dashboard() {
                     <Monitor className="w-5 h-5 text-sky-600 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-sky-800">
-                        {CONECTIVIDADE.computadoresConectados} computadores com acesso à internet
+                        {CONECTIVIDADE.computadoresConectados} computadores funcionando com internet
                       </p>
                       <p className="text-xs text-sky-600 mt-1">
-                        Programa Educação Conectada ativo desde 2022
+                        Programa Escola Conectada funcionando desde 2022
                       </p>
                     </div>
                   </div>
@@ -788,33 +795,33 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Scale className="w-5 h-5 text-accent" />
-                  Comparadores (Benchmark)
+                  Comparando com Outras Escolas
                 </CardTitle>
-                <CardDescription>Posição relativa da escola</CardDescription>
+                <CardDescription>Veja como a escola está em relação às outras da cidade e do estado</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-3">Repasse por Aluno</p>
+                    <p className="text-sm text-muted-foreground mb-3">Dinheiro por aluno</p>
                     <div className="space-y-3">
-                      <BenchmarkBar label="Esta Escola" value={BENCHMARK.repasseEscola} max={100} highlight />
-                      <BenchmarkBar label="Média Municipal" value={BENCHMARK.repasseMunicipal} max={100} />
-                      <BenchmarkBar label="Média Estadual" value={BENCHMARK.repasseEstadual} max={100} />
+                      <BenchmarkBar label="Esta escola" value={BENCHMARK.repasseEscola} max={100} highlight />
+                      <BenchmarkBar label="Outras da cidade" value={BENCHMARK.repasseMunicipal} max={100} />
+                      <BenchmarkBar label="Outras do estado" value={BENCHMARK.repasseEstadual} max={100} />
                     </div>
                     <p className="text-xs text-muted-foreground mt-3">
                       <span className={BENCHMARK.repasseEscola < BENCHMARK.repasseMunicipal ? 'text-amber-600' : 'text-primary'}>
-                        {BENCHMARK.repasseEscola < BENCHMARK.repasseMunicipal ? 'Abaixo' : 'Acima'} da média municipal
+                        {BENCHMARK.repasseEscola < BENCHMARK.repasseMunicipal ? 'Recebe menos que' : 'Recebe mais que'} as outras escolas da cidade
                       </span>
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-3">IDEB</p>
+                    <p className="text-sm text-muted-foreground mb-3">Nota IDEB</p>
                     <div className="space-y-3">
-                      <BenchmarkBar label="Esta Escola" value={BENCHMARK.idebEscola} max={10} highlight />
-                      <BenchmarkBar label="Média Municipal" value={BENCHMARK.idebMunicipal} max={10} />
+                      <BenchmarkBar label="Esta escola" value={BENCHMARK.idebEscola} max={10} highlight />
+                      <BenchmarkBar label="Outras da cidade" value={BENCHMARK.idebMunicipal} max={10} />
                     </div>
                     <p className="text-xs text-muted-foreground mt-3">
-                      <span className="text-primary">Acima da média municipal</span>
+                      <span className="text-primary">Nota melhor que as outras escolas da cidade</span>
                     </p>
                   </div>
                 </div>
@@ -826,8 +833,9 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <CalendarDays className="w-5 h-5 text-amber-600" />
-                  Calendário de Prazos
+                  Datas Importantes
                 </CardTitle>
+                <CardDescription>Não perca esses prazos!</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -854,16 +862,16 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-primary" />
-                  Indicadores Derivados
+                  Resumo em Números
                 </CardTitle>
-                <CardDescription>Cálculos baseados em dados públicos</CardDescription>
+                <CardDescription>Cálculos que fizemos pra você com os dados públicos</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <IndicatorCard label="Repasse por Aluno (2024)" value={`R$ ${repassePerAluno}`} subtitle="Total ÷ matrículas" />
-                  <IndicatorCard label="Tendência Repasses" value="-39%" subtitle="2024 vs 2023 (parcial)" negative />
-                  <IndicatorCard label="Último Repasse PDDE" value="2024" subtitle="Há 0 anos" />
-                  <IndicatorCard label="Variação Matrículas" value={`${enrollmentVariation}%`} subtitle="2024 vs 2023" negative={parseFloat(enrollmentVariation) < 0} />
+                  <IndicatorCard label="Quanto cada aluno custou (2024)" value={`R$ ${repassePerAluno}`} subtitle="Verba total ÷ alunos" />
+                  <IndicatorCard label="Verba comparando com ano passado" value="-39%" subtitle="2024 vs 2023 (ainda incompleto)" negative />
+                  <IndicatorCard label="Último dinheiro do PDDE" value="2024" subtitle="Veio este ano" />
+                  <IndicatorCard label="Alunos comparando com ano passado" value={`${enrollmentVariation}%`} subtitle="2024 vs 2023" negative={parseFloat(enrollmentVariation) < 0} />
                 </div>
               </CardContent>
             </Card>
@@ -873,15 +881,15 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <AlertCircle className="w-5 h-5 text-amber-600" />
-                  Observações e Alertas
+                  Coisas pra Ficar de Olho
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <AlertItem text="Último repasse PDDE registrado em: 2024" source="FNDE - Liberações" />
-                  <AlertItem text="Último exercício de prestação com status registrado: 2023" source="FNDE - SIGPC" />
-                  <AlertItem text={`Defasagem de ciclos: ${defasagemCiclos}`} source="Cálculo derivado" type="warning" />
-                  <AlertItem text={`Matrículas em variação: ${enrollmentVariation}%`} source="INEP - Censo Escolar" type={parseFloat(enrollmentVariation) < -5 ? 'warning' : 'info'} />
+                  <AlertItem text="Último dinheiro do PDDE chegou em: 2024" source="FNDE - Liberações" />
+                  <AlertItem text="Última prestação de contas com situação: 2023" source="FNDE - SIGPC" />
+                  <AlertItem text={`Anos sem prestar contas: ${defasagemCiclos}`} source="Calculamos pra você" type="warning" />
+                  <AlertItem text={`Mudança no número de alunos: ${enrollmentVariation}%`} source="INEP - Censo Escolar" type={parseFloat(enrollmentVariation) < -5 ? 'warning' : 'info'} />
                 </div>
               </CardContent>
             </Card>
@@ -891,15 +899,16 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="font-display flex items-center gap-2">
                   <Link2 className="w-5 h-5 text-sky-600" />
-                  Links Úteis
+                  Sites Importantes
                 </CardTitle>
+                <CardDescription>Acesse os sistemas do governo por aqui</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <LinkCard name="PDDE Interativo" url="https://pddeinterativo.mec.gov.br" />
-                  <LinkCard name="SIGPC" url="https://www.fnde.gov.br/sigpc" />
-                  <LinkCard name="Portal FNDE" url="https://www.fnde.gov.br" />
-                  <LinkCard name="Consulta Escola (INEP)" url="https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/inep-data/consulta-matricula" />
+                  <LinkCard name="PDDE Interativo (onde cadastra)" url="https://pddeinterativo.mec.gov.br" />
+                  <LinkCard name="SIGPC (onde presta contas)" url="https://www.fnde.gov.br/sigpc" />
+                  <LinkCard name="Portal FNDE (tudo sobre verbas)" url="https://www.fnde.gov.br" />
+                  <LinkCard name="Dados da Escola (INEP)" url="https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/inep-data/consulta-matricula" />
                 </div>
               </CardContent>
             </Card>
@@ -910,27 +919,27 @@ export default function Dashboard() {
                 <div className="flex items-start gap-3 mb-4">
                   <Info className="w-5 h-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <h4 className="font-display font-bold mb-2">Fontes e Transparência</h4>
+                    <h4 className="font-display font-bold mb-2">De Onde Tiramos Esses Dados</h4>
                     <div className="text-sm text-muted-foreground space-y-1">
-                      <p>• <strong>Matrículas/Infraestrutura:</strong> INEP - Censo Escolar (consulta: Fev/2025)</p>
-                      <p>• <strong>IDEB/Taxas:</strong> INEP - Indicadores Educacionais (consulta: Fev/2025)</p>
-                      <p>• <strong>Repasses:</strong> FNDE - Portal de Liberações (consulta: Fev/2025)</p>
-                      <p>• <strong>Prestação de Contas:</strong> FNDE - SIGPC Público (consulta: Fev/2025)</p>
+                      <p>• <strong>Alunos e Estrutura:</strong> Censo Escolar do INEP (vimos em Fev/2025)</p>
+                      <p>• <strong>Notas e Aprovação:</strong> INEP (vimos em Fev/2025)</p>
+                      <p>• <strong>Dinheiro recebido:</strong> FNDE - Portal de Liberações (vimos em Fev/2025)</p>
+                      <p>• <strong>Prestação de Contas:</strong> FNDE - SIGPC Público (vimos em Fev/2025)</p>
                     </div>
                   </div>
                 </div>
                 <div className="p-4 rounded-xl bg-background border border-border/50 text-sm text-muted-foreground">
-                  <p className="mb-2"><strong>Aviso:</strong> Este painel usa apenas dados públicos. Não reflete saldo bancário, despesas internas ou extratos.</p>
-                  <p>Indicadores derivados são cálculos a partir de repasses e matrículas disponíveis publicamente.</p>
+                  <p className="mb-2"><strong>Importante:</strong> Aqui só mostramos o que é público na internet. Não mostramos saldo do banco, gastos ou extratos da escola.</p>
+                  <p>Os números que calculamos usam os dados públicos de repasses e matrículas.</p>
                 </div>
                 <div className="flex gap-3 mt-4">
                   <Button variant="outline" size="sm" className="rounded-lg" data-testid="button-export-pdf">
                     <Download className="w-4 h-4 mr-2" />
-                    Exportar PDF
+                    Baixar em PDF
                   </Button>
                   <Button variant="outline" size="sm" className="rounded-lg" data-testid="button-export-json">
                     <FileText className="w-4 h-4 mr-2" />
-                    Exportar JSON
+                    Baixar Dados
                   </Button>
                 </div>
               </CardContent>
@@ -941,8 +950,8 @@ export default function Dashboard() {
             <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-6">
               <Search className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-display font-bold mb-2">Digite um Código INEP</h3>
-            <p className="text-muted-foreground max-w-sm">Insira o código de 8 dígitos da escola para carregar os dados públicos disponíveis.</p>
+            <h3 className="text-xl font-display font-bold mb-2">Coloque o Código da Escola</h3>
+            <p className="text-muted-foreground max-w-sm">Coloque os 8 números do código INEP da escola pra ver os dados públicos.</p>
           </div>
         )}
       </main>
