@@ -341,7 +341,7 @@ function Porto({ unidade, isCompleted, isCurrent, index, onSelect, onComplete }:
   const isLeft = index % 2 === 0;
   
   return (
-    <div className="relative grid grid-cols-[1fr_180px_1fr] md:grid-cols-[1fr_300px_1fr] items-center gap-0 py-6">
+    <div className="relative grid grid-cols-[1fr_200px_1fr] md:grid-cols-[1fr_400px_1fr] items-center gap-0 py-6">
       <div className={cn(
         "transition-all duration-300",
         isLeft ? "col-start-1" : "col-start-3",
@@ -498,6 +498,7 @@ function Porto({ unidade, isCompleted, isCurrent, index, onSelect, onComplete }:
 export default function Trilha() {
   const { progress, completedCount, totalUnits, completeUnit, setCurrentUnit, isUnitCompleted, resetProgress } = useTrilhaProgress();
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
   
   const progressPercent = Math.round((completedCount / totalUnits) * 100);
   
@@ -513,6 +514,15 @@ export default function Trilha() {
 
   const handleCompleteUnit = (unitId: string) => {
     completeUnit(unitId);
+  };
+
+  const navegarPeloRio = () => {
+    setIsNavigating(true);
+    const endElement = document.getElementById('fim-jornada');
+    if (endElement) {
+      endElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    setTimeout(() => setIsNavigating(false), 5000);
   };
 
   return (
@@ -560,6 +570,15 @@ export default function Trilha() {
                   >
                     <Play className="w-4 h-4 mr-2" />
                     Continuar de onde parei
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={navegarPeloRio}
+                    disabled={isNavigating}
+                    data-testid="button-navegar-rio"
+                  >
+                    <Ship className="w-4 h-4 mr-2" />
+                    {isNavigating ? 'Navegando...' : 'Ver todo o rio'}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -640,7 +659,7 @@ export default function Trilha() {
           
           <div className="container mx-auto px-4 py-8 relative z-10">
             <div className="relative max-w-3xl mx-auto">
-              <svg className="absolute left-1/2 top-0 h-full w-44 md:w-72 -translate-x-1/2 -z-10 overflow-visible" preserveAspectRatio="none">
+              <svg className="absolute left-1/2 top-0 h-full w-48 md:w-96 -translate-x-1/2 -z-10 overflow-visible" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="riverMain" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.1" />
@@ -759,7 +778,7 @@ export default function Trilha() {
               </div>
             ))}
             
-            <div className="flex items-center justify-center mt-12 py-8">
+            <div id="fim-jornada" className="flex items-center justify-center mt-12 py-8">
               <div className="text-center p-8 rounded-3xl bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-amber-200">
                 <div className="w-16 h-16 rounded-full bg-amber-200 flex items-center justify-center mx-auto mb-4">
                   <MapPin className="w-8 h-8 text-amber-700" />
