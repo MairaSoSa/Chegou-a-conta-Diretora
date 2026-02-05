@@ -594,72 +594,31 @@ export default function Trilha() {
 
         <div className="trilha-amazonia relative">
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute left-0 top-0 w-32 md:w-48 h-full">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#1a4d1a]/30 via-[#2d5a27]/15 to-transparent" />
+            <div className="absolute left-0 top-0 w-24 md:w-40 h-full">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#1a4d1a]/40 via-[#2d5a27]/25 to-transparent" />
               <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-                <defs>
-                  <pattern id="acaiLeft" patternUnits="userSpaceOnUse" width="100" height="180">
-                    {/* Açaizeiro 1 */}
-                    <rect x="45" y="60" width="6" height="80" fill="#5d4037" rx="2" />
-                    <rect x="44" y="55" width="8" height="12" fill="#6d5047" rx="1" />
-                    {/* Folhas do açaí - formato palmeira */}
-                    <path d="M48 55 Q30 30 15 25" stroke="#2d5a27" strokeWidth="2" fill="none" />
-                    <path d="M48 55 Q25 35 8 35" stroke="#3d7a37" strokeWidth="2" fill="none" />
-                    <path d="M48 55 Q35 45 20 50" stroke="#4a8a47" strokeWidth="2" fill="none" />
-                    <path d="M48 55 Q70 30 85 25" stroke="#2d5a27" strokeWidth="2" fill="none" />
-                    <path d="M48 55 Q75 35 92 35" stroke="#3d7a37" strokeWidth="2" fill="none" />
-                    <path d="M48 55 Q65 45 80 50" stroke="#4a8a47" strokeWidth="2" fill="none" />
-                    <path d="M48 55 Q48 25 48 10" stroke="#3d7a37" strokeWidth="2" fill="none" />
-                    {/* Folhinhas detalhadas */}
-                    <ellipse cx="15" cy="25" rx="8" ry="3" fill="#2d5a27" opacity="0.8" transform="rotate(-30 15 25)" />
-                    <ellipse cx="8" cy="35" rx="7" ry="3" fill="#3d7a37" opacity="0.7" transform="rotate(-15 8 35)" />
-                    <ellipse cx="20" cy="50" rx="6" ry="2" fill="#4a8a47" opacity="0.6" transform="rotate(10 20 50)" />
-                    <ellipse cx="85" cy="25" rx="8" ry="3" fill="#2d5a27" opacity="0.8" transform="rotate(30 85 25)" />
-                    <ellipse cx="92" cy="35" rx="7" ry="3" fill="#3d7a37" opacity="0.7" transform="rotate(15 92 35)" />
-                    <ellipse cx="80" cy="50" rx="6" ry="2" fill="#4a8a47" opacity="0.6" transform="rotate(-10 80 50)" />
-                    <ellipse cx="48" cy="10" rx="4" ry="6" fill="#3d7a37" opacity="0.7" />
-                    {/* Cachos de açaí */}
-                    <circle cx="42" cy="58" r="2" fill="#2d1b4e" opacity="0.8" />
-                    <circle cx="46" cy="60" r="2" fill="#3d2b5e" opacity="0.7" />
-                    <circle cx="50" cy="58" r="2" fill="#2d1b4e" opacity="0.8" />
-                    <circle cx="54" cy="60" r="2" fill="#3d2b5e" opacity="0.7" />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#acaiLeft)" />
+                <pattern id="forestLeft" patternUnits="userSpaceOnUse" width="80" height="120">
+                  <ellipse cx="40" cy="25" rx="35" ry="20" fill="#2d5a27" opacity="0.7" />
+                  <ellipse cx="25" cy="35" rx="25" ry="15" fill="#3d7a37" opacity="0.6" />
+                  <ellipse cx="55" cy="40" rx="22" ry="14" fill="#4a8a47" opacity="0.5" />
+                  <ellipse cx="20" cy="50" rx="18" ry="12" fill="#2d5a27" opacity="0.4" />
+                  <rect x="35" y="50" width="8" height="50" fill="#5d4037" opacity="0.3" />
+                </pattern>
+                <rect width="100%" height="100%" fill="url(#forestLeft)" />
               </svg>
             </div>
             
-            <div className="absolute right-0 top-0 w-32 md:w-48 h-full">
-              <div className="absolute inset-0 bg-gradient-to-l from-[#1a4d1a]/30 via-[#2d5a27]/15 to-transparent" />
+            <div className="absolute right-0 top-0 w-24 md:w-40 h-full">
+              <div className="absolute inset-0 bg-gradient-to-l from-[#1a4d1a]/40 via-[#2d5a27]/25 to-transparent" />
               <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-                <defs>
-                  <pattern id="acaiRight" patternUnits="userSpaceOnUse" width="100" height="180" patternTransform="translate(30, 40)">
-                    {/* Açaizeiro 2 - ligeiramente diferente */}
-                    <rect x="50" y="65" width="5" height="75" fill="#6d5047" rx="2" />
-                    <rect x="49" y="60" width="7" height="10" fill="#5d4037" rx="1" />
-                    {/* Folhas do açaí */}
-                    <path d="M52 60 Q35 35 20 28" stroke="#3d7a37" strokeWidth="2" fill="none" />
-                    <path d="M52 60 Q30 42 12 40" stroke="#2d5a27" strokeWidth="2" fill="none" />
-                    <path d="M52 60 Q38 50 25 55" stroke="#4a8a47" strokeWidth="2" fill="none" />
-                    <path d="M52 60 Q68 35 82 28" stroke="#3d7a37" strokeWidth="2" fill="none" />
-                    <path d="M52 60 Q72 42 88 40" stroke="#2d5a27" strokeWidth="2" fill="none" />
-                    <path d="M52 60 Q65 50 78 55" stroke="#4a8a47" strokeWidth="2" fill="none" />
-                    <path d="M52 60 Q52 30 52 15" stroke="#2d5a27" strokeWidth="2" fill="none" />
-                    {/* Folhinhas */}
-                    <ellipse cx="20" cy="28" rx="7" ry="3" fill="#3d7a37" opacity="0.8" transform="rotate(-25 20 28)" />
-                    <ellipse cx="12" cy="40" rx="6" ry="2" fill="#2d5a27" opacity="0.7" transform="rotate(-10 12 40)" />
-                    <ellipse cx="25" cy="55" rx="5" ry="2" fill="#4a8a47" opacity="0.6" transform="rotate(15 25 55)" />
-                    <ellipse cx="82" cy="28" rx="7" ry="3" fill="#3d7a37" opacity="0.8" transform="rotate(25 82 28)" />
-                    <ellipse cx="88" cy="40" rx="6" ry="2" fill="#2d5a27" opacity="0.7" transform="rotate(10 88 40)" />
-                    <ellipse cx="78" cy="55" rx="5" ry="2" fill="#4a8a47" opacity="0.6" transform="rotate(-15 78 55)" />
-                    <ellipse cx="52" cy="15" rx="4" ry="5" fill="#2d5a27" opacity="0.7" />
-                    {/* Cachos */}
-                    <circle cx="47" cy="63" r="2" fill="#3d2b5e" opacity="0.8" />
-                    <circle cx="51" cy="65" r="2" fill="#2d1b4e" opacity="0.7" />
-                    <circle cx="55" cy="63" r="2" fill="#3d2b5e" opacity="0.8" />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#acaiRight)" />
+                <pattern id="forestRight" patternUnits="userSpaceOnUse" width="80" height="120">
+                  <ellipse cx="40" cy="30" rx="32" ry="18" fill="#3d7a37" opacity="0.7" />
+                  <ellipse cx="55" cy="40" rx="28" ry="16" fill="#2d5a27" opacity="0.6" />
+                  <ellipse cx="25" cy="45" rx="20" ry="13" fill="#4a8a47" opacity="0.5" />
+                  <ellipse cx="60" cy="55" rx="16" ry="11" fill="#3d7a37" opacity="0.4" />
+                  <rect x="38" y="52" width="7" height="48" fill="#6d5047" opacity="0.3" />
+                </pattern>
+                <rect width="100%" height="100%" fill="url(#forestRight)" />
               </svg>
             </div>
           </div>
