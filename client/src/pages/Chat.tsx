@@ -116,49 +116,44 @@ function TelaBoasVindas({ onSugestao }: { onSugestao: (texto: string) => void })
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center h-full text-center px-4 py-8"
+      className="flex flex-col items-center text-center px-2 py-4 sm:py-6"
     >
-      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-100 to-green-100 flex items-center justify-center mb-6">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg">
-          <Sparkles className="w-7 h-7 text-white" />
+      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-emerald-100 to-green-100 flex items-center justify-center mb-4 sm:mb-6">
+        <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg">
+          <Sparkles className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
         </div>
       </div>
       
-      <h2 className="text-2xl font-bold text-foreground mb-2">
-        Oi, Diretora! Posso ajudar?
+      <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
+        Oi! Posso ajudar?
       </h2>
-      <p className="text-muted-foreground mb-8 max-w-md leading-relaxed">
-        Sou sua assistente virtual especialista em verbas escolares. 
-        Pode perguntar sobre PDDE, PNAE, PNATE, prestação de contas... 
-        tô aqui pra isso!
+      <p className="text-sm sm:text-base text-muted-foreground mb-6 max-w-sm leading-relaxed">
+        Sou sua assistente para dúvidas sobre verbas escolares: PDDE, PNAE, PNATE...
       </p>
       
-      <div className="w-full max-w-2xl">
-        <p className="text-sm text-muted-foreground mb-3 flex items-center justify-center gap-2">
-          <MessageCircle className="w-4 h-4" />
-          Perguntas frequentes:
+      <div className="w-full">
+        <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 flex items-center justify-center gap-2">
+          <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          Clique para perguntar:
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {SUGESTOES.map((sugestao, i) => (
+        <div className="grid grid-cols-1 gap-2 sm:gap-3">
+          {SUGESTOES.slice(0, 4).map((sugestao, i) => (
             <motion.button
               key={i}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ delay: i * 0.08 }}
               onClick={() => onSugestao(sugestao.pergunta)}
-              className="group flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-200 hover:border-primary/30 hover:shadow-md transition-all text-left"
+              className="group flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl bg-white border border-slate-200 hover:border-primary/30 hover:shadow-md transition-all text-left"
               data-testid={`sugestao-${i}`}
             >
-              <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-100 transition-colors">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
                 {sugestao.icone}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground leading-snug">
-                  {sugestao.pergunta}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">{sugestao.categoria}</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              <p className="flex-1 text-sm font-medium text-foreground leading-snug">
+                {sugestao.pergunta}
+              </p>
+              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             </motion.button>
           ))}
         </div>
@@ -208,33 +203,33 @@ export default function Chat() {
   const temMensagens = conversationData?.messages && conversationData.messages.length > 0;
 
   return (
-    <div className="h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans">
       <Navigation />
       
-      <main className="flex-1 container mx-auto px-4 py-4 flex flex-col max-w-4xl overflow-hidden">
-        <Card className="flex-1 flex flex-col overflow-hidden border-slate-200">
-          {/* Header */}
-          <div className="px-4 py-3 border-b bg-gradient-to-r from-emerald-50 to-green-50 flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <Bot className="w-6 h-6 text-white" />
+      <main className="flex-1 container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex flex-col max-w-3xl">
+        <Card className="flex-1 flex flex-col min-h-0 border-slate-200 overflow-hidden">
+          {/* Header - mais compacto */}
+          <div className="px-3 sm:px-4 py-2 sm:py-3 border-b bg-gradient-to-r from-emerald-50 to-green-50 flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-md flex-shrink-0">
+              <Bot className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <div className="flex-1">
-              <h2 className="font-bold text-foreground flex items-center gap-2">
-                Assistente Virtual
-                <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs font-normal">
+            <div className="flex-1 min-w-0">
+              <h2 className="font-bold text-foreground flex items-center gap-2 flex-wrap">
+                <span className="truncate">Assistente</span>
+                <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs font-normal flex-shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse" />
                   Online
                 </Badge>
               </h2>
-              <p className="text-xs text-muted-foreground">
-                Especialista em verbas escolares • PDDE, PNAE, PNATE
+              <p className="text-xs text-muted-foreground truncate">
+                Tira-dúvidas sobre verbas escolares
               </p>
             </div>
           </div>
 
           {/* Messages Area */}
           <div 
-            className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50" 
+            className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-slate-50/50 min-h-0" 
             ref={scrollRef}
           >
             {!temMensagens ? (
@@ -251,15 +246,15 @@ export default function Chat() {
             )}
           </div>
 
-          {/* Input Area */}
-          <div className="p-4 bg-white border-t">
+          {/* Input Area - mais compacto */}
+          <div className="p-3 sm:p-4 bg-white border-t flex-shrink-0">
             <div className="flex gap-2">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Digite sua dúvida aqui..."
-                className="min-h-[52px] max-h-32 resize-none border-slate-200 focus:border-primary"
+                placeholder="Digite sua dúvida..."
+                className="min-h-[44px] max-h-24 resize-none border-slate-200 focus:border-primary text-base"
                 disabled={isSending}
                 rows={1}
                 data-testid="input-mensagem"
@@ -267,8 +262,7 @@ export default function Chat() {
               <Button 
                 onClick={() => handleSend()} 
                 disabled={!input.trim() || isSending}
-                size="lg"
-                className="px-4 h-auto bg-primary hover:bg-primary/90"
+                className="px-3 sm:px-4 self-end"
                 data-testid="button-enviar"
               >
                 {isSending ? (
@@ -278,8 +272,8 @@ export default function Chat() {
                 )}
               </Button>
             </div>
-            <p className="text-[11px] text-center text-muted-foreground mt-2">
-              A assistente pode errar às vezes. Sempre confirme as informações nos sites oficiais do FNDE.
+            <p className="text-[10px] sm:text-[11px] text-center text-muted-foreground mt-2">
+              Confirme sempre nos sites oficiais do FNDE
             </p>
           </div>
         </Card>

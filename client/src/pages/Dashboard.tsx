@@ -389,86 +389,128 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* MODO RESUMIDO: Cards rápidos com números principais */}
+            {/* MODO RESUMIDO: Explicação inicial amigável */}
             {viewMode === 'resumido' && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="card-clay p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Users className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-primary">{displaySchool.enrollmentCount}</p>
-                      <p className="text-xs text-muted-foreground">Alunos</p>
-                    </div>
-                  </div>
+              <div className="space-y-6">
+                <Card className="bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200">
+                  <CardContent className="p-4">
+                    <p className="text-emerald-800 leading-relaxed">
+                      <strong>Olá!</strong> Aqui você vê um resumo da sua escola. 
+                      Esses números vêm do <strong>Censo Escolar</strong> e do <strong>FNDE</strong>. 
+                      Use para acompanhar as verbas e não perder nenhum prazo!
+                    </p>
+                  </CardContent>
                 </Card>
-                <Card className="card-clay p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-sky-100 flex items-center justify-center">
-                      <GraduationCap className="w-5 h-5 text-sky-600" />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Card className="card-clay p-5">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Users className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-3xl font-bold text-primary">{displaySchool.enrollmentCount}</p>
+                        <p className="text-sm font-medium text-foreground">Alunos matriculados</p>
+                        <p className="text-xs text-muted-foreground mt-1">Esse número define quanto dinheiro você recebe</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold text-sky-600">{lastIdeb.escola}</p>
-                      <p className="text-xs text-muted-foreground">IDEB 2023</p>
+                  </Card>
+                  <Card className="card-clay p-5">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+                        <Banknote className="w-6 h-6 text-accent" />
+                      </div>
+                      <div>
+                        <p className="text-3xl font-bold text-accent">R$ {lastRepasse.total.toLocaleString('pt-BR')}</p>
+                        <p className="text-sm font-medium text-foreground">Recebido em 2024</p>
+                        <p className="text-xs text-muted-foreground mt-1">Soma de PDDE (R${lastRepasse.pdde.toLocaleString('pt-BR')}) + PNAE (R${lastRepasse.pnae.toLocaleString('pt-BR')})</p>
+                      </div>
                     </div>
-                  </div>
-                </Card>
-                <Card className="card-clay p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                      <Banknote className="w-5 h-5 text-accent" />
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold text-accent">R$ {(lastRepasse.total / 1000).toFixed(1)}k</p>
-                      <p className="text-xs text-muted-foreground">Recebido 2024</p>
-                    </div>
-                  </div>
-                </Card>
-                <Card className="card-clay p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-amber-700">28/Fev</p>
-                      <p className="text-xs text-muted-foreground">Próximo prazo</p>
-                    </div>
-                  </div>
-                </Card>
+                  </Card>
+                </div>
               </div>
             )}
 
             {/* MODO RESUMIDO: Próximos prazos */}
             {viewMode === 'resumido' && (
               <Card className="card-clay">
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-amber-600" />
-                    Próximos Prazos
+                    Fique de Olho nos Prazos
                   </CardTitle>
+                  <CardDescription>
+                    Datas importantes para não esquecer
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {CALENDARIO_EVENTOS.filter(e => e.urgente || new Date(e.ano, e.mes - 1, e.dia) > new Date()).slice(0, 4).map((evento, i) => (
-                      <div key={i} className={`flex items-center gap-3 p-3 rounded-xl ${evento.urgente ? 'bg-red-50 border border-red-200' : 'bg-muted/30'}`}>
-                        <span className={`text-sm font-mono font-bold ${evento.urgente ? 'text-red-600' : 'text-muted-foreground'}`}>
-                          {evento.dia}/{MESES_NOMES[evento.mes]}
-                        </span>
-                        <span className="text-sm flex-1">{evento.evento}</span>
-                        {evento.urgente && <Badge className="bg-red-100 text-red-700 border-0 text-xs">Urgente</Badge>}
+                  <div className="space-y-3">
+                    {CALENDARIO_EVENTOS.filter(e => e.urgente || new Date(e.ano, e.mes - 1, e.dia) > new Date()).slice(0, 3).map((evento, i) => (
+                      <div key={i} className={`p-4 rounded-xl ${evento.urgente ? 'bg-red-50 border-2 border-red-200' : 'bg-muted/30 border border-transparent'}`}>
+                        <div className="flex items-start gap-3">
+                          <div className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center flex-shrink-0 ${evento.urgente ? 'bg-red-100' : 'bg-white border'}`}>
+                            <span className={`text-xs font-medium ${evento.urgente ? 'text-red-600' : 'text-muted-foreground'}`}>{MESES_NOMES[evento.mes]}</span>
+                            <span className={`text-lg font-bold ${evento.urgente ? 'text-red-700' : 'text-foreground'}`}>{evento.dia}</span>
+                          </div>
+                          <div className="flex-1">
+                            <p className={`font-medium ${evento.urgente ? 'text-red-800' : 'text-foreground'}`}>{evento.evento}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{TIPO_LABELS[evento.tipo]}</p>
+                            {evento.urgente && (
+                              <Badge className="bg-red-100 text-red-700 border-0 text-xs mt-2">
+                                <AlertTriangle className="w-3 h-3 mr-1" />
+                                Prazo chegando!
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
                   <Button 
-                    variant="ghost" 
-                    className="w-full mt-4 text-muted-foreground"
+                    variant="outline" 
+                    className="w-full mt-4"
                     onClick={() => setViewMode('completo')}
                     data-testid="btn-ver-calendario-completo"
                   >
-                    Ver calendário completo
+                    Ver todos os prazos do ano
                     <ChevronDown className="w-4 h-4 ml-2" />
                   </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* MODO RESUMIDO: Links úteis */}
+            {viewMode === 'resumido' && (
+              <Card className="card-clay">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <Link2 className="w-5 h-5 text-primary" />
+                    Sites que Você Vai Precisar
+                  </CardTitle>
+                  <CardDescription>
+                    Clique para abrir em nova aba
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {LINKS_PROGRAMAS.map((link, i) => (
+                      <a
+                        key={i}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/20 transition-all group"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <ExternalLink className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground group-hover:text-primary transition-colors">{link.nome}</p>
+                          <p className="text-xs text-muted-foreground truncate">{link.descricao}</p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             )}
