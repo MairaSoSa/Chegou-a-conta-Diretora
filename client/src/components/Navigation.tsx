@@ -21,28 +21,28 @@ export function Navigation() {
     const isActive = location === item.href;
     return (
       <Link href={item.href} className={cn(
-        "flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 text-sm font-medium",
+        "flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 text-sm font-medium",
         isActive 
-          ? "bg-primary/10 text-primary hover:bg-primary/15" 
-          : "text-muted-foreground hover:text-foreground hover:bg-muted",
+          ? "bg-accent/10 text-accent border-r-2 border-accent" 
+          : "text-muted-foreground hover:text-foreground hover:bg-amber-50",
         mobile ? "w-full text-base py-3" : ""
       )} onClick={() => mobile && setIsOpen(false)}>
-        <item.icon className={cn("w-4 h-4", isActive ? "text-primary" : "text-muted-foreground")} />
+        <item.icon className={cn("w-4 h-4", isActive ? "text-accent" : "text-muted-foreground")} />
         {item.label}
       </Link>
     );
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-xl">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:shadow-md group-hover:shadow-primary/20 transition-all">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-600 to-amber-700 flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:shadow-md group-hover:shadow-accent/20 transition-all" style={{ fontFamily: 'Quicksand' }}>
             A
           </div>
-          <span className="font-bold text-lg tracking-tight hidden sm:block text-foreground">
-            A Conta Chegou<span className="text-primary">, Diretora!</span>
+          <span className="font-bold text-lg tracking-tight hidden sm:block text-foreground" style={{ fontFamily: 'Quicksand' }}>
+            Chegou a Conta<span className="text-accent">, Diretora!</span>
           </span>
         </Link>
 

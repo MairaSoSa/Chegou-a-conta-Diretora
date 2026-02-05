@@ -2,11 +2,11 @@ import { Link } from "wouter";
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/50 bg-muted/30 py-12 mt-auto">
+    <footer className="border-t border-border/40 bg-gradient-to-b from-amber-50/30 to-green-50/20 py-12 mt-auto">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div className="space-y-4">
-            <h3 className="font-bold text-lg text-foreground">A Conta Chegou</h3>
+            <h3 className="font-bold text-lg text-foreground" style={{ fontFamily: 'Quicksand' }}>Chegou a Conta, Diretora!</h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
               Descomplicando a gestão financeira escolar para diretores e gestores de todo o Brasil.
             </p>
