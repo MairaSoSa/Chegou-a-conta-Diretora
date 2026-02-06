@@ -76,6 +76,13 @@ export function registerChatRoutes(app: Express): void {
       const glossaryItems = await storage.getGlossary();
       const toolItems = await storage.getTools();
       const trilhaItems = await storage.getTrilhaUnits();
+      const programItems = await storage.getPrograms();
+
+      let allProgramDetails: Array<{ programCode: string; type: string; content: string; category: string | null }> = [];
+      for (const prog of programItems) {
+        const details = await storage.getProgramDetails(prog.code);
+        allProgramDetails = allProgramDetails.concat(details);
+      }
 
       let knowledgeBase = "";
 
@@ -83,6 +90,25 @@ export function registerChatRoutes(app: Express): void {
         knowledgeBase += "=== DOCUMENTOS DA BASE DE CONHECIMENTO ===\n";
         for (const doc of aiDocs) {
           knowledgeBase += `\n--- ${doc.title} ---\n${doc.content}\n`;
+        }
+      }
+
+      if (programItems.length > 0) {
+        knowledgeBase += "\n=== PROGRAMAS GOVERNAMENTAIS ===\n";
+        knowledgeBase += "Página de programas: /programas\n";
+        for (const prog of programItems) {
+          knowledgeBase += `\n--- ${prog.code}: ${prog.name} ---\n`;
+          knowledgeBase += `Descrição: ${prog.description}\n`;
+          knowledgeBase += `Status: ${prog.status}\n`;
+          if (prog.lastReferenceYear) knowledgeBase += `Ano de referência: ${prog.lastReferenceYear}\n`;
+          if (prog.observation) knowledgeBase += `Observação: ${prog.observation}\n`;
+          knowledgeBase += `Link: /programas/${prog.code}\n`;
+          const progDetails = allProgramDetails.filter(d => d.programCode === prog.code);
+          if (progDetails.length > 0) {
+            for (const detail of progDetails) {
+              knowledgeBase += `  ${detail.type}${detail.category ? ` (${detail.category})` : ""}: ${detail.content}\n`;
+            }
+          }
         }
       }
 
@@ -109,19 +135,32 @@ export function registerChatRoutes(app: Express): void {
         }
       }
 
-      const systemPrompt = `Você é a assistente virtual do site "Chegou a Conta, Diretora!", uma plataforma que ajuda diretoras de escolas públicas brasileiras a gerenciar recursos financeiros (PDDE, PNAE, PNATE e outros programas).
+      const hasContent = knowledgeBase.trim().length > 0;
 
-REGRAS IMPORTANTES:
-1. Responda APENAS com base nas informações fornecidas abaixo (documentos da base de conhecimento e conteúdo do site).
-2. Se a pergunta não puder ser respondida com as informações disponíveis, diga educadamente que não tem essa informação na base de dados e sugira consultar o FNDE ou a secretaria de educação.
-3. Use linguagem simples e acessível, como se estivesse conversando com uma diretora de escola.
-4. Seja direta e prática nas respostas.
-5. Quando relevante, mencione as ferramentas e materiais disponíveis no site.
-6. Use formatação Markdown nas respostas: **negrito** para termos importantes, listas com - para itens, e links no formato [texto do link](/caminho) para páginas internas do site.
-7. Quando mencionar unidades da trilha, inclua o link direto: [Nome da Unidade](/trilha/U00).
-8. Quando mencionar ferramentas, inclua o link para a página: [ver ferramentas](/ferramentas).
-9. Quando mencionar programas, inclua o link: [ver programas](/programas).
-10. Para sites externos como o FNDE, use links completos: [site do FNDE](https://www.fnde.gov.br).
+      const systemPrompt = `Você é a assistente virtual do site "Chegou a Conta, Diretora!". Seu papel é ajudar diretoras de escolas públicas brasileiras com dúvidas sobre gestão financeira escolar.
+
+REGRA FUNDAMENTAL — OBRIGATÓRIA E INVIOLÁVEL:
+Você SOMENTE pode responder usando as informações que estão listadas abaixo na seção "BASE DE CONHECIMENTO".
+Você NÃO possui conhecimento próprio. Você NÃO sabe nada além do que está escrito abaixo.
+Se a informação NÃO estiver explicitamente presente na BASE DE CONHECIMENTO abaixo, você DEVE dizer:
+"Desculpe, não tenho essa informação na minha base de dados. Sugiro consultar o [site do FNDE](https://www.fnde.gov.br) ou entrar em contato com a secretaria de educação do seu município."
+
+PROIBIÇÕES ABSOLUTAS:
+- NUNCA invente dados, números, valores, percentuais, datas ou prazos que não estejam na base abaixo.
+- NUNCA use seu conhecimento geral para complementar respostas. Mesmo que você "saiba" algo, se não está na base abaixo, não responda.
+- NUNCA crie informações sobre legislação, resoluções, portarias ou normas que não estejam explicitamente na base.
+- NUNCA invente procedimentos ou etapas que não estejam documentados abaixo.
+- NUNCA responda perguntas que não sejam sobre gestão financeira escolar, programas educacionais ou o conteúdo do site.
+- Se alguém perguntar sobre assuntos fora do escopo (política, receitas, outros temas), diga: "Só posso ajudar com assuntos relacionados à gestão financeira da escola. Como posso te ajudar com isso?"
+
+COMPORTAMENTO:
+- Use linguagem simples e acessível, como se estivesse conversando com uma diretora de escola.
+- Seja direta e prática nas respostas.
+- Use formatação Markdown: **negrito** para termos importantes, listas com - para itens.
+- Quando mencionar conteúdo do site, inclua links: [texto](/caminho).
+- Quando mencionar unidades da trilha, inclua o link: [Nome da Unidade](/trilha/U00).
+- Quando mencionar programas, inclua: [ver detalhes do programa](/programas/CÓDIGO).
+- Para sites externos, use links completos: [site do FNDE](https://www.fnde.gov.br).
 
 PÁGINAS DO SITE:
 - Dashboard: /dashboard
@@ -131,7 +170,11 @@ PÁGINAS DO SITE:
 - Glossário: /glossario
 - Chat IA: /chat
 
-${knowledgeBase}`;
+======= BASE DE CONHECIMENTO (ÚNICA FONTE DE VERDADE) =======
+${hasContent ? knowledgeBase : "A base de conhecimento está vazia. Informe ao usuário que o conteúdo ainda está sendo cadastrado e sugira consultar o FNDE."}
+======= FIM DA BASE DE CONHECIMENTO =======
+
+LEMBRETE FINAL: Qualquer informação que NÃO esteja entre as marcações "BASE DE CONHECIMENTO" e "FIM DA BASE DE CONHECIMENTO" acima NÃO existe para você. Responda EXCLUSIVAMENTE com o que está lá.`;
 
       const chatMessages = [
         { role: "system" as const, content: systemPrompt },
@@ -146,11 +189,12 @@ ${knowledgeBase}`;
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      // Stream response from OpenAI
+      // Stream response from OpenAI (temperature 0.3 to reduce hallucination)
       const stream = await openai.chat.completions.create({
         model: "gpt-5.1",
         messages: chatMessages,
         stream: true,
+        temperature: 0.3,
         max_completion_tokens: 2048,
       });
 

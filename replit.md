@@ -15,6 +15,16 @@ The interface uses a warm, nature-inspired "Ghibli/territorial" visual style wit
 
 ## Recent Changes
 
+### AI Knowledge Base Security Hardening (Feb 2026)
+- System prompt completely rewritten with strict "REGRA FUNDAMENTAL — OBRIGATÓRIA E INVIOLÁVEL" framing
+- AI now ONLY responds using content from the knowledge base (admin-managed content)
+- Explicit refusal for out-of-scope topics and questions not in the knowledge base
+- Programs + program details now included in AI knowledge base (were missing before)
+- Temperature set to 0.3 on both chat and audio routes to reduce hallucination
+- Knowledge base delimited with clear markers: "BASE DE CONHECIMENTO (ÚNICA FONTE DE VERDADE)"
+- Empty knowledge base handling: tells users content is being set up
+- Chat responses rendered with react-markdown for formatted output with clickable links
+
 ### Expanded Admin Panel (Feb 2026)
 - Admin panel expanded from 3 to 7 tabs: Glossário, Ferramentas, Trilha, Programas, Dashboard, Base IA, Configurações
 - Programs tab: CRUD for PDDE/PNAE/PNATE programs and their details
@@ -22,7 +32,7 @@ The interface uses a warm, nature-inspired "Ghibli/territorial" visual style wit
 - Base IA tab: AI knowledge base document management - uploaded docs restrict chatbot responses
 - Configurações tab: Editable site settings (site_title, footer_slogan, footer_text) fetched dynamically
 - Dashboard page uses database data with fallback to hardcoded demo constants
-- AI chat system prompt now injects knowledge base + glossary + tools + trilha content
+- AI chat system prompt now injects knowledge base + glossary + tools + trilha + programs content
 - Footer dynamically fetches settings from database
 - All new admin routes validated with Zod schemas
 - Insert schemas properly omit auto-generated fields (id, lastUpdated)
