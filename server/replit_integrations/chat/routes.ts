@@ -1,8 +1,8 @@
 import express, { type Express, type Request, type Response } from "express";
-import OpenAI from "openai";
+import OpenAI, { toFile } from "openai";
 import { chatStorage } from "./storage";
 import { storage } from "../../storage";
-import { ensureCompatibleFormat, speechToText } from "../audio/client";
+import { ensureCompatibleFormat } from "../audio/client";
 
 const audioBodyParser = express.json({ limit: "50mb" });
 
@@ -263,8 +263,35 @@ LEMBRETE FINAL: Qualquer informação que NÃO esteja entre as marcações "BASE
       }
       const rawBuffer = Buffer.from(audio, "base64");
       const { buffer: audioBuffer, format: inputFormat } = await ensureCompatibleFormat(rawBuffer);
-      const transcript = await speechToText(audioBuffer, inputFormat);
-      res.json({ transcript });
+
+      try {
+        const file = await toFile(audioBuffer, `audio.${inputFormat}`);
+        const response = await openai.audio.transcriptions.create({
+          file,
+          model: "gpt-4o-mini-transcribe",
+          response_format: "json",
+        });
+        res.json({ transcript: response.text });
+      } catch (transcribeErr: any) {
+        console.log("Transcriptions API failed (status:", transcribeErr?.status, "), trying chat completions with gpt-4o audio input...");
+        const audioBase64 = audioBuffer.toString("base64");
+        const chatResponse = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{
+            role: "user",
+            content: [
+              {
+                type: "input_audio" as any,
+                input_audio: { data: audioBase64, format: "wav" },
+              } as any,
+              { type: "text", text: "Transcreva exatamente o que foi dito no áudio acima. Responda APENAS com a transcrição literal, sem adicionar explicações." },
+            ],
+          }],
+          temperature: 0.3,
+        });
+        const transcript = chatResponse.choices[0]?.message?.content?.trim() || "";
+        res.json({ transcript });
+      }
     } catch (error) {
       console.error("Error transcribing audio:", error);
       res.status(500).json({ error: "Failed to transcribe audio" });
