@@ -234,42 +234,20 @@ export async function textToSpeechStream(
 }
 
 /**
- * Speech-to-Text: Transcribes audio using chat completions with audio input.
- * Falls back from audio.transcriptions API (which returns 401 on modelfarm proxy)
- * to chat completions with input_audio, which works reliably.
+ * Speech-to-Text: Transcribes audio using dedicated transcription model.
+ * Uses gpt-4o-mini-transcribe with response_format 'json' as required by AI integrations.
  */
 export async function speechToText(
   audioBuffer: Buffer,
   format: "wav" | "mp3" | "webm" = "wav"
 ): Promise<string> {
-  try {
-    const file = await toFile(audioBuffer, `audio.${format}`);
-    const response = await openai.audio.transcriptions.create({
-      file,
-      model: "gpt-4o-mini-transcribe",
-      response_format: "json",
-    });
-    return response.text;
-  } catch (primaryError: any) {
-    console.log("Audio transcriptions API failed, trying chat completions fallback:", primaryError?.status || primaryError?.message);
-    const audioBase64 = audioBuffer.toString("base64");
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{
-        role: "user",
-        content: [
-          {
-            type: "input_audio" as any,
-            input_audio: { data: audioBase64, format: "wav" },
-          } as any,
-          { type: "text", text: "Transcreva exatamente o que foi dito no áudio acima. Responda APENAS com a transcrição literal, sem adicionar explicações ou comentários." },
-        ],
-      }],
-      temperature: 0.3,
-    });
-    const transcript = response.choices[0]?.message?.content?.trim() || "";
-    return transcript;
-  }
+  const file = await toFile(audioBuffer, `audio.${format}`);
+  const response = await openai.audio.transcriptions.create({
+    file,
+    model: "gpt-4o-mini-transcribe",
+    response_format: "json",
+  });
+  return response.text;
 }
 
 /**

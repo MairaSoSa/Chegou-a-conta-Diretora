@@ -237,24 +237,29 @@ export default function Chat() {
 
         setIsTranscribing(true);
         try {
-          const reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
-          reader.onloadend = async () => {
-            const base64 = (reader.result as string).split(",")[1];
-            const res = await fetch("/api/transcribe", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ audio: base64 }),
-            });
-            if (!res.ok) throw new Error("Transcription failed");
-            const { transcript } = await res.json();
-            setIsTranscribing(false);
-            if (transcript && transcript.trim()) {
-              handleSend(transcript.trim());
-            } else {
-              toast({ title: "Nenhum texto detectado", description: "Tente falar mais perto do microfone.", variant: "destructive" });
-            }
-          };
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const result = reader.result as string;
+              resolve(result.split(",")[1]);
+            };
+            reader.onerror = () => reject(new Error("Failed to read audio"));
+            reader.readAsDataURL(audioBlob);
+          });
+
+          const res = await fetch("/api/transcribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ audio: base64 }),
+          });
+          if (!res.ok) throw new Error("Transcription failed");
+          const { transcript } = await res.json();
+          setIsTranscribing(false);
+          if (transcript && transcript.trim()) {
+            handleSend(transcript.trim());
+          } else {
+            toast({ title: "Nenhum texto detectado", description: "Tente falar mais perto do microfone.", variant: "destructive" });
+          }
         } catch (err) {
           setIsTranscribing(false);
           toast({ title: "Erro ao transcrever", description: "Tente novamente.", variant: "destructive" });

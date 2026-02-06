@@ -37,7 +37,7 @@ export function registerChatRoutes(app: Express): void {
   // Get single conversation with messages
   app.get("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.id as string);
       const conversation = await chatStorage.getConversation(id);
       if (!conversation) {
         return res.status(404).json({ error: "Conversation not found" });
@@ -65,7 +65,7 @@ export function registerChatRoutes(app: Express): void {
   // Delete conversation
   app.delete("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.id as string);
       await chatStorage.deleteConversation(id);
       res.status(204).send();
     } catch (error) {
@@ -77,7 +77,7 @@ export function registerChatRoutes(app: Express): void {
   // Send message and get AI response (streaming)
   app.post("/api/conversations/:id/messages", async (req: Request, res: Response) => {
     try {
-      const conversationId = parseInt(req.params.id);
+      const conversationId = parseInt(req.params.id as string);
       const { content } = req.body;
 
       // Save user message
@@ -264,36 +264,15 @@ LEMBRETE FINAL: Qualquer informação que NÃO esteja entre as marcações "BASE
       const rawBuffer = Buffer.from(audio, "base64");
       const { buffer: audioBuffer, format: inputFormat } = await ensureCompatibleFormat(rawBuffer);
 
-      try {
-        const file = await toFile(audioBuffer, `audio.${inputFormat}`);
-        const response = await openai.audio.transcriptions.create({
-          file,
-          model: "gpt-4o-mini-transcribe",
-          response_format: "json",
-        });
-        res.json({ transcript: response.text });
-      } catch (transcribeErr: any) {
-        console.log("Transcriptions API failed (status:", transcribeErr?.status, "), trying chat completions with gpt-4o audio input...");
-        const audioBase64 = audioBuffer.toString("base64");
-        const chatResponse = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [{
-            role: "user",
-            content: [
-              {
-                type: "input_audio" as any,
-                input_audio: { data: audioBase64, format: "wav" },
-              } as any,
-              { type: "text", text: "Transcreva exatamente o que foi dito no áudio acima. Responda APENAS com a transcrição literal, sem adicionar explicações." },
-            ],
-          }],
-          temperature: 0.3,
-        });
-        const transcript = chatResponse.choices[0]?.message?.content?.trim() || "";
-        res.json({ transcript });
-      }
-    } catch (error) {
-      console.error("Error transcribing audio:", error);
+      const file = await toFile(audioBuffer, `audio.${inputFormat}`);
+      const response = await openai.audio.transcriptions.create({
+        file,
+        model: "gpt-4o-mini-transcribe",
+        response_format: "json",
+      });
+      res.json({ transcript: response.text });
+    } catch (error: any) {
+      console.error("Error transcribing audio:", error?.status || error?.message || error);
       res.status(500).json({ error: "Failed to transcribe audio" });
     }
   });
