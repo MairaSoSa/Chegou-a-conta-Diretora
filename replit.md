@@ -15,6 +15,20 @@ The interface uses a warm, nature-inspired "Ghibli/territorial" visual style wit
 
 ## Recent Changes
 
+### FNDE PDDEInfo Live Data Integration (Feb 2026)
+- New server-side scraper (`server/scraper/pdde.ts`) extracts school financial data from FNDE's PDDEInfo portal in real-time
+- Converts the FNDE HTML response (iso-8859-1 encoded) using cheerio for parsing
+- API route: GET `/api/pdde/:inep?ano=YYYY` - public, no auth required
+- Data extracted: school info, enrollment by level, UEx (Unidade Executora) with CNPJ, bank accounts with balances, UEx/EEx situation (mandatos, prestação de contas, adesão), destinações/repasses with custeio/capital breakdown
+- Client hook: `usePddeInfo(inep, ano)` with 5-min stale time and retry=1
+- Dashboard integration:
+  - Resumido mode: real enrollment count, total paid, bank accounts summary, FNDE situation
+  - Completo mode: full PDDE section with year selector, UEx details, bank accounts table, situation cards, destinações table with totals, enrollment by level grid
+  - School data section uses PDDE data for name, city, UEx, CNPJ when available
+  - Enrollment breakdown shows PDDE levels instead of hardcoded series when available
+- Year selector allows switching between last 6 years of FNDE data
+- Accessibility icon moved from floating button to navbar (next to logo) using React Context
+
 ### PDF & Word Document Support for AI Knowledge Base (Feb 2026)
 - AI Documents (Base IA) now accepts PDF (.pdf), Word (.docx, .doc) files in addition to text files
 - Server-side text extraction: POST /api/admin/extract-text endpoint (admin auth required)

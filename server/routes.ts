@@ -9,6 +9,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { registerChatRoutes } from "./replit_integrations/chat";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { getPddeInfo } from "./scraper/pdde";
 import { z } from "zod";
 import {
   insertToolSchema, insertGlossarySchema, insertTrilhaUnitSchema,
@@ -129,6 +130,22 @@ export async function registerRoutes(
       return res.status(404).json({ message: "School not found" });
     }
     res.json(school);
+  });
+
+  // === PUBLIC: PDDE INFO (FNDE Scraper) ===
+  app.get("/api/pdde/:inep", async (req, res) => {
+    try {
+      const inep = req.params.inep;
+      const ano = parseInt(req.query.ano as string) || new Date().getFullYear();
+      if (!/^\d{8}$/.test(inep)) {
+        return res.status(400).json({ ok: false, error: "Código INEP deve ter 8 dígitos" });
+      }
+      const result = await getPddeInfo(ano, inep);
+      res.json(result);
+    } catch (err: any) {
+      console.error("PDDE scraper error:", err.message);
+      res.status(500).json({ ok: false, error: "Erro ao consultar dados do FNDE" });
+    }
   });
 
   // === PUBLIC: PROGRAMS ===

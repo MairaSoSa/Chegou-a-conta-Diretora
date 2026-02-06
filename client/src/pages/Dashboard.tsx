@@ -11,9 +11,11 @@ import {
   GraduationCap, BookOpen, BarChart3, AlertTriangle, Info, Download, ExternalLink,
   School, Loader2, Wifi, Library, Dumbbell, Accessibility, Monitor, 
   Users2, CalendarDays, Link2, Award, Target, Scale, Building2, ShieldCheck,
-  ChevronDown, ChevronUp, LayoutGrid, List
+  ChevronDown, ChevronUp, LayoutGrid, List, Landmark, CreditCard, ClipboardCheck, Hash
 } from "lucide-react";
 import { useSchoolSearch, useSchool } from "@/hooks/use-schools";
+import { usePddeInfo } from "@/hooks/use-pdde";
+import type { PddeInfo } from "@/hooks/use-pdde";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -265,9 +267,18 @@ export default function Dashboard() {
   const [showDemo, setShowDemo] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'resumido' | 'completo'>('resumido');
+  const [pddeAno, setPddeAno] = useState(new Date().getFullYear());
   
   const { data: searchResults } = useSchoolSearch(searchQuery);
   const { data: school } = useSchool(selectedInep || "");
+  const { data: pddeData, isLoading: pddeLoading, isFetching: pddeFetching } = usePddeInfo(selectedInep, pddeAno);
+
+  const pddeEnrollTotal = pddeData?.ok
+    ? pddeData.matriculas_total
+      ?? (pddeData.matriculas_por_nivel
+        ? Object.values(pddeData.matriculas_por_nivel).reduce((a, b) => a + b, 0)
+        : null)
+    : null;
 
   const { data: datasets = [] } = useQuery<DashboardDataset[]>({
     queryKey: ["/api/dashboard/datasets"],
@@ -295,7 +306,17 @@ export default function Dashboard() {
       }, new Date(0))
     : null;
 
-  const displaySchool = selectedInep && school ? school : (showDemo ? DEMO_SCHOOL : null);
+  const pddeSchoolFallback = selectedInep && !school && pddeData?.ok ? {
+    inep: selectedInep,
+    name: pddeData.nome_escola || `Escola ${selectedInep}`,
+    city: pddeData.municipio || '',
+    state: pddeData.uf || '',
+    network: pddeData.rede || '',
+    location: '',
+    enrollmentCount: pddeEnrollTotal || 0,
+  } : null;
+
+  const displaySchool = selectedInep && school ? school : (pddeSchoolFallback || (showDemo ? DEMO_SCHOOL : null));
 
   const lastEnrollment = enrollmentData[enrollmentData.length - 1];
   const prevEnrollment = enrollmentData[enrollmentData.length - 2];
@@ -421,6 +442,26 @@ export default function Dashboard() {
               </div>
             )}
 
+            {pddeLoading && selectedInep && (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-sky-50 to-blue-50 border border-sky-200 flex items-center gap-3">
+                <Loader2 className="w-5 h-5 text-sky-600 animate-spin flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-sky-800">Buscando dados do FNDE...</p>
+                  <p className="text-sm text-sky-700">Consultando informações financeiras da escola no portal do governo.</p>
+                </div>
+              </div>
+            )}
+
+            {pddeData && !pddeData.ok && !showDemo && (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-amber-800">Dados financeiros indisponíveis</p>
+                  <p className="text-sm text-amber-700">{pddeData.error || "Não foi possível consultar o FNDE para este código."}</p>
+                </div>
+              </div>
+            )}
+
             {/* MODO RESUMIDO: Explicação inicial amigável */}
             {viewMode === 'resumido' && (
               <div className="space-y-6">
@@ -441,9 +482,13 @@ export default function Dashboard() {
                         <Users className="w-6 h-6 text-primary" />
                       </div>
                       <div>
-                        <p className="text-3xl font-bold text-primary">{displaySchool.enrollmentCount}</p>
+                        <p className="text-3xl font-bold text-primary">
+                          {pddeEnrollTotal ?? displaySchool.enrollmentCount}
+                        </p>
                         <p className="text-sm font-medium text-foreground">Alunos matriculados</p>
-                        <p className="text-xs text-muted-foreground mt-1">Esse número define quanto dinheiro você recebe</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {pddeEnrollTotal ? `Fonte: FNDE ${pddeData?.ano}` : 'Esse número define quanto dinheiro você recebe'}
+                        </p>
                       </div>
                     </div>
                   </Card>
@@ -453,13 +498,94 @@ export default function Dashboard() {
                         <Banknote className="w-6 h-6 text-accent" />
                       </div>
                       <div>
-                        <p className="text-3xl font-bold text-accent">R$ {lastRepasse.total.toLocaleString('pt-BR')}</p>
-                        <p className="text-sm font-medium text-foreground">Recebido em 2024</p>
-                        <p className="text-xs text-muted-foreground mt-1">Soma de PDDE (R${lastRepasse.pdde.toLocaleString('pt-BR')}) + PNAE (R${lastRepasse.pnae.toLocaleString('pt-BR')})</p>
+                        {pddeData?.ok && pddeData.destinacoes && pddeData.destinacoes.length > 0 ? (
+                          <>
+                            <p className="text-3xl font-bold text-accent">
+                              R$ {pddeData.destinacoes.reduce((s, d) => s + (d.pago_total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                            <p className="text-sm font-medium text-foreground">Pago em {pddeData.ano}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {pddeData.destinacoes.length} {pddeData.destinacoes.length === 1 ? 'destinação' : 'destinações'} - Fonte FNDE
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-3xl font-bold text-accent">R$ {lastRepasse.total.toLocaleString('pt-BR')}</p>
+                            <p className="text-sm font-medium text-foreground">Recebido em 2024</p>
+                            <p className="text-xs text-muted-foreground mt-1">Soma de PDDE (R${lastRepasse.pdde.toLocaleString('pt-BR')}) + PNAE (R${lastRepasse.pnae.toLocaleString('pt-BR')})</p>
+                          </>
+                        )}
                       </div>
                     </div>
                   </Card>
                 </div>
+
+                {pddeData?.ok && pddeData.contas && pddeData.contas.length > 0 && (
+                  <Card className="card-clay">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <CreditCard className="w-4 h-4 text-primary" />
+                        Contas Bancárias
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {pddeData.contas.map((conta, i) => (
+                          <div key={i} className="p-3 rounded-xl bg-muted/30 flex items-center justify-between gap-2" data-testid={`conta-bancaria-${i}`}>
+                            <div>
+                              <p className="text-sm font-medium">{conta.programa}</p>
+                              <p className="text-xs text-muted-foreground font-mono">Ag {conta.agencia} / CC {conta.conta}</p>
+                            </div>
+                            {conta.saldo !== null && (
+                              <p className={`text-sm font-bold ${conta.saldo > 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+                                R$ {conta.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {pddeData?.ok && pddeData.situacao_uex && (
+                  <Card className="card-clay">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <ClipboardCheck className="w-4 h-4 text-accent" />
+                        Situação no FNDE
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {pddeData.situacao_uex.dados_cadastrais && (
+                          <div className="p-3 rounded-xl bg-muted/30">
+                            <p className="text-xs text-muted-foreground mb-1">Cadastro</p>
+                            <p className="text-sm font-medium">{pddeData.situacao_uex.dados_cadastrais}</p>
+                          </div>
+                        )}
+                        {pddeData.situacao_uex.prestacao_contas && (
+                          <div className="p-3 rounded-xl bg-muted/30">
+                            <p className="text-xs text-muted-foreground mb-1">Prestação de Contas</p>
+                            <p className="text-sm font-medium">{pddeData.situacao_uex.prestacao_contas}</p>
+                          </div>
+                        )}
+                        {pddeData.situacao_uex.mandato_inicio && (
+                          <div className="p-3 rounded-xl bg-muted/30">
+                            <p className="text-xs text-muted-foreground mb-1">Mandato</p>
+                            <p className="text-sm font-medium">{pddeData.situacao_uex.mandato_inicio} a {pddeData.situacao_uex.mandato_fim}</p>
+                          </div>
+                        )}
+                        {pddeData.situacao_eex?.adesao && (
+                          <div className="p-3 rounded-xl bg-muted/30">
+                            <p className="text-xs text-muted-foreground mb-1">Adesão (Prefeitura)</p>
+                            <p className="text-sm font-medium">{pddeData.situacao_eex.adesao}</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
 
@@ -555,18 +681,22 @@ export default function Dashboard() {
                     <School className="w-5 h-5 text-accent" />
                     Dados da Escola
                   </CardTitle>
-                  <CardDescription>Informações básicas que aparecem no Censo</CardDescription>
+                  <CardDescription>Informações básicas que aparecem no Censo e FNDE</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <InfoItem label="Nome" value={displaySchool.name} />
+                    <InfoItem label="Nome" value={pddeData?.ok && pddeData.nome_escola ? pddeData.nome_escola : displaySchool.name} />
                     <InfoItem label="Código INEP" value={displaySchool.inep} mono />
-                    <InfoItem label="Cidade/Estado" value={`${displaySchool.city}/${displaySchool.state}`} />
-                    <InfoItem label="Rede" value={displaySchool.network} />
+                    <InfoItem label="Cidade/Estado" value={pddeData?.ok && pddeData.municipio ? `${pddeData.municipio}/${pddeData.uf}` : `${displaySchool.city}/${displaySchool.state}`} />
+                    <InfoItem label="Rede" value={pddeData?.ok && pddeData.rede ? pddeData.rede : displaySchool.network} />
                     <InfoItem label="Área" value={displaySchool.location} />
-                    <InfoItem label="O que a escola oferece" value={DEMO_SCHOOL.etapas.join(", ")} />
-                    <InfoItem label="Quantos alunos (2024)" value={displaySchool.enrollmentCount.toString()} highlight />
-                    <InfoItem label="Bairro/Comunidade" value={DEMO_SCHOOL.bairro} />
+                    <InfoItem label="Alunos" value={(pddeEnrollTotal ?? displaySchool.enrollmentCount).toString()} highlight />
+                    {pddeData?.ok && pddeData.uex && (
+                      <>
+                        <InfoItem label="UEx (Caixa Escolar)" value={pddeData.uex.executora} />
+                        <InfoItem label="CNPJ da UEx" value={pddeData.uex.cnpj} mono />
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -609,22 +739,43 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-3">Por série em 2024</p>
-                    <div className="space-y-4">
-                      <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-medium">1º ao 5º ano</span>
-                          <span className="font-bold text-primary">{lastEnrollment.iniciais}</span>
-                        </div>
-                        <Progress value={(lastEnrollment.iniciais / lastEnrollment.total) * 100} className="h-2" />
-                      </div>
-                      <div className="p-4 rounded-xl bg-accent/5 border border-accent/10">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-medium">6º ao 9º ano</span>
-                          <span className="font-bold text-accent">{lastEnrollment.finais}</span>
-                        </div>
-                        <Progress value={(lastEnrollment.finais / lastEnrollment.total) * 100} className="h-2" />
-                      </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {pddeData?.ok && pddeData.matriculas_por_nivel && Object.keys(pddeData.matriculas_por_nivel).length > 0
+                        ? `Por nível (FNDE ${pddeData.ano})`
+                        : 'Por série em 2024'}
+                    </p>
+                    <div className="space-y-3">
+                      {pddeData?.ok && pddeData.matriculas_por_nivel && Object.keys(pddeData.matriculas_por_nivel).length > 0 ? (
+                        Object.entries(pddeData.matriculas_por_nivel).map(([nivel, qtd]) => {
+                          const total = pddeEnrollTotal || Object.values(pddeData.matriculas_por_nivel!).reduce((a, b) => a + b, 0);
+                          return (
+                            <div key={nivel} className="p-3 rounded-xl bg-muted/30 border border-border/30">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm font-medium">{nivel}</span>
+                                <span className="font-bold text-primary">{qtd}</span>
+                              </div>
+                              <Progress value={total > 0 ? (qtd / total) * 100 : 0} className="h-2" />
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <>
+                          <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium">1º ao 5º ano</span>
+                              <span className="font-bold text-primary">{lastEnrollment.iniciais}</span>
+                            </div>
+                            <Progress value={(lastEnrollment.iniciais / lastEnrollment.total) * 100} className="h-2" />
+                          </div>
+                          <div className="p-3 rounded-xl bg-accent/5 border border-accent/10">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium">6º ao 9º ano</span>
+                              <span className="font-bold text-accent">{lastEnrollment.finais}</span>
+                            </div>
+                            <Progress value={(lastEnrollment.finais / lastEnrollment.total) * 100} className="h-2" />
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -699,6 +850,297 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>}
+
+            {/* PDDE: Seletor de Ano + Dados FNDE */}
+            {viewMode === 'completo' && selectedInep && !showDemo && (
+              <Card className="card-clay bg-gradient-to-r from-sky-50/50 to-blue-50/50 border-sky-200/50" data-testid="card-pdde-fnde">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <CardTitle className="flex items-center gap-2">
+                      <Landmark className="w-5 h-5 text-sky-700" />
+                      Dados do FNDE (PDDEInfo)
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Ano:</span>
+                      <select 
+                        value={pddeAno}
+                        onChange={(e) => setPddeAno(parseInt(e.target.value))}
+                        className="text-sm border border-border/50 rounded-lg px-3 py-1.5 bg-background"
+                        data-testid="select-pdde-ano"
+                        aria-label="Selecionar ano dos dados FNDE"
+                      >
+                        {[...Array(6)].map((_, i) => {
+                          const y = new Date().getFullYear() - i;
+                          return <option key={y} value={y}>{y}</option>;
+                        })}
+                      </select>
+                      {pddeFetching && <Loader2 className="w-4 h-4 animate-spin text-sky-600" />}
+                    </div>
+                  </div>
+                  <CardDescription>
+                    Informações financeiras extraídas do portal do FNDE
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {pddeLoading ? (
+                    <div className="flex items-center justify-center py-8 gap-3">
+                      <Loader2 className="w-5 h-5 animate-spin text-sky-600" />
+                      <p className="text-sm text-muted-foreground">Consultando FNDE...</p>
+                    </div>
+                  ) : pddeData?.ok ? (
+                    <div className="space-y-6">
+                      {/* UEx Info */}
+                      {pddeData.uex && (
+                        <div>
+                          <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <Building className="w-4 h-4 text-sky-600" />
+                            Unidade Executora (Caixa Escolar)
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <InfoItem label="Nome" value={pddeData.uex.executora} />
+                            <InfoItem label="CNPJ" value={pddeData.uex.cnpj} mono />
+                            <InfoItem label="UF" value={pddeData.uex.uf} />
+                            <InfoItem label="Município" value={pddeData.uex.municipio} />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Contas Bancárias */}
+                      {pddeData.contas && pddeData.contas.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-sky-600" />
+                            Contas Bancárias Vinculadas
+                          </p>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b border-border/50">
+                                  <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium">Programa</th>
+                                  <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium">Banco</th>
+                                  <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium">Agência</th>
+                                  <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium">Conta</th>
+                                  <th className="text-right py-2 px-3 text-xs text-muted-foreground font-medium">Saldo</th>
+                                  <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium">Ocorrência</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {pddeData.contas.map((conta, i) => (
+                                  <tr key={i} className="border-b border-border/20 hover:bg-muted/30 transition-colors" data-testid={`row-conta-${i}`}>
+                                    <td className="py-2.5 px-3 font-medium">{conta.programa}</td>
+                                    <td className="py-2.5 px-3 font-mono text-xs">{conta.banco}</td>
+                                    <td className="py-2.5 px-3 font-mono text-xs">{conta.agencia}</td>
+                                    <td className="py-2.5 px-3 font-mono text-xs">{conta.conta}</td>
+                                    <td className="py-2.5 px-3 text-right font-mono">
+                                      {conta.saldo !== null
+                                        ? <span className={conta.saldo > 0 ? 'text-primary font-medium' : ''}>
+                                            R$ {conta.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                          </span>
+                                        : <span className="text-muted-foreground">—</span>}
+                                    </td>
+                                    <td className="py-2.5 px-3 text-xs text-muted-foreground">{conta.ocorrencia || '—'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Situação UEx + EEx */}
+                      {(pddeData.situacao_uex || pddeData.situacao_eex) && (
+                        <div>
+                          <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <ClipboardCheck className="w-4 h-4 text-sky-600" />
+                            Situação Cadastral e Prestação de Contas
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {pddeData.situacao_uex && (
+                              <div className="p-4 rounded-xl bg-background border border-border/30">
+                                <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wider">Unidade Executora (UEx)</p>
+                                <div className="space-y-3">
+                                  {pddeData.situacao_uex.dados_cadastrais && (
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Dados Cadastrais</p>
+                                      <p className="text-sm font-medium">{pddeData.situacao_uex.dados_cadastrais}</p>
+                                    </div>
+                                  )}
+                                  {pddeData.situacao_uex.prestacao_contas && (
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Prestação de Contas</p>
+                                      <Badge className={
+                                        pddeData.situacao_uex.prestacao_contas.toLowerCase().includes('regular') || pddeData.situacao_uex.prestacao_contas.toLowerCase().includes('aprovad')
+                                          ? 'bg-green-100 text-green-700'
+                                          : pddeData.situacao_uex.prestacao_contas.toLowerCase().includes('pendent') || pddeData.situacao_uex.prestacao_contas.toLowerCase().includes('análise')
+                                          ? 'bg-amber-100 text-amber-700'
+                                          : 'bg-muted text-muted-foreground'
+                                      }>{pddeData.situacao_uex.prestacao_contas}</Badge>
+                                    </div>
+                                  )}
+                                  {pddeData.situacao_uex.mandato_inicio && (
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Mandato</p>
+                                      <p className="text-sm font-medium">{pddeData.situacao_uex.mandato_inicio} a {pddeData.situacao_uex.mandato_fim}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {pddeData.situacao_eex && (
+                              <div className="p-4 rounded-xl bg-background border border-border/30">
+                                <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wider">Entidade Executora (Prefeitura/Estado)</p>
+                                <div className="space-y-3">
+                                  {pddeData.situacao_eex.adesao && (
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Adesão</p>
+                                      <p className="text-sm font-medium">{pddeData.situacao_eex.adesao}</p>
+                                    </div>
+                                  )}
+                                  {pddeData.situacao_eex.prestacao_contas && (
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Prestação de Contas</p>
+                                      <Badge className={
+                                        pddeData.situacao_eex.prestacao_contas.toLowerCase().includes('regular') || pddeData.situacao_eex.prestacao_contas.toLowerCase().includes('aprovad')
+                                          ? 'bg-green-100 text-green-700'
+                                          : pddeData.situacao_eex.prestacao_contas.toLowerCase().includes('pendent') || pddeData.situacao_eex.prestacao_contas.toLowerCase().includes('análise')
+                                          ? 'bg-amber-100 text-amber-700'
+                                          : 'bg-muted text-muted-foreground'
+                                      }>{pddeData.situacao_eex.prestacao_contas}</Badge>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Destinações / Repasses Detalhados */}
+                      {pddeData.destinacoes && pddeData.destinacoes.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <Banknote className="w-4 h-4 text-sky-600" />
+                            Destinações e Repasses ({pddeData.ano})
+                          </p>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b border-border/50">
+                                  <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium">Destinação</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium">Devido (Custeio)</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium">Devido (Capital)</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium">Total Devido</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium">Pago (Total)</th>
+                                  <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium">Data Pgto</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {pddeData.destinacoes.map((dest, i) => (
+                                  <tr key={i} className="border-b border-border/20 hover:bg-muted/30 transition-colors" data-testid={`row-destinacao-${i}`}>
+                                    <td className="py-2.5 px-2 font-medium text-xs">{dest.destinacao}</td>
+                                    <td className="py-2.5 px-2 text-right font-mono text-xs">
+                                      {dest.devido_custeio !== null ? `R$ ${dest.devido_custeio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+                                    </td>
+                                    <td className="py-2.5 px-2 text-right font-mono text-xs">
+                                      {dest.devido_capital !== null ? `R$ ${dest.devido_capital.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+                                    </td>
+                                    <td className="py-2.5 px-2 text-right font-mono text-xs font-medium">
+                                      {dest.devido_total !== null ? `R$ ${dest.devido_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+                                    </td>
+                                    <td className="py-2.5 px-2 text-right font-mono text-xs">
+                                      {dest.pago_total !== null
+                                        ? <span className="text-primary font-medium">R$ {dest.pago_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                        : <span className="text-muted-foreground">—</span>}
+                                    </td>
+                                    <td className="py-2.5 px-2 text-xs text-muted-foreground">{dest.data_ordem_pgto || '—'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot>
+                                <tr className="border-t-2 border-border/50 bg-muted/20">
+                                  <td className="py-2.5 px-2 font-bold text-xs">TOTAL</td>
+                                  <td className="py-2.5 px-2 text-right font-mono text-xs font-bold">
+                                    R$ {pddeData.destinacoes.reduce((s, d) => s + (d.devido_custeio || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </td>
+                                  <td className="py-2.5 px-2 text-right font-mono text-xs font-bold">
+                                    R$ {pddeData.destinacoes.reduce((s, d) => s + (d.devido_capital || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </td>
+                                  <td className="py-2.5 px-2 text-right font-mono text-xs font-bold">
+                                    R$ {pddeData.destinacoes.reduce((s, d) => s + (d.devido_total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </td>
+                                  <td className="py-2.5 px-2 text-right font-mono text-xs font-bold text-primary">
+                                    R$ {pddeData.destinacoes.reduce((s, d) => s + (d.pago_total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </td>
+                                  <td className="py-2.5 px-2"></td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+
+                          {/* Summary cards for quick view */}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                            <div className="p-3 rounded-xl bg-primary/5 border border-primary/20" data-testid="text-pdde-total-devido">
+                              <p className="text-xs text-muted-foreground mb-1">Total Devido</p>
+                              <p className="text-lg font-bold text-primary">
+                                R$ {pddeData.destinacoes.reduce((s, d) => s + (d.devido_total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-accent/5 border border-accent/20" data-testid="text-pdde-total-pago">
+                              <p className="text-xs text-muted-foreground mb-1">Total Pago</p>
+                              <p className="text-lg font-bold text-accent">
+                                R$ {pddeData.destinacoes.reduce((s, d) => s + (d.pago_total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-muted/50" data-testid="text-pdde-custeio">
+                              <p className="text-xs text-muted-foreground mb-1">Custeio</p>
+                              <p className="text-lg font-bold">
+                                R$ {pddeData.destinacoes.reduce((s, d) => s + (d.pago_custeio || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-muted/50">
+                              <p className="text-xs text-muted-foreground mb-1">Capital</p>
+                              <p className="text-lg font-bold">
+                                R$ {pddeData.destinacoes.reduce((s, d) => s + (d.pago_capital || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Matrículas detalhadas PDDE */}
+                      {pddeData.matriculas_por_nivel && Object.keys(pddeData.matriculas_por_nivel).length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <GraduationCap className="w-4 h-4 text-sky-600" />
+                            Matrículas por Nível ({pddeData.ano})
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {Object.entries(pddeData.matriculas_por_nivel).map(([nivel, qtd]) => (
+                              <div key={nivel} className="p-3 rounded-xl bg-background border border-border/30">
+                                <p className="text-xs text-muted-foreground mb-1">{nivel}</p>
+                                <p className="text-xl font-bold">{qtd}</p>
+                              </div>
+                            ))}
+                            {pddeEnrollTotal && (
+                              <div className="p-3 rounded-xl bg-primary/5 border border-primary/20" data-testid="text-pdde-matriculas-total">
+                                <p className="text-xs text-muted-foreground mb-1">Total</p>
+                                <p className="text-xl font-bold text-primary">{pddeEnrollTotal}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="py-6 text-center">
+                      <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">{pddeData?.error || 'Não foi possível consultar o FNDE.'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Tente outro ano ou verifique o código INEP.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* 6. Infraestrutura */}
             {viewMode === 'completo' && <Card className="card-clay">
@@ -1228,10 +1670,11 @@ export default function Dashboard() {
                   <div>
                     <h4 className="font-bold mb-2">De Onde Tiramos Esses Dados</h4>
                     <div className="text-sm text-muted-foreground space-y-1">
-                      <p>• <strong>Alunos e Estrutura:</strong> Censo Escolar do INEP (vimos em Fev/2025)</p>
-                      <p>• <strong>Notas e Aprovação:</strong> INEP (vimos em Fev/2025)</p>
-                      <p>• <strong>Dinheiro recebido:</strong> FNDE - Portal de Liberações (vimos em Fev/2025)</p>
-                      <p>• <strong>Prestação de Contas:</strong> FNDE - SIGPC Público (vimos em Fev/2025)</p>
+                      <p>• <strong>Alunos e Estrutura:</strong> Censo Escolar do INEP</p>
+                      <p>• <strong>Notas e Aprovação:</strong> INEP</p>
+                      <p>• <strong>Dinheiro recebido:</strong> FNDE - Portal de Liberações</p>
+                      <p>• <strong>Prestação de Contas:</strong> FNDE - SIGPC Público</p>
+                      <p>• <strong>UEx, Contas, Repasses:</strong> FNDE - PDDEInfo (consulta em tempo real)</p>
                     </div>
                   </div>
                 </div>
