@@ -1026,35 +1026,44 @@ export default function Dashboard() {
                             <table className="w-full text-sm">
                               <thead>
                                 <tr className="border-b border-border/50">
-                                  <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium">Destinação</th>
-                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium">Devido (Custeio)</th>
-                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium">Devido (Capital)</th>
-                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium">Total Devido</th>
-                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium">Pago (Total)</th>
-                                  <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium">Data Pgto</th>
+                                  <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Destinação</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Devido Custeio</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Devido Capital</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Devido Total</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Ajuste Custeio</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Ajuste Capital</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Ajuste Total</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Final Devido</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Pago Custeio</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Pago Capital</th>
+                                  <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Pago Total</th>
+                                  <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Data Pgto</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {pddeData.destinacoes.map((dest, i) => (
-                                  <tr key={i} className="border-b border-border/20 hover:bg-muted/30 transition-colors" data-testid={`row-destinacao-${i}`}>
-                                    <td className="py-2.5 px-2 font-medium text-xs">{dest.destinacao}</td>
-                                    <td className="py-2.5 px-2 text-right font-mono text-xs">
-                                      {dest.devido_custeio !== null ? `R$ ${dest.devido_custeio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
-                                    </td>
-                                    <td className="py-2.5 px-2 text-right font-mono text-xs">
-                                      {dest.devido_capital !== null ? `R$ ${dest.devido_capital.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
-                                    </td>
-                                    <td className="py-2.5 px-2 text-right font-mono text-xs font-medium">
-                                      {dest.devido_total !== null ? `R$ ${dest.devido_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
-                                    </td>
-                                    <td className="py-2.5 px-2 text-right font-mono text-xs">
-                                      {dest.pago_total !== null
-                                        ? <span className="text-primary font-medium">R$ {dest.pago_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                                        : <span className="text-muted-foreground">—</span>}
-                                    </td>
-                                    <td className="py-2.5 px-2 text-xs text-muted-foreground">{dest.data_ordem_pgto || '—'}</td>
-                                  </tr>
-                                ))}
+                                {pddeData.destinacoes.map((dest, i) => {
+                                  const fmt = (v: number | null) => v !== null ? `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
+                                  return (
+                                    <tr key={i} className="border-b border-border/20 hover:bg-muted/30 transition-colors" data-testid={`row-destinacao-${i}`}>
+                                      <td className="py-2.5 px-2 font-medium text-xs whitespace-nowrap">{dest.destinacao}</td>
+                                      <td className="py-2.5 px-2 text-right font-mono text-xs">{fmt(dest.devido_custeio)}</td>
+                                      <td className="py-2.5 px-2 text-right font-mono text-xs">{fmt(dest.devido_capital)}</td>
+                                      <td className="py-2.5 px-2 text-right font-mono text-xs font-medium">{fmt(dest.devido_total)}</td>
+                                      <td className="py-2.5 px-2 text-right font-mono text-xs">{fmt(dest.ajuste_custeio)}</td>
+                                      <td className="py-2.5 px-2 text-right font-mono text-xs">{fmt(dest.ajuste_capital)}</td>
+                                      <td className="py-2.5 px-2 text-right font-mono text-xs">{fmt(dest.ajuste_total)}</td>
+                                      <td className="py-2.5 px-2 text-right font-mono text-xs font-medium">{fmt(dest.final_devido_total)}</td>
+                                      <td className="py-2.5 px-2 text-right font-mono text-xs">{fmt(dest.pago_custeio)}</td>
+                                      <td className="py-2.5 px-2 text-right font-mono text-xs">{fmt(dest.pago_capital)}</td>
+                                      <td className="py-2.5 px-2 text-right font-mono text-xs">
+                                        {dest.pago_total !== null
+                                          ? <span className="text-primary font-medium">{fmt(dest.pago_total)}</span>
+                                          : <span className="text-muted-foreground">—</span>}
+                                      </td>
+                                      <td className="py-2.5 px-2 text-xs text-muted-foreground whitespace-nowrap">{dest.data_ordem_pgto || '—'}</td>
+                                    </tr>
+                                  );
+                                })}
                               </tbody>
                               <tfoot>
                                 <tr className="border-t-2 border-border/50 bg-muted/20">
@@ -1068,6 +1077,24 @@ export default function Dashboard() {
                                   <td className="py-2.5 px-2 text-right font-mono text-xs font-bold">
                                     R$ {pddeData.destinacoes.reduce((s, d) => s + (d.devido_total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                   </td>
+                                  <td className="py-2.5 px-2 text-right font-mono text-xs font-bold">
+                                    R$ {pddeData.destinacoes.reduce((s, d) => s + (d.ajuste_custeio || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </td>
+                                  <td className="py-2.5 px-2 text-right font-mono text-xs font-bold">
+                                    R$ {pddeData.destinacoes.reduce((s, d) => s + (d.ajuste_capital || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </td>
+                                  <td className="py-2.5 px-2 text-right font-mono text-xs font-bold">
+                                    R$ {pddeData.destinacoes.reduce((s, d) => s + (d.ajuste_total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </td>
+                                  <td className="py-2.5 px-2 text-right font-mono text-xs font-bold">
+                                    R$ {pddeData.destinacoes.reduce((s, d) => s + (d.final_devido_total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </td>
+                                  <td className="py-2.5 px-2 text-right font-mono text-xs font-bold">
+                                    R$ {pddeData.destinacoes.reduce((s, d) => s + (d.pago_custeio || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </td>
+                                  <td className="py-2.5 px-2 text-right font-mono text-xs font-bold">
+                                    R$ {pddeData.destinacoes.reduce((s, d) => s + (d.pago_capital || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </td>
                                   <td className="py-2.5 px-2 text-right font-mono text-xs font-bold text-primary">
                                     R$ {pddeData.destinacoes.reduce((s, d) => s + (d.pago_total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                   </td>
@@ -1078,11 +1105,23 @@ export default function Dashboard() {
                           </div>
 
                           {/* Summary cards for quick view */}
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mt-4">
                             <div className="p-3 rounded-xl bg-primary/5 border border-primary/20" data-testid="text-pdde-total-devido">
                               <p className="text-xs text-muted-foreground mb-1">Total Devido</p>
                               <p className="text-lg font-bold text-primary">
                                 R$ {pddeData.destinacoes.reduce((s, d) => s + (d.devido_total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-muted/50" data-testid="text-pdde-ajuste-total">
+                              <p className="text-xs text-muted-foreground mb-1">Ajustes</p>
+                              <p className="text-lg font-bold">
+                                R$ {pddeData.destinacoes.reduce((s, d) => s + (d.ajuste_total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-muted/50" data-testid="text-pdde-final-devido">
+                              <p className="text-xs text-muted-foreground mb-1">Final Devido</p>
+                              <p className="text-lg font-bold">
+                                R$ {pddeData.destinacoes.reduce((s, d) => s + (d.final_devido_total || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </p>
                             </div>
                             <div className="p-3 rounded-xl bg-accent/5 border border-accent/20" data-testid="text-pdde-total-pago">
@@ -1092,13 +1131,13 @@ export default function Dashboard() {
                               </p>
                             </div>
                             <div className="p-3 rounded-xl bg-muted/50" data-testid="text-pdde-custeio">
-                              <p className="text-xs text-muted-foreground mb-1">Custeio</p>
+                              <p className="text-xs text-muted-foreground mb-1">Pago Custeio</p>
                               <p className="text-lg font-bold">
                                 R$ {pddeData.destinacoes.reduce((s, d) => s + (d.pago_custeio || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </p>
                             </div>
-                            <div className="p-3 rounded-xl bg-muted/50">
-                              <p className="text-xs text-muted-foreground mb-1">Capital</p>
+                            <div className="p-3 rounded-xl bg-muted/50" data-testid="text-pdde-capital">
+                              <p className="text-xs text-muted-foreground mb-1">Pago Capital</p>
                               <p className="text-lg font-bold">
                                 R$ {pddeData.destinacoes.reduce((s, d) => s + (d.pago_capital || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </p>
