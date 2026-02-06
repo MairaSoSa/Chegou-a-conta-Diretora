@@ -147,7 +147,6 @@ function findFeminineVoice(): SpeechSynthesisVoice | null {
 
 export function AccessibilityMenu() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
   const [fontSize, setFontSize] = useState(100);
   const [highContrast, setHighContrast] = useState(false);
   const [dyslexiaFont, setDyslexiaFont] = useState(false);
@@ -158,19 +157,7 @@ export function AccessibilityMenu() {
   const chunkIndexRef = useRef(0);
   const stoppedRef = useRef(false);
   const keepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
-
-  useEffect(() => {
-    if (!isOpen) {
-      hideTimerRef.current = setTimeout(() => setIsVisible(false), 3000);
-    } else {
-      setIsVisible(true);
-    }
-    return () => {
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    };
-  }, [isOpen]);
 
   useEffect(() => {
     const savedFontSize = localStorage.getItem(FONT_SIZE_KEY);
@@ -366,43 +353,24 @@ export function AccessibilityMenu() {
 
   return (
     <>
-      <div
-        className="fixed top-3 left-3 z-50"
-        onMouseEnter={() => {
-          if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-          setIsVisible(true);
-        }}
-        onMouseLeave={() => {
-          if (!isOpen) {
-            hideTimerRef.current = setTimeout(() => setIsVisible(false), 2000);
-          }
-        }}
+      <Button
+        onClick={() => setIsOpen(!isOpen)}
+        size="icon"
+        variant="ghost"
+        className="fixed bottom-4 left-4 z-50 rounded-full opacity-40 hover:opacity-100 transition-opacity"
+        aria-label="Ajustes de visualização e leitura"
+        data-testid="button-accessibility-menu"
       >
-        <motion.div
-          animate={{ opacity: isVisible ? 1 : 0 }}
-          transition={{ duration: 0.4 }}
-          style={{ pointerEvents: isVisible ? "auto" : "none" }}
-        >
-          <Button
-            onClick={() => setIsOpen(!isOpen)}
-            size="icon"
-            variant="ghost"
-            className="rounded-full w-8 h-8 text-muted-foreground/60 hover:text-foreground"
-            aria-label="Ajustes de visualização e leitura"
-            data-testid="button-accessibility-menu"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-          </Button>
-        </motion.div>
-      </div>
+        <SlidersHorizontal className="w-4 h-4" />
+      </Button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            className="fixed top-14 left-3 z-50 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 w-72"
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="fixed bottom-16 left-4 z-50 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 w-72"
             role="dialog"
             aria-label="Ajustes de visualização e leitura"
           >
