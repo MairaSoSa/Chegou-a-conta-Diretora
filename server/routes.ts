@@ -1,7 +1,10 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import crypto from "crypto";
+import express from "express";
 import Papa from "papaparse";
+import { PDFParse, VerbosityLevel } from "pdf-parse";
+import mammoth from "mammoth";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { registerChatRoutes } from "./replit_integrations/chat";
@@ -67,6 +70,51 @@ export async function registerRoutes(
 
   registerChatRoutes(app);
   registerObjectStorageRoutes(app, adminAuth);
+
+  app.post(
+    "/api/admin/extract-text",
+    adminAuth,
+    express.raw({ type: ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword", "application/octet-stream"], limit: "20mb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const contentType = req.headers["content-type"] || "";
+        const fileName = (req.headers["x-file-name"] as string) || "documento";
+        const fileExt = fileName.split(".").pop()?.toLowerCase() || "";
+        const buffer = Buffer.from(req.body as Buffer);
+
+        if (!buffer || buffer.length === 0) {
+          return res.status(400).json({ message: "Arquivo vazio ou formato não suportado." });
+        }
+
+        let text = "";
+        const isPdf = contentType.includes("pdf") || fileExt === "pdf";
+        const isWord = contentType.includes("wordprocessingml") || contentType.includes("msword") || ["docx", "doc"].includes(fileExt);
+
+        if (isPdf) {
+          const parser = new PDFParse({ data: buffer, verbosity: VerbosityLevel.ERRORS });
+          await parser.load(buffer);
+          const result = await parser.getText();
+          text = result.text;
+        } else if (isWord) {
+          const result = await mammoth.extractRawText({ buffer });
+          text = result.value;
+        } else {
+          return res.status(400).json({ message: "Formato não suportado. Use PDF ou Word (.docx)." });
+        }
+
+        text = text.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+
+        if (!text) {
+          return res.status(422).json({ message: "Não foi possível extrair texto deste arquivo. Ele pode conter apenas imagens." });
+        }
+
+        res.json({ text, fileName });
+      } catch (err: any) {
+        console.error("Text extraction error:", err);
+        res.status(500).json({ message: "Erro ao processar arquivo: " + (err.message || "erro desconhecido") });
+      }
+    }
+  );
 
   // === PUBLIC: SCHOOLS ===
   app.get(api.schools.search.path, async (req, res) => {

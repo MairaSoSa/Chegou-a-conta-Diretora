@@ -1218,32 +1218,57 @@ function AiDocsManager({ token }: { token: string }) {
     queryKey: ["/api/ai-documents"],
   });
 
-  const handleTextFileLoad = (file: File, targetForm: "create" | "edit") => {
+  const handleFileLoad = async (file: File, targetForm: "create" | "edit") => {
     setLoadingFile(true);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    const isBinary = ["pdf", "docx", "doc"].includes(ext);
+
+    try {
+      let text = "";
       const title = file.name.replace(/\.[^.]+$/, "");
-      if (targetForm === "create") {
-        setForm(prev => ({
-          ...prev,
-          content: text,
-          title: prev.title || title,
-        }));
+
+      if (isBinary) {
+        const mimeMap: Record<string, string> = {
+          pdf: "application/pdf",
+          docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          doc: "application/msword",
+        };
+        const contentType = mimeMap[ext] || file.type || "application/octet-stream";
+        const res = await fetch("/api/admin/extract-text", {
+          method: "POST",
+          headers: {
+            "Content-Type": contentType,
+            Authorization: `Bearer ${token}`,
+            "X-File-Name": file.name,
+          },
+          body: file,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ message: "Erro desconhecido" }));
+          throw new Error(err.message);
+        }
+        const result = await res.json();
+        text = result.text;
       } else {
-        setForm(prev => ({
-          ...prev,
-          content: text,
-        }));
+        text = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = () => reject(new Error("Erro ao ler arquivo"));
+          reader.readAsText(file);
+        });
       }
-      setLoadingFile(false);
+
+      if (targetForm === "create") {
+        setForm(prev => ({ ...prev, content: text, title: prev.title || title }));
+      } else {
+        setForm(prev => ({ ...prev, content: text }));
+      }
       toast({ title: "Arquivo carregado", description: `${file.name} (${(file.size / 1024).toFixed(1)} KB)` });
-    };
-    reader.onerror = () => {
+    } catch (err: any) {
+      toast({ title: "Erro ao processar arquivo", description: err.message, variant: "destructive" });
+    } finally {
       setLoadingFile(false);
-      toast({ title: "Erro ao ler arquivo", variant: "destructive" });
-    };
-    reader.readAsText(file);
+    }
   };
 
   const createMutation = useMutation({
@@ -1310,17 +1335,17 @@ function AiDocsManager({ token }: { token: string }) {
             data-testid="button-upload-ai-doc-file"
           >
             {loadingFile ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />}
-            Carregar arquivo de texto
+            Carregar arquivo
           </Button>
-          <span className="text-xs text-muted-foreground">.txt, .md, .csv</span>
+          <span className="text-xs text-muted-foreground">.pdf, .docx, .txt, .md, .csv</span>
           <input
             ref={aiDocFileRef}
             type="file"
             className="hidden"
-            accept=".txt,.md,.csv,.text"
+            accept=".txt,.md,.csv,.text,.pdf,.doc,.docx"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) handleTextFileLoad(file, "create");
+              if (file) handleFileLoad(file, "create");
               e.target.value = "";
             }}
           />
@@ -1328,10 +1353,10 @@ function AiDocsManager({ token }: { token: string }) {
             ref={aiDocEditFileRef}
             type="file"
             className="hidden"
-            accept=".txt,.md,.csv,.text"
+            accept=".txt,.md,.csv,.text,.pdf,.doc,.docx"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) handleTextFileLoad(file, "edit");
+              if (file) handleFileLoad(file, "edit");
               e.target.value = "";
             }}
           />

@@ -15,6 +15,15 @@ The interface uses a warm, nature-inspired "Ghibli/territorial" visual style wit
 
 ## Recent Changes
 
+### PDF & Word Document Support for AI Knowledge Base (Feb 2026)
+- AI Documents (Base IA) now accepts PDF (.pdf), Word (.docx, .doc) files in addition to text files
+- Server-side text extraction: POST /api/admin/extract-text endpoint (admin auth required)
+- Uses pdf-parse v2 (PDFParse class) for PDF text extraction
+- Uses mammoth for Word document text extraction
+- Frontend detects file type by extension and sends binary to server for extraction
+- Fallback: also checks X-File-Name header for format detection when Content-Type is generic
+- Accepted formats in UI: .pdf, .docx, .txt, .md, .csv
+
 ### Voice Input & Unanswered Questions Tracking (Feb 2026)
 - Added microphone button to AI chat for voice input (record → transcribe → send as text)
 - Uses MediaRecorder API in frontend, OpenAI gpt-4o-mini-transcribe for speech-to-text
