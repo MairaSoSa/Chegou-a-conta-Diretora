@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,10 +12,50 @@ import {
   BookText, Wrench, Ship, FileText, ChevronLeft,
   ChevronDown, ChevronUp, GraduationCap, Settings,
   Building2, BarChart3, Brain, Upload, Download, Check,
-  HelpCircle
+  HelpCircle, Loader2, Paperclip
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GlossaryItem, Tool, TrilhaUnit, Program, ProgramDetail, DashboardDataset, AiDocument, UnansweredQuestion } from "@shared/schema";
+
+function useFileUpload() {
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+
+  const uploadFile = useCallback(async (file: File): Promise<string | null> => {
+    setIsUploading(true);
+    setUploadedFileName(null);
+    try {
+      const res = await fetch("/api/uploads/request-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: file.name,
+          size: file.size,
+          contentType: file.type || "application/octet-stream",
+        }),
+      });
+      if (!res.ok) throw new Error("Falha ao obter URL de upload");
+      const { uploadURL, objectPath } = await res.json();
+
+      const putRes = await fetch(uploadURL, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+      });
+      if (!putRes.ok) throw new Error("Falha ao enviar arquivo");
+
+      setUploadedFileName(file.name);
+      return objectPath;
+    } catch (err) {
+      console.error("Upload error:", err);
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  }, []);
+
+  return { uploadFile, isUploading, uploadedFileName };
+}
 
 function useAdminAuth() {
   const [token, setToken] = useState<string | null>(() =>
@@ -266,6 +306,8 @@ function ToolsManager({ token }: { token: string }) {
   const [editing, setEditing] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", category: "planejar", type: "excel", featured: false, downloadUrl: "" });
+  const { uploadFile, isUploading, uploadedFileName } = useFileUpload();
+  const toolFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { data: items = [], isLoading } = useQuery<Tool[]>({
     queryKey: ["/api/tools"],
@@ -273,6 +315,16 @@ function ToolsManager({ token }: { token: string }) {
 
   const categories = ["planejar", "pesquisar", "comprar", "receber", "prestar"];
   const types = ["excel", "word", "checklist", "pdf"];
+
+  const handleToolFileUpload = async (file: File) => {
+    const objectPath = await uploadFile(file);
+    if (objectPath) {
+      setForm(prev => ({ ...prev, downloadUrl: objectPath }));
+      toast({ title: "Arquivo enviado", description: file.name });
+    } else {
+      toast({ title: "Erro no upload", description: "Tente novamente", variant: "destructive" });
+    }
+  };
 
   const createMutation = useMutation({
     mutationFn: (data: typeof form) =>
@@ -323,8 +375,38 @@ function ToolsManager({ token }: { token: string }) {
       <CardContent className="p-4 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input placeholder="Nome da ferramenta" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} data-testid="input-tool-title" />
-          <Input placeholder="URL de download (opcional)" value={form.downloadUrl} onChange={(e) => setForm({ ...form, downloadUrl: e.target.value })} data-testid="input-tool-url" />
+          <div className="flex gap-2">
+            <Input placeholder="URL de download (opcional)" value={form.downloadUrl} onChange={(e) => setForm({ ...form, downloadUrl: e.target.value })} className="flex-1" data-testid="input-tool-url" />
+            <Button
+              variant="outline"
+              size="icon"
+              type="button"
+              onClick={() => toolFileInputRef.current?.click()}
+              disabled={isUploading}
+              title="Enviar arquivo"
+              data-testid="button-upload-tool-file"
+            >
+              {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            </Button>
+            <input
+              ref={toolFileInputRef}
+              type="file"
+              className="hidden"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleToolFileUpload(file);
+                e.target.value = "";
+              }}
+            />
+          </div>
         </div>
+        {uploadedFileName && form.downloadUrl && (
+          <div className="flex items-center gap-2 text-sm text-emerald-700">
+            <Paperclip className="w-3 h-3" />
+            <span>Arquivo: {uploadedFileName}</span>
+          </div>
+        )}
         <Textarea placeholder="Descrição..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} data-testid="input-tool-description" />
         <div className="flex items-center gap-3 flex-wrap">
           <select className="border rounded-md px-3 py-2 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} data-testid="select-tool-category">
@@ -387,6 +469,12 @@ function ToolsManager({ token }: { token: string }) {
                         {item.featured && <Badge className="text-xs bg-amber-100 text-amber-800 border-0">Destaque</Badge>}
                       </div>
                       <p className="text-sm text-muted-foreground">{item.description}</p>
+                      {item.downloadUrl && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <Paperclip className="w-3 h-3 text-emerald-600" />
+                          <span className="text-xs text-emerald-600">Arquivo anexado</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
                       <Button variant="ghost" size="icon" onClick={() => startEdit(item)} data-testid={`button-edit-tool-${item.id}`}>
@@ -1119,10 +1207,41 @@ function AiDocsManager({ token }: { token: string }) {
   const [editing, setEditing] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ title: "", content: "", category: "", sortOrder: 0 });
+  const [loadingFile, setLoadingFile] = useState(false);
+  const aiDocFileRef = useRef<HTMLInputElement | null>(null);
+  const aiDocEditFileRef = useRef<HTMLInputElement | null>(null);
 
   const { data: items = [], isLoading } = useQuery<AiDocument[]>({
     queryKey: ["/api/ai-documents"],
   });
+
+  const handleTextFileLoad = (file: File, targetForm: "create" | "edit") => {
+    setLoadingFile(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const title = file.name.replace(/\.[^.]+$/, "");
+      if (targetForm === "create") {
+        setForm(prev => ({
+          ...prev,
+          content: text,
+          title: prev.title || title,
+        }));
+      } else {
+        setForm(prev => ({
+          ...prev,
+          content: text,
+        }));
+      }
+      setLoadingFile(false);
+      toast({ title: "Arquivo carregado", description: `${file.name} (${(file.size / 1024).toFixed(1)} KB)` });
+    };
+    reader.onerror = () => {
+      setLoadingFile(false);
+      toast({ title: "Erro ao ler arquivo", variant: "destructive" });
+    };
+    reader.readAsText(file);
+  };
 
   const createMutation = useMutation({
     mutationFn: (data: typeof form) =>
@@ -1171,6 +1290,75 @@ function AiDocsManager({ token }: { token: string }) {
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Carregando...</div>;
 
+  const renderDocForm = (isNew: boolean) => (
+    <Card className="border-emerald-200">
+      <CardContent className="p-4 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Input placeholder="Título do documento" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} data-testid="input-ai-doc-title" />
+          <Input placeholder="Categoria (opcional)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} data-testid="input-ai-doc-category" />
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            onClick={() => isNew ? aiDocFileRef.current?.click() : aiDocEditFileRef.current?.click()}
+            disabled={loadingFile}
+            data-testid="button-upload-ai-doc-file"
+          >
+            {loadingFile ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />}
+            Carregar arquivo de texto
+          </Button>
+          <span className="text-xs text-muted-foreground">.txt, .md, .csv</span>
+          <input
+            ref={aiDocFileRef}
+            type="file"
+            className="hidden"
+            accept=".txt,.md,.csv,.text"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleTextFileLoad(file, "create");
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={aiDocEditFileRef}
+            type="file"
+            className="hidden"
+            accept=".txt,.md,.csv,.text"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleTextFileLoad(file, "edit");
+              e.target.value = "";
+            }}
+          />
+        </div>
+        <Textarea
+          placeholder="Conteúdo do documento..."
+          value={form.content}
+          onChange={(e) => setForm({ ...form, content: e.target.value })}
+          rows={12}
+          data-testid="input-ai-doc-content"
+        />
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" onClick={() => { isNew ? setCreating(false) : setEditing(null); }}>
+            <X className="w-4 h-4 mr-1" /> Cancelar
+          </Button>
+          <Button
+            onClick={() => {
+              if (isNew) createMutation.mutate(form);
+              else if (editing) updateMutation.mutate({ id: editing, data: form });
+            }}
+            disabled={!form.title || !form.content}
+            data-testid="button-save-ai-doc"
+          >
+            <Save className="w-4 h-4 mr-1" /> Salvar
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -1184,57 +1372,14 @@ function AiDocsManager({ token }: { token: string }) {
         </Button>
       </div>
 
-      {creating && (
-        <Card className="border-emerald-200">
-          <CardContent className="p-4 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Input placeholder="Título do documento" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} data-testid="input-ai-doc-title" />
-              <Input placeholder="Categoria (opcional)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} data-testid="input-ai-doc-category" />
-            </div>
-            <Textarea
-              placeholder="Conteúdo do documento..."
-              value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-              rows={12}
-              data-testid="input-ai-doc-content"
-            />
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setCreating(false)}>
-                <X className="w-4 h-4 mr-1" /> Cancelar
-              </Button>
-              <Button onClick={() => createMutation.mutate(form)} disabled={!form.title || !form.content} data-testid="button-save-ai-doc">
-                <Save className="w-4 h-4 mr-1" /> Salvar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {creating && renderDocForm(true)}
 
       <div className="space-y-2">
         {items.map((item) => (
           <Card key={item.id} className={cn(editing === item.id && "border-emerald-300 ring-1 ring-emerald-200")}>
             <CardContent className="p-4">
               {editing === item.id ? (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Título" />
-                    <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Categoria" />
-                  </div>
-                  <Textarea
-                    value={form.content}
-                    onChange={(e) => setForm({ ...form, content: e.target.value })}
-                    rows={12}
-                    placeholder="Conteúdo"
-                  />
-                  <div className="flex gap-2 justify-end">
-                    <Button variant="outline" onClick={() => setEditing(null)}>
-                      <X className="w-4 h-4 mr-1" /> Cancelar
-                    </Button>
-                    <Button onClick={() => updateMutation.mutate({ id: item.id, data: form })}>
-                      <Save className="w-4 h-4 mr-1" /> Salvar
-                    </Button>
-                  </div>
-                </div>
+                renderDocForm(false)
               ) : (
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
