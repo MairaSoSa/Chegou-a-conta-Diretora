@@ -5,6 +5,7 @@ import Papa from "papaparse";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { registerChatRoutes } from "./replit_integrations/chat";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { z } from "zod";
 import {
   insertToolSchema, insertGlossarySchema, insertTrilhaUnitSchema,
@@ -65,6 +66,7 @@ export async function registerRoutes(
 ): Promise<Server> {
 
   registerChatRoutes(app);
+  registerObjectStorageRoutes(app);
 
   // === PUBLIC: SCHOOLS ===
   app.get(api.schools.search.path, async (req, res) => {
