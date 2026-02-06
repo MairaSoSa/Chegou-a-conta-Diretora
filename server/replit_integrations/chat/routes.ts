@@ -1,10 +1,7 @@
-import express, { type Express, type Request, type Response } from "express";
-import OpenAI, { toFile } from "openai";
+import { type Express, type Request, type Response } from "express";
+import OpenAI from "openai";
 import { chatStorage } from "./storage";
 import { storage } from "../../storage";
-import { ensureCompatibleFormat } from "../audio/client";
-
-const audioBodyParser = express.json({ limit: "50mb" });
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -255,26 +252,5 @@ LEMBRETE FINAL: Qualquer informação que NÃO esteja entre as marcações "BASE
     }
   });
 
-  app.post("/api/transcribe", audioBodyParser, async (req: Request, res: Response) => {
-    try {
-      const { audio } = req.body;
-      if (!audio) {
-        return res.status(400).json({ error: "Audio data (base64) is required" });
-      }
-      const rawBuffer = Buffer.from(audio, "base64");
-      const { buffer: audioBuffer, format: inputFormat } = await ensureCompatibleFormat(rawBuffer);
-
-      const file = await toFile(audioBuffer, `audio.${inputFormat}`);
-      const response = await openai.audio.transcriptions.create({
-        file,
-        model: "gpt-4o-mini-transcribe",
-        response_format: "json",
-      });
-      res.json({ transcript: response.text });
-    } catch (error: any) {
-      console.error("Error transcribing audio:", error?.status || error?.message || error);
-      res.status(500).json({ error: "Failed to transcribe audio" });
-    }
-  });
 }
 

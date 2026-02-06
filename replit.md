@@ -24,11 +24,7 @@ The interface uses a warm, nature-inspired "Ghibli/territorial" visual style wit
 - Fallback: also checks X-File-Name header for format detection when Content-Type is generic
 - Accepted formats in UI: .pdf, .docx, .txt, .md, .csv
 
-### Voice Input & Unanswered Questions Tracking (Feb 2026)
-- Added microphone button to AI chat for voice input (record → transcribe → send as text)
-- Uses MediaRecorder API in frontend, OpenAI gpt-4o-mini-transcribe for speech-to-text
-- Audio auto-converted to compatible format via ffmpeg (WebM/MP4/OGG → WAV)
-- Recording UI shows red "Gravando..." indicator and amber "Transcrevendo..." state
+### Unanswered Questions Tracking (Feb 2026)
 - Created unanswered_questions table to track questions AI can't answer from knowledge base
 - Pattern matching on AI response detects refusals (e.g., "não tenho essa informação")
 - Excludes out-of-scope refusals (e.g., "só posso ajudar com gestão financeira")
@@ -41,7 +37,7 @@ The interface uses a warm, nature-inspired "Ghibli/territorial" visual style wit
 - AI now ONLY responds using content from the knowledge base (admin-managed content)
 - Explicit refusal for out-of-scope topics and questions not in the knowledge base
 - Programs + program details now included in AI knowledge base (were missing before)
-- Temperature set to 0.3 on both chat and audio routes to reduce hallucination
+- Temperature set to 0.3 on chat route to reduce hallucination
 - Knowledge base delimited with clear markers: "BASE DE CONHECIMENTO (ÚNICA FONTE DE VERDADE)"
 - Empty knowledge base handling: tells users content is being set up
 - Chat responses rendered with react-markdown for formatted output with clickable links
@@ -106,8 +102,7 @@ Preferred communication style: Simple, everyday language.
 
 ### AI Integration
 - **Provider**: OpenAI API (configured via environment variables)
-- **Features**: Text chat and voice chat support
-- **Voice Processing**: Audio worklet for real-time PCM16 playback, WebM recording
+- **Features**: Text chat support
 
 ### Project Structure
 ```
@@ -120,7 +115,7 @@ server/           # Express backend
   seed.ts         # Database seeding logic
   storage.ts      # Storage interface with CRUD operations
   routes.ts       # API routes (public + admin)
-  replit_integrations/  # AI chat and audio modules
+  replit_integrations/  # AI chat modules
 shared/           # Shared types, schemas, and API contracts
   schema.ts       # Drizzle ORM schema definitions
 ```
@@ -135,8 +130,6 @@ shared/           # Shared types, schemas, and API contracts
 - **OpenAI API**: Powers the chat assistant
   - `AI_INTEGRATIONS_OPENAI_API_KEY`: API key
   - `AI_INTEGRATIONS_OPENAI_BASE_URL`: API endpoint
-- **FFmpeg**: Required for audio format conversion in voice features
-
 ### Third-Party Libraries
 - **Radix UI**: Accessible component primitives for shadcn/ui
 - **TanStack Query**: Data fetching and caching
