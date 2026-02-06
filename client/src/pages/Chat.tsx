@@ -12,6 +12,7 @@ import {
 import { useCreateConversation, useSendMessage, useConversation } from "@/hooks/use-chat";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
 
 const SUGESTOES = [
   {
@@ -57,7 +58,19 @@ function MensagemAssistente({ conteudo }: { conteudo: string }) {
         <Bot className="w-5 h-5 text-white" />
       </div>
       <div className="bg-white border border-slate-200 p-4 rounded-2xl rounded-tl-sm shadow-sm">
-        <p className="text-foreground leading-relaxed whitespace-pre-wrap">{conteudo}</p>
+        <div className="text-foreground leading-relaxed prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:mt-2 prose-headings:mb-1 prose-a:text-primary prose-a:underline">
+          <ReactMarkdown
+            components={{
+              a: ({ href, children }) => (
+                <a href={href} target={href?.startsWith("http") ? "_blank" : undefined} rel={href?.startsWith("http") ? "noopener noreferrer" : undefined} className="text-primary underline hover:text-primary/80">
+                  {children}
+                </a>
+              ),
+            }}
+          >
+            {conteudo}
+          </ReactMarkdown>
+        </div>
       </div>
     </motion.div>
   );

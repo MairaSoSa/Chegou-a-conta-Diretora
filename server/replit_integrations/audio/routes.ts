@@ -106,15 +106,17 @@ export function registerAudioRoutes(app: Express): void {
 
       if (toolItems.length > 0) {
         knowledgeBase += "\n=== FERRAMENTAS DISPONÍVEIS ===\n";
+        knowledgeBase += "Página de ferramentas: /ferramentas\n";
         for (const tool of toolItems) {
-          knowledgeBase += `${tool.title} (${tool.category}): ${tool.description}\n`;
+          knowledgeBase += `- ${tool.title} (${tool.category}): ${tool.description}\n`;
         }
       }
 
       if (trilhaItems.length > 0) {
         knowledgeBase += "\n=== TRILHA DE APRENDIZAGEM ===\n";
+        knowledgeBase += "Página da trilha: /trilha\n";
         for (const unit of trilhaItems) {
-          knowledgeBase += `${unit.unitId} - ${unit.title}: ${unit.subtitle}\n`;
+          knowledgeBase += `- ${unit.unitId} - ${unit.title}: ${unit.subtitle} → Link: /trilha/${unit.unitId}\n`;
         }
       }
 
@@ -125,7 +127,15 @@ REGRAS IMPORTANTES:
 2. Se a pergunta não puder ser respondida com as informações disponíveis, diga educadamente que não tem essa informação na base de dados e sugira consultar o FNDE ou a secretaria de educação.
 3. Use linguagem simples e acessível, como se estivesse conversando com uma diretora de escola.
 4. Seja direta e prática nas respostas.
-5. Quando relevante, mencione as ferramentas e materiais disponíveis no site.
+5. Quando relevante, mencione as ferramentas e materiais disponíveis no site e seus links internos.
+
+PÁGINAS DO SITE:
+- Dashboard: /dashboard
+- Trilha de Aprendizagem: /trilha
+- Programas: /programas
+- Ferramentas: /ferramentas
+- Glossário: /glossario
+- Chat IA: /chat
 
 ${knowledgeBase}`;
 
