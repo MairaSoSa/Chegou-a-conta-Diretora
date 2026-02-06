@@ -1,0 +1,137 @@
+PDDE Info é por escola (tem Código INEP da escola) e também mostra a UEx (CNPJ/mandato/contas).
+
+SIGPC é por entidade / processo de prestação de contas (quase sempre por CNPJ do convenente/entidade), e nem sempre “sabe” o INEP da escola.
+
+Então a correlação “pra saber se é daquela escola” não é direta escola↔SIGPC; é escola → UEx (CNPJ) → processos no SIGPC.
+
+1) O vínculo principal: CNPJ da UEx (do PDDE Info) = CNPJ do SIGPC
+
+No seu HTML do PDDE Info aparece:
+
+Cod. Escola (INEP): ex. 22073655
+
+Unidade Executora Própria (UEx):
+
+CNPJ: ex. 19.364.590/0001-60
+
+nome da executora (Conselho/APM etc.)
+
+Município/UF da escola
+
+Como correlacionar:
+
+Você pega o CNPJ da UEx do PDDE Info.
+
+No SIGPC você faz a consulta usando esse mesmo CNPJ.
+
+Se o SIGPC retornar processos para esse CNPJ, em regra, eles são “daquela UEx” — e portanto relacionáveis à(s) escola(s) atendidas por essa UEx.
+
+✅ Isso é o match mais forte, porque é o mesmo documento (CNPJ).
+
+2) O cuidado importante: uma UEx pode atender MAIS de uma escola
+
+No seu exemplo, a UEx tem um nome tipo “Conselho/Associação das escolas municipais X, Y, Z…”.
+
+Isso indica que:
+
+1 CNPJ (UEx) pode “cobrir” várias escolas
+
+então um processo no SIGPC para o CNPJ pode não ser exclusivo de uma única escola
+
+Como resolver no dashboard
+
+Você cria uma tabela/estrutura assim:
+
+(A) No PDDE Info você monta um “mapa UEx → escolas”
+
+Para cada escola consultada:
+
+inep
+
+nome_escola
+
+uf, municipio
+
+cnpj_uex
+
+nome_uex
+
+E você agrupa por cnpj_uex:
+
+cnpj_uex → lista de inep[] + nomes
+
+(B) Quando puxar SIGPC por CNPJ
+
+Você mostra no dash:
+
+“Processos no SIGPC deste CNPJ”
+
+e logo acima: “Esse CNPJ (UEx) está associado a estas escolas: …”
+
+Assim você não “promete” que o processo é 100% daquela escola; você diz a verdade operacional:
+
+“Este processo é da UEx (CNPJ X) que atende a(s) escola(s) A, B, C.”
+
+3) Confirmação extra (pra quando bater dúvida)
+
+Além do CNPJ, use 2 checagens de consistência:
+
+UF e Município
+
+PDDE Info: UF/município da escola
+
+SIGPC: geralmente aparece UF/município da entidade/processo (às vezes no detalhe)
+
+Se UF + município também batem, é um reforço forte.
+
+Nome da entidade
+
+“APM / Conselho Escolar / Associação…” no PDDE Info
+
+nome do convenente/entidade no SIGPC (quando vier)
+
+Você pode fazer uma comparação “fuzzy” (sem acento, caixa baixa, remove “APM”, “CONSELHO”, etc.) só pra sinalizar:
+
+✅ “nome compatível”
+
+⚠️ “nome não confere” (aí vale revisar)
+
+4) Como exibir no dashboard de um jeito que não dá ruim
+
+No card da escola (INEP):
+
+UEx (CNPJ): xxxx
+
+Status PDDE Info: saldo/contas/mandato/pendências
+
+SIGPC (por CNPJ da UEx):
+
+lista de processos encontrados
+
+status atual
+
+histórico (timeline)
+
+badge “UEx atende N escolas” com link para ver a lista
+
+E você coloca uma regra de texto:
+
+Se cnpj_uex aparece em mais de 1 escola no seu mapa:
+“Processos vinculados à UEx (podem se referir ao conjunto de escolas atendidas).”
+
+Se cnpj_uex aparece só em 1 escola:
+“Processos vinculados à UEx desta escola.”
+
+5) Quando NÃO vai dar pra correlacionar bem
+
+Escola sem UEx (aí o PDDE pode ir pela EEx/secretaria)
+
+SIGPC registrando pelo CNPJ da EEx e você tentando pelo da UEx (ou vice-versa)
+
+CNPJ mudou/baixado/substituído e você não tem histórico
+
+Nesses casos, a estratégia é:
+
+tentar também o CNPJ da EEx (prefeitura/secretaria) quando o PDDE Info indicar essa estrutura
+
+e sempre mostrar no dash como “por entidade (CNPJ)”, não “por escola”, quando não houver 1:1.

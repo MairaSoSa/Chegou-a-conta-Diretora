@@ -16,6 +16,8 @@ import {
 import { useSchoolSearch, useSchool } from "@/hooks/use-schools";
 import { usePddeInfo } from "@/hooks/use-pdde";
 import type { PddeInfo } from "@/hooks/use-pdde";
+import { useSigpcLocalizar } from "@/hooks/use-sigpc";
+import type { SigpcLocalizarResult } from "@/hooks/use-sigpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -272,6 +274,12 @@ export default function Dashboard() {
   const { data: searchResults } = useSchoolSearch(searchQuery);
   const { data: school } = useSchool(selectedInep || "");
   const { data: pddeData, isLoading: pddeLoading, isFetching: pddeFetching } = usePddeInfo(selectedInep, pddeAno);
+
+  const uexCnpj = pddeData?.ok && pddeData.uex?.cnpj ? pddeData.uex.cnpj : null;
+  const { data: sigpcData, isLoading: sigpcLoading, isFetching: sigpcFetching } = useSigpcLocalizar(
+    uexCnpj,
+    String(pddeAno)
+  );
 
   const pddeEnrollTotal = pddeData?.ok
     ? pddeData.matriculas_total
@@ -583,6 +591,90 @@ export default function Dashboard() {
                           </div>
                         )}
                       </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* SIGPC - Prestação de Contas (Resumido) */}
+                {uexCnpj && (
+                  <Card className="card-clay">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <FileText className="w-4 h-4 text-amber-600" />
+                        Prestação de Contas (SIGPC)
+                        {sigpcFetching && <Loader2 className="w-3 h-3 animate-spin text-amber-600" />}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {sigpcLoading ? (
+                        <div className="flex items-center gap-2 py-3">
+                          <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+                          <p className="text-sm text-muted-foreground">Consultando SIGPC...</p>
+                        </div>
+                      ) : sigpcData?.ok && sigpcData.processos.length > 0 ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs text-muted-foreground">
+                              {sigpcData.totalCount || sigpcData.processos.length} processo(s) encontrado(s) para {pddeAno}
+                            </p>
+                            <Badge className="bg-primary/10 text-primary" data-testid="badge-sigpc-count">
+                              {sigpcData.totalCount || sigpcData.processos.length}
+                            </Badge>
+                          </div>
+                          {sigpcData.processos.slice(0, 3).map((proc, i) => (
+                            <div key={i} className="p-3 rounded-xl bg-muted/30" data-testid={`sigpc-processo-resumo-${i}`}>
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium truncate">{proc.entidade || proc.programa || `Processo ${proc.pcId || ''}`}</p>
+                                  {proc.statusPc && (
+                                    <p className="text-xs text-muted-foreground">{proc.statusPc}</p>
+                                  )}
+                                </div>
+                                {proc.statusAnalise && (
+                                  <Badge className={
+                                    proc.statusAnalise.toLowerCase().includes('aprovad') ? 'bg-green-100 text-green-700' :
+                                    proc.statusAnalise.toLowerCase().includes('pendent') || proc.statusAnalise.toLowerCase().includes('análise') ? 'bg-amber-100 text-amber-700' :
+                                    'bg-muted text-muted-foreground'
+                                  }>{proc.statusAnalise}</Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          {sigpcData.processos.length > 3 && (
+                            <Button
+                              variant="outline"
+                              className="w-full mt-2"
+                              onClick={() => setViewMode('completo')}
+                              data-testid="btn-ver-sigpc-completo"
+                            >
+                              Ver todos os processos
+                              <ChevronDown className="w-4 h-4 ml-2" />
+                            </Button>
+                          )}
+                        </div>
+                      ) : sigpcData?.wafBlocked ? (
+                        <div className="py-3 text-center">
+                          <AlertTriangle className="w-6 h-6 text-amber-500 mx-auto mb-2" />
+                          <p className="text-xs text-muted-foreground">Portal SIGPC temporariamente indisponível para consulta automática.</p>
+                          <a
+                            href={`https://www.fnde.gov.br/sigpcadm/sistema.pu?operation=localizar`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary hover:underline mt-1 inline-flex items-center gap-1"
+                            data-testid="link-sigpc-manual"
+                          >
+                            Consultar manualmente <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      ) : sigpcData && !sigpcData.ok ? (
+                        <div className="py-3 text-center">
+                          <p className="text-xs text-muted-foreground">{sigpcData.error || 'Nenhum processo encontrado'}</p>
+                        </div>
+                      ) : (
+                        <div className="py-3 text-center">
+                          <p className="text-xs text-muted-foreground">Nenhum processo encontrado para este CNPJ em {pddeAno}.</p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -1175,6 +1267,142 @@ export default function Dashboard() {
                       <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-3" />
                       <p className="text-sm text-muted-foreground">{pddeData?.error || 'Não foi possível consultar o FNDE.'}</p>
                       <p className="text-xs text-muted-foreground mt-1">Tente outro ano ou verifique o código INEP.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* SIGPC: Processos de Prestação de Contas (Completo) */}
+            {viewMode === 'completo' && selectedInep && !showDemo && uexCnpj && (
+              <Card className="card-clay bg-gradient-to-r from-amber-50/50 to-orange-50/50 border-amber-200/50" data-testid="card-sigpc-completo">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-amber-700" />
+                      SIGPC - Prestação de Contas
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      {sigpcFetching && <Loader2 className="w-4 h-4 animate-spin text-amber-600" />}
+                      <a
+                        href="https://www.fnde.gov.br/sigpcadm/sistema.pu?operation=localizar"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-amber-700 hover:underline inline-flex items-center gap-1"
+                        data-testid="link-sigpc-portal"
+                      >
+                        Abrir portal SIGPC <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                  <CardDescription>
+                    Processos de prestação de contas vinculados ao CNPJ da UEx ({uexCnpj})
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {sigpcLoading ? (
+                    <div className="flex items-center justify-center py-8 gap-3">
+                      <Loader2 className="w-5 h-5 animate-spin text-amber-600" />
+                      <p className="text-sm text-muted-foreground">Consultando SIGPC do FNDE...</p>
+                    </div>
+                  ) : sigpcData?.ok && sigpcData.processos.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          {sigpcData.totalCount || sigpcData.processos.length} processo(s) encontrado(s)
+                        </p>
+                        <Badge className="bg-amber-100 text-amber-700" data-testid="badge-sigpc-total">
+                          {sigpcData.totalCount || sigpcData.processos.length} processos
+                        </Badge>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm" data-testid="table-sigpc-processos">
+                          <thead>
+                            <tr className="border-b border-border/50">
+                              <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium whitespace-nowrap">Entidade / Programa</th>
+                              <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium whitespace-nowrap">Ano</th>
+                              <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium whitespace-nowrap">Status PC</th>
+                              <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium whitespace-nowrap">Análise</th>
+                              <th className="text-right py-2 px-3 text-xs text-muted-foreground font-medium whitespace-nowrap">Valor</th>
+                              <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium whitespace-nowrap">UF</th>
+                              <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium whitespace-nowrap">Município</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sigpcData.processos.map((proc, i) => (
+                              <tr key={i} className="border-b border-border/20 hover:bg-muted/30 transition-colors" data-testid={`row-sigpc-${i}`}>
+                                <td className="py-2.5 px-3">
+                                  <p className="font-medium text-xs">{proc.entidade || '—'}</p>
+                                  {proc.programa && <p className="text-xs text-muted-foreground">{proc.programa}</p>}
+                                </td>
+                                <td className="py-2.5 px-3 text-xs">{proc.anoConcessao || '—'}</td>
+                                <td className="py-2.5 px-3">
+                                  {proc.statusPc ? (
+                                    <Badge className={
+                                      proc.statusPc.toLowerCase().includes('aprovad') || proc.statusPc.toLowerCase().includes('regular') ? 'bg-green-100 text-green-700' :
+                                      proc.statusPc.toLowerCase().includes('pendent') || proc.statusPc.toLowerCase().includes('análise') ? 'bg-amber-100 text-amber-700' :
+                                      proc.statusPc.toLowerCase().includes('rejeit') || proc.statusPc.toLowerCase().includes('irregular') ? 'bg-red-100 text-red-700' :
+                                      'bg-muted text-muted-foreground'
+                                    }>{proc.statusPc}</Badge>
+                                  ) : <span className="text-xs text-muted-foreground">—</span>}
+                                </td>
+                                <td className="py-2.5 px-3 text-xs">{proc.statusAnalise || '—'}</td>
+                                <td className="py-2.5 px-3 text-right font-mono text-xs">
+                                  {proc.valorTotal != null
+                                    ? `R$ ${Number(proc.valorTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                                    : '—'}
+                                </td>
+                                <td className="py-2.5 px-3 text-xs">{proc.uf || '—'}</td>
+                                <td className="py-2.5 px-3 text-xs">{proc.municipio || '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {pddeData?.uex && (
+                        <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 mt-2">
+                          <div className="flex items-start gap-2">
+                            <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-amber-700">
+                              Processos vinculados à UEx <strong>{pddeData.uex.executora}</strong> (CNPJ: {pddeData.uex.cnpj}).
+                              Uma UEx pode atender mais de uma escola, portanto estes processos podem se referir ao conjunto de escolas atendidas.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : sigpcData?.wafBlocked ? (
+                    <div className="py-6 text-center">
+                      <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground mb-2">
+                        O portal SIGPC do FNDE está temporariamente indisponível para consulta automática.
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Você pode consultar manualmente usando o CNPJ da UEx: <span className="font-mono font-medium">{uexCnpj}</span>
+                      </p>
+                      <a
+                        href="https://www.fnde.gov.br/sigpcadm/sistema.pu?operation=localizar"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-testid="link-sigpc-manual-completo"
+                      >
+                        <Button variant="outline" data-testid="btn-sigpc-manual-open">
+                          Abrir SIGPC no navegador
+                          <ExternalLink className="w-4 h-4 ml-2" />
+                        </Button>
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="py-6 text-center">
+                      <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">
+                        {sigpcData?.error || `Nenhum processo encontrado no SIGPC para o CNPJ ${uexCnpj} em ${pddeAno}.`}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Tente outro ano ou consulte diretamente no portal do FNDE.
+                      </p>
                     </div>
                   )}
                 </CardContent>

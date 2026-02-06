@@ -15,12 +15,29 @@ The interface uses a warm, nature-inspired "Ghibli/territorial" visual style wit
 
 ## Recent Changes
 
+### SIGPC Integration - Prestação de Contas (Feb 2026)
+- New server-side SIGPC proxy (`server/scraper/sigpc.ts`) queries FNDE's SIGPC public API for prestação de contas data
+- Correlation: School INEP → PDDE UEx CNPJ → SIGPC processes (automatic, no user input needed)
+- API routes (public, no auth):
+  - GET `/api/sigpc/localizar?cnpj=XXXXX&anoConcessao=YYYY&programaId=40` - Search processes by CNPJ
+  - GET `/api/sigpc/pc/:pcId` - Process details + current/former directors
+  - GET `/api/sigpc/historico/:concessaoId` - Analysis history for a specific grant
+- Client hook: `useSigpcLocalizar(cnpj, ano, programaId)` with 5-min stale time and retry=1
+- WAF detection: FNDE SIGPC portal may block cloud server requests; detected gracefully with `wafBlocked` flag
+- Dashboard integration:
+  - Resumido mode: compact SIGPC card showing process count and status badges
+  - Completo mode: full SIGPC section with process table (entity, year, status, analysis, value, UF, municipality)
+  - Info banner explaining UEx-to-school relationship (one UEx may cover multiple schools)
+  - Manual portal link provided when WAF blocks automatic queries
+- SIGPC data follows same year selector as PDDE data
+
 ### FNDE PDDEInfo Live Data Integration (Feb 2026)
 - New server-side scraper (`server/scraper/pdde.ts`) extracts school financial data from FNDE's PDDEInfo portal in real-time
 - Converts the FNDE HTML response (iso-8859-1 encoded) using cheerio for parsing
 - API route: GET `/api/pdde/:inep?ano=YYYY` - public, no auth required
 - Data extracted: school info, enrollment by level, UEx (Unidade Executora) with CNPJ, bank accounts with balances, UEx/EEx situation (mandatos, prestação de contas, adesão), destinações/repasses with custeio/capital breakdown
 - Client hook: `usePddeInfo(inep, ano)` with 5-min stale time and retry=1
+- Dashboard defaults to previous year (currentYear - 1) since FNDE data for current year may not be published yet
 - Dashboard integration:
   - Resumido mode: real enrollment count, total paid, bank accounts summary, FNDE situation
   - Completo mode: full PDDE section with year selector, UEx details, bank accounts table, situation cards, destinações table with totals, enrollment by level grid

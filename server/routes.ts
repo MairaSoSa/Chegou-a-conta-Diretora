@@ -10,6 +10,7 @@ import { api } from "@shared/routes";
 import { registerChatRoutes } from "./replit_integrations/chat";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { getPddeInfo } from "./scraper/pdde";
+import { localizarProcessos, detalharProcesso, historicoAnalise } from "./scraper/sigpc";
 import { z } from "zod";
 import {
   insertToolSchema, insertGlossarySchema, insertTrilhaUnitSchema,
@@ -145,6 +146,49 @@ export async function registerRoutes(
     } catch (err: any) {
       console.error("PDDE scraper error:", err.message);
       res.status(500).json({ ok: false, error: "Erro ao consultar dados do FNDE" });
+    }
+  });
+
+  // === PUBLIC: SIGPC (Prestação de Contas) ===
+  app.get("/api/sigpc/localizar", async (req, res) => {
+    try {
+      const cnpj = (req.query.cnpj as string) || "";
+      const anoConcessao = (req.query.anoConcessao as string) || String(new Date().getFullYear() - 1);
+      const programaId = (req.query.programaId as string) || "40";
+      const limit = (req.query.limit as string) || "40";
+      const start = (req.query.start as string) || "0";
+
+      if (!cnpj || cnpj.replace(/\D/g, "").length < 11) {
+        return res.status(400).json({ ok: false, error: "CNPJ inválido ou ausente" });
+      }
+
+      const result = await localizarProcessos(cnpj, anoConcessao, programaId, limit, start);
+      res.json(result);
+    } catch (err: any) {
+      console.error("SIGPC localizar error:", err.message);
+      res.status(500).json({ ok: false, error: "Erro ao consultar SIGPC" });
+    }
+  });
+
+  app.get("/api/sigpc/pc/:pcId", async (req, res) => {
+    try {
+      const { pcId } = req.params;
+      const result = await detalharProcesso(pcId);
+      res.json(result);
+    } catch (err: any) {
+      console.error("SIGPC detalhe error:", err.message);
+      res.status(500).json({ ok: false, error: "Erro ao detalhar processo SIGPC" });
+    }
+  });
+
+  app.get("/api/sigpc/historico/:concessaoId", async (req, res) => {
+    try {
+      const { concessaoId } = req.params;
+      const result = await historicoAnalise(concessaoId);
+      res.json(result);
+    } catch (err: any) {
+      console.error("SIGPC historico error:", err.message);
+      res.status(500).json({ ok: false, error: "Erro ao consultar histórico SIGPC" });
     }
   });
 
