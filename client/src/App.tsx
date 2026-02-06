@@ -1,3 +1,4 @@
+import { useState, createContext, useContext } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -15,6 +16,9 @@ import Chat from "@/pages/Chat";
 import QuemSomos from "@/pages/QuemSomos";
 import Admin from "@/pages/Admin";
 
+const AccessibilityContext = createContext<{ isOpen: boolean; toggle: () => void }>({ isOpen: false, toggle: () => {} });
+export const useAccessibility = () => useContext(AccessibilityContext);
+
 function Router() {
   return (
     <Switch>
@@ -23,7 +27,6 @@ function Router() {
       <Route path="/trilha" component={Trilha} />
       <Route path="/trilha/:unitId" component={TrilhaUnidade} />
       <Route path="/programas" component={Programas} />
-      {/* Dynamic route for program details if we had the component ready, handled generically for now or added later */}
       <Route path="/programas/:code" component={Programas} /> 
       <Route path="/ferramentas" component={Ferramentas} />
       <Route path="/chat" component={Chat} />
@@ -35,12 +38,17 @@ function Router() {
 }
 
 function App() {
+  const [accessibilityOpen, setAccessibilityOpen] = useState(false);
+  const toggleAccessibility = () => setAccessibilityOpen(prev => !prev);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
-        <AccessibilityMenu />
+        <AccessibilityContext.Provider value={{ isOpen: accessibilityOpen, toggle: toggleAccessibility }}>
+          <Toaster />
+          <Router />
+          <AccessibilityMenu isOpen={accessibilityOpen} onToggle={toggleAccessibility} />
+        </AccessibilityContext.Provider>
       </TooltipProvider>
     </QueryClientProvider>
   );

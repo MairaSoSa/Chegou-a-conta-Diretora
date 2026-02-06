@@ -1,13 +1,15 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, GraduationCap, MessagesSquare, Wrench, Menu, X, BookOpen, Building2 } from "lucide-react";
+import { LayoutDashboard, GraduationCap, MessagesSquare, Wrench, Menu, X, BookOpen, Building2, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAccessibility } from "@/App";
 
 export function Navigation() {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const { toggle: toggleAccessibility } = useAccessibility();
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -36,12 +38,24 @@ export function Navigation() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-xl">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center group">
-          <span className="font-bold text-lg tracking-tight text-foreground">
-            Chegou a Conta<span className="text-accent">, Diretora!</span>
-          </span>
-        </Link>
+        {/* Logo + Accessibility */}
+        <div className="flex items-center gap-1">
+          <Link href="/" className="flex items-center group">
+            <span className="font-bold text-lg tracking-tight text-foreground">
+              Chegou a Conta<span className="text-accent">, Diretora!</span>
+            </span>
+          </Link>
+          <Button
+            onClick={toggleAccessibility}
+            size="icon"
+            variant="ghost"
+            className="text-muted-foreground/50 hover:text-foreground"
+            aria-label="Ajustes de visualização e leitura"
+            data-testid="button-accessibility-menu"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+          </Button>
+        </div>
 
         {/* Desktop Nav - esconde na home porque já tem cards de navegação */}
         {location !== "/" && (
