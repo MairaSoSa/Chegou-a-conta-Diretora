@@ -66,7 +66,7 @@ export async function registerRoutes(
 ): Promise<Server> {
 
   registerChatRoutes(app);
-  registerObjectStorageRoutes(app);
+  registerObjectStorageRoutes(app, adminAuth);
 
   // === PUBLIC: SCHOOLS ===
   app.get(api.schools.search.path, async (req, res) => {

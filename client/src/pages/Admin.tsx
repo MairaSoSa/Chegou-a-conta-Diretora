@@ -17,7 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { GlossaryItem, Tool, TrilhaUnit, Program, ProgramDetail, DashboardDataset, AiDocument, UnansweredQuestion } from "@shared/schema";
 
-function useFileUpload() {
+function useFileUpload(token: string) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
 
@@ -27,7 +27,10 @@ function useFileUpload() {
     try {
       const res = await fetch("/api/uploads/request-url", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           name: file.name,
           size: file.size,
@@ -52,7 +55,7 @@ function useFileUpload() {
     } finally {
       setIsUploading(false);
     }
-  }, []);
+  }, [token]);
 
   return { uploadFile, isUploading, uploadedFileName };
 }
@@ -306,7 +309,7 @@ function ToolsManager({ token }: { token: string }) {
   const [editing, setEditing] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", category: "planejar", type: "excel", featured: false, downloadUrl: "" });
-  const { uploadFile, isUploading, uploadedFileName } = useFileUpload();
+  const { uploadFile, isUploading, uploadedFileName } = useFileUpload(token);
   const toolFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { data: items = [], isLoading } = useQuery<Tool[]>({
@@ -1376,31 +1379,33 @@ function AiDocsManager({ token }: { token: string }) {
 
       <div className="space-y-2">
         {items.map((item) => (
-          <Card key={item.id} className={cn(editing === item.id && "border-emerald-300 ring-1 ring-emerald-200")}>
-            <CardContent className="p-4">
-              {editing === item.id ? (
-                renderDocForm(false)
-              ) : (
-                <div className="flex items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <h3 className="font-semibold">{item.title}</h3>
-                      {item.category && <Badge variant="outline" className="text-xs">{item.category}</Badge>}
+          <div key={item.id}>
+            {editing === item.id ? (
+              renderDocForm(false)
+            ) : (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <h3 className="font-semibold">{item.title}</h3>
+                        {item.category && <Badge variant="outline" className="text-xs">{item.category}</Badge>}
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-3">{item.content}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-3">{item.content}</p>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <Button variant="ghost" size="icon" onClick={() => startEdit(item)} data-testid={`button-edit-ai-doc-${item.id}`}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir este documento?")) deleteMutation.mutate(item.id); }} data-testid={`button-delete-ai-doc-${item.id}`}>
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-1 flex-shrink-0">
-                    <Button variant="ghost" size="icon" onClick={() => startEdit(item)} data-testid={`button-edit-ai-doc-${item.id}`}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir este documento?")) deleteMutation.mutate(item.id); }} data-testid={`button-delete-ai-doc-${item.id}`}>
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         ))}
       </div>
 
