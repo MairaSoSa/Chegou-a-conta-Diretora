@@ -15,21 +15,17 @@ The interface uses a warm, nature-inspired "Ghibli/territorial" visual style wit
 
 ## Recent Changes
 
-### SIGPC Integration - Prestação de Contas (Feb 2026)
-- New server-side SIGPC proxy (`server/scraper/sigpc.ts`) queries FNDE's SIGPC public API for prestação de contas data
-- Correlation: School INEP → PDDE UEx CNPJ → SIGPC processes (automatic, no user input needed)
-- API routes (public, no auth):
-  - GET `/api/sigpc/localizar?cnpj=XXXXX&anoConcessao=YYYY&programaId=40` - Search processes by CNPJ
-  - GET `/api/sigpc/pc/:pcId` - Process details + current/former directors
-  - GET `/api/sigpc/historico/:concessaoId` - Analysis history for a specific grant
-- Client hook: `useSigpcLocalizar(cnpj, ano, programaId)` with 5-min stale time and retry=1
-- WAF detection: FNDE SIGPC portal may block cloud server requests; detected gracefully with `wafBlocked` flag
-- Dashboard integration:
-  - Resumido mode: compact SIGPC card showing process count and status badges
-  - Completo mode: full SIGPC section with process table (entity, year, status, analysis, value, UF, municipality)
-  - Info banner explaining UEx-to-school relationship (one UEx may cover multiple schools)
-  - Manual portal link provided when WAF blocks automatic queries
-- SIGPC data follows same year selector as PDDE data
+### Dashboard Cleanup - Remove SIGPC & Fictitious Data (Feb 2026)
+- Removed SIGPC integration entirely (WAF blocks cloud server requests from FNDE)
+  - Deleted `server/scraper/sigpc.ts`, SIGPC routes from `server/routes.ts`, `client/src/hooks/use-sigpc.ts`
+  - Removed all SIGPC UI sections from Dashboard (resumido + completo modes)
+- Removed all hardcoded fictitious/demo data constants from Dashboard:
+  - DEMO_SCHOOL, DEFAULT_ENROLLMENT_HISTORY, DEFAULT_IDEB_DATA, DEFAULT_REPASSES_DATA, etc.
+  - Removed demo mode (showDemo state) entirely
+- Removed sections that depended 100% on hardcoded data: Conselho Escolar, VAAR, Elegibilidade a Programas, Conectividade, Benchmark
+- Dashboard now shows only real data: PDDE Info (live) + admin-uploaded CSV datasets
+- Sections that depend on admin datasets only render when data exists (no fallbacks)
+- Dashboard reduced from ~2075 lines to ~1302 lines
 
 ### FNDE PDDEInfo Live Data Integration (Feb 2026)
 - New server-side scraper (`server/scraper/pdde.ts`) extracts school financial data from FNDE's PDDEInfo portal in real-time
