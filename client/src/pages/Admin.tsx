@@ -11,10 +11,11 @@ import {
   Lock, LogOut, Plus, Pencil, Trash2, Save, X,
   BookText, Wrench, Ship, FileText, ChevronLeft,
   ChevronDown, ChevronUp, GraduationCap, Settings,
-  Building2, BarChart3, Brain, Upload, Download, Check
+  Building2, BarChart3, Brain, Upload, Download, Check,
+  HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { GlossaryItem, Tool, TrilhaUnit, Program, ProgramDetail, DashboardDataset, AiDocument } from "@shared/schema";
+import type { GlossaryItem, Tool, TrilhaUnit, Program, ProgramDetail, DashboardDataset, AiDocument, UnansweredQuestion } from "@shared/schema";
 
 function useAdminAuth() {
   const [token, setToken] = useState<string | null>(() =>
@@ -1352,7 +1353,132 @@ function SettingsManager({ token }: { token: string }) {
   );
 }
 
-type TabId = "glossary" | "tools" | "trilha" | "programs" | "dashboard" | "ai-docs" | "settings";
+function UnansweredQuestionsManager({ token }: { token: string }) {
+  const { toast } = useToast();
+  const { data: questions = [], isLoading } = useQuery<UnansweredQuestion[]>({
+    queryKey: ["/api/admin/unanswered-questions"],
+    queryFn: () => adminFetch("/api/admin/unanswered-questions", "GET", token),
+  });
+
+  const markResolved = useMutation({
+    mutationFn: (id: number) => adminFetch(`/api/admin/unanswered-questions/${id}`, "PATCH", token, { status: "resolved" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/unanswered-questions"] });
+      toast({ title: "Marcada como resolvida" });
+    },
+  });
+
+  const deleteQuestion = useMutation({
+    mutationFn: (id: number) => adminFetch(`/api/admin/unanswered-questions/${id}`, "DELETE", token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/unanswered-questions"] });
+      toast({ title: "Pergunta removida" });
+    },
+  });
+
+  const pending = questions.filter(q => q.status === "pending");
+  const resolved = questions.filter(q => q.status === "resolved");
+
+  if (isLoading) return <p className="text-muted-foreground">Carregando...</p>;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="font-semibold text-lg mb-1">Perguntas sem Resposta na Base</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Perguntas que usuários fizeram mas a IA não tinha na base de conhecimento. Use esta lista para alimentar a base com as respostas.
+        </p>
+      </div>
+
+      {pending.length === 0 && resolved.length === 0 && (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            <HelpCircle className="w-10 h-10 mx-auto mb-3 opacity-40" />
+            <p>Nenhuma pergunta pendente ainda.</p>
+            <p className="text-sm mt-1">Quando a IA não souber responder algo do escopo do site, a pergunta aparecerá aqui.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {pending.length > 0 && (
+        <div>
+          <h4 className="font-medium text-sm text-muted-foreground mb-2 flex items-center gap-2">
+            <Badge variant="destructive" className="text-xs">{pending.length}</Badge>
+            Pendentes - precisam de resposta na base
+          </h4>
+          <div className="space-y-2">
+            {pending.map((q) => (
+              <Card key={q.id}>
+                <CardContent className="py-3 flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium" data-testid={`text-question-${q.id}`}>{q.question}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {q.createdAt ? new Date(q.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}
+                    </p>
+                  </div>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => markResolved.mutate(q.id)}
+                      title="Marcar como resolvida"
+                      data-testid={`button-resolve-${q.id}`}
+                    >
+                      <Check className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => deleteQuestion.mutate(q.id)}
+                      title="Remover"
+                      data-testid={`button-delete-question-${q.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {resolved.length > 0 && (
+        <div>
+          <h4 className="font-medium text-sm text-muted-foreground mb-2 flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs">{resolved.length}</Badge>
+            Resolvidas
+          </h4>
+          <div className="space-y-2">
+            {resolved.map((q) => (
+              <Card key={q.id} className="opacity-60">
+                <CardContent className="py-3 flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm line-through" data-testid={`text-resolved-${q.id}`}>{q.question}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {q.createdAt ? new Date(q.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => deleteQuestion.mutate(q.id)}
+                    title="Remover"
+                    data-testid={`button-delete-resolved-${q.id}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type TabId = "glossary" | "tools" | "trilha" | "programs" | "dashboard" | "ai-docs" | "unanswered" | "settings";
 
 const TABS: Array<{ id: TabId; label: string; icon: typeof BookText }> = [
   { id: "glossary", label: "Glossário", icon: BookText },
@@ -1361,6 +1487,7 @@ const TABS: Array<{ id: TabId; label: string; icon: typeof BookText }> = [
   { id: "programs", label: "Programas", icon: Building2 },
   { id: "dashboard", label: "Dashboard", icon: BarChart3 },
   { id: "ai-docs", label: "Base IA", icon: Brain },
+  { id: "unanswered", label: "Pendentes IA", icon: HelpCircle },
   { id: "settings", label: "Configurações", icon: Settings },
 ];
 
@@ -1419,6 +1546,7 @@ export default function Admin() {
         {activeTab === "programs" && token && <ProgramsManager token={token} />}
         {activeTab === "dashboard" && token && <DashboardManager token={token} />}
         {activeTab === "ai-docs" && token && <AiDocsManager token={token} />}
+        {activeTab === "unanswered" && token && <UnansweredQuestionsManager token={token} />}
         {activeTab === "settings" && token && <SettingsManager token={token} />}
       </div>
     </div>

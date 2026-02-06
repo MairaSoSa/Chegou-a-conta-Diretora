@@ -1,7 +1,7 @@
 import { db } from "./db";
 import {
   schools, programs, programDetails, tools, glossary, trilhaUnits,
-  siteSettings, dashboardDatasets, aiDocuments,
+  siteSettings, dashboardDatasets, aiDocuments, unansweredQuestions,
   type School, type InsertSchool,
   type Program, type InsertProgram,
   type ProgramDetail, type InsertProgramDetail,
@@ -10,7 +10,8 @@ import {
   type TrilhaUnit, type InsertTrilhaUnit,
   type SiteSetting, type InsertSiteSetting,
   type DashboardDataset, type InsertDashboardDataset,
-  type AiDocument, type InsertAiDocument
+  type AiDocument, type InsertAiDocument,
+  type UnansweredQuestion, type InsertUnansweredQuestion
 } from "@shared/schema";
 import { eq, ilike, or, asc, desc } from "drizzle-orm";
 
@@ -62,6 +63,11 @@ export interface IStorage {
   createAiDocument(doc: InsertAiDocument): Promise<AiDocument>;
   updateAiDocument(id: number, doc: Partial<InsertAiDocument>): Promise<AiDocument | undefined>;
   deleteAiDocument(id: number): Promise<boolean>;
+
+  getUnansweredQuestions(): Promise<UnansweredQuestion[]>;
+  createUnansweredQuestion(question: InsertUnansweredQuestion): Promise<UnansweredQuestion>;
+  updateUnansweredQuestionStatus(id: number, status: string): Promise<UnansweredQuestion | undefined>;
+  deleteUnansweredQuestion(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -272,6 +278,25 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAiDocument(id: number): Promise<boolean> {
     const result = await db.delete(aiDocuments).where(eq(aiDocuments.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getUnansweredQuestions(): Promise<UnansweredQuestion[]> {
+    return db.select().from(unansweredQuestions).orderBy(desc(unansweredQuestions.createdAt));
+  }
+
+  async createUnansweredQuestion(question: InsertUnansweredQuestion): Promise<UnansweredQuestion> {
+    const [created] = await db.insert(unansweredQuestions).values(question).returning();
+    return created;
+  }
+
+  async updateUnansweredQuestionStatus(id: number, status: string): Promise<UnansweredQuestion | undefined> {
+    const [updated] = await db.update(unansweredQuestions).set({ status }).where(eq(unansweredQuestions.id, id)).returning();
+    return updated;
+  }
+
+  async deleteUnansweredQuestion(id: number): Promise<boolean> {
+    const result = await db.delete(unansweredQuestions).where(eq(unansweredQuestions.id, id)).returning();
     return result.length > 0;
   }
 }

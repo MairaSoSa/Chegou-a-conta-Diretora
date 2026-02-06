@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,12 +7,13 @@ import { Card } from "@/components/ui/card";
 import { 
   Send, Bot, User, Sparkles, MessageCircle, 
   HelpCircle, BookOpen, Calculator, FileText,
-  Lightbulb, Clock, ChevronRight, Loader2
+  Lightbulb, Clock, ChevronRight, Loader2, Mic, Square
 } from "lucide-react";
 import { useCreateConversation, useSendMessage, useConversation } from "@/hooks/use-chat";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
+import { useToast } from "@/hooks/use-toast";
 
 const SUGESTOES = [
   {
@@ -178,7 +179,12 @@ function TelaBoasVindas({ onSugestao }: { onSugestao: (texto: string) => void })
 export default function Chat() {
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [input, setInput] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const { toast } = useToast();
   
   const { mutate: createConversation } = useCreateConversation();
   const { mutate: sendMessage, isPending: isSending } = useSendMessage();
@@ -213,7 +219,64 @@ export default function Chat() {
     }
   };
 
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(track => track.stop());
+        const audioBlob = new Blob(chunksRef.current, { type: mediaRecorder.mimeType });
+        chunksRef.current = [];
+
+        setIsTranscribing(true);
+        try {
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = async () => {
+            const base64 = (reader.result as string).split(",")[1];
+            const res = await fetch("/api/transcribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ audio: base64 }),
+            });
+            if (!res.ok) throw new Error("Transcription failed");
+            const { transcript } = await res.json();
+            setIsTranscribing(false);
+            if (transcript && transcript.trim()) {
+              handleSend(transcript.trim());
+            } else {
+              toast({ title: "Nenhum texto detectado", description: "Tente falar mais perto do microfone.", variant: "destructive" });
+            }
+          };
+        } catch (err) {
+          setIsTranscribing(false);
+          toast({ title: "Erro ao transcrever", description: "Tente novamente.", variant: "destructive" });
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      toast({ title: "Microfone indisponível", description: "Permita o acesso ao microfone no navegador.", variant: "destructive" });
+    }
+  }, [conversationId, toast]);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  }, []);
+
   const temMensagens = conversationData?.messages && conversationData.messages.length > 0;
+  const isBusy = isSending || isTranscribing;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans">
@@ -259,23 +322,61 @@ export default function Chat() {
             )}
           </div>
 
-          {/* Input Area - mais compacto */}
+          {/* Input Area */}
           <div className="p-3 sm:p-4 bg-white border-t flex-shrink-0">
+            {isRecording && (
+              <div className="flex items-center justify-center gap-2 mb-2 py-2 px-3 rounded-lg bg-red-50 border border-red-200">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-sm text-red-700 font-medium" data-testid="text-recording-status">Gravando...</span>
+              </div>
+            )}
+            {isTranscribing && (
+              <div className="flex items-center justify-center gap-2 mb-2 py-2 px-3 rounded-lg bg-amber-50 border border-amber-200">
+                <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+                <span className="text-sm text-amber-700 font-medium" data-testid="text-transcribing-status">Transcrevendo seu áudio...</span>
+              </div>
+            )}
             <div className="flex gap-2">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Digite sua dúvida..."
+                placeholder="Digite ou grave sua dúvida..."
                 className="min-h-[44px] max-h-24 resize-none border-slate-200 focus:border-primary text-base"
-                disabled={isSending}
+                disabled={isBusy}
                 rows={1}
                 data-testid="input-mensagem"
               />
+              {isRecording ? (
+                <Button 
+                  onClick={stopRecording}
+                  variant="destructive"
+                  size="icon"
+                  className="self-end flex-shrink-0"
+                  data-testid="button-parar-gravacao"
+                >
+                  <Square className="w-5 h-5" />
+                </Button>
+              ) : (
+                <Button 
+                  onClick={startRecording}
+                  variant="outline"
+                  size="icon"
+                  disabled={isBusy}
+                  className="self-end flex-shrink-0"
+                  data-testid="button-gravar"
+                >
+                  {isTranscribing ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Mic className="w-5 h-5" />
+                  )}
+                </Button>
+              )}
               <Button 
                 onClick={() => handleSend()} 
-                disabled={!input.trim() || isSending}
-                className="px-3 sm:px-4 self-end"
+                disabled={!input.trim() || isBusy}
+                className="self-end flex-shrink-0"
                 data-testid="button-enviar"
               >
                 {isSending ? (

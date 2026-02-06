@@ -1,12 +1,26 @@
-import type { Express, Request, Response } from "express";
+import express, { type Express, type Request, type Response } from "express";
 import OpenAI from "openai";
 import { chatStorage } from "./storage";
 import { storage } from "../../storage";
+import { ensureCompatibleFormat, speechToText } from "../audio/client";
+
+const audioBodyParser = express.json({ limit: "50mb" });
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
+
+const REFUSAL_PATTERNS = [
+  "não tenho essa informação",
+  "não está na minha base",
+  "não possuo essa informação",
+  "não encontrei essa informação",
+  "não tenho dados sobre",
+  "não consta na base",
+  "conteúdo ainda está sendo cadastrado",
+  "não tenho informações sobre",
+];
 
 export function registerChatRoutes(app: Express): void {
   // Get all conversations
@@ -211,17 +225,49 @@ LEMBRETE FINAL: Qualquer informação que NÃO esteja entre as marcações "BASE
       // Save assistant message
       await chatStorage.createMessage(conversationId, "assistant", fullResponse);
 
+      const responseLower = fullResponse.toLowerCase();
+      const isRefusal = REFUSAL_PATTERNS.some(pattern => responseLower.includes(pattern));
+      const outOfScopePatterns = ["só posso ajudar com assuntos relacionados à gestão financeira"];
+      const isOutOfScope = outOfScopePatterns.some(pattern => responseLower.includes(pattern));
+
+      if (isRefusal && !isOutOfScope) {
+        const userMessages = messages.filter(m => m.role === "user");
+        const lastUserMessage = userMessages[userMessages.length - 1];
+        if (lastUserMessage) {
+          try {
+            await storage.createUnansweredQuestion({ question: lastUserMessage.content, status: "pending" });
+          } catch (e) {
+            console.error("Failed to log unanswered question:", e);
+          }
+        }
+      }
+
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
     } catch (error) {
       console.error("Error sending message:", error);
-      // Check if headers already sent (SSE streaming started)
       if (res.headersSent) {
         res.write(`data: ${JSON.stringify({ error: "Failed to send message" })}\n\n`);
         res.end();
       } else {
         res.status(500).json({ error: "Failed to send message" });
       }
+    }
+  });
+
+  app.post("/api/transcribe", audioBodyParser, async (req: Request, res: Response) => {
+    try {
+      const { audio } = req.body;
+      if (!audio) {
+        return res.status(400).json({ error: "Audio data (base64) is required" });
+      }
+      const rawBuffer = Buffer.from(audio, "base64");
+      const { buffer: audioBuffer, format: inputFormat } = await ensureCompatibleFormat(rawBuffer);
+      const transcript = await speechToText(audioBuffer, inputFormat);
+      res.json({ transcript });
+    } catch (error) {
+      console.error("Error transcribing audio:", error);
+      res.status(500).json({ error: "Failed to transcribe audio" });
     }
   });
 }

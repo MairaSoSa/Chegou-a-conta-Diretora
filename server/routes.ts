@@ -413,5 +413,25 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  app.get("/api/admin/unanswered-questions", adminAuth, async (_req, res) => {
+    const questions = await storage.getUnansweredQuestions();
+    res.json(questions);
+  });
+
+  app.patch("/api/admin/unanswered-questions/:id", adminAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { status } = req.body;
+    const updated = await storage.updateUnansweredQuestionStatus(id, status);
+    if (!updated) return res.status(404).json({ message: "Pergunta não encontrada" });
+    res.json(updated);
+  });
+
+  app.delete("/api/admin/unanswered-questions/:id", adminAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteUnansweredQuestion(id);
+    if (!deleted) return res.status(404).json({ message: "Pergunta não encontrada" });
+    res.json({ success: true });
+  });
+
   return httpServer;
 }

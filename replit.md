@@ -15,6 +15,18 @@ The interface uses a warm, nature-inspired "Ghibli/territorial" visual style wit
 
 ## Recent Changes
 
+### Voice Input & Unanswered Questions Tracking (Feb 2026)
+- Added microphone button to AI chat for voice input (record → transcribe → send as text)
+- Uses MediaRecorder API in frontend, OpenAI gpt-4o-mini-transcribe for speech-to-text
+- Audio auto-converted to compatible format via ffmpeg (WebM/MP4/OGG → WAV)
+- Recording UI shows red "Gravando..." indicator and amber "Transcrevendo..." state
+- Created unanswered_questions table to track questions AI can't answer from knowledge base
+- Pattern matching on AI response detects refusals (e.g., "não tenho essa informação")
+- Excludes out-of-scope refusals (e.g., "só posso ajudar com gestão financeira")
+- New admin tab "Pendentes IA" shows pending/resolved unanswered questions
+- Admin can mark questions as resolved or delete them
+- Admin panel now has 8 tabs: Glossário, Ferramentas, Trilha, Programas, Dashboard, Base IA, Pendentes IA, Configurações
+
 ### AI Knowledge Base Security Hardening (Feb 2026)
 - System prompt completely rewritten with strict "REGRA FUNDAMENTAL — OBRIGATÓRIA E INVIOLÁVEL" framing
 - AI now ONLY responds using content from the knowledge base (admin-managed content)
@@ -69,7 +81,7 @@ Preferred communication style: Simple, everyday language.
 - **Database**: PostgreSQL via Drizzle ORM
 - **Schema Location**: `shared/schema.ts` defines all tables
 - **Migrations**: Drizzle Kit handles schema pushes (`db:push`)
-- **Tables**: schools, programs, program_details, tools, glossary, trilha_units, conversations, messages, site_settings, dashboard_datasets, ai_documents
+- **Tables**: schools, programs, program_details, tools, glossary, trilha_units, conversations, messages, site_settings, dashboard_datasets, ai_documents, unanswered_questions
 - **Seeding**: `server/seed.ts` auto-seeds on startup if tables are empty
 
 ### Content Management

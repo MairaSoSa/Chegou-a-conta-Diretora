@@ -110,6 +110,14 @@ export const trilhaUnits = pgTable("trilha_units", {
   sortOrder: integer("sort_order").default(0),
 });
 
+// === UNANSWERED QUESTIONS ===
+export const unansweredQuestions = pgTable("unanswered_questions", {
+  id: serial("id").primaryKey(),
+  question: text("question").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  status: text("status").notNull().default("pending"),
+});
+
 // === ZOD SCHEMAS ===
 export const insertSchoolSchema = createInsertSchema(schools).omit({ id: true });
 export const insertProgramSchema = createInsertSchema(programs).omit({ id: true });
@@ -120,6 +128,7 @@ export const insertTrilhaUnitSchema = createInsertSchema(trilhaUnits).omit({ id:
 export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({ id: true });
 export const insertDashboardDatasetSchema = createInsertSchema(dashboardDatasets).omit({ id: true, lastUpdated: true });
 export const insertAiDocumentSchema = createInsertSchema(aiDocuments).omit({ id: true });
+export const insertUnansweredQuestionSchema = createInsertSchema(unansweredQuestions).omit({ id: true, createdAt: true });
 
 // === TYPES ===
 export type School = typeof schools.$inferSelect;
@@ -148,5 +157,8 @@ export type InsertDashboardDataset = z.infer<typeof insertDashboardDatasetSchema
 
 export type AiDocument = typeof aiDocuments.$inferSelect;
 export type InsertAiDocument = z.infer<typeof insertAiDocumentSchema>;
+
+export type UnansweredQuestion = typeof unansweredQuestions.$inferSelect;
+export type InsertUnansweredQuestion = z.infer<typeof insertUnansweredQuestionSchema>;
 
 export type SchoolSearchRequest = { query: string };
