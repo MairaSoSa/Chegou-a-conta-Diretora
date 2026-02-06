@@ -267,7 +267,7 @@ export default function Dashboard() {
   const [showDemo, setShowDemo] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'resumido' | 'completo'>('resumido');
-  const [pddeAno, setPddeAno] = useState(new Date().getFullYear());
+  const [pddeAno, setPddeAno] = useState(new Date().getFullYear() - 1);
   
   const { data: searchResults } = useSchoolSearch(searchQuery);
   const { data: school } = useSchool(selectedInep || "");

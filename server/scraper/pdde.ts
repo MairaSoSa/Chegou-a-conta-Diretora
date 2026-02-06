@@ -175,13 +175,13 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
     const alunos: Record<string, number> = {};
     let total: number | null = null;
     rows.each((_, tr) => {
-      const tds = $(tr).find("td").map((_, td) => $(td).text().trim()).get();
-      if (tds.length >= 2) {
-        const nivel = tds[0].trim();
-        const qtd = tds[tds.length - 1].trim();
+      const allCells = $(tr).find("th, td").map((_, c) => $(c).text().trim()).get();
+      if (allCells.length >= 2) {
+        const nivel = allCells[0].trim();
+        const qtd = allCells[allCells.length - 1].trim();
         if (nivel.toUpperCase() === "TOTAL") {
           total = parseIntSafe(qtd);
-        } else if (nivel && !nivel.includes("Nome") && !nivel.includes("UF") && !nivel.includes("Rede")) {
+        } else if (nivel && !nivel.includes("Nome") && !nivel.includes("UF") && !nivel.includes("Rede") && !nivel.includes("Nível")) {
           const parsed = parseIntSafe(qtd);
           if (parsed !== null && parsed > 0) {
             alunos[nivel] = parsed;
