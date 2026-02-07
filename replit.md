@@ -13,6 +13,18 @@ A web application designed to help Brazilian school principals manage public sch
 
 The interface uses a warm, nature-inspired "Ghibli/territorial" visual style with earthy colors and hand-drawn aesthetics.
 
+## Development Setup
+
+This project runs on **VS Code / GitHub Codespaces** with Node.js 20+, PostgreSQL 16, and includes AI integrations for chat functionality.
+
+**Quick Start:**
+```bash
+npm install
+npm run dev
+```
+
+Access the application at `http://localhost:5000`
+
 ## Recent Changes
 
 ### Dashboard Cleanup - Remove SIGPC & Fictitious Data (Feb 2026)
@@ -129,7 +141,8 @@ Preferred communication style: Simple, everyday language.
 
 ### AI Integration
 - **Provider**: OpenAI API (configured via environment variables)
-- **Features**: Text chat support
+- **Features**: Text chat support, document upload for knowledge base (PDF, Word, Text)
+- **Implementation**: Server-side chat routes in `server/replit_integrations/chat/`
 
 ### Project Structure
 ```
@@ -142,7 +155,10 @@ server/           # Express backend
   seed.ts         # Database seeding logic
   storage.ts      # Storage interface with CRUD operations
   routes.ts       # API routes (public + admin)
-  replit_integrations/  # AI chat modules
+  scraper/        # FNDE data scrapers (PDDE, SIGPC)
+  replit_integrations/  # AI modules
+    chat/         # Chat functionality
+    object_storage/  # File upload handling
 shared/           # Shared types, schemas, and API contracts
   schema.ts       # Drizzle ORM schema definitions
 ```
