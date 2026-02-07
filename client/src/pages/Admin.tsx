@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   Lock, LogOut, Plus, Pencil, Trash2, Save, X,
-  BookText, Wrench, Ship, FileText, ChevronLeft,
-  ChevronDown, ChevronUp, GraduationCap, Settings,
+  BookText, Wrench, Ship, ChevronLeft,
+  ChevronDown, ChevronUp, Settings,
   Building2, BarChart3, Brain, Upload, Download, Check,
   HelpCircle, Loader2, Paperclip
 } from "lucide-react";
@@ -812,8 +812,8 @@ function ProgramsManager({ token }: { token: string }) {
   });
 
   const updateDetailMutation = useMutation({
-    mutationFn: ({ id, data, programCode }: { id: number; data: Partial<typeof detailForm>; programCode: string }) =>
-      adminFetch(`/api/admin/program-details/${id}`, "PUT", token, data),
+    mutationFn: (variables: { id: number; data: Partial<typeof detailForm>; programCode: string }) =>
+      adminFetch(`/api/admin/program-details/${variables.id}`, "PUT", token, variables.data),
     onSuccess: (_: unknown, variables: { id: number; data: Partial<typeof detailForm>; programCode: string }) => {
       fetchDetails(variables.programCode);
       setDetailEditing(null);
@@ -823,8 +823,8 @@ function ProgramsManager({ token }: { token: string }) {
   });
 
   const deleteDetailMutation = useMutation({
-    mutationFn: ({ id, programCode }: { id: number; programCode: string }) =>
-      adminFetch(`/api/admin/program-details/${id}`, "DELETE", token),
+    mutationFn: (variables: { id: number; programCode: string }) =>
+      adminFetch(`/api/admin/program-details/${variables.id}`, "DELETE", token),
     onSuccess: (_: unknown, variables: { id: number; programCode: string }) => {
       fetchDetails(variables.programCode);
       toast({ title: "Detalhe excluído" });
@@ -1261,10 +1261,21 @@ function AiDocsManager({ token }: { token: string }) {
   const { toast } = useToast();
   const [editing, setEditing] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ title: "", content: "", category: "", sortOrder: 0 });
+  const [form, setForm] = useState({ title: "", content: "", category: "", link: "", sortOrder: 0 });
   const [loadingFile, setLoadingFile] = useState(false);
   const aiDocFileRef = useRef<HTMLInputElement | null>(null);
   const aiDocEditFileRef = useRef<HTMLInputElement | null>(null);
+  const aiDocLinkFileRef = useRef<HTMLInputElement | null>(null);
+  const { uploadFile, isUploading, uploadedFileName } = useFileUpload(token);
+  const handleLinkUpload = async (file: File) => {
+    const objectPath = await uploadFile(file);
+    if (objectPath) {
+      setForm(prev => ({ ...prev, link: objectPath }));
+      toast({ title: "Link salvo", description: file.name });
+    } else {
+      toast({ title: "Erro no upload", description: "Tente novamente", variant: "destructive" });
+    }
+  };
 
   const { data: items = [], isLoading } = useQuery<AiDocument[]>({
     queryKey: ["/api/ai-documents"],
@@ -1279,7 +1290,36 @@ function AiDocsManager({ token }: { token: string }) {
       let text = "";
       const title = file.name.replace(/\.[^.]+$/, "");
 
+      const extractPdfText = async (sourceFile: File): Promise<string> => {
+        const pdfjsLib = await import("pdfjs-dist");
+        const workerUrl = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+
+        const data = new Uint8Array(await sourceFile.arrayBuffer());
+        const loadingTask = pdfjsLib.getDocument({ data });
+        const pdf = await loadingTask.promise;
+
+        let fullText = "";
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum += 1) {
+          const page = await pdf.getPage(pageNum);
+          const content = await page.getTextContent();
+          const pageText = content.items
+            .map((item: any) => ("str" in item ? item.str : ""))
+            .join(" ");
+          fullText += `${pageText}\n\n`;
+        }
+
+        const normalized = fullText.trim();
+        if (!normalized) {
+          throw new Error("Não foi possível extrair texto do PDF.");
+        }
+        return normalized;
+      };
+
       if (isBinary) {
+        if (ext === "pdf") {
+          text = await extractPdfText(file);
+        } else {
         const mimeMap: Record<string, string> = {
           pdf: "application/pdf",
           docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -1296,11 +1336,20 @@ function AiDocsManager({ token }: { token: string }) {
           body: file,
         });
         if (!res.ok) {
-          const err = await res.json().catch(() => ({ message: "Erro desconhecido" }));
-          throw new Error(err.message);
+          const raw = await res.text();
+          let message = "Erro desconhecido";
+          try {
+            const parsed = JSON.parse(raw);
+            message = parsed?.message || message;
+          } catch {
+            const cleaned = raw.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+            message = cleaned || `Erro ${res.status}`;
+          }
+          throw new Error(`(${res.status}) ${message}`);
         }
         const result = await res.json();
         text = result.text;
+        }
       } else {
         text = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
@@ -1332,7 +1381,7 @@ function AiDocsManager({ token }: { token: string }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/ai-documents"] });
       setCreating(false);
-      setForm({ title: "", content: "", category: "", sortOrder: 0 });
+      setForm({ title: "", content: "", category: "", link: "", sortOrder: 0 });
       toast({ title: "Documento criado" });
     },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
@@ -1364,6 +1413,7 @@ function AiDocsManager({ token }: { token: string }) {
       title: item.title,
       content: item.content,
       category: item.category || "",
+      link: item.link || "",
       sortOrder: item.sortOrder || 0,
     });
   };
@@ -1377,6 +1427,12 @@ function AiDocsManager({ token }: { token: string }) {
           <Input placeholder="Título do documento" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} data-testid="input-ai-doc-title" />
           <Input placeholder="Categoria (opcional)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} data-testid="input-ai-doc-category" />
         </div>
+        <Input
+          placeholder="Link do documento (opcional)"
+          value={form.link}
+          onChange={(e) => setForm({ ...form, link: e.target.value })}
+          data-testid="input-ai-doc-link"
+        />
         <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
@@ -1389,7 +1445,22 @@ function AiDocsManager({ token }: { token: string }) {
             {loadingFile ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />}
             Carregar arquivo
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            onClick={() => aiDocLinkFileRef.current?.click()}
+            disabled={isUploading}
+            data-testid="button-upload-ai-doc-link"
+          >
+            {isUploading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Paperclip className="w-4 h-4 mr-1" />}
+            Enviar PDF e salvar link
+          </Button>
           <span className="text-xs text-muted-foreground">.pdf, .docx, .txt, .md, .csv</span>
+          <span className="text-xs text-muted-foreground">PDF grande? Envie em partes.</span>
+          {uploadedFileName && (
+            <span className="text-xs text-emerald-600">{uploadedFileName}</span>
+          )}
           <input
             ref={aiDocFileRef}
             type="file"
@@ -1409,6 +1480,17 @@ function AiDocsManager({ token }: { token: string }) {
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) handleFileLoad(file, "edit");
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={aiDocLinkFileRef}
+            type="file"
+            className="hidden"
+            accept=".pdf"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleLinkUpload(file);
               e.target.value = "";
             }}
           />
@@ -1467,6 +1549,16 @@ function AiDocsManager({ token }: { token: string }) {
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <h3 className="font-semibold">{item.title}</h3>
                         {item.category && <Badge variant="outline" className="text-xs">{item.category}</Badge>}
+                        {item.link && (
+                          <a
+                            href={item.link}
+                            target={item.link.startsWith("http") ? "_blank" : undefined}
+                            rel={item.link.startsWith("http") ? "noopener noreferrer" : undefined}
+                            className="text-xs text-primary underline"
+                          >
+                            Link
+                          </a>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-3">{item.content}</p>
                     </div>

@@ -2,18 +2,20 @@ import { db } from "./db";
 import {
   schools, programs, programDetails, tools, glossary, trilhaUnits,
   siteSettings, dashboardDatasets, aiDocuments, unansweredQuestions,
+  aiDocumentEmbeddings,
   type School, type InsertSchool,
   type Program, type InsertProgram,
   type ProgramDetail, type InsertProgramDetail,
   type Tool, type InsertTool,
   type GlossaryItem, type InsertGlossaryItem,
   type TrilhaUnit, type InsertTrilhaUnit,
-  type SiteSetting, type InsertSiteSetting,
-  type DashboardDataset, type InsertDashboardDataset,
+  type SiteSetting,
+  type DashboardDataset,
   type AiDocument, type InsertAiDocument,
+  type AiDocumentEmbedding, type InsertAiDocumentEmbedding,
   type UnansweredQuestion, type InsertUnansweredQuestion
 } from "@shared/schema";
-import { eq, ilike, or, asc, desc } from "drizzle-orm";
+import { and, eq, ilike, or, asc, desc } from "drizzle-orm";
 
 export interface IStorage {
   getSchools(query?: string): Promise<School[]>;
@@ -61,9 +63,17 @@ export interface IStorage {
 
   getAiDocuments(): Promise<AiDocument[]>;
   getAiDocumentById(id: number): Promise<AiDocument | undefined>;
+  getAiDocumentsByLinkAndCategory(link: string, category?: string): Promise<AiDocument[]>;
   createAiDocument(doc: InsertAiDocument): Promise<AiDocument>;
   updateAiDocument(id: number, doc: Partial<InsertAiDocument>): Promise<AiDocument | undefined>;
   deleteAiDocument(id: number): Promise<boolean>;
+  deleteAiDocumentsByLinkAndCategory(link: string, category?: string): Promise<number>;
+
+  getAiDocumentEmbeddings(): Promise<AiDocumentEmbedding[]>;
+  getAiDocumentEmbeddingByDocumentId(documentId: number): Promise<AiDocumentEmbedding | undefined>;
+  upsertAiDocumentEmbedding(documentId: number, embedding: number[]): Promise<AiDocumentEmbedding>;
+  deleteAiDocumentEmbeddingByDocumentId(documentId: number): Promise<boolean>;
+  getAiDocumentEmbeddingsWithDocuments(): Promise<Array<{ embedding: AiDocumentEmbedding; document: AiDocument }>>;
 
   getUnansweredQuestions(): Promise<UnansweredQuestion[]>;
   createUnansweredQuestion(question: InsertUnansweredQuestion): Promise<UnansweredQuestion>;
@@ -187,22 +197,52 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTrilhaUnits(): Promise<TrilhaUnit[]> {
-    return db.select().from(trilhaUnits).orderBy(asc(trilhaUnits.sortOrder), asc(trilhaUnits.unitId));
+    const units = await db.select().from(trilhaUnits).orderBy(asc(trilhaUnits.sortOrder), asc(trilhaUnits.unitId));
+    return units.map((unit) => ({
+      ...unit,
+      sections: typeof unit.sections === 'string' ? JSON.parse(unit.sections) : unit.sections,
+      materials: typeof unit.materials === 'string' ? JSON.parse(unit.materials) : unit.materials,
+    })) as TrilhaUnit[];
   }
 
   async getTrilhaUnitByUnitId(unitId: string): Promise<TrilhaUnit | undefined> {
     const [unit] = await db.select().from(trilhaUnits).where(eq(trilhaUnits.unitId, unitId));
-    return unit;
+    if (!unit) return undefined;
+    return {
+      ...unit,
+      sections: typeof unit.sections === 'string' ? JSON.parse(unit.sections) : unit.sections,
+      materials: typeof unit.materials === 'string' ? JSON.parse(unit.materials) : unit.materials,
+    } as TrilhaUnit;
   }
 
   async createTrilhaUnit(unit: InsertTrilhaUnit): Promise<TrilhaUnit> {
-    const [newUnit] = await db.insert(trilhaUnits).values(unit).returning();
-    return newUnit;
+    // Serialize JSON fields for SQLite
+    const serialized = {
+      ...unit,
+      sections: unit.sections ? JSON.stringify(unit.sections) : JSON.stringify([]),
+      materials: unit.materials ? JSON.stringify(unit.materials) : JSON.stringify([]),
+    };
+    const [newUnit] = await db.insert(trilhaUnits).values(serialized).returning();
+    return {
+      ...newUnit,
+      sections: typeof newUnit.sections === 'string' ? JSON.parse(newUnit.sections as string) : newUnit.sections,
+      materials: typeof newUnit.materials === 'string' ? JSON.parse(newUnit.materials as string) : newUnit.materials,
+    } as any;
   }
 
   async updateTrilhaUnit(id: number, unit: Partial<InsertTrilhaUnit>): Promise<TrilhaUnit | undefined> {
-    const [updated] = await db.update(trilhaUnits).set(unit).where(eq(trilhaUnits.id, id)).returning();
-    return updated;
+    const serialized = {
+      ...unit,
+      ...(unit.sections && { sections: JSON.stringify(unit.sections) }),
+      ...(unit.materials && { materials: JSON.stringify(unit.materials) }),
+    };
+    const [updated] = await db.update(trilhaUnits).set(serialized).where(eq(trilhaUnits.id, id)).returning();
+    if (!updated) return undefined;
+    return {
+      ...updated,
+      sections: typeof updated.sections === 'string' ? JSON.parse(updated.sections) : updated.sections,
+      materials: typeof updated.materials === 'string' ? JSON.parse(updated.materials) : updated.materials,
+    } as TrilhaUnit;
   }
 
   async deleteTrilhaUnit(id: number): Promise<boolean> {
@@ -246,14 +286,14 @@ export class DatabaseStorage implements IStorage {
   async upsertDashboardDataset(category: string, data: unknown, label?: string): Promise<DashboardDataset> {
     const existing = await this.getDashboardDatasetByCategory(category);
     if (existing) {
-      const updateData: any = { data, lastUpdated: new Date() };
+      const updateData: Record<string, unknown> = { data, lastUpdated: Date.now() };
       if (label !== undefined) {
         updateData.label = label;
       }
       const [updated] = await db.update(dashboardDatasets).set(updateData).where(eq(dashboardDatasets.id, existing.id)).returning();
       return updated;
     }
-    const [created] = await db.insert(dashboardDatasets).values({ category, data, label, lastUpdated: new Date() }).returning();
+    const [created] = await db.insert(dashboardDatasets).values({ category, data, label, lastUpdated: Date.now() }).returning();
     return created;
   }
 
@@ -276,8 +316,21 @@ export class DatabaseStorage implements IStorage {
     return doc;
   }
 
+  async getAiDocumentsByLinkAndCategory(link: string, category?: string): Promise<AiDocument[]> {
+    if (!category) {
+      return db.select().from(aiDocuments).where(eq(aiDocuments.link, link));
+    }
+    return db
+      .select()
+      .from(aiDocuments)
+      .where(and(eq(aiDocuments.link, link), eq(aiDocuments.category, category)));
+  }
+
   async createAiDocument(doc: InsertAiDocument): Promise<AiDocument> {
-    const [created] = await db.insert(aiDocuments).values(doc).returning();
+    const [created] = await db
+      .insert(aiDocuments)
+      .values({ ...doc, createdAt: Date.now() })
+      .returning();
     return created;
   }
 
@@ -289,6 +342,66 @@ export class DatabaseStorage implements IStorage {
   async deleteAiDocument(id: number): Promise<boolean> {
     const result = await db.delete(aiDocuments).where(eq(aiDocuments.id, id)).returning();
     return result.length > 0;
+  }
+
+  async deleteAiDocumentsByLinkAndCategory(link: string, category?: string): Promise<number> {
+    const result = category
+      ? await db
+          .delete(aiDocuments)
+          .where(and(eq(aiDocuments.link, link), eq(aiDocuments.category, category)))
+          .returning()
+      : await db.delete(aiDocuments).where(eq(aiDocuments.link, link)).returning();
+    return result.length;
+  }
+
+  async getAiDocumentEmbeddings(): Promise<AiDocumentEmbedding[]> {
+    return db.select().from(aiDocumentEmbeddings).orderBy(desc(aiDocumentEmbeddings.updatedAt));
+  }
+
+  async getAiDocumentEmbeddingByDocumentId(documentId: number): Promise<AiDocumentEmbedding | undefined> {
+    const [embedding] = await db
+      .select()
+      .from(aiDocumentEmbeddings)
+      .where(eq(aiDocumentEmbeddings.documentId, documentId));
+    return embedding;
+  }
+
+  async upsertAiDocumentEmbedding(documentId: number, embedding: number[]): Promise<AiDocumentEmbedding> {
+    const serialized = JSON.stringify(embedding);
+    const existing = await this.getAiDocumentEmbeddingByDocumentId(documentId);
+    if (existing) {
+      const [updated] = await db
+        .update(aiDocumentEmbeddings)
+        .set({ embedding: serialized, updatedAt: Date.now() })
+        .where(eq(aiDocumentEmbeddings.documentId, documentId))
+        .returning();
+      return updated;
+    }
+    const now = Date.now();
+    const [created] = await db
+      .insert(aiDocumentEmbeddings)
+      .values({ documentId, embedding: serialized, createdAt: now, updatedAt: now })
+      .returning();
+    return created;
+  }
+
+  async deleteAiDocumentEmbeddingByDocumentId(documentId: number): Promise<boolean> {
+    const result = await db
+      .delete(aiDocumentEmbeddings)
+      .where(eq(aiDocumentEmbeddings.documentId, documentId))
+      .returning();
+    return result.length > 0;
+  }
+
+  async getAiDocumentEmbeddingsWithDocuments(): Promise<Array<{ embedding: AiDocumentEmbedding; document: AiDocument }>> {
+    const rows = await db
+      .select({ embedding: aiDocumentEmbeddings, document: aiDocuments })
+      .from(aiDocumentEmbeddings)
+      .leftJoin(aiDocuments, eq(aiDocumentEmbeddings.documentId, aiDocuments.id));
+    return rows.filter((row) => row.document !== null) as Array<{
+      embedding: AiDocumentEmbedding;
+      document: AiDocument;
+    }>;
   }
 
   async getUnansweredQuestions(): Promise<UnansweredQuestion[]> {

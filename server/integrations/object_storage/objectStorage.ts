@@ -1,4 +1,4 @@
-import { Storage, File } from "@google-cloud/storage";
+import { Storage, type StorageOptions, File } from "@google-cloud/storage";
 import { Response } from "express";
 import { randomUUID } from "crypto";
 import {
@@ -9,26 +9,27 @@ import {
   setObjectAclPolicy,
 } from "./objectAcl";
 
-const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
+function buildStorageOptions(): StorageOptions {
+  const options: StorageOptions = {};
+  const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT;
+  if (projectId) {
+    options.projectId = projectId;
+  }
 
-// The object storage client is used to interact with the object storage service.
-export const objectStorageClient = new Storage({
-  credentials: {
-    audience: "replit",
-    subject_token_type: "access_token",
-    token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
-    type: "external_account",
-    credential_source: {
-      url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
-      format: {
-        type: "json",
-        subject_token_field_name: "access_token",
-      },
-    },
-    universe_domain: "googleapis.com",
-  },
-  projectId: "",
-});
+  const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+  if (credentialsJson) {
+    try {
+      options.credentials = JSON.parse(credentialsJson);
+    } catch (error) {
+      console.warn("Invalid GOOGLE_APPLICATION_CREDENTIALS_JSON; using default credentials.", error);
+    }
+  }
+
+  return options;
+}
+
+// The object storage client is used to interact with Google Cloud Storage.
+export const objectStorageClient = new Storage(buildStorageOptions());
 
 export class ObjectNotFoundError extends Error {
   constructor() {
@@ -55,8 +56,8 @@ export class ObjectStorageService {
     );
     if (paths.length === 0) {
       throw new Error(
-        "PUBLIC_OBJECT_SEARCH_PATHS not set. Create a bucket in 'Object Storage' " +
-          "tool and set PUBLIC_OBJECT_SEARCH_PATHS env var (comma-separated paths)."
+        "PUBLIC_OBJECT_SEARCH_PATHS not set. Configure it with comma-separated GCS paths " +
+          "like /bucket-name/public."
       );
     }
     return paths;
@@ -67,8 +68,7 @@ export class ObjectStorageService {
     const dir = process.env.PRIVATE_OBJECT_DIR || "";
     if (!dir) {
       throw new Error(
-        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' " +
-          "tool and set PRIVATE_OBJECT_DIR env var."
+        "PRIVATE_OBJECT_DIR not set. Configure it with a GCS path like /bucket-name/private."
       );
     }
     return dir;
@@ -135,8 +135,7 @@ export class ObjectStorageService {
     const privateObjectDir = this.getPrivateObjectDir();
     if (!privateObjectDir) {
       throw new Error(
-        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' " +
-          "tool and set PRIVATE_OBJECT_DIR env var."
+        "PRIVATE_OBJECT_DIR not set. Configure it with a GCS path like /bucket-name/private."
       );
     }
 
@@ -271,30 +270,13 @@ async function signObjectURL({
   method: "GET" | "PUT" | "DELETE" | "HEAD";
   ttlSec: number;
 }): Promise<string> {
-  const request = {
-    bucket_name: bucketName,
-    object_name: objectName,
-    method,
-    expires_at: new Date(Date.now() + ttlSec * 1000).toISOString(),
-  };
-  const response = await fetch(
-    `${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(request),
-    }
-  );
-  if (!response.ok) {
-    throw new Error(
-      `Failed to sign object URL, errorcode: ${response.status}, ` +
-        `make sure you're running on Replit`
-    );
-  }
-
-  const { signed_url: signedURL } = await response.json();
+  const bucket = objectStorageClient.bucket(bucketName);
+  const file = bucket.file(objectName);
+  const action = method === "PUT" ? "write" : method === "DELETE" ? "delete" : "read";
+  const [signedURL] = await file.getSignedUrl({
+    action,
+    expires: Date.now() + ttlSec * 1000,
+  });
   return signedURL;
 }
 

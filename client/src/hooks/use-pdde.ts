@@ -30,6 +30,7 @@ export interface PddeSituacaoEex {
 
 export interface PddeDestinacao {
   destinacao: string;
+  acao?: string | null;
   devido_custeio: number | null;
   devido_capital: number | null;
   devido_total: number | null;

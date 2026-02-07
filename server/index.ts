@@ -1,8 +1,11 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { ensureAiDocumentsCreatedAtColumn, ensureAiDocumentsLinkColumn } from "./db";
 import { seedDatabase } from "./seed";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { startMecNormasScheduler } from "./integrations/mecnormas";
 
 const app = express();
 const httpServer = createServer(app);
@@ -15,14 +18,14 @@ declare module "http" {
 
 app.use(
   express.json({
-    limit: "50mb",
+    limit: "200mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: "200mb" }));
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -62,7 +65,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  ensureAiDocumentsCreatedAtColumn();
+  ensureAiDocumentsLinkColumn();
   await registerRoutes(httpServer, app);
+  startMecNormasScheduler();
 
   // Seed desabilitado - para popular novamente: npm run db:seed
   // try {

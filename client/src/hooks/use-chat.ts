@@ -62,15 +62,6 @@ export function useSendMessage() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ conversationId, content }: { conversationId: number, content: string }) => {
-      // NOTE: The server uses SSE for responses, but for basic implementation we'll assume it returns or we poll
-      // For this implementation, we'll trigger the POST which initiates the stream
-      // Handling SSE in a simple hook is complex, so we'll rely on the server saving messages and polling to fetch updates
-      // OR simpler: wait for the request to complete if it wasn't streaming-only. 
-      // Given the implementation notes specified "Text based chat UI", we will use the standard fetch.
-      // The provided server route sends SSE. 
-      // To properly handle SSE without a complex streaming hook for now:
-      // We will perform the fetch and consume the stream to completion, then invalidate.
-      
       const res = await fetch(`/api/conversations/${conversationId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -79,13 +70,42 @@ export function useSendMessage() {
       
       if (!res.ok) throw new Error("Failed to send message");
       
-      // Consume the stream so the browser doesn't keep it pending
-      const reader = res.body?.getReader();
-      if (reader) {
+      // Properly consume the SSE stream to completion
+      if (!res.body) throw new Error("No response body");
+      
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      
+      try {
         while (true) {
-          const { done } = await reader.read();
+          const { done, value } = await reader.read();
+          
           if (done) break;
+          
+          buffer += decoder.decode(value, { stream: true });
+          
+          // Process complete SSE messages
+          const lines = buffer.split("\n");
+          buffer = lines[lines.length - 1]; // Keep incomplete line in buffer
+          
+          for (let i = 0; i < lines.length - 1; i++) {
+            const line = lines[i];
+            if (line.startsWith("data: ")) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.done) {
+                  // SSE stream is complete
+                  return true;
+                }
+              } catch (e) {
+                // Ignore JSON parse errors for malformed SSE data
+              }
+            }
+          }
         }
+      } finally {
+        reader.releaseLock();
       }
       
       return true;

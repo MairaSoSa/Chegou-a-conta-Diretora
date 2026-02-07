@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, GraduationCap, MessagesSquare, Wrench, Menu, X, BookOpen, Building2, SlidersHorizontal } from "lucide-react";
+import { LayoutDashboard, GraduationCap, MessagesSquare, Wrench, Menu, BookOpen, Building2, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertSchoolSchema, insertProgramSchema, insertToolSchema, insertGlossarySchema, insertTrilhaUnitSchema, schools, programs, tools, programDetails, glossary, trilhaUnits } from './schema';
+import { schools, programs, tools, programDetails, glossary, trilhaUnits } from './schema';
 
 export const api = {
   schools: {

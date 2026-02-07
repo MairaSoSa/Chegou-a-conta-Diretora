@@ -193,4 +193,157 @@ export async function seedDatabase() {
       category: "Financeiro",
     });
   }
+
+  // Seed AI Documents for better chat responses
+  const aiDocs = await storage.getAiDocuments();
+  if (aiDocs.length < 5) {  // Changed from === 0 to add new docs
+    // Only add if not already exists
+    const existingTitles = aiDocs.map(d => d.title);
+    
+    if (!existingTitles.includes("O que é o PDDE")) {
+      await storage.createAiDocument({
+      title: "O que é o PDDE",
+      content: `O PDDE (Programa Dinheiro Direto na Escola) é um programa do governo federal que transfere recursos financeiros diretamente para as escolas públicas de educação básica. O objetivo é ajudar a escola a custear suas despesas de manutenção e desenvolvimento do ensino.
+
+O dinheiro é depositado na conta bancária da Unidade Executora da escola (APM ou Conselho Escolar). Os valores são calculados com base no número de matrículas registradas no Censo Escolar do ano anterior.
+
+O PDDE pode ser usado para:
+- Manutenção e pequenos reparos na estrutura física da escola
+- Aquisição de materiais de consumo necessários ao funcionamento da escola  
+- Compra de materiais permanentes (equipamentos, mobiliário)
+- Desenvolvimento de atividades educacionais
+
+O PDDE é dividido em duas categorias de despesa:
+- Custeio (70%): para materiais de consumo e serviços
+- Capital (30%): para bens permanentes (equipamentos, móveis)
+
+A prestação de contas do PDDE deve ser feita anualmente através do sistema PDDEWeb, disponível no site do FNDE.`,
+      });
+    }
+
+    if (!existingTitles.includes("Como fazer a prestação de contas do PDDE")) {
+      await storage.createAiDocument({
+      title: "Como fazer a prestação de contas do PDDE",
+      content: `A prestação de contas do PDDE é obrigatória e deve ser feita anualmente através do sistema PDDEWeb (https://www.fnde.gov.br/pdde).
+
+Documentos necessários:
+1. Plano de Aplicação aprovado pelo Conselho Escolar
+2. Notas fiscais de todas as compras realizadas
+3. Comprovantes de pagamento (transferências bancárias, recibos)
+4. Atas de reunião do Conselho Escolar aprovando as compras
+5. Extrato bancário da conta da UEx
+6. Demonstrativo da execução da receita e despesa
+7. Conciliação bancária
+8. Relação de bens adquiridos ou produzidos (quando houver)
+
+Prazos:
+- A prestação de contas deve ser apresentada até 31 de dezembro do ano seguinte ao repasse
+- O não envio da prestação de contas no prazo impede novos repasses
+
+Importante:
+- Todas as despesas devem estar dentro do Plano de Aplicação aprovado
+- Não misture as categorias: custeio e capital têm limites próprios
+- Guarde cópia de todos os documentos por pelo menos 20 anos
+- O Conselho Escolar deve aprovar a prestação de contas antes do envio`,
+      });
+    }
+
+    if (!existingTitles.includes("O que pode e não pode comprar com o PDDE")) {
+      await storage.createAiDocument({
+      title: "O que pode e não pode comprar com o PDDE",
+      content: `Com o PDDE você PODE comprar:
+
+Materiais de Custeio (70% do valor):
+- Material de limpeza e higiene
+- Material de expediente (papel, canetas, grampos)
+- Material didático e pedagógico
+- Pequenos reparos e manutenção
+- Serviços de manutenção (eletricista, encanador, pintor)
+
+Materiais de Capital (30% do valor):
+- Equipamentos e aparelhos (ventiladores, bebedouros)
+- Mobiliário escolar (carteiras, mesas, armários)
+- Computadores e equipamentos de informática
+- Eletrodomésticos para uso da escola
+- Bens permanentes em geral
+
+Você NÃO PODE comprar com o PDDE:
+- Pagamento de salários, gratificações ou qualquer tipo de remuneração a pessoal
+- Combustível para veículos
+- Festividades e confraternizações
+- Pagamento de contas de consumo (água, luz, telefone) - essas são responsabilidade do mantenedor
+- Taxa de administração ou gestão
+- Multas ou juros por atraso de pagamento
+
+Lembre-se: toda compra precisa estar justificada no Plano de Aplicação e aprovada pelo Conselho Escolar!`,
+      });
+    }
+
+    if (!existingTitles.includes("Perguntas Frequentes sobre Compras com PDDE")) {
+      await storage.createAiDocument({
+      title: "Perguntas Frequentes sobre Compras com PDDE",
+      content: `PERGUNTAS FREQUENTES - O QUE POSSO OU NÃO POSSO COMPRAR COM O PDDE
+
+Posso comprar material de limpeza?
+SIM! Material de limpeza e higiene fazem parte do custeio (70% do valor). Você pode comprar sabão, detergente, desinfetante, papel higiênico, álcool, etc.
+
+Posso comprar papel sulfite, canetas e grampos?
+SIM! Material de expediente está permitido como custeio. Pode comprar papel, canetas, lápis, grampos, clipes, cola, fita adesiva, etc.
+
+Posso comprar carteiras e mesas para os alunos?
+SIM! Mobiliário escolar é considerado capital (30% do valor). Pode comprar carteiras, mesas, cadeiras, armários, estantes, arquivos, etc.
+
+Posso comprar ventiladores e bebedouros?
+SIM! Equipamentos e aparelhos fazem parte do capital. Pode comprar ventiladores, bebedouros, geladeiras, fogões, micro-ondas para uso da escola.
+
+Posso comprar computadores e impressoras?
+SIM! Equipamentos de informática são permitidos como capital. Pode comprar computadores, notebooks, impressoras, projetores, tablets para uso pedagógico.
+
+Posso contratar eletricista ou encanador?
+SIM! Serviços de manutenção são permitidos como custeio. Pode contratar eletricista, encanador, pintor, pedreiro para pequenos reparos.
+
+Posso pagar contas de luz e água?
+NÃO! Contas de consumo (luz, água, telefone, internet) são responsabilidade do município/estado. O PDDE não pode ser usado para isso.
+
+Posso pagar professor ou funcionário?
+NÃO! Pagamento de salários, gratificações ou qualquer remuneração a pessoal é proibido. O PDDE não paga pessoas.
+
+Posso comprar combustível para o ônibus escolar?
+NÃO! Combustível para veículos não pode ser comprado com PDDE, mesmo para transporte escolar.
+
+Posso fazer festa junina com o dinheiro?
+NÃO! Festividades, confraternizações e eventos sociais não podem usar recursos do PDDE. O foco é manutenção e desenvolvimento educacional.`,
+      });
+    }
+
+    if (!existingTitles.includes("Passo a passo para usar o PDDE corretamente")) {
+      await storage.createAiDocument({
+      title: "Passo a passo para usar o PDDE corretamente",
+      content: `COMO USAR O DINHEIRO DO PDDE NA PRÁTICA
+
+1. PLANEJE PRIMEIRO
+Antes de gastar, faça uma reunião com o Conselho Escolar e liste o que a escola mais precisa. Organize por prioridade: o que é mais urgente?
+
+2. RESPEITE AS CATEGORIAS
+Lembre-se: 70% é custeio (coisas que gastam) e 30% é capital (coisas que duram). Não pode inverter!
+
+3. PESQUISE PREÇOS
+Pegue pelo menos 3 orçamentos de fornecedores diferentes. Isso é obrigatório! Escolha o melhor custo-benefício.
+
+4. APROVE NO CONSELHO
+O Conselho Escolar precisa aprovar as compras em reunião. Faça ata da reunião e guarde!
+
+5. COMPRE E GUARDE NOTA FISCAL
+Todas as compras precisam de nota fiscal em nome da UEx (APM ou Conselho). Sem nota fiscal = problema na prestação de contas.
+
+6. PAGUE E REGISTRE
+Pague preferencialmente por transferência bancária. Guarde todos os comprovantes de pagamento.
+
+7. PRESTE CONTAS
+Todo ano você precisa prestar contas no sistema PDDEWeb. Organize todos os documentos: notas, recibos, atas, extratos.
+
+DICA DE OURO: Organize uma pasta (física e digital) com TODOS os documentos desde o início. Isso vai facilitar muito na hora da prestação de contas!`,
+      });
+    }
+  }
 }

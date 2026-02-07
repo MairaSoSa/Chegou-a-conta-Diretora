@@ -1,14 +1,16 @@
 import type { Express, Request, Response, NextFunction } from "express";
-import { createServer, type Server } from "http";
+import type { Server } from "http";
 import crypto from "crypto";
 import express from "express";
 import Papa from "papaparse";
-import { PDFParse, VerbosityLevel } from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
-import { registerChatRoutes } from "./replit_integrations/chat";
-import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { registerChatRoutes } from "./integrations/chat";
+import { registerObjectStorageRoutes } from "./integrations/object_storage";
+import { fetchMecNormasFilters, syncMecNormas } from "./integrations/mecnormas";
+import { backfillAiDocumentEmbeddings } from "./integrations/embeddings";
 import { getPddeInfo } from "./scraper/pdde";
 import { 
   localizarPrestacoesPorCnpj,
@@ -31,6 +33,31 @@ const settingsEntrySchema = z.object({
 const csvUploadSchema = z.object({
   csvData: z.string().min(1, "Dados CSV não fornecidos"),
   label: z.string().optional(),
+});
+
+const aiDocFromUrlSchema = z.object({
+  title: z.string().min(1),
+  url: z.string().url(),
+  category: z.string().optional(),
+  authHeaderName: z.string().optional(),
+  authHeaderValue: z.string().optional(),
+});
+
+const mecNormasSyncSchema = z.object({
+  buscaTextual: z.string().optional(),
+  exata: z.boolean().optional(),
+  tipo: z.union([z.number(), z.string()]).optional(),
+  assunto: z.union([z.number(), z.string()]).optional(),
+  unidade: z.union([z.number(), z.string()]).optional(),
+  ordenacao: z.union([z.number(), z.string()]).optional(),
+  pageSize: z.number().int().min(1).max(200).optional(),
+  currentPage: z.number().int().min(1).optional(),
+  maxPages: z.number().int().min(1).max(500).optional(),
+});
+
+const embeddingsBackfillSchema = z.object({
+  category: z.string().optional(),
+  limit: z.number().int().min(1).max(5000).optional(),
 });
 
 const VALID_DASHBOARD_CATEGORIES = [
@@ -58,6 +85,12 @@ function verifyToken(token: string): boolean {
   return Date.now() - createdAt < TOKEN_EXPIRY_MS;
 }
 
+function getParam(params: Record<string, string | string[] | undefined>, key: string): string {
+  const value = params[key];
+  if (Array.isArray(value)) return value[0] || "";
+  return value || "";
+}
+
 function adminAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -81,15 +114,27 @@ export async function registerRoutes(
   app.post(
     "/api/admin/extract-text",
     adminAuth,
-    express.raw({ type: ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword", "application/octet-stream"], limit: "20mb" }),
+    (req, _res, next) => {
+      console.log("[extract-text] upload", {
+        contentType: req.headers["content-type"],
+        contentLength: req.headers["content-length"],
+        fileName: req.headers["x-file-name"],
+      });
+      next();
+    },
+    express.raw({ type: ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword", "application/octet-stream"], limit: "500mb" }),
     async (req: Request, res: Response) => {
       try {
         const contentType = req.headers["content-type"] || "";
         const fileName = (req.headers["x-file-name"] as string) || "documento";
         const fileExt = fileName.split(".").pop()?.toLowerCase() || "";
-        const buffer = Buffer.from(req.body as Buffer);
+        if (!Buffer.isBuffer(req.body)) {
+          return res.status(400).json({ message: "Corpo do arquivo inválido ou formato não suportado." });
+        }
 
-        if (!buffer || buffer.length === 0) {
+        const buffer = req.body as Buffer;
+
+        if (buffer.length === 0) {
           return res.status(400).json({ message: "Arquivo vazio ou formato não suportado." });
         }
 
@@ -98,8 +143,7 @@ export async function registerRoutes(
         const isWord = contentType.includes("wordprocessingml") || contentType.includes("msword") || ["docx", "doc"].includes(fileExt);
 
         if (isPdf) {
-          const parser = new PDFParse({ data: buffer, verbosity: VerbosityLevel.ERRORS });
-          await parser.load(buffer);
+          const parser = new PDFParse({ data: buffer });
           const result = await parser.getText();
           text = result.text;
         } else if (isWord) {
@@ -131,7 +175,8 @@ export async function registerRoutes(
   });
 
   app.get(api.schools.get.path, async (req, res) => {
-    const school = await storage.getSchoolByInep(req.params.inep);
+    const inep = getParam(req.params, "inep");
+    const school = await storage.getSchoolByInep(inep);
     if (!school) {
       return res.status(404).json({ message: "School not found" });
     }
@@ -141,7 +186,7 @@ export async function registerRoutes(
   // === PUBLIC: PDDE INFO (FNDE Scraper) ===
   app.get("/api/pdde/:inep", async (req, res) => {
     try {
-      const inep = req.params.inep;
+      const inep = getParam(req.params, "inep");
       const ano = parseInt(req.query.ano as string) || new Date().getFullYear();
       if (!/^\d{8}$/.test(inep)) {
         return res.status(400).json({ ok: false, error: "Código INEP deve ter 8 dígitos" });
@@ -206,13 +251,13 @@ export async function registerRoutes(
   });
 
   // === PUBLIC: PROGRAMS ===
-  app.get(api.programs.list.path, async (req, res) => {
+  app.get(api.programs.list.path, async (_req, res) => {
     const programs = await storage.getPrograms();
     res.json(programs);
   });
 
   app.get(api.programs.get.path, async (req, res) => {
-    const code = req.params.code;
+    const code = getParam(req.params, "code");
     const program = await storage.getProgramByCode(code);
     if (!program) {
       return res.status(404).json({ message: "Program not found" });
@@ -229,19 +274,20 @@ export async function registerRoutes(
   });
 
   // === PUBLIC: GLOSSARY ===
-  app.get(api.glossary.list.path, async (req, res) => {
+  app.get(api.glossary.list.path, async (_req, res) => {
     const items = await storage.getGlossary();
     res.json(items);
   });
 
   // === PUBLIC: TRILHA ===
-  app.get(api.trilha.list.path, async (req, res) => {
+  app.get(api.trilha.list.path, async (_req, res) => {
     const units = await storage.getTrilhaUnits();
     res.json(units);
   });
 
   app.get(api.trilha.get.path, async (req, res) => {
-    const unit = await storage.getTrilhaUnitByUnitId(req.params.unitId);
+    const unitId = getParam(req.params, "unitId");
+    const unit = await storage.getTrilhaUnitByUnitId(unitId);
     if (!unit) {
       return res.status(404).json({ message: "Unit not found" });
     }
@@ -259,6 +305,14 @@ export async function registerRoutes(
     }
   });
 
+  // === DEBUG: OPENAI ===
+  app.get("/api/debug/openai", (_req, res) => {
+    res.json({
+      configured: !!process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+    });
+  });
+
   // === ADMIN: GLOSSARY ===
   app.post("/api/admin/glossary", adminAuth, async (req, res) => {
     try {
@@ -273,7 +327,7 @@ export async function registerRoutes(
   app.put("/api/admin/glossary/:id", adminAuth, async (req, res) => {
     try {
       const data = insertGlossarySchema.partial().parse(req.body);
-      const id = parseInt(req.params.id);
+      const id = parseInt(getParam(req.params, "id"), 10);
       const updated = await storage.updateGlossaryItem(id, data);
       if (!updated) return res.status(404).json({ message: "Item não encontrado" });
       res.json(updated);
@@ -283,7 +337,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/admin/glossary/:id", adminAuth, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(getParam(req.params, "id"), 10);
     const deleted = await storage.deleteGlossaryItem(id);
     if (!deleted) return res.status(404).json({ message: "Item não encontrado" });
     res.json({ success: true });
@@ -303,7 +357,7 @@ export async function registerRoutes(
   app.put("/api/admin/tools/:id", adminAuth, async (req, res) => {
     try {
       const data = insertToolSchema.partial().parse(req.body);
-      const id = parseInt(req.params.id);
+      const id = parseInt(getParam(req.params, "id"), 10);
       const updated = await storage.updateTool(id, data);
       if (!updated) return res.status(404).json({ message: "Ferramenta não encontrada" });
       res.json(updated);
@@ -313,7 +367,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/admin/tools/:id", adminAuth, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(getParam(req.params, "id"), 10);
     const deleted = await storage.deleteTool(id);
     if (!deleted) return res.status(404).json({ message: "Ferramenta não encontrada" });
     res.json({ success: true });
@@ -333,7 +387,7 @@ export async function registerRoutes(
   app.put("/api/admin/trilha/:id", adminAuth, async (req, res) => {
     try {
       const data = insertTrilhaUnitSchema.partial().parse(req.body);
-      const id = parseInt(req.params.id);
+      const id = parseInt(getParam(req.params, "id"), 10);
       const updated = await storage.updateTrilhaUnit(id, data);
       if (!updated) return res.status(404).json({ message: "Unidade não encontrada" });
       res.json(updated);
@@ -343,7 +397,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/admin/trilha/:id", adminAuth, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(getParam(req.params, "id"), 10);
     const deleted = await storage.deleteTrilhaUnit(id);
     if (!deleted) return res.status(404).json({ message: "Unidade não encontrada" });
     res.json({ success: true });
@@ -363,7 +417,7 @@ export async function registerRoutes(
   app.put("/api/admin/programs/:id", adminAuth, async (req, res) => {
     try {
       const data = insertProgramSchema.partial().parse(req.body);
-      const id = parseInt(req.params.id);
+      const id = parseInt(getParam(req.params, "id"), 10);
       const updated = await storage.updateProgram(id, data);
       if (!updated) return res.status(404).json({ message: "Programa não encontrado" });
       res.json(updated);
@@ -373,7 +427,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/admin/programs/:id", adminAuth, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(getParam(req.params, "id"), 10);
     const deleted = await storage.deleteProgram(id);
     if (!deleted) return res.status(404).json({ message: "Programa não encontrado" });
     res.json({ success: true });
@@ -393,7 +447,7 @@ export async function registerRoutes(
   app.put("/api/admin/program-details/:id", adminAuth, async (req, res) => {
     try {
       const data = insertProgramDetailSchema.partial().parse(req.body);
-      const id = parseInt(req.params.id);
+      const id = parseInt(getParam(req.params, "id"), 10);
       const updated = await storage.updateProgramDetail(id, data);
       if (!updated) return res.status(404).json({ message: "Detalhe não encontrado" });
       res.json(updated);
@@ -403,7 +457,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/admin/program-details/:id", adminAuth, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(getParam(req.params, "id"), 10);
     const deleted = await storage.deleteProgramDetail(id);
     if (!deleted) return res.status(404).json({ message: "Detalhe não encontrado" });
     res.json({ success: true });
@@ -439,7 +493,8 @@ export async function registerRoutes(
   });
 
   app.get("/api/dashboard/datasets/:category", async (req, res) => {
-    const dataset = await storage.getDashboardDatasetByCategory(req.params.category as string);
+    const category = getParam(req.params, "category");
+    const dataset = await storage.getDashboardDatasetByCategory(category);
     if (!dataset) return res.status(404).json({ message: "Dados não encontrados" });
     res.json(dataset);
   });
@@ -462,7 +517,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/dashboard/template/:category", adminAuth, async (req, res) => {
-    const category = req.params.category as string;
+    const category = getParam(req.params, "category");
     const config = DASHBOARD_CATEGORIES[category];
     if (!config) return res.status(404).json({ message: "Categoria não encontrada" });
     const csv = Papa.unparse({ fields: config.columns, data: [] });
@@ -473,7 +528,7 @@ export async function registerRoutes(
 
   app.post("/api/admin/dashboard/upload/:category", adminAuth, async (req, res) => {
     try {
-      const category = req.params.category as string;
+      const category = getParam(req.params, "category");
       if (!VALID_DASHBOARD_CATEGORIES.includes(category as any)) {
         return res.status(400).json({ message: "Categoria inválida" });
       }
@@ -507,7 +562,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/admin/dashboard/:id", adminAuth, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(getParam(req.params, "id"), 10);
     const deleted = await storage.deleteDashboardDataset(id);
     if (!deleted) return res.status(404).json({ message: "Dataset não encontrado" });
     res.json({ success: true });
@@ -517,6 +572,16 @@ export async function registerRoutes(
   app.get("/api/ai-documents", async (_req, res) => {
     const docs = await storage.getAiDocuments();
     res.json(docs);
+  });
+
+  // === PUBLIC: MEC NORMAS FILTERS ===
+  app.get("/api/mecnormas/filters", async (_req, res) => {
+    try {
+      const filters = await fetchMecNormasFilters();
+      res.json(filters);
+    } catch (e: any) {
+      res.status(500).json({ message: e.message || "Erro ao buscar filtros do MEC Normas" });
+    }
   });
 
   // === ADMIN: AI DOCUMENTS ===
@@ -530,10 +595,60 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/ai-documents/embeddings/backfill", adminAuth, async (req, res) => {
+    try {
+      const payload = embeddingsBackfillSchema.parse(req.body || {});
+      const result = await backfillAiDocumentEmbeddings(payload);
+      res.json(result);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message || "Erro ao gerar embeddings" });
+    }
+  });
+
+  app.post("/api/admin/ai-documents/fetch-url", adminAuth, async (req, res) => {
+    try {
+      const data = aiDocFromUrlSchema.parse(req.body);
+      const headers: Record<string, string> = {};
+      if (data.authHeaderName && data.authHeaderValue) {
+        headers[data.authHeaderName] = data.authHeaderValue;
+      }
+
+      const response = await fetch(data.url, { headers });
+      if (!response.ok) {
+        return res.status(400).json({ message: `Falha ao buscar URL (${response.status})` });
+      }
+
+      const contentType = response.headers.get("content-type") || "";
+      let content = "";
+      if (contentType.includes("application/json")) {
+        const json = await response.json();
+        content = JSON.stringify(json, null, 2);
+      } else {
+        content = await response.text();
+      }
+
+      if (!content.trim()) {
+        return res.status(422).json({ message: "Conteúdo vazio ao buscar URL" });
+      }
+
+      const doc = await storage.createAiDocument({
+        title: data.title,
+        content,
+        category: data.category,
+        link: data.url,
+        sortOrder: 0,
+      });
+
+      res.json(doc);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
   app.put("/api/admin/ai-documents/:id", adminAuth, async (req, res) => {
     try {
       const data = insertAiDocumentSchema.partial().parse(req.body);
-      const id = parseInt(req.params.id);
+      const id = parseInt(getParam(req.params, "id"), 10);
       const updated = await storage.updateAiDocument(id, data);
       if (!updated) return res.status(404).json({ message: "Documento não encontrado" });
       res.json(updated);
@@ -543,10 +658,21 @@ export async function registerRoutes(
   });
 
   app.delete("/api/admin/ai-documents/:id", adminAuth, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(getParam(req.params, "id"), 10);
     const deleted = await storage.deleteAiDocument(id);
     if (!deleted) return res.status(404).json({ message: "Documento não encontrado" });
     res.json({ success: true });
+  });
+
+  // === ADMIN: MEC NORMAS SYNC ===
+  app.post("/api/admin/mecnormas/sync", adminAuth, async (req, res) => {
+    try {
+      const options = mecNormasSyncSchema.parse(req.body || {});
+      const result = await syncMecNormas(options);
+      res.json(result);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message || "Erro ao sincronizar MEC Normas" });
+    }
   });
 
   app.get("/api/admin/unanswered-questions", adminAuth, async (_req, res) => {
@@ -555,7 +681,7 @@ export async function registerRoutes(
   });
 
   app.patch("/api/admin/unanswered-questions/:id", adminAuth, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(getParam(req.params, "id"), 10);
     const { status } = req.body;
     const updated = await storage.updateUnansweredQuestionStatus(id, status);
     if (!updated) return res.status(404).json({ message: "Pergunta não encontrada" });
@@ -563,7 +689,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/admin/unanswered-questions/:id", adminAuth, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(getParam(req.params, "id"), 10);
     const deleted = await storage.deleteUnansweredQuestion(id);
     if (!deleted) return res.status(404).json({ message: "Pergunta não encontrada" });
     res.json({ success: true });
