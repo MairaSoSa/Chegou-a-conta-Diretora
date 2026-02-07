@@ -64,12 +64,13 @@ app.use((req, res, next) => {
 (async () => {
   await registerRoutes(httpServer, app);
 
-  try {
-    await seedDatabase();
-    log("Database seeded successfully");
-  } catch (e) {
-    log(`Database seeding error: ${e}`);
-  }
+  // Seed desabilitado - para popular novamente: npm run db:seed
+  // try {
+  //   await seedDatabase();
+  //   log("Database seeded successfully");
+  // } catch (e) {
+  //   log(`Database seeding error: ${e}`);
+  // }
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

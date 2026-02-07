@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { DashboardDataset } from "@shared/schema";
 import { Navigation } from "@/components/Navigation";
@@ -16,10 +16,12 @@ import {
 import { useSchoolSearch, useSchool } from "@/hooks/use-schools";
 import { usePddeInfo } from "@/hooks/use-pdde";
 import type { PddeInfo } from "@/hooks/use-pdde";
+import { useSigpcLocalizar, type SigpcPrestacaoListItem } from "@/hooks/use-sigpc";
+import { SigpcDetailModal } from "@/components/SigpcDetailModal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, BarChart, Bar, LineChart, Line } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 
 const MESES_NOMES = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -51,10 +53,16 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'resumido' | 'completo'>('resumido');
   const [pddeAno, setPddeAno] = useState(new Date().getFullYear() - 1);
+  const [selectedPrestacao, setSelectedPrestacao] = useState<SigpcPrestacaoListItem | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   
   const { data: searchResults } = useSchoolSearch(searchQuery);
   const { data: school } = useSchool(selectedInep || "");
   const { data: pddeData, isLoading: pddeLoading, isFetching: pddeFetching } = usePddeInfo(selectedInep, pddeAno);
+
+  // Extrai CNPJ da UEx para consultar prestações de contas
+  const cnpjUex = pddeData?.ok && pddeData.uex?.cnpj ? pddeData.uex.cnpj : null;
+  const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(cnpjUex || undefined, pddeAno);
 
   const pddeEnrollTotal = pddeData?.ok
     ? pddeData.matriculas_total
@@ -115,6 +123,58 @@ export default function Dashboard() {
   const lastIdeb = idebData?.[idebData.length - 1];
   const ultimoPrestacao = prestacaoData?.[prestacaoData.length - 1];
   const defasagemCiclos = ultimoPrestacao ? 2025 - parseInt(ultimoPrestacao.exercicio) : null;
+
+  // Processa dados do SIGPC
+  const sigpcProcessado = useMemo(() => {
+    if (!sigpcData?.ok || !sigpcData.prestacoes || sigpcData.prestacoes.length === 0) {
+      return null;
+    }
+
+    const prestacoes = sigpcData.prestacoes;
+    const totalPrestacoes = prestacoes.length;
+    const valorTotal = prestacoes.reduce((acc, pc) => acc + (pc.valorConcessao || 0), 0);
+
+    const statusCount = {
+      aprovado: prestacoes.filter(pc =>
+        pc.situacaoNome?.toLowerCase().includes('aprovad') ||
+        pc.situacaoNome?.toLowerCase().includes('regular')
+      ).length,
+      pendente: prestacoes.filter(pc =>
+        pc.situacaoNome?.toLowerCase().includes('pendent') ||
+        pc.situacaoNome?.toLowerCase().includes('análise') ||
+        pc.situacaoNome?.toLowerCase().includes('aguardando')
+      ).length,
+      irregular: prestacoes.filter(pc =>
+        pc.situacaoNome?.toLowerCase().includes('irregular') ||
+        pc.situacaoNome?.toLowerCase().includes('rejeit')
+      ).length,
+    };
+
+    const maiorPendente = prestacoes.find(pc =>
+      pc.situacaoNome?.toLowerCase().includes('pendent') ||
+      pc.situacaoNome?.toLowerCase().includes('análise') ||
+      pc.situacaoNome?.toLowerCase().includes('aguardando')
+    );
+
+    const porAno = prestacoes.reduce((acc, pc) => {
+      const ano = pc.anoConcessao || 'Sem ano';
+      if (!acc[ano]) acc[ano] = [];
+      acc[ano].push(pc);
+      return acc;
+    }, {} as Record<string, typeof prestacoes>);
+
+    const anos = Object.keys(porAno).sort((a, b) => Number(b) - Number(a));
+
+    return {
+      prestacoes,
+      totalPrestacoes,
+      valorTotal,
+      statusCount,
+      maiorPendente,
+      porAno,
+      anos,
+    };
+  }, [sigpcData]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -410,6 +470,59 @@ export default function Dashboard() {
                   </Button>
                 </CardContent>
               </Card>
+            )}
+
+            {viewMode === 'resumido' && sigpcProcessado && (
+              <>
+                <Card className="card-clay border-sky-200 bg-sky-50/30">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2">
+                      <ClipboardCheck className="w-5 h-5 text-sky-600" />
+                      Prestações de Contas
+                    </CardTitle>
+                    <CardDescription>Situação no SIGPC/FNDE</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="text-center p-3 rounded-lg bg-green-50 border border-green-200">
+                        <p className="text-2xl font-bold text-green-900">{sigpcProcessado.statusCount.aprovado}</p>
+                        <p className="text-xs text-green-700 mt-1">✓ Aprovadas</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-amber-50 border border-amber-200">
+                        <p className="text-2xl font-bold text-amber-900">{sigpcProcessado.statusCount.pendente}</p>
+                        <p className="text-xs text-amber-700 mt-1">⏱ Pendentes</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-red-50 border border-red-200">
+                        <p className="text-2xl font-bold text-red-900">{sigpcProcessado.statusCount.irregular}</p>
+                        <p className="text-xs text-red-700 mt-1">⚠ Irregulares</p>
+                      </div>
+                    </div>
+
+                    {sigpcProcessado.maiorPendente && (
+                      <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 mb-3">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-amber-900">Atenção necessária</p>
+                            <p className="text-xs text-amber-700 mt-1 truncate">
+                              {sigpcProcessado.maiorPendente.programaNome} ({sigpcProcessado.maiorPendente.anoConcessao}) está pendente
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => setViewMode('completo')}
+                    >
+                      Ver todas as prestações
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </>
             )}
 
             {viewMode === 'resumido' && (
@@ -789,6 +902,7 @@ export default function Dashboard() {
                                   <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Pago Custeio</th>
                                   <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Pago Capital</th>
                                   <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Total Pago</th>
+                                  <th className="text-center py-2 px-2 text-xs text-muted-foreground font-medium whitespace-nowrap">Data Pgto</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -804,6 +918,9 @@ export default function Dashboard() {
                                     </td>
                                     <td className="py-2 px-2 text-right font-mono text-xs font-medium">
                                       {dest.pago_total != null ? `R$ ${dest.pago_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+                                    </td>
+                                    <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">
+                                      {dest.data_ordem_pgto || '—'}
                                     </td>
                                   </tr>
                                 ))}
@@ -863,6 +980,251 @@ export default function Dashboard() {
                       <p className="text-xs text-muted-foreground mt-1">Tente outro ano ou verifique o código INEP.</p>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            )}
+
+            {viewMode === 'completo' && sigpcProcessado && (
+              <>
+                <Card className="card-clay">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2">
+                      <ClipboardCheck className="w-5 h-5 text-sky-600" />
+                      Prestações de Contas
+                    </CardTitle>
+                    <CardDescription>
+                      Dados do Sistema SIGPC/FNDE • CNPJ: {cnpjUex}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                  {sigpcLoading ? (
+                    <div className="py-6 text-center">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-sky-600" />
+                      <p className="text-sm text-muted-foreground">Consultando prestações de contas...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Resumo */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="p-4 rounded-xl bg-sky-50 border border-sky-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FileText className="w-4 h-4 text-sky-600" />
+                            <p className="text-xs text-sky-700 font-medium">Total</p>
+                          </div>
+                          <p className="text-2xl font-bold text-sky-900">{sigpcProcessado.totalPrestacoes}</p>
+                          <p className="text-xs text-sky-600">
+                            {sigpcProcessado.totalPrestacoes === 1 ? 'prestação' : 'prestações'}
+                          </p>
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-green-50 border border-green-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            <p className="text-xs text-green-700 font-medium">Aprovadas</p>
+                          </div>
+                          <p className="text-2xl font-bold text-green-900">{sigpcProcessado.statusCount.aprovado}</p>
+                          <p className="text-xs text-green-600">
+                            {sigpcProcessado.totalPrestacoes > 0 ? Math.round((sigpcProcessado.statusCount.aprovado / sigpcProcessado.totalPrestacoes) * 100) : 0}% do total
+                          </p>
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Clock className="w-4 h-4 text-amber-600" />
+                            <p className="text-xs text-amber-700 font-medium">Pendentes</p>
+                          </div>
+                          <p className="text-2xl font-bold text-amber-900">{sigpcProcessado.statusCount.pendente}</p>
+                          <p className="text-xs text-amber-600">em análise</p>
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-purple-50 border border-purple-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Banknote className="w-4 h-4 text-purple-600" />
+                            <p className="text-xs text-purple-700 font-medium">Valor Total</p>
+                          </div>
+                          <p className="text-lg font-bold text-purple-900">
+                            R$ {(sigpcProcessado.valorTotal / 1000).toFixed(0)}k
+                          </p>
+                          <p className="text-xs text-purple-600">em concessões</p>
+                        </div>
+                      </div>
+
+                      {/* Mini gráfico de distribuição */}
+                      <div className="mt-4 p-4 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200">
+                        <p className="text-xs font-medium text-slate-700 mb-3">Distribuição por Status</p>
+                        <ResponsiveContainer width="100%" height={120}>
+                          <PieChart>
+                            <Pie
+                              data={[
+                                { name: 'Aprovadas', value: sigpcProcessado.statusCount.aprovado, fill: '#10b981' },
+                                { name: 'Pendentes', value: sigpcProcessado.statusCount.pendente, fill: '#f59e0b' },
+                                { name: 'Irregulares', value: sigpcProcessado.statusCount.irregular, fill: '#ef4444' }
+                              ]}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={30}
+                              outerRadius={50}
+                              paddingAngle={2}
+                              dataKey="value"
+                            >
+                              <Cell fill="#10b981" />
+                              <Cell fill="#f59e0b" />
+                              <Cell fill="#ef4444" />
+                            </Pie>
+                            <Tooltip 
+                              formatter={(value: number) => [`${value} prestações`, '']}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="flex items-center justify-center gap-4 mt-2 text-xs">
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            <span className="text-muted-foreground">Aprovadas</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                            <span className="text-muted-foreground">Pendentes</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                            <span className="text-muted-foreground">Irregulares</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Prestações por ano */}
+                      <div className="space-y-4">
+                        {sigpcProcessado.anos.map((ano) => {
+                          const prestacoesDoAno = sigpcProcessado.porAno[ano];
+                          const valorAno = prestacoesDoAno.reduce((acc, pc) => acc + (pc.valorConcessao || 0), 0);
+                          
+                          return (
+                            <div key={ano}>
+                              <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                                  <Calendar className="w-4 h-4 text-sky-600" />
+                                  Ano {ano}
+                                  <Badge variant="secondary" className="text-xs ml-2">
+                                    {prestacoesDoAno.length} {prestacoesDoAno.length === 1 ? 'prestação' : 'prestações'}
+                                  </Badge>
+                                </h3>
+                                {valorAno > 0 && (
+                                  <span className="text-sm font-mono text-muted-foreground">
+                                    Total: R$ {valorAno.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="space-y-2">
+                                {prestacoesDoAno.map((pc, idx) => (
+                                  <div 
+                                    key={`${pc.pcId}-${idx}`}
+                                    onClick={() => {
+                                      setSelectedPrestacao(pc);
+                                      setModalOpen(true);
+                                    }}
+                                    className="p-3 rounded-lg bg-background border border-border/30 hover:border-sky-300 hover:shadow-md transition-all cursor-pointer group"
+                                  >
+                                    <div className="flex items-start justify-between gap-3 mb-2">
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-medium text-sm text-foreground truncate">{pc.programaNome}</h4>
+                                        {pc.entidadeNome && (
+                                          <p className="text-xs text-muted-foreground truncate">{pc.entidadeNome}</p>
+                                        )}
+                                      </div>
+                                      <Badge 
+                                        variant="secondary"
+                                        className={
+                                          pc.situacaoNome?.toLowerCase().includes('aprovad') || pc.situacaoNome?.toLowerCase().includes('regular')
+                                            ? 'bg-green-100 text-green-800 border-green-200'
+                                            : pc.situacaoNome?.toLowerCase().includes('pendent') || pc.situacaoNome?.toLowerCase().includes('análise') || pc.situacaoNome?.toLowerCase().includes('aguardando')
+                                            ? 'bg-amber-100 text-amber-800 border-amber-200'
+                                            : pc.situacaoNome?.toLowerCase().includes('irregular') || pc.situacaoNome?.toLowerCase().includes('rejeit')
+                                            ? 'bg-red-100 text-red-800 border-red-200'
+                                            : 'bg-muted text-muted-foreground'
+                                        }
+                                      >
+                                        {pc.situacaoNome || 'Não informado'}
+                                      </Badge>
+                                    </div>
+                                    
+                                    <div className="flex flex-wrap gap-4 text-xs">
+                                      {pc.convenioNumero && (
+                                        <div className="flex items-center gap-1">
+                                          <Hash className="w-3 h-3 text-muted-foreground" />
+                                          <span className="text-muted-foreground">Convênio:</span>
+                                          <span className="font-mono font-medium">{pc.convenioNumero}</span>
+                                        </div>
+                                      )}
+                                      {pc.valorConcessao && (
+                                        <div className="flex items-center gap-1">
+                                          <DollarSign className="w-3 h-3 text-muted-foreground" />
+                                          <span className="text-muted-foreground">Valor:</span>
+                                          <span className="font-mono font-medium text-primary">
+                                            R$ {pc.valorConcessao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {pc.faseNome && (
+                                        <div className="flex items-center gap-1">
+                                          <TrendingUp className="w-3 h-3 text-muted-foreground" />
+                                          <span className="text-muted-foreground">Fase:</span>
+                                          <span className="font-medium">{pc.faseNome}</span>
+                                        </div>
+                                      )}
+                                      {pc.dataLimite && (
+                                        <div className="flex items-center gap-1">
+                                          <AlertCircle className="w-3 h-3 text-muted-foreground" />
+                                          <span className="text-muted-foreground">Limite:</span>
+                                          <span className="font-mono font-medium">{pc.dataLimite}</span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <div className="mt-2 pt-2 border-t border-border/20 flex items-center justify-between">
+                                      <span className="text-xs text-sky-600 group-hover:text-sky-700 font-medium flex items-center gap-1">
+                                        <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                                        Clique para ver detalhes completos
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              </>
+            )}
+
+            {viewMode === 'completo' && cnpjUex && sigpcData?.ok && (!sigpcData.prestacoes || sigpcData.prestacoes.length === 0) && (
+              <Card className="card-clay border-sky-200">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <Info className="w-5 h-5 text-sky-600 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-sky-800">Sem prestações de contas encontradas</p>
+                    <p className="text-sm text-sky-700">
+                      Não foram encontradas prestações de contas no SIGPC para o CNPJ {cnpjUex} no ano de {pddeAno}.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {viewMode === 'completo' && selectedInep && !cnpjUex && pddeData?.ok && (
+              <Card className="card-clay border-amber-200 bg-amber-50/30">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-amber-800">CNPJ da UEx não disponível</p>
+                    <p className="text-sm text-amber-700">
+                      Esta escola não possui CNPJ da Unidade Executora (UEx) cadastrado no FNDE. Sem o CNPJ não é possível consultar as prestações de contas no SIGPC.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -1225,6 +1587,15 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+
+      {/* Modal de Detalhes da Prestação SIGPC */}
+      {selectedPrestacao && (
+        <SigpcDetailModal 
+          prestacao={selectedPrestacao}
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+        />
+      )}
 
       <Footer />
     </div>

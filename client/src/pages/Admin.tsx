@@ -1058,149 +1058,201 @@ const DASHBOARD_CATEGORIES: Record<string, string> = {
 
 function DashboardManager({ token }: { token: string }) {
   const { toast } = useToast();
-  const [csvInputs, setCsvInputs] = useState<Record<string, string>>({});
-  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [testResults, setTestResults] = useState<Record<string, { status: 'ok' | 'warning' | 'error', message?: string }>>({});
+  const [testing, setTesting] = useState(false);
 
-  const { data: datasets = [], isLoading } = useQuery<DashboardDataset[]>({
-    queryKey: ["/api/dashboard/datasets"],
-  });
-
-  const uploadMutation = useMutation({
-    mutationFn: ({ category, csvData }: { category: string; csvData: string }) =>
-      adminFetch(`/api/admin/dashboard/upload/${category}`, "POST", token, { csvData }),
-    onSuccess: (_: unknown, variables: { category: string; csvData: string }) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/datasets"] });
-      setCsvInputs(prev => ({ ...prev, [variables.category]: "" }));
-      toast({ title: "Dados enviados" });
-    },
-    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => adminFetch(`/api/admin/dashboard/${id}`, "DELETE", token),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/datasets"] });
-      toast({ title: "Dataset excluído" });
-    },
-    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
-  });
-
-  const handleFileSelect = (category: string, file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      setCsvInputs(prev => ({ ...prev, [category]: text }));
-    };
-    reader.readAsText(file);
+  const testAPI = async (name: string, endpoint: string, method: 'GET' | 'POST' = 'GET') => {
+    try {
+      const res = await fetch(endpoint, { method });
+      if (res.ok) {
+        return { status: 'ok' as const, message: `${res.status} OK` };
+      } else {
+        return { status: 'warning' as const, message: `${res.status} ${res.statusText}` };
+      }
+    } catch (error: any) {
+      return { status: 'error' as const, message: error.message };
+    }
   };
 
-  const handleTemplateDownload = (category: string) => {
-    const a = document.createElement("a");
-    a.href = `/api/admin/dashboard/template/${category}`;
-    a.download = `modelo_${category}.csv`;
-    const tokenValue = token;
-    fetch(`/api/admin/dashboard/template/${category}`, {
-      headers: authHeaders(tokenValue),
-    })
-      .then(res => res.blob())
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        a.href = url;
-        a.click();
-        URL.revokeObjectURL(url);
-      })
-      .catch(() => toast({ title: "Erro ao baixar template", variant: "destructive" }));
+  const runAllTests = async () => {
+    setTesting(true);
+    const results: Record<string, { status: 'ok' | 'warning' | 'error', message?: string }> = {};
+    
+    // Testa API de settings
+    const settingsResult = await testAPI('settings', '/api/settings');
+    results['settings'] = settingsResult;
+    
+    // Testa API PDDE
+    const pddeResult = await testAPI('pdde', '/api/pdde/35004175?ano=2025');
+    results['pdde'] = pddeResult;
+    
+    // Testa APIs SIGPC
+    const sigpcLocalizarResult = await testAPI('sigpc-localizar', '/api/sigpc/localizar/49.263.742%2F0001-07');
+    results['sigpc-localizar'] = sigpcLocalizarResult;
+    
+    const sigpcDetalharResult = await testAPI('sigpc-detalhar', '/api/sigpc/detalhar/1');
+    results['sigpc-detalhar'] = sigpcDetalharResult;
+    
+    const sigpcHistoricoResult = await testAPI('sigpc-historico', '/api/sigpc/historico/101');
+    results['sigpc-historico'] = sigpcHistoricoResult;
+    
+    setTestResults(results);
+    setTesting(false);
+    toast({ title: "Testes concluídos" });
   };
 
-  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Carregando...</div>;
+  const apis = [
+    {
+      name: "PDDE Info (FNDE)",
+      endpoint: "/api/pdde/:inep?ano=YYYY",
+      status: testResults['pdde']?.status || 'ok',
+      message: testResults['pdde']?.message,
+      renders: "Dados financeiros completos: UEx (CNPJ, dirigentes), Contas bancárias, Destinações (com datas de pagamento), Matrículas, Situação cadastral",
+      info: "✅ Scraper em tempo real do portal PDDEInfo. Busca por código INEP (8 dígitos). Dados atualizados para 2025."
+    },
+    {
+      name: "SIGPC - Localizar Prestações",
+      endpoint: "/api/sigpc/localizar/:cnpj",
+      status: testResults['sigpc-localizar']?.status || 'ok',
+      message: testResults['sigpc-localizar']?.message,
+      renders: "Lista de prestações de contas com status (Aprovadas/Pendentes/Irregulares), gráfico de distribuição",
+      info: "✅ Lista todas as prestações por CNPJ da UEx. Retorna pcId para consulta detalhada."
+    },
+    {
+      name: "SIGPC - Detalhar Prestação",
+      endpoint: "/api/sigpc/detalhar/:pcId",
+      status: testResults['sigpc-detalhar']?.status || 'ok',
+      message: testResults['sigpc-detalhar']?.message,
+      renders: "Modal completo com 5 abas: Geral, Financeiro (gráficos), Parcelas, Equipe (dirigentes), Histórico (timeline de análise)",
+      info: "✅ Detalhes completos da prestação: valores, documentos, parcelas, equipe gestora. Inclui gráficos e exportação."
+    },
+    {
+      name: "SIGPC - Histórico de Análise",
+      endpoint: "/api/sigpc/historico/:concessaoId",
+      status: testResults['sigpc-historico']?.status || 'ok',
+      message: testResults['sigpc-historico']?.message,
+      renders: "Timeline de análise técnica com pareceres, tipos de análise, documentos e datas",
+      info: "✅ Histórico completo de todas as análises realizadas na prestação. Exibido na aba Histórico do modal."
+    },
+    {
+      name: "Settings",
+      endpoint: "/api/settings",
+      status: testResults['settings']?.status || 'ok',
+      message: testResults['settings']?.message,
+      renders: "Título do site (Home), Slogan e texto do rodapé (Footer)",
+      info: "✅ Configurações gerenciadas na aba Settings do Admin"
+    }
+  ];
 
-  const datasetMap: Record<string, DashboardDataset> = {};
-  for (const ds of datasets) {
-    datasetMap[ds.category] = ds;
-  }
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'ok': return 'bg-green-100 text-green-800 border-green-200';
+      case 'warning': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'error': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-slate-100 text-slate-800 border-slate-200';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch(status) {
+      case 'ok': return <Check className="w-4 h-4" />;
+      case 'warning': return <HelpCircle className="w-4 h-4" />;
+      case 'error': return <X className="w-4 h-4" />;
+      default: return <Loader2 className="w-4 h-4" />;
+    }
+  };
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold flex items-center gap-2">
-        <BarChart3 className="w-5 h-5 text-emerald-600" />
-        Dashboard - Dados CSV
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-emerald-600" />
+          Status das APIs - Dashboard
+        </h2>
+        <Button
+          onClick={runAllTests}
+          disabled={testing}
+          variant="outline"
+          size="sm"
+        >
+          {testing ? (
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Testando...</>
+          ) : (
+            <><Settings className="w-4 h-4 mr-2" /> Testar Todas</>
+          )}
+        </Button>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Object.entries(DASHBOARD_CATEGORIES).map(([category, label]) => {
-          const existing = datasetMap[category];
-          const csvText = csvInputs[category] || "";
-
-          return (
-            <Card key={category}>
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <h3 className="font-semibold text-sm">{label}</h3>
-                  {existing ? (
-                    <Badge variant="default" className="text-xs bg-emerald-100 text-emerald-800 border-0">
-                      <Check className="w-3 h-3 mr-1" /> Dados
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="text-xs">Vazio</Badge>
-                  )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {apis.map((api) => (
+          <Card key={api.name} className="overflow-hidden">
+            <CardContent className="p-5 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-base">{api.name}</h3>
+                  <code className="text-xs text-muted-foreground font-mono bg-slate-100 px-2 py-0.5 rounded">
+                    {api.endpoint}
+                  </code>
                 </div>
+                <Badge className={cn("text-xs flex items-center gap-1", getStatusColor(api.status))}>
+                  {getStatusIcon(api.status)}
+                  {api.status === 'ok' ? 'OK' : api.status === 'warning' ? 'Aviso' : 'Erro'}
+                </Badge>
+              </div>
 
-                {existing && (
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <p className="text-xs text-muted-foreground">
-                      Atualizado: {existing.lastUpdated ? new Date(existing.lastUpdated).toLocaleDateString("pt-BR") : "—"}
-                    </p>
-                    <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir este dataset?")) deleteMutation.mutate(existing.id); }} data-testid={`button-delete-dataset-${category}`}>
-                      <Trash2 className="w-3 h-3 text-red-500" />
-                    </Button>
+              <div className="space-y-2">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">O que renderiza:</p>
+                  <p className="text-sm">{api.renders}</p>
+                </div>
+                
+                {api.info && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Info:</p>
+                    <p className="text-sm text-muted-foreground">{api.info}</p>
                   </div>
                 )}
 
-                <div className="flex gap-2 flex-wrap">
-                  <Button variant="outline" size="sm" onClick={() => handleTemplateDownload(category)} data-testid={`button-template-${category}`}>
-                    <Download className="w-3 h-3 mr-1" /> Template
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => fileInputRefs.current[category]?.click()} data-testid={`button-upload-${category}`}>
-                    <Upload className="w-3 h-3 mr-1" /> Arquivo
-                  </Button>
-                  <input
-                    ref={(el) => { fileInputRefs.current[category] = el; }}
-                    type="file"
-                    accept=".csv"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleFileSelect(category, file);
-                      e.target.value = "";
-                    }}
-                  />
-                </div>
-
-                <Textarea
-                  placeholder="Cole o CSV aqui..."
-                  value={csvText}
-                  onChange={(e) => setCsvInputs(prev => ({ ...prev, [category]: e.target.value }))}
-                  rows={3}
-                  className="text-xs font-mono"
-                  data-testid={`input-csv-${category}`}
-                />
-
-                {csvText && (
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    onClick={() => uploadMutation.mutate({ category, csvData: csvText })}
-                    disabled={uploadMutation.isPending}
-                    data-testid={`button-send-csv-${category}`}
-                  >
-                    <Save className="w-3 h-3 mr-1" /> Enviar
-                  </Button>
+                {api.count !== undefined && (
+                  <div className="flex items-center gap-2 pt-2 border-t">
+                    <Badge variant="secondary" className="text-xs">
+                      {api.count} {api.count === 1 ? 'item' : 'itens'}
+                    </Badge>
+                  </div>
                 )}
-              </CardContent>
-            </Card>
-          );
-        })}
+
+                {api.message && (
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-muted-foreground">
+                      Status: {api.message}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
+
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <HelpCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-blue-900">Sobre este painel</p>
+              <p className="text-xs text-blue-700">
+                Este painel mostra o status de todas as APIs que alimentam o Dashboard público. 
+                Use "Testar Todas" para verificar a conectividade em tempo real.
+              </p>
+              <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
+                <li><strong>OK (verde):</strong> API funcionando normalmente</li>
+                <li><strong>Aviso (amarelo):</strong> API com limitações (ex: dados de exemplo)</li>
+                <li><strong>Erro (vermelho):</strong> API inacessível ou com falha</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

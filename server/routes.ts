@@ -10,6 +10,11 @@ import { api } from "@shared/routes";
 import { registerChatRoutes } from "./replit_integrations/chat";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { getPddeInfo } from "./scraper/pdde";
+import { 
+  localizarPrestacoesPorCnpj,
+  detalharPrestacao,
+  recuperarHistoricoAnalise
+} from "./scraper/sigpc";
 import { z } from "zod";
 import {
   insertToolSchema, insertGlossarySchema, insertTrilhaUnitSchema,
@@ -25,6 +30,7 @@ const settingsEntrySchema = z.object({
 
 const csvUploadSchema = z.object({
   csvData: z.string().min(1, "Dados CSV não fornecidos"),
+  label: z.string().optional(),
 });
 
 const VALID_DASHBOARD_CATEGORIES = [
@@ -145,6 +151,57 @@ export async function registerRoutes(
     } catch (err: any) {
       console.error("PDDE scraper error:", err.message);
       res.status(500).json({ ok: false, error: "Erro ao consultar dados do FNDE" });
+    }
+  });
+
+  // === PUBLIC: SIGPC - PRESTAÇÃO DE CONTAS ===
+  // Endpoint 1: Localizar prestações por CNPJ (busca inicial)
+  app.get("/api/sigpc/localizar/:cnpj", async (req, res) => {
+    try {
+      const cnpj = decodeURIComponent(req.params.cnpj);
+      const anoConcessao = req.query.anoConcessao ? parseInt(req.query.anoConcessao as string) : undefined;
+
+      const prestacoes = await localizarPrestacoesPorCnpj(cnpj, anoConcessao);
+      res.json({ ok: true, prestacoes });
+    } catch (err: any) {
+      console.error("SIGPC localizar error:", err.message);
+      res.status(500).json({ ok: false, error: "Erro ao localizar prestações" });
+    }
+  });
+
+  // Endpoint 2: Detalhar prestação por pcId
+  app.get("/api/sigpc/detalhar/:pcId", async (req, res) => {
+    try {
+      const pcId = parseInt(req.params.pcId);
+      if (isNaN(pcId)) {
+        return res.status(400).json({ ok: false, error: "pcId inválido" });
+      }
+
+      const detalhes = await detalharPrestacao(pcId);
+      if (!detalhes) {
+        return res.status(404).json({ ok: false, error: "Prestação não encontrada" });
+      }
+
+      res.json({ ok: true, prestacao: detalhes });
+    } catch (err: any) {
+      console.error("SIGPC detalhar error:", err.message);
+      res.status(500).json({ ok: false, error: "Erro ao detalhar prestação" });
+    }
+  });
+
+  // Endpoint 3: Histórico de análise por concessaoId
+  app.get("/api/sigpc/historico/:concessaoId", async (req, res) => {
+    try {
+      const concessaoId = parseInt(req.params.concessaoId);
+      if (isNaN(concessaoId)) {
+        return res.status(400).json({ ok: false, error: "concessaoId inválido" });
+      }
+
+      const historico = await recuperarHistoricoAnalise(concessaoId);
+      res.json({ ok: true, historico });
+    } catch (err: any) {
+      console.error("SIGPC historico error:", err.message);
+      res.status(500).json({ ok: false, error: "Erro ao recuperar histórico" });
     }
   });
 
@@ -423,15 +480,27 @@ export async function registerRoutes(
       const config = DASHBOARD_CATEGORIES[category];
       if (!config) return res.status(404).json({ message: "Categoria não encontrada" });
 
-      const { csvData } = csvUploadSchema.parse(req.body);
+      const { csvData, label } = csvUploadSchema.parse(req.body);
 
       const parsed = Papa.parse(csvData, { header: true, skipEmptyLines: true, dynamicTyping: true });
       if (parsed.errors.length > 0) {
         return res.status(400).json({ message: "Erro no CSV", errors: parsed.errors });
       }
 
-      const dataset = await storage.upsertDashboardDataset(category, parsed.data);
+      const dataset = await storage.upsertDashboardDataset(category, parsed.data, label);
       res.json(dataset);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.patch("/api/admin/dashboard/:id/label", adminAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { label } = z.object({ label: z.string() }).parse(req.body);
+      const updated = await storage.updateDashboardDatasetLabel(id, label);
+      if (!updated) return res.status(404).json({ message: "Dataset não encontrado" });
+      res.json(updated);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
     }

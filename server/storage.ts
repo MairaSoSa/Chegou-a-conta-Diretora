@@ -55,7 +55,8 @@ export interface IStorage {
 
   getDashboardDatasets(): Promise<DashboardDataset[]>;
   getDashboardDatasetByCategory(category: string): Promise<DashboardDataset | undefined>;
-  upsertDashboardDataset(category: string, data: unknown): Promise<DashboardDataset>;
+  upsertDashboardDataset(category: string, data: unknown, label?: string): Promise<DashboardDataset>;
+  updateDashboardDatasetLabel(id: number, label: string): Promise<DashboardDataset | undefined>;
   deleteDashboardDataset(id: number): Promise<boolean>;
 
   getAiDocuments(): Promise<AiDocument[]>;
@@ -242,14 +243,23 @@ export class DatabaseStorage implements IStorage {
     return dataset;
   }
 
-  async upsertDashboardDataset(category: string, data: unknown): Promise<DashboardDataset> {
+  async upsertDashboardDataset(category: string, data: unknown, label?: string): Promise<DashboardDataset> {
     const existing = await this.getDashboardDatasetByCategory(category);
     if (existing) {
-      const [updated] = await db.update(dashboardDatasets).set({ data, lastUpdated: new Date() }).where(eq(dashboardDatasets.id, existing.id)).returning();
+      const updateData: any = { data, lastUpdated: new Date() };
+      if (label !== undefined) {
+        updateData.label = label;
+      }
+      const [updated] = await db.update(dashboardDatasets).set(updateData).where(eq(dashboardDatasets.id, existing.id)).returning();
       return updated;
     }
-    const [created] = await db.insert(dashboardDatasets).values({ category, data, lastUpdated: new Date() }).returning();
+    const [created] = await db.insert(dashboardDatasets).values({ category, data, label, lastUpdated: new Date() }).returning();
     return created;
+  }
+
+  async updateDashboardDatasetLabel(id: number, label: string): Promise<DashboardDataset | undefined> {
+    const [updated] = await db.update(dashboardDatasets).set({ label }).where(eq(dashboardDatasets.id, id)).returning();
+    return updated;
   }
 
   async deleteDashboardDataset(id: number): Promise<boolean> {

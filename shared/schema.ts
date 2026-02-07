@@ -73,6 +73,7 @@ export const siteSettings = pgTable("site_settings", {
 export const dashboardDatasets = pgTable("dashboard_datasets", {
   id: serial("id").primaryKey(),
   category: text("category").notNull(),
+  label: text("label"),
   data: jsonb("data").notNull(),
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
