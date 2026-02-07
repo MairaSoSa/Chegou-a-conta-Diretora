@@ -16,7 +16,7 @@ export function Navigation() {
     { href: "/trilha", label: "Trilha", icon: GraduationCap },
     { href: "/programas", label: "Programas", icon: Building2 },
     { href: "/ferramentas", label: "Ferramentas", icon: Wrench },
-    { href: "/chat", label: "Chat IA", icon: MessagesSquare },
+    { href: "/chat", label: "Caderno da Diretora", icon: MessagesSquare },
   ];
 
   const NavLink = ({ item, mobile = false }: { item: typeof navItems[0], mobile?: boolean }) => {

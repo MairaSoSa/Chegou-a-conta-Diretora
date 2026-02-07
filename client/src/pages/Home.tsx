@@ -55,7 +55,7 @@ export default function Home() {
               <NavCard href="/trilha" icon={GraduationCap} label="Trilha" />
               <NavCard href="/programas" icon={BookOpen} label="Programas" />
               <NavCard href="/ferramentas" icon={Wrench} label="Ferramentas" />
-              <NavCard href="/chat" icon={MessagesSquare} label="Chat IA" className="col-span-2 md:col-span-1" />
+              <NavCard href="/chat" icon={MessagesSquare} label="Caderno da Diretora" className="col-span-2 md:col-span-1" />
             </motion.div>
           </div>
         </section>

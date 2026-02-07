@@ -32,7 +32,7 @@ export function Footer() {
             <Link href="/trilha" className="hover:text-primary transition-colors">Trilha</Link>
             <Link href="/programas" className="hover:text-primary transition-colors">Programas</Link>
             <Link href="/ferramentas" className="hover:text-primary transition-colors">Ferramentas</Link>
-            <Link href="/chat" className="hover:text-primary transition-colors">Chat IA</Link>
+            <Link href="/chat" className="hover:text-primary transition-colors">Caderno da Diretora</Link>
             <Link href="/admin" className="hover:text-primary transition-colors" data-testid="link-admin" aria-label="Admin">
               <Settings className="w-3.5 h-3.5" />
             </Link>

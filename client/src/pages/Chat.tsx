@@ -227,14 +227,14 @@ export default function Chat() {
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="font-bold text-foreground flex items-center gap-2 flex-wrap">
-                <span className="truncate">Assistente</span>
+                <span className="truncate">Caderno da Diretora</span>
                 <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs font-normal flex-shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse" />
                   Online
                 </Badge>
               </h2>
               <p className="text-xs text-muted-foreground truncate">
-                Tira-dúvidas sobre verbas escolares
+                Seu assistente para gestão escolar
               </p>
             </div>
           </div>
