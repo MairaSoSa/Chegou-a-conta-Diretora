@@ -15,7 +15,7 @@ The interface uses a warm, nature-inspired "Ghibli/territorial" visual style wit
 
 ## Development Setup
 
-This project runs on **VS Code / GitHub Codespaces** with Node.js 20+, PostgreSQL 16, and includes AI integrations for chat functionality.
+This project runs on **Replit** with Node.js 20+ and includes AI integrations for chat functionality.
 
 **Quick Start:**
 ```bash
@@ -23,7 +23,9 @@ npm install
 npm run dev
 ```
 
-Access the application at `http://localhost:5000`
+The application serves on port 5000 (both API and frontend via Vite middleware in dev mode).
+
+**Database:** SQLite via better-sqlite3 (file: `dev.db`). Uses `SQLITE_DATABASE_URL` env var to avoid conflict with Replit's system `DATABASE_URL`.
 
 ## Recent Changes
 
@@ -122,7 +124,7 @@ Preferred communication style: Simple, everyday language.
 - **Admin Auth**: Bearer token authentication via `ADMIN_PASSWORD` env var (defaults to "admin2024")
 
 ### Data Storage
-- **Database**: PostgreSQL via Drizzle ORM
+- **Database**: SQLite via better-sqlite3 and Drizzle ORM (env var: `SQLITE_DATABASE_URL`, defaults to `file:dev.db`)
 - **Schema Location**: `shared/schema.ts` defines all tables
 - **Migrations**: Drizzle Kit handles schema pushes (`db:push`)
 - **Tables**: schools, programs, program_details, tools, glossary, trilha_units, conversations, messages, site_settings, dashboard_datasets, ai_documents, unanswered_questions
@@ -166,7 +168,7 @@ shared/           # Shared types, schemas, and API contracts
 ## External Dependencies
 
 ### Database
-- **PostgreSQL**: Primary database, connection via `DATABASE_URL` environment variable
+- **SQLite**: Primary database via better-sqlite3, connection via `SQLITE_DATABASE_URL` environment variable (defaults to `file:dev.db`)
 - **Drizzle ORM**: Type-safe database queries and schema management
 
 ### AI Services

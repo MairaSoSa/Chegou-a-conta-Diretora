@@ -551,7 +551,7 @@ export async function registerRoutes(
 
   app.patch("/api/admin/dashboard/:id/label", adminAuth, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(getParam(req.params, "id"), 10);
       const { label } = z.object({ label: z.string() }).parse(req.body);
       const updated = await storage.updateDashboardDatasetLabel(id, label);
       if (!updated) return res.status(404).json({ message: "Dataset não encontrado" });

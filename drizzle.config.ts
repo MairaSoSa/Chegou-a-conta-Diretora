@@ -1,7 +1,7 @@
 import { defineConfig } from "drizzle-kit";
 import path from "path";
 
-const dbPath = process.env.DATABASE_URL?.replace("file:", "") || "dev.db";
+const dbPath = (process.env.SQLITE_DATABASE_URL || "file:dev.db").replace("file:", "");
 
 export default defineConfig({
   out: "./migrations",

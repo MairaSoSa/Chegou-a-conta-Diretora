@@ -27,16 +27,40 @@ const SUGESTOES = [
 
 function separarFontes(conteudo: string): { corpo: string; fontes: string | null } {
   const marcadores = ["📚 **Fontes:**", "**Fontes:**", "Fontes:"];
+  for (const marcador of marcadores) {
+    const indice = conteudo.indexOf(marcador);
     if (indice > -1) {
-                {temMensagens ? (
-                  <Button
-                    onClick={handleNewChat}
-                    className="h-8 px-3 text-xs bg-transparent text-muted-foreground border border-[#E6E0D3] hover:bg-white/80"
-                  >
-                    Nova conversa
-                  </Button>
-                ) : null}
-              </div>
+      return {
+        corpo: conteudo.substring(0, indice).trim(),
+        fontes: conteudo.substring(indice).trim(),
+      };
+    }
+  }
+  return { corpo: conteudo, fontes: null };
+}
+
+function MensagemAssistente({ conteudo }: { conteudo: string }) {
+  const { corpo, fontes } = separarFontes(conteudo);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex gap-2 max-w-[92%] mr-auto items-start"
+    >
+      <div className="mt-1 text-[#4A6CF7]">
+        <Bot className="w-4 h-4" />
+      </div>
+      <div className="notebook-bubble ai">
+        <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-headings:mt-3 prose-headings:mb-1 text-[15px] sm:text-[16px] leading-relaxed font-note text-[#3A3A3A]">
+          <ReactMarkdown
+            components={{
+              a: ({ href, children }) => (
+                <a href={href} target={href?.startsWith("http") ? "_blank" : undefined} rel={href?.startsWith("http") ? "noopener noreferrer" : undefined} className="text-[#4A6CF7] underline hover:text-[#3C5BE0]">
+                  {children}
+                </a>
+              ),
+            }}
+          >
             {corpo}
           </ReactMarkdown>
         </div>
