@@ -23,9 +23,23 @@ npm install
 npm run dev
 ```
 
-The application serves on port 5000 (both API and frontend via Vite middleware in dev mode).
+Access the application at the URL provided by Replit.
 
-**Database:** SQLite via better-sqlite3 (file: `dev.db`). Uses `SQLITE_DATABASE_URL` env var to avoid conflict with Replit's system `DATABASE_URL`.
+## Preparação para o GitHub
+
+Para enviar este projeto para o GitHub, siga estes passos:
+1.  **Variáveis de Ambiente:** Configure os seguintes segredos no seu repositório GitHub ou ambiente local:
+    - `SQLITE_DATABASE_URL`: Defina como `file:dev.db` (local) ou o caminho do seu banco de dados de produção.
+    - `ADMIN_PASSWORD`: Sua senha para o painel administrativo.
+    - `OPENAI_API_KEY`: Necessário para o Chat de IA.
+2.  **Banco de Dados:** O arquivo `dev.db` está excluído do controle de versão para evitar vazamento de dados. Execute `npm run db:push` para inicializar um novo banco de dados.
+3.  **Build:** Execute `npm run build` para gerar a versão de produção na pasta `dist`.
+
+**Início Rápido:**
+```bash
+npm install
+npm run dev
+```
 
 ## Recent Changes
 
