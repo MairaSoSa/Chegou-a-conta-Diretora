@@ -237,6 +237,21 @@ export default function Dashboard() {
                 <span className="text-muted-foreground flex items-center gap-1">
                   <MapPin className="w-3 h-3" /> {displaySchool.city}/{displaySchool.state}
                 </span>
+                
+                <div className="flex items-center gap-2 bg-muted/50 px-2 py-1 rounded-lg border border-border/50">
+                  <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                  <select 
+                    value={pddeAno} 
+                    onChange={(e) => setPddeAno(parseInt(e.target.value))}
+                    className="bg-transparent border-0 text-xs font-medium focus:ring-0 cursor-pointer outline-none"
+                    data-testid="select-ano-pdde"
+                  >
+                    {[2025, 2024, 2023, 2022, 2021, 2020].map(year => (
+                      <option key={year} value={year}>Ano {year}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <Badge variant="outline">{displaySchool.network}</Badge>
                 <Badge variant="outline">{displaySchool.location}</Badge>
                 {latestUpdate && latestUpdate.getTime() > 0 && (
