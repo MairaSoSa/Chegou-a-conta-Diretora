@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import iconv from "iconv-lite";
 
 const BASE = "https://www.fnde.gov.br/pddeinfo";
 const CONSULTA_URL = `${BASE}/pddeinfo/escola/consultar`;
@@ -134,9 +135,9 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
       return { ok: false, error: `HTTP ${response.status}`, ano, co_escola: coEscola };
     }
 
-    const buffer = await response.arrayBuffer();
-    const isoDecoder = new TextDecoder("iso-8859-1");
-    const html = isoDecoder.decode(buffer);
+    // Use iconv-lite to decode latin1 (ISO-8859-1) properly
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const html = iconv.decode(buffer, "latin1");
     
     console.log(`[PDDE Scraper] HTML Length: ${html.length}`);
     
@@ -154,11 +155,11 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
        return { ok: false, error: "Nenhum dado financeiro encontrado para este ano.", ano, co_escola: coEscola };
     }
 
-    // 1. DADOS DA ESCOLA - More aggressive search
+    // 1. DADOS DA ESCOLA
     const t1 = findTableByCaptionContains($, "Dados da Escola") || 
                findTableByCaptionContains($, "Identifica") || 
                findTableByCaptionContains($, coEscola) ||
-               $("table").first(); // Last resort
+               $("table").first();
 
     if (t1) {
       t1.find("tr").each((_, tr) => {
