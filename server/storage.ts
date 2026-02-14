@@ -15,7 +15,7 @@ import {
   type AiDocumentEmbedding, type InsertAiDocumentEmbedding,
   type UnansweredQuestion, type InsertUnansweredQuestion
 } from "@shared/schema";
-import { and, eq, ilike, or, asc, desc } from "drizzle-orm";
+import { and, eq, like, or, asc, desc } from "drizzle-orm";
 
 export interface IStorage {
   getSchools(query?: string): Promise<School[]>;
@@ -87,9 +87,9 @@ export class DatabaseStorage implements IStorage {
     const search = `%${query}%`;
     return db.select().from(schools).where(
       or(
-        ilike(schools.inep, search),
-        ilike(schools.name, search),
-        ilike(schools.city, search)
+        like(schools.inep, search),
+        like(schools.name, search),
+        like(schools.city, search)
       )
     );
   }

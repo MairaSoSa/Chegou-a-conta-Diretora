@@ -72,10 +72,12 @@ export function usePddeInfo(inep: string | null, ano?: number) {
       if (!inep) return { ok: false, error: "No INEP code", ano: queryYear, co_escola: "" };
       const res = await fetch(`/api/pdde/${inep}?ano=${queryYear}`);
       if (!res.ok) throw new Error("Erro ao consultar PDDE");
-      return res.json();
+      const data = await res.json();
+      console.log("PDDE Data Received:", data);
+      return data;
     },
     enabled: !!inep && /^\d{8}$/.test(inep),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     retry: 1,
   });
 }

@@ -61,15 +61,16 @@ export default function Dashboard() {
   const { data: pddeData, isLoading: pddeLoading, isFetching: pddeFetching } = usePddeInfo(selectedInep, pddeAno);
 
   // Extrai CNPJ da UEx para consultar prestações de contas
-  const cnpjUex = pddeData?.ok && pddeData.uex?.cnpj ? pddeData.uex.cnpj : null;
+  const cnpjUex = useMemo(() => pddeData?.ok && pddeData.uex?.cnpj ? pddeData.uex.cnpj : null, [pddeData]);
   const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(cnpjUex || undefined, pddeAno);
 
-  const pddeEnrollTotal = pddeData?.ok
-    ? pddeData.matriculas_total
+  const pddeEnrollTotal = useMemo(() => {
+    if (!pddeData?.ok) return null;
+    return pddeData.matriculas_total
       ?? (pddeData.matriculas_por_nivel
         ? Object.values(pddeData.matriculas_por_nivel).reduce((a, b) => a + b, 0)
-        : null)
-    : null;
+        : null);
+  }, [pddeData]);
 
   const { data: datasets = [] } = useQuery<DashboardDataset[]>({
     queryKey: ["/api/dashboard/datasets"],
@@ -97,15 +98,20 @@ export default function Dashboard() {
       }, new Date(0))
     : null;
 
-  const pddeSchoolFallback = selectedInep && !school && pddeData?.ok ? {
-    inep: selectedInep,
-    name: pddeData.nome_escola || `Escola ${selectedInep}`,
-    city: pddeData.municipio || '',
-    state: pddeData.uf || '',
-    network: pddeData.rede || '',
-    location: '',
-    enrollmentCount: pddeEnrollTotal || 0,
-  } : null;
+  const pddeSchoolFallback = useMemo(() => {
+    if (selectedInep && !school && pddeData?.ok) {
+      return {
+        inep: selectedInep,
+        name: pddeData.nome_escola || `Escola ${selectedInep}`,
+        city: pddeData.municipio || '',
+        state: pddeData.uf || '',
+        network: pddeData.rede || '',
+        location: '',
+        enrollmentCount: pddeEnrollTotal || 0,
+      };
+    }
+    return null;
+  }, [selectedInep, school, pddeData, pddeEnrollTotal]);
 
   const displaySchool = selectedInep && school ? school : pddeSchoolFallback || null;
 
@@ -298,12 +304,12 @@ export default function Dashboard() {
               </div>
             )}
 
-            {pddeData && !pddeData.ok && (
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+            {pddeData && pddeData.ok && (!pddeData.contas || pddeData.contas.length === 0) && (!pddeData.destinacoes || pddeData.destinacoes.length === 0) && (
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-3">
+                <Info className="w-5 h-5 text-slate-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-amber-800">Dados financeiros indisponíveis</p>
-                  <p className="text-sm text-amber-700">{pddeData.error || "Não foi possível consultar o FNDE para este código."}</p>
+                  <p className="font-medium text-slate-800">Sem movimentações em {pddeAno}</p>
+                  <p className="text-sm text-slate-700">Não encontramos repasses ou contas ativas para este ano específico. Tente selecionar outro ano no menu acima.</p>
                 </div>
               </div>
             )}
@@ -1187,10 +1193,12 @@ export default function Dashboard() {
                                           <span className="font-medium">{pc.faseNome}</span>
                                         </div>
                                       )}
+                                      {/* @ts-ignore */}
                                       {pc.dataLimite && (
                                         <div className="flex items-center gap-1">
                                           <AlertCircle className="w-3 h-3 text-muted-foreground" />
                                           <span className="text-muted-foreground">Limite:</span>
+                                          {/* @ts-ignore */}
                                           <span className="font-mono font-medium">{pc.dataLimite}</span>
                                         </div>
                                       )}
