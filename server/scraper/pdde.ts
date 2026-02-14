@@ -1,10 +1,12 @@
 import * as cheerio from "cheerio";
 
-const BASE = "https://www.fnde.gov.br";
-const CONSULTA_URL = `${BASE}/pddeinfo/pddeinfo/escola/consultar`;
+const BASE = "https://www.fnde.gov.br/pddeinfo";
+const CONSULTA_URL = `${BASE}/pddeinfo/escola/consultar`;
 
 const HEADERS: Record<string, string> = {
-  "User-Agent": "Mozilla/5.0 (compatible; PDDEInfoDash/1.0)",
+  "User-Agent": "Mozilla/5.0",
+  "Accept": "text/html,application/json",
+  "Referer": "https://www.fnde.gov.br/pddeinfo/",
   "Accept-Language": "pt-BR,pt;q=0.9",
 };
 

@@ -1,0 +1,133 @@
+Base
+export const PDDE_BASE = "https://www.fnde.gov.br/pddeinfo";
+
+routes.ts (exemplo em TypeScript)
+export const PDDE_ROUTES = {
+  // =========================
+  // ESCOLA (consulta principal)
+  // =========================
+  ESCOLA_CONSULTAR: {
+    method: "GET",
+    path: "/pddeinfo/escola/consultar",
+    example:
+      "/pddeinfo/escola/consultar?ano=2025&sg_uf=PA&co_municipio_fnde=150190&consultar=Consultar",
+    params: [
+      "ano",                // obrigatório na prática
+      "co_escola",          // INEP (opcional se tiver UF/município)
+      "cnpj",               // opcional
+      "co_esfera_adm",      // opcional
+      "sg_uf",              // UF
+      "co_municipio_fnde",  // código FNDE do município
+      "consultar"           // sempre "Consultar"
+    ],
+    returns: "HTML | JSON (varia por chamada)"
+  },
+
+  // =========================
+  // CORP (apoio de formulário)
+  // =========================
+  MUNICIPIOS_POR_UF: {
+    method: "GET",
+    path: "/pddeinfo/corp/get-municipio/sg_uf/{UF}",
+    example: "/pddeinfo/corp/get-municipio/sg_uf/PA",
+    params: ["UF"],
+    returns: "JSON"
+  },
+
+  // =========================
+  // RELATÓRIOS – SITUAÇÃO CADASTRAL
+  // =========================
+  SITUACAO_CADASTRO_ENTIDADE: {
+    method: "GET",
+    path: "/situacaocadastroentidade/situacaocadastroentidade/situacaocadastroentidade",
+    example:
+      "/situacaocadastroentidade/situacaocadastroentidade/situacaocadastroentidade/ano/2025/sg_uf/PA/co_municipio_fnde/150190/tp_relatorio/1/consultar/Consultar",
+    paramsSegmented: [
+      "ano",
+      "sg_uf",
+      "co_municipio_fnde",
+      "tp_relatorio",
+      "consultar"
+    ],
+    returns: "HTML"
+  },
+
+  SITUACAO_CADASTRO_ENTIDADE_EXCEL: {
+    method: "GET",
+    path: "/situacaocadastroentidade/situacaocadastroentidade/excel/param[]/...",
+    example:
+      "/situacaocadastroentidade/situacaocadastroentidade/excel/param%5B%5D/2025/param%5B%5D//param%5B%5D/%27PA%27/param%5B%5D/150190/param%5B%5D/situacaoCadastroEntidade",
+    returns: "XLSX"
+  },
+
+  // =========================
+  // RELATÓRIOS – PRESTAÇÃO DE CONTAS
+  // =========================
+  SITUACAO_PRESTACAO_CONTAS: {
+    method: "GET",
+    path: "/situacaoprestacaoconta/situacaoprestacaoconta/situacaoprestacaoconta",
+    returns: "HTML"
+  },
+
+  // =========================
+  // RELATÓRIOS – SALDO ENTIDADE
+  // =========================
+  CONSULTA_SALDO_ENTIDADE: {
+    method: "GET",
+    path: "/consultasaldoentidade/consultasaldoentidade/consultasaldoentidade",
+    returns: "HTML"
+  },
+
+  // =========================
+  // RELATÓRIOS – ATENDIMENTO
+  // =========================
+  SITUACAO_ATENDIMENTO_ENTIDADE: {
+    method: "GET",
+    path: "/situacaoatendimentoentidade/situacaoatendimentoentidade/situacaoatendimentoentidade",
+    returns: "HTML"
+  },
+
+  // =========================
+  // RELATÓRIOS – SUSPENSÃO
+  // =========================
+  RELATORIO_SUSPENSAO: {
+    method: "GET",
+    path: "/relatoriosuspensao/relatoriosuspensao/relatoriosuspensao",
+    returns: "HTML"
+  }
+};
+
+Exemplo de uso (Node / Fetch)
+const BASE = "https://www.fnde.gov.br/pddeinfo";
+
+async function consultarEscola({ ano, uf, municipio }) {
+  const params = new URLSearchParams({
+    ano,
+    sg_uf: uf,
+    co_municipio_fnde: municipio,
+    consultar: "Consultar"
+  });
+
+  const res = await fetch(`${BASE}/pddeinfo/escola/consultar?${params}`, {
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+      "Accept": "text/html,application/json",
+      "Referer": "https://www.fnde.gov.br/pddeinfo/"
+    }
+  });
+
+  const text = await res.text(); // muitas vezes vem HTML
+  return text;
+}
+
+Boas práticas (pra não quebrar)
+
+Headers básicos: User-Agent, Accept, Referer.
+
+Rate limit: 1–2s entre requisições.
+
+Cache local por ano+inep ou ano+município.
+
+Parser duplo: trate JSON e HTML (cheerio/BeautifulSoup).
+
+Excel: quando existir rota /excel/..., prefira — já vem estruturado.
