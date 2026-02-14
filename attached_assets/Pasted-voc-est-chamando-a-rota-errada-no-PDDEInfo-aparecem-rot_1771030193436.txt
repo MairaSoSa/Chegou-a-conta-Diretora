@@ -1,0 +1,90 @@
+você está chamando a rota errada (no PDDEInfo aparecem rotas com /pddeinfo/pddeinfo/..., não só /pddeinfo/...), e/ou
+
+você está esperando JSON, mas o PDDEInfo normalmente retorna HTML (tabela/trecho de página), então o seu parse “como JSON” quebra.
+
+1) Rotas que você tem que usar (as que você já capturou no DevTools)
+Consulta “por escola” (retorna HTML)
+GET https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar?ano=&co_escola=&cnpj=&co_esfera_adm=&sg_uf=PA&co_municipio_fnde=150190&consultar=Consultar
+
+Município por UF (para preencher combos)
+GET https://www.fnde.gov.br/pddeinfo/pddeinfo/corp/get-municipio/sg_uf/PA
+
+
+Se no seu código você estiver usando /pddeinfo/escola/consultar (sem o segundo pddeinfo), vai dar 404/redirect e “parecer” que não vem nada.
+
+2) Teste rápido (pra saber se o problema é rota / CORS / parse)
+No terminal (server-side, sem CORS)
+curl -L 'https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar?ano=&co_escola=&cnpj=&co_esfera_adm=&sg_uf=PA&co_municipio_fnde=150190&consultar=Consultar' \
+  -H 'Accept: text/html,*/*' \
+  -H 'User-Agent: Mozilla/5.0'
+
+
+Se isso retornar HTML (com <table etc.), a rota está ok.
+
+Se retornar login / página genérica / erro, aí precisa ajustar parâmetros ou cookies/sessão.
+
+3) Se você estiver tentando puxar no FRONT (browser), o bloqueio pode ser CORS
+
+O site é www.fnde.gov.br e seu app é outro domínio → o fetch() do navegador pode ser bloqueado.
+
+✅ Solução prática: crie um endpoint proxy no seu backend (Next.js API route, Express, FastAPI) e faça o backend chamar o FNDE.
+
+Exemplo (Node/Express) — retorna o HTML cru:
+
+import express from "express";
+
+const app = express();
+
+app.get("/proxy/pddeinfo/escola/consultar", async (req, res) => {
+  const url = new URL("https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar");
+  for (const [k, v] of Object.entries(req.query)) {
+    url.searchParams.set(k, String(v));
+  }
+
+  const r = await fetch(url, {
+    headers: {
+      "accept": "text/html,*/*",
+      "user-agent": "Mozilla/5.0",
+    },
+  });
+
+  const html = await r.text();
+  res.setHeader("content-type", "text/html; charset=utf-8");
+  res.status(r.status).send(html);
+});
+
+app.listen(3001);
+
+4) “Tá vindo HTML: como eu extraio os dados?”
+
+Você tem duas opções:
+
+Opção A) Extrair com cheerio (Node)
+import * as cheerio from "cheerio";
+
+function extrairTabela(html) {
+  const $ = cheerio.load(html);
+  const rows = [];
+
+  $("table tr").each((_, tr) => {
+    const cols = $(tr).find("th,td").map((_, td) => $(td).text().trim()).get();
+    if (cols.length) rows.push(cols);
+  });
+
+  return rows;
+}
+
+Opção B) Se vier um HTML parcial (fragmento), você ainda parseia igual.
+5) O que eu preciso de você pra eu cravar “onde está quebrando” sem chute
+
+Como você disse “não tá puxando dados”, me diga qual desses sintomas é o seu (não precisa explicar muito):
+
+(A) dá erro de CORS no console do browser
+
+(B) retorna 200 mas vem HTML vazio / página sem tabela
+
+(C) retorna 302/301 (redirect)
+
+(D) retorna 404
+
+(E) você está tentando response.json() e dá erro

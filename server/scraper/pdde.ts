@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
 
 const BASE = "https://www.fnde.gov.br/pddeinfo";
+// Fix: The actual endpoint observed in DevTools has /pddeinfo/pddeinfo/
 const CONSULTA_URL = `${BASE}/pddeinfo/escola/consultar`;
 
 const HEADERS: Record<string, string> = {
@@ -116,7 +117,8 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
       consultar: "Consultar",
     });
 
-    const url = `https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar?${params.toString()}`;
+    // The endpoint is https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar
+    const url = `${CONSULTA_URL}?${params.toString()}`;
     console.log(`[PDDE Scraper] Fetching: ${url}`);
 
     let response: Response;
@@ -135,7 +137,7 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
       return { ok: false, error: `HTTP ${response.status}`, ano, co_escola: coEscola };
     }
 
-    // Use iconv-lite to decode latin1 (ISO-8859-1) properly
+    // Use iconv-lite to decode latin1 (ISO-8859-1) properly as noted in instructions
     const buffer = Buffer.from(await response.arrayBuffer());
     const html = iconv.decode(buffer, "latin1");
     
