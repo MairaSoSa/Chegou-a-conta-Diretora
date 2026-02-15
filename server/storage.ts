@@ -285,15 +285,18 @@ export class DatabaseStorage implements IStorage {
 
   async upsertDashboardDataset(category: string, data: unknown, label?: string): Promise<DashboardDataset> {
     const existing = await this.getDashboardDatasetByCategory(category);
+    // Ensure data is serialized for blob storage if it's an object/array
+    const serializedData = typeof data === 'object' ? JSON.stringify(data) : data;
+    
     if (existing) {
-      const updateData: Record<string, unknown> = { data, lastUpdated: Date.now() };
+      const updateData: Record<string, unknown> = { data: serializedData, lastUpdated: Date.now() };
       if (label !== undefined) {
         updateData.label = label;
       }
       const [updated] = await db.update(dashboardDatasets).set(updateData).where(eq(dashboardDatasets.id, existing.id)).returning();
       return updated;
     }
-    const [created] = await db.insert(dashboardDatasets).values({ category, data, label, lastUpdated: Date.now() }).returning();
+    const [created] = await db.insert(dashboardDatasets).values({ category, data: serializedData, label, lastUpdated: Date.now() }).returning();
     return created;
   }
 
