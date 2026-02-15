@@ -12,6 +12,7 @@ import { registerObjectStorageRoutes } from "./integrations/object_storage";
 import { fetchMecNormasFilters, syncMecNormas } from "./integrations/mecnormas";
 import { backfillAiDocumentEmbeddings } from "./integrations/embeddings";
 import { getPddeInfo } from "./scraper/pdde";
+import { searchSchoolsLocal, getEscolaCompletaLocal, importSingleSchoolFromApi, importFromExternalApi, getImportStatus, getLocalSchoolCount } from "./importador";
 import { 
   localizarPrestacoesPorCnpj,
   detalharPrestacao,
@@ -168,38 +169,25 @@ export async function registerRoutes(
     }
   );
 
-  // === EXTERNAL API BASE URL ===
+  // === EXTERNAL API (fallback only) ===
   const EXTERNAL_API = process.env.EXTERNAL_API_URL || "https://api-escolas.replit.app";
 
-  // === PUBLIC: SCHOOLS (proxy to external API) ===
+  // === PUBLIC: SCHOOLS (local-first, API fallback) ===
   app.get(api.schools.search.path, async (req, res) => {
     const query = req.query.q as string | undefined;
     if (!query || query.length < 2) return res.json([]);
 
-    const isInepCode = /^\d{7,8}$/.test(query.trim());
+    const localResults = searchSchoolsLocal(query);
+    if (localResults.length > 0) {
+      return res.json(localResults);
+    }
 
     try {
+      const isInepCode = /^\d{7,8}$/.test(query.trim());
       if (isInepCode) {
-        const url = `${EXTERNAL_API}/api/escola/${query.trim()}`;
-        const apiRes = await fetch(url, { signal: AbortSignal.timeout(10000) });
-        if (apiRes.ok) {
-          const raw: any = await apiRes.json();
-          if (!raw.erro) {
-            const latestYear = raw.anos_disponiveis?.[raw.anos_disponiveis.length - 1] || String(new Date().getFullYear());
-            const censo = raw.dados?.[latestYear]?.censo_escolar;
-            const school = {
-              id: raw.co_entidade || 0,
-              inep: String(raw.co_entidade),
-              name: censo?.no_entidade || "Sem nome",
-              city: censo?.localizacao?.no_municipio || "",
-              state: censo?.localizacao?.sg_uf || "",
-              network: censo?.caracteristicas?.ds_dependencia || "",
-              location: censo?.caracteristicas?.ds_localizacao || "",
-              enrollmentCount: censo?.quantidades?.qt_matriculas || 0,
-              dataStatus: "API Externa",
-            };
-            return res.json([school]);
-          }
+        const imported = await importSingleSchoolFromApi(query.trim());
+        if (imported) {
+          return res.json(searchSchoolsLocal(query));
         }
       }
 
@@ -210,124 +198,61 @@ export async function registerRoutes(
       const schools = (data.dados || []).map((d: any) => ({
         id: d.co_entidade || 0,
         inep: String(d.co_entidade),
-        name: d.no_entidade || d.nome || "Sem nome",
-        city: d.no_municipio || d.municipio || "",
-        state: d.sg_uf || d.co_uf_texto || d.uf || "",
-        network: d.ds_dependencia || d.tp_dependencia_texto || d.rede || "",
-        location: d.ds_localizacao || d.tp_localizacao_texto || d.localizacao || "",
-        enrollmentCount: d.qt_matriculas || d.qt_mat_bas || d.matriculas || 0,
+        name: d.no_entidade || "Sem nome",
+        city: d.no_municipio || "",
+        state: d.sg_uf || "",
+        network: d.ds_dependencia || "",
+        location: d.ds_localizacao || "",
+        enrollmentCount: d.qt_matriculas || 0,
         dataStatus: "API Externa",
       }));
       res.json(schools);
     } catch (err: any) {
-      console.error("[Schools Search] External API error:", err.message);
-      const localSchools = await storage.getSchools(query);
-      res.json(localSchools);
+      console.error("[Schools Search] API error:", err.message);
+      res.json([]);
     }
   });
 
   app.get(api.schools.get.path, async (req, res) => {
     const inep = getParam(req.params, "inep");
+    
+    const localResults = searchSchoolsLocal(inep);
+    if (localResults.length > 0) {
+      return res.json(localResults[0]);
+    }
+
     try {
-      const url = `${EXTERNAL_API}/api/escola/${inep}`;
-      const apiRes = await fetch(url, { signal: AbortSignal.timeout(10000) });
-      if (!apiRes.ok) {
-        const local = await storage.getSchoolByInep(inep);
-        if (!local) return res.status(404).json({ message: "Escola não encontrada" });
-        return res.json(local);
+      const imported = await importSingleSchoolFromApi(inep);
+      if (imported) {
+        const results = searchSchoolsLocal(inep);
+        if (results.length > 0) return res.json(results[0]);
       }
-      const data: any = await apiRes.json();
-      if (data.erro) {
-        const local = await storage.getSchoolByInep(inep);
-        if (!local) return res.status(404).json({ message: data.erro });
-        return res.json(local);
-      }
-      const latestYear = data.anos_disponiveis?.[data.anos_disponiveis.length - 1] || String(new Date().getFullYear());
-      const anoData = data.dados?.[latestYear] || {};
-      const censo = anoData.censo_escolar;
-      const school = {
-        id: data.co_entidade || 0,
-        inep: String(data.co_entidade),
-        name: censo?.no_entidade || data.no_entidade || "Sem nome",
-        city: censo?.localizacao?.no_municipio || data.no_municipio || "",
-        state: censo?.localizacao?.sg_uf || data.sg_uf || "",
-        network: censo?.caracteristicas?.ds_dependencia || data.ds_dependencia || "",
-        location: censo?.caracteristicas?.ds_localizacao || data.ds_localizacao || "",
-        enrollmentCount: censo?.quantidades?.qt_matriculas || 0,
-        dataStatus: "API Externa",
-      };
-      res.json(school);
+      res.status(404).json({ message: "Escola não encontrada" });
     } catch (err: any) {
-      console.error("[School Get] External API error:", err.message);
-      const local = await storage.getSchoolByInep(inep);
-      if (!local) return res.status(404).json({ message: "Escola não encontrada" });
-      res.json(local);
+      console.error("[School Get] Error:", err.message);
+      res.status(404).json({ message: "Escola não encontrada" });
     }
   });
 
-  // === PUBLIC: ESCOLA COMPLETA (all indicators from external API) ===
+  // === PUBLIC: ESCOLA COMPLETA (local-first, API fallback) ===
   app.get("/api/escola-completa/:inep", async (req, res) => {
     const inep = getParam(req.params, "inep");
     const ano = parseInt(req.query.ano as string) || new Date().getFullYear();
+
+    let localData = getEscolaCompletaLocal(inep, ano);
+    if (localData) {
+      return res.json(localData);
+    }
+
     try {
-      const url = `${EXTERNAL_API}/api/escola/${inep}?ano=${ano}`;
-      const apiRes = await fetch(url, { signal: AbortSignal.timeout(15000) });
-      if (!apiRes.ok) return res.status(apiRes.status).json({ erro: "Erro ao buscar dados" });
-      const raw: any = await apiRes.json();
-      if (raw.erro) return res.status(404).json(raw);
+      await importSingleSchoolFromApi(inep);
+      localData = getEscolaCompletaLocal(inep, ano);
+      if (localData) return res.json(localData);
 
-      const anoData = raw.dados?.[String(ano)] || raw.dados?.[Object.keys(raw.dados || {})[0]] || {};
-      
-      const result: any = {
-        co_entidade: raw.co_entidade,
-        anos_disponiveis: raw.anos_disponiveis,
-        ano_selecionado: ano,
-      };
-
-      if (anoData.censo_escolar) {
-        const c = anoData.censo_escolar;
-        result.censo_escolar = {
-          ...c,
-          no_entidade: c.no_entidade,
-          qt_mat_bas: c.quantidades?.qt_matriculas || c.qt_matriculas,
-          qt_mat_inf: c.matriculas_por_etapa?.infantil,
-          qt_mat_fund_ai: c.matriculas_por_etapa?.fundamental,
-          qt_mat_fund_af: c.matriculas_por_etapa?.fundamental,
-          qt_mat_med: c.matriculas_por_etapa?.medio,
-          qt_mat_eja: c.matriculas_por_etapa?.eja,
-          qt_mat_esp: c.matriculas_por_etapa?.especial,
-          qt_docentes: c.quantidades?.qt_docentes,
-          qt_turmas: c.quantidades?.qt_turmas,
-          qt_salas: c.quantidades?.qt_salas_utilizadas,
-          tp_dependencia_texto: c.caracteristicas?.ds_dependencia,
-          tp_localizacao_texto: c.caracteristicas?.ds_localizacao || c.localizacao?.ds_localizacao_diferenciada,
-          tp_situacao_texto: c.caracteristicas?.ds_situacao,
-          in_internet: c.infraestrutura?.in_internet,
-          no_municipio: c.localizacao?.no_municipio,
-          sg_uf: c.localizacao?.sg_uf,
-          infraestrutura: c.infraestrutura,
-          tempo_integral: c.tempo_integral,
-        };
-      }
-
-      if (anoData.ideb) result.ideb = anoData.ideb;
-      if (anoData.icg) result.icg = anoData.icg;
-      if (anoData.inse) result.inse = anoData.inse;
-      if (anoData.tdi) result.tdi = anoData.tdi;
-      if (anoData.ird) result.ird = anoData.ird;
-      if (anoData.dsu) result.dsu = anoData.dsu;
-      if (anoData.had) result.had = anoData.had;
-      if (anoData.atu) result.atu = anoData.atu;
-      if (anoData.ied) result.ied = anoData.ied;
-      if (anoData.afd) result.afd = anoData.afd;
-      if (anoData.saeb) result.saeb = anoData.saeb;
-      if (anoData.taxas_rendimento) result.taxas_rendimento = anoData.taxas_rendimento;
-      if (anoData.taxa_nao_resposta) result.taxa_nao_resposta = anoData.taxa_nao_resposta;
-
-      res.json(result);
+      res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], ano_selecionado: ano });
     } catch (err: any) {
-      console.error("[Escola Completa] External API error:", err.message);
-      res.status(500).json({ erro: "Erro de conexão com a API de escolas" });
+      console.error("[Escola Completa] Error:", err.message);
+      res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], ano_selecionado: ano });
     }
   });
 
@@ -678,6 +603,23 @@ export async function registerRoutes(
     const dataset = await storage.getDashboardDatasetByCategory(category);
     if (!dataset) return res.status(404).json({ message: "Dados não encontrados" });
     res.json(dataset);
+  });
+
+  // === ADMIN: DATA IMPORT (from external API) ===
+  app.post("/api/admin/importar", adminAuth, async (req, res) => {
+    const tipos = req.body.tipos as string[] | undefined;
+    importFromExternalApi(tipos).then(result => {
+      console.log("[Import] Finished:", result);
+    });
+    res.json({ mensagem: "Importação iniciada em background", status: getImportStatus() });
+  });
+
+  app.get("/api/admin/importar-status", adminAuth, async (_req, res) => {
+    res.json({ ...getImportStatus(), localSchoolCount: getLocalSchoolCount() });
+  });
+
+  app.get("/api/importar-status", async (_req, res) => {
+    res.json({ ...getImportStatus(), localSchoolCount: getLocalSchoolCount() });
   });
 
   // === ADMIN: DASHBOARD CSV UPLOAD ===

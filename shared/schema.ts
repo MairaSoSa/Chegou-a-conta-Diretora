@@ -129,6 +129,45 @@ export const trilhaUnits = sqliteTable("trilha_units", {
   sortOrder: integer("sort_order").default(0),
 });
 
+// === EDUCATIONAL INDICATORS (from INEP) ===
+export const censoEscolar = sqliteTable("censo_escolar", {
+  id: integer("id").primaryKey(),
+  inep: text("inep").notNull(),
+  ano: integer("ano").notNull(),
+  nome: text("nome"),
+  municipio: text("municipio"),
+  uf: text("uf"),
+  dependencia: text("dependencia"),
+  localizacao: text("localizacao"),
+  situacao: text("situacao"),
+  matriculas: integer("matriculas"),
+  docentes: integer("docentes"),
+  turmas: integer("turmas"),
+  dados: text("dados"),
+  updatedAt: integer("updated_at"),
+});
+
+export const indicadoresEducacionais = sqliteTable("indicadores_educacionais", {
+  id: integer("id").primaryKey(),
+  inep: text("inep").notNull(),
+  ano: integer("ano").notNull(),
+  tipo: text("tipo").notNull(),
+  dados: text("dados"),
+  updatedAt: integer("updated_at"),
+});
+
+export const importacaoStatus = sqliteTable("importacao_status", {
+  id: integer("id").primaryKey(),
+  tipo: text("tipo").notNull(),
+  ano: integer("ano").notNull(),
+  status: text("status").notNull(),
+  totalRegistros: integer("total_registros"),
+  registrosImportados: integer("registros_importados"),
+  erro: text("erro"),
+  iniciadoEm: integer("iniciado_em"),
+  finalizadoEm: integer("finalizado_em"),
+});
+
 // === UNANSWERED QUESTIONS ===
 export const unansweredQuestions = sqliteTable("unanswered_questions", {
   id: integer("id").primaryKey(),

@@ -43,11 +43,15 @@ npm run dev
 
 ## Recent Changes
 
-### External Educational Data API Integration (Feb 2026)
-- Dashboard now connects to external API (api-escolas.replit.app) for real-time school data
-- Server-side proxy routes in `server/routes.ts` forward requests to external API with local DB fallback
-- Search supports both school name and INEP code (7-8 digit) lookup
-- Complete school data endpoint: GET `/api/escola-completa/:inep?ano=YYYY`
+### Local-First Educational Data with API Fallback (Feb 2026)
+- **Local-first architecture**: Dashboard queries local SQLite database first, external API (api-escolas.replit.app) as fallback only
+- New database tables: `censo_escolar` (school census data with full JSON), `indicadores_educacionais` (IDEB, ICG, INSE, TDI, IRD, etc.)
+- `server/importador.ts`: Data import module with local-first query functions (`searchSchoolsLocal`, `getEscolaCompletaLocal`, `importSingleSchoolFromApi`)
+- On-demand import: When a school is searched by INEP code and not found locally, it's fetched from API and cached in local DB
+- Admin bulk import: POST `/api/admin/importar` triggers background import of all schools from external API (paginated, 100/page)
+- Import status: GET `/api/admin/importar-status` or GET `/api/importar-status` (public) shows progress
+- Search supports both school name (case-insensitive LIKE) and INEP code (7-8 digit) lookup
+- Complete school data endpoint: GET `/api/escola-completa/:inep?ano=YYYY` returns census + all indicators from local DB
 - Extracts nested data from `dados.{year}` structure: censo_escolar, ideb, icg, inse, tdi, ird, dsu, had, atu, ied, afd, saeb, taxas_rendimento
 - Dashboard displays: summary cards (enrollment, IDEB, ICG), expandable indicator sections in "completo" mode
 - Year selector dynamically uses `anos_disponiveis` from API response
