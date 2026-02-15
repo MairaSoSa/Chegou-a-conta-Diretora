@@ -68,14 +68,14 @@ export default function Dashboard() {
     if (pddeData?.ok) {
       return {
         id: dbSchool?.id || 0,
-        inep: selectedInep || "",
-        name: pddeData.nome_escola || dbSchool?.name || "Escola não identificada",
-        city: pddeData.municipio || dbSchool?.city || "",
-        state: pddeData.uf || dbSchool?.state || "",
-        network: pddeData.rede || dbSchool?.network || "",
-        location: dbSchool?.location || "Urbana",
-        enrollmentCount: pddeData.matriculas_total || dbSchool?.enrollmentCount || 0,
-        dataStatus: pddeData.ok ? "Completo" : (dbSchool?.dataStatus || "Incompleto"),
+        inep: (selectedInep || "") as string,
+        name: (pddeData.nome_escola || dbSchool?.name || "Escola não identificada") as string,
+        city: (pddeData.municipio || dbSchool?.city || "") as string,
+        state: (pddeData.uf || dbSchool?.state || "") as string,
+        network: (pddeData.rede || dbSchool?.network || "") as string,
+        location: (dbSchool?.location || "Urbana") as string,
+        enrollmentCount: (pddeData.matriculas_total || dbSchool?.enrollmentCount || 0) as number,
+        dataStatus: (pddeData.ok ? "Completo" : (dbSchool?.dataStatus || "Incompleto")) as string,
         lastUpdate: Date.now()
       } as any;
     }
@@ -1648,7 +1648,8 @@ export default function Dashboard() {
   );
 }
 
-function InfoItem({ label, value, mono, highlight }: { label: string; value: string; mono?: boolean; highlight?: boolean }) {
+function InfoItem({ label, value, mono, highlight }: { label: string; value: string | null | undefined; mono?: boolean; highlight?: boolean }) {
+  if (value === null || value === undefined) return null;
   return (
     <div className="p-3 rounded-xl bg-muted/30">
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
