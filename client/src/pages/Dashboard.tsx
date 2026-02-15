@@ -142,6 +142,31 @@ export default function Dashboard() {
           medio: d.percentual_med ?? null,
         };
       }),
+      icg: anos.map((a: number) => {
+        const ic = indicadores[a]?.icg;
+        if (!ic) return { ano: a };
+        return { ano: a, nivel: ic.nivel ?? null };
+      }),
+      ird: anos.map((a: number) => {
+        const ir = indicadores[a]?.ird;
+        if (!ir) return { ano: a };
+        return { ano: a, media: ir.media_ird ?? ir.media ?? null };
+      }),
+      ideb: anos.map((a: number) => {
+        const id = indicadores[a]?.ideb;
+        if (!id) return { ano: a };
+        return {
+          ano: a,
+          ideb_ai: id.ideb_ai ?? id.ideb ?? null,
+          ideb_af: id.ideb_af ?? null,
+          ideb_em: id.ideb_em ?? null,
+        };
+      }),
+      inse: anos.map((a: number) => {
+        const ins = indicadores[a]?.inse;
+        if (!ins) return { ano: a };
+        return { ano: a, media: ins.media_inse ?? ins.valor ?? null };
+      }),
     };
   }, [evolucaoData]);
 
@@ -717,6 +742,44 @@ export default function Dashboard() {
                                 ]}
                                 icon={<GraduationCap className="w-4 h-4 text-emerald-600" />}
                               />
+                              <EvolutionChart
+                                title="TDI - Distorção Idade-Série (%)"
+                                data={evolutionCharts.tdi}
+                                lines={[
+                                  { key: "fund_total", color: CHART_COLORS[0], name: "Fund. Total" },
+                                  { key: "fund_af", color: CHART_COLORS[1], name: "Fund. AF" },
+                                  { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
+                                ]}
+                                icon={<BarChart3 className="w-4 h-4 text-orange-600" />}
+                              />
+                              <EvolutionChart
+                                title="ICG - Complexidade de Gestão"
+                                data={evolutionCharts.icg}
+                                lines={[{ key: "nivel", color: CHART_COLORS[0], name: "Nível" }]}
+                                icon={<BarChart3 className="w-4 h-4 text-blue-600" />}
+                              />
+                              <EvolutionChart
+                                title="IRD - Regularidade do Docente"
+                                data={evolutionCharts.ird}
+                                lines={[{ key: "media", color: CHART_COLORS[2], name: "Média IRD" }]}
+                                icon={<BarChart3 className="w-4 h-4 text-teal-600" />}
+                              />
+                              <EvolutionChart
+                                title="IDEB"
+                                data={evolutionCharts.ideb}
+                                lines={[
+                                  { key: "ideb_ai", color: CHART_COLORS[0], name: "Anos Iniciais" },
+                                  { key: "ideb_af", color: CHART_COLORS[1], name: "Anos Finais" },
+                                  { key: "ideb_em", color: EXTRA_COLORS[2], name: "Ensino Médio" },
+                                ]}
+                                icon={<Award className="w-4 h-4 text-amber-600" />}
+                              />
+                              <EvolutionChart
+                                title="INSE - Nível Socioeconômico"
+                                data={evolutionCharts.inse}
+                                lines={[{ key: "media", color: CHART_COLORS[3], name: "Média INSE" }]}
+                                icon={<TrendingUp className="w-4 h-4 text-purple-600" />}
+                              />
                             </>
                           )}
                         </div>
@@ -789,6 +852,34 @@ export default function Dashboard() {
                                 { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
                               ]}
                               icon={<GraduationCap className="w-4 h-4 text-emerald-600" />}
+                            />
+                            <EvolutionChart
+                              title="ICG - Complexidade de Gestão"
+                              data={evolutionCharts.icg}
+                              lines={[{ key: "nivel", color: CHART_COLORS[0], name: "Nível" }]}
+                              icon={<BarChart3 className="w-4 h-4 text-blue-600" />}
+                            />
+                            <EvolutionChart
+                              title="IRD - Regularidade do Docente"
+                              data={evolutionCharts.ird}
+                              lines={[{ key: "media", color: CHART_COLORS[2], name: "Média IRD" }]}
+                              icon={<BarChart3 className="w-4 h-4 text-teal-600" />}
+                            />
+                            <EvolutionChart
+                              title="IDEB"
+                              data={evolutionCharts.ideb}
+                              lines={[
+                                { key: "ideb_ai", color: CHART_COLORS[0], name: "Anos Iniciais" },
+                                { key: "ideb_af", color: CHART_COLORS[1], name: "Anos Finais" },
+                                { key: "ideb_em", color: EXTRA_COLORS[2], name: "Ensino Médio" },
+                              ]}
+                              icon={<Award className="w-4 h-4 text-amber-600" />}
+                            />
+                            <EvolutionChart
+                              title="INSE - Nível Socioeconômico"
+                              data={evolutionCharts.inse}
+                              lines={[{ key: "media", color: CHART_COLORS[3], name: "Média INSE" }]}
+                              icon={<TrendingUp className="w-4 h-4 text-purple-600" />}
                             />
                           </>
                         )}

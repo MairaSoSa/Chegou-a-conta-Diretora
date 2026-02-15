@@ -436,6 +436,113 @@ export function getEscolaEvolucaoLocal(inep: string) {
   };
 }
 
+async function fetchJsonSafe(url: string, timeout = 8000): Promise<any | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(timeout) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.erro) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function getEscolaEvolucaoCompleta(inep: string) {
+  const localData = getEscolaEvolucaoLocal(inep);
+
+  const censoByYear: Record<number, any> = localData?.censo_por_ano || {};
+  const indicadoresByYear: Record<number, Record<string, any>> = localData?.indicadores_por_ano || {};
+  let escolaInfo = localData?.escola || null;
+
+  const indicatorEndpoints: { tipo: string; apiPath: string; anos: number[] }[] = [
+    { tipo: "censo_escolar", apiPath: "censo-escolar", anos: [2020, 2021, 2022, 2023, 2024] },
+    { tipo: "icg", apiPath: "icg", anos: [2020, 2021, 2022, 2023, 2024] },
+    { tipo: "tdi", apiPath: "tdi", anos: [2020, 2021, 2022, 2023, 2024] },
+    { tipo: "taxas_rendimento", apiPath: "taxa-rendimento", anos: [2020, 2021, 2022, 2023, 2024] },
+    { tipo: "ird", apiPath: "ird", anos: [2020, 2021, 2022, 2023, 2024] },
+    { tipo: "ideb", apiPath: "ideb", anos: [2019, 2021, 2023] },
+    { tipo: "inse", apiPath: "inse", anos: [2021, 2023] },
+    { tipo: "atu", apiPath: "atu", anos: [2020, 2021, 2022, 2023, 2024] },
+    { tipo: "had", apiPath: "had", anos: [2020, 2021, 2022, 2023, 2024] },
+    { tipo: "dsu", apiPath: "dsu", anos: [2020, 2021, 2022, 2023, 2024] },
+  ];
+
+  const fetchTasks: Promise<void>[] = [];
+  for (const ep of indicatorEndpoints) {
+    for (const ano of ep.anos) {
+      if (ep.tipo === "censo_escolar" && censoByYear[ano]) continue;
+      if (ep.tipo !== "censo_escolar" && indicadoresByYear[ano]?.[ep.tipo]) continue;
+
+      fetchTasks.push(
+        fetchJsonSafe(`${EXTERNAL_API}/api/${ep.apiPath}/${ano}/escolas/${inep}`).then(data => {
+          if (!data) return;
+          if (ep.tipo === "censo_escolar") {
+            censoByYear[ano] = {
+              ...data,
+              no_entidade: data.no_entidade,
+              qt_mat_bas: data.quantidades?.qt_matriculas || data.qt_matriculas || data.qt_mat_bas,
+              qt_doc_bas: data.quantidades?.qt_docentes || data.qt_docentes || data.qt_doc_bas,
+              qt_tur_bas: data.quantidades?.qt_turmas || data.qt_turmas || data.qt_tur_bas,
+              qt_docentes: data.quantidades?.qt_docentes || data.qt_docentes,
+              qt_turmas: data.quantidades?.qt_turmas || data.qt_turmas,
+              qt_salas_utilizadas: data.quantidades?.qt_salas_utilizadas || data.qt_salas_utilizadas,
+              no_municipio: data.localizacao?.no_municipio || data.no_municipio,
+              sg_uf: data.localizacao?.sg_uf || data.sg_uf,
+              ds_dependencia: data.caracteristicas?.ds_dependencia || data.ds_dependencia,
+              ds_localizacao: data.caracteristicas?.ds_localizacao || data.ds_localizacao,
+              ds_situacao: data.caracteristicas?.ds_situacao || data.ds_situacao,
+            };
+            if (!escolaInfo) {
+              escolaInfo = {
+                no_entidade: censoByYear[ano].no_entidade,
+                no_municipio: censoByYear[ano].no_municipio,
+                sg_uf: censoByYear[ano].sg_uf,
+                ds_dependencia: censoByYear[ano].ds_dependencia,
+                ds_localizacao: censoByYear[ano].ds_localizacao,
+                ds_situacao: censoByYear[ano].ds_situacao,
+              };
+            }
+          } else {
+            if (!indicadoresByYear[ano]) indicadoresByYear[ano] = {};
+            indicadoresByYear[ano][ep.tipo] = data;
+          }
+        })
+      );
+    }
+  }
+
+  await Promise.all(fetchTasks);
+
+  const anosSet = new Set<number>();
+  Object.keys(censoByYear).forEach(a => anosSet.add(parseInt(a)));
+  Object.keys(indicadoresByYear).forEach(a => anosSet.add(parseInt(a)));
+  const anos = [...anosSet].sort();
+
+  if (anos.length === 0 && !escolaInfo) return null;
+
+  if (!escolaInfo && Object.keys(censoByYear).length > 0) {
+    const latestAno = anos[anos.length - 1];
+    const c = censoByYear[latestAno];
+    escolaInfo = {
+      no_entidade: c?.no_entidade,
+      no_municipio: c?.no_municipio,
+      sg_uf: c?.sg_uf,
+      ds_dependencia: c?.ds_dependencia || c?.tp_dependencia_texto,
+      ds_localizacao: c?.ds_localizacao || c?.tp_localizacao_texto,
+      ds_situacao: c?.ds_situacao || c?.tp_situacao_texto,
+    };
+  }
+
+  return {
+    co_entidade: parseInt(inep),
+    anos_disponiveis: anos,
+    escola: escolaInfo,
+    censo_por_ano: censoByYear,
+    indicadores_por_ano: indicadoresByYear,
+  };
+}
+
 export function getLocalSchoolCount() {
   const result = db.select({ count: sql<number>`count(*)` }).from(censoEscolar).get();
   return result?.count || 0;
