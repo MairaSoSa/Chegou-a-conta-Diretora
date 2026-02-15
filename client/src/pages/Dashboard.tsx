@@ -1,19 +1,18 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import type { DashboardDataset } from "@shared/schema";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { 
   Search, Users, ArrowRight, 
-  MapPin, Calendar, Banknote, 
+  MapPin, Banknote, 
   GraduationCap, Info, ExternalLink,
   School, Loader2, List, LayoutGrid, Link2,
-  BarChart3
+  BarChart3, TrendingUp, BookOpen, Award,
+  ChevronDown, ChevronUp
 } from "lucide-react";
-import { useSchoolSearch, useSchool } from "@/hooks/use-schools";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useSchoolSearch, useSchool, useEscolaCompleta } from "@/hooks/use-schools";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 const LINKS_PROGRAMAS = [
@@ -26,47 +25,29 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInep, setSelectedInep] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'resumido' | 'completo'>('resumido');
+  const [selectedAno, setSelectedAno] = useState(new Date().getFullYear());
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   
   const { data: searchResults, refetch: refetchSearch, isLoading: searchLoading } = useSchoolSearch(searchQuery);
   const { data: school, isLoading: schoolLoading } = useSchool(selectedInep || "");
-  
-  const { data: datasets = [] } = useQuery<DashboardDataset[]>({
-    queryKey: ["/api/dashboard/datasets"],
-  });
+  const { data: escolaCompleta, isLoading: completaLoading } = useEscolaCompleta(selectedInep || "", selectedAno);
 
-  function getDataset(category: string) {
-    return datasets.find(d => d.category === category);
-  }
+  const toggleSection = (key: string) => {
+    setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
-  const repassesData = getDataset('repasses')?.data as any[] | null;
-  const enrollmentData = getDataset('enrollment')?.data as any[] | null;
-  const icgData = getDataset('icg')?.data as any[] | null;
-  const inseData = getDataset('inse')?.data as any[] | null;
-  const tdiData = getDataset('tdi')?.data as any[] | null;
-  const irdData = getDataset('ird')?.data as any[] | null;
-  const dsuData = getDataset('dsu')?.data as any[] | null;
-  const hadData = getDataset('had')?.data as any[] | null;
-  const atuData = getDataset('atu')?.data as any[] | null;
-  const iedData = getDataset('ied')?.data as any[] | null;
-  const afdData = getDataset('afd')?.data as any[] | null;
-  const idebData = getDataset('ideb')?.data as any[] | null;
+  const censoData = escolaCompleta?.censo_escolar;
+  const idebData = escolaCompleta?.ideb;
+  const icgData = escolaCompleta?.icg;
+  const inseData = escolaCompleta?.inse;
+  const tdiData = escolaCompleta?.tdi;
+  const irdData = escolaCompleta?.ird;
+  const taxasData = escolaCompleta?.taxas_rendimento;
+  const saebData = escolaCompleta?.saeb;
 
-  const latestUpdate = datasets.length > 0
-    ? datasets.reduce((latest, d) => {
-        const dt = d.lastUpdated ? new Date(d.lastUpdated) : new Date(0);
-        return dt > latest ? dt : latest;
-      }, new Date(0))
-    : null;
+  const matriculasTotal = censoData?.qt_mat_bas || censoData?.matriculas || school?.enrollmentCount || 0;
 
-  const lastRepasse = repassesData?.[repassesData.length - 1];
-  
-  const repassePerAluno = useMemo(() => {
-    const totalAlunos = (school?.enrollmentCount ?? enrollmentData?.[enrollmentData.length - 1]?.total) as number | null | undefined;
-    if (lastRepasse && typeof totalAlunos === 'number' && totalAlunos > 0) {
-      return (lastRepasse.total / totalAlunos).toFixed(2);
-    }
-    return null;
-  }, [lastRepasse, school?.enrollmentCount, enrollmentData]);
+  const anos = [2024, 2023, 2022, 2021, 2020];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -87,7 +68,13 @@ export default function Dashboard() {
                     if (selectedInep) setSelectedInep(null);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') refetchSearch();
+                    if (e.key === 'Enter') {
+                      if (searchQuery.length === 8 && /^\d+$/.test(searchQuery)) {
+                        setSelectedInep(searchQuery);
+                      } else {
+                        refetchSearch();
+                      }
+                    }
                   }}
                 />
                 
@@ -95,7 +82,7 @@ export default function Dashboard() {
                   <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/50 rounded-xl shadow-xl z-50 overflow-hidden max-h-80 overflow-y-auto">
                     {searchResults.map((result: any) => (
                       <button
-                        key={result.id}
+                        key={result.inep || result.id}
                         className="w-full text-left px-4 py-3 hover:bg-accent/5 border-b border-border/30 last:border-0 transition-colors flex justify-between items-center group"
                         onClick={() => {
                           setSelectedInep(result.inep);
@@ -138,12 +125,15 @@ export default function Dashboard() {
                 
                 <Badge variant="outline">{school.network || "—"}</Badge>
                 <Badge variant="outline">{school.location || "—"}</Badge>
-                {latestUpdate && latestUpdate.getTime() > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    Dados atualizados em: {latestUpdate.toLocaleDateString('pt-BR')}
-                  </span>
-                )}
+
                 <div className="ml-auto flex items-center gap-2">
+                  <select
+                    value={selectedAno}
+                    onChange={(e) => setSelectedAno(Number(e.target.value))}
+                    className="text-xs bg-background border border-border/50 rounded-lg px-2 py-1"
+                  >
+                    {anos.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
                   <Button
                     variant={viewMode === 'resumido' ? 'secondary' : 'ghost'}
                     size="sm"
@@ -170,112 +160,176 @@ export default function Dashboard() {
 
         {selectedInep ? (
           <div className="space-y-6">
-            <Card className="bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200">
-              <CardContent className="p-4">
-                <p className="text-emerald-800 leading-relaxed">
-                  <strong>Olá!</strong> Aqui você vê um resumo da sua escola baseado nos dados cadastrados na nossa plataforma.
-                </p>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Card className="card-clay p-5">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Users className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold text-primary">
-                      {school?.enrollmentCount ?? '—'}
-                    </p>
-                    <p className="text-sm font-medium text-foreground">Alunos matriculados</p>
-                  </div>
-                </div>
-              </Card>
-              
-              <Card className="card-clay p-5">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-                    <Banknote className="w-6 h-6 text-accent" />
-                  </div>
-                  <div>
-                    {lastRepasse ? (
-                      <>
-                        <p className="text-3xl font-bold text-accent">R$ {lastRepasse.total.toLocaleString('pt-BR')}</p>
-                        <p className="text-sm font-medium text-foreground">Recebido em {lastRepasse.year || '—'}</p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-3xl font-bold text-muted-foreground">—</p>
-                        <p className="text-sm font-medium text-foreground">Repasses</p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            {viewMode === 'completo' && (
+            {completaLoading && (
               <Card className="card-clay">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Info className="w-5 h-5 text-primary" />
-                    Detalhes da Escola
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <InfoItem label="Nome" value={school?.name} />
-                    <InfoItem label="INEP" value={school?.inep} mono />
-                    <InfoItem label="Cidade" value={school?.city} />
-                    <InfoItem label="Estado" value={school?.state} />
-                    <InfoItem label="Rede" value={school?.network} />
-                    <InfoItem label="Localização" value={school?.location} />
-                    <InfoItem label="Situação dos Dados" value={school?.dataStatus} />
-                    {repassePerAluno && (
-                      <InfoItem label="Repasse por Aluno" value={`R$ ${repassePerAluno}`} highlight />
-                    )}
-                  </div>
+                <CardContent className="p-8 text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary mb-2" />
+                  <p className="text-muted-foreground">Carregando dados da API...</p>
                 </CardContent>
               </Card>
             )}
 
-            {viewMode === 'completo' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="card-clay">
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4 text-primary" />
-                      Indicadores de Contexto
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-4">
-                      <InfoItem label="ICG (Complexidade)" value={icgData?.[0]?.valor} />
-                      <InfoItem label="INSE (Socioeconômico)" value={inseData?.[0]?.valor} />
-                      <InfoItem label="IED (Esforço Docente)" value={iedData?.[0]?.valor} />
-                      <InfoItem label="AFD (Formação Docente)" value={afdData?.[0]?.valor} />
-                    </div>
-                  </CardContent>
-                </Card>
+            <Card className="bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200">
+              <CardContent className="p-4">
+                <p className="text-emerald-800 leading-relaxed">
+                  <strong>Olá!</strong> Aqui estão os dados da sua escola vindos diretamente da base do INEP.
+                  {!escolaCompleta && !completaLoading && " Os dados ainda estão sendo carregados na API."}
+                </p>
+              </CardContent>
+            </Card>
 
-                <Card className="card-clay">
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <GraduationCap className="w-4 h-4 text-accent" />
-                      Indicadores de Desempenho
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-4">
-                      <InfoItem label="IDEB" value={idebData?.[0]?.valor || idebData?.[0]?.escola} />
-                      <InfoItem label="TDI (Distorção)" value={tdiData?.[0]?.valor} />
-                      <InfoItem label="ATU (Alunos/Turma)" value={atuData?.[0]?.valor} />
-                      <InfoItem label="HAD (Horas-aula)" value={hadData?.[0]?.valor} />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <StatCard
+                icon={<Users className="w-6 h-6 text-primary" />}
+                value={matriculasTotal || '—'}
+                label="Alunos matriculados"
+                color="primary"
+              />
+              <StatCard
+                icon={<GraduationCap className="w-6 h-6 text-accent" />}
+                value={idebData?.ideb !== undefined && idebData?.ideb !== null ? idebData.ideb : '—'}
+                label={`IDEB ${idebData?.ano || ''}`}
+                color="accent"
+              />
+              <StatCard
+                icon={<BarChart3 className="w-6 h-6 text-blue-600" />}
+                value={icgData?.nivel_texto || icgData?.nivel || '—'}
+                label="Complexidade (ICG)"
+                color="blue"
+              />
+            </div>
+
+            {viewMode === 'completo' && escolaCompleta && (
+              <>
+                {censoData && (
+                  <IndicatorSection
+                    title="Censo Escolar"
+                    icon={<BookOpen className="w-5 h-5 text-primary" />}
+                    expanded={expandedSections['censo']}
+                    onToggle={() => toggleSection('censo')}
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <InfoItem label="Matrículas Total" value={censoData.qt_mat_bas} />
+                      <InfoItem label="Ed. Infantil" value={censoData.qt_mat_inf} />
+                      <InfoItem label="Fund. Iniciais" value={censoData.qt_mat_fund_ai} />
+                      <InfoItem label="Fund. Finais" value={censoData.qt_mat_fund_af} />
+                      <InfoItem label="Ensino Médio" value={censoData.qt_mat_med} />
+                      <InfoItem label="EJA" value={censoData.qt_mat_eja} />
+                      <InfoItem label="Ed. Especial" value={censoData.qt_mat_esp} />
+                      <InfoItem label="Docentes" value={censoData.qt_docentes || censoData.qt_doc} />
+                      <InfoItem label="Turmas" value={censoData.qt_turmas || censoData.qt_tur} />
+                      <InfoItem label="Salas" value={censoData.qt_salas || censoData.qt_sal_utilizada} />
+                      <InfoItem label="Dependência" value={censoData.tp_dependencia_texto} />
+                      <InfoItem label="Localização" value={censoData.tp_localizacao_texto} />
+                      <InfoItem label="Internet" value={censoData.in_internet === 1 ? "Sim" : censoData.in_internet === 0 ? "Não" : undefined} />
+                      <InfoItem label="Situação" value={censoData.tp_situacao_texto} />
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  </IndicatorSection>
+                )}
+
+                {idebData && (
+                  <IndicatorSection
+                    title="IDEB"
+                    icon={<Award className="w-5 h-5 text-amber-600" />}
+                    expanded={expandedSections['ideb']}
+                    onToggle={() => toggleSection('ideb')}
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <InfoItem label="IDEB" value={idebData.ideb} highlight />
+                      <InfoItem label="Meta" value={idebData.projecao || idebData.meta} />
+                      <InfoItem label="Nota SAEB Matemática" value={idebData.nota_saeb_mat || idebData.nota_mat} />
+                      <InfoItem label="Nota SAEB Português" value={idebData.nota_saeb_lp || idebData.nota_lp} />
+                      <InfoItem label="Indicador Rendimento" value={idebData.indicador_rendimento} />
+                      <InfoItem label="Etapa" value={idebData.etapa} />
+                      <InfoItem label="Ano" value={idebData.ano} />
+                    </div>
+                  </IndicatorSection>
+                )}
+
+                {inseData && (
+                  <IndicatorSection
+                    title="INSE - Nível Socioeconômico"
+                    icon={<TrendingUp className="w-5 h-5 text-purple-600" />}
+                    expanded={expandedSections['inse']}
+                    onToggle={() => toggleSection('inse')}
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <InfoItem label="Classificação" value={inseData.classificacao || inseData.nivel || inseData.inse_classificacao} highlight />
+                      <InfoItem label="Valor INSE" value={inseData.media_inse || inseData.valor || inseData.inse_valor} />
+                      <InfoItem label="Ano" value={inseData.ano} />
+                    </div>
+                  </IndicatorSection>
+                )}
+
+                {icgData && (
+                  <IndicatorSection
+                    title="ICG - Complexidade de Gestão"
+                    icon={<BarChart3 className="w-5 h-5 text-blue-600" />}
+                    expanded={expandedSections['icg']}
+                    onToggle={() => toggleSection('icg')}
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <InfoItem label="Nível" value={icgData.nivel_texto || icgData.nivel || icgData.icg_nivel} highlight />
+                      <InfoItem label="Valor" value={icgData.valor || icgData.icg_valor} />
+                      <InfoItem label="Ano" value={icgData.ano} />
+                    </div>
+                  </IndicatorSection>
+                )}
+
+                {tdiData && (
+                  <IndicatorSection
+                    title="TDI - Distorção Idade-Série"
+                    icon={<BarChart3 className="w-5 h-5 text-orange-600" />}
+                    expanded={expandedSections['tdi']}
+                    onToggle={() => toggleSection('tdi')}
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <IndicatorRows data={tdiData} />
+                    </div>
+                  </IndicatorSection>
+                )}
+
+                {irdData && (
+                  <IndicatorSection
+                    title="IRD - Regularidade do Docente"
+                    icon={<BarChart3 className="w-5 h-5 text-teal-600" />}
+                    expanded={expandedSections['ird']}
+                    onToggle={() => toggleSection('ird')}
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <IndicatorRows data={irdData} />
+                    </div>
+                  </IndicatorSection>
+                )}
+
+                {taxasData && (
+                  <IndicatorSection
+                    title="Taxas de Rendimento"
+                    icon={<TrendingUp className="w-5 h-5 text-green-600" />}
+                    expanded={expandedSections['taxas']}
+                    onToggle={() => toggleSection('taxas')}
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <IndicatorRows data={taxasData} />
+                    </div>
+                  </IndicatorSection>
+                )}
+
+                {saebData && (
+                  <IndicatorSection
+                    title="SAEB"
+                    icon={<Award className="w-5 h-5 text-indigo-600" />}
+                    expanded={expandedSections['saeb']}
+                    onToggle={() => toggleSection('saeb')}
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <IndicatorRows data={saebData} />
+                    </div>
+                  </IndicatorSection>
+                )}
+
+                {renderExtraIndicators(escolaCompleta, expandedSections, toggleSection)}
+              </>
             )}
 
             <Card className="card-clay">
@@ -327,9 +381,124 @@ export default function Dashboard() {
   );
 }
 
+function StatCard({ icon, value, label, color }: { icon: React.ReactNode; value: any; label: string; color: string }) {
+  return (
+    <Card className="card-clay p-5">
+      <div className="flex items-start gap-4">
+        <div className={`w-12 h-12 rounded-xl bg-${color}/10 flex items-center justify-center flex-shrink-0`}>
+          {icon}
+        </div>
+        <div>
+          <p className="text-2xl font-bold">{value}</p>
+          <p className="text-sm font-medium text-foreground">{label}</p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function IndicatorSection({ title, icon, expanded = true, onToggle, children }: {
+  title: string; icon: React.ReactNode; expanded?: boolean; onToggle: () => void; children: React.ReactNode;
+}) {
+  return (
+    <Card className="card-clay">
+      <CardHeader className="pb-2 cursor-pointer" onClick={onToggle}>
+        <CardTitle className="flex items-center gap-2 text-base">
+          {icon}
+          {title}
+          <span className="ml-auto">
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </span>
+        </CardTitle>
+      </CardHeader>
+      {expanded && <CardContent>{children}</CardContent>}
+    </Card>
+  );
+}
+
+function IndicatorRows({ data }: { data: any }) {
+  if (!data) return null;
+  if (Array.isArray(data)) {
+    return (
+      <>
+        {data.map((item: any, idx: number) => (
+          <div key={idx} className="col-span-full">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {Object.entries(item)
+                .filter(([k]) => !['co_entidade', 'co_municipio', 'no_entidade'].includes(k))
+                .map(([key, val]) => (
+                  <InfoItem key={key} label={formatLabel(key)} value={val as any} />
+                ))}
+            </div>
+          </div>
+        ))}
+      </>
+    );
+  }
+  return (
+    <>
+      {Object.entries(data)
+        .filter(([k]) => !['co_entidade', 'co_municipio', 'no_entidade'].includes(k))
+        .map(([key, val]) => (
+          <InfoItem key={key} label={formatLabel(key)} value={val as any} />
+        ))}
+    </>
+  );
+}
+
+function renderExtraIndicators(escolaCompleta: any, expandedSections: Record<string, boolean>, toggleSection: (k: string) => void) {
+  const extras = [
+    { key: 'dsu', title: 'DSU - Docentes com Superior', color: 'cyan-600' },
+    { key: 'had', title: 'HAD - Horas-aula Diárias', color: 'pink-600' },
+    { key: 'atu', title: 'ATU - Alunos por Turma', color: 'lime-600' },
+    { key: 'ied', title: 'IED - Esforço Docente', color: 'violet-600' },
+    { key: 'afd', title: 'AFD - Formação Docente', color: 'rose-600' },
+    { key: 'taxa_nao_resposta', title: 'Taxa de Não-Resposta', color: 'slate-600' },
+  ];
+
+  return extras
+    .filter(e => escolaCompleta[e.key])
+    .map(e => (
+      <IndicatorSection
+        key={e.key}
+        title={e.title}
+        icon={<BarChart3 className={`w-5 h-5 text-${e.color}`} />}
+        expanded={expandedSections[e.key] ?? false}
+        onToggle={() => toggleSection(e.key)}
+      >
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <IndicatorRows data={escolaCompleta[e.key]} />
+        </div>
+      </IndicatorSection>
+    ));
+}
+
+function formatLabel(key: string): string {
+  const map: Record<string, string> = {
+    ano: 'Ano', etapa: 'Etapa', rede: 'Rede',
+    ideb: 'IDEB', projecao: 'Meta/Projeção',
+    nota_saeb_mat: 'Nota Matemática', nota_saeb_lp: 'Nota Português',
+    nota_mat: 'Nota Matemática', nota_lp: 'Nota Português',
+    indicador_rendimento: 'Indicador Rendimento',
+    nivel: 'Nível', nivel_texto: 'Classificação', valor: 'Valor',
+    media_inse: 'Média INSE', classificacao: 'Classificação',
+    qt_mat_bas: 'Matrículas Total', qt_mat_inf: 'Ed. Infantil',
+    qt_mat_fund_ai: 'Fund. Iniciais', qt_mat_fund_af: 'Fund. Finais',
+    qt_mat_med: 'Ensino Médio', qt_mat_eja: 'EJA',
+    qt_docentes: 'Docentes', qt_turmas: 'Turmas',
+    taxa_aprovacao: 'Aprovação', taxa_reprovacao: 'Reprovação',
+    taxa_abandono: 'Abandono',
+    tp_dependencia_texto: 'Dependência', tp_localizacao_texto: 'Localização',
+    no_municipio: 'Município', co_uf: 'UF',
+    inse_classificacao: 'Classificação INSE', inse_valor: 'Valor INSE',
+    icg_nivel: 'Nível ICG', icg_valor: 'Valor ICG',
+  };
+  return map[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function InfoItem({ label, value, mono, highlight }: { label: string; value: string | number | null | undefined; mono?: boolean; highlight?: boolean }) {
-  if (value === null || value === undefined) return null;
-  const displayValue = String(value);
+  if (value === null || value === undefined || value === '') return null;
+  const displayValue = typeof value === 'number' ? (Number.isInteger(value) ? value.toLocaleString('pt-BR') : value.toFixed(2)) : String(value);
   return (
     <div className="p-3 rounded-xl bg-muted/30">
       <p className="text-xs text-muted-foreground mb-1">{label}</p>

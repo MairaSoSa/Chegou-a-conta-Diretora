@@ -168,21 +168,112 @@ export async function registerRoutes(
     }
   );
 
-  // === PUBLIC: SCHOOLS ===
+  // === EXTERNAL API BASE URL ===
+  const EXTERNAL_API = process.env.EXTERNAL_API_URL || "https://api-escolas.replit.app";
+
+  // === PUBLIC: SCHOOLS (proxy to external API) ===
   app.get(api.schools.search.path, async (req, res) => {
     const query = req.query.q as string | undefined;
-    const schools = await storage.getSchools(query);
-    res.json(schools);
+    if (!query || query.length < 2) return res.json([]);
+    try {
+      const url = `${EXTERNAL_API}/api/escola/buscar?nome=${encodeURIComponent(query)}&per_page=20`;
+      const apiRes = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      if (!apiRes.ok) return res.json([]);
+      const data: any = await apiRes.json();
+      const schools = (data.dados || []).map((d: any) => ({
+        id: d.co_entidade || 0,
+        inep: String(d.co_entidade),
+        name: d.no_entidade || d.nome || "Sem nome",
+        city: d.no_municipio || d.municipio || "",
+        state: d.co_uf_texto || d.uf || "",
+        network: d.tp_dependencia_texto || d.rede || "",
+        location: d.tp_localizacao_texto || d.localizacao || "",
+        enrollmentCount: d.qt_mat_bas || d.matriculas || 0,
+        dataStatus: "API Externa",
+      }));
+      res.json(schools);
+    } catch (err: any) {
+      console.error("[Schools Search] External API error:", err.message);
+      const localSchools = await storage.getSchools(query);
+      res.json(localSchools);
+    }
   });
 
   app.get(api.schools.get.path, async (req, res) => {
     const inep = getParam(req.params, "inep");
-    const school = await storage.getSchoolByInep(inep);
-    if (!school) {
-      return res.status(404).json({ message: "School not found" });
+    try {
+      const url = `${EXTERNAL_API}/api/escola/${inep}`;
+      const apiRes = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      if (!apiRes.ok) {
+        const local = await storage.getSchoolByInep(inep);
+        if (!local) return res.status(404).json({ message: "Escola não encontrada" });
+        return res.json(local);
+      }
+      const data: any = await apiRes.json();
+      if (data.erro) {
+        const local = await storage.getSchoolByInep(inep);
+        if (!local) return res.status(404).json({ message: data.erro });
+        return res.json(local);
+      }
+      const school = {
+        id: data.co_entidade || 0,
+        inep: String(data.co_entidade),
+        name: data.no_entidade || data.nome || "Sem nome",
+        city: data.no_municipio || data.municipio || "",
+        state: data.co_uf_texto || data.uf || "",
+        network: data.tp_dependencia_texto || data.rede || "",
+        location: data.tp_localizacao_texto || data.localizacao || "",
+        enrollmentCount: data.censo_escolar?.qt_mat_bas || data.matriculas || 0,
+        dataStatus: "API Externa",
+      };
+      res.json(school);
+    } catch (err: any) {
+      console.error("[School Get] External API error:", err.message);
+      const local = await storage.getSchoolByInep(inep);
+      if (!local) return res.status(404).json({ message: "Escola não encontrada" });
+      res.json(local);
     }
-    res.json(school);
   });
+
+  // === PUBLIC: ESCOLA COMPLETA (all indicators from external API) ===
+  app.get("/api/escola-completa/:inep", async (req, res) => {
+    const inep = getParam(req.params, "inep");
+    const ano = parseInt(req.query.ano as string) || new Date().getFullYear();
+    try {
+      const url = `${EXTERNAL_API}/api/escola/${inep}?ano=${ano}`;
+      const apiRes = await fetch(url, { signal: AbortSignal.timeout(15000) });
+      if (!apiRes.ok) return res.status(apiRes.status).json({ erro: "Erro ao buscar dados" });
+      const data: any = await apiRes.json();
+      if (data.erro) return res.status(404).json(data);
+      res.json(data);
+    } catch (err: any) {
+      console.error("[Escola Completa] External API error:", err.message);
+      res.status(500).json({ erro: "Erro de conexão com a API de escolas" });
+    }
+  });
+
+  // === PUBLIC: INDIVIDUAL INDICATORS (proxy) ===
+  const INDICATOR_ROUTES = [
+    "censo-escolar", "ideb", "icg", "inse", "tdi", "ird",
+    "dsu", "had", "atu", "ied", "afd",
+    "taxa-rendimento", "taxa-nao-resposta", "saeb"
+  ];
+
+  for (const indicator of INDICATOR_ROUTES) {
+    app.get(`/api/indicador/${indicator}/:ano/escolas/:inep`, async (req, res) => {
+      const { ano, inep } = req.params;
+      try {
+        const url = `${EXTERNAL_API}/api/${indicator}/${ano}/escolas/${inep}`;
+        const apiRes = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (!apiRes.ok) return res.status(apiRes.status).json({ erro: "Não encontrado" });
+        const data = await apiRes.json();
+        res.json(data);
+      } catch (err: any) {
+        console.error(`[Indicator ${indicator}] External API error:`, err.message);
+        res.status(500).json({ erro: "Erro de conexão" });
+      }
+    });
+  }
 
   // === PUBLIC: PDDE INFO (FNDE Scraper) ===
   app.get("/api/pdde/:inep", async (req, res) => {
