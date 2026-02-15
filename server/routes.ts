@@ -488,8 +488,18 @@ export async function registerRoutes(
 
   // === PUBLIC: DASHBOARD DATASETS ===
   app.get("/api/dashboard/datasets", async (_req, res) => {
-    const datasets = await storage.getDashboardDatasets();
-    res.json(datasets);
+    try {
+      const datasets = await storage.getDashboardDatasets();
+      // Ensure data is parsed if it's stored as a stringified blob
+      const parsedDatasets = datasets.map(d => ({
+        ...d,
+        data: typeof d.data === 'string' ? JSON.parse(d.data) : d.data
+      }));
+      res.json(parsedDatasets);
+    } catch (error) {
+      console.error("Error fetching dashboard datasets:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard datasets" });
+    }
   });
 
   app.get("/api/dashboard/datasets/:category", async (req, res) => {
