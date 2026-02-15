@@ -57,8 +57,31 @@ export default function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   
   const { data: searchResults } = useSchoolSearch(searchQuery);
-  const { data: school } = useSchool(selectedInep || "");
+  const { data: dbSchool } = useSchool(selectedInep || "");
   const { data: pddeData, isLoading: pddeLoading, isFetching: pddeFetching } = usePddeInfo(selectedInep, pddeAno);
+
+  // Combine DB school data with PDDE live data
+  const school = useMemo(() => {
+    if (!dbSchool && !pddeData?.ok) return null;
+    
+    // If we have PDDE data, use it to fill or override DB data
+    if (pddeData?.ok) {
+      return {
+        id: dbSchool?.id || 0,
+        inep: selectedInep || "",
+        name: pddeData.nome_escola || dbSchool?.name || "Escola não identificada",
+        city: pddeData.municipio || dbSchool?.city || "",
+        state: pddeData.uf || dbSchool?.state || "",
+        network: pddeData.rede || dbSchool?.network || "",
+        location: dbSchool?.location || "Urbana",
+        enrollmentCount: pddeData.matriculas_total || dbSchool?.enrollmentCount || 0,
+        dataStatus: pddeData.ok ? "Completo" : (dbSchool?.dataStatus || "Incompleto"),
+        lastUpdate: Date.now()
+      } as any;
+    }
+    
+    return dbSchool;
+  }, [dbSchool, pddeData, selectedInep]);
 
   // Extrai CNPJ da UEx para consultar prestações de contas
   const cnpjUex = useMemo(() => pddeData?.ok && pddeData.uex?.cnpj ? pddeData.uex.cnpj : null, [pddeData]);
@@ -113,7 +136,7 @@ export default function Dashboard() {
     return null;
   }, [selectedInep, school, pddeData, pddeEnrollTotal]);
 
-  const displaySchool = selectedInep && school ? school : pddeSchoolFallback || null;
+  const displaySchool = school;
 
   const lastEnrollment = enrollmentData?.[enrollmentData.length - 1];
   const prevEnrollment = enrollmentData?.[enrollmentData.length - 2];
@@ -238,10 +261,10 @@ export default function Dashboard() {
 
             {displaySchool && (
               <div className="mt-4 pt-4 border-t border-border/30 flex flex-wrap items-center gap-4 text-sm">
-                <Badge className="bg-accent/10 text-accent border-0 font-mono">{displaySchool.inep}</Badge>
-                <span className="font-semibold">{displaySchool.name}</span>
+                <Badge className="bg-accent/10 text-accent border-0 font-mono">{school?.inep}</Badge>
+                <span className="font-semibold">{school?.name}</span>
                 <span className="text-muted-foreground flex items-center gap-1">
-                  <MapPin className="w-3 h-3" /> {displaySchool.city}/{displaySchool.state}
+                  <MapPin className="w-3 h-3" /> {school?.city}/{school?.state}
                 </span>
                 
                 <div className="flex items-center gap-2 bg-muted/50 px-2 py-1 rounded-lg border border-border/50">
@@ -258,8 +281,8 @@ export default function Dashboard() {
                   </select>
                 </div>
 
-                <Badge variant="outline">{displaySchool.network}</Badge>
-                <Badge variant="outline">{displaySchool.location}</Badge>
+                <Badge variant="outline">{school?.network || "—"}</Badge>
+                <Badge variant="outline">{school?.location || "—"}</Badge>
                 {latestUpdate && latestUpdate.getTime() > 0 && (
                   <span className="text-xs text-muted-foreground" data-testid="text-dashboard-last-update">
                     Dados atualizados em: {latestUpdate.toLocaleDateString('pt-BR')}
@@ -334,7 +357,7 @@ export default function Dashboard() {
                       </div>
                       <div>
                         <p className="text-3xl font-bold text-primary">
-                          {pddeEnrollTotal ?? displaySchool?.enrollmentCount ?? '—'}
+                          {pddeEnrollTotal ?? school?.enrollmentCount ?? '—'}
                         </p>
                         <p className="text-sm font-medium text-foreground">Alunos matriculados</p>
                         <p className="text-xs text-muted-foreground mt-1">
