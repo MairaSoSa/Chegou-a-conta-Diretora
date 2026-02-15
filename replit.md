@@ -4,7 +4,7 @@
 
 A web application designed to help Brazilian school principals manage public school finances. The platform simplifies financial management for education programs (PDDE, PNAE, PNATE) by providing:
 
-- **Dashboard**: School data visualization using public government data (INEP code lookup)
+- **Dados Educacionais (Educational Data Panel)**: National school data overview with interactive charts, school search, and detailed school profiles — powered by 215K+ schools from local INEP census data
 - **Learning Trail (Trilha)**: Step-by-step learning path with Amazonian river/boat theme
 - **Programs Library**: Documentation for government education funding programs
 - **Tools (Ferramentas)**: Templates, checklists, and spreadsheets organized by action verbs
