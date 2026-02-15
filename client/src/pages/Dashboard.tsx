@@ -562,6 +562,132 @@ export default function Dashboard() {
                   />
                 </div>
 
+                {(allIndicators.icg || allIndicators.tdi || allIndicators.ird || allIndicators.taxas_rendimento || allIndicators.atu || allIndicators.had || allIndicators.dsu || allIndicators.ideb || allIndicators.inse) && (
+                  <Card className="card-clay border-l-4 border-l-blue-500">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5 text-blue-600" />
+                        Indicadores Educacionais
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {allIndicators.ideb && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <Award className="w-3.5 h-3.5 text-amber-600" /> IDEB
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                            <InfoItem label="IDEB" value={allIndicators.ideb.ideb} highlight />
+                            <InfoItem label="Meta" value={allIndicators.ideb.projecao || allIndicators.ideb.meta} />
+                            <InfoItem label="Nota SAEB Mat." value={allIndicators.ideb.nota_saeb_mat || allIndicators.ideb.nota_mat} />
+                            <InfoItem label="Nota SAEB Port." value={allIndicators.ideb.nota_saeb_lp || allIndicators.ideb.nota_lp} />
+                            <InfoItem label="Rendimento" value={allIndicators.ideb.indicador_rendimento} />
+                          </div>
+                        </div>
+                      )}
+
+                      {allIndicators.icg && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <BarChart3 className="w-3.5 h-3.5 text-blue-600" /> ICG - Complexidade de Gestão
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <InfoItem label="Nível" value={allIndicators.icg.nivel_texto || allIndicators.icg.nivel} highlight />
+                            <InfoItem label="Valor" value={allIndicators.icg.valor} />
+                          </div>
+                        </div>
+                      )}
+
+                      {allIndicators.inse && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <TrendingUp className="w-3.5 h-3.5 text-purple-600" /> INSE - Nível Socioeconômico
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <InfoItem label="Classificação" value={allIndicators.inse.classificacao || allIndicators.inse.nivel} highlight />
+                            <InfoItem label="Valor INSE" value={allIndicators.inse.media_inse || allIndicators.inse.valor} />
+                          </div>
+                        </div>
+                      )}
+
+                      {allIndicators.tdi && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <BarChart3 className="w-3.5 h-3.5 text-orange-600" /> TDI - Distorção Idade-Série
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <IndicatorRows data={allIndicators.tdi} />
+                          </div>
+                        </div>
+                      )}
+
+                      {allIndicators.ird && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <BarChart3 className="w-3.5 h-3.5 text-teal-600" /> IRD - Regularidade do Docente
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <IndicatorRows data={allIndicators.ird} />
+                          </div>
+                        </div>
+                      )}
+
+                      {allIndicators.taxas_rendimento && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <TrendingUp className="w-3.5 h-3.5 text-green-600" /> Taxas de Rendimento
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <IndicatorRows data={allIndicators.taxas_rendimento} />
+                          </div>
+                        </div>
+                      )}
+
+                      {allIndicators.atu && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5 text-indigo-600" /> ATU - Média de Alunos por Turma
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <InfoItem label="Fundamental Total" value={allIndicators.atu.media_fund} />
+                            <InfoItem label="Fund. Anos Iniciais" value={allIndicators.atu.media_fund_ai} />
+                            <InfoItem label="Fund. Anos Finais" value={allIndicators.atu.media_fund_af} />
+                            <InfoItem label="Ensino Médio" value={allIndicators.atu.media_med} />
+                          </div>
+                        </div>
+                      )}
+
+                      {allIndicators.had && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-cyan-600" /> HAD - Horas-Aula Diária
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <InfoItem label="Fundamental Total" value={allIndicators.had.media_fund} />
+                            <InfoItem label="Fund. Anos Iniciais" value={allIndicators.had.media_fund_ai} />
+                            <InfoItem label="Fund. Anos Finais" value={allIndicators.had.media_fund_af} />
+                            <InfoItem label="Ensino Médio" value={allIndicators.had.media_med} />
+                          </div>
+                        </div>
+                      )}
+
+                      {allIndicators.dsu && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <GraduationCap className="w-3.5 h-3.5 text-emerald-600" /> DSU - Docentes com Curso Superior
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <InfoItem label="Fundamental Total" value={allIndicators.dsu.percentual_fund != null ? `${allIndicators.dsu.percentual_fund}%` : null} />
+                            <InfoItem label="Fund. Anos Iniciais" value={allIndicators.dsu.percentual_fund_ai != null ? `${allIndicators.dsu.percentual_fund_ai}%` : null} />
+                            <InfoItem label="Fund. Anos Finais" value={allIndicators.dsu.percentual_fund_af != null ? `${allIndicators.dsu.percentual_fund_af}%` : null} />
+                            <InfoItem label="Ensino Médio" value={allIndicators.dsu.percentual_med != null ? `${allIndicators.dsu.percentual_med}%` : null} />
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
                 <IndicatorSection
                   title="Matrículas por Etapa"
                   icon={<BookOpen className="w-5 h-5 text-accent" />}
@@ -973,138 +1099,6 @@ export default function Dashboard() {
                     <InfraItem label="Ed. Especial" value={censoData.in_material_ped_edu_esp} />
                   </div>
                 </IndicatorSection>
-
-                {allIndicators.ideb && (
-                  <IndicatorSection
-                    title="IDEB"
-                    icon={<Award className="w-5 h-5 text-amber-600" />}
-                    expanded={expandedSections['ideb'] ?? true}
-                    onToggle={() => toggleSection('ideb')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      <InfoItem label="IDEB" value={allIndicators.ideb.ideb} highlight />
-                      <InfoItem label="Meta" value={allIndicators.ideb.projecao || allIndicators.ideb.meta} />
-                      <InfoItem label="Nota SAEB Mat." value={allIndicators.ideb.nota_saeb_mat || allIndicators.ideb.nota_mat} />
-                      <InfoItem label="Nota SAEB Port." value={allIndicators.ideb.nota_saeb_lp || allIndicators.ideb.nota_lp} />
-                      <InfoItem label="Rendimento" value={allIndicators.ideb.indicador_rendimento} />
-                    </div>
-                  </IndicatorSection>
-                )}
-
-                {allIndicators.icg && (
-                  <IndicatorSection
-                    title="ICG - Complexidade de Gestão"
-                    icon={<BarChart3 className="w-5 h-5 text-blue-600" />}
-                    expanded={expandedSections['icg'] ?? false}
-                    onToggle={() => toggleSection('icg')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <InfoItem label="Nível" value={allIndicators.icg.nivel_texto || allIndicators.icg.nivel} highlight />
-                      <InfoItem label="Valor" value={allIndicators.icg.valor} />
-                    </div>
-                  </IndicatorSection>
-                )}
-
-                {allIndicators.inse && (
-                  <IndicatorSection
-                    title="INSE - Nível Socioeconômico"
-                    icon={<TrendingUp className="w-5 h-5 text-purple-600" />}
-                    expanded={expandedSections['inse'] ?? false}
-                    onToggle={() => toggleSection('inse')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <InfoItem label="Classificação" value={allIndicators.inse.classificacao || allIndicators.inse.nivel} highlight />
-                      <InfoItem label="Valor INSE" value={allIndicators.inse.media_inse || allIndicators.inse.valor} />
-                    </div>
-                  </IndicatorSection>
-                )}
-
-                {allIndicators.tdi && (
-                  <IndicatorSection
-                    title="TDI - Distorção Idade-Série"
-                    icon={<BarChart3 className="w-5 h-5 text-orange-600" />}
-                    expanded={expandedSections['tdi'] ?? false}
-                    onToggle={() => toggleSection('tdi')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <IndicatorRows data={allIndicators.tdi} />
-                    </div>
-                  </IndicatorSection>
-                )}
-
-                {allIndicators.ird && (
-                  <IndicatorSection
-                    title="IRD - Regularidade do Docente"
-                    icon={<BarChart3 className="w-5 h-5 text-teal-600" />}
-                    expanded={expandedSections['ird'] ?? false}
-                    onToggle={() => toggleSection('ird')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <IndicatorRows data={allIndicators.ird} />
-                    </div>
-                  </IndicatorSection>
-                )}
-
-                {allIndicators.taxas_rendimento && (
-                  <IndicatorSection
-                    title="Taxas de Rendimento"
-                    icon={<TrendingUp className="w-5 h-5 text-green-600" />}
-                    expanded={expandedSections['taxas'] ?? false}
-                    onToggle={() => toggleSection('taxas')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <IndicatorRows data={allIndicators.taxas_rendimento} />
-                    </div>
-                  </IndicatorSection>
-                )}
-
-                {allIndicators.atu && (
-                  <IndicatorSection
-                    title="ATU - Média de Alunos por Turma"
-                    icon={<Users className="w-5 h-5 text-indigo-600" />}
-                    expanded={expandedSections['atu'] ?? false}
-                    onToggle={() => toggleSection('atu')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <InfoItem label="Fundamental Total" value={allIndicators.atu.media_fund} />
-                      <InfoItem label="Fund. Anos Iniciais" value={allIndicators.atu.media_fund_ai} />
-                      <InfoItem label="Fund. Anos Finais" value={allIndicators.atu.media_fund_af} />
-                      <InfoItem label="Ensino Médio" value={allIndicators.atu.media_med} />
-                    </div>
-                  </IndicatorSection>
-                )}
-
-                {allIndicators.had && (
-                  <IndicatorSection
-                    title="HAD - Horas-Aula Diária"
-                    icon={<Clock className="w-5 h-5 text-cyan-600" />}
-                    expanded={expandedSections['had'] ?? false}
-                    onToggle={() => toggleSection('had')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <InfoItem label="Fundamental Total" value={allIndicators.had.media_fund} />
-                      <InfoItem label="Fund. Anos Iniciais" value={allIndicators.had.media_fund_ai} />
-                      <InfoItem label="Fund. Anos Finais" value={allIndicators.had.media_fund_af} />
-                      <InfoItem label="Ensino Médio" value={allIndicators.had.media_med} />
-                    </div>
-                  </IndicatorSection>
-                )}
-
-                {allIndicators.dsu && (
-                  <IndicatorSection
-                    title="DSU - Docentes com Curso Superior"
-                    icon={<GraduationCap className="w-5 h-5 text-emerald-600" />}
-                    expanded={expandedSections['dsu'] ?? false}
-                    onToggle={() => toggleSection('dsu')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <InfoItem label="Fundamental Total" value={allIndicators.dsu.percentual_fund != null ? `${allIndicators.dsu.percentual_fund}%` : null} />
-                      <InfoItem label="Fund. Anos Iniciais" value={allIndicators.dsu.percentual_fund_ai != null ? `${allIndicators.dsu.percentual_fund_ai}%` : null} />
-                      <InfoItem label="Fund. Anos Finais" value={allIndicators.dsu.percentual_fund_af != null ? `${allIndicators.dsu.percentual_fund_af}%` : null} />
-                      <InfoItem label="Ensino Médio" value={allIndicators.dsu.percentual_med != null ? `${allIndicators.dsu.percentual_med}%` : null} />
-                    </div>
-                  </IndicatorSection>
-                )}
 
                 <Card className="card-clay">
                   <CardHeader className="pb-2">
