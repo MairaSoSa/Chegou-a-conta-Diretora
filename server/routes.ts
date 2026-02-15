@@ -13,7 +13,7 @@ import { fetchMecNormasFilters, syncMecNormas } from "./integrations/mecnormas";
 import { backfillAiDocumentEmbeddings } from "./integrations/embeddings";
 import { getPddeInfo } from "./scraper/pdde";
 import {
-  searchSchoolsLocal, getEscolaCompletaLocal, getEscolaEvolucaoLocal, getEscolaEvolucaoCompleta,
+  searchSchoolsLocal, getEscolaCompletaLocal, getEscolaEvolucaoLocal,
   importFromExternalApi, getImportStatus, getLocalSchoolCount, getLocalStats,
   listCensoEscolar, getCensoEscolarDetail, getCensoEstatisticas,
   listIndicador, getIndicadorDetail, getEscolaCompleta, getApiInfo,
@@ -198,15 +198,9 @@ export async function registerRoutes(
     res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], ano_selecionado: ano });
   });
 
-  // === PUBLIC: ESCOLA EVOLUÇÃO (all years - local + external API) ===
-  app.get("/api/escola-evolucao/:inep", async (req, res) => {
+  // === PUBLIC: ESCOLA EVOLUÇÃO (all years - 100% local) ===
+  app.get("/api/escola-evolucao/:inep", (req, res) => {
     const inep = getParam(req.params, "inep");
-    try {
-      const data = await getEscolaEvolucaoCompleta(inep);
-      if (data) return res.json(data);
-    } catch (err: any) {
-      console.error(`[Evolucao] Error for ${inep}:`, err.message);
-    }
     const localData = getEscolaEvolucaoLocal(inep);
     if (localData) return res.json(localData);
     res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], escola: null, censo_por_ano: {}, indicadores_por_ano: {} });
