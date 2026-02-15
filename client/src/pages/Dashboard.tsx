@@ -47,7 +47,10 @@ export default function Dashboard() {
 
   const matriculasTotal = censoData?.qt_mat_bas || censoData?.matriculas || school?.enrollmentCount || 0;
 
-  const anos = [2024, 2023, 2022, 2021, 2020];
+  const anosDisponiveis = escolaCompleta?.anos_disponiveis;
+  const anos = anosDisponiveis && anosDisponiveis.length > 0
+    ? (anosDisponiveis as string[]).map((a) => Number(a)).sort((a, b) => b - a)
+    : [2024, 2023, 2022, 2021, 2020];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

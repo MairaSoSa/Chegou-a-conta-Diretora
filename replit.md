@@ -43,6 +43,18 @@ npm run dev
 
 ## Recent Changes
 
+### External Educational Data API Integration (Feb 2026)
+- Dashboard now connects to external API (api-escolas.replit.app) for real-time school data
+- Server-side proxy routes in `server/routes.ts` forward requests to external API with local DB fallback
+- Search supports both school name and INEP code (7-8 digit) lookup
+- Complete school data endpoint: GET `/api/escola-completa/:inep?ano=YYYY`
+- Extracts nested data from `dados.{year}` structure: censo_escolar, ideb, icg, inse, tdi, ird, dsu, had, atu, ied, afd, saeb, taxas_rendimento
+- Dashboard displays: summary cards (enrollment, IDEB, ICG), expandable indicator sections in "completo" mode
+- Year selector dynamically uses `anos_disponiveis` from API response
+- Field mappings: sg_uf, ds_dependencia, ds_localizacao, qt_matriculas for search; nested censo_escolar.quantidades/caracteristicas/localizacao for details
+- Client hooks: `useSchoolSearch`, `useSchool`, `useEscolaCompleta` in `client/src/hooks/use-schools.ts`
+- Environment variable `EXTERNAL_API_URL` configurable (defaults to https://api-escolas.replit.app)
+
 ### Dashboard Cleanup - Remove SIGPC & Fictitious Data (Feb 2026)
 - Removed SIGPC integration entirely (WAF blocks cloud server requests from FNDE)
   - Deleted `server/scraper/sigpc.ts`, SIGPC routes from `server/routes.ts`, `client/src/hooks/use-sigpc.ts`

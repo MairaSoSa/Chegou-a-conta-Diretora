@@ -175,7 +175,34 @@ export async function registerRoutes(
   app.get(api.schools.search.path, async (req, res) => {
     const query = req.query.q as string | undefined;
     if (!query || query.length < 2) return res.json([]);
+
+    const isInepCode = /^\d{7,8}$/.test(query.trim());
+
     try {
+      if (isInepCode) {
+        const url = `${EXTERNAL_API}/api/escola/${query.trim()}`;
+        const apiRes = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (apiRes.ok) {
+          const raw: any = await apiRes.json();
+          if (!raw.erro) {
+            const latestYear = raw.anos_disponiveis?.[raw.anos_disponiveis.length - 1] || String(new Date().getFullYear());
+            const censo = raw.dados?.[latestYear]?.censo_escolar;
+            const school = {
+              id: raw.co_entidade || 0,
+              inep: String(raw.co_entidade),
+              name: censo?.no_entidade || "Sem nome",
+              city: censo?.localizacao?.no_municipio || "",
+              state: censo?.localizacao?.sg_uf || "",
+              network: censo?.caracteristicas?.ds_dependencia || "",
+              location: censo?.caracteristicas?.ds_localizacao || "",
+              enrollmentCount: censo?.quantidades?.qt_matriculas || 0,
+              dataStatus: "API Externa",
+            };
+            return res.json([school]);
+          }
+        }
+      }
+
       const url = `${EXTERNAL_API}/api/escola/buscar?nome=${encodeURIComponent(query)}&per_page=20`;
       const apiRes = await fetch(url, { signal: AbortSignal.timeout(10000) });
       if (!apiRes.ok) return res.json([]);
