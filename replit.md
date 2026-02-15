@@ -43,20 +43,31 @@ npm run dev
 
 ## Recent Changes
 
-### Local-First Educational Data with API Fallback (Feb 2026)
-- **Local-first architecture**: Dashboard queries local SQLite database first, external API (api-escolas.replit.app) as fallback only
-- New database tables: `censo_escolar` (school census data with full JSON), `indicadores_educacionais` (IDEB, ICG, INSE, TDI, IRD, etc.)
-- `server/importador.ts`: Data import module with local-first query functions (`searchSchoolsLocal`, `getEscolaCompletaLocal`, `importSingleSchoolFromApi`)
-- On-demand import: When a school is searched by INEP code and not found locally, it's fetched from API and cached in local DB
-- Admin bulk import: POST `/api/admin/importar` triggers background import of all schools from external API (paginated, 100/page)
-- Import status: GET `/api/admin/importar-status` or GET `/api/importar-status` (public) shows progress
-- Search supports both school name (case-insensitive LIKE) and INEP code (7-8 digit) lookup
-- Complete school data endpoint: GET `/api/escola-completa/:inep?ano=YYYY` returns census + all indicators from local DB
-- Extracts nested data from `dados.{year}` structure: censo_escolar, ideb, icg, inse, tdi, ird, dsu, had, atu, ied, afd, saeb, taxas_rendimento
-- Dashboard displays: summary cards (enrollment, IDEB, ICG), expandable indicator sections in "completo" mode
-- Year selector dynamically uses `anos_disponiveis` from API response
-- Field mappings: sg_uf, ds_dependencia, ds_localizacao, qt_matriculas for search; nested censo_escolar.quantidades/caracteristicas/localizacao for details
-- Client hooks: `useSchoolSearch`, `useSchool`, `useEscolaCompleta` in `client/src/hooks/use-schools.ts`
+### Self-Sufficient Local Data Engine (Feb 2026)
+- **Complete api-escolas parity**: Platform mirrors ALL endpoints from api-escolas.replit.app locally
+- **server/importador.ts**: Comprehensive data engine with 15+ functions: import, query, aggregate, statistics
+- **Bulk import system**: Admin-triggered background import from external API with progress tracking
+  - POST `/api/admin/importar` with optional `tipos[]` and `anos[]` filters
+  - Supports 9 data types: censo_escolar, ideb, icg, inse, tdi, ird, taxas_rendimento, taxa_nao_resposta, saeb
+  - Paginated import (100 records/page, max 500 pages per type/year)
+  - Import progress persisted in `importacao_status` table
+- **On-demand single school import**: Schools not in local DB are auto-imported from external API on first access
+- **Complete REST API endpoints** (all local-first):
+  - `GET /api/info` - API metadata and local stats
+  - `GET /api/escola/buscar?nome=X` - Search schools by name
+  - `GET /api/escola/:inep` - Complete school data (all years, all indicators)
+  - `GET /api/censo-escolar/:ano/escolas` - List schools with filters (uf, municipio, nome, dependencia, localizacao, situacao)
+  - `GET /api/censo-escolar/:ano/escolas/:inep` - School census detail
+  - `GET /api/censo-escolar/:ano/escolas/estatisticas` - Aggregated statistics
+  - `GET /api/{ideb|icg|inse|tdi|ird|taxa-rendimento|taxa-nao-resposta|saeb}/:ano/escolas` - Indicator lists with pagination
+  - `GET /api/{indicator}/:ano/escolas/:inep` - Individual indicator detail
+  - Legacy `/api/indicador/*` routes maintained for backward compatibility
+- **Admin Import UI**: New "Importar Dados" tab in admin panel with:
+  - Selectable data types for targeted import
+  - Real-time progress bars with page/record counts
+  - Local record counts per indicator type
+  - Import history with status badges
+- Database tables: `censo_escolar`, `indicadores_educacionais`, `importacao_status`
 - Environment variable `EXTERNAL_API_URL` configurable (defaults to https://api-escolas.replit.app)
 
 ### Dashboard Cleanup - Remove SIGPC & Fictitious Data (Feb 2026)

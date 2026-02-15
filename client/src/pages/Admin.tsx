@@ -1797,7 +1797,179 @@ function UnansweredQuestionsManager({ token }: { token: string }) {
   );
 }
 
-type TabId = "glossary" | "tools" | "trilha" | "programs" | "dashboard" | "ai-docs" | "unanswered" | "settings";
+function ImportManager({ token }: { token: string }) {
+  const { toast } = useToast();
+
+  const statusQuery = useQuery({
+    queryKey: ["/api/importar-status"],
+    refetchInterval: 3000,
+  });
+
+  const importMutation = useMutation({
+    mutationFn: async (body: { tipos?: string[]; anos?: number[] }) => {
+      const res = await fetch("/api/admin/importar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Importação iniciada em segundo plano" });
+      queryClient.invalidateQueries({ queryKey: ["/api/importar-status"] });
+    },
+  });
+
+  const status = statusQuery.data as any;
+  const stats = status?.stats || {};
+  const isRunning = status?.running;
+
+  const TIPOS = [
+    { key: "censo_escolar", label: "Censo Escolar", desc: "Dados cadastrais de todas as escolas" },
+    { key: "ideb", label: "IDEB", desc: "Índice de Desenvolvimento da Educação Básica" },
+    { key: "icg", label: "ICG", desc: "Complexidade de Gestão da Escola" },
+    { key: "inse", label: "INSE", desc: "Nível Socioeconômico" },
+    { key: "tdi", label: "TDI", desc: "Taxa de Distorção Idade-Série" },
+    { key: "ird", label: "IRD", desc: "Regularidade do Corpo Docente" },
+    { key: "taxas_rendimento", label: "Taxas de Rendimento", desc: "Aprovação, Reprovação e Abandono" },
+    { key: "taxa_nao_resposta", label: "Taxa de Não Resposta", desc: "Alunos sem informação de rendimento" },
+    { key: "saeb", label: "SAEB", desc: "Sistema de Avaliação da Educação Básica" },
+  ];
+
+  const [selectedTipos, setSelectedTipos] = useState<string[]>([]);
+
+  const toggleTipo = (tipo: string) => {
+    setSelectedTipos(prev =>
+      prev.includes(tipo) ? prev.filter(t => t !== tipo) : [...prev, tipo]
+    );
+  };
+
+  const startImport = () => {
+    const body: { tipos?: string[] } = {};
+    if (selectedTipos.length > 0) body.tipos = selectedTipos;
+    importMutation.mutate(body);
+  };
+
+  const getCount = (tipo: string) => {
+    if (tipo === "censo_escolar") return stats.censo_escolar || 0;
+    return stats.indicadores?.[tipo] || 0;
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="p-6">
+          <h2 className="text-lg font-bold mb-1">Importação de Dados do INEP</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Importa dados educacionais da API externa para o banco de dados local.
+            Após a importação, todos os dados são servidos localmente sem dependência externa.
+          </p>
+
+          {isRunning && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                <span className="font-medium text-blue-800">Importação em andamento</span>
+              </div>
+              <p className="text-sm text-blue-700">Tarefa atual: {status?.currentTask || "Processando..."}</p>
+              {status?.progress?.map((p: any) => (
+                <div key={p.tipo} className="mt-2">
+                  <div className="flex justify-between text-xs text-blue-600 mb-1">
+                    <span>{p.tipo}</span>
+                    <span>{p.imported}/{p.total} ({p.pagesCompleted}/{p.totalPages} páginas)</span>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 rounded-full h-2 transition-all"
+                      style={{ width: `${p.total > 0 ? (p.imported / p.total) * 100 : 0}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+              {status?.errors?.length > 0 && (
+                <div className="mt-2 text-xs text-red-600">
+                  {status.errors.length} erro(s): {status.errors[status.errors.length - 1]}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-4">
+            {TIPOS.map(tipo => {
+              const count = getCount(tipo.key);
+              const selected = selectedTipos.includes(tipo.key);
+              return (
+                <div
+                  key={tipo.key}
+                  onClick={() => toggleTipo(tipo.key)}
+                  className={cn(
+                    "border rounded-lg p-3 cursor-pointer transition-all",
+                    selected ? "border-emerald-500 bg-emerald-50" : "hover:border-gray-300"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-medium text-sm">{tipo.label}</span>
+                    <Badge variant={count > 0 ? "default" : "secondary"} className="text-xs">
+                      {count.toLocaleString("pt-BR")}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{tipo.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={startImport}
+              disabled={isRunning || importMutation.isPending}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {isRunning ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Importando...</>
+              ) : (
+                <><Download className="w-4 h-4 mr-2" /> {selectedTipos.length > 0 ? `Importar ${selectedTipos.length} selecionado(s)` : "Importar Tudo"}</>
+              )}
+            </Button>
+            {selectedTipos.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={() => setSelectedTipos([])}>
+                Limpar seleção
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {stats.importHistory?.length > 0 && (
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-bold mb-3">Histórico de Importações</h3>
+            <div className="space-y-2">
+              {stats.importHistory.map((h: any) => (
+                <div key={`${h.tipo}-${h.ano}`} className="flex items-center justify-between text-sm border-b pb-2">
+                  <div>
+                    <span className="font-medium">{h.tipo}</span>
+                    <span className="text-muted-foreground ml-2">({h.ano})</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground">
+                      {h.registrosImportados?.toLocaleString("pt-BR") || 0} registros
+                    </span>
+                    <Badge variant={h.status === "completo" ? "default" : h.status === "erro" ? "destructive" : "secondary"}>
+                      {h.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+type TabId = "glossary" | "tools" | "trilha" | "programs" | "dashboard" | "ai-docs" | "unanswered" | "import" | "settings";
 
 const TABS: Array<{ id: TabId; label: string; icon: typeof BookText }> = [
   { id: "glossary", label: "Glossário", icon: BookText },
@@ -1807,6 +1979,7 @@ const TABS: Array<{ id: TabId; label: string; icon: typeof BookText }> = [
   { id: "dashboard", label: "Dashboard", icon: BarChart3 },
   { id: "ai-docs", label: "Base IA", icon: Brain },
   { id: "unanswered", label: "Pendentes IA", icon: HelpCircle },
+  { id: "import", label: "Importar Dados", icon: Download },
   { id: "settings", label: "Configurações", icon: Settings },
 ];
 
@@ -1866,6 +2039,7 @@ export default function Admin() {
         {activeTab === "dashboard" && token && <DashboardManager token={token} />}
         {activeTab === "ai-docs" && token && <AiDocsManager token={token} />}
         {activeTab === "unanswered" && token && <UnansweredQuestionsManager token={token} />}
+        {activeTab === "import" && token && <ImportManager token={token} />}
         {activeTab === "settings" && token && <SettingsManager token={token} />}
       </div>
     </div>

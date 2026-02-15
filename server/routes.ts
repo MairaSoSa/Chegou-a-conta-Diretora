@@ -12,7 +12,12 @@ import { registerObjectStorageRoutes } from "./integrations/object_storage";
 import { fetchMecNormasFilters, syncMecNormas } from "./integrations/mecnormas";
 import { backfillAiDocumentEmbeddings } from "./integrations/embeddings";
 import { getPddeInfo } from "./scraper/pdde";
-import { searchSchoolsLocal, getEscolaCompletaLocal, importSingleSchoolFromApi, importFromExternalApi, getImportStatus, getLocalSchoolCount } from "./importador";
+import {
+  searchSchoolsLocal, getEscolaCompletaLocal, importSingleSchoolFromApi,
+  importFromExternalApi, getImportStatus, getLocalSchoolCount, getLocalStats,
+  listCensoEscolar, getCensoEscolarDetail, getCensoEstatisticas,
+  listIndicador, getIndicadorDetail, getEscolaCompleta, getApiInfo,
+} from "./importador";
 import { 
   localizarPrestacoesPorCnpj,
   detalharPrestacao,
@@ -256,26 +261,128 @@ export async function registerRoutes(
     }
   });
 
-  // === PUBLIC: INDIVIDUAL INDICATORS (proxy) ===
-  const INDICATOR_ROUTES = [
-    "censo-escolar", "ideb", "icg", "inse", "tdi", "ird",
-    "dsu", "had", "atu", "ied", "afd",
-    "taxa-rendimento", "taxa-nao-resposta", "saeb"
-  ];
+  // === PUBLIC: API INFO (mirrors api-escolas root) ===
+  app.get("/api/info", (_req, res) => {
+    res.json(getApiInfo());
+  });
 
-  for (const indicator of INDICATOR_ROUTES) {
-    app.get(`/api/indicador/${indicator}/:ano/escolas/:inep`, async (req, res) => {
-      const { ano, inep } = req.params;
-      try {
-        const url = `${EXTERNAL_API}/api/${indicator}/${ano}/escolas/${inep}`;
-        const apiRes = await fetch(url, { signal: AbortSignal.timeout(10000) });
-        if (!apiRes.ok) return res.status(apiRes.status).json({ erro: "Não encontrado" });
-        const data = await apiRes.json();
-        res.json(data);
-      } catch (err: any) {
-        console.error(`[Indicator ${indicator}] External API error:`, err.message);
-        res.status(500).json({ erro: "Erro de conexão" });
+  // === PUBLIC: ESCOLA COMPLETA (full school data, all years) ===
+  app.get("/api/escola/buscar", async (req, res) => {
+    const nome = req.query.nome as string;
+    const perPage = parseInt(req.query.per_page as string) || 20;
+    if (!nome || nome.length < 2) return res.json({ dados: [], total: 0 });
+
+    const localResults = searchSchoolsLocal(nome, perPage);
+    if (localResults.length > 0) {
+      return res.json({
+        dados: localResults.map(s => ({
+          co_entidade: s.id,
+          no_entidade: s.name,
+          no_municipio: s.city,
+          sg_uf: s.state,
+          ds_dependencia: s.network,
+          ds_localizacao: s.location,
+          qt_matriculas: s.enrollmentCount,
+        })),
+        total: localResults.length,
+      });
+    }
+
+    try {
+      const url = `${EXTERNAL_API}/api/escola/buscar?nome=${encodeURIComponent(nome)}&per_page=${perPage}`;
+      const apiRes = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      if (!apiRes.ok) return res.json({ dados: [], total: 0 });
+      const data = await apiRes.json();
+      res.json(data);
+    } catch {
+      res.json({ dados: [], total: 0 });
+    }
+  });
+
+  app.get("/api/escola/:inep", async (req, res) => {
+    const inep = getParam(req.params, "inep");
+
+    const localData = getEscolaCompleta(inep);
+    if (localData) return res.json(localData);
+
+    try {
+      const imported = await importSingleSchoolFromApi(inep);
+      if (imported) {
+        const data = getEscolaCompleta(inep);
+        if (data) return res.json(data);
       }
+      res.status(404).json({ erro: "Escola não encontrada" });
+    } catch {
+      res.status(404).json({ erro: "Escola não encontrada" });
+    }
+  });
+
+  // === PUBLIC: CENSO ESCOLAR ROUTES ===
+  app.get("/api/censo-escolar/:ano/escolas/estatisticas", (req, res) => {
+    const ano = parseInt(req.params.ano);
+    res.json(getCensoEstatisticas(ano));
+  });
+
+  app.get("/api/censo-escolar/:ano/escolas/:inep", (req, res) => {
+    const ano = parseInt(req.params.ano);
+    const inep = getParam(req.params, "inep");
+    const data = getCensoEscolarDetail(ano, inep);
+    if (!data) return res.status(404).json({ erro: "Escola não encontrada" });
+    res.json(data);
+  });
+
+  app.get("/api/censo-escolar/:ano/escolas", (req, res) => {
+    const ano = parseInt(req.params.ano);
+    const page = parseInt(req.query.pagina as string) || 1;
+    const perPage = parseInt(req.query.per_page as string) || 20;
+    const filters: Record<string, string> = {};
+    for (const key of ["uf", "municipio", "nome", "tp_dependencia", "tp_localizacao", "tp_situacao"]) {
+      if (req.query[key]) filters[key] = req.query[key] as string;
+    }
+    res.json(listCensoEscolar(ano, filters, page, perPage));
+  });
+
+  // === PUBLIC: INDICATOR ROUTES (local-first) ===
+  const INDICATOR_TIPO_MAP: Record<string, string> = {
+    "ideb": "ideb",
+    "icg": "icg",
+    "inse": "inse",
+    "tdi": "tdi",
+    "ird": "ird",
+    "taxa-rendimento": "taxas_rendimento",
+    "taxa-nao-resposta": "taxa_nao_resposta",
+    "saeb": "saeb",
+  };
+
+  for (const [apiPath, tipoDb] of Object.entries(INDICATOR_TIPO_MAP)) {
+    app.get(`/api/${apiPath}/:ano/escolas/:inep`, (req, res) => {
+      const ano = parseInt(req.params.ano);
+      const inep = getParam(req.params, "inep");
+      const data = getIndicadorDetail(tipoDb, ano, inep);
+      if (!data) return res.status(404).json({ erro: "Não encontrado" });
+      res.json(data);
+    });
+
+    app.get(`/api/${apiPath}/:ano/escolas`, (req, res) => {
+      const ano = parseInt(req.params.ano);
+      const page = parseInt(req.query.pagina as string) || 1;
+      const perPage = parseInt(req.query.per_page as string) || 20;
+      const filters: Record<string, string> = {};
+      for (const key of ["uf", "municipio", "nome", "etapa", "rede"]) {
+        if (req.query[key]) filters[key] = req.query[key] as string;
+      }
+      res.json(listIndicador(tipoDb, ano, filters, page, perPage));
+    });
+  }
+
+  // === LEGACY: /api/indicador/* routes (backward compat) ===
+  for (const [apiPath, tipoDb] of Object.entries(INDICATOR_TIPO_MAP)) {
+    app.get(`/api/indicador/${apiPath}/:ano/escolas/:inep`, (req, res) => {
+      const ano = parseInt(req.params.ano);
+      const inep = getParam(req.params, "inep");
+      const data = getIndicadorDetail(tipoDb, ano, inep);
+      if (!data) return res.status(404).json({ erro: "Não encontrado" });
+      res.json(data);
     });
   }
 
@@ -608,18 +715,19 @@ export async function registerRoutes(
   // === ADMIN: DATA IMPORT (from external API) ===
   app.post("/api/admin/importar", adminAuth, async (req, res) => {
     const tipos = req.body.tipos as string[] | undefined;
-    importFromExternalApi(tipos).then(result => {
-      console.log("[Import] Finished:", result);
+    const anos = req.body.anos as number[] | undefined;
+    importFromExternalApi(tipos, anos).then(result => {
+      console.log("[Import] Finished:", JSON.stringify(result.errors?.length || 0), "errors");
     });
     res.json({ mensagem: "Importação iniciada em background", status: getImportStatus() });
   });
 
   app.get("/api/admin/importar-status", adminAuth, async (_req, res) => {
-    res.json({ ...getImportStatus(), localSchoolCount: getLocalSchoolCount() });
+    res.json({ ...getImportStatus(), stats: getLocalStats() });
   });
 
   app.get("/api/importar-status", async (_req, res) => {
-    res.json({ ...getImportStatus(), localSchoolCount: getLocalSchoolCount() });
+    res.json({ ...getImportStatus(), stats: getLocalStats() });
   });
 
   // === ADMIN: DASHBOARD CSV UPLOAD ===
