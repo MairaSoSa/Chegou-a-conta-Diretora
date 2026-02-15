@@ -87,6 +87,7 @@ export class DatabaseStorage implements IStorage {
     const search = `%${query}%`;
     return db.select().from(schools).where(
       or(
+        eq(schools.inep, query),
         like(schools.inep, search),
         like(schools.name, search),
         like(schools.city, search)

@@ -63,6 +63,7 @@ const embeddingsBackfillSchema = z.object({
 const VALID_DASHBOARD_CATEGORIES = [
   "enrollment", "ideb", "repasses", "prestacao", "taxas",
   "infraestrutura", "acoes_pdde", "calendario", "escola",
+  "icg", "inse", "tdi", "ird", "dsu", "had", "atu", "ied", "afd"
 ] as const;
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin2024";
@@ -520,6 +521,15 @@ export async function registerRoutes(
     acoes_pdde: { label: "Ações PDDE", columns: ["nome", "status", "valor"] },
     calendario: { label: "Calendário", columns: ["mes", "ano", "dia", "evento", "tipo", "urgente"] },
     escola: { label: "Dados da Escola", columns: ["campo", "valor"] },
+    icg: { label: "ICG - Complexidade de Gestão", columns: ["ano", "valor", "nivel"] },
+    inse: { label: "INSE - Nível Socioeconômico", columns: ["ano", "valor", "nivel"] },
+    tdi: { label: "TDI - Distorção Idade-Série", columns: ["ano", "valor", "nivel"] },
+    ird: { label: "IRD - Regularidade do Docente", columns: ["ano", "valor", "nivel"] },
+    dsu: { label: "DSU - Docentes com Superior", columns: ["ano", "valor", "nivel"] },
+    had: { label: "HAD - Horas-aula Diárias", columns: ["ano", "valor", "nivel"] },
+    atu: { label: "ATU - Alunos por Turma", columns: ["ano", "valor", "nivel"] },
+    ied: { label: "IED - Esforço Docente", columns: ["ano", "valor", "nivel"] },
+    afd: { label: "AFD - Adequação Formação Docente", columns: ["ano", "valor", "nivel"] },
   };
 
   app.get("/api/admin/dashboard/categories", adminAuth, async (_req, res) => {

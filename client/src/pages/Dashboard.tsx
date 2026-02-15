@@ -9,7 +9,8 @@ import {
   Search, Users, ArrowRight, 
   MapPin, Calendar, Banknote, 
   GraduationCap, Info, ExternalLink,
-  School, Loader2, List, LayoutGrid, Link2
+  School, Loader2, List, LayoutGrid, Link2,
+  BarChart3
 } from "lucide-react";
 import { useSchoolSearch, useSchool } from "@/hooks/use-schools";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -39,6 +40,16 @@ export default function Dashboard() {
 
   const repassesData = getDataset('repasses')?.data as any[] | null;
   const enrollmentData = getDataset('enrollment')?.data as any[] | null;
+  const icgData = getDataset('icg')?.data as any[] | null;
+  const inseData = getDataset('inse')?.data as any[] | null;
+  const tdiData = getDataset('tdi')?.data as any[] | null;
+  const irdData = getDataset('ird')?.data as any[] | null;
+  const dsuData = getDataset('dsu')?.data as any[] | null;
+  const hadData = getDataset('had')?.data as any[] | null;
+  const atuData = getDataset('atu')?.data as any[] | null;
+  const iedData = getDataset('ied')?.data as any[] | null;
+  const afdData = getDataset('afd')?.data as any[] | null;
+  const idebData = getDataset('ideb')?.data as any[] | null;
 
   const latestUpdate = datasets.length > 0
     ? datasets.reduce((latest, d) => {
@@ -227,6 +238,44 @@ export default function Dashboard() {
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {viewMode === 'completo' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="card-clay">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-primary" />
+                      Indicadores de Contexto
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <InfoItem label="ICG (Complexidade)" value={icgData?.[0]?.valor} />
+                      <InfoItem label="INSE (Socioeconômico)" value={inseData?.[0]?.valor} />
+                      <InfoItem label="IED (Esforço Docente)" value={iedData?.[0]?.valor} />
+                      <InfoItem label="AFD (Formação Docente)" value={afdData?.[0]?.valor} />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="card-clay">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4 text-accent" />
+                      Indicadores de Desempenho
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <InfoItem label="IDEB" value={idebData?.[0]?.valor || idebData?.[0]?.escola} />
+                      <InfoItem label="TDI (Distorção)" value={tdiData?.[0]?.valor} />
+                      <InfoItem label="ATU (Alunos/Turma)" value={atuData?.[0]?.valor} />
+                      <InfoItem label="HAD (Horas-aula)" value={hadData?.[0]?.valor} />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             <Card className="card-clay">
