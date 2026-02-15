@@ -562,88 +562,417 @@ export default function Dashboard() {
                   />
                 </div>
 
-                <Card className="card-clay">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-accent" />
-                      Matrículas por Etapa
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                      <InfoItem label="Ed. Infantil" value={censoData.qt_mat_inf} />
-                      <InfoItem label="Fund. Anos Iniciais" value={censoData.qt_mat_fund_ai} />
-                      <InfoItem label="Fund. Anos Finais" value={censoData.qt_mat_fund_af} />
-                      <InfoItem label="Ensino Médio" value={censoData.qt_mat_med} />
-                      <InfoItem label="EJA" value={censoData.qt_mat_eja} />
-                      <InfoItem label="Ed. Especial" value={censoData.qt_mat_esp} />
-                    </div>
-                  </CardContent>
-                </Card>
+                <IndicatorSection
+                  title="Matrículas por Etapa"
+                  icon={<BookOpen className="w-5 h-5 text-accent" />}
+                  expanded={expandedSections['matriculas'] ?? true}
+                  onToggle={() => toggleSection('matriculas')}
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <InfoItem label="Ed. Infantil - Creche" value={censoData.qt_mat_inf_cre} />
+                    <InfoItem label="Ed. Infantil - Pré-escola" value={censoData.qt_mat_inf_pre} />
+                    <InfoItem label="Fund. Anos Iniciais" value={censoData.qt_mat_fund_ai} />
+                    <InfoItem label="Fund. 1º ano" value={censoData.qt_mat_fund_ai_1} />
+                    <InfoItem label="Fund. 2º ano" value={censoData.qt_mat_fund_ai_2} />
+                    <InfoItem label="Fund. 3º ano" value={censoData.qt_mat_fund_ai_3} />
+                    <InfoItem label="Fund. 4º ano" value={censoData.qt_mat_fund_ai_4} />
+                    <InfoItem label="Fund. 5º ano" value={censoData.qt_mat_fund_ai_5} />
+                    <InfoItem label="Fund. Anos Finais" value={censoData.qt_mat_fund_af} />
+                    <InfoItem label="Fund. 6º ano" value={censoData.qt_mat_fund_af_6} />
+                    <InfoItem label="Fund. 7º ano" value={censoData.qt_mat_fund_af_7} />
+                    <InfoItem label="Fund. 8º ano" value={censoData.qt_mat_fund_af_8} />
+                    <InfoItem label="Fund. 9º ano" value={censoData.qt_mat_fund_af_9} />
+                    <InfoItem label="Ensino Médio" value={censoData.qt_mat_med} />
+                    <InfoItem label="Médio 1ª série" value={censoData.qt_mat_med_prop_1} />
+                    <InfoItem label="Médio 2ª série" value={censoData.qt_mat_med_prop_2} />
+                    <InfoItem label="Médio 3ª série" value={censoData.qt_mat_med_prop_3} />
+                    <InfoItem label="Médio 4ª série" value={censoData.qt_mat_med_prop_4} />
+                    <InfoItem label="Ed. Profissional" value={censoData.qt_mat_prof} />
+                    <InfoItem label="EJA Fund." value={censoData.qt_mat_eja_fund} />
+                    <InfoItem label="EJA Médio" value={censoData.qt_mat_eja_med} />
+                    <InfoItem label="Ed. Especial (inclusão)" value={censoData.qt_mat_esp_cc} />
+                    <InfoItem label="Ed. Especial (exclusiva)" value={censoData.qt_mat_esp_ce} />
+                  </div>
+                </IndicatorSection>
 
-                <Card className="card-clay">
-                  <CardHeader className="pb-2 cursor-pointer" onClick={() => toggleSection('info')}>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Info className="w-4 h-4 text-blue-600" />
-                      Informações da Escola
-                      <span className="ml-auto">
-                        {expandedSections['info'] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  {(expandedSections['info'] ?? true) && (
-                    <CardContent>
+                <IndicatorSection
+                  title="Perfil dos Alunos"
+                  icon={<Users className="w-5 h-5 text-blue-600" />}
+                  expanded={expandedSections['perfil'] ?? true}
+                  onToggle={() => toggleSection('perfil')}
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Turno</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <InfoItem label="Diurno" value={censoData.qt_mat_bas_d} />
+                        <InfoItem label="Noturno" value={censoData.qt_mat_bas_n} />
+                        <InfoItem label="EAD" value={censoData.qt_mat_bas_ead} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Sexo</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <InfoItem label="Feminino" value={censoData.qt_mat_bas_fem} />
+                        <InfoItem label="Masculino" value={censoData.qt_mat_bas_masc} />
+                        <InfoItem label="Não declarado" value={censoData.qt_mat_bas_nd} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Cor/Raça</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <InfoItem label="Branca" value={censoData.qt_mat_bas_branca} />
+                        <InfoItem label="Preta" value={censoData.qt_mat_bas_preta} />
+                        <InfoItem label="Parda" value={censoData.qt_mat_bas_parda} />
+                        <InfoItem label="Amarela" value={censoData.qt_mat_bas_amarela} />
+                        <InfoItem label="Indígena" value={censoData.qt_mat_bas_indigena} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Faixa Etária</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <InfoItem label="0 a 3 anos" value={censoData.qt_mat_bas_0_3} />
+                        <InfoItem label="4 a 5 anos" value={censoData.qt_mat_bas_4_5} />
+                        <InfoItem label="6 a 10 anos" value={censoData.qt_mat_bas_6_10} />
+                        <InfoItem label="11 a 14 anos" value={censoData.qt_mat_bas_11_14} />
+                        <InfoItem label="15 a 17 anos" value={censoData.qt_mat_bas_15_17} />
+                        <InfoItem label="18+ anos" value={censoData.qt_mat_bas_18_mais} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Zona de Residência</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <InfoItem label="Urbana" value={censoData.qt_mat_zr_urb} />
+                        <InfoItem label="Rural" value={censoData.qt_mat_zr_rur} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Integral</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <InfoItem label="Infantil Integral" value={censoData.qt_mat_inf_int} />
+                        <InfoItem label="Fund. AI Integral" value={censoData.qt_mat_fund_ai_int} />
+                        <InfoItem label="Fund. AF Integral" value={censoData.qt_mat_fund_af_int} />
+                        <InfoItem label="Médio Integral" value={censoData.qt_mat_med_int} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Transporte Escolar</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <InfoItem label="Transporte Público" value={censoData.qt_transp_publico} />
+                        <InfoItem label="Resp. Estadual" value={censoData.qt_transp_resp_est} />
+                        <InfoItem label="Resp. Municipal" value={censoData.qt_transp_resp_mun} />
+                      </div>
+                    </div>
+                  </div>
+                </IndicatorSection>
+
+                <IndicatorSection
+                  title="Docentes"
+                  icon={<GraduationCap className="w-5 h-5 text-purple-600" />}
+                  expanded={expandedSections['docentes'] ?? true}
+                  onToggle={() => toggleSection('docentes')}
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <InfoItem label="Total" value={censoData.qt_doc_bas} highlight />
+                    <InfoItem label="Ed. Infantil" value={censoData.qt_doc_inf} />
+                    <InfoItem label="Infantil Creche" value={censoData.qt_doc_inf_cre} />
+                    <InfoItem label="Infantil Pré" value={censoData.qt_doc_inf_pre} />
+                    <InfoItem label="Fundamental" value={censoData.qt_doc_fund} />
+                    <InfoItem label="Fund. Anos Iniciais" value={censoData.qt_doc_fund_ai} />
+                    <InfoItem label="Fund. Anos Finais" value={censoData.qt_doc_fund_af} />
+                    <InfoItem label="Ensino Médio" value={censoData.qt_doc_med} />
+                    <InfoItem label="Ed. Profissional" value={censoData.qt_doc_prof} />
+                    <InfoItem label="EJA" value={censoData.qt_doc_eja} />
+                    <InfoItem label="Ed. Especial" value={censoData.qt_doc_esp} />
+                  </div>
+                </IndicatorSection>
+
+                <IndicatorSection
+                  title="Turmas"
+                  icon={<BookOpen className="w-5 h-5 text-teal-600" />}
+                  expanded={expandedSections['turmas'] ?? false}
+                  onToggle={() => toggleSection('turmas')}
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <InfoItem label="Total" value={censoData.qt_tur_bas} highlight />
+                    <InfoItem label="Ed. Infantil" value={censoData.qt_tur_inf} />
+                    <InfoItem label="Infantil Creche" value={censoData.qt_tur_inf_cre} />
+                    <InfoItem label="Infantil Pré" value={censoData.qt_tur_inf_pre} />
+                    <InfoItem label="Fundamental" value={censoData.qt_tur_fund} />
+                    <InfoItem label="Fund. Anos Iniciais" value={censoData.qt_tur_fund_ai} />
+                    <InfoItem label="Fund. Anos Finais" value={censoData.qt_tur_fund_af} />
+                    <InfoItem label="Ensino Médio" value={censoData.qt_tur_med} />
+                    <InfoItem label="Ed. Profissional" value={censoData.qt_tur_prof} />
+                    <InfoItem label="EJA" value={censoData.qt_tur_eja} />
+                    <InfoItem label="Ed. Especial" value={censoData.qt_tur_esp} />
+                    <InfoItem label="Diurnas" value={censoData.qt_tur_bas_d} />
+                    <InfoItem label="Noturnas" value={censoData.qt_tur_bas_n} />
+                  </div>
+                </IndicatorSection>
+
+                <IndicatorSection
+                  title="Informações Gerais"
+                  icon={<Info className="w-5 h-5 text-blue-600" />}
+                  expanded={expandedSections['info'] ?? true}
+                  onToggle={() => toggleSection('info')}
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Dados Básicos</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         <InfoItem label="Situação" value={censoData.ds_situacao} />
                         <InfoItem label="Dependência" value={censoData.ds_dependencia} />
                         <InfoItem label="Localização" value={censoData.ds_localizacao} />
+                        <InfoItem label="Região" value={censoData.no_regiao} />
                         <InfoItem label="Município" value={censoData.no_municipio} />
                         <InfoItem label="UF" value={censoData.sg_uf} />
-                        <InfoItem label="Internet" value={censoData.in_internet === 1 ? "Sim" : censoData.in_internet === 0 ? "Não" : undefined} />
-                        <InfoItem label="Banda Larga" value={censoData.in_banda_larga === 1 ? "Sim" : censoData.in_banda_larga === 0 ? "Não" : undefined} />
-                        <InfoItem label="Internet p/ Alunos" value={censoData.in_internet_alunos === 1 ? "Sim" : censoData.in_internet_alunos === 0 ? "Não" : undefined} />
-                        <InfoItem label="Água Potável" value={censoData.in_agua_potavel === 1 ? "Sim" : censoData.in_agua_potavel === 0 ? "Não" : undefined} />
-                        <InfoItem label="Energia Elétrica" value={censoData.in_energia_rede_publica === 1 ? "Sim" : censoData.in_energia_rede_publica === 0 ? "Não" : undefined} />
-                        <InfoItem label="Esgoto" value={censoData.in_esgoto_rede_publica === 1 ? "Rede Pública" : censoData.in_esgoto_fossa_septica === 1 ? "Fossa" : undefined} />
-                        <InfoItem label="Coleta de Lixo" value={censoData.in_lixo_servico_coleta === 1 ? "Sim" : censoData.in_lixo_servico_coleta === 0 ? "Não" : undefined} />
+                        <InfoItem label="Cód. Município" value={censoData.co_municipio} />
+                        <InfoItem label="Regulamentação" value={censoData.tp_regulamentacao === 1 ? "Sim" : censoData.tp_regulamentacao === 2 ? "Sim, em tramitação" : censoData.tp_regulamentacao === 3 ? "Não" : undefined} />
+                        <InfraItem label="Prédio Escolar" value={censoData.in_local_func_predio_escolar} />
+                        <InfraItem label="Prédio Compartilhado" value={censoData.in_predio_compartilhado} />
+                        <InfraItem label="Alimentação" value={censoData.in_alimentacao} />
                       </div>
-                    </CardContent>
-                  )}
-                </Card>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Etapas e Modalidades Oferecidas</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <InfraItem label="Ed. Infantil" value={censoData.in_inf} />
+                        <InfraItem label="Creche" value={censoData.in_inf_cre} />
+                        <InfraItem label="Pré-escola" value={censoData.in_inf_pre} />
+                        <InfraItem label="Ensino Fund." value={censoData.in_fund} />
+                        <InfraItem label="Fund. Anos Iniciais" value={censoData.in_fund_ai} />
+                        <InfraItem label="Fund. Anos Finais" value={censoData.in_fund_af} />
+                        <InfraItem label="Ensino Médio" value={censoData.in_med} />
+                        <InfraItem label="Ed. Profissional" value={censoData.in_prof} />
+                        <InfraItem label="EJA" value={censoData.in_eja} />
+                        <InfraItem label="EJA Fund." value={censoData.in_eja_fund} />
+                        <InfraItem label="EJA Médio" value={censoData.in_eja_med} />
+                        <InfraItem label="Ed. Especial" value={censoData.in_esp} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Organização</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <InfraItem label="Conselho Escolar" value={censoData.in_orgao_conselho_escolar} />
+                        <InfraItem label="APM / APP" value={censoData.in_orgao_ass_pais_mestres} />
+                        <InfraItem label="Grêmio Estudantil" value={censoData.in_orgao_gremio_estudantil} />
+                        <InfraItem label="Redes Sociais" value={censoData.in_redes_sociais} />
+                        <InfraItem label="Ed. Ambiental" value={censoData.in_educ_ambiental} />
+                      </div>
+                    </div>
+                  </div>
+                </IndicatorSection>
 
-                <Card className="card-clay">
-                  <CardHeader className="pb-2 cursor-pointer" onClick={() => toggleSection('infra')}>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-green-600" />
-                      Infraestrutura
-                      <span className="ml-auto">
-                        {expandedSections['infra'] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  {expandedSections['infra'] && (
-                    <CardContent>
+                <IndicatorSection
+                  title="Água, Energia e Saneamento"
+                  icon={<Info className="w-5 h-5 text-cyan-600" />}
+                  expanded={expandedSections['saneamento'] ?? false}
+                  onToggle={() => toggleSection('saneamento')}
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Água</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <InfraItem label="Água Potável" value={censoData.in_agua_potavel} />
+                        <InfraItem label="Rede Pública" value={censoData.in_agua_rede_publica} />
+                        <InfraItem label="Poço Artesiano" value={censoData.in_agua_poco_artesiano} />
+                        <InfraItem label="Cacimba" value={censoData.in_agua_cacimba} />
+                        <InfraItem label="Fonte/Rio" value={censoData.in_agua_fonte_rio} />
+                        <InfraItem label="Carro-pipa" value={censoData.in_agua_carro_pipa} />
+                        <InfraItem label="Inexistente" value={censoData.in_agua_inexistente} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Energia</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <InfraItem label="Rede Pública" value={censoData.in_energia_rede_publica} />
+                        <InfraItem label="Gerador Fóssil" value={censoData.in_energia_gerador_fossil} />
+                        <InfraItem label="Renovável" value={censoData.in_energia_renovavel} />
+                        <InfraItem label="Inexistente" value={censoData.in_energia_inexistente} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Esgoto</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <InfraItem label="Rede Pública" value={censoData.in_esgoto_rede_publica} />
+                        <InfraItem label="Fossa Séptica" value={censoData.in_esgoto_fossa_septica} />
+                        <InfraItem label="Fossa Comum" value={censoData.in_esgoto_fossa_comum} />
+                        <InfraItem label="Inexistente" value={censoData.in_esgoto_inexistente} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Lixo</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <InfraItem label="Coleta" value={censoData.in_lixo_servico_coleta} />
+                        <InfraItem label="Queima" value={censoData.in_lixo_queima} />
+                        <InfraItem label="Enterra" value={censoData.in_lixo_enterra} />
+                        <InfraItem label="Separação" value={censoData.in_tratamento_lixo_separacao} />
+                        <InfraItem label="Reciclagem" value={censoData.in_tratamento_lixo_reciclagem} />
+                      </div>
+                    </div>
+                  </div>
+                </IndicatorSection>
+
+                <IndicatorSection
+                  title="Infraestrutura e Dependências"
+                  icon={<Building2 className="w-5 h-5 text-green-600" />}
+                  expanded={expandedSections['infra'] ?? true}
+                  onToggle={() => toggleSection('infra')}
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Salas</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <InfoItem label="Salas Utilizadas" value={censoData.qt_salas_utilizadas} />
+                        <InfoItem label="Salas Dentro" value={censoData.qt_salas_utilizadas_dentro} />
+                        <InfoItem label="Salas Fora" value={censoData.qt_salas_utilizadas_fora} />
+                        <InfoItem label="Climatizadas" value={censoData.qt_salas_utiliza_climatizadas} />
+                        <InfoItem label="Acessíveis" value={censoData.qt_salas_utilizadas_acessiveis} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Espaços</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         <InfraItem label="Biblioteca" value={censoData.in_biblioteca} />
-                        <InfraItem label="Sala de Leitura" value={censoData.in_sala_leitura || censoData.in_biblioteca_sala_leitura} />
+                        <InfraItem label="Sala de Leitura" value={censoData.in_biblioteca_sala_leitura} />
                         <InfraItem label="Lab. Informática" value={censoData.in_laboratorio_informatica} />
                         <InfraItem label="Lab. Ciências" value={censoData.in_laboratorio_ciencias} />
-                        <InfraItem label="Quadra Esportes" value={censoData.in_quadra_esportes} />
+                        <InfraItem label="Lab. Ed. Profissional" value={censoData.in_laboratorio_educ_prof} />
+                        <InfraItem label="Quadra Coberta" value={censoData.in_quadra_esportes_coberta} />
+                        <InfraItem label="Quadra Descoberta" value={censoData.in_quadra_esportes_descoberta} />
                         <InfraItem label="Cozinha" value={censoData.in_cozinha} />
+                        <InfraItem label="Despensa" value={censoData.in_despensa} />
                         <InfraItem label="Refeitório" value={censoData.in_refeitorio} />
+                        <InfraItem label="Almoxarifado" value={censoData.in_almoxarifado} />
                         <InfraItem label="Pátio Coberto" value={censoData.in_patio_coberto} />
+                        <InfraItem label="Pátio Descoberto" value={censoData.in_patio_descoberto} />
                         <InfraItem label="Parque Infantil" value={censoData.in_parque_infantil} />
                         <InfraItem label="Auditório" value={censoData.in_auditorio} />
-                        <InfraItem label="Banheiro PNE" value={censoData.in_banheiro_pne} />
+                        <InfraItem label="Piscina" value={censoData.in_piscina} />
                         <InfraItem label="Área Verde" value={censoData.in_area_verde} />
                         <InfraItem label="Sala Multiuso" value={censoData.in_sala_multiuso} />
                         <InfraItem label="Sala Diretoria" value={censoData.in_sala_diretoria} />
                         <InfraItem label="Sala Professores" value={censoData.in_sala_professor} />
                         <InfraItem label="Secretaria" value={censoData.in_secretaria} />
+                        <InfraItem label="Sala Atend. Especial" value={censoData.in_sala_atendimento_especial} />
+                        <InfraItem label="Sala Artes" value={censoData.in_sala_atelie_artes} />
+                        <InfraItem label="Sala Música" value={censoData.in_sala_musica_coral} />
+                        <InfraItem label="Viveiro" value={censoData.in_viveiro} />
                       </div>
-                    </CardContent>
-                  )}
-                </Card>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Banheiros</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <InfraItem label="Banheiro" value={censoData.in_banheiro} />
+                        <InfraItem label="Banheiro Ed. Infantil" value={censoData.in_banheiro_ei} />
+                        <InfraItem label="Banheiro PNE" value={censoData.in_banheiro_pne} />
+                        <InfraItem label="Banheiro Funcionários" value={censoData.in_banheiro_funcionarios} />
+                        <InfraItem label="Chuveiro" value={censoData.in_banheiro_chuveiro} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Acessibilidade</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <InfraItem label="Rampas" value={censoData.in_acessibilidade_rampas} />
+                        <InfraItem label="Corrimão" value={censoData.in_acessibilidade_corrimao} />
+                        <InfraItem label="Elevador" value={censoData.in_acessibilidade_elevador} />
+                        <InfraItem label="Pisos Táteis" value={censoData.in_acessibilidade_pisos_tateis} />
+                        <InfraItem label="Vão Livre" value={censoData.in_acessibilidade_vao_livre} />
+                        <InfraItem label="Sinal Sonoro" value={censoData.in_acessibilidade_sinal_sonoro} />
+                        <InfraItem label="Sinal Tátil" value={censoData.in_acessibilidade_sinal_tatil} />
+                        <InfraItem label="Sinal Visual" value={censoData.in_acessibilidade_sinal_visual} />
+                      </div>
+                    </div>
+                  </div>
+                </IndicatorSection>
+
+                <IndicatorSection
+                  title="Equipamentos e Tecnologia"
+                  icon={<Info className="w-5 h-5 text-indigo-600" />}
+                  expanded={expandedSections['equipamentos'] ?? false}
+                  onToggle={() => toggleSection('equipamentos')}
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Equipamentos</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <InfraItem label="Computador" value={censoData.in_computador} />
+                        <InfoItem label="Desktops p/ Alunos" value={censoData.qt_desktop_aluno} />
+                        <InfoItem label="Notebooks p/ Alunos" value={censoData.qt_comp_portatil_aluno} />
+                        <InfoItem label="Tablets p/ Alunos" value={censoData.qt_tablet_aluno} />
+                        <InfoItem label="TVs" value={censoData.qt_equip_tv} />
+                        <InfoItem label="Projetores" value={censoData.qt_equip_multimidia} />
+                        <InfoItem label="Lousas Digitais" value={censoData.qt_equip_lousa_digital} />
+                        <InfoItem label="Equipamentos de Som" value={censoData.qt_equip_som} />
+                        <InfraItem label="Impressora" value={censoData.in_equip_impressora} />
+                        <InfraItem label="Copiadora" value={censoData.in_equip_copiadora} />
+                        <InfraItem label="Scanner" value={censoData.in_equip_scanner} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Internet e Conectividade</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <InfraItem label="Internet" value={censoData.in_internet} />
+                        <InfraItem label="Banda Larga" value={censoData.in_banda_larga} />
+                        <InfraItem label="Internet p/ Alunos" value={censoData.in_internet_alunos} />
+                        <InfraItem label="Internet Administrativo" value={censoData.in_internet_administrativo} />
+                        <InfraItem label="Internet Aprendizagem" value={censoData.in_internet_aprendizagem} />
+                        <InfraItem label="Internet Comunidade" value={censoData.in_internet_comunidade} />
+                        <InfraItem label="Acesso por Computador" value={censoData.in_acesso_internet_computador} />
+                        <InfraItem label="Acesso por Dispositivos" value={censoData.in_aces_internet_disp_pessoais} />
+                      </div>
+                    </div>
+                  </div>
+                </IndicatorSection>
+
+                <IndicatorSection
+                  title="Profissionais (não docentes)"
+                  icon={<Users className="w-5 h-5 text-amber-600" />}
+                  expanded={expandedSections['profissionais'] ?? false}
+                  onToggle={() => toggleSection('profissionais')}
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <InfoItem label="Administrativos" value={censoData.qt_prof_administrativos} />
+                    <InfoItem label="Serviços Gerais" value={censoData.qt_prof_servicos_gerais} />
+                    <InfoItem label="Bibliotecários" value={censoData.qt_prof_bibliotecario} />
+                    <InfoItem label="Saúde" value={censoData.qt_prof_saude} />
+                    <InfoItem label="Coordenadores" value={censoData.qt_prof_coordenador} />
+                    <InfoItem label="Fonoaudiólogos" value={censoData.qt_prof_fonaudiologo} />
+                    <InfoItem label="Nutricionistas" value={censoData.qt_prof_nutricionista} />
+                    <InfoItem label="Psicólogos" value={censoData.qt_prof_psicologo} />
+                    <InfoItem label="Alimentação" value={censoData.qt_prof_alimentacao} />
+                    <InfoItem label="Pedagogia" value={censoData.qt_prof_pedagogia} />
+                    <InfoItem label="Secretários" value={censoData.qt_prof_secretario} />
+                    <InfoItem label="Segurança" value={censoData.qt_prof_seguranca} />
+                    <InfoItem label="Monitores" value={censoData.qt_prof_monitores} />
+                    <InfoItem label="Gestão" value={censoData.qt_prof_gestao} />
+                    <InfoItem label="Assistentes Sociais" value={censoData.qt_prof_assist_social} />
+                    <InfoItem label="Trad. Libras" value={censoData.qt_prof_trad_libras} />
+                  </div>
+                </IndicatorSection>
+
+                <IndicatorSection
+                  title="Materiais Pedagógicos"
+                  icon={<BookOpen className="w-5 h-5 text-rose-600" />}
+                  expanded={expandedSections['materiais'] ?? false}
+                  onToggle={() => toggleSection('materiais')}
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <InfraItem label="Multimídia" value={censoData.in_material_ped_multimidia} />
+                    <InfraItem label="Infantil" value={censoData.in_material_ped_infantil} />
+                    <InfraItem label="Científico" value={censoData.in_material_ped_cientifico} />
+                    <InfraItem label="Difusão" value={censoData.in_material_ped_difusao} />
+                    <InfraItem label="Musical" value={censoData.in_material_ped_musical} />
+                    <InfraItem label="Jogos" value={censoData.in_material_ped_jogos} />
+                    <InfraItem label="Artísticas" value={censoData.in_material_ped_artisticas} />
+                    <InfraItem label="Profissional" value={censoData.in_material_ped_profissional} />
+                    <InfraItem label="Desportiva" value={censoData.in_material_ped_desportiva} />
+                    <InfraItem label="Indígena" value={censoData.in_material_ped_indigena} />
+                    <InfraItem label="Étnico" value={censoData.in_material_ped_etnico} />
+                    <InfraItem label="Quilombola" value={censoData.in_material_ped_quilombola} />
+                    <InfraItem label="Ed. Especial" value={censoData.in_material_ped_edu_esp} />
+                  </div>
+                </IndicatorSection>
 
                 {allIndicators.ideb && (
                   <IndicatorSection
