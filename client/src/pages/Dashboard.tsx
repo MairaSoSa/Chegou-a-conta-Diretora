@@ -89,11 +89,14 @@ export default function Dashboard() {
 
   const pddeEnrollTotal = useMemo(() => {
     if (!pddeData?.ok) return null;
-    return pddeData.matriculas_total
-      ?? (pddeData.matriculas_por_nivel
-        ? Object.values(pddeData.matriculas_por_nivel).reduce((a, b) => a + b, 0)
-        : null);
-  }, [pddeData]);
+    const total = pddeData.matriculas_total;
+    const porNivel = pddeData.matriculas_por_nivel;
+    if (total !== null && total !== undefined) return total as number;
+    if (porNivel) {
+      return Object.values(porNivel).reduce((a, b) => a + (b as number), 0) as number;
+    }
+    return null;
+  }, [pddeData]) as number | null;
 
   const { data: datasets = [] } = useQuery<DashboardDataset[]>({
     queryKey: ["/api/dashboard/datasets"],
@@ -145,9 +148,13 @@ export default function Dashboard() {
     : null;
 
   const lastRepasse = repassesData?.[repassesData.length - 1];
-  const repassePerAluno = lastRepasse && lastEnrollment 
-    ? (lastRepasse.total / lastEnrollment.total).toFixed(2)
-    : null;
+  const repassePerAluno = useMemo(() => {
+    const totalAlunos = (pddeEnrollTotal ?? school?.enrollmentCount ?? lastEnrollment?.total) as number | null | undefined;
+    if (lastRepasse && typeof totalAlunos === 'number' && totalAlunos > 0) {
+      return (lastRepasse.total / totalAlunos).toFixed(2);
+    }
+    return null;
+  }, [lastRepasse, pddeEnrollTotal, school?.enrollmentCount, lastEnrollment?.total]);
 
   const lastIdeb = idebData?.[idebData.length - 1];
   const ultimoPrestacao = prestacaoData?.[prestacaoData.length - 1];
@@ -615,16 +622,16 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <InfoItem label="Nome" value={pddeData?.ok && pddeData.nome_escola ? pddeData.nome_escola : displaySchool.name} />
-                    <InfoItem label="Código INEP" value={displaySchool.inep} mono />
-                    <InfoItem label="Cidade/Estado" value={pddeData?.ok && pddeData.municipio ? `${pddeData.municipio}/${pddeData.uf}` : `${displaySchool.city}/${displaySchool.state}`} />
-                    <InfoItem label="Rede" value={pddeData?.ok && pddeData.rede ? pddeData.rede : displaySchool.network} />
-                    <InfoItem label="Área" value={displaySchool.location} />
-                    <InfoItem label="Alunos" value={(pddeEnrollTotal ?? displaySchool.enrollmentCount).toString()} highlight />
+                    <InfoItem label="Nome" value={pddeData?.ok && pddeData.nome_escola ? pddeData.nome_escola : (school?.name || "—")} />
+                    <InfoItem label="Código INEP" value={school?.inep || "—"} mono />
+                    <InfoItem label="Cidade/Estado" value={pddeData?.ok && pddeData.municipio ? `${pddeData.municipio}/${pddeData.uf}` : (school ? `${school.city}/${school.state}` : "—")} />
+                    <InfoItem label="Rede" value={pddeData?.ok && pddeData.rede ? pddeData.rede : (school?.network || "—")} />
+                    <InfoItem label="Área" value={school?.location || "—"} />
+                    <InfoItem label="Alunos" value={pddeEnrollTotal ?? school?.enrollmentCount ?? 0} highlight />
                     {pddeData?.ok && pddeData.uex && (
                       <>
-                        <InfoItem label="UEx (Caixa Escolar)" value={pddeData.uex.executora} />
-                        <InfoItem label="CNPJ da UEx" value={pddeData.uex.cnpj} mono />
+                        <InfoItem label="UEx (Caixa Escolar)" value={pddeData.uex.executora as string | undefined} />
+                        <InfoItem label="CNPJ da UEx" value={pddeData.uex.cnpj as string | undefined} mono />
                       </>
                     )}
                   </div>
@@ -953,7 +960,7 @@ export default function Dashboard() {
                                 {pddeData.destinacoes.map((dest, i) => (
                                   <tr key={i} className="border-b border-border/20 hover:bg-muted/30 transition-colors" data-testid={`row-dest-${i}`}>
                                     <td className="py-2 px-2 text-xs font-medium max-w-[200px] truncate" title={dest.destinacao}>{dest.destinacao}</td>
-                                    <td className="py-2 px-2 text-xs max-w-[120px] truncate" title={dest.acao}>{dest.acao || '—'}</td>
+                                    <td className="py-2 px-2 text-xs max-w-[120px] truncate" title={dest.destinacao}>{dest.destinacao || '—'}</td>
                                     <td className="py-2 px-2 text-right font-mono text-xs">
                                       {dest.pago_custeio != null ? `R$ ${dest.pago_custeio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
                                     </td>
@@ -1648,12 +1655,13 @@ export default function Dashboard() {
   );
 }
 
-function InfoItem({ label, value, mono, highlight }: { label: string; value: string | null | undefined; mono?: boolean; highlight?: boolean }) {
+function InfoItem({ label, value, mono, highlight }: { label: string; value: string | number | null | undefined; mono?: boolean; highlight?: boolean }) {
   if (value === null || value === undefined) return null;
+  const displayValue = String(value);
   return (
     <div className="p-3 rounded-xl bg-muted/30">
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      <p className={`font-medium ${mono ? 'font-mono' : ''} ${highlight ? 'text-primary font-bold text-lg' : ''}`}>{value}</p>
+      <p className={`font-medium ${mono ? 'font-mono' : ''} ${highlight ? 'text-primary font-bold text-lg' : ''}`}>{displayValue}</p>
     </div>
   );
 }
