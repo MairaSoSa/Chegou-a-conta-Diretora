@@ -18,6 +18,7 @@ import {
   listCensoEscolar, getCensoEscolarDetail, getCensoEstatisticas,
   listIndicador, getIndicadorDetail, getEscolaCompleta, getApiInfo,
 } from "./importador";
+import { importAllIndicators, getIndicatorImportRunning, getAvailableIndicators } from "./import-inep-indicators";
 import { 
   localizarPrestacoesPorCnpj,
   detalharPrestacao,
@@ -641,6 +642,23 @@ export async function registerRoutes(
 
   app.get("/api/importar-status", async (_req, res) => {
     res.json({ ...getImportStatus(), stats: getLocalStats() });
+  });
+
+  app.post("/api/admin/importar-indicadores", adminAuth, async (req, res) => {
+    if (getIndicatorImportRunning()) {
+      return res.status(409).json({ error: "Importação de indicadores já em andamento" });
+    }
+    const tipos = req.body.tipos as string[] | undefined;
+    const anos = req.body.anos as number[] | undefined;
+    importAllIndicators(tipos, anos).then(result => {
+      console.log("[INEP] Indicator import finished:", JSON.stringify(result.errors?.length || 0), "errors");
+    });
+    res.json({ mensagem: "Importação de indicadores INEP iniciada em background", disponíveis: getAvailableIndicators() });
+  });
+
+  app.get("/api/admin/indicadores-status", adminAuth, async (_req, res) => {
+    const stats = getLocalStats();
+    res.json({ running: getIndicatorImportRunning(), disponíveis: getAvailableIndicators(), stats });
   });
 
   // === ADMIN: DASHBOARD CSV UPLOAD ===

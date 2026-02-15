@@ -8,7 +8,7 @@ import {
   MapPin, GraduationCap, Info, ExternalLink,
   School, Loader2, BarChart3, TrendingUp,
   BookOpen, Award, ChevronDown, ChevronUp,
-  Globe, Building2, TreePine, Filter, X
+  Globe, Building2, TreePine, Filter, X, Clock
 } from "lucide-react";
 import { useSchoolSearch, useSchool, useEscolaCompleta, useEstatisticas, useListaEscolas } from "@/hooks/use-schools";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1054,6 +1054,54 @@ export default function Dashboard() {
                   >
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       <IndicatorRows data={allIndicators.taxas_rendimento} />
+                    </div>
+                  </IndicatorSection>
+                )}
+
+                {allIndicators.atu && (
+                  <IndicatorSection
+                    title="ATU - Média de Alunos por Turma"
+                    icon={<Users className="w-5 h-5 text-indigo-600" />}
+                    expanded={expandedSections['atu'] ?? false}
+                    onToggle={() => toggleSection('atu')}
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <InfoItem label="Fundamental Total" value={allIndicators.atu.media_fund} />
+                      <InfoItem label="Fund. Anos Iniciais" value={allIndicators.atu.media_fund_ai} />
+                      <InfoItem label="Fund. Anos Finais" value={allIndicators.atu.media_fund_af} />
+                      <InfoItem label="Ensino Médio" value={allIndicators.atu.media_med} />
+                    </div>
+                  </IndicatorSection>
+                )}
+
+                {allIndicators.had && (
+                  <IndicatorSection
+                    title="HAD - Horas-Aula Diária"
+                    icon={<Clock className="w-5 h-5 text-cyan-600" />}
+                    expanded={expandedSections['had'] ?? false}
+                    onToggle={() => toggleSection('had')}
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <InfoItem label="Fundamental Total" value={allIndicators.had.media_fund} />
+                      <InfoItem label="Fund. Anos Iniciais" value={allIndicators.had.media_fund_ai} />
+                      <InfoItem label="Fund. Anos Finais" value={allIndicators.had.media_fund_af} />
+                      <InfoItem label="Ensino Médio" value={allIndicators.had.media_med} />
+                    </div>
+                  </IndicatorSection>
+                )}
+
+                {allIndicators.dsu && (
+                  <IndicatorSection
+                    title="DSU - Docentes com Curso Superior"
+                    icon={<GraduationCap className="w-5 h-5 text-emerald-600" />}
+                    expanded={expandedSections['dsu'] ?? false}
+                    onToggle={() => toggleSection('dsu')}
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <InfoItem label="Fundamental Total" value={allIndicators.dsu.percentual_fund != null ? `${allIndicators.dsu.percentual_fund}%` : null} />
+                      <InfoItem label="Fund. Anos Iniciais" value={allIndicators.dsu.percentual_fund_ai != null ? `${allIndicators.dsu.percentual_fund_ai}%` : null} />
+                      <InfoItem label="Fund. Anos Finais" value={allIndicators.dsu.percentual_fund_af != null ? `${allIndicators.dsu.percentual_fund_af}%` : null} />
+                      <InfoItem label="Ensino Médio" value={allIndicators.dsu.percentual_med != null ? `${allIndicators.dsu.percentual_med}%` : null} />
                     </div>
                   </IndicatorSection>
                 )}

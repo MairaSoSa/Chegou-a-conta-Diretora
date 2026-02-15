@@ -40,6 +40,10 @@ const INDICATOR_CONFIG: Record<string, { apiPath: string; anos: number[] }> = {
   taxas_rendimento: { apiPath: "taxa-rendimento", anos: [2024, 2023, 2022, 2021, 2020] },
   taxa_nao_resposta: { apiPath: "taxa-nao-resposta", anos: [2024, 2023, 2022, 2021, 2020] },
   saeb: { apiPath: "saeb", anos: [2023, 2021, 2019] },
+  atu: { apiPath: "atu", anos: [2024, 2023, 2022, 2021, 2020] },
+  had: { apiPath: "had", anos: [2024, 2023, 2022, 2021, 2020] },
+  dsu: { apiPath: "dsu", anos: [2024, 2023, 2022, 2021, 2020] },
+  afd: { apiPath: "afd", anos: [2024, 2023, 2022, 2021, 2020] },
 };
 
 export async function importFromExternalApi(tipos?: string[], anos?: number[]) {
