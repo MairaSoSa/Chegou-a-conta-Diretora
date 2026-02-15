@@ -284,7 +284,7 @@ export function searchSchoolsLocal(query: string, limit = 20) {
 
   const upperQuery = query.toUpperCase();
   const results = db.select().from(censoEscolar)
-    .where(like(censoEscolar.nome, `%${upperQuery}%`))
+    .where(sql`upper(${censoEscolar.nome}) LIKE ${'%' + upperQuery + '%'}`)
     .limit(limit)
     .all();
   return results.map(mapCensoToSchool);
@@ -376,20 +376,20 @@ export function getEscolaCompletaLocal(inep: string, ano: number) {
 }
 
 export function getLocalSchoolCount() {
-  const result = db.select().from(censoEscolar).all();
-  return result.length;
+  const result = db.select({ count: sql<number>`count(*)` }).from(censoEscolar).get();
+  return result?.count || 0;
 }
 
 export function getLocalStats() {
-  const censoCount = db.select().from(censoEscolar).all().length;
+  const censoCount = db.select({ count: sql<number>`count(*)` }).from(censoEscolar).get()?.count || 0;
 
   const indicadorCounts: Record<string, number> = {};
   for (const tipo of Object.keys(INDICATOR_CONFIG)) {
     if (tipo === "censo_escolar") continue;
-    const rows = db.select().from(indicadoresEducacionais)
+    const result = db.select({ count: sql<number>`count(*)` }).from(indicadoresEducacionais)
       .where(eq(indicadoresEducacionais.tipo, tipo))
-      .all();
-    indicadorCounts[tipo] = rows.length;
+      .get();
+    indicadorCounts[tipo] = result?.count || 0;
   }
 
   const importHistory = db.select().from(importacaoStatus).all();
@@ -476,33 +476,38 @@ export async function importSingleSchoolFromApi(inep: string) {
 }
 
 export function listCensoEscolar(ano: number, filters: Record<string, string> = {}, page = 1, perPage = 20) {
-  let rows = db.select().from(censoEscolar)
-    .where(eq(censoEscolar.ano, ano))
-    .all();
+  const depMap: Record<string, string> = { "1": "Federal", "2": "Estadual", "3": "Municipal", "4": "Privada" };
+  const locMap: Record<string, string> = { "1": "Urbana", "2": "Rural" };
+  const sitMap: Record<string, string> = { "1": "Em Atividade", "2": "Paralisada", "3": "Extinta" };
 
-  if (filters.uf) rows = rows.filter(r => r.uf?.toUpperCase() === filters.uf.toUpperCase());
-  if (filters.municipio) rows = rows.filter(r => r.municipio?.toUpperCase().includes(filters.municipio.toUpperCase()));
-  if (filters.nome) rows = rows.filter(r => r.nome?.toUpperCase().includes(filters.nome.toUpperCase()));
+  const conditions: any[] = [eq(censoEscolar.ano, ano)];
+  if (filters.uf) conditions.push(sql`upper(${censoEscolar.uf}) = ${filters.uf.toUpperCase()}`);
+  if (filters.municipio) conditions.push(sql`upper(${censoEscolar.municipio}) LIKE ${'%' + filters.municipio.toUpperCase() + '%'}`);
+  if (filters.nome) conditions.push(sql`upper(${censoEscolar.nome}) LIKE ${'%' + filters.nome.toUpperCase() + '%'}`);
   if (filters.tp_dependencia) {
-    const depMap: Record<string, string> = { "1": "Federal", "2": "Estadual", "3": "Municipal", "4": "Privada" };
     const depText = depMap[filters.tp_dependencia] || filters.tp_dependencia;
-    rows = rows.filter(r => r.dependencia === depText);
+    conditions.push(eq(censoEscolar.dependencia, depText));
   }
   if (filters.tp_localizacao) {
-    const locMap: Record<string, string> = { "1": "Urbana", "2": "Rural" };
     const locText = locMap[filters.tp_localizacao] || filters.tp_localizacao;
-    rows = rows.filter(r => r.localizacao === locText);
+    conditions.push(eq(censoEscolar.localizacao, locText));
   }
   if (filters.tp_situacao) {
-    const sitMap: Record<string, string> = { "1": "Em Atividade", "2": "Paralisada", "3": "Extinta" };
     const sitText = sitMap[filters.tp_situacao] || filters.tp_situacao;
-    rows = rows.filter(r => r.situacao === sitText);
+    conditions.push(eq(censoEscolar.situacao, sitText));
   }
 
-  const total = rows.length;
+  const whereClause = and(...conditions);
+  const countResult = db.select({ count: sql<number>`count(*)` }).from(censoEscolar).where(whereClause).get();
+  const total = countResult?.count || 0;
   const totalPages = Math.ceil(total / perPage);
-  const start = (page - 1) * perPage;
-  const pageRows = rows.slice(start, start + perPage);
+  const offset = (page - 1) * perPage;
+
+  const pageRows = db.select().from(censoEscolar)
+    .where(whereClause)
+    .limit(perPage)
+    .offset(offset)
+    .all();
 
   return {
     ano,
@@ -552,73 +557,67 @@ export function getCensoEscolarDetail(ano: number, inep: string) {
 }
 
 export function getCensoEstatisticas(ano: number) {
-  const rows = db.select().from(censoEscolar)
-    .where(eq(censoEscolar.ano, ano))
-    .all();
+  const totals = db.select({
+    total_escolas: sql<number>`count(*)`,
+    total_matriculas: sql<number>`coalesce(sum(${censoEscolar.matriculas}), 0)`,
+    total_docentes: sql<number>`coalesce(sum(${censoEscolar.docentes}), 0)`,
+    total_turmas: sql<number>`coalesce(sum(${censoEscolar.turmas}), 0)`,
+  }).from(censoEscolar).where(eq(censoEscolar.ano, ano)).get();
 
-  const totalEscolas = rows.length;
-  const totalMatriculas = rows.reduce((sum, r) => sum + (r.matriculas || 0), 0);
-  const totalDocentes = rows.reduce((sum, r) => sum + (r.docentes || 0), 0);
-  const totalTurmas = rows.reduce((sum, r) => sum + (r.turmas || 0), 0);
-
-  const porDependencia: Record<string, number> = {};
-  const porLocalizacao: Record<string, number> = {};
-  const porUf: Record<string, number> = {};
-  const porSituacao: Record<string, number> = {};
-
-  for (const r of rows) {
-    if (r.dependencia) porDependencia[r.dependencia] = (porDependencia[r.dependencia] || 0) + 1;
-    if (r.localizacao) porLocalizacao[r.localizacao] = (porLocalizacao[r.localizacao] || 0) + 1;
-    if (r.uf) porUf[r.uf] = (porUf[r.uf] || 0) + 1;
-    if (r.situacao) porSituacao[r.situacao] = (porSituacao[r.situacao] || 0) + 1;
-  }
+  const groupBy = (col: any) => {
+    const rows = db.select({
+      key: col,
+      count: sql<number>`count(*)`,
+    }).from(censoEscolar).where(and(eq(censoEscolar.ano, ano), sql`${col} IS NOT NULL`)).groupBy(col).all();
+    const result: Record<string, number> = {};
+    for (const r of rows) result[r.key as string] = r.count;
+    return result;
+  };
 
   return {
     ano,
-    total_escolas: totalEscolas,
-    total_matriculas: totalMatriculas,
-    total_docentes: totalDocentes,
-    total_turmas: totalTurmas,
-    por_dependencia: porDependencia,
-    por_localizacao: porLocalizacao,
-    por_uf: porUf,
-    por_situacao: porSituacao,
+    total_escolas: totals?.total_escolas || 0,
+    total_matriculas: totals?.total_matriculas || 0,
+    total_docentes: totals?.total_docentes || 0,
+    total_turmas: totals?.total_turmas || 0,
+    por_dependencia: groupBy(censoEscolar.dependencia),
+    por_localizacao: groupBy(censoEscolar.localizacao),
+    por_uf: groupBy(censoEscolar.uf),
+    por_situacao: groupBy(censoEscolar.situacao),
   };
 }
 
 export function listIndicador(tipo: string, ano: number, filters: Record<string, string> = {}, page = 1, perPage = 20) {
-  let rows = db.select().from(indicadoresEducacionais)
-    .where(and(eq(indicadoresEducacionais.tipo, tipo), eq(indicadoresEducacionais.ano, ano)))
-    .all();
+  const conditions: any[] = [
+    eq(indicadoresEducacionais.tipo, tipo),
+    eq(indicadoresEducacionais.ano, ano),
+  ];
 
-  if (filters.nome || filters.uf || filters.municipio) {
-    const censoRows = db.select().from(censoEscolar).all();
-    const censoMap = new Map(censoRows.map(c => [c.inep, c]));
+  const needsJoin = filters.nome || filters.uf || filters.municipio;
 
+  if (needsJoin) {
     if (filters.uf) {
-      rows = rows.filter(r => {
-        const c = censoMap.get(r.inep);
-        return c?.uf?.toUpperCase() === filters.uf.toUpperCase();
-      });
+      conditions.push(sql`EXISTS (SELECT 1 FROM censo_escolar c WHERE c.inep = ${indicadoresEducacionais.inep} AND c.ano = ${ano} AND upper(c.uf) = ${filters.uf.toUpperCase()})`);
     }
     if (filters.municipio) {
-      rows = rows.filter(r => {
-        const c = censoMap.get(r.inep);
-        return c?.municipio?.toUpperCase().includes(filters.municipio.toUpperCase());
-      });
+      conditions.push(sql`EXISTS (SELECT 1 FROM censo_escolar c WHERE c.inep = ${indicadoresEducacionais.inep} AND c.ano = ${ano} AND upper(c.municipio) LIKE ${'%' + filters.municipio.toUpperCase() + '%'})`);
     }
     if (filters.nome) {
-      rows = rows.filter(r => {
-        const c = censoMap.get(r.inep);
-        return c?.nome?.toUpperCase().includes(filters.nome.toUpperCase());
-      });
+      conditions.push(sql`EXISTS (SELECT 1 FROM censo_escolar c WHERE c.inep = ${indicadoresEducacionais.inep} AND c.ano = ${ano} AND upper(c.nome) LIKE ${'%' + filters.nome.toUpperCase() + '%'})`);
     }
   }
 
-  const total = rows.length;
+  const whereClause = and(...conditions);
+  const countResult = db.select({ count: sql<number>`count(*)` }).from(indicadoresEducacionais).where(whereClause).get();
+  const total = countResult?.count || 0;
   const totalPages = Math.ceil(total / perPage);
-  const start = (page - 1) * perPage;
-  const pageRows = rows.slice(start, start + perPage);
+  const offset = (page - 1) * perPage;
+
+  const pageRows = db.select().from(indicadoresEducacionais)
+    .where(whereClause)
+    .limit(perPage)
+    .offset(offset)
+    .all();
 
   return {
     ano,

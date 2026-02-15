@@ -44,14 +44,16 @@ npm run dev
 ## Recent Changes
 
 ### Self-Sufficient Local Data Engine (Feb 2026)
-- **Complete api-escolas parity**: Platform mirrors ALL endpoints from api-escolas.replit.app locally
+- **215,545 schools imported** from official INEP microdata CSV (censo escolar 2024)
+- **100% local operation**: All API requests served from local SQLite, zero external API dependency
+- **INEP CSV import script**: `server/import-inep-csv.ts` processes official INEP microdata files directly from download.inep.gov.br
+- **SQL-optimized queries**: All list/stats/search functions use SQL COUNT, GROUP BY, LIMIT/OFFSET instead of loading all records into memory
+- **Database indexes**: idx_censo_ano, idx_censo_inep, idx_censo_uf, idx_censo_dependencia, idx_censo_nome, idx_censo_ano_inep, idx_indicadores_tipo_ano, idx_indicadores_inep
 - **server/importador.ts**: Comprehensive data engine with 15+ functions: import, query, aggregate, statistics
-- **Bulk import system**: Admin-triggered background import from external API with progress tracking
+- **Bulk import system**: Admin-triggered background import with progress tracking
   - POST `/api/admin/importar` with optional `tipos[]` and `anos[]` filters
   - Supports 9 data types: censo_escolar, ideb, icg, inse, tdi, ird, taxas_rendimento, taxa_nao_resposta, saeb
-  - Paginated import (100 records/page, max 500 pages per type/year)
   - Import progress persisted in `importacao_status` table
-- **On-demand single school import**: Schools not in local DB are auto-imported from external API on first access
 - **Complete REST API endpoints** (all local-first):
   - `GET /api/info` - API metadata and local stats
   - `GET /api/escola/buscar?nome=X` - Search schools by name

@@ -13,7 +13,7 @@ import { fetchMecNormasFilters, syncMecNormas } from "./integrations/mecnormas";
 import { backfillAiDocumentEmbeddings } from "./integrations/embeddings";
 import { getPddeInfo } from "./scraper/pdde";
 import {
-  searchSchoolsLocal, getEscolaCompletaLocal, importSingleSchoolFromApi,
+  searchSchoolsLocal, getEscolaCompletaLocal,
   importFromExternalApi, getImportStatus, getLocalSchoolCount, getLocalStats,
   listCensoEscolar, getCensoEscolarDetail, getCensoEstatisticas,
   listIndicador, getIndicadorDetail, getEscolaCompleta, getApiInfo,
@@ -174,91 +174,27 @@ export async function registerRoutes(
     }
   );
 
-  // === EXTERNAL API (fallback only) ===
-  const EXTERNAL_API = process.env.EXTERNAL_API_URL || "https://api-escolas.replit.app";
-
-  // === PUBLIC: SCHOOLS (local-first, API fallback) ===
-  app.get(api.schools.search.path, async (req, res) => {
+  // === PUBLIC: SCHOOLS (100% local) ===
+  app.get(api.schools.search.path, (req, res) => {
     const query = req.query.q as string | undefined;
     if (!query || query.length < 2) return res.json([]);
-
-    const localResults = searchSchoolsLocal(query);
-    if (localResults.length > 0) {
-      return res.json(localResults);
-    }
-
-    try {
-      const isInepCode = /^\d{7,8}$/.test(query.trim());
-      if (isInepCode) {
-        const imported = await importSingleSchoolFromApi(query.trim());
-        if (imported) {
-          return res.json(searchSchoolsLocal(query));
-        }
-      }
-
-      const url = `${EXTERNAL_API}/api/escola/buscar?nome=${encodeURIComponent(query)}&per_page=20`;
-      const apiRes = await fetch(url, { signal: AbortSignal.timeout(10000) });
-      if (!apiRes.ok) return res.json([]);
-      const data: any = await apiRes.json();
-      const schools = (data.dados || []).map((d: any) => ({
-        id: d.co_entidade || 0,
-        inep: String(d.co_entidade),
-        name: d.no_entidade || "Sem nome",
-        city: d.no_municipio || "",
-        state: d.sg_uf || "",
-        network: d.ds_dependencia || "",
-        location: d.ds_localizacao || "",
-        enrollmentCount: d.qt_matriculas || 0,
-        dataStatus: "API Externa",
-      }));
-      res.json(schools);
-    } catch (err: any) {
-      console.error("[Schools Search] API error:", err.message);
-      res.json([]);
-    }
+    res.json(searchSchoolsLocal(query));
   });
 
-  app.get(api.schools.get.path, async (req, res) => {
+  app.get(api.schools.get.path, (req, res) => {
     const inep = getParam(req.params, "inep");
-    
     const localResults = searchSchoolsLocal(inep);
-    if (localResults.length > 0) {
-      return res.json(localResults[0]);
-    }
-
-    try {
-      const imported = await importSingleSchoolFromApi(inep);
-      if (imported) {
-        const results = searchSchoolsLocal(inep);
-        if (results.length > 0) return res.json(results[0]);
-      }
-      res.status(404).json({ message: "Escola não encontrada" });
-    } catch (err: any) {
-      console.error("[School Get] Error:", err.message);
-      res.status(404).json({ message: "Escola não encontrada" });
-    }
+    if (localResults.length > 0) return res.json(localResults[0]);
+    res.status(404).json({ message: "Escola não encontrada. Importe os dados pelo painel admin." });
   });
 
-  // === PUBLIC: ESCOLA COMPLETA (local-first, API fallback) ===
-  app.get("/api/escola-completa/:inep", async (req, res) => {
+  // === PUBLIC: ESCOLA COMPLETA (100% local) ===
+  app.get("/api/escola-completa/:inep", (req, res) => {
     const inep = getParam(req.params, "inep");
     const ano = parseInt(req.query.ano as string) || new Date().getFullYear();
-
-    let localData = getEscolaCompletaLocal(inep, ano);
-    if (localData) {
-      return res.json(localData);
-    }
-
-    try {
-      await importSingleSchoolFromApi(inep);
-      localData = getEscolaCompletaLocal(inep, ano);
-      if (localData) return res.json(localData);
-
-      res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], ano_selecionado: ano });
-    } catch (err: any) {
-      console.error("[Escola Completa] Error:", err.message);
-      res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], ano_selecionado: ano });
-    }
+    const localData = getEscolaCompletaLocal(inep, ano);
+    if (localData) return res.json(localData);
+    res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], ano_selecionado: ano });
   });
 
   // === PUBLIC: API INFO (mirrors api-escolas root) ===
@@ -266,55 +202,32 @@ export async function registerRoutes(
     res.json(getApiInfo());
   });
 
-  // === PUBLIC: ESCOLA COMPLETA (full school data, all years) ===
-  app.get("/api/escola/buscar", async (req, res) => {
+  // === PUBLIC: ESCOLA BUSCAR + DETALHE (100% local) ===
+  app.get("/api/escola/buscar", (req, res) => {
     const nome = req.query.nome as string;
     const perPage = parseInt(req.query.per_page as string) || 20;
     if (!nome || nome.length < 2) return res.json({ dados: [], total: 0 });
 
     const localResults = searchSchoolsLocal(nome, perPage);
-    if (localResults.length > 0) {
-      return res.json({
-        dados: localResults.map(s => ({
-          co_entidade: s.id,
-          no_entidade: s.name,
-          no_municipio: s.city,
-          sg_uf: s.state,
-          ds_dependencia: s.network,
-          ds_localizacao: s.location,
-          qt_matriculas: s.enrollmentCount,
-        })),
-        total: localResults.length,
-      });
-    }
-
-    try {
-      const url = `${EXTERNAL_API}/api/escola/buscar?nome=${encodeURIComponent(nome)}&per_page=${perPage}`;
-      const apiRes = await fetch(url, { signal: AbortSignal.timeout(10000) });
-      if (!apiRes.ok) return res.json({ dados: [], total: 0 });
-      const data = await apiRes.json();
-      res.json(data);
-    } catch {
-      res.json({ dados: [], total: 0 });
-    }
+    res.json({
+      dados: localResults.map(s => ({
+        co_entidade: s.id,
+        no_entidade: s.name,
+        no_municipio: s.city,
+        sg_uf: s.state,
+        ds_dependencia: s.network,
+        ds_localizacao: s.location,
+        qt_matriculas: s.enrollmentCount,
+      })),
+      total: localResults.length,
+    });
   });
 
-  app.get("/api/escola/:inep", async (req, res) => {
+  app.get("/api/escola/:inep", (req, res) => {
     const inep = getParam(req.params, "inep");
-
     const localData = getEscolaCompleta(inep);
     if (localData) return res.json(localData);
-
-    try {
-      const imported = await importSingleSchoolFromApi(inep);
-      if (imported) {
-        const data = getEscolaCompleta(inep);
-        if (data) return res.json(data);
-      }
-      res.status(404).json({ erro: "Escola não encontrada" });
-    } catch {
-      res.status(404).json({ erro: "Escola não encontrada" });
-    }
+    res.status(404).json({ erro: "Escola não encontrada. Importe os dados pelo painel admin." });
   });
 
   // === PUBLIC: CENSO ESCOLAR ROUTES ===
