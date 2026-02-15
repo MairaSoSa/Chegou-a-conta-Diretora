@@ -379,6 +379,63 @@ export function getEscolaCompletaLocal(inep: string, ano: number) {
   return Object.keys(result).length > 3 ? result : null;
 }
 
+export function getEscolaEvolucaoLocal(inep: string) {
+  const censoRecords = db.select().from(censoEscolar)
+    .where(eq(censoEscolar.inep, inep))
+    .all();
+
+  if (censoRecords.length === 0) return null;
+
+  const indicadorRecords = db.select().from(indicadoresEducacionais)
+    .where(eq(indicadoresEducacionais.inep, inep))
+    .all();
+
+  const anosSet = new Set<number>();
+  censoRecords.forEach(r => anosSet.add(r.ano));
+  indicadorRecords.forEach(r => anosSet.add(r.ano));
+  const anos = [...anosSet].sort();
+
+  const censoByYear: Record<number, any> = {};
+  for (const c of censoRecords) {
+    const dados = c.dados ? JSON.parse(c.dados) : {};
+    censoByYear[c.ano] = {
+      ...dados,
+      no_entidade: c.nome || dados.no_entidade,
+      qt_docentes: c.docentes || dados.qt_docentes,
+      qt_salas_utilizadas: dados.qt_salas_utilizadas,
+      tp_dependencia_texto: c.dependencia,
+      tp_localizacao_texto: c.localizacao,
+      tp_situacao_texto: c.situacao,
+      no_municipio: c.municipio,
+      sg_uf: c.uf,
+    };
+  }
+
+  const indicadoresByYear: Record<number, Record<string, any>> = {};
+  for (const ind of indicadorRecords) {
+    if (!indicadoresByYear[ind.ano]) indicadoresByYear[ind.ano] = {};
+    indicadoresByYear[ind.ano][ind.tipo] = ind.dados ? JSON.parse(ind.dados) : {};
+  }
+
+  const latestAno = anos[anos.length - 1];
+  const latestCenso = censoByYear[latestAno] || censoByYear[anos[0]];
+
+  return {
+    co_entidade: parseInt(inep),
+    anos_disponiveis: anos,
+    escola: {
+      no_entidade: latestCenso?.no_entidade,
+      no_municipio: latestCenso?.no_municipio,
+      sg_uf: latestCenso?.sg_uf,
+      ds_dependencia: latestCenso?.ds_dependencia || latestCenso?.tp_dependencia_texto,
+      ds_localizacao: latestCenso?.ds_localizacao || latestCenso?.tp_localizacao_texto,
+      ds_situacao: latestCenso?.ds_situacao || latestCenso?.tp_situacao_texto,
+    },
+    censo_por_ano: censoByYear,
+    indicadores_por_ano: indicadoresByYear,
+  };
+}
+
 export function getLocalSchoolCount() {
   const result = db.select({ count: sql<number>`count(*)` }).from(censoEscolar).get();
   return result?.count || 0;

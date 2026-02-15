@@ -47,6 +47,23 @@ export function useEscolaCompleta(inep: string, ano?: number) {
   });
 }
 
+export function useEscolaEvolucao(inep: string) {
+  return useQuery({
+    queryKey: ["escola-evolucao", inep],
+    queryFn: async () => {
+      if (!inep) return null;
+      const res = await fetch(`/api/escola-evolucao/${inep}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data.escola) return null;
+      return data;
+    },
+    enabled: !!inep,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useEstatisticas(ano: number) {
   return useQuery({
     queryKey: ["estatisticas", ano],

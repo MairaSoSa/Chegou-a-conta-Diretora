@@ -10,12 +10,13 @@ import {
   BookOpen, Award, ChevronDown, ChevronUp,
   Globe, Building2, TreePine, Filter, X, Clock
 } from "lucide-react";
-import { useSchoolSearch, useSchool, useEscolaCompleta, useEstatisticas, useListaEscolas } from "@/hooks/use-schools";
+import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas } from "@/hooks/use-schools";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell, Legend
+  ResponsiveContainer, PieChart, Pie, Cell, Legend,
+  LineChart, Line
 } from "recharts";
 
 const UF_NAMES: Record<string, string> = {
@@ -29,6 +30,7 @@ const UF_NAMES: Record<string, string> = {
 
 const CHART_COLORS = ["#2d6a4f", "#40916c", "#52b788", "#74c69d", "#95d5b2", "#b7e4c7"];
 const PIE_COLORS = ["#2d6a4f", "#40916c", "#74c69d", "#b7e4c7"];
+const EXTRA_COLORS = ["#e76f51", "#264653", "#2a9d8f", "#e9c46a"];
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -42,7 +44,7 @@ export default function Dashboard() {
 
   const { data: stats, isLoading: statsLoading } = useEstatisticas(selectedAno);
   const { data: searchResults, refetch: refetchSearch, isLoading: searchLoading } = useSchoolSearch(searchQuery);
-  const { data: escolaCompleta, isLoading: completaLoading } = useEscolaCompleta(selectedInep || "", selectedAno);
+  const { data: evolucaoData, isLoading: evolucaoLoading } = useEscolaEvolucao(selectedInep || "");
 
   const listFilters = useMemo(() => {
     const f: Record<string, string> = {};
@@ -62,8 +64,86 @@ export default function Dashboard() {
     setActiveTab("detail");
   };
 
-  const censoData = escolaCompleta?.censo_escolar || null;
-  const allIndicators = escolaCompleta || {};
+  const latestAno = useMemo(() => {
+    if (!evolucaoData?.anos_disponiveis?.length) return null;
+    return Math.max(...evolucaoData.anos_disponiveis);
+  }, [evolucaoData]);
+
+  const censoLatest = useMemo(() => {
+    if (!evolucaoData || !latestAno) return null;
+    return evolucaoData.censo_por_ano?.[latestAno] || null;
+  }, [evolucaoData, latestAno]);
+
+  const indicadoresLatest = useMemo(() => {
+    if (!evolucaoData || !latestAno) return {};
+    return evolucaoData.indicadores_por_ano?.[latestAno] || {};
+  }, [evolucaoData, latestAno]);
+
+  const evolutionCharts = useMemo(() => {
+    if (!evolucaoData) return null;
+    const anos = evolucaoData.anos_disponiveis;
+    const censo = evolucaoData.censo_por_ano;
+    const indicadores = evolucaoData.indicadores_por_ano;
+
+    return {
+      matriculas: anos.map((a: number) => ({ ano: a, value: censo[a]?.qt_mat_bas || 0 })),
+      docentes: anos.map((a: number) => ({ ano: a, value: censo[a]?.qt_doc_bas || censo[a]?.qt_docentes || 0 })),
+      turmas: anos.map((a: number) => ({ ano: a, value: censo[a]?.qt_tur_bas || censo[a]?.qt_turmas || 0 })),
+      taxasRendimento: anos.map((a: number) => {
+        const tr = indicadores[a]?.taxas_rendimento;
+        if (!tr) return { ano: a };
+        return {
+          ano: a,
+          aprovacao: tr.aprovacao_fund ?? tr.aprovacao_total ?? null,
+          reprovacao: tr.reprovacao_fund ?? tr.reprovacao_total ?? null,
+          abandono: tr.abandono_fund ?? tr.abandono_total ?? null,
+        };
+      }),
+      tdi: anos.map((a: number) => {
+        const t = indicadores[a]?.tdi;
+        if (!t) return { ano: a };
+        return {
+          ano: a,
+          fund_total: t.fundamental_total ?? null,
+          fund_af: t.fundamental_af ?? null,
+          medio: t.medio_total ?? null,
+        };
+      }),
+      atu: anos.map((a: number) => {
+        const at = indicadores[a]?.atu;
+        if (!at) return { ano: a };
+        return {
+          ano: a,
+          fund: at.media_fund ?? null,
+          fund_ai: at.media_fund_ai ?? null,
+          fund_af: at.media_fund_af ?? null,
+          medio: at.media_med ?? null,
+        };
+      }),
+      had: anos.map((a: number) => {
+        const h = indicadores[a]?.had;
+        if (!h) return { ano: a };
+        return {
+          ano: a,
+          fund: h.media_fund ?? null,
+          fund_ai: h.media_fund_ai ?? null,
+          fund_af: h.media_fund_af ?? null,
+          medio: h.media_med ?? null,
+        };
+      }),
+      dsu: anos.map((a: number) => {
+        const d = indicadores[a]?.dsu;
+        if (!d) return { ano: a };
+        return {
+          ano: a,
+          fund: d.percentual_fund ?? null,
+          fund_ai: d.percentual_fund_ai ?? null,
+          fund_af: d.percentual_fund_af ?? null,
+          medio: d.percentual_med ?? null,
+        };
+      }),
+    };
+  }, [evolucaoData]);
 
   const ufChartData = useMemo(() => {
     if (!stats?.por_uf) return [];
@@ -92,6 +172,8 @@ export default function Dashboard() {
 
   const formatNumber = (n: number) => n?.toLocaleString("pt-BR") || "0";
 
+  const hasMultipleYears = (evolucaoData?.anos_disponiveis?.length || 0) > 1;
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
@@ -102,15 +184,17 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-foreground">Painel de Dados Educacionais</h1>
             <p className="text-sm text-muted-foreground mt-1">Censo Escolar {selectedAno} - Fonte: INEP/MEC</p>
           </div>
-          <div className="flex items-center gap-2">
-            <select
-              value={selectedAno}
-              onChange={(e) => setSelectedAno(Number(e.target.value))}
-              className="text-sm bg-background border border-border/50 rounded-lg px-3 py-2"
-            >
-              {[2024, 2023, 2022, 2021, 2020].map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
-          </div>
+          {activeTab === "overview" && (
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedAno}
+                onChange={(e) => setSelectedAno(Number(e.target.value))}
+                className="text-sm bg-background border border-border/50 rounded-lg px-3 py-2"
+              >
+                {[2024, 2023, 2022, 2021, 2020].map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 border-b border-border/30 pb-1">
@@ -506,30 +590,33 @@ export default function Dashboard() {
               <ArrowLeft className="w-4 h-4 mr-1" /> Voltar à lista
             </Button>
 
-            {completaLoading ? (
+            {evolucaoLoading ? (
               <Card className="card-clay">
                 <CardContent className="py-12 text-center">
                   <Loader2 className="w-8 h-8 animate-spin mx-auto text-accent mb-3" />
                   <p className="text-muted-foreground">Carregando dados da escola...</p>
                 </CardContent>
               </Card>
-            ) : censoData ? (
+            ) : evolucaoData && censoLatest ? (
               <>
                 <Card className="card-clay border-l-4 border-l-accent">
                   <CardContent className="p-5">
                     <div className="flex flex-wrap items-start gap-3">
                       <div className="flex-1 min-w-0">
-                        <h2 className="text-lg font-bold text-foreground">{censoData.no_entidade}</h2>
+                        <h2 className="text-lg font-bold text-foreground">{evolucaoData.escola.no_entidade}</h2>
                         <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                           <MapPin className="w-3 h-3" />
-                          {censoData.no_municipio}/{censoData.sg_uf}
+                          {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Anos disponíveis: {evolucaoData.anos_disponiveis.join(", ")}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <Badge className="bg-accent/10 text-accent border-0 font-mono">{selectedInep}</Badge>
-                        <Badge variant="outline">{censoData.ds_dependencia || censoData.tp_dependencia_texto}</Badge>
-                        <Badge variant="outline">{censoData.ds_localizacao || censoData.tp_localizacao_texto}</Badge>
-                        <Badge variant="outline">{censoData.ds_situacao || censoData.tp_situacao_texto}</Badge>
+                        <Badge variant="outline">{evolucaoData.escola.ds_dependencia}</Badge>
+                        <Badge variant="outline">{evolucaoData.escola.ds_localizacao}</Badge>
+                        <Badge variant="outline">{evolucaoData.escola.ds_situacao}</Badge>
                       </div>
                     </div>
                   </CardContent>
@@ -538,149 +625,297 @@ export default function Dashboard() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <StatCard
                     icon={<Users className="w-5 h-5 text-accent" />}
-                    value={formatNumber(censoData.qt_mat_bas || 0)}
-                    label="Matrículas"
+                    value={formatNumber(censoLatest.qt_mat_bas || 0)}
+                    label={`Matrículas (${latestAno})`}
                     color="bg-accent/10"
                   />
                   <StatCard
                     icon={<GraduationCap className="w-5 h-5 text-blue-600" />}
-                    value={formatNumber(censoData.qt_doc_bas || censoData.qt_docentes || 0)}
-                    label="Docentes"
+                    value={formatNumber(censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0)}
+                    label={`Docentes (${latestAno})`}
                     color="bg-blue-600/10"
                   />
                   <StatCard
                     icon={<BookOpen className="w-5 h-5 text-purple-600" />}
-                    value={formatNumber(censoData.qt_tur_bas || censoData.qt_turmas || 0)}
-                    label="Turmas"
+                    value={formatNumber(censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0)}
+                    label={`Turmas (${latestAno})`}
                     color="bg-purple-600/10"
                   />
                   <StatCard
                     icon={<School className="w-5 h-5 text-orange-600" />}
-                    value={formatNumber(censoData.qt_salas_utilizadas || 0)}
-                    label="Salas"
+                    value={formatNumber(censoLatest.qt_salas_utilizadas || 0)}
+                    label={`Salas (${latestAno})`}
                     color="bg-orange-600/10"
                   />
                 </div>
 
-                {(allIndicators.icg || allIndicators.tdi || allIndicators.ird || allIndicators.taxas_rendimento || allIndicators.atu || allIndicators.had || allIndicators.dsu || allIndicators.ideb || allIndicators.inse) && (
+                <Card className="card-clay border-l-4 border-l-green-500">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-green-600" />
+                      Evolução ao Longo dos Anos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {!hasMultipleYears ? (
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                          Dados disponíveis apenas para {latestAno}. Quando houver mais anos importados, gráficos de evolução aparecerão aqui.
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {evolutionCharts && (
+                            <>
+                              <EvolutionChart
+                                title="Matrículas"
+                                data={evolutionCharts.matriculas}
+                                lines={[{ key: "value", color: CHART_COLORS[0], name: "Matrículas" }]}
+                                icon={<Users className="w-4 h-4 text-accent" />}
+                              />
+                              <EvolutionChart
+                                title="Docentes"
+                                data={evolutionCharts.docentes}
+                                lines={[{ key: "value", color: CHART_COLORS[1], name: "Docentes" }]}
+                                icon={<GraduationCap className="w-4 h-4 text-blue-600" />}
+                              />
+                              <EvolutionChart
+                                title="Taxas de Rendimento (%)"
+                                data={evolutionCharts.taxasRendimento}
+                                lines={[
+                                  { key: "aprovacao", color: CHART_COLORS[0], name: "Aprovação" },
+                                  { key: "reprovacao", color: EXTRA_COLORS[0], name: "Reprovação" },
+                                  { key: "abandono", color: EXTRA_COLORS[1], name: "Abandono" },
+                                ]}
+                                icon={<TrendingUp className="w-4 h-4 text-green-600" />}
+                              />
+                              <EvolutionChart
+                                title="ATU - Alunos por Turma"
+                                data={evolutionCharts.atu}
+                                lines={[
+                                  { key: "fund", color: CHART_COLORS[0], name: "Fund. Total" },
+                                  { key: "fund_af", color: CHART_COLORS[1], name: "Fund. AF" },
+                                  { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
+                                ]}
+                                icon={<Users className="w-4 h-4 text-indigo-600" />}
+                              />
+                              <EvolutionChart
+                                title="HAD - Horas-Aula Diária"
+                                data={evolutionCharts.had}
+                                lines={[
+                                  { key: "fund", color: CHART_COLORS[0], name: "Fund. Total" },
+                                  { key: "fund_af", color: CHART_COLORS[1], name: "Fund. AF" },
+                                  { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
+                                ]}
+                                icon={<Clock className="w-4 h-4 text-cyan-600" />}
+                              />
+                              <EvolutionChart
+                                title="DSU - Docentes com Superior (%)"
+                                data={evolutionCharts.dsu}
+                                lines={[
+                                  { key: "fund", color: CHART_COLORS[0], name: "Fund. Total" },
+                                  { key: "fund_af", color: CHART_COLORS[1], name: "Fund. AF" },
+                                  { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
+                                ]}
+                                icon={<GraduationCap className="w-4 h-4 text-emerald-600" />}
+                              />
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {evolutionCharts && (
+                          <>
+                            <EvolutionChart
+                              title="Matrículas"
+                              data={evolutionCharts.matriculas}
+                              lines={[{ key: "value", color: CHART_COLORS[0], name: "Matrículas" }]}
+                              icon={<Users className="w-4 h-4 text-accent" />}
+                            />
+                            <EvolutionChart
+                              title="Docentes"
+                              data={evolutionCharts.docentes}
+                              lines={[{ key: "value", color: CHART_COLORS[1], name: "Docentes" }]}
+                              icon={<GraduationCap className="w-4 h-4 text-blue-600" />}
+                            />
+                            <EvolutionChart
+                              title="Taxas de Rendimento (%)"
+                              data={evolutionCharts.taxasRendimento}
+                              lines={[
+                                { key: "aprovacao", color: CHART_COLORS[0], name: "Aprovação" },
+                                { key: "reprovacao", color: EXTRA_COLORS[0], name: "Reprovação" },
+                                { key: "abandono", color: EXTRA_COLORS[1], name: "Abandono" },
+                              ]}
+                              icon={<TrendingUp className="w-4 h-4 text-green-600" />}
+                            />
+                            <EvolutionChart
+                              title="TDI - Distorção Idade-Série (%)"
+                              data={evolutionCharts.tdi}
+                              lines={[
+                                { key: "fund_total", color: CHART_COLORS[0], name: "Fund. Total" },
+                                { key: "fund_af", color: CHART_COLORS[1], name: "Fund. AF" },
+                                { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
+                              ]}
+                              icon={<BarChart3 className="w-4 h-4 text-orange-600" />}
+                            />
+                            <EvolutionChart
+                              title="ATU - Alunos por Turma"
+                              data={evolutionCharts.atu}
+                              lines={[
+                                { key: "fund", color: CHART_COLORS[0], name: "Fund. Total" },
+                                { key: "fund_ai", color: CHART_COLORS[1], name: "Fund. AI" },
+                                { key: "fund_af", color: CHART_COLORS[2], name: "Fund. AF" },
+                                { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
+                              ]}
+                              icon={<Users className="w-4 h-4 text-indigo-600" />}
+                            />
+                            <EvolutionChart
+                              title="HAD - Horas-Aula Diária"
+                              data={evolutionCharts.had}
+                              lines={[
+                                { key: "fund", color: CHART_COLORS[0], name: "Fund. Total" },
+                                { key: "fund_ai", color: CHART_COLORS[1], name: "Fund. AI" },
+                                { key: "fund_af", color: CHART_COLORS[2], name: "Fund. AF" },
+                                { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
+                              ]}
+                              icon={<Clock className="w-4 h-4 text-cyan-600" />}
+                            />
+                            <EvolutionChart
+                              title="DSU - Docentes com Superior (%)"
+                              data={evolutionCharts.dsu}
+                              lines={[
+                                { key: "fund", color: CHART_COLORS[0], name: "Fund. Total" },
+                                { key: "fund_ai", color: CHART_COLORS[1], name: "Fund. AI" },
+                                { key: "fund_af", color: CHART_COLORS[2], name: "Fund. AF" },
+                                { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
+                              ]}
+                              icon={<GraduationCap className="w-4 h-4 text-emerald-600" />}
+                            />
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {(indicadoresLatest.icg || indicadoresLatest.tdi || indicadoresLatest.ird || indicadoresLatest.taxas_rendimento || indicadoresLatest.atu || indicadoresLatest.had || indicadoresLatest.dsu || indicadoresLatest.ideb || indicadoresLatest.inse) && (
                   <Card className="card-clay border-l-4 border-l-blue-500">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-blue-600" />
-                        Indicadores Educacionais
+                        Indicadores Educacionais ({latestAno})
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {allIndicators.ideb && (
+                      {indicadoresLatest.ideb && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <Award className="w-3.5 h-3.5 text-amber-600" /> IDEB
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                            <InfoItem label="IDEB" value={allIndicators.ideb.ideb} highlight />
-                            <InfoItem label="Meta" value={allIndicators.ideb.projecao || allIndicators.ideb.meta} />
-                            <InfoItem label="Nota SAEB Mat." value={allIndicators.ideb.nota_saeb_mat || allIndicators.ideb.nota_mat} />
-                            <InfoItem label="Nota SAEB Port." value={allIndicators.ideb.nota_saeb_lp || allIndicators.ideb.nota_lp} />
-                            <InfoItem label="Rendimento" value={allIndicators.ideb.indicador_rendimento} />
+                            <InfoItem label="IDEB" value={indicadoresLatest.ideb.ideb} highlight />
+                            <InfoItem label="Meta" value={indicadoresLatest.ideb.projecao || indicadoresLatest.ideb.meta} />
+                            <InfoItem label="Nota SAEB Mat." value={indicadoresLatest.ideb.nota_saeb_mat || indicadoresLatest.ideb.nota_mat} />
+                            <InfoItem label="Nota SAEB Port." value={indicadoresLatest.ideb.nota_saeb_lp || indicadoresLatest.ideb.nota_lp} />
+                            <InfoItem label="Rendimento" value={indicadoresLatest.ideb.indicador_rendimento} />
                           </div>
                         </div>
                       )}
 
-                      {allIndicators.icg && (
+                      {indicadoresLatest.icg && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <BarChart3 className="w-3.5 h-3.5 text-blue-600" /> ICG - Complexidade de Gestão
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Nível" value={allIndicators.icg.nivel_texto || allIndicators.icg.nivel} highlight />
-                            <InfoItem label="Valor" value={allIndicators.icg.valor} />
+                            <InfoItem label="Nível" value={indicadoresLatest.icg.nivel_texto || indicadoresLatest.icg.nivel} highlight />
+                            <InfoItem label="Valor" value={indicadoresLatest.icg.valor} />
                           </div>
                         </div>
                       )}
 
-                      {allIndicators.inse && (
+                      {indicadoresLatest.inse && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <TrendingUp className="w-3.5 h-3.5 text-purple-600" /> INSE - Nível Socioeconômico
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Classificação" value={allIndicators.inse.classificacao || allIndicators.inse.nivel} highlight />
-                            <InfoItem label="Valor INSE" value={allIndicators.inse.media_inse || allIndicators.inse.valor} />
+                            <InfoItem label="Classificação" value={indicadoresLatest.inse.classificacao || indicadoresLatest.inse.nivel} highlight />
+                            <InfoItem label="Valor INSE" value={indicadoresLatest.inse.media_inse || indicadoresLatest.inse.valor} />
                           </div>
                         </div>
                       )}
 
-                      {allIndicators.tdi && (
+                      {indicadoresLatest.tdi && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <BarChart3 className="w-3.5 h-3.5 text-orange-600" /> TDI - Distorção Idade-Série
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <IndicatorRows data={allIndicators.tdi} />
+                            <IndicatorRows data={indicadoresLatest.tdi} />
                           </div>
                         </div>
                       )}
 
-                      {allIndicators.ird && (
+                      {indicadoresLatest.ird && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <BarChart3 className="w-3.5 h-3.5 text-teal-600" /> IRD - Regularidade do Docente
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <IndicatorRows data={allIndicators.ird} />
+                            <IndicatorRows data={indicadoresLatest.ird} />
                           </div>
                         </div>
                       )}
 
-                      {allIndicators.taxas_rendimento && (
+                      {indicadoresLatest.taxas_rendimento && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <TrendingUp className="w-3.5 h-3.5 text-green-600" /> Taxas de Rendimento
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <IndicatorRows data={allIndicators.taxas_rendimento} />
+                            <IndicatorRows data={indicadoresLatest.taxas_rendimento} />
                           </div>
                         </div>
                       )}
 
-                      {allIndicators.atu && (
+                      {indicadoresLatest.atu && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <Users className="w-3.5 h-3.5 text-indigo-600" /> ATU - Média de Alunos por Turma
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Fundamental Total" value={allIndicators.atu.media_fund} />
-                            <InfoItem label="Fund. Anos Iniciais" value={allIndicators.atu.media_fund_ai} />
-                            <InfoItem label="Fund. Anos Finais" value={allIndicators.atu.media_fund_af} />
-                            <InfoItem label="Ensino Médio" value={allIndicators.atu.media_med} />
+                            <InfoItem label="Fundamental Total" value={indicadoresLatest.atu.media_fund} />
+                            <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.atu.media_fund_ai} />
+                            <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.atu.media_fund_af} />
+                            <InfoItem label="Ensino Médio" value={indicadoresLatest.atu.media_med} />
                           </div>
                         </div>
                       )}
 
-                      {allIndicators.had && (
+                      {indicadoresLatest.had && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5 text-cyan-600" /> HAD - Horas-Aula Diária
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Fundamental Total" value={allIndicators.had.media_fund} />
-                            <InfoItem label="Fund. Anos Iniciais" value={allIndicators.had.media_fund_ai} />
-                            <InfoItem label="Fund. Anos Finais" value={allIndicators.had.media_fund_af} />
-                            <InfoItem label="Ensino Médio" value={allIndicators.had.media_med} />
+                            <InfoItem label="Fundamental Total" value={indicadoresLatest.had.media_fund} />
+                            <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.had.media_fund_ai} />
+                            <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.had.media_fund_af} />
+                            <InfoItem label="Ensino Médio" value={indicadoresLatest.had.media_med} />
                           </div>
                         </div>
                       )}
 
-                      {allIndicators.dsu && (
+                      {indicadoresLatest.dsu && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <GraduationCap className="w-3.5 h-3.5 text-emerald-600" /> DSU - Docentes com Curso Superior
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Fundamental Total" value={allIndicators.dsu.percentual_fund != null ? `${allIndicators.dsu.percentual_fund}%` : null} />
-                            <InfoItem label="Fund. Anos Iniciais" value={allIndicators.dsu.percentual_fund_ai != null ? `${allIndicators.dsu.percentual_fund_ai}%` : null} />
-                            <InfoItem label="Fund. Anos Finais" value={allIndicators.dsu.percentual_fund_af != null ? `${allIndicators.dsu.percentual_fund_af}%` : null} />
-                            <InfoItem label="Ensino Médio" value={allIndicators.dsu.percentual_med != null ? `${allIndicators.dsu.percentual_med}%` : null} />
+                            <InfoItem label="Fundamental Total" value={indicadoresLatest.dsu.percentual_fund != null ? `${indicadoresLatest.dsu.percentual_fund}%` : null} />
+                            <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.dsu.percentual_fund_ai != null ? `${indicadoresLatest.dsu.percentual_fund_ai}%` : null} />
+                            <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.dsu.percentual_fund_af != null ? `${indicadoresLatest.dsu.percentual_fund_af}%` : null} />
+                            <InfoItem label="Ensino Médio" value={indicadoresLatest.dsu.percentual_med != null ? `${indicadoresLatest.dsu.percentual_med}%` : null} />
                           </div>
                         </div>
                       )}
@@ -695,29 +930,29 @@ export default function Dashboard() {
                   onToggle={() => toggleSection('matriculas')}
                 >
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <InfoItem label="Ed. Infantil - Creche" value={censoData.qt_mat_inf_cre} />
-                    <InfoItem label="Ed. Infantil - Pré-escola" value={censoData.qt_mat_inf_pre} />
-                    <InfoItem label="Fund. Anos Iniciais" value={censoData.qt_mat_fund_ai} />
-                    <InfoItem label="Fund. 1º ano" value={censoData.qt_mat_fund_ai_1} />
-                    <InfoItem label="Fund. 2º ano" value={censoData.qt_mat_fund_ai_2} />
-                    <InfoItem label="Fund. 3º ano" value={censoData.qt_mat_fund_ai_3} />
-                    <InfoItem label="Fund. 4º ano" value={censoData.qt_mat_fund_ai_4} />
-                    <InfoItem label="Fund. 5º ano" value={censoData.qt_mat_fund_ai_5} />
-                    <InfoItem label="Fund. Anos Finais" value={censoData.qt_mat_fund_af} />
-                    <InfoItem label="Fund. 6º ano" value={censoData.qt_mat_fund_af_6} />
-                    <InfoItem label="Fund. 7º ano" value={censoData.qt_mat_fund_af_7} />
-                    <InfoItem label="Fund. 8º ano" value={censoData.qt_mat_fund_af_8} />
-                    <InfoItem label="Fund. 9º ano" value={censoData.qt_mat_fund_af_9} />
-                    <InfoItem label="Ensino Médio" value={censoData.qt_mat_med} />
-                    <InfoItem label="Médio 1ª série" value={censoData.qt_mat_med_prop_1} />
-                    <InfoItem label="Médio 2ª série" value={censoData.qt_mat_med_prop_2} />
-                    <InfoItem label="Médio 3ª série" value={censoData.qt_mat_med_prop_3} />
-                    <InfoItem label="Médio 4ª série" value={censoData.qt_mat_med_prop_4} />
-                    <InfoItem label="Ed. Profissional" value={censoData.qt_mat_prof} />
-                    <InfoItem label="EJA Fund." value={censoData.qt_mat_eja_fund} />
-                    <InfoItem label="EJA Médio" value={censoData.qt_mat_eja_med} />
-                    <InfoItem label="Ed. Especial (inclusão)" value={censoData.qt_mat_esp_cc} />
-                    <InfoItem label="Ed. Especial (exclusiva)" value={censoData.qt_mat_esp_ce} />
+                    <InfoItem label="Ed. Infantil - Creche" value={censoLatest.qt_mat_inf_cre} />
+                    <InfoItem label="Ed. Infantil - Pré-escola" value={censoLatest.qt_mat_inf_pre} />
+                    <InfoItem label="Fund. Anos Iniciais" value={censoLatest.qt_mat_fund_ai} />
+                    <InfoItem label="Fund. 1º ano" value={censoLatest.qt_mat_fund_ai_1} />
+                    <InfoItem label="Fund. 2º ano" value={censoLatest.qt_mat_fund_ai_2} />
+                    <InfoItem label="Fund. 3º ano" value={censoLatest.qt_mat_fund_ai_3} />
+                    <InfoItem label="Fund. 4º ano" value={censoLatest.qt_mat_fund_ai_4} />
+                    <InfoItem label="Fund. 5º ano" value={censoLatest.qt_mat_fund_ai_5} />
+                    <InfoItem label="Fund. Anos Finais" value={censoLatest.qt_mat_fund_af} />
+                    <InfoItem label="Fund. 6º ano" value={censoLatest.qt_mat_fund_af_6} />
+                    <InfoItem label="Fund. 7º ano" value={censoLatest.qt_mat_fund_af_7} />
+                    <InfoItem label="Fund. 8º ano" value={censoLatest.qt_mat_fund_af_8} />
+                    <InfoItem label="Fund. 9º ano" value={censoLatest.qt_mat_fund_af_9} />
+                    <InfoItem label="Ensino Médio" value={censoLatest.qt_mat_med} />
+                    <InfoItem label="Médio 1ª série" value={censoLatest.qt_mat_med_prop_1} />
+                    <InfoItem label="Médio 2ª série" value={censoLatest.qt_mat_med_prop_2} />
+                    <InfoItem label="Médio 3ª série" value={censoLatest.qt_mat_med_prop_3} />
+                    <InfoItem label="Médio 4ª série" value={censoLatest.qt_mat_med_prop_4} />
+                    <InfoItem label="Ed. Profissional" value={censoLatest.qt_mat_prof} />
+                    <InfoItem label="EJA Fund." value={censoLatest.qt_mat_eja_fund} />
+                    <InfoItem label="EJA Médio" value={censoLatest.qt_mat_eja_med} />
+                    <InfoItem label="Ed. Especial (inclusão)" value={censoLatest.qt_mat_esp_cc} />
+                    <InfoItem label="Ed. Especial (exclusiva)" value={censoLatest.qt_mat_esp_ce} />
                   </div>
                 </IndicatorSection>
 
@@ -731,62 +966,62 @@ export default function Dashboard() {
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Turno</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Diurno" value={censoData.qt_mat_bas_d} />
-                        <InfoItem label="Noturno" value={censoData.qt_mat_bas_n} />
-                        <InfoItem label="EAD" value={censoData.qt_mat_bas_ead} />
+                        <InfoItem label="Diurno" value={censoLatest.qt_mat_bas_d} />
+                        <InfoItem label="Noturno" value={censoLatest.qt_mat_bas_n} />
+                        <InfoItem label="EAD" value={censoLatest.qt_mat_bas_ead} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Sexo</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Feminino" value={censoData.qt_mat_bas_fem} />
-                        <InfoItem label="Masculino" value={censoData.qt_mat_bas_masc} />
-                        <InfoItem label="Não declarado" value={censoData.qt_mat_bas_nd} />
+                        <InfoItem label="Feminino" value={censoLatest.qt_mat_bas_fem} />
+                        <InfoItem label="Masculino" value={censoLatest.qt_mat_bas_masc} />
+                        <InfoItem label="Não declarado" value={censoLatest.qt_mat_bas_nd} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Cor/Raça</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Branca" value={censoData.qt_mat_bas_branca} />
-                        <InfoItem label="Preta" value={censoData.qt_mat_bas_preta} />
-                        <InfoItem label="Parda" value={censoData.qt_mat_bas_parda} />
-                        <InfoItem label="Amarela" value={censoData.qt_mat_bas_amarela} />
-                        <InfoItem label="Indígena" value={censoData.qt_mat_bas_indigena} />
+                        <InfoItem label="Branca" value={censoLatest.qt_mat_bas_branca} />
+                        <InfoItem label="Preta" value={censoLatest.qt_mat_bas_preta} />
+                        <InfoItem label="Parda" value={censoLatest.qt_mat_bas_parda} />
+                        <InfoItem label="Amarela" value={censoLatest.qt_mat_bas_amarela} />
+                        <InfoItem label="Indígena" value={censoLatest.qt_mat_bas_indigena} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Faixa Etária</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="0 a 3 anos" value={censoData.qt_mat_bas_0_3} />
-                        <InfoItem label="4 a 5 anos" value={censoData.qt_mat_bas_4_5} />
-                        <InfoItem label="6 a 10 anos" value={censoData.qt_mat_bas_6_10} />
-                        <InfoItem label="11 a 14 anos" value={censoData.qt_mat_bas_11_14} />
-                        <InfoItem label="15 a 17 anos" value={censoData.qt_mat_bas_15_17} />
-                        <InfoItem label="18+ anos" value={censoData.qt_mat_bas_18_mais} />
+                        <InfoItem label="0 a 3 anos" value={censoLatest.qt_mat_bas_0_3} />
+                        <InfoItem label="4 a 5 anos" value={censoLatest.qt_mat_bas_4_5} />
+                        <InfoItem label="6 a 10 anos" value={censoLatest.qt_mat_bas_6_10} />
+                        <InfoItem label="11 a 14 anos" value={censoLatest.qt_mat_bas_11_14} />
+                        <InfoItem label="15 a 17 anos" value={censoLatest.qt_mat_bas_15_17} />
+                        <InfoItem label="18+ anos" value={censoLatest.qt_mat_bas_18_mais} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Zona de Residência</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Urbana" value={censoData.qt_mat_zr_urb} />
-                        <InfoItem label="Rural" value={censoData.qt_mat_zr_rur} />
+                        <InfoItem label="Urbana" value={censoLatest.qt_mat_zr_urb} />
+                        <InfoItem label="Rural" value={censoLatest.qt_mat_zr_rur} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Integral</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Infantil Integral" value={censoData.qt_mat_inf_int} />
-                        <InfoItem label="Fund. AI Integral" value={censoData.qt_mat_fund_ai_int} />
-                        <InfoItem label="Fund. AF Integral" value={censoData.qt_mat_fund_af_int} />
-                        <InfoItem label="Médio Integral" value={censoData.qt_mat_med_int} />
+                        <InfoItem label="Infantil Integral" value={censoLatest.qt_mat_inf_int} />
+                        <InfoItem label="Fund. AI Integral" value={censoLatest.qt_mat_fund_ai_int} />
+                        <InfoItem label="Fund. AF Integral" value={censoLatest.qt_mat_fund_af_int} />
+                        <InfoItem label="Médio Integral" value={censoLatest.qt_mat_med_int} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Transporte Escolar</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Transporte Público" value={censoData.qt_transp_publico} />
-                        <InfoItem label="Resp. Estadual" value={censoData.qt_transp_resp_est} />
-                        <InfoItem label="Resp. Municipal" value={censoData.qt_transp_resp_mun} />
+                        <InfoItem label="Transporte Público" value={censoLatest.qt_transp_publico} />
+                        <InfoItem label="Resp. Estadual" value={censoLatest.qt_transp_resp_est} />
+                        <InfoItem label="Resp. Municipal" value={censoLatest.qt_transp_resp_mun} />
                       </div>
                     </div>
                   </div>
@@ -799,17 +1034,17 @@ export default function Dashboard() {
                   onToggle={() => toggleSection('docentes')}
                 >
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <InfoItem label="Total" value={censoData.qt_doc_bas} highlight />
-                    <InfoItem label="Ed. Infantil" value={censoData.qt_doc_inf} />
-                    <InfoItem label="Infantil Creche" value={censoData.qt_doc_inf_cre} />
-                    <InfoItem label="Infantil Pré" value={censoData.qt_doc_inf_pre} />
-                    <InfoItem label="Fundamental" value={censoData.qt_doc_fund} />
-                    <InfoItem label="Fund. Anos Iniciais" value={censoData.qt_doc_fund_ai} />
-                    <InfoItem label="Fund. Anos Finais" value={censoData.qt_doc_fund_af} />
-                    <InfoItem label="Ensino Médio" value={censoData.qt_doc_med} />
-                    <InfoItem label="Ed. Profissional" value={censoData.qt_doc_prof} />
-                    <InfoItem label="EJA" value={censoData.qt_doc_eja} />
-                    <InfoItem label="Ed. Especial" value={censoData.qt_doc_esp} />
+                    <InfoItem label="Total" value={censoLatest.qt_doc_bas} highlight />
+                    <InfoItem label="Ed. Infantil" value={censoLatest.qt_doc_inf} />
+                    <InfoItem label="Infantil Creche" value={censoLatest.qt_doc_inf_cre} />
+                    <InfoItem label="Infantil Pré" value={censoLatest.qt_doc_inf_pre} />
+                    <InfoItem label="Fundamental" value={censoLatest.qt_doc_fund} />
+                    <InfoItem label="Fund. Anos Iniciais" value={censoLatest.qt_doc_fund_ai} />
+                    <InfoItem label="Fund. Anos Finais" value={censoLatest.qt_doc_fund_af} />
+                    <InfoItem label="Ensino Médio" value={censoLatest.qt_doc_med} />
+                    <InfoItem label="Ed. Profissional" value={censoLatest.qt_doc_prof} />
+                    <InfoItem label="EJA" value={censoLatest.qt_doc_eja} />
+                    <InfoItem label="Ed. Especial" value={censoLatest.qt_doc_esp} />
                   </div>
                 </IndicatorSection>
 
@@ -820,19 +1055,19 @@ export default function Dashboard() {
                   onToggle={() => toggleSection('turmas')}
                 >
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <InfoItem label="Total" value={censoData.qt_tur_bas} highlight />
-                    <InfoItem label="Ed. Infantil" value={censoData.qt_tur_inf} />
-                    <InfoItem label="Infantil Creche" value={censoData.qt_tur_inf_cre} />
-                    <InfoItem label="Infantil Pré" value={censoData.qt_tur_inf_pre} />
-                    <InfoItem label="Fundamental" value={censoData.qt_tur_fund} />
-                    <InfoItem label="Fund. Anos Iniciais" value={censoData.qt_tur_fund_ai} />
-                    <InfoItem label="Fund. Anos Finais" value={censoData.qt_tur_fund_af} />
-                    <InfoItem label="Ensino Médio" value={censoData.qt_tur_med} />
-                    <InfoItem label="Ed. Profissional" value={censoData.qt_tur_prof} />
-                    <InfoItem label="EJA" value={censoData.qt_tur_eja} />
-                    <InfoItem label="Ed. Especial" value={censoData.qt_tur_esp} />
-                    <InfoItem label="Diurnas" value={censoData.qt_tur_bas_d} />
-                    <InfoItem label="Noturnas" value={censoData.qt_tur_bas_n} />
+                    <InfoItem label="Total" value={censoLatest.qt_tur_bas} highlight />
+                    <InfoItem label="Ed. Infantil" value={censoLatest.qt_tur_inf} />
+                    <InfoItem label="Infantil Creche" value={censoLatest.qt_tur_inf_cre} />
+                    <InfoItem label="Infantil Pré" value={censoLatest.qt_tur_inf_pre} />
+                    <InfoItem label="Fundamental" value={censoLatest.qt_tur_fund} />
+                    <InfoItem label="Fund. Anos Iniciais" value={censoLatest.qt_tur_fund_ai} />
+                    <InfoItem label="Fund. Anos Finais" value={censoLatest.qt_tur_fund_af} />
+                    <InfoItem label="Ensino Médio" value={censoLatest.qt_tur_med} />
+                    <InfoItem label="Ed. Profissional" value={censoLatest.qt_tur_prof} />
+                    <InfoItem label="EJA" value={censoLatest.qt_tur_eja} />
+                    <InfoItem label="Ed. Especial" value={censoLatest.qt_tur_esp} />
+                    <InfoItem label="Diurnas" value={censoLatest.qt_tur_bas_d} />
+                    <InfoItem label="Noturnas" value={censoLatest.qt_tur_bas_n} />
                   </div>
                 </IndicatorSection>
 
@@ -846,44 +1081,44 @@ export default function Dashboard() {
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Dados Básicos</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <InfoItem label="Situação" value={censoData.ds_situacao} />
-                        <InfoItem label="Dependência" value={censoData.ds_dependencia} />
-                        <InfoItem label="Localização" value={censoData.ds_localizacao} />
-                        <InfoItem label="Região" value={censoData.no_regiao} />
-                        <InfoItem label="Município" value={censoData.no_municipio} />
-                        <InfoItem label="UF" value={censoData.sg_uf} />
-                        <InfoItem label="Cód. Município" value={censoData.co_municipio} />
-                        <InfoItem label="Regulamentação" value={censoData.tp_regulamentacao === 1 ? "Sim" : censoData.tp_regulamentacao === 2 ? "Sim, em tramitação" : censoData.tp_regulamentacao === 3 ? "Não" : undefined} />
-                        <InfraItem label="Prédio Escolar" value={censoData.in_local_func_predio_escolar} />
-                        <InfraItem label="Prédio Compartilhado" value={censoData.in_predio_compartilhado} />
-                        <InfraItem label="Alimentação" value={censoData.in_alimentacao} />
+                        <InfoItem label="Situação" value={censoLatest.ds_situacao} />
+                        <InfoItem label="Dependência" value={censoLatest.ds_dependencia} />
+                        <InfoItem label="Localização" value={censoLatest.ds_localizacao} />
+                        <InfoItem label="Região" value={censoLatest.no_regiao} />
+                        <InfoItem label="Município" value={censoLatest.no_municipio} />
+                        <InfoItem label="UF" value={censoLatest.sg_uf} />
+                        <InfoItem label="Cód. Município" value={censoLatest.co_municipio} />
+                        <InfoItem label="Regulamentação" value={censoLatest.tp_regulamentacao === 1 ? "Sim" : censoLatest.tp_regulamentacao === 2 ? "Sim, em tramitação" : censoLatest.tp_regulamentacao === 3 ? "Não" : undefined} />
+                        <InfraItem label="Prédio Escolar" value={censoLatest.in_local_func_predio_escolar} />
+                        <InfraItem label="Prédio Compartilhado" value={censoLatest.in_predio_compartilhado} />
+                        <InfraItem label="Alimentação" value={censoLatest.in_alimentacao} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Etapas e Modalidades Oferecidas</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <InfraItem label="Ed. Infantil" value={censoData.in_inf} />
-                        <InfraItem label="Creche" value={censoData.in_inf_cre} />
-                        <InfraItem label="Pré-escola" value={censoData.in_inf_pre} />
-                        <InfraItem label="Ensino Fund." value={censoData.in_fund} />
-                        <InfraItem label="Fund. Anos Iniciais" value={censoData.in_fund_ai} />
-                        <InfraItem label="Fund. Anos Finais" value={censoData.in_fund_af} />
-                        <InfraItem label="Ensino Médio" value={censoData.in_med} />
-                        <InfraItem label="Ed. Profissional" value={censoData.in_prof} />
-                        <InfraItem label="EJA" value={censoData.in_eja} />
-                        <InfraItem label="EJA Fund." value={censoData.in_eja_fund} />
-                        <InfraItem label="EJA Médio" value={censoData.in_eja_med} />
-                        <InfraItem label="Ed. Especial" value={censoData.in_esp} />
+                        <InfraItem label="Ed. Infantil" value={censoLatest.in_inf} />
+                        <InfraItem label="Creche" value={censoLatest.in_inf_cre} />
+                        <InfraItem label="Pré-escola" value={censoLatest.in_inf_pre} />
+                        <InfraItem label="Ensino Fund." value={censoLatest.in_fund} />
+                        <InfraItem label="Fund. Anos Iniciais" value={censoLatest.in_fund_ai} />
+                        <InfraItem label="Fund. Anos Finais" value={censoLatest.in_fund_af} />
+                        <InfraItem label="Ensino Médio" value={censoLatest.in_med} />
+                        <InfraItem label="Ed. Profissional" value={censoLatest.in_prof} />
+                        <InfraItem label="EJA" value={censoLatest.in_eja} />
+                        <InfraItem label="EJA Fund." value={censoLatest.in_eja_fund} />
+                        <InfraItem label="EJA Médio" value={censoLatest.in_eja_med} />
+                        <InfraItem label="Ed. Especial" value={censoLatest.in_esp} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Organização</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <InfraItem label="Conselho Escolar" value={censoData.in_orgao_conselho_escolar} />
-                        <InfraItem label="APM / APP" value={censoData.in_orgao_ass_pais_mestres} />
-                        <InfraItem label="Grêmio Estudantil" value={censoData.in_orgao_gremio_estudantil} />
-                        <InfraItem label="Redes Sociais" value={censoData.in_redes_sociais} />
-                        <InfraItem label="Ed. Ambiental" value={censoData.in_educ_ambiental} />
+                        <InfraItem label="Conselho Escolar" value={censoLatest.in_orgao_conselho_escolar} />
+                        <InfraItem label="APM / APP" value={censoLatest.in_orgao_ass_pais_mestres} />
+                        <InfraItem label="Grêmio Estudantil" value={censoLatest.in_orgao_gremio_estudantil} />
+                        <InfraItem label="Redes Sociais" value={censoLatest.in_redes_sociais} />
+                        <InfraItem label="Ed. Ambiental" value={censoLatest.in_educ_ambiental} />
                       </div>
                     </div>
                   </div>
@@ -899,41 +1134,41 @@ export default function Dashboard() {
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Água</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <InfraItem label="Água Potável" value={censoData.in_agua_potavel} />
-                        <InfraItem label="Rede Pública" value={censoData.in_agua_rede_publica} />
-                        <InfraItem label="Poço Artesiano" value={censoData.in_agua_poco_artesiano} />
-                        <InfraItem label="Cacimba" value={censoData.in_agua_cacimba} />
-                        <InfraItem label="Fonte/Rio" value={censoData.in_agua_fonte_rio} />
-                        <InfraItem label="Carro-pipa" value={censoData.in_agua_carro_pipa} />
-                        <InfraItem label="Inexistente" value={censoData.in_agua_inexistente} />
+                        <InfraItem label="Água Potável" value={censoLatest.in_agua_potavel} />
+                        <InfraItem label="Rede Pública" value={censoLatest.in_agua_rede_publica} />
+                        <InfraItem label="Poço Artesiano" value={censoLatest.in_agua_poco_artesiano} />
+                        <InfraItem label="Cacimba" value={censoLatest.in_agua_cacimba} />
+                        <InfraItem label="Fonte/Rio" value={censoLatest.in_agua_fonte_rio} />
+                        <InfraItem label="Carro-pipa" value={censoLatest.in_agua_carro_pipa} />
+                        <InfraItem label="Inexistente" value={censoLatest.in_agua_inexistente} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Energia</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <InfraItem label="Rede Pública" value={censoData.in_energia_rede_publica} />
-                        <InfraItem label="Gerador Fóssil" value={censoData.in_energia_gerador_fossil} />
-                        <InfraItem label="Renovável" value={censoData.in_energia_renovavel} />
-                        <InfraItem label="Inexistente" value={censoData.in_energia_inexistente} />
+                        <InfraItem label="Rede Pública" value={censoLatest.in_energia_rede_publica} />
+                        <InfraItem label="Gerador Fóssil" value={censoLatest.in_energia_gerador_fossil} />
+                        <InfraItem label="Renovável" value={censoLatest.in_energia_renovavel} />
+                        <InfraItem label="Inexistente" value={censoLatest.in_energia_inexistente} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Esgoto</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <InfraItem label="Rede Pública" value={censoData.in_esgoto_rede_publica} />
-                        <InfraItem label="Fossa Séptica" value={censoData.in_esgoto_fossa_septica} />
-                        <InfraItem label="Fossa Comum" value={censoData.in_esgoto_fossa_comum} />
-                        <InfraItem label="Inexistente" value={censoData.in_esgoto_inexistente} />
+                        <InfraItem label="Rede Pública" value={censoLatest.in_esgoto_rede_publica} />
+                        <InfraItem label="Fossa Séptica" value={censoLatest.in_esgoto_fossa_septica} />
+                        <InfraItem label="Fossa Comum" value={censoLatest.in_esgoto_fossa_comum} />
+                        <InfraItem label="Inexistente" value={censoLatest.in_esgoto_inexistente} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Lixo</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <InfraItem label="Coleta" value={censoData.in_lixo_servico_coleta} />
-                        <InfraItem label="Queima" value={censoData.in_lixo_queima} />
-                        <InfraItem label="Enterra" value={censoData.in_lixo_enterra} />
-                        <InfraItem label="Separação" value={censoData.in_tratamento_lixo_separacao} />
-                        <InfraItem label="Reciclagem" value={censoData.in_tratamento_lixo_reciclagem} />
+                        <InfraItem label="Coleta" value={censoLatest.in_lixo_servico_coleta} />
+                        <InfraItem label="Queima" value={censoLatest.in_lixo_queima} />
+                        <InfraItem label="Enterra" value={censoLatest.in_lixo_enterra} />
+                        <InfraItem label="Separação" value={censoLatest.in_tratamento_lixo_separacao} />
+                        <InfraItem label="Reciclagem" value={censoLatest.in_tratamento_lixo_reciclagem} />
                       </div>
                     </div>
                   </div>
@@ -949,64 +1184,64 @@ export default function Dashboard() {
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Salas</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <InfoItem label="Salas Utilizadas" value={censoData.qt_salas_utilizadas} />
-                        <InfoItem label="Salas Dentro" value={censoData.qt_salas_utilizadas_dentro} />
-                        <InfoItem label="Salas Fora" value={censoData.qt_salas_utilizadas_fora} />
-                        <InfoItem label="Climatizadas" value={censoData.qt_salas_utiliza_climatizadas} />
-                        <InfoItem label="Acessíveis" value={censoData.qt_salas_utilizadas_acessiveis} />
+                        <InfoItem label="Salas Utilizadas" value={censoLatest.qt_salas_utilizadas} />
+                        <InfoItem label="Salas Dentro" value={censoLatest.qt_salas_utilizadas_dentro} />
+                        <InfoItem label="Salas Fora" value={censoLatest.qt_salas_utilizadas_fora} />
+                        <InfoItem label="Climatizadas" value={censoLatest.qt_salas_utiliza_climatizadas} />
+                        <InfoItem label="Acessíveis" value={censoLatest.qt_salas_utilizadas_acessiveis} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Espaços</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <InfraItem label="Biblioteca" value={censoData.in_biblioteca} />
-                        <InfraItem label="Sala de Leitura" value={censoData.in_biblioteca_sala_leitura} />
-                        <InfraItem label="Lab. Informática" value={censoData.in_laboratorio_informatica} />
-                        <InfraItem label="Lab. Ciências" value={censoData.in_laboratorio_ciencias} />
-                        <InfraItem label="Lab. Ed. Profissional" value={censoData.in_laboratorio_educ_prof} />
-                        <InfraItem label="Quadra Coberta" value={censoData.in_quadra_esportes_coberta} />
-                        <InfraItem label="Quadra Descoberta" value={censoData.in_quadra_esportes_descoberta} />
-                        <InfraItem label="Cozinha" value={censoData.in_cozinha} />
-                        <InfraItem label="Despensa" value={censoData.in_despensa} />
-                        <InfraItem label="Refeitório" value={censoData.in_refeitorio} />
-                        <InfraItem label="Almoxarifado" value={censoData.in_almoxarifado} />
-                        <InfraItem label="Pátio Coberto" value={censoData.in_patio_coberto} />
-                        <InfraItem label="Pátio Descoberto" value={censoData.in_patio_descoberto} />
-                        <InfraItem label="Parque Infantil" value={censoData.in_parque_infantil} />
-                        <InfraItem label="Auditório" value={censoData.in_auditorio} />
-                        <InfraItem label="Piscina" value={censoData.in_piscina} />
-                        <InfraItem label="Área Verde" value={censoData.in_area_verde} />
-                        <InfraItem label="Sala Multiuso" value={censoData.in_sala_multiuso} />
-                        <InfraItem label="Sala Diretoria" value={censoData.in_sala_diretoria} />
-                        <InfraItem label="Sala Professores" value={censoData.in_sala_professor} />
-                        <InfraItem label="Secretaria" value={censoData.in_secretaria} />
-                        <InfraItem label="Sala Atend. Especial" value={censoData.in_sala_atendimento_especial} />
-                        <InfraItem label="Sala Artes" value={censoData.in_sala_atelie_artes} />
-                        <InfraItem label="Sala Música" value={censoData.in_sala_musica_coral} />
-                        <InfraItem label="Viveiro" value={censoData.in_viveiro} />
+                        <InfraItem label="Biblioteca" value={censoLatest.in_biblioteca} />
+                        <InfraItem label="Sala de Leitura" value={censoLatest.in_biblioteca_sala_leitura} />
+                        <InfraItem label="Lab. Informática" value={censoLatest.in_laboratorio_informatica} />
+                        <InfraItem label="Lab. Ciências" value={censoLatest.in_laboratorio_ciencias} />
+                        <InfraItem label="Lab. Ed. Profissional" value={censoLatest.in_laboratorio_educ_prof} />
+                        <InfraItem label="Quadra Coberta" value={censoLatest.in_quadra_esportes_coberta} />
+                        <InfraItem label="Quadra Descoberta" value={censoLatest.in_quadra_esportes_descoberta} />
+                        <InfraItem label="Cozinha" value={censoLatest.in_cozinha} />
+                        <InfraItem label="Despensa" value={censoLatest.in_despensa} />
+                        <InfraItem label="Refeitório" value={censoLatest.in_refeitorio} />
+                        <InfraItem label="Almoxarifado" value={censoLatest.in_almoxarifado} />
+                        <InfraItem label="Pátio Coberto" value={censoLatest.in_patio_coberto} />
+                        <InfraItem label="Pátio Descoberto" value={censoLatest.in_patio_descoberto} />
+                        <InfraItem label="Parque Infantil" value={censoLatest.in_parque_infantil} />
+                        <InfraItem label="Auditório" value={censoLatest.in_auditorio} />
+                        <InfraItem label="Piscina" value={censoLatest.in_piscina} />
+                        <InfraItem label="Área Verde" value={censoLatest.in_area_verde} />
+                        <InfraItem label="Sala Multiuso" value={censoLatest.in_sala_multiuso} />
+                        <InfraItem label="Sala Diretoria" value={censoLatest.in_sala_diretoria} />
+                        <InfraItem label="Sala Professores" value={censoLatest.in_sala_professor} />
+                        <InfraItem label="Secretaria" value={censoLatest.in_secretaria} />
+                        <InfraItem label="Sala Atend. Especial" value={censoLatest.in_sala_atendimento_especial} />
+                        <InfraItem label="Sala Artes" value={censoLatest.in_sala_atelie_artes} />
+                        <InfraItem label="Sala Música" value={censoLatest.in_sala_musica_coral} />
+                        <InfraItem label="Viveiro" value={censoLatest.in_viveiro} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Banheiros</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <InfraItem label="Banheiro" value={censoData.in_banheiro} />
-                        <InfraItem label="Banheiro Ed. Infantil" value={censoData.in_banheiro_ei} />
-                        <InfraItem label="Banheiro PNE" value={censoData.in_banheiro_pne} />
-                        <InfraItem label="Banheiro Funcionários" value={censoData.in_banheiro_funcionarios} />
-                        <InfraItem label="Chuveiro" value={censoData.in_banheiro_chuveiro} />
+                        <InfraItem label="Banheiro" value={censoLatest.in_banheiro} />
+                        <InfraItem label="Banheiro Ed. Infantil" value={censoLatest.in_banheiro_ei} />
+                        <InfraItem label="Banheiro PNE" value={censoLatest.in_banheiro_pne} />
+                        <InfraItem label="Banheiro Funcionários" value={censoLatest.in_banheiro_funcionarios} />
+                        <InfraItem label="Chuveiro" value={censoLatest.in_banheiro_chuveiro} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Acessibilidade</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <InfraItem label="Rampas" value={censoData.in_acessibilidade_rampas} />
-                        <InfraItem label="Corrimão" value={censoData.in_acessibilidade_corrimao} />
-                        <InfraItem label="Elevador" value={censoData.in_acessibilidade_elevador} />
-                        <InfraItem label="Pisos Táteis" value={censoData.in_acessibilidade_pisos_tateis} />
-                        <InfraItem label="Vão Livre" value={censoData.in_acessibilidade_vao_livre} />
-                        <InfraItem label="Sinal Sonoro" value={censoData.in_acessibilidade_sinal_sonoro} />
-                        <InfraItem label="Sinal Tátil" value={censoData.in_acessibilidade_sinal_tatil} />
-                        <InfraItem label="Sinal Visual" value={censoData.in_acessibilidade_sinal_visual} />
+                        <InfraItem label="Rampas" value={censoLatest.in_acessibilidade_rampas} />
+                        <InfraItem label="Corrimão" value={censoLatest.in_acessibilidade_corrimao} />
+                        <InfraItem label="Elevador" value={censoLatest.in_acessibilidade_elevador} />
+                        <InfraItem label="Pisos Táteis" value={censoLatest.in_acessibilidade_pisos_tateis} />
+                        <InfraItem label="Vão Livre" value={censoLatest.in_acessibilidade_vao_livre} />
+                        <InfraItem label="Sinal Sonoro" value={censoLatest.in_acessibilidade_sinal_sonoro} />
+                        <InfraItem label="Sinal Tátil" value={censoLatest.in_acessibilidade_sinal_tatil} />
+                        <InfraItem label="Sinal Visual" value={censoLatest.in_acessibilidade_sinal_visual} />
                       </div>
                     </div>
                   </div>
@@ -1022,30 +1257,30 @@ export default function Dashboard() {
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Equipamentos</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <InfraItem label="Computador" value={censoData.in_computador} />
-                        <InfoItem label="Desktops p/ Alunos" value={censoData.qt_desktop_aluno} />
-                        <InfoItem label="Notebooks p/ Alunos" value={censoData.qt_comp_portatil_aluno} />
-                        <InfoItem label="Tablets p/ Alunos" value={censoData.qt_tablet_aluno} />
-                        <InfoItem label="TVs" value={censoData.qt_equip_tv} />
-                        <InfoItem label="Projetores" value={censoData.qt_equip_multimidia} />
-                        <InfoItem label="Lousas Digitais" value={censoData.qt_equip_lousa_digital} />
-                        <InfoItem label="Equipamentos de Som" value={censoData.qt_equip_som} />
-                        <InfraItem label="Impressora" value={censoData.in_equip_impressora} />
-                        <InfraItem label="Copiadora" value={censoData.in_equip_copiadora} />
-                        <InfraItem label="Scanner" value={censoData.in_equip_scanner} />
+                        <InfraItem label="Computador" value={censoLatest.in_computador} />
+                        <InfoItem label="Desktops p/ Alunos" value={censoLatest.qt_desktop_aluno} />
+                        <InfoItem label="Notebooks p/ Alunos" value={censoLatest.qt_comp_portatil_aluno} />
+                        <InfoItem label="Tablets p/ Alunos" value={censoLatest.qt_tablet_aluno} />
+                        <InfoItem label="TVs" value={censoLatest.qt_equip_tv} />
+                        <InfoItem label="Projetores" value={censoLatest.qt_equip_multimidia} />
+                        <InfoItem label="Lousas Digitais" value={censoLatest.qt_equip_lousa_digital} />
+                        <InfoItem label="Equipamentos de Som" value={censoLatest.qt_equip_som} />
+                        <InfraItem label="Impressora" value={censoLatest.in_equip_impressora} />
+                        <InfraItem label="Copiadora" value={censoLatest.in_equip_copiadora} />
+                        <InfraItem label="Scanner" value={censoLatest.in_equip_scanner} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Internet e Conectividade</p>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <InfraItem label="Internet" value={censoData.in_internet} />
-                        <InfraItem label="Banda Larga" value={censoData.in_banda_larga} />
-                        <InfraItem label="Internet p/ Alunos" value={censoData.in_internet_alunos} />
-                        <InfraItem label="Internet Administrativo" value={censoData.in_internet_administrativo} />
-                        <InfraItem label="Internet Aprendizagem" value={censoData.in_internet_aprendizagem} />
-                        <InfraItem label="Internet Comunidade" value={censoData.in_internet_comunidade} />
-                        <InfraItem label="Acesso por Computador" value={censoData.in_acesso_internet_computador} />
-                        <InfraItem label="Acesso por Dispositivos" value={censoData.in_aces_internet_disp_pessoais} />
+                        <InfraItem label="Internet" value={censoLatest.in_internet} />
+                        <InfraItem label="Banda Larga" value={censoLatest.in_banda_larga} />
+                        <InfraItem label="Internet p/ Alunos" value={censoLatest.in_internet_alunos} />
+                        <InfraItem label="Internet Administrativo" value={censoLatest.in_internet_administrativo} />
+                        <InfraItem label="Internet Aprendizagem" value={censoLatest.in_internet_aprendizagem} />
+                        <InfraItem label="Internet Comunidade" value={censoLatest.in_internet_comunidade} />
+                        <InfraItem label="Acesso por Computador" value={censoLatest.in_acesso_internet_computador} />
+                        <InfraItem label="Acesso por Dispositivos" value={censoLatest.in_aces_internet_disp_pessoais} />
                       </div>
                     </div>
                   </div>
@@ -1058,22 +1293,22 @@ export default function Dashboard() {
                   onToggle={() => toggleSection('profissionais')}
                 >
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <InfoItem label="Administrativos" value={censoData.qt_prof_administrativos} />
-                    <InfoItem label="Serviços Gerais" value={censoData.qt_prof_servicos_gerais} />
-                    <InfoItem label="Bibliotecários" value={censoData.qt_prof_bibliotecario} />
-                    <InfoItem label="Saúde" value={censoData.qt_prof_saude} />
-                    <InfoItem label="Coordenadores" value={censoData.qt_prof_coordenador} />
-                    <InfoItem label="Fonoaudiólogos" value={censoData.qt_prof_fonaudiologo} />
-                    <InfoItem label="Nutricionistas" value={censoData.qt_prof_nutricionista} />
-                    <InfoItem label="Psicólogos" value={censoData.qt_prof_psicologo} />
-                    <InfoItem label="Alimentação" value={censoData.qt_prof_alimentacao} />
-                    <InfoItem label="Pedagogia" value={censoData.qt_prof_pedagogia} />
-                    <InfoItem label="Secretários" value={censoData.qt_prof_secretario} />
-                    <InfoItem label="Segurança" value={censoData.qt_prof_seguranca} />
-                    <InfoItem label="Monitores" value={censoData.qt_prof_monitores} />
-                    <InfoItem label="Gestão" value={censoData.qt_prof_gestao} />
-                    <InfoItem label="Assistentes Sociais" value={censoData.qt_prof_assist_social} />
-                    <InfoItem label="Trad. Libras" value={censoData.qt_prof_trad_libras} />
+                    <InfoItem label="Administrativos" value={censoLatest.qt_prof_administrativos} />
+                    <InfoItem label="Serviços Gerais" value={censoLatest.qt_prof_servicos_gerais} />
+                    <InfoItem label="Bibliotecários" value={censoLatest.qt_prof_bibliotecario} />
+                    <InfoItem label="Saúde" value={censoLatest.qt_prof_saude} />
+                    <InfoItem label="Coordenadores" value={censoLatest.qt_prof_coordenador} />
+                    <InfoItem label="Fonoaudiólogos" value={censoLatest.qt_prof_fonaudiologo} />
+                    <InfoItem label="Nutricionistas" value={censoLatest.qt_prof_nutricionista} />
+                    <InfoItem label="Psicólogos" value={censoLatest.qt_prof_psicologo} />
+                    <InfoItem label="Alimentação" value={censoLatest.qt_prof_alimentacao} />
+                    <InfoItem label="Pedagogia" value={censoLatest.qt_prof_pedagogia} />
+                    <InfoItem label="Secretários" value={censoLatest.qt_prof_secretario} />
+                    <InfoItem label="Segurança" value={censoLatest.qt_prof_seguranca} />
+                    <InfoItem label="Monitores" value={censoLatest.qt_prof_monitores} />
+                    <InfoItem label="Gestão" value={censoLatest.qt_prof_gestao} />
+                    <InfoItem label="Assistentes Sociais" value={censoLatest.qt_prof_assist_social} />
+                    <InfoItem label="Trad. Libras" value={censoLatest.qt_prof_trad_libras} />
                   </div>
                 </IndicatorSection>
 
@@ -1084,19 +1319,19 @@ export default function Dashboard() {
                   onToggle={() => toggleSection('materiais')}
                 >
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <InfraItem label="Multimídia" value={censoData.in_material_ped_multimidia} />
-                    <InfraItem label="Infantil" value={censoData.in_material_ped_infantil} />
-                    <InfraItem label="Científico" value={censoData.in_material_ped_cientifico} />
-                    <InfraItem label="Difusão" value={censoData.in_material_ped_difusao} />
-                    <InfraItem label="Musical" value={censoData.in_material_ped_musical} />
-                    <InfraItem label="Jogos" value={censoData.in_material_ped_jogos} />
-                    <InfraItem label="Artísticas" value={censoData.in_material_ped_artisticas} />
-                    <InfraItem label="Profissional" value={censoData.in_material_ped_profissional} />
-                    <InfraItem label="Desportiva" value={censoData.in_material_ped_desportiva} />
-                    <InfraItem label="Indígena" value={censoData.in_material_ped_indigena} />
-                    <InfraItem label="Étnico" value={censoData.in_material_ped_etnico} />
-                    <InfraItem label="Quilombola" value={censoData.in_material_ped_quilombola} />
-                    <InfraItem label="Ed. Especial" value={censoData.in_material_ped_edu_esp} />
+                    <InfraItem label="Multimídia" value={censoLatest.in_material_ped_multimidia} />
+                    <InfraItem label="Infantil" value={censoLatest.in_material_ped_infantil} />
+                    <InfraItem label="Científico" value={censoLatest.in_material_ped_cientifico} />
+                    <InfraItem label="Difusão" value={censoLatest.in_material_ped_difusao} />
+                    <InfraItem label="Musical" value={censoLatest.in_material_ped_musical} />
+                    <InfraItem label="Jogos" value={censoLatest.in_material_ped_jogos} />
+                    <InfraItem label="Artísticas" value={censoLatest.in_material_ped_artisticas} />
+                    <InfraItem label="Profissional" value={censoLatest.in_material_ped_profissional} />
+                    <InfraItem label="Desportiva" value={censoLatest.in_material_ped_desportiva} />
+                    <InfraItem label="Indígena" value={censoLatest.in_material_ped_indigena} />
+                    <InfraItem label="Étnico" value={censoLatest.in_material_ped_etnico} />
+                    <InfraItem label="Quilombola" value={censoLatest.in_material_ped_quilombola} />
+                    <InfraItem label="Ed. Especial" value={censoLatest.in_material_ped_edu_esp} />
                   </div>
                 </IndicatorSection>
 
@@ -1133,7 +1368,7 @@ export default function Dashboard() {
               <Card className="card-clay">
                 <CardContent className="py-12 text-center">
                   <School className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground">Escola não encontrada no censo {selectedAno}.</p>
+                  <p className="text-muted-foreground">Escola não encontrada.</p>
                   <Button variant="outline" size="sm" className="mt-3" onClick={() => setActiveTab("search")}>
                     Voltar à busca
                   </Button>
@@ -1144,6 +1379,71 @@ export default function Dashboard() {
         )}
       </main>
       <Footer />
+    </div>
+  );
+}
+
+function EvolutionChart({ title, data, lines, icon }: { title: string; data: any[]; lines: { key: string; color: string; name: string }[]; icon?: React.ReactNode }) {
+  const hasData = data.some(d => lines.some(l => d[l.key] != null && d[l.key] !== 0));
+  if (!hasData) return null;
+
+  const isSinglePoint = data.length <= 1;
+
+  return (
+    <div className="p-4 rounded-xl bg-muted/20 border border-border/30">
+      <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+        {icon}
+        {title}
+      </p>
+      <ResponsiveContainer width="100%" height={200}>
+        {isSinglePoint ? (
+          <BarChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="ano" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <Tooltip
+              formatter={(value: number, name: string) => [
+                typeof value === 'number' ? (Number.isInteger(value) ? value.toLocaleString('pt-BR') : value.toFixed(2)) : value,
+                name
+              ]}
+              labelFormatter={(label) => `Ano: ${label}`}
+              contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "12px" }}
+            />
+            <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
+            {lines.map((line) => (
+              <Bar key={line.key} dataKey={line.key} fill={line.color} name={line.name} radius={[4, 4, 0, 0]} />
+            ))}
+          </BarChart>
+        ) : (
+          <LineChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="ano" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <Tooltip
+              formatter={(value: number, name: string) => [
+                typeof value === 'number' ? (Number.isInteger(value) ? value.toLocaleString('pt-BR') : value.toFixed(2)) : value,
+                name
+              ]}
+              labelFormatter={(label) => `Ano: ${label}`}
+              contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "12px" }}
+            />
+            <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
+            {lines.map((line) => (
+              <Line
+                key={line.key}
+                type="monotone"
+                dataKey={line.key}
+                stroke={line.color}
+                name={line.name}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                activeDot={{ r: 6 }}
+                connectNulls
+              />
+            ))}
+          </LineChart>
+        )}
+      </ResponsiveContainer>
     </div>
   );
 }
