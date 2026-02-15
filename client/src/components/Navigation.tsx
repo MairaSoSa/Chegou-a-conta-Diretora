@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, GraduationCap, MessagesSquare, Wrench, Menu, BookOpen, Building2, SlidersHorizontal } from "lucide-react";
+import { BarChart3, GraduationCap, MessagesSquare, Wrench, Menu, BookOpen, Building2, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -12,7 +12,7 @@ export function Navigation() {
   const { toggle: toggleAccessibility } = useAccessibility();
 
   const navItems = [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dashboard", label: "Dados Educacionais", icon: BarChart3 },
     { href: "/trilha", label: "Trilha", icon: GraduationCap },
     { href: "/programas", label: "Programas", icon: Building2 },
     { href: "/ferramentas", label: "Ferramentas", icon: Wrench },

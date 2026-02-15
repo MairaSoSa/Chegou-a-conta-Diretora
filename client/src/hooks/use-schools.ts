@@ -5,10 +5,8 @@ export function useSchoolSearch(query: string) {
   return useQuery({
     queryKey: [api.schools.search.path, query],
     queryFn: async () => {
-      if (!query || query.length < 2) return [];
-      
-      const url = `${api.schools.search.path}?q=${encodeURIComponent(query)}`;
-      const res = await fetch(url);
+      if (!query || query.length < 2) return { dados: [], total: 0 };
+      const res = await fetch(`/api/escola/buscar?nome=${encodeURIComponent(query)}`);
       if (!res.ok) throw new Error("Failed to search schools");
       return res.json();
     },
@@ -21,14 +19,13 @@ export function useSchool(inep: string) {
     queryKey: [api.schools.get.path, inep],
     queryFn: async () => {
       if (!inep) return null;
-      const url = buildUrl(api.schools.get.path, { inep });
-      const res = await fetch(url);
+      const res = await fetch(`/api/escola/${inep}`);
       if (res.status === 404) throw new Error("Escola não encontrada");
       if (!res.ok) throw new Error("Erro ao buscar dados da escola");
       return res.json();
     },
     enabled: !!inep,
-    retry: false
+    retry: false,
   });
 }
 
@@ -46,6 +43,36 @@ export function useEscolaCompleta(inep: string, ano?: number) {
     },
     enabled: !!inep,
     retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useEstatisticas(ano: number) {
+  return useQuery({
+    queryKey: ["estatisticas", ano],
+    queryFn: async () => {
+      const res = await fetch(`/api/censo-escolar/${ano}/escolas/estatisticas`);
+      if (!res.ok) throw new Error("Erro ao buscar estatísticas");
+      return res.json();
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+export function useListaEscolas(ano: number, filters: Record<string, string>, page: number, perPage: number = 20) {
+  return useQuery({
+    queryKey: ["lista-escolas", ano, filters, page, perPage],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("per_page", String(perPage));
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v) params.set(k, v);
+      });
+      const res = await fetch(`/api/censo-escolar/${ano}/escolas?${params.toString()}`);
+      if (!res.ok) throw new Error("Erro ao buscar escolas");
+      return res.json();
+    },
     staleTime: 5 * 60 * 1000,
   });
 }
