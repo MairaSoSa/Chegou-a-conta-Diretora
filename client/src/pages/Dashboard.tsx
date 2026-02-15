@@ -1,13 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { 
   Search, Users, ArrowRight, 
-  MapPin, Banknote, 
+  MapPin,
   GraduationCap, Info, ExternalLink,
-  School, Loader2, List, LayoutGrid, Link2,
+  School, Loader2, Link2,
   BarChart3, TrendingUp, BookOpen, Award,
   ChevronDown, ChevronUp
 } from "lucide-react";
@@ -24,7 +24,6 @@ const LINKS_PROGRAMAS = [
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInep, setSelectedInep] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'resumido' | 'completo'>('resumido');
   const [selectedAno, setSelectedAno] = useState(new Date().getFullYear());
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   
@@ -137,24 +136,6 @@ export default function Dashboard() {
                   >
                     {anos.map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
-                  <Button
-                    variant={viewMode === 'resumido' ? 'secondary' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('resumido')}
-                    className="text-xs"
-                  >
-                    <List className="w-3 h-3 mr-1" />
-                    Resumido
-                  </Button>
-                  <Button
-                    variant={viewMode === 'completo' ? 'secondary' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('completo')}
-                    className="text-xs"
-                  >
-                    <LayoutGrid className="w-3 h-3 mr-1" />
-                    Completo
-                  </Button>
                 </div>
               </div>
             )}
@@ -172,168 +153,247 @@ export default function Dashboard() {
               </Card>
             )}
 
-            <Card className="bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200">
-              <CardContent className="p-4">
-                <p className="text-emerald-800 leading-relaxed">
-                  <strong>Olá!</strong> Aqui estão os dados da sua escola vindos diretamente da base do INEP.
-                  {!escolaCompleta && !completaLoading && " Os dados ainda estão sendo carregados na API."}
-                </p>
-              </CardContent>
-            </Card>
+            {!escolaCompleta && !completaLoading && (
+              <Card className="bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200">
+                <CardContent className="p-4">
+                  <p className="text-amber-800 leading-relaxed">
+                    Os dados desta escola ainda estão sendo carregados na API externa. Tente novamente em alguns minutos.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <StatCard
-                icon={<Users className="w-6 h-6 text-primary" />}
-                value={matriculasTotal || '—'}
-                label="Alunos matriculados"
-                color="primary"
-              />
-              <StatCard
-                icon={<GraduationCap className="w-6 h-6 text-accent" />}
-                value={idebData?.ideb !== undefined && idebData?.ideb !== null ? idebData.ideb : '—'}
-                label={`IDEB ${idebData?.ano || ''}`}
-                color="accent"
-              />
-              <StatCard
-                icon={<BarChart3 className="w-6 h-6 text-blue-600" />}
-                value={icgData?.nivel_texto || icgData?.nivel || '—'}
-                label="Complexidade (ICG)"
-                color="blue"
-              />
-            </div>
-
-            {viewMode === 'completo' && escolaCompleta && (
+            {censoData && (
               <>
-                {censoData && (
-                  <IndicatorSection
-                    title="Censo Escolar"
-                    icon={<BookOpen className="w-5 h-5 text-primary" />}
-                    expanded={expandedSections['censo']}
-                    onToggle={() => toggleSection('censo')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      <InfoItem label="Matrículas Total" value={censoData.qt_mat_bas} />
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  <StatCard
+                    icon={<Users className="w-6 h-6 text-primary" />}
+                    value={matriculasTotal || '—'}
+                    label="Matrículas"
+                    color="primary"
+                  />
+                  <StatCard
+                    icon={<GraduationCap className="w-6 h-6 text-accent" />}
+                    value={censoData.qt_docentes || '—'}
+                    label="Docentes"
+                    color="accent"
+                  />
+                  <StatCard
+                    icon={<BookOpen className="w-6 h-6 text-blue-600" />}
+                    value={censoData.qt_turmas || '—'}
+                    label="Turmas"
+                    color="blue"
+                  />
+                  <StatCard
+                    icon={<School className="w-6 h-6 text-orange-600" />}
+                    value={censoData.qt_salas || '—'}
+                    label="Salas"
+                    color="orange"
+                  />
+                </div>
+
+                <Card className="card-clay">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <BookOpen className="w-5 h-5 text-primary" />
+                      Matrículas por Etapa
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                       <InfoItem label="Ed. Infantil" value={censoData.qt_mat_inf} />
-                      <InfoItem label="Fund. Iniciais" value={censoData.qt_mat_fund_ai} />
-                      <InfoItem label="Fund. Finais" value={censoData.qt_mat_fund_af} />
+                      <InfoItem label="Fundamental" value={censoData.qt_mat_fund_ai} />
                       <InfoItem label="Ensino Médio" value={censoData.qt_mat_med} />
                       <InfoItem label="EJA" value={censoData.qt_mat_eja} />
                       <InfoItem label="Ed. Especial" value={censoData.qt_mat_esp} />
-                      <InfoItem label="Docentes" value={censoData.qt_docentes || censoData.qt_doc} />
-                      <InfoItem label="Turmas" value={censoData.qt_turmas || censoData.qt_tur} />
-                      <InfoItem label="Salas" value={censoData.qt_salas || censoData.qt_sal_utilizada} />
+                      <InfoItem label="Profissional" value={censoData.matriculas_por_etapa?.profissional} />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="card-clay">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Info className="w-5 h-5 text-blue-600" />
+                      Informações da Escola
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <InfoItem label="Situação" value={censoData.tp_situacao_texto} />
                       <InfoItem label="Dependência" value={censoData.tp_dependencia_texto} />
                       <InfoItem label="Localização" value={censoData.tp_localizacao_texto} />
+                      <InfoItem label="Município" value={censoData.no_municipio} />
+                      <InfoItem label="UF" value={censoData.sg_uf} />
                       <InfoItem label="Internet" value={censoData.in_internet === 1 ? "Sim" : censoData.in_internet === 0 ? "Não" : undefined} />
-                      <InfoItem label="Situação" value={censoData.tp_situacao_texto} />
+                      <InfoItem label="Banda Larga" value={censoData.infraestrutura?.in_banda_larga === 1 ? "Sim" : censoData.infraestrutura?.in_banda_larga === 0 ? "Não" : undefined} />
+                      <InfoItem label="Acessibilidade" value={censoData.infraestrutura?.in_acessibilidade === 1 ? "Sim" : censoData.infraestrutura?.in_acessibilidade === 0 ? "Não" : undefined} />
                     </div>
-                  </IndicatorSection>
-                )}
+                  </CardContent>
+                </Card>
 
-                {idebData && (
-                  <IndicatorSection
-                    title="IDEB"
-                    icon={<Award className="w-5 h-5 text-amber-600" />}
-                    expanded={expandedSections['ideb']}
-                    onToggle={() => toggleSection('ideb')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      <InfoItem label="IDEB" value={idebData.ideb} highlight />
-                      <InfoItem label="Meta" value={idebData.projecao || idebData.meta} />
-                      <InfoItem label="Nota SAEB Matemática" value={idebData.nota_saeb_mat || idebData.nota_mat} />
-                      <InfoItem label="Nota SAEB Português" value={idebData.nota_saeb_lp || idebData.nota_lp} />
-                      <InfoItem label="Indicador Rendimento" value={idebData.indicador_rendimento} />
-                      <InfoItem label="Etapa" value={idebData.etapa} />
-                      <InfoItem label="Ano" value={idebData.ano} />
-                    </div>
-                  </IndicatorSection>
-                )}
+                <Card className="card-clay">
+                  <CardHeader className="pb-2 cursor-pointer" onClick={() => toggleSection('infra')}>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <School className="w-5 h-5 text-green-600" />
+                      Infraestrutura
+                      <span className="ml-auto">
+                        {expandedSections['infra'] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  {expandedSections['infra'] && censoData.infraestrutura && (
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <InfoItem label="Biblioteca" value={censoData.infraestrutura.in_biblioteca === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Lab. Informática" value={censoData.infraestrutura.in_laboratorio_informatica === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Lab. Ciências" value={censoData.infraestrutura.in_laboratorio_ciencias === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Quadra Esportes" value={censoData.infraestrutura.in_quadra_esportes === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Cozinha" value={censoData.infraestrutura.in_cozinha === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Refeitório" value={censoData.infraestrutura.in_refeitorio === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Pátio Coberto" value={censoData.infraestrutura.in_patio_coberto === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Parque Infantil" value={censoData.infraestrutura.in_parque_infantil === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Auditório" value={censoData.infraestrutura.in_auditorio === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Sala de Leitura" value={censoData.infraestrutura.in_sala_leitura === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Banheiro PNE" value={censoData.infraestrutura.in_banheiro_pne === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Água Potável" value={censoData.infraestrutura.in_agua_potavel === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Energia Rede Pública" value={censoData.infraestrutura.in_energia_rede_publica === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Esgoto Rede Pública" value={censoData.infraestrutura.in_esgoto_rede_publica === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Coleta de Lixo" value={censoData.infraestrutura.in_lixo_servico_coleta === 1 ? "Sim" : "Não"} />
+                        <InfoItem label="Internet p/ Aprendizagem" value={censoData.infraestrutura.in_internet_aprendizagem === 1 ? "Sim" : "Não"} />
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
 
-                {inseData && (
-                  <IndicatorSection
-                    title="INSE - Nível Socioeconômico"
-                    icon={<TrendingUp className="w-5 h-5 text-purple-600" />}
-                    expanded={expandedSections['inse']}
-                    onToggle={() => toggleSection('inse')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <InfoItem label="Classificação" value={inseData.classificacao || inseData.nivel || inseData.inse_classificacao} highlight />
-                      <InfoItem label="Valor INSE" value={inseData.media_inse || inseData.valor || inseData.inse_valor} />
-                      <InfoItem label="Ano" value={inseData.ano} />
-                    </div>
-                  </IndicatorSection>
+                {censoData.tempo_integral && (
+                  <Card className="card-clay">
+                    <CardHeader className="pb-2 cursor-pointer" onClick={() => toggleSection('integral')}>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Award className="w-5 h-5 text-purple-600" />
+                        Tempo Integral
+                        <span className="ml-auto">
+                          {expandedSections['integral'] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </span>
+                      </CardTitle>
+                    </CardHeader>
+                    {expandedSections['integral'] && (
+                      <CardContent>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          <InfoItem label="Total Integral" value={censoData.tempo_integral.qt_mat_total_integral} />
+                          <InfoItem label="Fund. Integral" value={censoData.tempo_integral.qt_mat_fundamental_integral} />
+                          <InfoItem label="Infantil Integral" value={censoData.tempo_integral.qt_mat_infantil_integral} />
+                          <InfoItem label="Médio Integral" value={censoData.tempo_integral.qt_mat_medio_integral} />
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
                 )}
-
-                {icgData && (
-                  <IndicatorSection
-                    title="ICG - Complexidade de Gestão"
-                    icon={<BarChart3 className="w-5 h-5 text-blue-600" />}
-                    expanded={expandedSections['icg']}
-                    onToggle={() => toggleSection('icg')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <InfoItem label="Nível" value={icgData.nivel_texto || icgData.nivel || icgData.icg_nivel} highlight />
-                      <InfoItem label="Valor" value={icgData.valor || icgData.icg_valor} />
-                      <InfoItem label="Ano" value={icgData.ano} />
-                    </div>
-                  </IndicatorSection>
-                )}
-
-                {tdiData && (
-                  <IndicatorSection
-                    title="TDI - Distorção Idade-Série"
-                    icon={<BarChart3 className="w-5 h-5 text-orange-600" />}
-                    expanded={expandedSections['tdi']}
-                    onToggle={() => toggleSection('tdi')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <IndicatorRows data={tdiData} />
-                    </div>
-                  </IndicatorSection>
-                )}
-
-                {irdData && (
-                  <IndicatorSection
-                    title="IRD - Regularidade do Docente"
-                    icon={<BarChart3 className="w-5 h-5 text-teal-600" />}
-                    expanded={expandedSections['ird']}
-                    onToggle={() => toggleSection('ird')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <IndicatorRows data={irdData} />
-                    </div>
-                  </IndicatorSection>
-                )}
-
-                {taxasData && (
-                  <IndicatorSection
-                    title="Taxas de Rendimento"
-                    icon={<TrendingUp className="w-5 h-5 text-green-600" />}
-                    expanded={expandedSections['taxas']}
-                    onToggle={() => toggleSection('taxas')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <IndicatorRows data={taxasData} />
-                    </div>
-                  </IndicatorSection>
-                )}
-
-                {saebData && (
-                  <IndicatorSection
-                    title="SAEB"
-                    icon={<Award className="w-5 h-5 text-indigo-600" />}
-                    expanded={expandedSections['saeb']}
-                    onToggle={() => toggleSection('saeb')}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <IndicatorRows data={saebData} />
-                    </div>
-                  </IndicatorSection>
-                )}
-
-                {renderExtraIndicators(escolaCompleta, expandedSections, toggleSection)}
               </>
             )}
+
+            {idebData && (
+              <IndicatorSection
+                title="IDEB"
+                icon={<Award className="w-5 h-5 text-amber-600" />}
+                expanded={expandedSections['ideb'] ?? true}
+                onToggle={() => toggleSection('ideb')}
+              >
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <InfoItem label="IDEB" value={idebData.ideb} highlight />
+                  <InfoItem label="Meta" value={idebData.projecao || idebData.meta} />
+                  <InfoItem label="Nota SAEB Matemática" value={idebData.nota_saeb_mat || idebData.nota_mat} />
+                  <InfoItem label="Nota SAEB Português" value={idebData.nota_saeb_lp || idebData.nota_lp} />
+                  <InfoItem label="Indicador Rendimento" value={idebData.indicador_rendimento} />
+                  <InfoItem label="Etapa" value={idebData.etapa} />
+                  <InfoItem label="Ano" value={idebData.ano} />
+                </div>
+              </IndicatorSection>
+            )}
+
+            {inseData && (
+              <IndicatorSection
+                title="INSE - Nível Socioeconômico"
+                icon={<TrendingUp className="w-5 h-5 text-purple-600" />}
+                expanded={expandedSections['inse'] ?? true}
+                onToggle={() => toggleSection('inse')}
+              >
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <InfoItem label="Classificação" value={inseData.classificacao || inseData.nivel || inseData.inse_classificacao} highlight />
+                  <InfoItem label="Valor INSE" value={inseData.media_inse || inseData.valor || inseData.inse_valor} />
+                  <InfoItem label="Ano" value={inseData.ano} />
+                </div>
+              </IndicatorSection>
+            )}
+
+            {icgData && (
+              <IndicatorSection
+                title="ICG - Complexidade de Gestão"
+                icon={<BarChart3 className="w-5 h-5 text-blue-600" />}
+                expanded={expandedSections['icg'] ?? true}
+                onToggle={() => toggleSection('icg')}
+              >
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <InfoItem label="Nível" value={icgData.nivel_texto || icgData.nivel || icgData.icg_nivel} highlight />
+                  <InfoItem label="Valor" value={icgData.valor || icgData.icg_valor} />
+                  <InfoItem label="Ano" value={icgData.ano} />
+                </div>
+              </IndicatorSection>
+            )}
+
+            {tdiData && (
+              <IndicatorSection
+                title="TDI - Distorção Idade-Série"
+                icon={<BarChart3 className="w-5 h-5 text-orange-600" />}
+                expanded={expandedSections['tdi'] ?? false}
+                onToggle={() => toggleSection('tdi')}
+              >
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <IndicatorRows data={tdiData} />
+                </div>
+              </IndicatorSection>
+            )}
+
+            {irdData && (
+              <IndicatorSection
+                title="IRD - Regularidade do Docente"
+                icon={<BarChart3 className="w-5 h-5 text-teal-600" />}
+                expanded={expandedSections['ird'] ?? false}
+                onToggle={() => toggleSection('ird')}
+              >
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <IndicatorRows data={irdData} />
+                </div>
+              </IndicatorSection>
+            )}
+
+            {taxasData && (
+              <IndicatorSection
+                title="Taxas de Rendimento"
+                icon={<TrendingUp className="w-5 h-5 text-green-600" />}
+                expanded={expandedSections['taxas'] ?? false}
+                onToggle={() => toggleSection('taxas')}
+              >
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <IndicatorRows data={taxasData} />
+                </div>
+              </IndicatorSection>
+            )}
+
+            {saebData && (
+              <IndicatorSection
+                title="SAEB"
+                icon={<Award className="w-5 h-5 text-indigo-600" />}
+                expanded={expandedSections['saeb'] ?? false}
+                onToggle={() => toggleSection('saeb')}
+              >
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <IndicatorRows data={saebData} />
+                </div>
+              </IndicatorSection>
+            )}
+
+            {escolaCompleta && renderExtraIndicators(escolaCompleta, expandedSections, toggleSection)}
 
             <Card className="card-clay">
               <CardHeader className="pb-2">
