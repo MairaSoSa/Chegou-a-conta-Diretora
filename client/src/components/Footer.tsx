@@ -29,6 +29,7 @@ export function Footer() {
           </div>
           
           <div className="flex flex-wrap items-center gap-6">
+            <Link href="/legislacao" className="hover:text-primary transition-colors">Legislação</Link>
             <Link href="/trilha" className="hover:text-primary transition-colors">Trilha</Link>
             <Link href="/programas" className="hover:text-primary transition-colors">Programas</Link>
             <Link href="/ferramentas" className="hover:text-primary transition-colors">Ferramentas</Link>

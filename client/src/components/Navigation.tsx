@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { BarChart3, GraduationCap, MessagesSquare, Wrench, Menu, BookOpen, Building2, SlidersHorizontal } from "lucide-react";
+import { BarChart3, GraduationCap, MessagesSquare, Wrench, Menu, BookOpen, Building2, SlidersHorizontal, Scale } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -13,6 +13,7 @@ export function Navigation() {
 
   const navItems = [
     { href: "/dashboard", label: "Dados Educacionais", icon: BarChart3 },
+    { href: "/legislacao", label: "Legislação", icon: Scale },
     { href: "/trilha", label: "Trilha", icon: GraduationCap },
     { href: "/programas", label: "Programas", icon: Building2 },
     { href: "/ferramentas", label: "Ferramentas", icon: Wrench },

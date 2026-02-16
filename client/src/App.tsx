@@ -13,6 +13,7 @@ import TrilhaUnidade from "@/pages/TrilhaUnidade";
 import Programas from "@/pages/Programas";
 import Ferramentas from "@/pages/Ferramentas";
 import Chat from "@/pages/Chat";
+import Legislacao from "@/pages/Legislacao";
 import QuemSomos from "@/pages/QuemSomos";
 import Admin from "@/pages/Admin";
 
@@ -24,6 +25,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/legislacao" component={Legislacao} />
       <Route path="/trilha" component={Trilha} />
       <Route path="/trilha/:unitId" component={TrilhaUnidade} />
       <Route path="/programas" component={Programas} />
