@@ -831,6 +831,128 @@ export async function registerRoutes(
     }
   });
 
+  const mecNormasCache: { data: any; timestamp: number; tipo?: string; page?: number } | { entries: Map<string, { data: any; timestamp: number }> } = { entries: new Map() };
+  const MEC_CACHE_TTL = 1000 * 60 * 30;
+
+  app.get("/api/mecnormas/all", async (req, res) => {
+    try {
+      const page = Math.max(0, parseInt(String(req.query.page || "0"), 10));
+      const size = Math.min(parseInt(String(req.query.size || "50"), 10), 100);
+      const tipo = req.query.tipo ? String(req.query.tipo) : undefined;
+      const assunto = req.query.assunto ? String(req.query.assunto) : undefined;
+      const vigente = req.query.vigente;
+      const q = req.query.q ? String(req.query.q) : undefined;
+
+      const cacheKey = `${page}-${size}-${tipo || ""}-${assunto || ""}-${vigente || ""}-${q || ""}`;
+      const cached = (mecNormasCache as any).entries?.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < MEC_CACHE_TTL) {
+        return res.json(cached.data);
+      }
+
+      const url = new URL("https://mecnormas.mec.gov.br/pesquisa/api/atos");
+      url.searchParams.set("page", String(page));
+      url.searchParams.set("pageSize", String(size));
+      if (tipo) url.searchParams.set("tipo", tipo);
+      if (assunto) url.searchParams.set("assunto", assunto);
+      if (vigente === "true") url.searchParams.set("vigente", "true");
+      if (vigente === "false") url.searchParams.set("vigente", "false");
+      if (q) url.searchParams.set("buscaTextual", q);
+
+      const response = await fetch(url.toString(), {
+        headers: { "User-Agent": "chegou-a-conta-bot", "Accept": "application/json" },
+        signal: AbortSignal.timeout(20000),
+      });
+
+      if (!response.ok) {
+        return res.status(502).json({ ok: false, message: "MEC Normas indisponível" });
+      }
+
+      const data = await response.json();
+      const result = {
+        ok: true,
+        entidades: data.entidades || [],
+        total: data.total || 0,
+        page,
+        size,
+        totalPages: Math.ceil((data.total || 0) / size),
+      };
+
+      if (!(mecNormasCache as any).entries) {
+        (mecNormasCache as any).entries = new Map();
+      }
+      (mecNormasCache as any).entries.set(cacheKey, { data: result, timestamp: Date.now() });
+
+      if ((mecNormasCache as any).entries.size > 100) {
+        const firstKey = (mecNormasCache as any).entries.keys().next().value;
+        (mecNormasCache as any).entries.delete(firstKey);
+      }
+
+      res.json(result);
+    } catch (e: any) {
+      res.status(500).json({ ok: false, message: e.message || "Erro ao buscar normas do MEC" });
+    }
+  });
+
+  app.get("/api/mecnormas/tipos", async (_req, res) => {
+    try {
+      const cacheKey = "tipos-summary";
+      const cached = (mecNormasCache as any).entries?.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < MEC_CACHE_TTL) {
+        return res.json(cached.data);
+      }
+
+      const sampleResp = await fetch("https://mecnormas.mec.gov.br/pesquisa/api/atos?page=0&pageSize=50", {
+        headers: { "User-Agent": "chegou-a-conta-bot", "Accept": "application/json" },
+        signal: AbortSignal.timeout(15000),
+      });
+      const sampleData = await sampleResp.json();
+      const totalGeral = sampleData.total || 0;
+
+      const discoveredTipos = new Map<number, string>();
+      for (const ato of (sampleData.entidades || [])) {
+        if (ato.tipo?.id && ato.tipo?.nome) {
+          discoveredTipos.set(ato.tipo.id, ato.tipo.nome);
+        }
+      }
+
+      const knownTipoIds = [3403, 3753, 3203, 3503, 3603, 3703, 3803, 3853, 3903, 3953, 4003, 4053, 4103, 4153, 4253, 4353, 4553, 4653, 3303];
+      for (const id of knownTipoIds) {
+        if (!discoveredTipos.has(id)) discoveredTipos.set(id, "");
+      }
+
+      const tipoCounts: { id: number; nome: string; total: number }[] = [];
+      const countPromises = [...discoveredTipos.entries()].map(async ([tipoId, tipoName]) => {
+        try {
+          const resp = await fetch(`https://mecnormas.mec.gov.br/pesquisa/api/atos?page=0&pageSize=1&tipo=${tipoId}`, {
+            headers: { "User-Agent": "chegou-a-conta-bot", "Accept": "application/json" },
+            signal: AbortSignal.timeout(10000),
+          });
+          const d = await resp.json();
+          if (d.total > 0) {
+            const nome = tipoName || d.entidades?.[0]?.tipo?.nome || `Tipo ${tipoId}`;
+            tipoCounts.push({ id: tipoId, nome: nome.trim(), total: d.total });
+          }
+        } catch {}
+      });
+      await Promise.all(countPromises);
+
+      const result = {
+        ok: true,
+        totalGeral,
+        tipos: tipoCounts.sort((a, b) => b.total - a.total),
+      };
+
+      if (!(mecNormasCache as any).entries) {
+        (mecNormasCache as any).entries = new Map();
+      }
+      (mecNormasCache as any).entries.set(cacheKey, { data: result, timestamp: Date.now() });
+
+      res.json(result);
+    } catch (e: any) {
+      res.status(500).json({ ok: false, message: e.message || "Erro ao buscar tipos" });
+    }
+  });
+
   // === PUBLIC: MEC NORMAS SEARCH ===
   app.get("/api/mecnormas/search", async (req, res) => {
     try {

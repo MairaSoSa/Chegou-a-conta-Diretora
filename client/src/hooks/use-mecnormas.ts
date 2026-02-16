@@ -18,11 +18,17 @@ export interface MecNormasAto {
   numeroAto?: string | number;
   dataPublicacao?: string;
   dataPublicacaoAto?: string;
+  dataDePublicacao?: string;
+  dataDePublicacaoString?: string;
+  dataDeEdicaoString?: string;
   disponivelEm?: string;
   disponivel_em?: string;
+  vigente?: boolean;
   tipo?: { id?: number; nome?: string; descricao?: string };
   assunto?: { id?: number; nome?: string; descricao?: string };
-  unidade?: { id?: number; nome?: string; descricao?: string };
+  assuntos?: Array<{ id?: number; nome?: string }>;
+  unidade?: { id?: number; nome?: string; sigla?: string; descricao?: string };
+  anoText?: string;
 }
 
 export interface MecNormasSearchParams {
@@ -36,6 +42,21 @@ export interface MecNormasSearchParams {
   pageSize?: number;
 }
 
+export interface MecNormasAllParams {
+  page?: number;
+  size?: number;
+  tipo?: string;
+  assunto?: string;
+  vigente?: string;
+  q?: string;
+}
+
+export interface MecNormasTiposSummary {
+  ok: boolean;
+  totalGeral: number;
+  tipos: Array<{ id: number; nome: string; total: number }>;
+}
+
 export function useMecNormasFilters() {
   return useQuery<MecNormasFilters>({
     queryKey: ["/api/mecnormas/filters"],
@@ -46,6 +67,40 @@ export function useMecNormasFilters() {
     },
     staleTime: 1000 * 60 * 30,
     retry: 2,
+  });
+}
+
+export function useMecNormasTipos() {
+  return useQuery<MecNormasTiposSummary>({
+    queryKey: ["/api/mecnormas/tipos"],
+    queryFn: async () => {
+      const res = await fetch("/api/mecnormas/tipos");
+      if (!res.ok) throw new Error("Falha ao carregar tipos");
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 30,
+    retry: 2,
+  });
+}
+
+export function useMecNormasAll(params: MecNormasAllParams) {
+  const queryString = new URLSearchParams();
+  if (params.page !== undefined) queryString.set("page", String(params.page));
+  if (params.size) queryString.set("size", String(params.size));
+  if (params.tipo) queryString.set("tipo", params.tipo);
+  if (params.assunto) queryString.set("assunto", params.assunto);
+  if (params.vigente) queryString.set("vigente", params.vigente);
+  if (params.q) queryString.set("q", params.q);
+
+  return useQuery({
+    queryKey: ["/api/mecnormas/all", params],
+    queryFn: async () => {
+      const res = await fetch(`/api/mecnormas/all?${queryString.toString()}`);
+      if (!res.ok) throw new Error("Falha ao buscar normas");
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 10,
+    retry: 1,
   });
 }
 
