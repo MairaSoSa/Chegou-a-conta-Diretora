@@ -1176,6 +1176,7 @@ export default function Dashboard() {
                         <InfoItem label="UF" value={censoLatest.sg_uf} />
                         <InfoItem label="Cód. Município" value={censoLatest.co_municipio} />
                         <InfoItem label="Regulamentação" value={censoLatest.tp_regulamentacao === 1 ? "Sim" : censoLatest.tp_regulamentacao === 2 ? "Sim, em tramitação" : censoLatest.tp_regulamentacao === 3 ? "Não" : undefined} />
+                        <InfoItem label="Órgão Regulamentador" value={censoLatest.tp_responsavel_regulamentacao === 1 ? "Conselho Federal de Educação" : censoLatest.tp_responsavel_regulamentacao === 2 ? "Conselho Estadual de Educação" : censoLatest.tp_responsavel_regulamentacao === 3 ? "Conselho Municipal de Educação" : undefined} />
                         <InfraItem label="Prédio Escolar" value={censoLatest.in_local_func_predio_escolar} />
                         <InfraItem label="Prédio Compartilhado" value={censoLatest.in_predio_compartilhado} />
                         <InfraItem label="Alimentação" value={censoLatest.in_alimentacao} />
