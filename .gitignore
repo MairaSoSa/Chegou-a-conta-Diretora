@@ -8,3 +8,10 @@ vite.config.ts.*
 dev.db
 dev.db-shm
 dev.db-wal
+*.log
+.replit
+replit.nix
+.config/
+.cache/
+.local/
+.upm/
