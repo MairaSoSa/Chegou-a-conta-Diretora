@@ -3,12 +3,12 @@ import { Footer } from "@/components/Footer";
 import {
   ExternalLink, Scale, FileText, BookOpen, Landmark, GraduationCap,
   Utensils, Bus, Coins, Users, ShieldCheck, ClipboardList, Search,
-  Loader2, AlertCircle, Newspaper, ChevronDown, ChevronUp, BookMarked,
+  Loader2, AlertCircle, Newspaper, BookMarked,
   Calendar, Building2, Info, MapPin, Globe
 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { useMecNormasAll, useMecNormasTipos } from "@/hooks/use-mecnormas";
-import { useDOUSearch, useDOUCrossReference, useMunicipalGazetteSearch } from "@/hooks/use-dou";
+import { useDOUSearch, useMunicipalGazetteSearch } from "@/hooks/use-dou";
 
 interface Lei {
   titulo: string;
@@ -164,7 +164,7 @@ const doeLinks: { estado: string; sigla: string; url: string }[] = [
 ];
 
 type CategoryId = "cat-normas" | "cat-dou";
-type SubTabId = "normas-leis" | "normas-todas" | "normas-vigentes" | "normas-busca" | "dou-federal" | "dou-municipal" | "dou-estadual";
+type SubTabId = "normas-leis" | "normas-todas" | "dou-federal" | "dou-municipal" | "dou-estadual";
 
 const categories: { id: CategoryId; label: string; icon: string; subTabs: { id: SubTabId; label: string }[] }[] = [
   {
@@ -174,8 +174,6 @@ const categories: { id: CategoryId; label: string; icon: string; subTabs: { id: 
     subTabs: [
       { id: "normas-leis", label: "Leis Fundamentais" },
       { id: "normas-todas", label: "Todas as Normas" },
-      { id: "normas-vigentes", label: "Vigentes" },
-      { id: "normas-busca", label: "Buscar por Termo" },
     ],
   },
   {
@@ -330,16 +328,12 @@ function LeisFundamentaisContent() {
   );
 }
 
-function NormasContent({ subTab }: { subTab: SubTabId }) {
+function NormasContent() {
   const [page, setPage] = useState(0);
-  const [expandedId, setExpandedId] = useState<string | number | null>(null);
   const [selectedTipo, setSelectedTipo] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
   const pageSize = 30;
-
-  const vigente = subTab === "normas-vigentes" ? "true" : undefined;
-  const isBusca = subTab === "normas-busca";
 
   const { data: tiposData, isLoading: tiposLoading } = useMecNormasTipos();
 
@@ -347,8 +341,7 @@ function NormasContent({ subTab }: { subTab: SubTabId }) {
     page,
     size: pageSize,
     tipo: selectedTipo || undefined,
-    vigente,
-    q: isBusca ? submittedSearch || undefined : undefined,
+    q: submittedSearch || undefined,
   });
 
   const handleSearch = useCallback((e: React.FormEvent) => {
@@ -357,29 +350,15 @@ function NormasContent({ subTab }: { subTab: SubTabId }) {
     setPage(0);
   }, [searchTerm]);
 
+  const handleClearSearch = useCallback(() => {
+    setSearchTerm("");
+    setSubmittedSearch("");
+    setPage(0);
+  }, []);
+
   const normas: any[] = data?.entidades || [];
   const total = data?.total || 0;
   const totalPages = data?.totalPages || 0;
-
-  const descriptions: Record<string, { title: string; text: string; detail: string }> = {
-    "normas-todas": {
-      title: "Todas as Normas do MEC",
-      text: "Acervo completo de atos normativos do Ministério da Educação, incluindo resoluções, portarias, pareceres, decretos e demais instrumentos legais. Os dados são consultados diretamente do portal oficial MEC Normas (mecnormas.mec.gov.br).",
-      detail: `Total no acervo: ${tiposData?.totalGeral?.toLocaleString("pt-BR") || "carregando..."} normas | Fonte: MEC Normas - Ministério da Educação`,
-    },
-    "normas-vigentes": {
-      title: "Normas Vigentes do MEC",
-      text: "Exibe apenas as normas que estão atualmente em vigor. Normas revogadas, alteradas ou com vigência encerrada são automaticamente filtradas, garantindo que você consulte apenas a legislação válida.",
-      detail: "Filtro automático: apenas normas com status vigente | Atualizado em tempo real pelo MEC Normas",
-    },
-    "normas-busca": {
-      title: "Busca por Termo",
-      text: "Pesquise normas específicas do MEC por palavras-chave. Use termos como \"PDDE\", \"PNAE\", \"prestação de contas\" ou \"alimentação escolar\" para encontrar normas relacionadas.",
-      detail: "Dica: Combine a busca textual com o filtro de tipo para resultados mais precisos",
-    },
-  };
-
-  const desc = descriptions[subTab] || descriptions["normas-todas"];
 
   return (
     <>
@@ -395,11 +374,11 @@ function NormasContent({ subTab }: { subTab: SubTabId }) {
       }}>
         <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
           <Info className="w-4 h-4" />
-          {desc.title}
+          Todas as Normas do MEC
         </div>
-        <p>{desc.text}</p>
+        <p>Acervo completo de atos normativos do Ministério da Educação. Pesquise por palavras-chave, filtre por tipo e confira o status de vigência de cada norma. Os dados são consultados diretamente do portal oficial MEC Normas (mecnormas.mec.gov.br).</p>
         <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
-          <strong>{desc.detail}</strong>
+          <strong>Total no acervo: {tiposData?.totalGeral?.toLocaleString("pt-BR") || "carregando..."} normas | Fonte: MEC Normas - Ministério da Educação</strong>
         </div>
       </div>
 
@@ -429,11 +408,11 @@ function NormasContent({ subTab }: { subTab: SubTabId }) {
             const colors = ["#2e7d32", "#ef6c00", "#c62828", "#6b21a8", "#1565c0"];
             return (
               <div key={tipo.id} style={{
-                background: "white",
+                background: selectedTipo === String(tipo.id) ? "#f0f4ff" : "white",
                 borderRadius: "10px",
                 padding: "16px 20px",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
-                border: "1px solid #e2e5ec",
+                border: selectedTipo === String(tipo.id) ? "1px solid #93c5fd" : "1px solid #e2e5ec",
                 borderLeft: `3px solid ${colors[i % colors.length]}`,
                 cursor: "pointer",
               }}
@@ -453,33 +432,31 @@ function NormasContent({ subTab }: { subTab: SubTabId }) {
 
       <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
         <div style={{ padding: "16px 20px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end", borderBottom: "1px solid #e2e5ec" }}>
-          {isBusca && (
-            <form onSubmit={handleSearch} style={{ display: "flex", gap: "10px", flex: 1, minWidth: "200px", alignItems: "flex-end" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1 }}>
-                <label style={labelStyle}>Buscar norma</label>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Ex: PDDE, PNAE, alimentação escolar..."
-                  style={inputStyle}
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={!searchTerm.trim()}
-                style={{
-                  padding: "8px 18px", border: "none", borderRadius: "6px",
-                  fontSize: "13px", fontWeight: 600, cursor: searchTerm.trim() ? "pointer" : "not-allowed",
-                  display: "inline-flex", alignItems: "center", gap: "6px",
-                  background: searchTerm.trim() ? "#1a237e" : "#94a3b8", color: "white",
-                }}
-              >
-                <Search style={{ width: "14px", height: "14px" }} />
-                Buscar
-              </button>
-            </form>
-          )}
+          <form onSubmit={handleSearch} style={{ display: "flex", gap: "10px", flex: 1, minWidth: "200px", alignItems: "flex-end" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1 }}>
+              <label style={labelStyle}>Pesquisar normas</label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Ex: PDDE, PNAE, alimentação escolar, prestação de contas..."
+                style={inputStyle}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={!searchTerm.trim()}
+              style={{
+                padding: "8px 18px", border: "none", borderRadius: "6px",
+                fontSize: "13px", fontWeight: 600, cursor: searchTerm.trim() ? "pointer" : "not-allowed",
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                background: searchTerm.trim() ? "#1a237e" : "#94a3b8", color: "white",
+              }}
+            >
+              <Search style={{ width: "14px", height: "14px" }} />
+              Buscar
+            </button>
+          </form>
           {tiposData && tiposData.tipos && (
             <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
               <label style={labelStyle}>Filtrar por tipo</label>
@@ -495,16 +472,16 @@ function NormasContent({ subTab }: { subTab: SubTabId }) {
               </select>
             </div>
           )}
-          {selectedTipo && (
+          {(selectedTipo || submittedSearch) && (
             <button
-              onClick={() => { setSelectedTipo(""); setPage(0); }}
+              onClick={() => { setSelectedTipo(""); handleClearSearch(); }}
               style={{
                 padding: "8px 14px", border: "1px solid #e2e5ec", borderRadius: "6px",
                 fontSize: "12px", fontWeight: 500, cursor: "pointer",
                 background: "white", color: "#64748b",
               }}
             >
-              Limpar filtro
+              Limpar filtros
             </button>
           )}
         </div>
@@ -527,15 +504,7 @@ function NormasContent({ subTab }: { subTab: SubTabId }) {
           </div>
         )}
 
-        {!isLoading && !error && isBusca && !submittedSearch && (
-          <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-            <Search className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.3 }} />
-            <p style={{ fontSize: "14px" }}>Digite um termo para buscar normas do MEC</p>
-            <p style={{ fontSize: "12px", marginTop: "4px", opacity: 0.7 }}>Exemplo: PDDE, PNAE, prestação de contas, transporte escolar</p>
-          </div>
-        )}
-
-        {!isLoading && !error && normas.length === 0 && (isBusca ? submittedSearch : true) && !(isBusca && !submittedSearch) && (
+        {!isLoading && !error && normas.length === 0 && (
           <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
             <BookMarked className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.4 }} />
             <p style={{ fontSize: "14px" }}>Nenhuma norma encontrada</p>
@@ -546,7 +515,7 @@ function NormasContent({ subTab }: { subTab: SubTabId }) {
           <>
             <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h3 style={{ fontSize: "15px", fontWeight: 600 }}>
-                {subTab === "normas-vigentes" ? "Normas Vigentes" : "Normas do MEC"}
+                {submittedSearch ? `Resultados para "${submittedSearch}"` : "Normas do MEC"}
               </h3>
               <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
                 {total.toLocaleString("pt-BR")} norma(s)
@@ -571,23 +540,22 @@ function NormasContent({ subTab }: { subTab: SubTabId }) {
                     const date = norma.dataDePublicacaoString || norma.dataPublicacao || norma.dataPublicacaoAto || norma.dataDePublicacao || "";
                     const tipo = norma.tipo?.nome || "";
                     const link = norma.disponivelEm || norma.disponivel_em || "";
-                    const isExpanded = expandedId === norma.id;
                     const assuntos = norma.assuntos || [];
                     const isVigente = norma.vigente;
+                    const correlacoes = norma.correlacoes || [];
+                    const hasAlteracao = correlacoes.length > 0;
+                    const encerraVigencia = correlacoes.some((c: any) => c.encerraVigencia);
 
                     return (
                       <tr key={norma.id} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
                         <td style={tdStyle}>
-                          <div>
-                            <div
-                              onClick={() => setExpandedId(isExpanded ? null : norma.id)}
-                              style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3, cursor: "pointer", color: "#1565c0", maxWidth: "350px" }}
-                            >
+                          <div style={{ maxWidth: "400px" }}>
+                            <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3, color: "#1e293b" }}>
                               {title}
                             </div>
-                            {isExpanded && ementa && (
-                              <div style={{ fontSize: "12px", color: "#64748b", marginTop: "6px", lineHeight: 1.5, maxWidth: "350px" }}>
-                                {ementa}
+                            {ementa && (
+                              <div style={{ fontSize: "11.5px", color: "#64748b", marginTop: "4px", lineHeight: 1.5 }}>
+                                {ementa.length > 180 ? ementa.slice(0, 180) + "..." : ementa}
                               </div>
                             )}
                             {norma.unidade?.sigla && (
@@ -626,53 +594,57 @@ function NormasContent({ subTab }: { subTab: SubTabId }) {
                           <span style={{ fontSize: "12px", color: "#64748b" }}>{date || "—"}</span>
                         </td>
                         <td style={tdStyle}>
-                          {isVigente === true && (
-                            <span style={{
-                              display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                              fontSize: "11px", fontWeight: 600, background: "#dcfce7", color: "#166534",
-                            }}>
-                              Sim
-                            </span>
-                          )}
-                          {isVigente === false && (
-                            <span style={{
-                              display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                              fontSize: "11px", fontWeight: 600, background: "#fee2e2", color: "#991b1b",
-                            }}>
-                              Não
-                            </span>
-                          )}
-                          {isVigente === undefined || isVigente === null ? (
-                            <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
-                          ) : null}
+                          <div>
+                            {isVigente === true && !encerraVigencia && (
+                              <span style={{
+                                display: "inline-block", padding: "2px 8px", borderRadius: "4px",
+                                fontSize: "11px", fontWeight: 600, background: "#dcfce7", color: "#166534",
+                              }}>
+                                Vigente
+                              </span>
+                            )}
+                            {isVigente === true && encerraVigencia && (
+                              <span style={{
+                                display: "inline-block", padding: "2px 8px", borderRadius: "4px",
+                                fontSize: "11px", fontWeight: 600, background: "#fef3c7", color: "#92400e",
+                              }}>
+                                Com alteração
+                              </span>
+                            )}
+                            {isVigente === false && (
+                              <span style={{
+                                display: "inline-block", padding: "2px 8px", borderRadius: "4px",
+                                fontSize: "11px", fontWeight: 600, background: "#fee2e2", color: "#991b1b",
+                              }}>
+                                Revogada
+                              </span>
+                            )}
+                            {(isVigente === undefined || isVigente === null) && (
+                              <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
+                            )}
+                            {hasAlteracao && correlacoes.slice(0, 1).map((c: any, ci: number) => (
+                              <div key={ci} style={{ fontSize: "10px", color: "#94a3b8", marginTop: "3px", lineHeight: 1.3 }}>
+                                {c.textoCorrelacao}
+                              </div>
+                            ))}
+                          </div>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "center" }}>
-                          <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
-                            <button
-                              onClick={() => setExpandedId(isExpanded ? null : norma.id)}
+                          {link && (
+                            <a
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               style={{
-                                padding: "4px 8px", border: "1px solid #e2e5ec", borderRadius: "4px",
-                                background: "white", cursor: "pointer", fontSize: "12px", color: "#64748b",
+                                padding: "4px 10px", border: "none", borderRadius: "4px",
+                                background: "#1a237e", color: "white", fontSize: "11px", fontWeight: 600,
+                                textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
                               }}
                             >
-                              {isExpanded ? <ChevronUp style={{ width: "14px", height: "14px" }} /> : <ChevronDown style={{ width: "14px", height: "14px" }} />}
-                            </button>
-                            {link && (
-                              <a
-                                href={link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  padding: "4px 10px", border: "none", borderRadius: "4px",
-                                  background: "#1a237e", color: "white", fontSize: "11px", fontWeight: 600,
-                                  textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
-                                }}
-                              >
-                                <ExternalLink style={{ width: "11px", height: "11px" }} />
-                                Abrir
-                              </a>
-                            )}
-                          </div>
+                              <ExternalLink style={{ width: "11px", height: "11px" }} />
+                              Abrir
+                            </a>
+                          )}
                         </td>
                       </tr>
                     );
@@ -1411,8 +1383,8 @@ export default function Legislacao() {
     if (activeSubTab === "normas-leis") {
       return <LeisFundamentaisContent />;
     }
-    if (activeSubTab === "normas-todas" || activeSubTab === "normas-vigentes" || activeSubTab === "normas-busca") {
-      return <NormasContent subTab={activeSubTab} />;
+    if (activeSubTab === "normas-todas") {
+      return <NormasContent />;
     }
     if (activeSubTab === "dou-federal") {
       return <DOUFederalContent />;
