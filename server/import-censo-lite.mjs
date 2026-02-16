@@ -98,10 +98,9 @@ async function importCensoLite(filePath, ano) {
   db.pragma("synchronous = OFF");
   db.pragma("cache_size = -64000");
 
-  console.log(`[LITE] Deleting existing ${ano} data...`);
-  db.exec(`DELETE FROM censo_escolar WHERE ano = ${ano}`);
+  console.log(`[LITE] Using INSERT OR REPLACE for ${ano} data...`);
 
-  const stmt = db.prepare(`INSERT INTO censo_escolar (inep, ano, nome, municipio, uf, dependencia, localizacao, situacao, matriculas, docentes, turmas, dados, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  const stmt = db.prepare(`INSERT OR REPLACE INTO censo_escolar (inep, ano, nome, municipio, uf, dependencia, localizacao, situacao, matriculas, docentes, turmas, dados, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 
   const fileStream = fs.createReadStream(filePath, { encoding: "latin1" });
   const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });

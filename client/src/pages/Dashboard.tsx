@@ -78,7 +78,18 @@ export default function Dashboard() {
 
   const indicadoresLatest = useMemo(() => {
     if (!evolucaoData || !latestAno) return {};
-    return evolucaoData.indicadores_por_ano?.[latestAno] || {};
+    const allIndicadores = evolucaoData.indicadores_por_ano || {};
+    const anos = evolucaoData.anos_disponiveis || [];
+    const merged: Record<string, any> = {};
+    const sortedAnos = [...anos].sort((a: number, b: number) => b - a);
+    for (const ano of sortedAnos) {
+      const yearData = allIndicadores[ano];
+      if (!yearData) continue;
+      for (const [tipo, dados] of Object.entries(yearData)) {
+        if (!merged[tipo]) merged[tipo] = { ...dados as any, _ano: ano };
+      }
+    }
+    return merged;
   }, [evolucaoData, latestAno]);
 
   const evolutionCharts = useMemo(() => {
@@ -172,12 +183,12 @@ export default function Dashboard() {
       saeb: anos.map((a: number) => {
         const s = indicadores[a]?.saeb;
         if (!s) return { ano: a };
-        return { ano: a, mt_ai: s.nota_mt_ai ?? null, lp_ai: s.nota_lp_ai ?? null, mt_af: s.nota_mt_af ?? null, lp_af: s.nota_lp_af ?? null };
+        return { ano: a, mt_ai: s.nota_mt_ai ?? null, lp_ai: s.nota_lp_ai ?? null, mt_af: s.nota_mt_af ?? null, lp_af: s.nota_lp_af ?? null, mt_em: s.nota_mt_em ?? null, lp_em: s.nota_lp_em ?? null };
       }),
       ied: anos.map((a: number) => {
         const ie = indicadores[a]?.ied;
         if (!ie) return { ano: a };
-        return { ano: a, nivel_1: ie.nivel_1 ?? null, nivel_6: ie.nivel_6 ?? null };
+        return { ano: a, nivel_1: ie.nivel_1 ?? null, nivel_2: ie.nivel_2 ?? null, nivel_3: ie.nivel_3 ?? null, nivel_4: ie.nivel_4 ?? null, nivel_5: ie.nivel_5 ?? null, nivel_6: ie.nivel_6 ?? null };
       }),
       tnr: anos.map((a: number) => {
         const t = indicadores[a]?.taxa_nao_resposta;
@@ -721,6 +732,41 @@ export default function Dashboard() {
                                 lines={[{ key: "media", color: CHART_COLORS[3], name: "Média INSE" }]}
                                 icon={<TrendingUp className="w-4 h-4 text-purple-600" />}
                               />
+                              <EvolutionChart
+                                title="SAEB - Proficiência"
+                                data={evolutionCharts.saeb}
+                                lines={[
+                                  { key: "mt_ai", color: CHART_COLORS[0], name: "Mat. AI" },
+                                  { key: "lp_ai", color: CHART_COLORS[1], name: "Port. AI" },
+                                  { key: "mt_af", color: CHART_COLORS[2], name: "Mat. AF" },
+                                  { key: "lp_af", color: CHART_COLORS[3], name: "Port. AF" },
+                                  { key: "mt_em", color: EXTRA_COLORS[0], name: "Mat. EM" },
+                                  { key: "lp_em", color: EXTRA_COLORS[1], name: "Port. EM" },
+                                ]}
+                                icon={<Award className="w-4 h-4 text-blue-600" />}
+                              />
+                              <EvolutionChart
+                                title="IED - Esforço Docente (%)"
+                                data={evolutionCharts.ied}
+                                lines={[
+                                  { key: "nivel_1", color: CHART_COLORS[0], name: "Nível 1" },
+                                  { key: "nivel_2", color: CHART_COLORS[1], name: "Nível 2" },
+                                  { key: "nivel_3", color: CHART_COLORS[2], name: "Nível 3" },
+                                  { key: "nivel_4", color: CHART_COLORS[3], name: "Nível 4" },
+                                  { key: "nivel_5", color: EXTRA_COLORS[0], name: "Nível 5" },
+                                  { key: "nivel_6", color: EXTRA_COLORS[1], name: "Nível 6" },
+                                ]}
+                                icon={<GraduationCap className="w-4 h-4 text-pink-600" />}
+                              />
+                              <EvolutionChart
+                                title="Taxa de Não-Resposta"
+                                data={evolutionCharts.tnr}
+                                lines={[
+                                  { key: "fund", color: CHART_COLORS[0], name: "Fundamental" },
+                                  { key: "med", color: EXTRA_COLORS[2], name: "Médio" },
+                                ]}
+                                icon={<BarChart3 className="w-4 h-4 text-yellow-600" />}
+                              />
                             </>
                           )}
                         </div>
@@ -830,15 +876,21 @@ export default function Dashboard() {
                                 { key: "lp_ai", color: CHART_COLORS[1], name: "Port. AI" },
                                 { key: "mt_af", color: CHART_COLORS[2], name: "Mat. AF" },
                                 { key: "lp_af", color: CHART_COLORS[3], name: "Port. AF" },
+                                { key: "mt_em", color: EXTRA_COLORS[0], name: "Mat. EM" },
+                                { key: "lp_em", color: EXTRA_COLORS[1], name: "Port. EM" },
                               ]}
                               icon={<Award className="w-4 h-4 text-blue-600" />}
                             />
                             <EvolutionChart
-                              title="IED - Esforço Docente"
+                              title="IED - Esforço Docente (%)"
                               data={evolutionCharts.ied}
                               lines={[
                                 { key: "nivel_1", color: CHART_COLORS[0], name: "Nível 1" },
-                                { key: "nivel_6", color: EXTRA_COLORS[0], name: "Nível 6" },
+                                { key: "nivel_2", color: CHART_COLORS[1], name: "Nível 2" },
+                                { key: "nivel_3", color: CHART_COLORS[2], name: "Nível 3" },
+                                { key: "nivel_4", color: CHART_COLORS[3], name: "Nível 4" },
+                                { key: "nivel_5", color: EXTRA_COLORS[0], name: "Nível 5" },
+                                { key: "nivel_6", color: EXTRA_COLORS[1], name: "Nível 6" },
                               ]}
                               icon={<GraduationCap className="w-4 h-4 text-pink-600" />}
                             />
@@ -863,7 +915,7 @@ export default function Dashboard() {
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-accent" />
-                        Indicadores Educacionais ({latestAno})
+                        Indicadores Educacionais (dados mais recentes)
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-5">
@@ -871,6 +923,7 @@ export default function Dashboard() {
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <Award className="w-3.5 h-3.5 text-amber-600" /> IDEB
+                            {indicadoresLatest.ideb._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.ideb._ano}</span>}
                           </p>
                           {(indicadoresLatest.ideb.ideb_ai || indicadoresLatest.ideb.ideb_af) && (
                             <div className="mb-2">
@@ -904,6 +957,7 @@ export default function Dashboard() {
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <BarChart3 className="w-3.5 h-3.5 text-accent" /> ICG - Complexidade de Gestão
+                            {indicadoresLatest.icg._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.icg._ano}</span>}
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             <InfoItem label="Nível" value={indicadoresLatest.icg.nivel_texto || `Nível ${indicadoresLatest.icg.nivel}`} highlight />
@@ -915,6 +969,7 @@ export default function Dashboard() {
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <TrendingUp className="w-3.5 h-3.5 text-purple-600" /> INSE - Nível Socioeconômico
+                            {indicadoresLatest.inse._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.inse._ano}</span>}
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             <InfoItem label="Classificação" value={indicadoresLatest.inse.inse_classificacao || indicadoresLatest.inse.nivel_inse} highlight />
@@ -928,6 +983,7 @@ export default function Dashboard() {
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <BarChart3 className="w-3.5 h-3.5 text-orange-600" /> TDI - Distorção Idade-Série (%)
+                            {indicadoresLatest.tdi._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.tdi._ano}</span>}
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             <InfoItem label="Fundamental Total" value={indicadoresLatest.tdi.fundamental_total} highlight />
@@ -950,6 +1006,7 @@ export default function Dashboard() {
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <BarChart3 className="w-3.5 h-3.5 text-teal-600" /> IRD - Regularidade do Docente
+                            {indicadoresLatest.ird._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.ird._ano}</span>}
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             <InfoItem label="Média IRD" value={indicadoresLatest.ird.media_ird != null ? Number(indicadoresLatest.ird.media_ird).toFixed(2) : null} highlight />
@@ -961,6 +1018,7 @@ export default function Dashboard() {
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <TrendingUp className="w-3.5 h-3.5 text-green-600" /> Taxas de Rendimento (%)
+                            {indicadoresLatest.taxas_rendimento._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.taxas_rendimento._ano}</span>}
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             <InfoItem label="Aprovação Fund." value={indicadoresLatest.taxas_rendimento.aprovacao_fund} />
@@ -983,6 +1041,7 @@ export default function Dashboard() {
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <Users className="w-3.5 h-3.5 text-indigo-600" /> ATU - Média de Alunos por Turma
+                            {indicadoresLatest.atu._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.atu._ano}</span>}
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             <InfoItem label="Fundamental Total" value={indicadoresLatest.atu.media_fund} />
@@ -997,6 +1056,7 @@ export default function Dashboard() {
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5 text-cyan-600" /> HAD - Horas-Aula Diária
+                            {indicadoresLatest.had._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.had._ano}</span>}
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             <InfoItem label="Fundamental Total" value={indicadoresLatest.had.media_fund} />
@@ -1011,6 +1071,7 @@ export default function Dashboard() {
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <GraduationCap className="w-3.5 h-3.5 text-emerald-600" /> DSU - Docentes com Curso Superior (%)
+                            {indicadoresLatest.dsu._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.dsu._ano}</span>}
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             <InfoItem label="Fundamental Total" value={indicadoresLatest.dsu.percentual_fund} />
@@ -1025,6 +1086,7 @@ export default function Dashboard() {
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <GraduationCap className="w-3.5 h-3.5 text-rose-600" /> AFD - Adequação da Formação Docente (%)
+                            {indicadoresLatest.afd._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.afd._ano}</span>}
                           </p>
                           <div className="space-y-2">
                             <div>
@@ -1055,6 +1117,7 @@ export default function Dashboard() {
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <Award className="w-3.5 h-3.5 text-blue-600" /> SAEB - Proficiência
+                            {indicadoresLatest.saeb._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.saeb._ano}</span>}
                           </p>
                           <div className="space-y-2">
                             {(indicadoresLatest.saeb.nota_mt_ai || indicadoresLatest.saeb.nota_lp_ai || indicadoresLatest.saeb.nota_mt_af || indicadoresLatest.saeb.nota_lp_af) && (
@@ -1085,6 +1148,7 @@ export default function Dashboard() {
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <GraduationCap className="w-3.5 h-3.5 text-pink-600" /> IED - Esforço Docente (%)
+                            {indicadoresLatest.ied._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.ied._ano}</span>}
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                             <InfoItem label="Nível 1" value={indicadoresLatest.ied.nivel_1} />
@@ -1107,6 +1171,7 @@ export default function Dashboard() {
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <BarChart3 className="w-3.5 h-3.5 text-yellow-600" /> Taxa de Não-Resposta (%)
+                            {indicadoresLatest.taxa_nao_resposta._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.taxa_nao_resposta._ano}</span>}
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             <InfoItem label="Fundamental" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_fund ?? indicadoresLatest.taxa_nao_resposta.tnr_fund} />
@@ -1119,6 +1184,52 @@ export default function Dashboard() {
                     </CardContent>
                   </Card>
                 )}
+
+                {(() => {
+                  const allIndicators = [
+                    { key: 'ideb', name: 'IDEB', reason: 'O IDEB é calculado apenas em anos ímpares (2019, 2021, 2023) e para escolas com turmas de 5º e 9º ano do Fundamental ou 3ª série do Ensino Médio avaliadas pelo SAEB.' },
+                    { key: 'inse', name: 'INSE', reason: 'O INSE é calculado somente nos anos de aplicação do SAEB (2021, 2023) para escolas avaliadas.' },
+                    { key: 'saeb', name: 'SAEB', reason: 'O SAEB avalia escolas com turmas de 5º e 9º ano do Fundamental ou 3ª série do Ensino Médio, apenas em anos de aplicação (2019, 2021, 2023).' },
+                    { key: 'icg', name: 'ICG', reason: 'O ICG pode não estar disponível para escolas com poucos dados ou sem turmas regulares nos níveis avaliados.' },
+                    { key: 'tdi', name: 'TDI', reason: 'A Distorção Idade-Série requer matrícula nos níveis de Ensino Fundamental ou Médio regular.' },
+                    { key: 'ird', name: 'IRD', reason: 'A Regularidade do Docente requer que a escola tenha docentes vinculados nos censos dos últimos anos.' },
+                    { key: 'taxas_rendimento', name: 'Taxas de Rendimento', reason: 'As taxas de rendimento requerem informações de aprovação, reprovação e abandono reportadas no Censo.' },
+                    { key: 'atu', name: 'ATU', reason: 'O número médio de Alunos por Turma requer que a escola tenha turmas regulares nos níveis avaliados.' },
+                    { key: 'had', name: 'HAD', reason: 'As Horas-Aula Diárias requerem informações de carga horária reportadas no Censo Escolar.' },
+                    { key: 'dsu', name: 'DSU', reason: 'O indicador de Docentes com Curso Superior requer docentes vinculados à escola no Censo.' },
+                    { key: 'afd', name: 'AFD', reason: 'A Adequação da Formação Docente requer docentes vinculados e dados de formação no Censo.' },
+                    { key: 'ied', name: 'IED', reason: 'O Indicador de Esforço Docente requer que a escola tenha docentes vinculados em turmas regulares.' },
+                    { key: 'taxa_nao_resposta', name: 'Taxa de Não-Resposta', reason: 'A Taxa de Não-Resposta é calculada para escolas com matrículas no Ensino Fundamental ou Médio regular.' },
+                  ];
+                  const missing = allIndicators.filter(ind => !indicadoresLatest[ind.key]);
+                  if (missing.length === 0) return null;
+                  return (
+                    <Card className="card-clay border-l-4 border-l-amber-400">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Info className="w-5 h-5 text-amber-500" />
+                          Indicadores não disponíveis para esta escola
+                        </CardTitle>
+                        <p className="text-xs text-muted-foreground">
+                          Nem todas as escolas possuem todos os indicadores. Veja abaixo os motivos possíveis:
+                        </p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {missing.map(ind => (
+                            <div key={ind.key} className="flex items-start gap-2 p-2 rounded-lg bg-amber-50/50 border border-amber-100">
+                              <span className="text-amber-500 mt-0.5 shrink-0">--</span>
+                              <div>
+                                <p className="text-xs font-semibold text-foreground">{ind.name}</p>
+                                <p className="text-[11px] text-muted-foreground leading-snug">{ind.reason}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
 
                 <IndicatorSection
                   title="Matrículas por Etapa"

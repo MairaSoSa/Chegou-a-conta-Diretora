@@ -188,6 +188,54 @@ const INDICATORS: IndicatorDef[] = [
       return Object.keys(data).length > 0 ? data : null;
     },
   },
+  {
+    tipo: "ied",
+    zipUrl: (ano) => `${INEP_BASE}/${ano}/IED_${ano}_ESCOLAS.zip`,
+    xlsxPattern: /IED.*ESCOLAS.*\.xlsx$/i,
+    extractData: (headers, values) => {
+      const get = (col: string) => {
+        const idx = headers.indexOf(col);
+        if (idx < 0) return undefined;
+        const v = values[idx];
+        return v === "--" || v === "" || v === null || v === undefined ? null : Number(v);
+      };
+      const data: Record<string, any> = {};
+      for (let level = 1; level <= 6; level++) {
+        const funVal = get(`FUN_CAT_${level}`);
+        if (funVal !== undefined) data[`nivel_${level}`] = funVal;
+        const funAiVal = get(`FUN_AI_CAT_${level}`);
+        if (funAiVal !== undefined) data[`fund_ai_nivel_${level}`] = funAiVal;
+        const funAfVal = get(`FUN_AF_CAT_${level}`);
+        if (funAfVal !== undefined) data[`fund_af_nivel_${level}`] = funAfVal;
+        const medVal = get(`MED_CAT_${level}`);
+        if (medVal !== undefined) data[`med_nivel_${level}`] = medVal;
+      }
+      return Object.keys(data).length > 0 ? data : null;
+    },
+  },
+  {
+    tipo: "taxa_nao_resposta",
+    zipUrl: (ano) => `${INEP_BASE}/${ano}/tnr_escolas_${ano}.zip`,
+    xlsxPattern: /tnr.*escolas.*\.xlsx$/i,
+    extractData: (headers, values) => {
+      const get = (...cols: string[]) => {
+        for (const col of cols) {
+          const idx = headers.indexOf(col);
+          if (idx >= 0) {
+            const v = values[idx];
+            return v === "--" || v === "" || v === null || v === undefined ? null : Number(v);
+          }
+        }
+        return undefined;
+      };
+      return {
+        taxa_nao_resposta_fund: get("4_CAT_FUN", "TNR_FUN", "tnr_FUN"),
+        taxa_nao_resposta_fund_ai: get("4_CAT_FUN_AI", "TNR_FUN_AI", "tnr_F14"),
+        taxa_nao_resposta_fund_af: get("4_CAT_FUN_AF", "TNR_FUN_AF", "tnr_F58"),
+        taxa_nao_resposta_med: get("4_CAT_MED", "TNR_MED", "tnr_MED"),
+      };
+    },
+  },
 ];
 
 const TMP_DIR = "/tmp/inep_indicators";
@@ -749,6 +797,89 @@ export async function importInse(anos?: number[]) {
 
       try { fs.unlinkSync(xlsxPath); } catch {}
     }
+  } finally {
+    indicatorImportRunning = false;
+  }
+
+  return { success: true, results, errors };
+}
+
+export async function generateSaebFromIdeb() {
+  if (indicatorImportRunning) return { error: "Importação já em andamento" };
+  indicatorImportRunning = true;
+
+  const results: Record<string, any> = {};
+  const errors: string[] = [];
+
+  try {
+    const idebRecords = db.select().from(indicadoresEducacionais)
+      .where(eq(indicadoresEducacionais.tipo, "ideb"))
+      .all();
+
+    console.log(`[INEP] Generating SAEB from ${idebRecords.length} IDEB records...`);
+
+    const saebByKey: Record<string, { inep: string; ano: number; data: Record<string, any> }> = {};
+
+    for (const rec of idebRecords) {
+      const dados = rec.dados ? JSON.parse(rec.dados) : {};
+      const key = `${rec.inep}_${rec.ano}`;
+
+      if (!saebByKey[key]) {
+        saebByKey[key] = { inep: rec.inep, ano: rec.ano, data: { co_entidade: parseInt(rec.inep) } };
+      }
+
+      const saebData = saebByKey[key].data;
+      if (dados.nota_mt_ai != null) saebData.nota_mt_ai = dados.nota_mt_ai;
+      if (dados.nota_lp_ai != null) saebData.nota_lp_ai = dados.nota_lp_ai;
+      if (dados.nota_mt_af != null) saebData.nota_mt_af = dados.nota_mt_af;
+      if (dados.nota_lp_af != null) saebData.nota_lp_af = dados.nota_lp_af;
+      if (dados.nota_mt_em != null) saebData.nota_mt_em = dados.nota_mt_em;
+      if (dados.nota_lp_em != null) saebData.nota_lp_em = dados.nota_lp_em;
+    }
+
+    const entries = Object.values(saebByKey).filter(e => {
+      const d = e.data;
+      return d.nota_mt_ai != null || d.nota_lp_ai != null || d.nota_mt_af != null || d.nota_lp_af != null || d.nota_mt_em != null || d.nota_lp_em != null;
+    });
+
+    const anoSet = new Set(entries.map(e => e.ano));
+    for (const ano of anoSet) {
+      db.run(sql`DELETE FROM indicadores_educacionais WHERE tipo = 'saeb' AND ano = ${ano}`);
+    }
+
+    let imported = 0;
+    let batchValues: any[] = [];
+
+    for (const entry of entries) {
+      batchValues.push({
+        inep: entry.inep,
+        ano: entry.ano,
+        tipo: "saeb",
+        dados: JSON.stringify(entry.data),
+        updatedAt: Date.now(),
+      });
+
+      if (batchValues.length >= 1000) {
+        db.transaction((tx) => {
+          for (const rec of batchValues) tx.insert(indicadoresEducacionais).values(rec).run();
+        });
+        imported += batchValues.length;
+        batchValues = [];
+      }
+    }
+
+    if (batchValues.length > 0) {
+      db.transaction((tx) => {
+        for (const rec of batchValues) tx.insert(indicadoresEducacionais).values(rec).run();
+      });
+      imported += batchValues.length;
+    }
+
+    console.log(`[INEP] SAEB generation completed: ${imported} records from IDEB data`);
+    for (const ano of anoSet) {
+      updateStatus("saeb", ano, "completo", imported, imported);
+    }
+    results.saeb = { imported, anos: [...anoSet] };
   } finally {
     indicatorImportRunning = false;
   }

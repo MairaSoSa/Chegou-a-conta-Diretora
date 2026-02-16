@@ -18,7 +18,7 @@ import {
   listCensoEscolar, getCensoEscolarDetail, getCensoEstatisticas,
   listIndicador, getIndicadorDetail, getEscolaCompleta, getApiInfo,
 } from "./importador";
-import { importAllIndicators, getIndicatorImportRunning, getAvailableIndicators, importIdeb, importInse } from "./import-inep-indicators";
+import { importAllIndicators, getIndicatorImportRunning, getAvailableIndicators, importIdeb, importInse, generateSaebFromIdeb } from "./import-inep-indicators";
 import { 
   localizarPrestacoesPorCnpj,
   detalharPrestacao,
@@ -699,8 +699,9 @@ export async function registerRoutes(
       "ideb": "ideb", "icg": "icg", "inse": "inse",
       "tdi": "tdi", "ird": "ird",
       "taxa-rendimento": "taxas_rendimento",
-  
       "atu": "atu", "had": "had", "dsu": "dsu", "afd": "afd",
+      "ied": "ied", "taxa-nao-resposta": "taxa_nao_resposta",
+      "saeb": "saeb",
     };
     const dbTipo = tipoMap[tipo as string];
     if (!dbTipo) return res.status(404).json({ erro: "Tipo de indicador não encontrado" });
@@ -716,6 +717,11 @@ export async function registerRoutes(
       if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
       importInse([ano]).then(r => console.log("[INEP] INSE import done:", r.errors?.length || 0, "errors"));
       return res.json({ mensagem: `Importação de INSE ${ano} iniciada` });
+    }
+    if (dbTipo === "saeb") {
+      if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
+      generateSaebFromIdeb().then(r => console.log("[INEP] SAEB generation done:", JSON.stringify(r)));
+      return res.json({ mensagem: "Geração de SAEB a partir de IDEB iniciada" });
     }
 
     if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
