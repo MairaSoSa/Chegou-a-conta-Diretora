@@ -1124,6 +1124,73 @@ export async function registerRoutes(
     }
   });
 
+  // === DOE: State gazette search via Querido Diário (search all, filter by state) ===
+  app.get("/api/diarios-estaduais/busca", async (req, res) => {
+    try {
+      const q = String(req.query.q || "").trim();
+      const stateCode = String(req.query.state || "").trim().toUpperCase();
+      if (!q) {
+        return res.status(400).json({ ok: false, message: "Termo de busca obrigatório" });
+      }
+      if (!stateCode || stateCode.length !== 2) {
+        return res.status(400).json({ ok: false, message: "Código do estado (UF) obrigatório" });
+      }
+
+      const size = Math.min(parseInt(String(req.query.size || "10"), 10), 30);
+      const fetchSize = size * 8;
+
+      const params = new URLSearchParams();
+      params.set("querystring", q);
+      params.set("size", String(fetchSize));
+      params.set("offset", "0");
+      params.set("excerpt_size", "200");
+      params.set("number_of_excerpts", "1");
+      params.set("pre_tags", "<mark>");
+      params.set("post_tags", "</mark>");
+      params.set("sort_by", "relevance");
+
+      const apiUrl = `https://api.queridodiario.ok.org.br/gazettes?${params.toString()}`;
+      const response = await fetch(apiUrl, {
+        headers: { "Accept": "application/json" },
+        signal: AbortSignal.timeout(20000),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Querido Diário API returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      const sanitizeExcerpt = (html: string): string => {
+        return html.replace(/<(?!\/?mark\b)[^>]*>/gi, "").replace(/on\w+\s*=/gi, "");
+      };
+
+      const allGazettes = (data.gazettes || []);
+      const filtered = allGazettes
+        .filter((g: any) => g.state_code === stateCode)
+        .slice(0, size)
+        .map((g: any) => ({
+          territory_id: g.territory_id,
+          territory_name: g.territory_name,
+          state_code: g.state_code,
+          date: g.date,
+          url: g.url,
+          txt_url: g.txt_url,
+          edition: g.edition,
+          is_extra_edition: g.is_extra_edition,
+          excerpts: (g.excerpts || []).map((e: string) => sanitizeExcerpt(e)),
+        }));
+
+      res.json({
+        ok: true,
+        total: filtered.length,
+        gazettes: filtered,
+        allStates: [...new Set(allGazettes.map((g: any) => g.state_code))].sort(),
+      });
+    } catch (e: any) {
+      res.status(500).json({ ok: false, total: 0, gazettes: [], message: e.message });
+    }
+  });
+
   // === CALENDAR: NEWS & DEADLINES ===
   app.get("/api/noticias-educacao", async (req, res) => {
     try {

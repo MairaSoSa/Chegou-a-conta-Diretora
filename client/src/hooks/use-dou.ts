@@ -120,6 +120,36 @@ export function useMunicipalGazetteSearch(params: MunicipalSearchParams, enabled
   });
 }
 
+export interface StateGazetteSearchParams {
+  q: string;
+  state: string;
+  size?: number;
+  offset?: number;
+}
+
+export function useStateGazetteSearch(params: StateGazetteSearchParams, enabled = true) {
+  const queryString = new URLSearchParams();
+  if (params.q) queryString.set("q", params.q);
+  if (params.state) queryString.set("state", params.state);
+  if (params.size) queryString.set("size", String(params.size));
+  if (params.offset) queryString.set("offset", String(params.offset));
+
+  return useQuery<MunicipalGazetteResponse>({
+    queryKey: ["/api/diarios-estaduais/busca", params],
+    queryFn: async () => {
+      const res = await fetch(`/api/diarios-estaduais/busca?${queryString.toString()}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Falha ao buscar diários estaduais");
+      }
+      return res.json();
+    },
+    enabled: enabled && !!(params.q?.trim()) && !!(params.state?.trim()),
+    staleTime: 1000 * 60 * 10,
+    retry: 1,
+  });
+}
+
 export interface CityResult {
   territory_id: string;
   territory_name: string;
