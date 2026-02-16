@@ -272,7 +272,7 @@ export async function registerRoutes(
     "tdi": "tdi",
     "ird": "ird",
     "taxa-rendimento": "taxas_rendimento",
-    "taxa-nao-resposta": "taxa_nao_resposta",
+
     "saeb": "saeb",
     "atu": "atu",
     "had": "had",
@@ -697,7 +697,7 @@ export async function registerRoutes(
       "ideb": "ideb", "icg": "icg", "inse": "inse",
       "tdi": "tdi", "ird": "ird",
       "taxa-rendimento": "taxas_rendimento",
-      "taxa-nao-resposta": "taxa_nao_resposta",
+  
       "atu": "atu", "had": "had", "dsu": "dsu", "afd": "afd",
     };
     const dbTipo = tipoMap[tipo as string];

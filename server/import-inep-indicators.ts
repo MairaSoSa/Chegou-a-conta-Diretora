@@ -188,29 +188,6 @@ const INDICATORS: IndicatorDef[] = [
       return Object.keys(data).length > 0 ? data : null;
     },
   },
-  {
-    tipo: "taxa_nao_resposta",
-    zipUrl: (ano) => `${INEP_BASE}/${ano}/tx_rend_escolas_${ano}.zip`,
-    xlsxPattern: /tx_rend.*escolas.*\.xlsx$/i,
-    extractData: (headers, values) => {
-      const get = (...cols: string[]) => {
-        for (const col of cols) {
-          const idx = headers.indexOf(col);
-          if (idx >= 0) {
-            const v = values[idx];
-            return v === "--" || v === "" || v === null || v === undefined ? null : Number(v);
-          }
-        }
-        return undefined;
-      };
-      return {
-        fund_total: get("4_CAT_FUN", "tnr_FUN"),
-        fund_ai: get("4_CAT_FUN_AI", "tnr_F14"),
-        fund_af: get("4_CAT_FUN_AF", "tnr_F58"),
-        medio_total: get("4_CAT_MED", "tnr_MED"),
-      };
-    },
-  },
 ];
 
 const TMP_DIR = "/tmp/inep_indicators";
@@ -520,7 +497,7 @@ async function processIdebFile(xlsxPath: string, fileDef: IdebFileDef, anosToPro
     const row = allData[i];
     if (Array.isArray(row)) {
       const rowStrs = row.map((h: any) => String(h || "").trim());
-      if (rowStrs.some(h => h.includes("CO_ENTIDADE") || h.includes("CO_ESCOLA") || h === "SG_UF")) {
+      if (rowStrs.some(h => h.includes("CO_ENTIDADE") || h.includes("CO_ESCOLA") || h.includes("ID_ESCOLA") || h === "SG_UF")) {
         headerRowIdx = i;
         headers = rowStrs;
         break;
@@ -533,7 +510,7 @@ async function processIdebFile(xlsxPath: string, fileDef: IdebFileDef, anosToPro
     return;
   }
 
-  const coEntidadeIdx = headers.findIndex(h => h === "CO_ENTIDADE" || h === "CO_ESCOLA");
+  const coEntidadeIdx = headers.findIndex(h => h === "CO_ENTIDADE" || h === "CO_ESCOLA" || h === "ID_ESCOLA");
   if (coEntidadeIdx < 0) {
     errors.push(`ideb_${fileDef.etapa}: CO_ENTIDADE/CO_ESCOLA column not found`);
     return;
@@ -631,6 +608,21 @@ async function processIdebFile(xlsxPath: string, fileDef: IdebFileDef, anosToPro
 
 const INSE_BASE = "https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais";
 
+async function downloadXlsxDirect(url: string, destPath: string): Promise<boolean> {
+  try {
+    console.log(`[INEP] Downloading ${url}...`);
+    const res = await fetch(url, { redirect: "follow" });
+    if (!res.ok) return false;
+    const buffer = Buffer.from(await res.arrayBuffer());
+    if (buffer.length < 1000) return false;
+    fs.writeFileSync(destPath, buffer);
+    return true;
+  } catch (e: any) {
+    console.log(`[INEP] Download error: ${e.message}`);
+    return false;
+  }
+}
+
 export async function importInse(anos?: number[]) {
   if (indicatorImportRunning) return { error: "Importação já em andamento" };
   indicatorImportRunning = true;
@@ -643,28 +635,21 @@ export async function importInse(anos?: number[]) {
   try {
     for (const ano of anosToImport) {
       const urls = [
-        `${INSE_BASE}/${ano}/INSE_${ano}_ESCOLAS.zip`,
-        `${INSE_BASE}/${ano}/INSE_${ano}.zip`,
-        `https://download.inep.gov.br/educacao_basica/saeb/${ano}/INSE_${ano}_ESCOLAS.zip`,
+        `${INSE_BASE}/${ano}/nivel_socioeconomico/INSE_${ano}_escolas.xlsx`,
+        `${INSE_BASE}/${ano}/nivel_socioeconomico/INSE_${ano}_ESCOLAS.xlsx`,
+        `${INSE_BASE}/${ano}/INSE_${ano}_ESCOLAS.xlsx`,
       ];
 
-      let dir: string | null = null;
+      const xlsxPath = path.join(TMP_DIR, `inse_${ano}.xlsx`);
+      let downloaded = false;
       for (const url of urls) {
-        dir = await downloadAndExtract(url, `inse`, ano);
-        if (dir) break;
+        downloaded = await downloadXlsxDirect(url, xlsxPath);
+        if (downloaded) break;
       }
 
-      if (!dir) {
+      if (!downloaded) {
         errors.push(`inse ${ano}: Download failed (all URLs tried)`);
         updateStatus("inse", ano, "erro", 0, 0, "Falha no download");
-        continue;
-      }
-
-      const xlsxPath = findXlsx(dir, /INSE.*\.xlsx$/i) || findXlsx(dir, /\.xlsx$/i);
-      if (!xlsxPath) {
-        errors.push(`inse ${ano}: XLSX not found`);
-        updateStatus("inse", ano, "erro", 0, 0, "XLSX não encontrado");
-        try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
         continue;
       }
 
@@ -682,7 +667,7 @@ export async function importInse(anos?: number[]) {
         const row = allData[i];
         if (Array.isArray(row)) {
           const rowStrs = row.map((h: any) => String(h || "").trim());
-          if (rowStrs.some(h => h.includes("CO_ENTIDADE") || h.includes("CO_ESCOLA"))) {
+          if (rowStrs.some(h => h.includes("CO_ENTIDADE") || h.includes("CO_ESCOLA") || h.includes("ID_ESCOLA"))) {
             headerRowIdx = i;
             headers = rowStrs;
             break;
@@ -692,11 +677,11 @@ export async function importInse(anos?: number[]) {
 
       if (headerRowIdx < 0) {
         errors.push(`inse ${ano}: Header row not found`);
-        try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+        try { fs.unlinkSync(xlsxPath); } catch {}
         continue;
       }
 
-      const coIdx = headers.findIndex(h => h === "CO_ENTIDADE" || h === "CO_ESCOLA");
+      const coIdx = headers.findIndex(h => h === "CO_ENTIDADE" || h === "CO_ESCOLA" || h === "ID_ESCOLA");
       const get = (row: any[], col: string) => {
         const idx = headers.indexOf(col);
         if (idx < 0) return undefined;
@@ -762,7 +747,7 @@ export async function importInse(anos?: number[]) {
       updateStatus("inse", ano, "completo", imported, imported);
       results[`inse_${ano}`] = { imported };
 
-      try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+      try { fs.unlinkSync(xlsxPath); } catch {}
     }
   } finally {
     indicatorImportRunning = false;
