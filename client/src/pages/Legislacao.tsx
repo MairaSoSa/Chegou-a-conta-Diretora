@@ -170,6 +170,81 @@ const categories: { id: CategoryId; label: string; icon: string }[] = [
   },
 ];
 
+function gerarExplicacaoDiretora(titulo: string, ementa: string, tipo: string): string {
+  const texto = `${titulo || ""} ${ementa || ""}`.toLowerCase();
+
+  if (/pdde|dinheiro direto|programa dinheiro/.test(texto))
+    return "Trata do dinheiro que chega direto na conta da escola. A diretora precisa acompanhar os repasses, decidir os gastos com o conselho escolar e prestar contas corretamente.";
+  if (/pnae|alimentação escolar|merenda|alimenta/.test(texto) && !/pnate|transporte/.test(texto))
+    return "Relacionada à merenda escolar. A diretora deve garantir que os alunos recebam alimentação adequada e que as regras de compra (como os 30% da agricultura familiar) sejam cumpridas.";
+  if (/pnate|transporte escolar|transporte do estudante/.test(texto))
+    return "Sobre o transporte dos alunos até a escola. Se a escola recebe alunos da zona rural, a diretora pode ajudar a identificar quem precisa desse apoio.";
+  if (/pnld|livro didático|material didático|livros/.test(texto))
+    return "Trata dos livros e materiais que o governo envia para a escola. A diretora e os professores participam da escolha e precisam cuidar da conservação do acervo.";
+  if (/fundeb|fundo de manutenção|financiamento da educação básica/.test(texto))
+    return "Sobre o principal fundo que financia a educação. O dinheiro é distribuído conforme o número de alunos — quanto mais alunos matriculados, mais recursos a escola pode receber.";
+  if (/prestação de contas|prestar contas|accountability|comprovação/.test(texto))
+    return "Define como a escola deve comprovar o uso do dinheiro público. A diretora precisa guardar notas fiscais, recibos e documentos para mostrar que tudo foi gasto corretamente.";
+  if (/conselho escolar|colegiado|gestão democrática|participação da comunidade/.test(texto))
+    return "Sobre a participação da comunidade nas decisões da escola. A diretora trabalha junto com o conselho escolar (pais, professores, alunos) para decidir como usar os recursos.";
+  if (/formação continuada|capacitação|formação de professores|formação docente/.test(texto))
+    return "Trata da formação e capacitação dos profissionais da educação. A diretora pode usar essa norma para justificar a participação da equipe em cursos e treinamentos.";
+  if (/censo escolar|censo da educação|levantamento|coleta de dados/.test(texto))
+    return "Relacionada ao Censo Escolar, que conta quantos alunos, professores e escolas existem no país. A diretora precisa preencher os dados da escola corretamente — eles definem quanto dinheiro a escola vai receber.";
+  if (/educação especial|inclusão|acessibilidade|deficiência|atendimento educacional especializado|aee/.test(texto))
+    return "Sobre inclusão de alunos com deficiência ou necessidades especiais. A diretora deve garantir que a escola tenha condições de acolher todos os alunos, com adaptações necessárias.";
+  if (/educação integral|tempo integral|escola integral|jornada ampliada/.test(texto))
+    return "Trata da escola em tempo integral. Se a escola funciona nesse modelo, a diretora precisa organizar as atividades do dia inteiro — aulas, refeições, esporte, cultura.";
+  if (/educação infantil|creche|pré-escola/.test(texto))
+    return "Norma sobre educação infantil (creche e pré-escola). Define regras de funcionamento para crianças de 0 a 5 anos — importante para diretoras que atendem essa faixa etária.";
+  if (/ensino fundamental|anos iniciais|anos finais/.test(texto))
+    return "Sobre o ensino fundamental (1º ao 9º ano). Define como essa etapa deve funcionar — currículo, carga horária, avaliação dos alunos.";
+  if (/ensino médio|reforma do ensino médio|novo ensino médio/.test(texto))
+    return "Trata do ensino médio e suas regras. Importante para diretoras de escolas que oferecem essa etapa, especialmente com as mudanças do Novo Ensino Médio.";
+  if (/bncc|base nacional|currículo|curricular/.test(texto))
+    return "Relacionada ao currículo — o que os alunos devem aprender em cada ano. A diretora usa isso para orientar o projeto pedagógico da escola.";
+  if (/enem|avaliação|saeb|prova brasil|ideb|provinha/.test(texto))
+    return "Sobre avaliações e indicadores educacionais. Os resultados ajudam a diretora a identificar onde a escola precisa melhorar e planejar ações pedagógicas.";
+  if (/infraestrutura|obra|construção|reforma|ampliação|manutenção/.test(texto))
+    return "Trata de obras, reformas ou manutenção das escolas. A diretora pode usar essa norma para solicitar melhorias no prédio e nas instalações.";
+  if (/tecnologia|digital|internet|conectividade|computador|laboratório/.test(texto))
+    return "Sobre tecnologia e conectividade nas escolas. A diretora pode buscar recursos para melhorar o acesso à internet e aos equipamentos digitais.";
+  if (/professor|magistério|docente|carreira|remuneração|piso salarial/.test(texto))
+    return "Relacionada aos professores — carreira, salário ou condições de trabalho. Afeta diretamente a equipe que a diretora coordena na escola.";
+  if (/evasão|abandono|frequência|infrequência|busca ativa/.test(texto))
+    return "Sobre manter os alunos na escola. A diretora tem papel fundamental em identificar alunos que faltam muito e agir para que não abandonem os estudos.";
+  if (/educação do campo|rural|quilombola|indígena|ribeirinha/.test(texto))
+    return "Norma sobre educação em contextos específicos (campo, quilombola, indígena). Importante para diretoras de escolas nessas comunidades.";
+  if (/eja|educação de jovens|adultos|alfabetização/.test(texto))
+    return "Trata da educação de jovens e adultos que não estudaram na idade certa. Relevante para escolas que oferecem turmas de EJA.";
+  if (/licitação|compra|aquisição|contratação|pregão/.test(texto))
+    return "Sobre regras de compras e contratações com dinheiro público. A diretora precisa seguir essas regras ao adquirir materiais ou contratar serviços para a escola.";
+  if (/convênio|termo de compromisso|acordo|pacto|adesão/.test(texto))
+    return "Trata de acordos entre órgãos públicos. Pode envolver repasses de recursos ou compromissos que afetam o funcionamento da escola.";
+  if (/bolsa|auxílio|benefício|transferência de renda|bolsa família/.test(texto))
+    return "Sobre benefícios e programas sociais ligados à educação. A escola pode precisar confirmar a frequência dos alunos beneficiários.";
+  if (/resolução|regulament/.test(texto) && /fnde/.test(texto))
+    return "Norma do FNDE que regulamenta programas educacionais. Define regras que a diretora deve seguir para receber e usar os recursos federais na escola.";
+
+  const tipoLower = (tipo || "").toLowerCase();
+  if (tipoLower.includes("portaria"))
+    return "Portaria do MEC que pode afetar o funcionamento da escola ou a gestão dos programas educacionais. Vale a diretora conferir se impacta sua escola.";
+  if (tipoLower.includes("resolução"))
+    return "Resolução que define regras específicas para a educação. A diretora deve verificar se essa norma traz orientações aplicáveis à sua escola.";
+  if (tipoLower.includes("lei"))
+    return "Lei federal sobre educação. Estabelece direitos, deveres ou regras que todas as escolas públicas precisam cumprir.";
+  if (tipoLower.includes("decreto"))
+    return "Decreto que regulamenta algum aspecto da educação. Pode trazer novas regras ou ajustes em programas que a escola participa.";
+  if (tipoLower.includes("edital"))
+    return "Edital com oportunidade para as escolas — pode ser seleção de programas, chamada para projetos ou adesão a iniciativas do MEC.";
+  if (tipoLower.includes("parecer"))
+    return "Parecer com orientação oficial sobre um tema educacional. Pode ajudar a diretora a entender como agir em situações específicas.";
+  if (tipoLower.includes("nota técnica"))
+    return "Nota técnica com esclarecimentos sobre normas ou programas educacionais. Útil para a diretora tirar dúvidas sobre procedimentos.";
+
+  return "Norma do MEC que pode trazer orientações relevantes para a gestão escolar. A diretora deve verificar se há impacto direto na sua escola.";
+}
+
 function NormasContent() {
   const [page, setPage] = useState(0);
   const [selectedTipo, setSelectedTipo] = useState("");
@@ -550,17 +625,13 @@ function NormasContent() {
                           </div>
                         </td>
                         <td style={tdStyle}>
-                          {ementa ? (
-                            <div style={{
-                              fontSize: "12px", color: "#4a5568", lineHeight: 1.5, maxWidth: "300px",
-                              background: "#f8fafc", padding: "6px 10px", borderRadius: "6px",
-                              borderLeft: "3px solid #94a3b8",
-                            }}>
-                              {ementa.length > 120 ? ementa.slice(0, 120) + "..." : ementa}
-                            </div>
-                          ) : (
-                            <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
-                          )}
+                          <div style={{
+                            fontSize: "12px", color: "#2d3748", lineHeight: 1.5, maxWidth: "300px",
+                            background: "#fffbeb", padding: "8px 10px", borderRadius: "6px",
+                            borderLeft: "3px solid #f59e0b",
+                          }}>
+                            {gerarExplicacaoDiretora(title, ementa, tipo)}
+                          </div>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "center" }}>
                           {link && (
@@ -655,45 +726,6 @@ function DiarioOficialContent() {
   const munCurrentPage = Math.floor(munOffset / munPageSize);
   const isLoading = douQuery.isLoading || munQuery.isLoading;
   const hasResults = douResults.length > 0 || munGazettes.length > 0;
-
-  type UnifiedResult = {
-    type: "federal" | "municipal";
-    title: string;
-    subtitle: string;
-    date: string;
-    source: string;
-    badge: string;
-    link: string;
-    extraLink?: string;
-    excerpt?: string;
-  };
-
-  const unifiedResults: UnifiedResult[] = [];
-
-  douResults.forEach(item => {
-    unifiedResults.push({
-      type: "federal",
-      title: item.title,
-      subtitle: item.abstract || "",
-      date: item.date || "",
-      source: item.hierarchy || "Governo Federal",
-      badge: "União",
-      link: item.href,
-    });
-  });
-
-  munGazettes.forEach(g => {
-    unifiedResults.push({
-      type: "municipal",
-      title: g.territory_name,
-      subtitle: g.excerpts && g.excerpts.length > 0 ? g.excerpts[0] : "",
-      date: g.date ? new Date(g.date + "T12:00:00").toLocaleDateString("pt-BR") : "",
-      source: `${g.territory_name} - ${g.state_code}`,
-      badge: "Município",
-      link: g.url,
-      extraLink: g.txt_url || undefined,
-    });
-  });
 
   const sourceBadgeStyle = (type: string): React.CSSProperties => {
     if (type === "federal") return { display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "#dbeafe", color: "#1e40af", border: "1px solid #93c5fd" };
@@ -835,136 +867,177 @@ function DiarioOficialContent() {
       )}
 
       {hasResults && (
-        <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec", marginTop: "16px" }}>
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-            <h3 style={{ fontSize: "15px", fontWeight: 600 }}>Resultados para "{submittedTerm}"</h3>
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              {douResults.length > 0 && (
-                <span style={{ fontSize: "11px", color: "#1e40af", background: "#dbeafe", padding: "3px 10px", borderRadius: "12px", fontWeight: 600 }}>
-                  {douResults.length} da União
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "16px" }}>
+          {douResults.length > 0 && (
+            <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
+              <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#1e40af", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Landmark style={{ width: "16px", height: "16px" }} />
+                  DOU — Diário Oficial da União
+                </h3>
+                <span style={{ ...sourceBadgeStyle("federal") }}>
+                  {douResults.length} resultado(s)
                 </span>
-              )}
-              {munTotal > 0 && (
-                <span style={{ fontSize: "11px", color: "#166534", background: "#dcfce7", padding: "3px 10px", borderRadius: "12px", fontWeight: 600 }}>
-                  {munTotal.toLocaleString("pt-BR")} municipais
-                </span>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>Publicação</th>
+                      <th style={thStyle}>Data</th>
+                      <th style={thStyle}>Órgão</th>
+                      <th style={{ ...thStyle, textAlign: "center" }}>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {douResults.map((item, index) => (
+                      <tr key={`dou-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#f0f4ff" }}>
+                        <td style={tdStyle}>
+                          <div style={{ maxWidth: "450px" }}>
+                            <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3, color: "#1e293b" }}>{item.title}</div>
+                            {item.abstract && (
+                              <div style={{ fontSize: "11px", color: "#64748b", marginTop: "4px", lineHeight: 1.4 }}>
+                                {item.abstract.length > 180 ? item.abstract.slice(0, 180) + "..." : item.abstract}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td style={tdStyle}>
+                          <span style={{ fontSize: "12px", color: "#64748b" }}>{item.date || "—"}</span>
+                        </td>
+                        <td style={tdStyle}>
+                          <span style={{ fontSize: "12px", color: "#64748b" }}>{item.hierarchy || "Governo Federal"}</span>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center" }}>
+                          <a href={item.href} target="_blank" rel="noopener noreferrer" style={{ padding: "4px 10px", border: "none", borderRadius: "4px", background: "#1e40af", color: "white", fontSize: "11px", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            <ExternalLink style={{ width: "11px", height: "11px" }} />
+                            Abrir
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {douSearchUrl && (
+                <div style={{ padding: "10px 20px", borderTop: "1px solid #e2e5ec", textAlign: "center" }}>
+                  <a href={douSearchUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#1e40af", textDecoration: "none", fontWeight: 600 }}>
+                    Ver mais resultados no site oficial do DOU →
+                  </a>
+                </div>
               )}
             </div>
+          )}
+
+          <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#6b21a8", display: "flex", alignItems: "center", gap: "8px" }}>
+                <Globe style={{ width: "16px", height: "16px" }} />
+                DOE — Diários Oficiais dos Estados
+              </h3>
+              <span style={{ ...sourceBadgeStyle("estado") }}>
+                {doeLinks.length} portais
+              </span>
+            </div>
+            <div style={{ padding: "16px 20px" }}>
+              <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "12px" }}>
+                Os diários estaduais possuem portais próprios. Clique no estado desejado para buscar diretamente:
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {doeLinks.map(doe => (
+                  <a key={doe.sigla} href={doe.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "6px 12px", borderRadius: "6px", border: "1px solid #e2e5ec", background: "#fafbfc", color: "#6b21a8", fontSize: "12px", fontWeight: 600, textDecoration: "none", transition: "all 0.15s" }}>
+                    <Globe style={{ width: "11px", height: "11px" }} />
+                    {doe.sigla}
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>Origem</th>
-                  <th style={thStyle}>Publicação</th>
-                  <th style={thStyle}>Data</th>
-                  <th style={thStyle}>Fonte</th>
-                  <th style={{ ...thStyle, textAlign: "center" }}>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {unifiedResults.map((r, index) => (
-                  <tr key={`${r.type}-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
-                    <td style={tdStyle}>
-                      <span style={sourceBadgeStyle(r.type)}>
-                        {r.type === "federal" && <Landmark style={{ width: "11px", height: "11px" }} />}
-                        {r.type === "municipal" && <MapPin style={{ width: "11px", height: "11px" }} />}
-                        {r.badge}
-                      </span>
-                    </td>
-                    <td style={tdStyle}>
-                      <div style={{ maxWidth: "400px" }}>
-                        <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3 }}>{r.title}</div>
-                        {r.subtitle && (
-                          r.type === "municipal" ? (
+
+          {munGazettes.length > 0 && (
+            <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
+              <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#166534", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <MapPin style={{ width: "16px", height: "16px" }} />
+                  Diários Municipais
+                </h3>
+                <span style={{ ...sourceBadgeStyle("municipal") }}>
+                  {munTotal.toLocaleString("pt-BR")} resultado(s)
+                </span>
+              </div>
+              <div style={{ maxHeight: "500px", overflowY: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
+                  <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                    <tr>
+                      <th style={thStyle}>Município</th>
+                      <th style={thStyle}>Trecho</th>
+                      <th style={thStyle}>Data</th>
+                      <th style={{ ...thStyle, textAlign: "center" }}>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {munGazettes.map((g, index) => (
+                      <tr key={`mun-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#f0fdf4" }}>
+                        <td style={tdStyle}>
+                          <div style={{ fontWeight: 600, fontSize: "13px", color: "#1e293b" }}>{g.territory_name}</div>
+                          <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "2px" }}>{g.state_code}</div>
+                        </td>
+                        <td style={tdStyle}>
+                          {g.excerpts && g.excerpts.length > 0 ? (
                             <div
-                              style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px", lineHeight: 1.4, maxWidth: "400px" }}
+                              style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.4, maxWidth: "400px" }}
                               dangerouslySetInnerHTML={{
-                                __html: r.subtitle.length > 150 ? r.subtitle.slice(0, 150) + "..." : r.subtitle
+                                __html: g.excerpts[0].length > 180 ? g.excerpts[0].slice(0, 180) + "..." : g.excerpts[0]
                               }}
                             />
                           ) : (
-                            <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px", lineHeight: 1.4, maxWidth: "400px" }}>
-                              {r.subtitle.length > 150 ? r.subtitle.slice(0, 150) + "..." : r.subtitle}
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </td>
-                    <td style={tdStyle}>
-                      <span style={{ fontSize: "12px", color: "#64748b" }}>{r.date || "—"}</span>
-                    </td>
-                    <td style={tdStyle}>
-                      <span style={{ fontSize: "12px", color: "#64748b" }}>{r.source}</span>
-                    </td>
-                    <td style={{ ...tdStyle, textAlign: "center" }}>
-                      <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
-                        <a
-                          href={r.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            padding: "4px 10px", border: "none", borderRadius: "4px",
-                            background: "#1a237e", color: "white", fontSize: "11px", fontWeight: 600,
-                            textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
-                          }}
-                        >
-                          <ExternalLink style={{ width: "11px", height: "11px" }} />
-                          {r.type === "municipal" ? "PDF" : "Abrir"}
-                        </a>
-                        {r.extraLink && (
-                          <a
-                            href={r.extraLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              padding: "4px 10px", border: "1px solid #e2e5ec", borderRadius: "4px",
-                              background: "white", color: "#64748b", fontSize: "11px", fontWeight: 600,
-                              textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
-                            }}
-                          >
-                            <FileText style={{ width: "11px", height: "11px" }} />
-                            TXT
-                          </a>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {munTotalPages > 1 && (
-            <div style={{
-              display: "flex", justifyContent: "center", alignItems: "center",
-              gap: "8px", padding: "14px", borderTop: "1px solid #e2e5ec",
-            }}>
-              <span style={{ fontSize: "11px", color: "#94a3b8", marginRight: "8px" }}>Resultados municipais:</span>
-              <button
-                onClick={() => setMunOffset(Math.max(0, munOffset - munPageSize))}
-                disabled={munOffset <= 0}
-                style={{ ...paginationBtnStyle, opacity: munOffset <= 0 ? 0.4 : 1, cursor: munOffset <= 0 ? "not-allowed" : "pointer" }}
-              >
-                Anterior
-              </button>
-              <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-                Página {munCurrentPage + 1} de {munTotalPages > 100 ? "100+" : munTotalPages}
-              </span>
-              <button
-                onClick={() => setMunOffset(munOffset + munPageSize)}
-                disabled={munCurrentPage >= munTotalPages - 1 || munCurrentPage >= 99}
-                style={{ ...paginationBtnStyle, opacity: munCurrentPage >= munTotalPages - 1 ? 0.4 : 1, cursor: munCurrentPage >= munTotalPages - 1 ? "not-allowed" : "pointer" }}
-              >
-                Próxima
-              </button>
+                            <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
+                          )}
+                        </td>
+                        <td style={tdStyle}>
+                          <span style={{ fontSize: "12px", color: "#64748b" }}>
+                            {g.date ? new Date(g.date + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
+                          </span>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center" }}>
+                          <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                            <a href={g.url} target="_blank" rel="noopener noreferrer" style={{ padding: "4px 10px", border: "none", borderRadius: "4px", background: "#166534", color: "white", fontSize: "11px", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                              <ExternalLink style={{ width: "11px", height: "11px" }} />
+                              PDF
+                            </a>
+                            {g.txt_url && (
+                              <a href={g.txt_url} target="_blank" rel="noopener noreferrer" style={{ padding: "4px 10px", border: "1px solid #e2e5ec", borderRadius: "4px", background: "white", color: "#64748b", fontSize: "11px", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                <FileText style={{ width: "11px", height: "11px" }} />
+                                TXT
+                              </a>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {munTotalPages > 1 && (
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", padding: "14px", borderTop: "1px solid #e2e5ec" }}>
+                  <button onClick={() => setMunOffset(Math.max(0, munOffset - munPageSize))} disabled={munOffset <= 0} style={{ ...paginationBtnStyle, opacity: munOffset <= 0 ? 0.4 : 1, cursor: munOffset <= 0 ? "not-allowed" : "pointer" }}>
+                    Anterior
+                  </button>
+                  <span style={{ fontSize: "12px", color: "#94a3b8" }}>
+                    Página {munCurrentPage + 1} de {munTotalPages > 100 ? "100+" : munTotalPages}
+                  </span>
+                  <button onClick={() => setMunOffset(munOffset + munPageSize)} disabled={munCurrentPage >= munTotalPages - 1 || munCurrentPage >= 99} style={{ ...paginationBtnStyle, opacity: munCurrentPage >= munTotalPages - 1 ? 0.4 : 1, cursor: munCurrentPage >= munTotalPages - 1 ? "not-allowed" : "pointer" }}>
+                    Próxima
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
 
       {!submittedTerm && (
-        <>
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "16px" }}>
           <div style={{ textAlign: "center", padding: "32px 48px", color: "#94a3b8" }}>
             <Newspaper className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.3 }} />
             <p style={{ fontSize: "14px" }}>Pesquise nos diários oficiais (federal e municipais)</p>
@@ -973,36 +1046,23 @@ function DiarioOficialContent() {
             </p>
           </div>
 
-          <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec", marginTop: "8px" }}>
+          <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
             <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 style={{ fontSize: "15px", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
-                <Globe style={{ width: "16px", height: "16px", color: "#6b21a8" }} />
-                Portais Estaduais (DOE)
+              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#6b21a8", display: "flex", alignItems: "center", gap: "8px" }}>
+                <Globe style={{ width: "16px", height: "16px" }} />
+                DOE — Portais Estaduais
               </h3>
-              <span style={{ fontSize: "12px", color: "#6b21a8", background: "#f3e8ff", padding: "3px 10px", borderRadius: "12px", fontWeight: 600 }}>
-                {doeLinks.length} estados
+              <span style={{ ...sourceBadgeStyle("estado") }}>
+                {doeLinks.length} portais
               </span>
             </div>
             <div style={{ padding: "16px 20px" }}>
               <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "12px" }}>
-                Os diários estaduais possuem portais próprios. Clique em um estado para acessar diretamente:
+                Os diários estaduais possuem portais próprios. Clique no estado desejado para buscar diretamente:
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {doeLinks.map(doe => (
-                  <a
-                    key={doe.sigla}
-                    href={doe.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: "inline-flex", alignItems: "center", gap: "4px",
-                      padding: "6px 12px", borderRadius: "6px",
-                      border: "1px solid #e2e5ec", background: "#fafbfc",
-                      color: "#3949ab", fontSize: "12px", fontWeight: 600,
-                      textDecoration: "none",
-                      transition: "all 0.15s",
-                    }}
-                  >
+                  <a key={doe.sigla} href={doe.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "6px 12px", borderRadius: "6px", border: "1px solid #e2e5ec", background: "#fafbfc", color: "#6b21a8", fontSize: "12px", fontWeight: 600, textDecoration: "none", transition: "all 0.15s" }}>
                     <Globe style={{ width: "11px", height: "11px" }} />
                     {doe.sigla}
                   </a>
@@ -1010,7 +1070,7 @@ function DiarioOficialContent() {
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </>
   );
