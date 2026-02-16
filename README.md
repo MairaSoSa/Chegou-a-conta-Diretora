@@ -16,6 +16,7 @@ Plataforma web para apoiar diretoras de escolas públicas brasileiras na gestão
 
 - **Node.js** 18+ (recomendado 20)
 - **npm** 8+
+- **~10GB de espaço em disco** (para os dados do Censo INEP)
 - **OpenAI API Key** (opcional, necessário apenas para o chat com IA)
 
 ## Instalação Rápida
@@ -32,11 +33,66 @@ chmod +x setup.sh
 # 3. Edite o .env com suas configurações
 #    (especialmente OPENAI_API_KEY se quiser usar o chat)
 
-# 4. Inicie o servidor de desenvolvimento
+# 4. Importe os dados do INEP (veja seção abaixo)
+npm run setup:data
+
+# 5. Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
 O app estará disponível em **http://localhost:5000**
+
+## Importação dos Dados INEP
+
+O painel de Dados Educacionais requer dados do Censo Escolar e indicadores do INEP. O banco de dados (6GB+) não está incluído no repositório por ser muito grande. Execute os comandos abaixo para baixar e importar tudo:
+
+### Importação Completa (recomendado)
+
+```bash
+# Baixa os CSVs do INEP + importa tudo (~1h, dependendo da internet)
+npm run setup:data
+```
+
+### Importação em Etapas
+
+Se preferir importar em etapas separadas:
+
+```bash
+# Passo 1: Baixar os microdados do Censo (2020-2024)
+# Cada arquivo tem ~200MB compactado
+npm run download:censo
+
+# Passo 2: Importar o Censo no banco SQLite
+# Importa ~215K escolas/ano, ~1.1M registros total
+npm run import:censo
+
+# Passo 3: Importar indicadores educacionais (ICG, TDI, IDEB, INSE, etc.)
+# Baixa automaticamente do INEP
+npm run import:indicadores
+```
+
+### Importar apenas um ano específico
+
+```bash
+# Baixar apenas 2024
+bash scripts/download-inep-data.sh 2024
+
+# Importar apenas 2024
+node server/import-censo-lite.mjs 2024
+```
+
+### Dados incluídos
+
+| Fonte | Registros | Anos |
+|-------|-----------|------|
+| Censo Escolar | ~215K escolas/ano | 2020-2024 |
+| Indicadores (ICG, TDI, IRD, ATU, HAD, DSU, AFD) | ~130K/ano | 2020-2024 |
+| IED (Esforço Docente) | ~130K/ano | 2020-2024 |
+| Taxa de Não Resposta | ~130K/ano | 2020-2024 |
+| Taxas de Rendimento | ~130K/ano | 2020-2024 |
+| IDEB | ~50K/edição | 2019, 2021, 2023 |
+| INSE | ~130K/edição | 2021, 2023 |
+| SAEB | gerado do IDEB | 2019, 2021, 2023 |
 
 ## Setup Manual
 
@@ -49,6 +105,9 @@ cp .env.example .env
 
 # Inicializar o banco de dados SQLite
 npx drizzle-kit push
+
+# Importar dados (ver seção acima)
+npm run setup:data
 
 # Iniciar em modo desenvolvimento
 npm run dev
@@ -74,6 +133,10 @@ npm run dev
 | `npm start` | Inicia o servidor de produção |
 | `npm run db:push` | Sincroniza o schema do banco de dados |
 | `npm run check` | Verifica tipos TypeScript |
+| `npm run setup:data` | Baixa e importa todos os dados INEP |
+| `npm run download:censo` | Baixa microdados do Censo Escolar |
+| `npm run import:censo` | Importa CSVs do Censo no banco |
+| `npm run import:indicadores` | Importa indicadores educacionais |
 
 ## GitHub Codespaces
 
@@ -82,7 +145,8 @@ Este projeto inclui configuração para **GitHub Codespaces**. Ao abrir no Codes
 1. As dependências serão instaladas automaticamente
 2. O banco de dados será inicializado
 3. A porta 5000 será exposta automaticamente
-4. Basta rodar `npm run dev` para iniciar
+4. Execute `npm run setup:data` para baixar e importar os dados do INEP
+5. Rode `npm run dev` para iniciar
 
 ## Estrutura do Projeto
 
@@ -98,6 +162,10 @@ Este projeto inclui configuração para **GitHub Codespaces**. Ao abrir no Codes
 │   ├── scraper/         # Scrapers FNDE
 │   └── caderno-routes.ts
 ├── shared/              # Schema compartilhado (Drizzle + Zod)
+├── scripts/             # Scripts de importação de dados
+│   ├── download-inep-data.sh   # Download dos microdados
+│   ├── import-all-data.mjs     # Importação completa
+│   └── import-indicators.ts    # Importação de indicadores
 ├── script/              # Scripts de build
 ├── .devcontainer/       # Config GitHub Codespaces
 ├── .env.example         # Template de variáveis de ambiente

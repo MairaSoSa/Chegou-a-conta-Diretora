@@ -8,7 +8,12 @@
     "build": "tsx script/build.ts",
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "download:censo": "bash scripts/download-inep-data.sh",
+    "import:censo": "node server/import-censo-lite.mjs 2020 2021 2022 2023 2024",
+    "import:indicadores": "tsx scripts/import-indicators.ts",
+    "import:all": "node scripts/import-all-data.mjs",
+    "setup:data": "bash scripts/download-inep-data.sh && node scripts/import-all-data.mjs"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",
