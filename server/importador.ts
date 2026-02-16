@@ -277,20 +277,25 @@ async function importIndicadorFromApi(tipo: string, apiPath: string, ano: number
 
 export function searchSchoolsLocal(query: string, limit = 20) {
   const isInep = /^\d{7,8}$/.test(query.trim());
+  const rawDb = db.$client as any;
 
   if (isInep) {
-    const results = db.select().from(censoEscolar)
-      .where(eq(censoEscolar.inep, query.trim()))
-      .limit(1)
-      .all();
+    const results = rawDb.prepare(
+      `SELECT * FROM censo_escolar WHERE inep = ? ORDER BY ano DESC LIMIT 1`
+    ).all(query.trim());
     return results.map(mapCensoToSchool);
   }
 
   const upperQuery = query.toUpperCase();
-  const results = db.select().from(censoEscolar)
-    .where(sql`upper(${censoEscolar.nome}) LIKE ${'%' + upperQuery + '%'}`)
-    .limit(limit)
-    .all();
+  const results = rawDb.prepare(
+    `SELECT c.* FROM censo_escolar c
+     INNER JOIN (
+       SELECT inep, MAX(ano) as max_ano FROM censo_escolar
+       WHERE upper(nome) LIKE ?
+       GROUP BY inep
+     ) latest ON c.inep = latest.inep AND c.ano = latest.max_ano
+     LIMIT ?`
+  ).all('%' + upperQuery + '%', limit);
   return results.map(mapCensoToSchool);
 }
 
