@@ -148,6 +148,16 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
       return { ok: false, error: "Sistema do FNDE indisponível no momento.", ano, co_escola: coEscola };
     }
 
+    if (html.includes("ORA-") || html.includes("OCIStmtExecute") || html.includes("SQLSTATE")) {
+      console.error("[PDDE Scraper] FNDE database error detected in HTML");
+      return { ok: false, error: "O banco de dados do FNDE está com erro interno. Tente novamente mais tarde.", ano, co_escola: coEscola };
+    }
+
+    if (html.includes("msgAlerta") && html.includes("General error")) {
+      console.error("[PDDE Scraper] FNDE general error detected");
+      return { ok: false, error: "O sistema do FNDE está com problemas técnicos. Tente novamente mais tarde.", ano, co_escola: coEscola };
+    }
+
     const $ = cheerio.load(html);
     const data: PddeInfo = { ok: true, ano, co_escola: coEscola };
 
