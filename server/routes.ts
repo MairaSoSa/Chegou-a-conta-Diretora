@@ -1043,6 +1043,87 @@ export async function registerRoutes(
     }
   });
 
+  // === PUBLIC: QUERIDO DIÁRIO (MUNICIPAL GAZETTES) ===
+  app.get("/api/diarios-municipais/busca", async (req, res) => {
+    try {
+      const q = String(req.query.q || "").trim();
+      if (!q) {
+        return res.status(400).json({ ok: false, message: "Termo de busca obrigatório" });
+      }
+      const size = Math.min(parseInt(String(req.query.size || "10"), 10), 30);
+      const offset = parseInt(String(req.query.offset || "0"), 10);
+      const territoryIds = req.query.territory_ids ? String(req.query.territory_ids) : undefined;
+      const since = req.query.since ? String(req.query.since) : undefined;
+      const until = req.query.until ? String(req.query.until) : undefined;
+
+      const params = new URLSearchParams();
+      params.set("querystring", q);
+      params.set("size", String(size));
+      params.set("offset", String(offset));
+      params.set("excerpt_size", "200");
+      params.set("number_of_excerpts", "1");
+      params.set("pre_tags", "<mark>");
+      params.set("post_tags", "</mark>");
+      params.set("sort_by", "relevance");
+      if (territoryIds) params.set("territory_ids", territoryIds);
+      if (since) params.set("published_since", since);
+      if (until) params.set("published_until", until);
+
+      const apiUrl = `https://api.queridodiario.ok.org.br/gazettes?${params.toString()}`;
+      const response = await fetch(apiUrl, {
+        headers: { "Accept": "application/json" },
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Querido Diário API returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      const sanitizeExcerpt = (html: string): string => {
+        return html
+          .replace(/<(?!\/?mark\b)[^>]*>/gi, "")
+          .replace(/on\w+\s*=/gi, "");
+      };
+
+      res.json({
+        ok: true,
+        total: data.total_gazettes || 0,
+        gazettes: (data.gazettes || []).map((g: any) => ({
+          territory_id: g.territory_id,
+          territory_name: g.territory_name,
+          state_code: g.state_code,
+          date: g.date,
+          url: g.url,
+          txt_url: g.txt_url,
+          edition: g.edition,
+          is_extra_edition: g.is_extra_edition,
+          excerpts: (g.excerpts || []).map((e: string) => sanitizeExcerpt(e)),
+        })),
+      });
+    } catch (e: any) {
+      res.status(500).json({ ok: false, total: 0, gazettes: [], message: e.message });
+    }
+  });
+
+  app.get("/api/diarios-municipais/cidades", async (req, res) => {
+    try {
+      const name = String(req.query.name || "").trim();
+      if (!name) {
+        return res.status(400).json({ ok: false, message: "Nome da cidade obrigatório" });
+      }
+      const response = await fetch(`https://api.queridodiario.ok.org.br/cities?city_name=${encodeURIComponent(name)}`, {
+        headers: { "Accept": "application/json" },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!response.ok) throw new Error(`API returned ${response.status}`);
+      const data = await response.json();
+      res.json({ ok: true, cities: data.cities || [] });
+    } catch (e: any) {
+      res.status(500).json({ ok: false, cities: [], message: e.message });
+    }
+  });
+
   // === ADMIN: AI DOCUMENTS ===
   app.post("/api/admin/ai-documents", adminAuth, async (req, res) => {
     try {

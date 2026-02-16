@@ -4,11 +4,11 @@ import {
   ExternalLink, Scale, FileText, BookOpen, Landmark, GraduationCap,
   Utensils, Bus, Coins, Users, ShieldCheck, ClipboardList, Search,
   Loader2, AlertCircle, Newspaper, ChevronDown, ChevronUp, BookMarked,
-  Calendar, Building2, Info
+  Calendar, Building2, Info, MapPin, Globe
 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { useMecNormasAll, useMecNormasTipos } from "@/hooks/use-mecnormas";
-import { useDOUSearch, useDOUCrossReference } from "@/hooks/use-dou";
+import { useDOUSearch, useDOUCrossReference, useMunicipalGazetteSearch } from "@/hooks/use-dou";
 
 interface Lei {
   titulo: string;
@@ -50,7 +50,7 @@ const legislacoes: Lei[] = [
   {
     titulo: "PDDE - Programa Dinheiro Direto na Escola",
     numero: "Lei nº 11.947/2009 (Art. 22 a 30)",
-    descricao: "Autoriza o repasse de recursos financeiros diretamente às escolas públicas de educação básica, sem necessidade de convênio. Os recursos podem ser usados para manutenção, conservação e pequenos reparos, aquisição de material de consumo e implementação do projeto pedagógico.",
+    descricao: "Autoriza o repasse de recursos financeiros diretamente às escolas públicas de educação básica, sem necessidade de convênio.",
     link: "https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/lei/l11947.htm",
     categoria: "Programas FNDE",
     icon: FileText,
@@ -59,7 +59,7 @@ const legislacoes: Lei[] = [
   {
     titulo: "Resolução FNDE nº 15/2021 - PDDE Básico",
     numero: "Resolução CD/FNDE nº 15/2021",
-    descricao: "Dispõe sobre os critérios e as formas de transferência e de prestação de contas dos recursos do PDDE. Detalha como calcular o valor do repasse, prazos de execução e regras de prestação de contas.",
+    descricao: "Dispõe sobre os critérios e as formas de transferência e de prestação de contas dos recursos do PDDE.",
     link: "https://www.fnde.gov.br/index.php/legislacoes/resolucoes",
     categoria: "Programas FNDE",
     icon: ClipboardList,
@@ -67,7 +67,7 @@ const legislacoes: Lei[] = [
   {
     titulo: "PNAE - Programa Nacional de Alimentação Escolar",
     numero: "Lei nº 11.947/2009 (Art. 1 a 21)",
-    descricao: "Garante alimentação escolar e ações de educação alimentar e nutricional. Determina que no mínimo 30% dos recursos sejam investidos na compra de alimentos da agricultura familiar. O CAE (Conselho de Alimentação Escolar) fiscaliza a execução.",
+    descricao: "Garante alimentação escolar e ações de educação alimentar e nutricional. Determina que no mínimo 30% dos recursos sejam investidos na compra de alimentos da agricultura familiar.",
     link: "https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/lei/l11947.htm",
     categoria: "Programas FNDE",
     icon: Utensils,
@@ -76,7 +76,7 @@ const legislacoes: Lei[] = [
   {
     titulo: "PNATE - Programa Nacional de Apoio ao Transporte Escolar",
     numero: "Lei nº 10.880/2004",
-    descricao: "Garante o transporte escolar dos alunos da educação básica pública que residem em área rural. Os recursos são transferidos automaticamente para estados, Distrito Federal e municípios, sem necessidade de convênio.",
+    descricao: "Garante o transporte escolar dos alunos da educação básica pública que residem em área rural.",
     link: "https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2004/lei/l10.880.htm",
     categoria: "Programas FNDE",
     icon: Bus,
@@ -84,7 +84,7 @@ const legislacoes: Lei[] = [
   {
     titulo: "PNLD - Programa Nacional do Livro e do Material Didático",
     numero: "Decreto nº 9.099/2017",
-    descricao: "Avalia e disponibiliza obras didáticas, pedagógicas e literárias, além de outros materiais de apoio à prática educativa, de forma sistemática, regular e gratuita às escolas públicas de educação básica.",
+    descricao: "Avalia e disponibiliza obras didáticas, pedagógicas e literárias, além de outros materiais de apoio à prática educativa.",
     link: "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/decreto/d9099.htm",
     categoria: "Programas FNDE",
     icon: BookOpen,
@@ -92,7 +92,7 @@ const legislacoes: Lei[] = [
   {
     titulo: "Plano Nacional de Educação (PNE)",
     numero: "Lei nº 14.934/2024",
-    descricao: "Estabelece 18 metas e estratégias para a educação brasileira no decênio 2024-2034, incluindo universalização do acesso, melhoria da qualidade, valorização dos profissionais da educação e ampliação do investimento público em educação.",
+    descricao: "Estabelece 18 metas e estratégias para a educação brasileira no decênio 2024-2034.",
     link: "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2024/lei/L14934.htm",
     categoria: "Planejamento",
     icon: GraduationCap,
@@ -101,7 +101,7 @@ const legislacoes: Lei[] = [
   {
     titulo: "Estatuto da Criança e do Adolescente (ECA)",
     numero: "Lei nº 8.069/1990",
-    descricao: "Dispõe sobre a proteção integral à criança e ao adolescente. Estabelece o direito à educação, à cultura, ao esporte e ao lazer, e define as obrigações dos dirigentes de estabelecimentos de ensino.",
+    descricao: "Dispõe sobre a proteção integral à criança e ao adolescente. Estabelece o direito à educação, à cultura, ao esporte e ao lazer.",
     link: "https://www.planalto.gov.br/ccivil_03/leis/l8069.htm",
     categoria: "Base Legal",
     icon: ShieldCheck,
@@ -109,7 +109,7 @@ const legislacoes: Lei[] = [
   {
     titulo: "Gestão Democrática na Educação",
     numero: "Lei nº 14.644/2023",
-    descricao: "Institui a política de gestão democrática nas redes públicas de educação básica, regulamentando a escolha de diretores escolares, a participação da comunidade escolar e a autonomia administrativa e pedagógica das escolas.",
+    descricao: "Institui a política de gestão democrática nas redes públicas de educação básica, regulamentando a escolha de diretores escolares.",
     link: "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2023/lei/L14644.htm",
     categoria: "Gestão",
     icon: Users,
@@ -118,44 +118,61 @@ const legislacoes: Lei[] = [
   {
     titulo: "Lei de Responsabilidade Fiscal",
     numero: "Lei Complementar nº 101/2000",
-    descricao: "Estabelece normas de finanças públicas voltadas para a responsabilidade na gestão fiscal. Impacta a gestão escolar ao definir limites de gastos com pessoal e regras de transparência que também se aplicam à execução de recursos educacionais.",
+    descricao: "Estabelece normas de finanças públicas voltadas para a responsabilidade na gestão fiscal.",
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp101.htm",
     categoria: "Financiamento",
     icon: Coins,
   },
 ];
 
-const categorias = ["Todos", "Base Legal", "Financiamento", "Programas FNDE", "Planejamento", "Gestão"];
-
-const categoriaColors: Record<string, string> = {
-  "Base Legal": "bg-emerald-100 text-emerald-800",
-  "Financiamento": "bg-amber-100 text-amber-800",
-  "Programas FNDE": "bg-orange-100 text-orange-800",
-  "Planejamento": "bg-violet-100 text-violet-800",
-  "Gestão": "bg-sky-100 text-sky-800",
+const categoriaColors: Record<string, { bg: string; color: string }> = {
+  "Base Legal": { bg: "#dcfce7", color: "#166534" },
+  "Financiamento": { bg: "#ffedd5", color: "#9a3412" },
+  "Programas FNDE": { bg: "#fee2e2", color: "#991b1b" },
+  "Planejamento": { bg: "#f3e8ff", color: "#6b21a8" },
+  "Gestão": { bg: "#dbeafe", color: "#1e40af" },
 };
 
-type CategoryId = "cat-leis" | "cat-normas" | "cat-dou";
-type SubTabId = "leis-todas" | "leis-base" | "leis-financiamento" | "leis-programas" | "leis-gestao" | "normas-todas" | "normas-vigentes" | "normas-busca" | "dou-busca" | "dou-crossref";
+const doeLinks: { estado: string; sigla: string; url: string }[] = [
+  { estado: "Acre", sigla: "AC", url: "https://www.diario.ac.gov.br/" },
+  { estado: "Alagoas", sigla: "AL", url: "https://www.imprensaoficialal.com.br/" },
+  { estado: "Amapá", sigla: "AP", url: "https://doe.ap.gov.br/" },
+  { estado: "Amazonas", sigla: "AM", url: "https://diario.imprensaoficial.am.gov.br/" },
+  { estado: "Bahia", sigla: "BA", url: "https://dool.egba.ba.gov.br/" },
+  { estado: "Ceará", sigla: "CE", url: "https://www.ceara.gov.br/diario-oficial/" },
+  { estado: "Distrito Federal", sigla: "DF", url: "https://www.dodf.df.gov.br/" },
+  { estado: "Espírito Santo", sigla: "ES", url: "https://ioes.dio.es.gov.br/" },
+  { estado: "Goiás", sigla: "GO", url: "https://diariooficial.abc.go.gov.br/" },
+  { estado: "Maranhão", sigla: "MA", url: "https://www.diariooficial.ma.gov.br/" },
+  { estado: "Mato Grosso", sigla: "MT", url: "https://www.iomat.mt.gov.br/" },
+  { estado: "Mato Grosso do Sul", sigla: "MS", url: "https://www.do.ms.gov.br/" },
+  { estado: "Minas Gerais", sigla: "MG", url: "https://www.jornalminasgerais.mg.gov.br/" },
+  { estado: "Pará", sigla: "PA", url: "https://www.ioepa.com.br/" },
+  { estado: "Paraíba", sigla: "PB", url: "https://auniao.pb.gov.br/doe/" },
+  { estado: "Paraná", sigla: "PR", url: "https://www.legislacao.pr.gov.br/diario" },
+  { estado: "Pernambuco", sigla: "PE", url: "https://www.cepe.com.br/diariooficial" },
+  { estado: "Piauí", sigla: "PI", url: "https://www.diariooficial.pi.gov.br/" },
+  { estado: "Rio de Janeiro", sigla: "RJ", url: "https://www.ioerj.com.br/" },
+  { estado: "Rio Grande do Norte", sigla: "RN", url: "https://www.diariooficial.rn.gov.br/" },
+  { estado: "Rio Grande do Sul", sigla: "RS", url: "https://www.diariooficial.rs.gov.br/" },
+  { estado: "Rondônia", sigla: "RO", url: "https://diof.ro.gov.br/" },
+  { estado: "Roraima", sigla: "RR", url: "https://www.imprensaoficial.rr.gov.br/" },
+  { estado: "Santa Catarina", sigla: "SC", url: "https://www.doe.sea.sc.gov.br/" },
+  { estado: "São Paulo", sigla: "SP", url: "https://www.doe.sp.gov.br/" },
+  { estado: "Sergipe", sigla: "SE", url: "https://www.diarioficial.se.gov.br/" },
+  { estado: "Tocantins", sigla: "TO", url: "https://diariooficial.to.gov.br/" },
+];
+
+type CategoryId = "cat-normas" | "cat-dou";
+type SubTabId = "normas-leis" | "normas-todas" | "normas-vigentes" | "normas-busca" | "dou-federal" | "dou-municipal" | "dou-estadual";
 
 const categories: { id: CategoryId; label: string; icon: string; subTabs: { id: SubTabId; label: string }[] }[] = [
-  {
-    id: "cat-leis",
-    label: "Leis Fundamentais",
-    icon: "\u2696\uFE0F",
-    subTabs: [
-      { id: "leis-todas", label: "Todas as Leis" },
-      { id: "leis-base", label: "Base Legal" },
-      { id: "leis-financiamento", label: "Financiamento" },
-      { id: "leis-programas", label: "Programas FNDE" },
-      { id: "leis-gestao", label: "Planejamento e Gestão" },
-    ],
-  },
   {
     id: "cat-normas",
     label: "Normas do MEC",
     icon: "\uD83D\uDCD6",
     subTabs: [
+      { id: "normas-leis", label: "Leis Fundamentais" },
       { id: "normas-todas", label: "Todas as Normas" },
       { id: "normas-vigentes", label: "Vigentes" },
       { id: "normas-busca", label: "Buscar por Termo" },
@@ -166,137 +183,20 @@ const categories: { id: CategoryId; label: string; icon: string; subTabs: { id: 
     label: "Diário Oficial",
     icon: "\uD83D\uDCF0",
     subTabs: [
-      { id: "dou-busca", label: "Buscar no DOU" },
-      { id: "dou-crossref", label: "Verificar Vigência" },
+      { id: "dou-federal", label: "DOU (Federal)" },
+      { id: "dou-municipal", label: "Diários Municipais" },
+      { id: "dou-estadual", label: "DOE (Estados)" },
     ],
   },
 ];
 
-function DOUCrossRef({ normaTitle }: { normaTitle: string }) {
-  const [enabled, setEnabled] = useState(false);
-  const { data, isLoading, error } = useDOUCrossReference(normaTitle, enabled);
+function LeisFundamentaisContent() {
+  const [filterCat, setFilterCat] = useState("Todos");
+  const categoriasUnicas = ["Todos", ...Array.from(new Set(legislacoes.map(l => l.categoria)))];
 
-  if (!enabled) {
-    return (
-      <button
-        onClick={() => setEnabled(true)}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold"
-        style={{ color: "#1565c0" }}
-      >
-        <Newspaper className="w-3 h-3" />
-        Verificar no DOU
-      </button>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: "#64748b" }}>
-        <Loader2 className="w-3 h-3 animate-spin" />
-        Consultando DOU...
-      </span>
-    );
-  }
-
-  if (error || !data?.ok) {
-    return (
-      <span className="inline-flex items-center gap-1 text-xs" style={{ color: "#ef6c00" }}>
-        <AlertCircle className="w-3 h-3" />
-        DOU indisponível
-      </span>
-    );
-  }
-
-  if (data.results.length === 0 && data.searchUrl) {
-    return (
-      <a
-        href={data.searchUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold"
-        style={{ color: "#1565c0" }}
-      >
-        <ExternalLink className="w-3 h-3" />
-        Buscar no DOU
-      </a>
-    );
-  }
-
-  if (data.results.length > 0) {
-    return (
-      <div className="space-y-1">
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: "#2e7d32" }}>
-          <Newspaper className="w-3 h-3" />
-          {data.results.length} publicação(ões)
-        </span>
-        {data.results.slice(0, 2).map((r, i) => (
-          <a
-            key={i}
-            href={r.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block text-xs pl-4 hover:underline"
-            style={{ color: "#1565c0" }}
-          >
-            {r.title} ({r.date})
-          </a>
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <span className="text-xs" style={{ color: "#64748b" }}>
-      Nenhuma publicação encontrada
-    </span>
-  );
-}
-
-function LeisFundamentaisContent({ subTab }: { subTab: SubTabId }) {
-  const filterMap: Record<string, string> = {
-    "leis-todas": "Todos",
-    "leis-base": "Base Legal",
-    "leis-financiamento": "Financiamento",
-    "leis-programas": "Programas FNDE",
-    "leis-gestao": "Gestão",
-  };
-
-  const categoria = filterMap[subTab] || "Todos";
-  const leis = categoria === "Todos"
+  const leis = filterCat === "Todos"
     ? legislacoes
-    : subTab === "leis-gestao"
-      ? legislacoes.filter(l => l.categoria === "Planejamento" || l.categoria === "Gestão")
-      : legislacoes.filter(l => l.categoria === categoria);
-
-  const descriptions: Record<string, { title: string; text: string; detail: string }> = {
-    "leis-todas": {
-      title: "Legislação Educacional Completa",
-      text: "Conjunto das principais leis, decretos e resoluções que orientam a gestão financeira e pedagógica das escolas públicas brasileiras. Inclui a base legal constitucional, normas de financiamento, programas do FNDE e instrumentos de planejamento e gestão.",
-      detail: "Total: " + legislacoes.length + " normas fundamentais | Categorias: Base Legal, Financiamento, Programas FNDE, Planejamento, Gestão",
-    },
-    "leis-base": {
-      title: "Base Legal da Educação",
-      text: "Leis fundamentais que estruturam o sistema educacional brasileiro: a Constituição Federal, a Lei de Diretrizes e Bases (LDB) e o Estatuto da Criança e do Adolescente (ECA). Essas normas estabelecem os princípios, direitos e deveres da educação nacional.",
-      detail: "Fonte: Planalto - Legislação Federal Brasileira",
-    },
-    "leis-financiamento": {
-      title: "Financiamento da Educação",
-      text: "Normas que regulam o financiamento da educação pública, incluindo o FUNDEB (principal fundo de financiamento), a Lei de Responsabilidade Fiscal e as regras de aplicação mínima de recursos em educação.",
-      detail: "O FUNDEB representa cerca de 63% do financiamento da educação básica pública",
-    },
-    "leis-programas": {
-      title: "Programas do FNDE",
-      text: "Legislação dos programas federais administrados pelo FNDE que transferem recursos diretamente às escolas ou aos entes federativos: PDDE (dinheiro direto na escola), PNAE (alimentação), PNATE (transporte) e PNLD (livros didáticos).",
-      detail: "Os programas do FNDE atendem mais de 40 milhões de estudantes da educação básica",
-    },
-    "leis-gestao": {
-      title: "Planejamento e Gestão",
-      text: "Normas sobre planejamento educacional (PNE com 18 metas para 2024-2034) e gestão democrática das escolas, incluindo a escolha de diretores e a participação da comunidade escolar.",
-      detail: "A gestão democrática é princípio constitucional da educação pública (Art. 206, VI)",
-    },
-  };
-
-  const desc = descriptions[subTab] || descriptions["leis-todas"];
+    : legislacoes.filter(l => l.categoria === filterCat);
 
   return (
     <>
@@ -312,31 +212,36 @@ function LeisFundamentaisContent({ subTab }: { subTab: SubTabId }) {
       }}>
         <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
           <Info className="w-4 h-4" />
-          {desc.title}
+          Leis Fundamentais da Educação
         </div>
-        <p>{desc.text}</p>
+        <p>Conjunto das principais leis, decretos e resoluções que orientam a gestão financeira e pedagógica das escolas públicas brasileiras. Inclui a base legal constitucional, normas de financiamento, programas do FNDE e instrumentos de planejamento e gestão.</p>
         <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
-          <strong>{desc.detail}</strong>
+          <strong>Total: {legislacoes.length} normas fundamentais | Fonte: Planalto - Legislação Federal Brasileira</strong>
         </div>
       </div>
 
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
         gap: "12px",
         marginBottom: "16px",
       }}>
-        {categorias.filter(c => c !== "Todos").map(cat => {
+        {categoriasUnicas.filter(c => c !== "Todos").map(cat => {
           const count = legislacoes.filter(l => l.categoria === cat).length;
+          const colors = categoriaColors[cat] || { bg: "#f1f5f9", color: "#1a237e" };
           return (
-            <div key={cat} style={{
-              background: "white",
-              borderRadius: "10px",
-              padding: "16px 20px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
-              border: "1px solid #e2e5ec",
-              borderLeft: `3px solid ${cat === "Base Legal" ? "#2e7d32" : cat === "Financiamento" ? "#ef6c00" : cat === "Programas FNDE" ? "#c62828" : "#1a237e"}`,
-            }}>
+            <div key={cat}
+              onClick={() => setFilterCat(filterCat === cat ? "Todos" : cat)}
+              style={{
+                background: filterCat === cat ? colors.bg : "white",
+                borderRadius: "10px",
+                padding: "16px 20px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+                border: "1px solid #e2e5ec",
+                borderLeft: `3px solid ${colors.color}`,
+                cursor: "pointer",
+                transition: "all 0.15s",
+              }}>
               <div style={{ fontSize: "26px", fontWeight: 800, color: "#1a237e", lineHeight: 1.1 }}>{count}</div>
               <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginTop: "4px" }}>{cat}</div>
             </div>
@@ -363,67 +268,60 @@ function LeisFundamentaisContent({ subTab }: { subTab: SubTabId }) {
               </tr>
             </thead>
             <tbody>
-              {leis.map((lei, index) => (
-                <tr key={lei.numero} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
-                  <td style={tdStyle}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{
-                        width: "32px", height: "32px", borderRadius: "6px",
-                        background: "#e8eaf6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                      }}>
-                        <lei.icon style={{ width: "16px", height: "16px", color: "#3949ab" }} />
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3 }}>{lei.titulo}</div>
-                        <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px", lineHeight: 1.4, maxWidth: "400px" }}>
-                          {lei.descricao.length > 120 ? lei.descricao.slice(0, 120) + "..." : lei.descricao}
+              {leis.map((lei, index) => {
+                const catColor = categoriaColors[lei.categoria] || { bg: "#f1f5f9", color: "#1a237e" };
+                return (
+                  <tr key={lei.numero} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
+                    <td style={tdStyle}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div style={{
+                          width: "32px", height: "32px", borderRadius: "6px",
+                          background: "#e8eaf6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                        }}>
+                          <lei.icon style={{ width: "16px", height: "16px", color: "#3949ab" }} />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3 }}>{lei.titulo}</div>
+                          <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px", lineHeight: 1.4, maxWidth: "400px" }}>
+                            {lei.descricao.length > 120 ? lei.descricao.slice(0, 120) + "..." : lei.descricao}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td style={tdStyle}>
-                    <span style={{ fontSize: "12px", fontFamily: "monospace", color: "#64748b" }}>{lei.numero}</span>
-                  </td>
-                  <td style={tdStyle}>
-                    <span style={{
-                      display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                      fontSize: "11px", fontWeight: 600, letterSpacing: "0.2px",
-                      ...(lei.categoria === "Base Legal" ? { background: "#dcfce7", color: "#166534" } :
-                        lei.categoria === "Financiamento" ? { background: "#ffedd5", color: "#9a3412" } :
-                        lei.categoria === "Programas FNDE" ? { background: "#fee2e2", color: "#991b1b" } :
-                        lei.categoria === "Planejamento" ? { background: "#f3e8ff", color: "#6b21a8" } :
-                        { background: "#dbeafe", color: "#1e40af" }),
-                    }}>
-                      {lei.categoria}
-                    </span>
-                  </td>
-                  <td style={tdStyle}>
-                    {lei.destaque ? (
-                      <span style={{ fontSize: "11px", color: "#1565c0", fontWeight: 500 }}>
-                        {lei.destaque}
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{ fontSize: "12px", fontFamily: "monospace", color: "#64748b" }}>{lei.numero}</span>
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{
+                        display: "inline-block", padding: "2px 8px", borderRadius: "4px",
+                        fontSize: "11px", fontWeight: 600, letterSpacing: "0.2px",
+                        background: catColor.bg, color: catColor.color,
+                      }}>
+                        {lei.categoria}
                       </span>
-                    ) : (
-                      <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
-                    )}
-                  </td>
-                  <td style={{ ...tdStyle, textAlign: "center" }}>
-                    <a
-                      href={lei.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: "inline-flex", alignItems: "center", gap: "6px",
-                        padding: "6px 14px", border: "none", borderRadius: "6px",
-                        fontSize: "12px", fontWeight: 600, cursor: "pointer",
-                        background: "#1a237e", color: "white", textDecoration: "none",
-                      }}
-                    >
-                      <ExternalLink style={{ width: "12px", height: "12px" }} />
-                      Abrir
-                    </a>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td style={tdStyle}>
+                      {lei.destaque ? (
+                        <span style={{ fontSize: "11px", color: "#1565c0", fontWeight: 500 }}>{lei.destaque}</span>
+                      ) : (
+                        <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: "center" }}>
+                      <a href={lei.link} target="_blank" rel="noopener noreferrer"
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: "6px",
+                          padding: "6px 14px", border: "none", borderRadius: "6px",
+                          fontSize: "12px", fontWeight: 600, cursor: "pointer",
+                          background: "#1a237e", color: "white", textDecoration: "none",
+                        }}>
+                        <ExternalLink style={{ width: "12px", height: "12px" }} />
+                        Abrir
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -814,7 +712,7 @@ function NormasContent({ subTab }: { subTab: SubTabId }) {
   );
 }
 
-function DOUBuscaContent() {
+function DOUFederalContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [submittedTerm, setSubmittedTerm] = useState("");
 
@@ -852,9 +750,9 @@ function DOUBuscaContent() {
           <Info className="w-4 h-4" />
           Diário Oficial da União (DOU)
         </div>
-        <p>Pesquise publicações oficiais no Diário Oficial da União para verificar vigência de normas, encontrar novas resoluções e acompanhar alterações na legislação educacional.</p>
+        <p>Pesquise publicações oficiais no Diário Oficial da União para verificar vigência de normas, encontrar novas resoluções e acompanhar alterações na legislação educacional federal.</p>
         <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
-          <strong>Fonte:</strong> Portal da Imprensa Nacional (in.gov.br) | Os resultados são buscados diretamente no portal oficial
+          <strong>Fonte: Portal da Imprensa Nacional (in.gov.br)</strong>
         </div>
       </div>
 
@@ -947,8 +845,7 @@ function DOUBuscaContent() {
             </a>
           )}
           <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "12px", maxWidth: "400px", margin: "12px auto 0" }}>
-            O portal do Diário Oficial requer acesso direto pelo navegador. 
-            Clique no botão acima para ver os resultados no site da Imprensa Nacional.
+            O portal do Diário Oficial requer acesso direto pelo navegador.
           </p>
         </div>
       )}
@@ -1036,26 +933,35 @@ function DOUBuscaContent() {
   );
 }
 
-function DOUCrossRefContent() {
-  const [normaText, setNormaText] = useState("");
-  const [submittedNorma, setSubmittedNorma] = useState("");
+function DOUMunicipalContent() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [submittedTerm, setSubmittedTerm] = useState("");
+  const [offset, setOffset] = useState(0);
+  const pageSize = 10;
 
-  const { data, isLoading, error } = useDOUCrossReference(
-    submittedNorma || null,
-    !!submittedNorma
+  const { data, isLoading, error } = useMunicipalGazetteSearch(
+    { q: submittedTerm, size: pageSize, offset },
+    !!submittedTerm
   );
 
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    setSubmittedNorma(normaText.trim());
-  }, [normaText]);
+    setSubmittedTerm(searchTerm.trim());
+    setOffset(0);
+  }, [searchTerm]);
 
-  const quickNormas = [
-    "Resolução FNDE 15/2021",
-    "Lei 11.947/2009",
-    "Lei 14.113/2020",
-    "Resolução FNDE PDDE",
+  const quickSearches = [
+    "educação escolar",
+    "PDDE prestação de contas",
+    "alimentação escolar",
+    "transporte escolar",
+    "conselho escolar",
   ];
+
+  const total = data?.total || 0;
+  const gazettes = data?.gazettes || [];
+  const totalPages = Math.ceil(total / pageSize);
+  const currentPage = Math.floor(offset / pageSize);
 
   return (
     <>
@@ -1071,11 +977,11 @@ function DOUCrossRefContent() {
       }}>
         <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
           <Info className="w-4 h-4" />
-          Verificação de Vigência no DOU
+          Diários Oficiais Municipais
         </div>
-        <p>Verifique se uma norma específica foi publicada, alterada ou revogada consultando o Diário Oficial da União. Útil para confirmar a vigência de resoluções do FNDE, portarias do MEC e demais atos normativos.</p>
+        <p>Pesquise publicações nos diários oficiais de mais de 350 municípios brasileiros. Os dados são fornecidos pelo projeto Querido Diário (Open Knowledge Brasil), que coleta e disponibiliza diários oficiais municipais em formato aberto.</p>
         <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
-          <strong>Como usar:</strong> Digite o nome ou número da norma (ex: "Resolução FNDE 15/2021") para encontrar publicações relacionadas no DOU.
+          <strong>Fonte: Querido Diário (queridodiario.ok.org.br) | Dados abertos - Creative Commons 4.0</strong>
         </div>
       </div>
 
@@ -1083,37 +989,37 @@ function DOUCrossRefContent() {
         <form onSubmit={handleSearch}>
           <div style={{ padding: "16px 20px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1, minWidth: "200px" }}>
-              <label style={labelStyle}>Nome ou número da norma</label>
+              <label style={labelStyle}>Buscar nos diários municipais</label>
               <input
                 type="text"
-                value={normaText}
-                onChange={(e) => setNormaText(e.target.value)}
-                placeholder="Ex: Resolução FNDE 15/2021..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Ex: educação, PDDE, alimentação escolar..."
                 style={inputStyle}
               />
             </div>
             <button
               type="submit"
-              disabled={!normaText.trim()}
+              disabled={!searchTerm.trim()}
               style={{
                 padding: "8px 18px", border: "none", borderRadius: "6px",
-                fontSize: "13px", fontWeight: 600, cursor: normaText.trim() ? "pointer" : "not-allowed",
+                fontSize: "13px", fontWeight: 600, cursor: searchTerm.trim() ? "pointer" : "not-allowed",
                 display: "inline-flex", alignItems: "center", gap: "6px",
-                background: normaText.trim() ? "#1a237e" : "#94a3b8", color: "white",
+                background: searchTerm.trim() ? "#1a237e" : "#94a3b8", color: "white",
                 transition: "all 0.15s",
               }}
             >
               <Search style={{ width: "14px", height: "14px" }} />
-              Verificar
+              Buscar
             </button>
           </div>
         </form>
         <div style={{ padding: "0 20px 12px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          <span style={{ fontSize: "11px", color: "#94a3b8", alignSelf: "center" }}>Exemplos:</span>
-          {quickNormas.map((term) => (
+          <span style={{ fontSize: "11px", color: "#94a3b8", alignSelf: "center" }}>Sugestões:</span>
+          {quickSearches.map((term) => (
             <button
               key={term}
-              onClick={() => { setNormaText(term); setSubmittedNorma(term); }}
+              onClick={() => { setSearchTerm(term); setSubmittedTerm(term); setOffset(0); }}
               style={{
                 padding: "4px 10px", borderRadius: "20px", border: "none",
                 fontSize: "11px", fontWeight: 500, cursor: "pointer",
@@ -1130,7 +1036,7 @@ function DOUCrossRefContent() {
       {isLoading && (
         <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#1a237e" }} />
-          <div style={{ fontSize: "13px" }}>Verificando no Diário Oficial...</div>
+          <div style={{ fontSize: "13px" }}>Consultando diários municipais...</div>
         </div>
       )}
 
@@ -1141,112 +1047,293 @@ function DOUCrossRefContent() {
           fontSize: "12px", color: "#92400e", marginTop: "16px",
         }}>
           <AlertCircle className="w-4 h-4 inline mr-2" />
-          Não foi possível consultar o DOU. O portal pode estar temporariamente indisponível.
+          Não foi possível consultar os diários municipais. Tente novamente em alguns instantes.
         </div>
       )}
 
-      {!isLoading && !error && data && submittedNorma && (
-        <div style={{ marginTop: "16px" }}>
-          {data.results.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "48px" }}>
-              <Newspaper className="w-10 h-10 mx-auto mb-3" style={{ color: "#3b82f6", opacity: 0.6 }} />
-              <p style={{ fontSize: "14px", color: "#94a3b8", marginBottom: "12px" }}>
-                Busca preparada para "{submittedNorma}"
-              </p>
-              {data.searchUrl && (
-                <a
-                  href={data.searchUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: "8px",
-                    padding: "10px 20px", borderRadius: "6px",
-                    background: "#1a237e", color: "white", textDecoration: "none",
-                    fontSize: "13px", fontWeight: 600,
-                  }}
-                >
-                  <ExternalLink style={{ width: "14px", height: "14px" }} />
-                  Verificar no site oficial do DOU
-                </a>
-              )}
-            </div>
-          ) : (
-            <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
-              <div style={{
-                background: "#f0fdf4", borderLeft: "3px solid #2e7d32",
-                padding: "10px 14px", borderRadius: "0 6px 6px 0",
-                fontSize: "12px", color: "#2e7d32", margin: "16px 16px 0",
-              }}>
-                {data.results.length} publicação(ões) encontrada(s) no DOU para "{submittedNorma}"
-              </div>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
-                  <thead>
-                    <tr>
-                      <th style={thStyle}>Publicação</th>
-                      <th style={thStyle}>Seção</th>
-                      <th style={thStyle}>Data</th>
-                      <th style={{ ...thStyle, textAlign: "center" }}>Link</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.results.map((item, index) => (
-                      <tr key={`${item.href}-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
-                        <td style={tdStyle}>
-                          <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3 }}>{item.title}</div>
-                          {item.abstract && (
-                            <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px", lineHeight: 1.4 }}>
-                              {item.abstract.length > 150 ? item.abstract.slice(0, 150) + "..." : item.abstract}
-                            </div>
-                          )}
-                        </td>
-                        <td style={tdStyle}>
-                          {item.section && (
-                            <span style={{
-                              display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                              fontSize: "11px", fontWeight: 600, background: "#dbeafe", color: "#1e40af",
-                            }}>
-                              {item.section}
-                            </span>
-                          )}
-                        </td>
-                        <td style={tdStyle}>
-                          <span style={{ fontSize: "12px", color: "#64748b" }}>{item.date || "—"}</span>
-                        </td>
-                        <td style={{ ...tdStyle, textAlign: "center" }}>
+      {!isLoading && !error && data && gazettes.length === 0 && submittedTerm && (
+        <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
+          <MapPin className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.4 }} />
+          <p style={{ fontSize: "14px" }}>Nenhuma publicação encontrada para "{submittedTerm}"</p>
+          <p style={{ fontSize: "12px", marginTop: "4px", opacity: 0.7 }}>Tente outros termos ou verifique se o município está disponível no Querido Diário</p>
+        </div>
+      )}
+
+      {gazettes.length > 0 && (
+        <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec", marginTop: "16px" }}>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h3 style={{ fontSize: "15px", fontWeight: 600 }}>Publicações Municipais</h3>
+            <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
+              {total.toLocaleString("pt-BR")} resultado(s)
+            </span>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Município</th>
+                  <th style={thStyle}>UF</th>
+                  <th style={thStyle}>Data</th>
+                  <th style={thStyle}>Trecho</th>
+                  <th style={{ ...thStyle, textAlign: "center" }}>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gazettes.map((g, index) => (
+                  <tr key={`${g.territory_id}-${g.date}-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
+                    <td style={tdStyle}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <MapPin style={{ width: "14px", height: "14px", color: "#3949ab", flexShrink: 0 }} />
+                        <span style={{ fontWeight: 600, fontSize: "13px" }}>{g.territory_name}</span>
+                      </div>
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{
+                        display: "inline-block", padding: "2px 8px", borderRadius: "4px",
+                        fontSize: "11px", fontWeight: 600, background: "#dbeafe", color: "#1e40af",
+                      }}>
+                        {g.state_code}
+                      </span>
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{ fontSize: "12px", color: "#64748b" }}>
+                        {g.date ? new Date(g.date + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
+                      </span>
+                    </td>
+                    <td style={tdStyle}>
+                      {g.excerpts && g.excerpts.length > 0 ? (
+                        <div
+                          style={{ fontSize: "12px", color: "#64748b", lineHeight: 1.5, maxWidth: "400px" }}
+                          dangerouslySetInnerHTML={{
+                            __html: g.excerpts[0].length > 200
+                              ? g.excerpts[0].slice(0, 200) + "..."
+                              : g.excerpts[0]
+                          }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: "center" }}>
+                      <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                        <a
+                          href={g.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            padding: "4px 10px", border: "none", borderRadius: "4px",
+                            background: "#1a237e", color: "white", fontSize: "11px", fontWeight: 600,
+                            textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
+                          }}
+                        >
+                          <ExternalLink style={{ width: "11px", height: "11px" }} />
+                          PDF
+                        </a>
+                        {g.txt_url && (
                           <a
-                            href={item.href}
+                            href={g.txt_url}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                              padding: "4px 10px", border: "none", borderRadius: "4px",
-                              background: "#1a237e", color: "white", fontSize: "11px", fontWeight: 600,
+                              padding: "4px 10px", border: "1px solid #e2e5ec", borderRadius: "4px",
+                              background: "white", color: "#64748b", fontSize: "11px", fontWeight: 600,
                               textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
                             }}
                           >
-                            <ExternalLink style={{ width: "11px", height: "11px" }} />
-                            Abrir
+                            <FileText style={{ width: "11px", height: "11px" }} />
+                            TXT
                           </a>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div style={{
+              display: "flex", justifyContent: "center", alignItems: "center",
+              gap: "8px", padding: "14px", borderTop: "1px solid #e2e5ec",
+            }}>
+              <button
+                onClick={() => setOffset(Math.max(0, offset - pageSize))}
+                disabled={offset <= 0}
+                style={{ ...paginationBtnStyle, opacity: offset <= 0 ? 0.4 : 1, cursor: offset <= 0 ? "not-allowed" : "pointer" }}
+              >
+                Anterior
+              </button>
+              <span style={{ fontSize: "12px", color: "#94a3b8" }}>
+                Página {currentPage + 1} de {totalPages > 100 ? "100+" : totalPages}
+              </span>
+              <button
+                onClick={() => setOffset(offset + pageSize)}
+                disabled={currentPage >= totalPages - 1 || currentPage >= 99}
+                style={{ ...paginationBtnStyle, opacity: currentPage >= totalPages - 1 ? 0.4 : 1, cursor: currentPage >= totalPages - 1 ? "not-allowed" : "pointer" }}
+              >
+                Próxima
+              </button>
             </div>
           )}
         </div>
       )}
 
-      {!submittedNorma && (
+      {!submittedTerm && (
         <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-          <Scale className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.3 }} />
-          <p style={{ fontSize: "14px" }}>Verifique a vigência de normas no DOU</p>
+          <MapPin className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.3 }} />
+          <p style={{ fontSize: "14px" }}>Pesquise nos diários oficiais municipais</p>
           <p style={{ fontSize: "12px", marginTop: "4px", opacity: 0.7 }}>
-            Confirme se resoluções e atos normativos foram publicados, alterados ou revogados
+            Mais de 350 municípios disponíveis via Querido Diário
           </p>
         </div>
       )}
+    </>
+  );
+}
+
+function DOEEstadualContent() {
+  const [filterState, setFilterState] = useState("");
+
+  const filtered = filterState
+    ? doeLinks.filter(d => d.sigla === filterState)
+    : doeLinks;
+
+  const regions: Record<string, string[]> = {
+    "Norte": ["AC", "AP", "AM", "PA", "RO", "RR", "TO"],
+    "Nordeste": ["AL", "BA", "CE", "MA", "PB", "PE", "PI", "RN", "SE"],
+    "Centro-Oeste": ["DF", "GO", "MT", "MS"],
+    "Sudeste": ["ES", "MG", "RJ", "SP"],
+    "Sul": ["PR", "RS", "SC"],
+  };
+
+  return (
+    <>
+      <div style={{
+        background: "#eff6ff",
+        borderLeft: "4px solid #3b82f6",
+        padding: "16px 20px",
+        borderRadius: "0 10px 10px 0",
+        fontSize: "13px",
+        color: "#1e40af",
+        marginBottom: "16px",
+        lineHeight: 1.7,
+      }}>
+        <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <Info className="w-4 h-4" />
+          Diários Oficiais dos Estados (DOE)
+        </div>
+        <p>Acesse os diários oficiais de cada estado brasileiro. Cada estado possui seu próprio portal de publicações oficiais, onde é possível encontrar decretos, resoluções e atos normativos estaduais relacionados à educação.</p>
+        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
+          <strong>Total: {doeLinks.length} portais estaduais + Distrito Federal | Links diretos para os portais oficiais</strong>
+        </div>
+      </div>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+        gap: "12px",
+        marginBottom: "16px",
+      }}>
+        {Object.entries(regions).map(([region, states]) => {
+          const regionColors: Record<string, string> = {
+            "Norte": "#2e7d32",
+            "Nordeste": "#ef6c00",
+            "Centro-Oeste": "#c62828",
+            "Sudeste": "#1565c0",
+            "Sul": "#6b21a8",
+          };
+          return (
+            <div key={region} style={{
+              background: "white",
+              borderRadius: "10px",
+              padding: "16px 20px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+              border: "1px solid #e2e5ec",
+              borderLeft: `3px solid ${regionColors[region] || "#1a237e"}`,
+            }}>
+              <div style={{ fontSize: "26px", fontWeight: 800, color: "#1a237e", lineHeight: 1.1 }}>
+                {states.length}
+              </div>
+              <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginTop: "4px" }}>{region}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+          <h3 style={{ fontSize: "15px", fontWeight: 600 }}>Portais Estaduais</h3>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <select
+              value={filterState}
+              onChange={(e) => setFilterState(e.target.value)}
+              style={selectStyle}
+            >
+              <option value="">Todos os estados</option>
+              {doeLinks.map(d => (
+                <option key={d.sigla} value={d.sigla}>{d.sigla} - {d.estado}</option>
+              ))}
+            </select>
+            <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
+              {filtered.length} estado(s)
+            </span>
+          </div>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "500px" }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Estado</th>
+                <th style={thStyle}>UF</th>
+                <th style={thStyle}>Região</th>
+                <th style={{ ...thStyle, textAlign: "center" }}>Portal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((doe, index) => {
+                const region = Object.entries(regions).find(([_, states]) => states.includes(doe.sigla));
+                return (
+                  <tr key={doe.sigla} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
+                    <td style={tdStyle}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <Globe style={{ width: "14px", height: "14px", color: "#3949ab", flexShrink: 0 }} />
+                        <span style={{ fontWeight: 600, fontSize: "13px" }}>{doe.estado}</span>
+                      </div>
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{
+                        display: "inline-block", padding: "2px 8px", borderRadius: "4px",
+                        fontSize: "11px", fontWeight: 600, background: "#e8eaf6", color: "#3949ab",
+                      }}>
+                        {doe.sigla}
+                      </span>
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{ fontSize: "12px", color: "#64748b" }}>{region ? region[0] : "—"}</span>
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: "center" }}>
+                      <a
+                        href={doe.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: "6px 14px", border: "none", borderRadius: "6px",
+                          background: "#1a237e", color: "white", fontSize: "12px", fontWeight: 600,
+                          textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px",
+                        }}
+                      >
+                        <ExternalLink style={{ width: "12px", height: "12px" }} />
+                        Acessar DOE
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </>
   );
 }
@@ -1309,8 +1396,8 @@ const paginationBtnStyle: React.CSSProperties = {
 };
 
 export default function Legislacao() {
-  const [activeCategory, setActiveCategory] = useState<CategoryId>("cat-leis");
-  const [activeSubTab, setActiveSubTab] = useState<SubTabId>("leis-todas");
+  const [activeCategory, setActiveCategory] = useState<CategoryId>("cat-normas");
+  const [activeSubTab, setActiveSubTab] = useState<SubTabId>("normas-leis");
 
   const switchCategory = (catId: CategoryId) => {
     setActiveCategory(catId);
@@ -1321,17 +1408,20 @@ export default function Legislacao() {
   };
 
   const renderContent = () => {
-    if (activeSubTab.startsWith("leis-")) {
-      return <LeisFundamentaisContent subTab={activeSubTab} />;
+    if (activeSubTab === "normas-leis") {
+      return <LeisFundamentaisContent />;
     }
-    if (activeSubTab.startsWith("normas-")) {
+    if (activeSubTab === "normas-todas" || activeSubTab === "normas-vigentes" || activeSubTab === "normas-busca") {
       return <NormasContent subTab={activeSubTab} />;
     }
-    if (activeSubTab === "dou-busca") {
-      return <DOUBuscaContent />;
+    if (activeSubTab === "dou-federal") {
+      return <DOUFederalContent />;
     }
-    if (activeSubTab === "dou-crossref") {
-      return <DOUCrossRefContent />;
+    if (activeSubTab === "dou-municipal") {
+      return <DOUMunicipalContent />;
+    }
+    if (activeSubTab === "dou-estadual") {
+      return <DOEEstadualContent />;
     }
     return null;
   };
@@ -1350,7 +1440,7 @@ export default function Legislacao() {
           <div>
             <h1 style={{ fontSize: "20px", fontWeight: 700, letterSpacing: "-0.3px" }}>Painel de Legislação Educacional</h1>
             <p style={{ opacity: 0.75, fontSize: "12px", marginTop: "2px" }}>
-              Leis fundamentais, normas do MEC e publicações do Diário Oficial da União
+              Normas do MEC e publicações dos diários oficiais (federal, estaduais e municipais)
             </p>
           </div>
           <span style={{
@@ -1456,7 +1546,7 @@ export default function Legislacao() {
           color: "#92400e",
           marginTop: "24px",
         }}>
-          <strong>Nota:</strong> Esta seção reúne as principais legislações de referência para a gestão escolar. 
+          <strong>Nota:</strong> Esta seção reúne normas e publicações oficiais para a gestão escolar.
           As abas "Normas do MEC" e "Diário Oficial" consultam dados diretamente dos portais oficiais do governo.
           Para dúvidas específicas sobre a aplicação dessas normas, consulte o{" "}
           <a href="/chat" style={{ color: "#1565c0", fontWeight: 600 }}>Caderno da Diretora</a>.
