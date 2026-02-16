@@ -1,6 +1,6 @@
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MessagesSquare, GraduationCap, BookOpen, Wrench, BarChart3, Scale } from "lucide-react";
+import { ArrowRight, MessagesSquare, GraduationCap, BookOpen, Wrench, BarChart3, Scale, Calendar } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
@@ -49,10 +49,11 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-2xl mx-auto"
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-w-3xl mx-auto"
             >
               <NavCard href="/dashboard" icon={BarChart3} label="Dados Educacionais" />
               <NavCard href="/legislacao" icon={Scale} label="Legislação" />
+              <NavCard href="/calendario" icon={Calendar} label="Calendário" />
               <NavCard href="/trilha" icon={GraduationCap} label="Trilha" />
               <NavCard href="/programas" icon={BookOpen} label="Programas" />
               <NavCard href="/ferramentas" icon={Wrench} label="Ferramentas" />
