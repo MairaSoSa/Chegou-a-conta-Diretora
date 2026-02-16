@@ -11,6 +11,9 @@ import {
   Globe, Building2, TreePine, Filter, X, Clock, Heart
 } from "lucide-react";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas } from "@/hooks/use-schools";
+import { usePddeInfo } from "@/hooks/use-pdde";
+import { useSigpcLocalizar } from "@/hooks/use-sigpc";
+import { DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -46,6 +49,9 @@ export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useEstatisticas(selectedAno);
   const { data: searchResults, refetch: refetchSearch, isLoading: searchLoading } = useSchoolSearch(searchQuery);
   const { data: evolucaoData, isLoading: evolucaoLoading } = useEscolaEvolucao(selectedInep || "");
+  const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, selectedAno);
+  const pddeCnpj = pddeData?.uex?.cnpj || null;
+  const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined);
 
   const listFilters = useMemo(() => {
     const f: Record<string, string> = {};
