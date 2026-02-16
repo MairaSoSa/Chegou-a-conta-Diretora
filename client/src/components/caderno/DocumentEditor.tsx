@@ -8,7 +8,7 @@ import {
   Plus, Bold, Italic, List, ListOrdered, Heading2,
   Sparkles, PenLine, CheckSquare, AlertTriangle, SpellCheck,
   RefreshCw, ChevronLeft, ChevronRight, Clock, Menu, X,
-  School, Loader2
+  School, Loader2, Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -201,6 +201,73 @@ function EditorToolbar({ editor }: { editor: any }) {
   );
 }
 
+function buildHeaderHtml(type: string, headerData: any, escola: EscolaData | null, title: string): string {
+  let escolaHtml = "";
+  if (escola) {
+    escolaHtml = `<div class="escola-info"><p><strong>${escola.nome}</strong></p><p>${escola.municipio}/${escola.uf} — Rede: ${escola.rede} — Matrículas: ${escola.matriculas?.toLocaleString("pt-BR") || "—"}</p></div>`;
+  }
+  const h = headerData || {};
+  let fields = "";
+  switch (type) {
+    case "ata":
+      fields = `<p><strong>Data:</strong> ${h.data || "___/___/______"}</p><p><strong>Local:</strong> ${h.local || "________________"}</p><p><strong>Participantes:</strong> ${h.participantes || "________________"}</p><p><strong>Pauta:</strong> ${h.pauta || "________________"}</p>`;
+      break;
+    case "oficio":
+      fields = `<p><strong>Ofício nº:</strong> ${h.numero || "___/____"}</p><p><strong>Data:</strong> ${h.data || "___/___/______"}</p><p><strong>Destinatário:</strong> ${h.destinatario || "________________"}</p><p><strong>Assunto:</strong> ${h.assunto || "________________"}</p>`;
+      break;
+    case "pesquisa":
+      fields = `<p><strong>Objeto:</strong> ${h.objeto || "________________"}</p><p><strong>Data:</strong> ${h.data || "___/___/______"}</p><p><strong>Fornecedor 1:</strong> ${h.fornecedor1 || "________________"}</p><p><strong>Fornecedor 2:</strong> ${h.fornecedor2 || "________________"}</p><p><strong>Fornecedor 3:</strong> ${h.fornecedor3 || "________________"}</p>`;
+      break;
+    case "relatorio":
+      fields = `<p><strong>Período:</strong> ${h.periodo || "________________"}</p><p><strong>Programa:</strong> ${h.programa || "________________"}</p><p><strong>Valor Total:</strong> ${h.valorTotal || "R$ ________"}</p>`;
+      break;
+  }
+  return `<h1>${title || typeLabel(type)}</h1>${escolaHtml}<div class="header-info">${fields}</div>`;
+}
+
+function NewDocumentDialog({ onSelect, onClose }: { onSelect: (type: string) => void; onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        className="bg-[#FFFEF9] rounded-2xl shadow-xl border border-[#d4c4a8]/40 p-6 w-full max-w-md mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-semibold text-[#5d4037] mb-1">Novo Documento</h3>
+        <p className="text-xs text-[#8d6e63] mb-4">Escolha o tipo de documento que deseja criar:</p>
+        <div className="grid grid-cols-2 gap-3">
+          {DOC_TYPES.map((dt) => {
+            const Icon = dt.icon;
+            return (
+              <button
+                key={dt.value}
+                onClick={() => onSelect(dt.value)}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-[#8d6e63]/20 bg-white hover:bg-[#efebe9] hover:border-[#5d4037]/30 hover:shadow-md transition-all text-center group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#efebe9] group-hover:bg-[#5d4037]/10 flex items-center justify-center text-[#5d4037]">
+                  <Icon className="w-5 h-5" />
+                </div>
+                <span className="text-sm font-medium text-[#5d4037]">{dt.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <button onClick={onClose} className="mt-4 w-full text-xs text-[#8d6e63] hover:text-[#5d4037] transition-colors py-2">
+          Cancelar
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function DocumentEditor() {
   const queryClient = useQueryClient();
   const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
@@ -215,6 +282,7 @@ export default function DocumentEditor() {
   const [aiLoading, setAiLoading] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
   const [inepLoading, setInepLoading] = useState(false);
+  const [showNewDocDialog, setShowNewDocDialog] = useState(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: docsResponse, isLoading: docsLoading } = useQuery({
@@ -326,8 +394,47 @@ export default function DocumentEditor() {
     [selectedDocId, headerData, title, inepCode]
   );
 
-  const handleNewDocument = () => {
-    createMutation.mutate({ type: selectedType, title: `Novo ${typeLabel(selectedType)}` });
+  const handleNewDocument = (type?: string) => {
+    const docType = type || selectedType;
+    setSelectedType(docType);
+    createMutation.mutate({ type: docType, title: `Novo ${typeLabel(docType)}` });
+    setShowNewDocDialog(false);
+  };
+
+  const handleDownload = () => {
+    if (!editor || !selectedDoc) return;
+    const html = editor.getHTML();
+    const headerHtml = buildHeaderHtml(selectedDoc.type, headerData, escola, title);
+    const fullHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>${title || "Documento"}</title>
+<style>
+  body { font-family: 'Times New Roman', serif; max-width: 700px; margin: 40px auto; padding: 20px; color: #333; line-height: 1.6; }
+  h1 { font-size: 18px; text-align: center; margin-bottom: 8px; }
+  h2 { font-size: 16px; margin-top: 20px; }
+  .header-info { border: 1px solid #ccc; padding: 12px 16px; margin-bottom: 20px; border-radius: 4px; background: #f9f9f9; font-size: 14px; }
+  .header-info p { margin: 4px 0; }
+  .escola-info { border-bottom: 1px solid #ddd; padding-bottom: 12px; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  td, th { border: 1px solid #ccc; padding: 6px 10px; text-align: left; font-size: 13px; }
+  ul, ol { padding-left: 24px; }
+  p { margin: 6px 0; }
+</style>
+</head>
+<body>
+${headerHtml}
+<div>${html}</div>
+</body>
+</html>`;
+    const blob = new Blob([fullHtml], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(title || "documento").replace(/[^a-zA-Z0-9À-ÿ\s-]/g, "").replace(/\s+/g, "_")}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleSelectDoc = (doc: DocumentData) => {
@@ -422,7 +529,7 @@ export default function DocumentEditor() {
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
               </div>
-              <Button onClick={handleNewDocument} className="w-full bg-[#5d4037] hover:bg-[#6d4c41] text-white text-xs" size="sm" disabled={createMutation.isPending}>
+              <Button onClick={() => setShowNewDocDialog(true)} className="w-full bg-[#5d4037] hover:bg-[#6d4c41] text-white text-xs" size="sm" disabled={createMutation.isPending}>
                 <Plus className="w-3.5 h-3.5 mr-1.5" />
                 Novo Documento
               </Button>
@@ -483,10 +590,16 @@ export default function DocumentEditor() {
           </Tabs>
           <div className="flex items-center gap-1.5">
             {selectedDocId && (
-              <Button variant="outline" size="sm" className="text-xs h-7 border-[#8d6e63]/30 text-[#6d4c41]" onClick={handleSaveVersion}>
-                <Clock className="w-3 h-3 mr-1" />
-                Versões
-              </Button>
+              <>
+                <Button variant="outline" size="sm" className="text-xs h-7 border-[#8d6e63]/30 text-[#6d4c41]" onClick={handleDownload}>
+                  <Download className="w-3 h-3 mr-1" />
+                  Baixar
+                </Button>
+                <Button variant="outline" size="sm" className="text-xs h-7 border-[#8d6e63]/30 text-[#6d4c41]" onClick={handleSaveVersion}>
+                  <Clock className="w-3 h-3 mr-1" />
+                  Versões
+                </Button>
+              </>
             )}
             <Button
               variant={aiPanelOpen ? "default" : "outline"}
@@ -568,10 +681,26 @@ export default function DocumentEditor() {
               </Card>
             ) : (
               <Card className="flex-1 flex items-center justify-center border-[#8d6e63]/20 bg-white/50 min-h-[300px]">
-                <div className="text-center text-[#8d6e63]">
+                <div className="text-center text-[#8d6e63] max-w-sm">
                   <FileText className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm">Selecione ou crie um documento</p>
-                  <p className="text-xs mt-1">Use o botão "Novo Documento" na barra lateral</p>
+                  <p className="text-sm font-medium text-[#5d4037] mb-1">Criar novo documento</p>
+                  <p className="text-xs mb-4">Escolha o tipo de documento para começar:</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {DOC_TYPES.map((dt) => {
+                      const Icon = dt.icon;
+                      return (
+                        <button
+                          key={dt.value}
+                          onClick={() => handleNewDocument(dt.value)}
+                          disabled={createMutation.isPending}
+                          className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-[#8d6e63]/20 bg-white hover:bg-[#efebe9] hover:border-[#5d4037]/30 hover:shadow-md transition-all group"
+                        >
+                          <Icon className="w-5 h-5 text-[#5d4037]" />
+                          <span className="text-xs font-medium text-[#5d4037]">{dt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </Card>
             )}
@@ -667,6 +796,15 @@ export default function DocumentEditor() {
           </AnimatePresence>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showNewDocDialog && (
+          <NewDocumentDialog
+            onSelect={(type) => handleNewDocument(type)}
+            onClose={() => setShowNewDocDialog(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

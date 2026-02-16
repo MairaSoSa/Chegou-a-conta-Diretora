@@ -375,7 +375,7 @@ function ResearchChat() {
           transition={{ duration: 0.25 }}
           className="flex-1 flex flex-col min-h-0"
         >
-          <div className="relative flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 pb-4 space-y-4 sm:space-y-5 min-h-0" ref={scrollRef}>
+          <div className="relative flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 sm:pl-[72px] pb-4 space-y-4 sm:space-y-5 min-h-0" ref={scrollRef}>
             {!temMensagens ? (
               <TelaBoasVindas onSugestao={(texto) => handleSend(texto)} showSugestoes={true} />
             ) : (
@@ -391,8 +391,8 @@ function ResearchChat() {
             <NotasSalvas />
           </div>
 
-          <div className="px-4 sm:px-6 pb-4 pt-1">
-            <div className="rounded-2xl border border-[#8d6e63]/30 bg-white/80 px-4 py-3 shadow-sm">
+          <div className="px-4 sm:px-6 sm:pl-[72px] pb-4 pt-1">
+            <div className="rounded-xl border border-[#d4c4a8]/40 bg-white/50 px-4 py-3">
               <div className="mb-2 text-xs uppercase tracking-wide text-[#8d6e63]">
                 Escreva sua pergunta aqui
               </div>
@@ -469,13 +469,13 @@ export default function Chat() {
             </button>
           </div>
 
-          <Card className="w-full bg-white/90 border-[#8d6e63]/20 shadow-lg rounded-2xl overflow-hidden min-h-[600px]">
+          <div className={`w-full rounded-2xl overflow-hidden min-h-[600px] ${activeTab === "chat" ? "paper-sheet" : "bg-white/90 border border-[#8d6e63]/20 shadow-lg"}`}>
             {activeTab === "chat" ? (
               <ResearchChat />
             ) : (
               <DocumentEditor />
             )}
-          </Card>
+          </div>
         </div>
       </main>
     </div>
