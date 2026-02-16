@@ -33,6 +33,80 @@ const SOURCES = [
 
 const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
+const TERMOS_SUPERIOR = [
+  "ensino superior",
+  "graduação",
+  "graduacao",
+  "pós-graduação",
+  "pos-graduacao",
+  "universidade",
+  "universidades",
+  "universitário",
+  "universitario",
+  "universitária",
+  "universitaria",
+  "faculdade",
+  "faculdades",
+  "mestrado",
+  "doutorado",
+  "especialização",
+  "especializacao",
+  "enade",
+  "sisu",
+  "prouni",
+  "fies",
+  "reuni",
+  "capes",
+  "cnpq",
+  "stricto sensu",
+  "lato sensu",
+  "vestibular",
+  "vestibulares",
+  "enem",
+  "educação superior",
+  "educacao superior",
+  "instituto federal",
+  "ifes",
+  "campus universitário",
+  "campus universitario",
+  "reitoria",
+  "reitor",
+  "reitora",
+  "bacharelado",
+  "licenciatura",
+  "tecnólogo",
+  "tecnologo",
+  "diploma de graduação",
+  "diploma de graduacao",
+  "educação a distância",
+  "ead",
+  "curso superior",
+  "cursos superiores",
+  "sinaes",
+  "cpc",
+  "igc",
+  "conceito preliminar",
+  "avaliação institucional",
+  "credenciamento de ies",
+  "recredenciamento",
+  "regulação do ensino superior",
+];
+
+function isNoticiaSuperior(titulo: string, resumo?: string, categoria?: string, url?: string): boolean {
+  const textoCompleto = [titulo, resumo, categoria, url]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  const termosNorm = TERMOS_SUPERIOR.map(t =>
+    t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+  );
+
+  return termosNorm.some(termo => textoCompleto.includes(termo));
+}
+
 async function scrapeGovBrNoticias(
   sourceUrl: string,
   fonte: "MEC" | "FNDE" | "INEP",
@@ -89,9 +163,15 @@ async function scrapeGovBrNoticias(
       const categoria = $parent.find(".subtitulo-noticia, .categoria").first().text().trim() || "";
       const resumo = $parent.find(".descricao, .description").first().text().trim().slice(0, 200) || "";
 
+      const fullUrl = url.startsWith("http") ? url : `https://www.gov.br${url}`;
+
+      if (isNoticiaSuperior(titulo, resumo, categoria, fullUrl)) {
+        return;
+      }
+
       noticias.push({
         titulo,
-        url: url.startsWith("http") ? url : `https://www.gov.br${url}`,
+        url: fullUrl,
         data,
         fonte,
         categoria: categoria || undefined,
