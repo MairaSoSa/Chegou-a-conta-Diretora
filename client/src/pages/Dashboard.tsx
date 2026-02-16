@@ -35,6 +35,7 @@ const EXTRA_COLORS = ["#e76f51", "#264653", "#2a9d8f", "#e9c46a"];
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInep, setSelectedInep] = useState<string | null>(null);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(true);
   const [selectedAno, setSelectedAno] = useState(2024);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState<"overview" | "search">("overview");
@@ -61,6 +62,7 @@ export default function Dashboard() {
 
   const selectSchool = (inep: string) => {
     setSelectedInep(inep);
+    setShowSearchDropdown(false);
     if (activeTab !== "search") setActiveTab("search");
   };
 
@@ -436,7 +438,7 @@ export default function Dashboard() {
                       placeholder="Busque por nome ou código INEP..."
                       className="pl-10 bg-background border-border/50 h-11 rounded-xl"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => { setSearchQuery(e.target.value); setShowSearchDropdown(true); }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           if (searchQuery.length === 8 && /^\d+$/.test(searchQuery)) {
@@ -447,7 +449,7 @@ export default function Dashboard() {
                         }
                       }}
                     />
-                    {searchResults && searchResults.dados && searchResults.dados.length > 0 && (
+                    {showSearchDropdown && searchResults && searchResults.dados && searchResults.dados.length > 0 && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/50 rounded-xl shadow-xl z-50 max-h-72 overflow-y-auto">
                         {searchResults.dados.map((result: any) => (
                           <button
@@ -518,86 +520,6 @@ export default function Dashboard() {
                     </Button>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="card-clay">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <School className="w-4 h-4 text-accent" />
-                  {listaEscolas ? `${formatNumber(listaEscolas.total)} escolas encontradas` : "Escolas"}
-                  {filterUf && <Badge variant="outline" className="text-xs">{filterUf}</Badge>}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {listaLoading ? (
-                  <div className="py-10 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-accent" />
-                  </div>
-                ) : listaEscolas?.dados?.length > 0 ? (
-                  <>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-border/30">
-                            <th className="text-left py-2 px-2 text-muted-foreground font-medium">INEP</th>
-                            <th className="text-left py-2 px-2 text-muted-foreground font-medium">Escola</th>
-                            <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden md:table-cell">Município</th>
-                            <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden sm:table-cell">UF</th>
-                            <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden lg:table-cell">Rede</th>
-                            <th className="text-right py-2 px-2 text-muted-foreground font-medium">Matrículas</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {listaEscolas.dados.map((escola: any) => (
-                            <tr
-                              key={escola.co_entidade}
-                              className="border-b border-border/10 hover:bg-accent/5 cursor-pointer transition-colors"
-                              onClick={() => selectSchool(String(escola.co_entidade))}
-                            >
-                              <td className="py-2.5 px-2 font-mono text-xs text-muted-foreground">{escola.co_entidade}</td>
-                              <td className="py-2.5 px-2 font-medium text-foreground max-w-[200px] truncate">{escola.no_entidade}</td>
-                              <td className="py-2.5 px-2 text-muted-foreground hidden md:table-cell">{escola.no_municipio}</td>
-                              <td className="py-2.5 px-2 hidden sm:table-cell">{escola.sg_uf}</td>
-                              <td className="py-2.5 px-2 hidden lg:table-cell">
-                                <Badge variant="outline" className="text-xs">{escola.ds_dependencia}</Badge>
-                              </td>
-                              <td className="py-2.5 px-2 text-right font-mono">{formatNumber(escola.qt_matriculas || 0)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {listaEscolas.total_paginas > 1 && (
-                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/20">
-                        <p className="text-xs text-muted-foreground">
-                          Página {listaEscolas.pagina} de {formatNumber(listaEscolas.total_paginas)}
-                        </p>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={listPage <= 1}
-                            onClick={() => setListPage(p => Math.max(1, p - 1))}
-                          >
-                            <ArrowLeft className="w-4 h-4 mr-1" /> Anterior
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={listPage >= listaEscolas.total_paginas}
-                            onClick={() => setListPage(p => p + 1)}
-                          >
-                            Próxima <ArrowRight className="w-4 h-4 ml-1" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">Nenhuma escola encontrada com esses filtros.</p>
-                )}
               </CardContent>
             </Card>
 
@@ -1472,6 +1394,86 @@ export default function Dashboard() {
             )}
               </>
             )}
+
+            <Card className="card-clay">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <School className="w-4 h-4 text-accent" />
+                  {listaEscolas ? `${formatNumber(listaEscolas.total)} escolas encontradas` : "Escolas"}
+                  {filterUf && <Badge variant="outline" className="text-xs">{filterUf}</Badge>}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {listaLoading ? (
+                  <div className="py-10 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-accent" />
+                  </div>
+                ) : listaEscolas?.dados?.length > 0 ? (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border/30">
+                            <th className="text-left py-2 px-2 text-muted-foreground font-medium">INEP</th>
+                            <th className="text-left py-2 px-2 text-muted-foreground font-medium">Escola</th>
+                            <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden md:table-cell">Município</th>
+                            <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden sm:table-cell">UF</th>
+                            <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden lg:table-cell">Rede</th>
+                            <th className="text-right py-2 px-2 text-muted-foreground font-medium">Matrículas</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {listaEscolas.dados.map((escola: any) => (
+                            <tr
+                              key={escola.co_entidade}
+                              className="border-b border-border/10 hover:bg-accent/5 cursor-pointer transition-colors"
+                              onClick={() => selectSchool(String(escola.co_entidade))}
+                            >
+                              <td className="py-2.5 px-2 font-mono text-xs text-muted-foreground">{escola.co_entidade}</td>
+                              <td className="py-2.5 px-2 font-medium text-foreground max-w-[200px] truncate">{escola.no_entidade}</td>
+                              <td className="py-2.5 px-2 text-muted-foreground hidden md:table-cell">{escola.no_municipio}</td>
+                              <td className="py-2.5 px-2 hidden sm:table-cell">{escola.sg_uf}</td>
+                              <td className="py-2.5 px-2 hidden lg:table-cell">
+                                <Badge variant="outline" className="text-xs">{escola.ds_dependencia}</Badge>
+                              </td>
+                              <td className="py-2.5 px-2 text-right font-mono">{formatNumber(escola.qt_matriculas || 0)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {listaEscolas.total_paginas > 1 && (
+                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/20">
+                        <p className="text-xs text-muted-foreground">
+                          Página {listaEscolas.pagina} de {formatNumber(listaEscolas.total_paginas)}
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={listPage <= 1}
+                            onClick={() => setListPage(p => Math.max(1, p - 1))}
+                          >
+                            <ArrowLeft className="w-4 h-4 mr-1" /> Anterior
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={listPage >= listaEscolas.total_paginas}
+                            onClick={() => setListPage(p => p + 1)}
+                          >
+                            Próxima <ArrowRight className="w-4 h-4 ml-1" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Nenhuma escola encontrada com esses filtros.</p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
       </main>
