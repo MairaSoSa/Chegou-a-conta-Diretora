@@ -1,8 +1,7 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import {
-  ExternalLink, Scale, FileText, BookOpen, Landmark, GraduationCap,
-  Utensils, Bus, Coins, Users, ShieldCheck, ClipboardList, Search,
+  ExternalLink, Scale, FileText, Search,
   Loader2, AlertCircle, Newspaper, BookMarked,
   Calendar, Building2, Info, MapPin, Globe
 } from "lucide-react";
@@ -10,118 +9,111 @@ import { useState, useCallback } from "react";
 import { useMecNormasAll, useMecNormasTipos } from "@/hooks/use-mecnormas";
 import { useDOUSearch, useMunicipalGazetteSearch } from "@/hooks/use-dou";
 
-interface Lei {
+interface LeiFundamental {
   titulo: string;
   numero: string;
   descricao: string;
   link: string;
   categoria: string;
-  icon: any;
-  destaque?: string;
+  paraADiretora: string;
 }
 
-const legislacoes: Lei[] = [
+const leisFundamentais: LeiFundamental[] = [
   {
     titulo: "Lei de Diretrizes e Bases da Educação Nacional (LDB)",
     numero: "Lei nº 9.394/1996",
-    descricao: "Estabelece as diretrizes e bases da educação nacional, definindo a organização do sistema educacional brasileiro, as responsabilidades de cada ente federativo e os princípios da educação.",
+    descricao: "Estabelece as diretrizes e bases da educação nacional.",
     link: "https://www.planalto.gov.br/ccivil_03/leis/l9394.htm",
     categoria: "Base Legal",
-    icon: Scale,
-    destaque: "Fundamento de toda a educação brasileira",
+    paraADiretora: "A \"lei mãe\" da educação. Define como a escola deve funcionar: quantas horas de aula, como organizar as turmas, o que ensinar. Diz que a diretora tem autonomia para montar o projeto pedagógico da escola junto com a comunidade.",
   },
   {
     titulo: "Constituição Federal - Capítulo da Educação",
     numero: "CF/1988 - Arts. 205 a 214",
-    descricao: "Define a educação como direito de todos e dever do Estado e da família, estabelece o financiamento mínimo obrigatório (18% União, 25% estados e municípios) e os princípios constitucionais da educação.",
+    descricao: "Define a educação como direito de todos e dever do Estado.",
     link: "https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm",
     categoria: "Base Legal",
-    icon: Landmark,
+    paraADiretora: "A base de tudo. Garante que toda criança tem direito a estudar de graça. Obriga o governo a investir pelo menos 18% (União) e 25% (estados e municípios) do dinheiro público em educação. Se não cumprir, é inconstitucional.",
   },
   {
     titulo: "FUNDEB - Fundo de Manutenção e Desenvolvimento da Educação Básica",
     numero: "Lei nº 14.113/2020",
-    descricao: "Regulamenta o FUNDEB permanente, principal mecanismo de financiamento da educação básica pública. Define critérios de distribuição dos recursos, ponderações por etapa e modalidade de ensino e o sistema de complementação da União (VAAT, VAAR e VAAF).",
+    descricao: "Regulamenta o FUNDEB permanente, principal mecanismo de financiamento da educação básica.",
     link: "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/lei/l14113.htm",
     categoria: "Financiamento",
-    icon: Coins,
-    destaque: "Principal fonte de recursos da educação básica",
+    paraADiretora: "O \"cofrinho\" principal da educação. Junta dinheiro de impostos e distribui para as escolas conforme o número de alunos. Quanto mais alunos sua escola tem, mais dinheiro ela recebe. Agora é permanente - não precisa mais renovar a cada 14 anos.",
   },
   {
     titulo: "PDDE - Programa Dinheiro Direto na Escola",
     numero: "Lei nº 11.947/2009 (Art. 22 a 30)",
-    descricao: "Autoriza o repasse de recursos financeiros diretamente às escolas públicas de educação básica, sem necessidade de convênio.",
+    descricao: "Autoriza o repasse de recursos financeiros diretamente às escolas.",
     link: "https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/lei/l11947.htm",
     categoria: "Programas FNDE",
-    icon: FileText,
-    destaque: "Dinheiro direto na conta da escola",
+    paraADiretora: "Dinheiro que cai direto na conta da escola, sem precisar pedir para a prefeitura. A diretora decide, junto com o conselho escolar, como gastar: pode comprar material, consertar a escola, pagar pequenos serviços. Precisa prestar contas direitinho depois.",
   },
   {
     titulo: "Resolução FNDE nº 15/2021 - PDDE Básico",
     numero: "Resolução CD/FNDE nº 15/2021",
-    descricao: "Dispõe sobre os critérios e as formas de transferência e de prestação de contas dos recursos do PDDE.",
+    descricao: "Dispõe sobre critérios de transferência e prestação de contas do PDDE.",
     link: "https://www.fnde.gov.br/index.php/legislacoes/resolucoes",
     categoria: "Programas FNDE",
-    icon: ClipboardList,
+    paraADiretora: "O \"manual de instruções\" do PDDE. Explica passo a passo: como o dinheiro chega, o que pode e o que não pode comprar, como guardar as notas fiscais e como fazer a prestação de contas. Se seguir direitinho, não tem erro.",
   },
   {
     titulo: "PNAE - Programa Nacional de Alimentação Escolar",
     numero: "Lei nº 11.947/2009 (Art. 1 a 21)",
-    descricao: "Garante alimentação escolar e ações de educação alimentar e nutricional. Determina que no mínimo 30% dos recursos sejam investidos na compra de alimentos da agricultura familiar.",
+    descricao: "Garante alimentação escolar e ações de educação alimentar e nutricional.",
     link: "https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/lei/l11947.htm",
     categoria: "Programas FNDE",
-    icon: Utensils,
-    destaque: "Alimentação escolar de qualidade",
+    paraADiretora: "Garante a merenda na escola. Regra importante: pelo menos 30% do dinheiro tem que ser gasto comprando comida de agricultores da região. A diretora precisa acompanhar o cardápio (feito por nutricionista) e garantir que os alunos comam bem.",
   },
   {
     titulo: "PNATE - Programa Nacional de Apoio ao Transporte Escolar",
     numero: "Lei nº 10.880/2004",
-    descricao: "Garante o transporte escolar dos alunos da educação básica pública que residem em área rural.",
+    descricao: "Garante o transporte escolar dos alunos da educação básica que residem em área rural.",
     link: "https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2004/lei/l10.880.htm",
     categoria: "Programas FNDE",
-    icon: Bus,
+    paraADiretora: "Dinheiro para levar e trazer os alunos que moram no campo até a escola. Se sua escola recebe alunos da zona rural, esse programa garante que eles tenham como chegar. A diretora pode ajudar a identificar alunos que precisam do transporte.",
   },
   {
     titulo: "PNLD - Programa Nacional do Livro e do Material Didático",
     numero: "Decreto nº 9.099/2017",
-    descricao: "Avalia e disponibiliza obras didáticas, pedagógicas e literárias, além de outros materiais de apoio à prática educativa.",
+    descricao: "Disponibiliza obras didáticas, pedagógicas e literárias para as escolas.",
     link: "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/decreto/d9099.htm",
     categoria: "Programas FNDE",
-    icon: BookOpen,
+    paraADiretora: "O governo manda livros e materiais para a escola de graça. A diretora e os professores escolhem quais livros querem entre as opções aprovadas. Importante: cuidar bem dos livros porque eles são reutilizados por outros alunos nos anos seguintes.",
   },
   {
     titulo: "Plano Nacional de Educação (PNE)",
     numero: "Lei nº 14.934/2024",
-    descricao: "Estabelece 18 metas e estratégias para a educação brasileira no decênio 2024-2034.",
+    descricao: "Estabelece 18 metas e estratégias para a educação brasileira 2024-2034.",
     link: "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2024/lei/L14934.htm",
     categoria: "Planejamento",
-    icon: GraduationCap,
-    destaque: "Metas para a educação 2024-2034",
+    paraADiretora: "O \"plano de 10 anos\" da educação no Brasil. Tem 18 metas que o país precisa cumprir até 2034: alfabetizar todas as crianças, ter mais escolas em tempo integral, valorizar os professores. A diretora pode usar essas metas para justificar melhorias na escola.",
   },
   {
     titulo: "Estatuto da Criança e do Adolescente (ECA)",
     numero: "Lei nº 8.069/1990",
-    descricao: "Dispõe sobre a proteção integral à criança e ao adolescente. Estabelece o direito à educação, à cultura, ao esporte e ao lazer.",
+    descricao: "Dispõe sobre a proteção integral à criança e ao adolescente.",
     link: "https://www.planalto.gov.br/ccivil_03/leis/l8069.htm",
     categoria: "Base Legal",
-    icon: ShieldCheck,
+    paraADiretora: "Protege todas as crianças e adolescentes. A escola é obrigada a comunicar ao Conselho Tutelar se perceber maus-tratos, faltas excessivas sem justificativa ou evasão escolar. A diretora tem papel fundamental nessa proteção.",
   },
   {
     titulo: "Gestão Democrática na Educação",
     numero: "Lei nº 14.644/2023",
-    descricao: "Institui a política de gestão democrática nas redes públicas de educação básica, regulamentando a escolha de diretores escolares.",
+    descricao: "Institui a gestão democrática nas redes públicas de educação básica.",
     link: "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2023/lei/L14644.htm",
     categoria: "Gestão",
-    icon: Users,
-    destaque: "Gestão democrática e escolha de diretores",
+    paraADiretora: "Define como diretores escolares são escolhidos: com participação da comunidade (eleição, consulta pública). A diretora precisa governar junto com o conselho escolar, ouvir pais, alunos e professores nas decisões importantes da escola.",
   },
   {
     titulo: "Lei de Responsabilidade Fiscal",
     numero: "Lei Complementar nº 101/2000",
-    descricao: "Estabelece normas de finanças públicas voltadas para a responsabilidade na gestão fiscal.",
+    descricao: "Estabelece normas de finanças públicas voltadas para a responsabilidade fiscal.",
     link: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp101.htm",
     categoria: "Financiamento",
-    icon: Coins,
+    paraADiretora: "Regra de ouro do dinheiro público: não pode gastar mais do que recebe. A diretora precisa planejar os gastos da escola com cuidado, guardar todos os comprovantes e nunca usar o dinheiro público para fins pessoais. Transparência total.",
   },
 ];
 
@@ -164,17 +156,14 @@ const doeLinks: { estado: string; sigla: string; url: string }[] = [
 ];
 
 type CategoryId = "cat-normas" | "cat-dou";
-type SubTabId = "normas-leis" | "normas-todas" | "dou-federal" | "dou-municipal" | "dou-estadual";
+type SubTabId = "dou-federal" | "dou-municipal" | "dou-estadual";
 
 const categories: { id: CategoryId; label: string; icon: string; subTabs: { id: SubTabId; label: string }[] }[] = [
   {
     id: "cat-normas",
     label: "Normas do MEC",
     icon: "\uD83D\uDCD6",
-    subTabs: [
-      { id: "normas-leis", label: "Leis Fundamentais" },
-      { id: "normas-todas", label: "Todas as Normas" },
-    ],
+    subTabs: [],
   },
   {
     id: "cat-dou",
@@ -187,146 +176,6 @@ const categories: { id: CategoryId; label: string; icon: string; subTabs: { id: 
     ],
   },
 ];
-
-function LeisFundamentaisContent() {
-  const [filterCat, setFilterCat] = useState("Todos");
-  const categoriasUnicas = ["Todos", ...Array.from(new Set(legislacoes.map(l => l.categoria)))];
-
-  const leis = filterCat === "Todos"
-    ? legislacoes
-    : legislacoes.filter(l => l.categoria === filterCat);
-
-  return (
-    <>
-      <div style={{
-        background: "#eff6ff",
-        borderLeft: "4px solid #3b82f6",
-        padding: "16px 20px",
-        borderRadius: "0 10px 10px 0",
-        fontSize: "13px",
-        color: "#1e40af",
-        marginBottom: "16px",
-        lineHeight: 1.7,
-      }}>
-        <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <Info className="w-4 h-4" />
-          Leis Fundamentais da Educação
-        </div>
-        <p>Conjunto das principais leis, decretos e resoluções que orientam a gestão financeira e pedagógica das escolas públicas brasileiras. Inclui a base legal constitucional, normas de financiamento, programas do FNDE e instrumentos de planejamento e gestão.</p>
-        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
-          <strong>Total: {legislacoes.length} normas fundamentais | Fonte: Planalto - Legislação Federal Brasileira</strong>
-        </div>
-      </div>
-
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-        gap: "12px",
-        marginBottom: "16px",
-      }}>
-        {categoriasUnicas.filter(c => c !== "Todos").map(cat => {
-          const count = legislacoes.filter(l => l.categoria === cat).length;
-          const colors = categoriaColors[cat] || { bg: "#f1f5f9", color: "#1a237e" };
-          return (
-            <div key={cat}
-              onClick={() => setFilterCat(filterCat === cat ? "Todos" : cat)}
-              style={{
-                background: filterCat === cat ? colors.bg : "white",
-                borderRadius: "10px",
-                padding: "16px 20px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
-                border: "1px solid #e2e5ec",
-                borderLeft: `3px solid ${colors.color}`,
-                cursor: "pointer",
-                transition: "all 0.15s",
-              }}>
-              <div style={{ fontSize: "26px", fontWeight: 800, color: "#1a237e", lineHeight: 1.1 }}>{count}</div>
-              <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginTop: "4px" }}>{cat}</div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3 style={{ fontSize: "15px", fontWeight: 600 }}>Legislação</h3>
-          <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
-            {leis.length} norma(s)
-          </span>
-        </div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
-            <thead>
-              <tr>
-                <th style={thStyle}>Norma</th>
-                <th style={thStyle}>Número</th>
-                <th style={thStyle}>Categoria</th>
-                <th style={thStyle}>Destaque</th>
-                <th style={{ ...thStyle, textAlign: "center" }}>Link</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leis.map((lei, index) => {
-                const catColor = categoriaColors[lei.categoria] || { bg: "#f1f5f9", color: "#1a237e" };
-                return (
-                  <tr key={lei.numero} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
-                    <td style={tdStyle}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <div style={{
-                          width: "32px", height: "32px", borderRadius: "6px",
-                          background: "#e8eaf6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                        }}>
-                          <lei.icon style={{ width: "16px", height: "16px", color: "#3949ab" }} />
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3 }}>{lei.titulo}</div>
-                          <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px", lineHeight: 1.4, maxWidth: "400px" }}>
-                            {lei.descricao.length > 120 ? lei.descricao.slice(0, 120) + "..." : lei.descricao}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={tdStyle}>
-                      <span style={{ fontSize: "12px", fontFamily: "monospace", color: "#64748b" }}>{lei.numero}</span>
-                    </td>
-                    <td style={tdStyle}>
-                      <span style={{
-                        display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                        fontSize: "11px", fontWeight: 600, letterSpacing: "0.2px",
-                        background: catColor.bg, color: catColor.color,
-                      }}>
-                        {lei.categoria}
-                      </span>
-                    </td>
-                    <td style={tdStyle}>
-                      {lei.destaque ? (
-                        <span style={{ fontSize: "11px", color: "#1565c0", fontWeight: 500 }}>{lei.destaque}</span>
-                      ) : (
-                        <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
-                      )}
-                    </td>
-                    <td style={{ ...tdStyle, textAlign: "center" }}>
-                      <a href={lei.link} target="_blank" rel="noopener noreferrer"
-                        style={{
-                          display: "inline-flex", alignItems: "center", gap: "6px",
-                          padding: "6px 14px", border: "none", borderRadius: "6px",
-                          fontSize: "12px", fontWeight: 600, cursor: "pointer",
-                          background: "#1a237e", color: "white", textDecoration: "none",
-                        }}>
-                        <ExternalLink style={{ width: "12px", height: "12px" }} />
-                        Abrir
-                      </a>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
-  );
-}
 
 function NormasContent() {
   const [page, setPage] = useState(0);
@@ -359,6 +208,7 @@ function NormasContent() {
   const normas: any[] = data?.entidades || [];
   const total = data?.total || 0;
   const totalPages = data?.totalPages || 0;
+  const showFundamentais = page === 0 && !submittedSearch && !selectedTipo;
 
   return (
     <>
@@ -374,9 +224,9 @@ function NormasContent() {
       }}>
         <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
           <Info className="w-4 h-4" />
-          Todas as Normas do MEC
+          Normas do MEC
         </div>
-        <p>Acervo completo de atos normativos do Ministério da Educação. Pesquise por palavras-chave, filtre por tipo e confira o status de vigência de cada norma. Os dados são consultados diretamente do portal oficial MEC Normas (mecnormas.mec.gov.br).</p>
+        <p>Acervo completo de atos normativos do Ministério da Educação, com as {leisFundamentais.length} leis fundamentais da educação em destaque. Pesquise por palavras-chave, filtre por tipo e confira o status de vigência de cada norma.</p>
         <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
           <strong>Total no acervo: {tiposData?.totalGeral?.toLocaleString("pt-BR") || "carregando..."} normas | Fonte: MEC Normas - Ministério da Educação</strong>
         </div>
@@ -511,25 +361,121 @@ function NormasContent() {
           </div>
         )}
 
-        {normas.length > 0 && (
+        {showFundamentais && (
           <>
-            <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 style={{ fontSize: "15px", fontWeight: 600 }}>
-                {submittedSearch ? `Resultados para "${submittedSearch}"` : "Normas do MEC"}
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fffbeb" }}>
+              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#92400e", display: "flex", alignItems: "center", gap: "8px" }}>
+                <Scale style={{ width: "16px", height: "16px" }} />
+                Leis Fundamentais da Educação
               </h3>
-              <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
-                {total.toLocaleString("pt-BR")} norma(s)
+              <span style={{ fontSize: "12px", color: "#92400e", background: "#fef3c7", padding: "3px 10px", borderRadius: "12px", fontWeight: 600 }}>
+                {leisFundamentais.length} normas essenciais
               </span>
             </div>
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "900px" }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Norma</th>
+                    <th style={thStyle}>Categoria</th>
+                    <th style={thStyle}>Para a Diretora</th>
+                    <th style={{ ...thStyle, textAlign: "center" }}>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leisFundamentais.map((lei, index) => {
+                    const catColor = categoriaColors[lei.categoria] || { bg: "#f1f5f9", color: "#1a237e" };
+                    return (
+                      <tr key={lei.numero} style={{ background: index % 2 === 0 ? "#fffef5" : "#fefce8" }}>
+                        <td style={tdStyle}>
+                          <div style={{ maxWidth: "300px" }}>
+                            <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3, color: "#1e293b" }}>
+                              {lei.titulo}
+                            </div>
+                            <div style={{ fontSize: "11px", fontFamily: "monospace", color: "#94a3b8", marginTop: "2px" }}>
+                              {lei.numero}
+                            </div>
+                            <div style={{ fontSize: "11.5px", color: "#64748b", marginTop: "4px", lineHeight: 1.5 }}>
+                              {lei.descricao}
+                            </div>
+                          </div>
+                        </td>
+                        <td style={tdStyle}>
+                          <span style={{
+                            display: "inline-block", padding: "2px 8px", borderRadius: "4px",
+                            fontSize: "11px", fontWeight: 600, letterSpacing: "0.2px",
+                            background: catColor.bg, color: catColor.color,
+                          }}>
+                            {lei.categoria}
+                          </span>
+                        </td>
+                        <td style={tdStyle}>
+                          <div style={{
+                            fontSize: "12px", color: "#4a5568", lineHeight: 1.6, maxWidth: "350px",
+                            background: "#f0fdf4", padding: "8px 12px", borderRadius: "6px",
+                            borderLeft: "3px solid #22c55e",
+                          }}>
+                            {lei.paraADiretora}
+                          </div>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center" }}>
+                          <a href={lei.link} target="_blank" rel="noopener noreferrer"
+                            style={{
+                              padding: "6px 14px", border: "none", borderRadius: "6px",
+                              background: "#1a237e", color: "white", fontSize: "11px", fontWeight: 600,
+                              textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
+                            }}>
+                            <ExternalLink style={{ width: "11px", height: "11px" }} />
+                            Abrir
+                          </a>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div style={{
+              padding: "12px 20px",
+              borderTop: "2px solid #e2e5ec",
+              borderBottom: "1px solid #e2e5ec",
+              background: "#f8fafc",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}>
+              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#1a237e", display: "flex", alignItems: "center", gap: "8px" }}>
+                <FileText style={{ width: "16px", height: "16px" }} />
+                Demais Normas do MEC
+              </h3>
+              <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
+                {total.toLocaleString("pt-BR")} norma(s) no acervo
+              </span>
+            </div>
+          </>
+        )}
+
+        {!showFundamentais && normas.length > 0 && (
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h3 style={{ fontSize: "15px", fontWeight: 600 }}>
+              {submittedSearch ? `Resultados para "${submittedSearch}"` : "Normas do MEC"}
+            </h3>
+            <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
+              {total.toLocaleString("pt-BR")} norma(s)
+            </span>
+          </div>
+        )}
+
+        {normas.length > 0 && (
+          <>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "900px" }}>
                 <thead>
                   <tr>
                     <th style={thStyle}>Norma</th>
                     <th style={thStyle}>Tipo</th>
-                    <th style={thStyle}>Assuntos</th>
-                    <th style={thStyle}>Publicação</th>
-                    <th style={thStyle}>Vigente</th>
+                    <th style={thStyle}>Vigência</th>
+                    <th style={thStyle}>Para a Diretora</th>
                     <th style={{ ...thStyle, textAlign: "center" }}>Ações</th>
                   </tr>
                 </thead>
@@ -540,7 +486,6 @@ function NormasContent() {
                     const date = norma.dataDePublicacaoString || norma.dataPublicacao || norma.dataPublicacaoAto || norma.dataDePublicacao || "";
                     const tipo = norma.tipo?.nome || "";
                     const link = norma.disponivelEm || norma.disponivel_em || "";
-                    const assuntos = norma.assuntos || [];
                     const isVigente = norma.vigente;
                     const correlacoes = norma.correlacoes || [];
                     const hasAlteracao = correlacoes.length > 0;
@@ -549,18 +494,18 @@ function NormasContent() {
                     return (
                       <tr key={norma.id} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
                         <td style={tdStyle}>
-                          <div style={{ maxWidth: "400px" }}>
+                          <div style={{ maxWidth: "350px" }}>
                             <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3, color: "#1e293b" }}>
                               {title}
                             </div>
                             {ementa && (
                               <div style={{ fontSize: "11.5px", color: "#64748b", marginTop: "4px", lineHeight: 1.5 }}>
-                                {ementa.length > 180 ? ementa.slice(0, 180) + "..." : ementa}
+                                {ementa.length > 150 ? ementa.slice(0, 150) + "..." : ementa}
                               </div>
                             )}
-                            {norma.unidade?.sigla && (
+                            {date && (
                               <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "3px" }}>
-                                {norma.unidade.sigla}
+                                {norma.unidade?.sigla ? `${norma.unidade.sigla} | ` : ""}{date}
                               </div>
                             )}
                           </div>
@@ -574,24 +519,6 @@ function NormasContent() {
                               {tipo}
                             </span>
                           )}
-                        </td>
-                        <td style={tdStyle}>
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: "3px", maxWidth: "200px" }}>
-                            {assuntos.slice(0, 2).map((a: any, i: number) => (
-                              <span key={i} style={{
-                                display: "inline-block", padding: "1px 6px", borderRadius: "3px",
-                                fontSize: "10px", fontWeight: 500, background: "#dbeafe", color: "#1e40af",
-                              }}>
-                                {a.nome}
-                              </span>
-                            ))}
-                            {assuntos.length > 2 && (
-                              <span style={{ fontSize: "10px", color: "#94a3b8" }}>+{assuntos.length - 2}</span>
-                            )}
-                          </div>
-                        </td>
-                        <td style={tdStyle}>
-                          <span style={{ fontSize: "12px", color: "#64748b" }}>{date || "—"}</span>
                         </td>
                         <td style={tdStyle}>
                           <div>
@@ -628,6 +555,9 @@ function NormasContent() {
                               </div>
                             ))}
                           </div>
+                        </td>
+                        <td style={tdStyle}>
+                          <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
                         </td>
                         <td style={{ ...tdStyle, textAlign: "center" }}>
                           {link && (
@@ -1369,7 +1299,7 @@ const paginationBtnStyle: React.CSSProperties = {
 
 export default function Legislacao() {
   const [activeCategory, setActiveCategory] = useState<CategoryId>("cat-normas");
-  const [activeSubTab, setActiveSubTab] = useState<SubTabId>("normas-leis");
+  const [activeSubTab, setActiveSubTab] = useState<SubTabId>("dou-federal");
 
   const switchCategory = (catId: CategoryId) => {
     setActiveCategory(catId);
@@ -1380,10 +1310,7 @@ export default function Legislacao() {
   };
 
   const renderContent = () => {
-    if (activeSubTab === "normas-leis") {
-      return <LeisFundamentaisContent />;
-    }
-    if (activeSubTab === "normas-todas") {
+    if (activeCategory === "cat-normas") {
       return <NormasContent />;
     }
     if (activeSubTab === "dou-federal") {
@@ -1467,44 +1394,48 @@ export default function Legislacao() {
         </nav>
 
         {categories.map(cat => (
-          <div
-            key={cat.id}
-            style={{
-              display: activeCategory === cat.id ? "flex" : "none",
-              gap: "2px",
-              background: "#f1f5f9",
-              borderRadius: "0 0 10px 10px",
-              padding: "4px 6px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-              overflowX: "auto",
-              WebkitOverflowScrolling: "touch",
-              marginBottom: "20px",
-            }}
-          >
-            {cat.subTabs.map(sub => (
-              <button
-                key={sub.id}
-                onClick={() => setActiveSubTab(sub.id)}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "13px",
-                  fontWeight: activeSubTab === sub.id ? 600 : 500,
-                  color: activeSubTab === sub.id ? "#1a237e" : "#64748b",
-                  transition: "all 0.15s",
-                  whiteSpace: "nowrap",
-                  textAlign: "center",
-                  flexShrink: 0,
-                  border: "none",
-                  background: activeSubTab === sub.id ? "white" : "none",
-                  boxShadow: activeSubTab === sub.id ? "0 1px 3px rgba(0,0,0,0.06)" : "none",
-                }}
-              >
-                {sub.label}
-              </button>
-            ))}
-          </div>
+          cat.subTabs.length > 0 ? (
+            <div
+              key={cat.id}
+              style={{
+                display: activeCategory === cat.id ? "flex" : "none",
+                gap: "2px",
+                background: "#f1f5f9",
+                borderRadius: "0 0 10px 10px",
+                padding: "4px 6px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                overflowX: "auto",
+                WebkitOverflowScrolling: "touch",
+                marginBottom: "20px",
+              }}
+            >
+              {cat.subTabs.map(sub => (
+                <button
+                  key={sub.id}
+                  onClick={() => setActiveSubTab(sub.id)}
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    fontWeight: activeSubTab === sub.id ? 600 : 500,
+                    color: activeSubTab === sub.id ? "#1a237e" : "#64748b",
+                    transition: "all 0.15s",
+                    whiteSpace: "nowrap",
+                    textAlign: "center",
+                    flexShrink: 0,
+                    border: "none",
+                    background: activeSubTab === sub.id ? "white" : "none",
+                    boxShadow: activeSubTab === sub.id ? "0 1px 3px rgba(0,0,0,0.06)" : "none",
+                  }}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+          ) : activeCategory === cat.id ? (
+            <div key={cat.id} style={{ marginBottom: "20px" }} />
+          ) : null
         ))}
 
         {renderContent()}
