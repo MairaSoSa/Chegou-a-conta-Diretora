@@ -21,13 +21,6 @@ export interface DOUSearchResponse {
   searchUrl?: string;
 }
 
-function formatDateBR(d: Date): string {
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${dd}-${mm}-${yyyy}`;
-}
-
 export function buildDOUSearchUrl(query: string, exactMatch = false): string {
   const searchTerm = exactMatch ? `"${query}"` : query;
   const params = new URLSearchParams({
@@ -38,44 +31,118 @@ export function buildDOUSearchUrl(query: string, exactMatch = false): string {
   return `${IN_SEARCH_URL}?${params.toString()}`;
 }
 
-async function tryScrapeDOU(searchUrl: string, maxResults: number): Promise<DOUResult[]> {
-  const headers: Record<string, string> = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
-    "Cache-Control": "no-cache",
-    "Cookie": "COOKIE_SUPPORT=true; GUEST_LANGUAGE_ID=pt_BR",
-  };
+const COMMON_HEADERS: Record<string, string> = {
+  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+  "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+  "Cache-Control": "no-cache",
+  "Referer": "https://www.in.gov.br/consulta",
+};
 
-  const response = await fetch(searchUrl, {
-    headers,
-    signal: AbortSignal.timeout(20000),
-    redirect: "follow",
-  });
-
-  if (!response.ok) return [];
-
-  const html = await response.text();
-  const $ = cheerio.load(html);
-
-  const scriptTag = $(
-    "script#_br_com_seatecnologia_in_buscadou_BuscaDouPortlet_params"
-  );
-
-  if (!scriptTag.length) return [];
-
-  const jsonText = scriptTag.contents().first().text();
-  let parsed: any;
+async function tryJsonApi(searchParams: URLSearchParams, maxResults: number): Promise<DOUResult[]> {
   try {
-    parsed = JSON.parse(jsonText);
+    const apiUrl = `https://www.in.gov.br/consulta/-/buscar/dou?${searchParams.toString()}`;
+    const response = await fetch(apiUrl, {
+      headers: {
+        ...COMMON_HEADERS,
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "X-Requested-With": "XMLHttpRequest",
+        "Cookie": "COOKIE_SUPPORT=true; GUEST_LANGUAGE_ID=pt_BR",
+      },
+      signal: AbortSignal.timeout(15000),
+      redirect: "follow",
+    });
+
+    if (!response.ok) return [];
+
+    const contentType = response.headers.get("content-type") || "";
+    const body = await response.text();
+
+    if (contentType.includes("application/json")) {
+      const data = JSON.parse(body);
+      const jsonArray: any[] = data?.jsonArray || [];
+      if (jsonArray.length === 0) return [];
+      return jsonArray.slice(0, maxResults).map(mapItem);
+    }
+
+    return tryParseHtml(body, maxResults);
   } catch {
     return [];
   }
+}
 
-  const jsonArray: any[] = parsed?.jsonArray || [];
+async function tryHtmlScrape(searchUrl: string, maxResults: number): Promise<DOUResult[]> {
+  try {
+    const response = await fetch(searchUrl, {
+      headers: {
+        ...COMMON_HEADERS,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Cookie": "COOKIE_SUPPORT=true; GUEST_LANGUAGE_ID=pt_BR",
+      },
+      signal: AbortSignal.timeout(20000),
+      redirect: "follow",
+    });
+
+    if (!response.ok) return [];
+
+    const html = await response.text();
+    return tryParseHtml(html, maxResults);
+  } catch {
+    return [];
+  }
+}
+
+function tryParseHtml(html: string, maxResults: number): DOUResult[] {
+  const $ = cheerio.load(html);
+
+  const scriptIds = [
+    "script#_br_com_seatecnologia_in_buscadou_BuscaDouPortlet_params",
+    "script[id*='BuscaDou']",
+    "script[id*='buscadou']",
+    "script[id*='Portlet_params']",
+  ];
+
+  let jsonArray: any[] = [];
+
+  for (const selector of scriptIds) {
+    const scriptTag = $(selector);
+    if (scriptTag.length) {
+      const jsonText = scriptTag.contents().first().text();
+      try {
+        const parsed = JSON.parse(jsonText);
+        jsonArray = parsed?.jsonArray || [];
+        if (jsonArray.length > 0) break;
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  if (jsonArray.length === 0) {
+    const allScripts = $("script").toArray();
+    for (const script of allScripts) {
+      const text = $(script).text();
+      if (text.includes("jsonArray") && text.includes("urlTitle")) {
+        try {
+          const match = text.match(/\{[\s\S]*"jsonArray"\s*:\s*\[[\s\S]*\][\s\S]*\}/);
+          if (match) {
+            const parsed = JSON.parse(match[0]);
+            jsonArray = parsed?.jsonArray || [];
+            if (jsonArray.length > 0) break;
+          }
+        } catch {
+          continue;
+        }
+      }
+    }
+  }
+
   if (jsonArray.length === 0) return [];
 
-  return jsonArray.slice(0, maxResults).map((item: any) => ({
+  return jsonArray.slice(0, maxResults).map(mapItem);
+}
+
+function mapItem(item: any): DOUResult {
+  return {
     title: item.title || "",
     href: item.urlTitle ? `${IN_WEB_BASE_URL}${item.urlTitle}` : "",
     abstract: cleanHtml(item.content || ""),
@@ -83,7 +150,7 @@ async function tryScrapeDOU(searchUrl: string, maxResults: number): Promise<DOUR
     section: (item.pubName || "").toLowerCase(),
     hierarchy: item.hierarchyStr || "",
     artType: item.artType || "",
-  }));
+  };
 }
 
 export async function searchDOU(params: {
@@ -114,7 +181,11 @@ export async function searchDOU(params: {
   const searchUrl = `${IN_SEARCH_URL}?${searchParams.toString()}`;
 
   try {
-    const results = await tryScrapeDOU(searchUrl, maxResults);
+    let results = await tryJsonApi(searchParams, maxResults);
+
+    if (results.length === 0) {
+      results = await tryHtmlScrape(searchUrl, maxResults);
+    }
 
     if (results.length > 0) {
       return { ok: true, results, total: results.length, searchUrl };

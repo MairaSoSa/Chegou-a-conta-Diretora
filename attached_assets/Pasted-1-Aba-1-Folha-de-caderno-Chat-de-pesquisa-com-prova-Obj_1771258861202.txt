@@ -1,0 +1,229 @@
+1) Aba 1 — Folha de caderno + Chat de pesquisa “com prova”
+Objetivo
+
+Um chat tipo GPT, mas com alucinação “bloqueada”: ele só pode:
+
+usar o histórico do próprio chat (mensagens anteriores), e/ou
+
+usar fontes consultadas na hora (web, PDFs, páginas) que ficam salvas como “clipping” com link e trecho.
+
+Regras de resposta
+
+Toda afirmação factual precisa vir com pelo menos 1 citação:
+
+[Chat] quando veio de uma mensagem anterior do chat (com “permalink” interno: mensagem #, data, autor).
+
+[Fonte] quando veio de consulta (URL + trecho + data/hora de captura).
+
+Se não houver fonte suficiente: o chat responde “não encontrei evidência nas fontes disponíveis” e sugere o que pesquisar (mas não inventa).
+
+UX essencial (pra ficar bom de usar)
+
+Layout “folha de caderno”: texto com linhas suaves + margem.
+
+Cada resposta vem com um bloco “📌 Fontes usadas” expandível:
+
+Link clicável
+
+Título da página/PDF
+
+Data/hora da captura
+
+Trecho destacado (highlight)
+
+Botões rápidos:
+
+“Salvar como nota” (vira nota do caderno)
+
+“Fixar fonte” (entra no acervo daquele tópico)
+
+“Abrir no leitor” (abre PDF/página num painel lateral)
+
+Como implementar a restrição “só chat ou consultado”
+
+No backend do chat, tu forças um “modo evidência”:
+
+Pipeline de resposta
+
+O usuário pergunta.
+
+O sistema monta um “pacote de contexto” apenas com:
+
+trechos do histórico do chat (últimas mensagens + mensagens relevantes por busca)
+
+trechos das fontes consultadas e armazenadas (clippings)
+
+O modelo só recebe esse pacote e é instruído:
+
+“não use conhecimento externo; se não estiver no pacote, diga que não sabe”.
+
+O modelo deve retornar em formato estruturado:
+
+answer (texto)
+
+citations[] (lista de IDs de trechos usados)
+
+follow_up_queries[] (buscas sugeridas)
+
+Ferramentas (tools) do chat
+
+search_web(query) → retorna páginas
+
+fetch_url(url) → baixa e extrai texto
+
+fetch_pdf(url) → baixa pdf, extrai texto, guarda trechos
+
+save_clipping(source_id, excerpt, tags) → salva evidência
+
+Tu não precisas “confiar” no modelo: tu validas no backend se ele citou algo que existe.
+
+Modelo de dados (mínimo)
+
+chat_thread
+
+chat_message { id, thread_id, role, content, created_at }
+
+source { id, thread_id, url, title, fetched_at, content_hash }
+
+source_chunk { id, source_id, chunk_text, chunk_index }
+
+answer_citation { message_id, chunk_id }
+
+note { id, thread_id, title, content, links[] }
+
+2) Aba 2 — Editor por tipo de documento (com normas + revisão assistida)
+
+Aqui é outra lógica: não é “chat que escreve tudo”, é editor com orientação, revisão e conformidade.
+
+Estrutura
+
+Tu podes fazer como “subabas”:
+
+2.1 Escolher tipo de documento
+
+Ata
+
+Ofício
+
+Plano de aplicação / plano de ação
+
+Pesquisa de preços / mapa comparativo
+
+Relatório de execução / prestação de contas (narrativa)
+
+Termo/declaração/encaminhamento (se tu usas isso)
+
+2.2 Editor
+
+Campo para logo (upload; guarda no projeto e reaproveita)
+
+Cabeçalho autopreenchido por código INEP
+
+Corpo do documento (rich text)
+
+Rodapé (assinaturas, local/data)
+
+2.3 Painel de “Dicas e Normas” (do lado direito)
+Em vez de gerar o texto inteiro, o chat vira um assistente contextual com ações do tipo:
+
+“Tornar mais descritivo”
+
+“Reescrever este parágrafo com clareza”
+
+“Checar gramática e concordância”
+
+“Verificar se faltam elementos obrigatórios”
+
+“Sugerir checklist do documento”
+
+“Apontar inconsistências (datas, valores, nomes, CNPJ)”
+
+“Marcar trechos vagos (‘conforme combinado’, ‘diversos’) e sugerir detalhamento”
+
+Regras do assistente no editor
+
+Ele não cria um documento do zero sem que exista texto.
+
+Ele trabalha em cima de:
+
+seleção do usuário (um trecho)
+
+ou seções vazias que tu delimitas como campos (ex.: “Objetivo”, “Justificativa”, “Metodologia”, “Cronograma”).
+
+Ele sempre mostra sugestões como:
+
+“Sugestão de reescrita” (com botão “Aplicar”)
+
+“Checklist de completude”
+
+“Alertas” (tom neutro, sem juridiquês)
+
+Normas consultadas “dentro do editor”
+
+Aqui entra teu requisito: “conforme as normas que devem ser consultadas também”.
+
+O truque é: cada tipo de documento tem um “pacote normativo” (um conjunto de fontes) que o assistente pode consultar.
+
+Exemplo:
+
+“Ata” → checklist + orientações internas + trechos de guias do FNDE/PDDE, e quando cabível, orientações do banco/BB sobre movimentação/registro
+
+“Pesquisa de preços” → boas práticas + orientações internas + exigências de transparência/registro
+
+“Ofício” → padrão formal + campos obrigatórios + orientações de clareza (sem inventar norma)
+
+Importante: mesmo no editor, quando ele falar “a norma exige X”, ele precisa citar a fonte (link/trecho) do teu acervo normativo.
+
+Cabeçalho por INEP (autopreenchimento)
+
+Fluxo:
+
+Usuário digita INEP
+
+Backend consulta tua base (ideal: tabela local com escola/municipio/uf/endereço/rede etc.)
+
+Preenche:
+
+Nome da escola
+
+Município/UF
+
+Endereço (se tiver)
+
+Rede (municipal/estadual)
+
+CNPJ da UEx (se tu tiveres isso numa tabela separada)
+
+Esses campos viram variáveis de template no cabeçalho.
+
+Fallback: se não achar INEP, o editor pede para preencher manualmente e marca como “pendente”.
+
+Export DOCX e PDF
+
+DOCX: montar a partir do HTML do editor + placeholders (logo, cabeçalho, estilos).
+
+PDF: renderização por engine (tipo Chromium headless) ou biblioteca.
+O ideal é manter um “tema” (fontes, margens, espaçamento, estilo do cabeçalho) consistente.
+
+3) Como amarrar as duas abas sem confundir
+O que o Chat de Pesquisa entrega para o Editor
+
+Um botão em cada resposta do chat: “Usar no documento”:
+
+envia para o editor como:
+
+nota lateral (não entra no texto)
+
+ou referência com link (se tu quiser citar no relatório/justificativa)
+
+nunca “cola automático no corpo” sem o usuário escolher onde entra.
+
+Biblioteca de fontes compartilhada
+
+Tudo que o chat consultou pode virar:
+
+“Fontes do Projeto”
+
+“Fontes do Tipo de Documento”
+
+“Fontes Favoritas do Usuário”

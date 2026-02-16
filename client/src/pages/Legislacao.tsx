@@ -121,8 +121,8 @@ const categoriaColors: Record<string, { bg: string; color: string }> = {
   "Base Legal": { bg: "#dcfce7", color: "#166534" },
   "Financiamento": { bg: "#ffedd5", color: "#9a3412" },
   "Programas FNDE": { bg: "#fee2e2", color: "#991b1b" },
-  "Planejamento": { bg: "#f3e8ff", color: "#6b21a8" },
-  "Gestão": { bg: "#dbeafe", color: "#1e40af" },
+  "Planejamento": { bg: "#efebe9", color: "#6d4c41" },
+  "Gestão": { bg: "#efebe9", color: "#6d4c41" },
 };
 
 const doeLinks: { estado: string; sigla: string; url: string; searchUrl?: (q: string) => string }[] = [
@@ -365,12 +365,12 @@ function NormasContent() {
   return (
     <>
       <div style={{
-        background: "#eff6ff",
-        borderLeft: "4px solid #3b82f6",
+        background: "#faf5f0",
+        borderLeft: "4px solid #8d6e63",
         padding: "16px 20px",
         borderRadius: "0 10px 10px 0",
         fontSize: "13px",
-        color: "#1e40af",
+        color: "#4e342e",
         marginBottom: "16px",
         lineHeight: 1.7,
       }}>
@@ -379,7 +379,7 @@ function NormasContent() {
           Normas
         </div>
         <p>Acervo completo de atos normativos do Ministério da Educação, com as {leisFundamentais.length} leis fundamentais da educação em destaque. Pesquise por palavras-chave, filtre por tipo e confira o status de vigência de cada norma.</p>
-        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
+        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #d7ccc8", fontSize: "12px", color: "#4e342e" }}>
           <strong>Total no acervo: {tiposData?.totalGeral?.toLocaleString("pt-BR") || "carregando..."} normas | Fonte: MEC Normas - Ministério da Educação</strong>
         </div>
       </div>
@@ -397,9 +397,9 @@ function NormasContent() {
             padding: "16px 20px",
             boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
             border: "1px solid #e2e5ec",
-            borderLeft: "3px solid #1a237e",
+            borderLeft: "3px solid #5d4037",
           }}>
-            <div style={{ fontSize: "26px", fontWeight: 800, color: "#1a237e", lineHeight: 1.1 }}>
+            <div style={{ fontSize: "26px", fontWeight: 800, color: "#5d4037", lineHeight: 1.1 }}>
               {tiposData.totalGeral.toLocaleString("pt-BR")}
             </div>
             <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginTop: "4px" }}>
@@ -407,20 +407,20 @@ function NormasContent() {
             </div>
           </div>
           {tiposData.tipos.slice(0, 5).map((tipo, i) => {
-            const colors = ["#2e7d32", "#ef6c00", "#c62828", "#6b21a8", "#1565c0"];
+            const colors = ["#2e7d32", "#ef6c00", "#c62828", "#6d4c41", "#1565c0"];
             return (
               <div key={tipo.id} style={{
-                background: selectedTipo === String(tipo.id) ? "#f0f4ff" : "white",
+                background: selectedTipo === String(tipo.id) ? "#faf5f0" : "white",
                 borderRadius: "10px",
                 padding: "16px 20px",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
-                border: selectedTipo === String(tipo.id) ? "1px solid #93c5fd" : "1px solid #e2e5ec",
+                border: selectedTipo === String(tipo.id) ? "1px solid #bcaaa4" : "1px solid #e2e5ec",
                 borderLeft: `3px solid ${colors[i % colors.length]}`,
                 cursor: "pointer",
               }}
               onClick={() => { setSelectedTipo(selectedTipo === String(tipo.id) ? "" : String(tipo.id)); setPage(0); }}
               >
-                <div style={{ fontSize: "26px", fontWeight: 800, color: "#1a237e", lineHeight: 1.1 }}>
+                <div style={{ fontSize: "26px", fontWeight: 800, color: "#5d4037", lineHeight: 1.1 }}>
                   {tipo.total.toLocaleString("pt-BR")}
                 </div>
                 <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginTop: "4px" }}>
@@ -452,7 +452,7 @@ function NormasContent() {
                 padding: "8px 18px", border: "none", borderRadius: "6px",
                 fontSize: "13px", fontWeight: 600, cursor: searchTerm.trim() ? "pointer" : "not-allowed",
                 display: "inline-flex", alignItems: "center", gap: "6px",
-                background: searchTerm.trim() ? "#1a237e" : "#94a3b8", color: "white",
+                background: searchTerm.trim() ? "#5d4037" : "#94a3b8", color: "white",
               }}
             >
               <Search style={{ width: "14px", height: "14px" }} />
@@ -490,7 +490,7 @@ function NormasContent() {
 
         {isLoading && (
           <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#1a237e" }} />
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#5d4037" }} />
             <div style={{ fontSize: "13px" }}>Carregando normas do MEC...</div>
           </div>
         )}
@@ -536,7 +536,7 @@ function NormasContent() {
                 </thead>
                 <tbody>
                   {leisFundamentais.map((lei, index) => {
-                    const catColor = categoriaColors[lei.categoria] || { bg: "#f1f5f9", color: "#1a237e" };
+                    const catColor = categoriaColors[lei.categoria] || { bg: "#efebe9", color: "#5d4037" };
                     return (
                       <tr key={lei.numero} style={{ background: index % 2 === 0 ? "#fffef5" : "#fefce8" }}>
                         <td style={tdStyle}>
@@ -574,7 +574,7 @@ function NormasContent() {
                           <a href={lei.link} target="_blank" rel="noopener noreferrer"
                             style={{
                               padding: "6px 14px", border: "none", borderRadius: "6px",
-                              background: "#1a237e", color: "white", fontSize: "11px", fontWeight: 600,
+                              background: "#5d4037", color: "white", fontSize: "11px", fontWeight: 600,
                               textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
                             }}>
                             <ExternalLink style={{ width: "11px", height: "11px" }} />
@@ -596,7 +596,7 @@ function NormasContent() {
               justifyContent: "space-between",
               alignItems: "center",
             }}>
-              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#1a237e", display: "flex", alignItems: "center", gap: "8px" }}>
+              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#5d4037", display: "flex", alignItems: "center", gap: "8px" }}>
                 <FileText style={{ width: "16px", height: "16px" }} />
                 Demais Normas
               </h3>
@@ -666,7 +666,7 @@ function NormasContent() {
                           {tipo && (
                             <span style={{
                               display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                              fontSize: "11px", fontWeight: 600, background: "#f3e8ff", color: "#6b21a8",
+                              fontSize: "11px", fontWeight: 600, background: "#efebe9", color: "#6d4c41",
                             }}>
                               {tipo}
                             </span>
@@ -725,7 +725,7 @@ function NormasContent() {
                               rel="noopener noreferrer"
                               style={{
                                 padding: "4px 10px", border: "none", borderRadius: "4px",
-                                background: "#1a237e", color: "white", fontSize: "11px", fontWeight: 600,
+                                background: "#5d4037", color: "white", fontSize: "11px", fontWeight: 600,
                                 textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
                               }}
                             >
@@ -873,8 +873,8 @@ function DiarioOficialContent() {
   ];
 
   const subTabs: { id: DiarioSubTab; label: string; icon: React.ReactNode; color: string }[] = [
-    { id: "dou", label: "DOU Federal", icon: <Landmark style={{ width: "14px", height: "14px" }} />, color: "#1e40af" },
-    { id: "doe", label: "DOE Estados", icon: <Globe style={{ width: "14px", height: "14px" }} />, color: "#6b21a8" },
+    { id: "dou", label: "DOU Federal", icon: <Landmark style={{ width: "14px", height: "14px" }} />, color: "#6d4c41" },
+    { id: "doe", label: "DOE Estados", icon: <Globe style={{ width: "14px", height: "14px" }} />, color: "#6d4c41" },
     { id: "municipal", label: "Diários Municipais", icon: <MapPin style={{ width: "14px", height: "14px" }} />, color: "#166534" },
   ];
 
@@ -908,12 +908,12 @@ function DiarioOficialContent() {
   return (
     <>
       <div style={{
-        background: "#eff6ff",
-        borderLeft: "4px solid #3b82f6",
+        background: "#faf5f0",
+        borderLeft: "4px solid #8d6e63",
         padding: "14px 20px",
         borderRadius: "0 10px 10px 0",
         fontSize: "13px",
-        color: "#1e40af",
+        color: "#6d4c41",
         marginBottom: "16px",
         lineHeight: 1.6,
       }}>
@@ -922,7 +922,7 @@ function DiarioOficialContent() {
           Diários Oficiais
         </div>
         <p>Busque publicações oficiais do DOU (federal), dos diários estaduais (DOE) e dos diários municipais. Escolha a aba desejada abaixo.</p>
-        <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
+        <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid #d7ccc8", fontSize: "12px", color: "#4e342e" }}>
           <strong>Fontes: Imprensa Nacional (in.gov.br) | Querido Diário API (queridodiario.ok.org.br)</strong>
         </div>
       </div>
@@ -970,7 +970,7 @@ function DiarioOficialContent() {
                     style={inputStyle}
                   />
                 </div>
-                <button type="submit" disabled={!douSearch.trim()} style={{ padding: "8px 18px", border: "none", borderRadius: "6px", fontSize: "13px", fontWeight: 600, cursor: douSearch.trim() ? "pointer" : "not-allowed", display: "inline-flex", alignItems: "center", gap: "6px", background: douSearch.trim() ? "#1e40af" : "#94a3b8", color: "white", transition: "all 0.15s" }}>
+                <button type="submit" disabled={!douSearch.trim()} style={{ padding: "8px 18px", border: "none", borderRadius: "6px", fontSize: "13px", fontWeight: 600, cursor: douSearch.trim() ? "pointer" : "not-allowed", display: "inline-flex", alignItems: "center", gap: "6px", background: douSearch.trim() ? "#6d4c41" : "#94a3b8", color: "white", transition: "all 0.15s" }}>
                   <Search style={{ width: "14px", height: "14px" }} />
                   Buscar
                 </button>
@@ -979,7 +979,7 @@ function DiarioOficialContent() {
             <div style={{ padding: "0 20px 12px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
               <span style={{ fontSize: "11px", color: "#94a3b8", alignSelf: "center" }}>Sugestões:</span>
               {quickSearches.map((term) => (
-                <button key={term} onClick={() => { setDouSearch(term); setDouSubmitted(term); }} style={{ padding: "4px 10px", borderRadius: "20px", border: "none", fontSize: "11px", fontWeight: 500, cursor: "pointer", background: "#dbeafe", color: "#1e40af", transition: "all 0.15s" }}>
+                <button key={term} onClick={() => { setDouSearch(term); setDouSubmitted(term); }} style={{ padding: "4px 10px", borderRadius: "20px", border: "none", fontSize: "11px", fontWeight: 500, cursor: "pointer", background: "#efebe9", color: "#6d4c41", transition: "all 0.15s" }}>
                   {term}
                 </button>
               ))}
@@ -988,7 +988,7 @@ function DiarioOficialContent() {
 
           {douQuery.isLoading && (
             <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#1e40af" }} />
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#6d4c41" }} />
               <div style={{ fontSize: "13px" }}>Consultando o DOU (Imprensa Nacional)...</div>
             </div>
           )}
@@ -1003,7 +1003,7 @@ function DiarioOficialContent() {
           {!douQuery.isLoading && douSubmitted && !douQuery.error && (
             <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
               <div style={{ padding: "12px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "13px", color: "#1e40af", fontWeight: 600 }}>
+                <span style={{ fontSize: "13px", color: "#6d4c41", fontWeight: 600 }}>
                   Resultados para "{douSubmitted}"
                 </span>
                 <span style={{ fontSize: "11px", color: "#64748b" }}>
@@ -1024,7 +1024,7 @@ function DiarioOficialContent() {
                       </thead>
                       <tbody>
                         {douResults.map((item, index) => (
-                          <tr key={`dou-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#f0f4ff" }}>
+                          <tr key={`dou-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#faf5f0" }}>
                             <td style={tdStyle}>
                               <div style={{ maxWidth: "450px" }}>
                                 <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3, color: "#1e293b" }}>{item.title}</div>
@@ -1038,7 +1038,7 @@ function DiarioOficialContent() {
                             <td style={tdStyle}><span style={{ fontSize: "12px", color: "#64748b" }}>{item.date || "—"}</span></td>
                             <td style={tdStyle}><span style={{ fontSize: "12px", color: "#64748b" }}>{item.hierarchy || "Governo Federal"}</span></td>
                             <td style={{ ...tdStyle, textAlign: "center" }}>
-                              <a href={item.href} target="_blank" rel="noopener noreferrer" style={{ padding: "4px 10px", border: "none", borderRadius: "4px", background: "#1e40af", color: "white", fontSize: "11px", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                              <a href={item.href} target="_blank" rel="noopener noreferrer" style={{ padding: "4px 10px", border: "none", borderRadius: "4px", background: "#6d4c41", color: "white", fontSize: "11px", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
                                 <ExternalLink style={{ width: "11px", height: "11px" }} /> Abrir
                               </a>
                             </td>
@@ -1049,7 +1049,7 @@ function DiarioOficialContent() {
                   </div>
                   {douSearchUrl && (
                     <div style={{ padding: "10px 20px", borderTop: "1px solid #e2e5ec", textAlign: "center" }}>
-                      <a href={douSearchUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#1e40af", textDecoration: "none", fontWeight: 600 }}>
+                      <a href={douSearchUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#6d4c41", textDecoration: "none", fontWeight: 600 }}>
                         Ver mais resultados no site oficial do DOU →
                       </a>
                     </div>
@@ -1057,7 +1057,7 @@ function DiarioOficialContent() {
                 </>
               ) : (
                 <div style={{ padding: "28px 20px", textAlign: "center" }}>
-                  <Landmark className="w-8 h-8 mx-auto mb-3" style={{ color: "#1e40af", opacity: 0.5 }} />
+                  <Landmark className="w-8 h-8 mx-auto mb-3" style={{ color: "#6d4c41", opacity: 0.5 }} />
                   <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "6px" }}>
                     {douQuery.data?.message || `Nenhum resultado encontrado para "${douSubmitted}" no DOU.`}
                   </p>
@@ -1065,7 +1065,7 @@ function DiarioOficialContent() {
                     O site da Imprensa Nacional pode exigir acesso direto para algumas buscas.
                   </p>
                   {douSearchUrl && (
-                    <a href={douSearchUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "8px", background: "#1e40af", color: "white", textDecoration: "none", fontSize: "14px", fontWeight: 600, boxShadow: "0 2px 8px rgba(30,64,175,0.3)", transition: "all 0.15s" }}>
+                    <a href={douSearchUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "8px", background: "#6d4c41", color: "white", textDecoration: "none", fontSize: "14px", fontWeight: 600, boxShadow: "0 2px 8px rgba(93,64,55,0.3)", transition: "all 0.15s" }}>
                       <Search style={{ width: "16px", height: "16px" }} />
                       Buscar "{douSubmitted}" no site do DOU
                       <ExternalLink style={{ width: "13px", height: "13px" }} />
@@ -1117,7 +1117,7 @@ function DiarioOficialContent() {
                     style={inputStyle}
                   />
                 </div>
-                <button type="submit" disabled={!doeSearch.trim() || !doeState} style={{ padding: "8px 18px", border: "none", borderRadius: "6px", fontSize: "13px", fontWeight: 600, cursor: (doeSearch.trim() && doeState) ? "pointer" : "not-allowed", display: "inline-flex", alignItems: "center", gap: "6px", background: (doeSearch.trim() && doeState) ? "#6b21a8" : "#94a3b8", color: "white", transition: "all 0.15s" }}>
+                <button type="submit" disabled={!doeSearch.trim() || !doeState} style={{ padding: "8px 18px", border: "none", borderRadius: "6px", fontSize: "13px", fontWeight: 600, cursor: (doeSearch.trim() && doeState) ? "pointer" : "not-allowed", display: "inline-flex", alignItems: "center", gap: "6px", background: (doeSearch.trim() && doeState) ? "#6d4c41" : "#94a3b8", color: "white", transition: "all 0.15s" }}>
                   <Search style={{ width: "14px", height: "14px" }} />
                   Buscar
                 </button>
@@ -1126,7 +1126,7 @@ function DiarioOficialContent() {
             <div style={{ padding: "0 20px 12px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
               <span style={{ fontSize: "11px", color: "#94a3b8", alignSelf: "center" }}>Sugestões:</span>
               {quickSearches.map((term) => (
-                <button key={term} onClick={() => { setDoeSearch(term); if (doeState) { setDoeSubmitted(term); setDoeOffset(0); } }} style={{ padding: "4px 10px", borderRadius: "20px", border: "none", fontSize: "11px", fontWeight: 500, cursor: "pointer", background: "#f3e8ff", color: "#6b21a8", transition: "all 0.15s" }}>
+                <button key={term} onClick={() => { setDoeSearch(term); if (doeState) { setDoeSubmitted(term); setDoeOffset(0); } }} style={{ padding: "4px 10px", borderRadius: "20px", border: "none", fontSize: "11px", fontWeight: 500, cursor: "pointer", background: "#efebe9", color: "#6d4c41", transition: "all 0.15s" }}>
                   {term}
                 </button>
               ))}
@@ -1135,7 +1135,7 @@ function DiarioOficialContent() {
 
           {doeQuery.isLoading && (
             <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#6b21a8" }} />
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#6d4c41" }} />
               <div style={{ fontSize: "13px" }}>Consultando diários de {doeState} via Querido Diário...</div>
             </div>
           )}
@@ -1150,7 +1150,7 @@ function DiarioOficialContent() {
           {!doeQuery.isLoading && doeSubmitted && doeState && !doeQuery.error && (
             <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
               <div style={{ padding: "12px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-                <span style={{ fontSize: "13px", color: "#6b21a8", fontWeight: 600 }}>
+                <span style={{ fontSize: "13px", color: "#6d4c41", fontWeight: 600 }}>
                   Resultados para "{doeSubmitted}" em {doeState}
                 </span>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -1158,7 +1158,7 @@ function DiarioOficialContent() {
                     {doeGazettes.length > 0 ? `${doeTotal.toLocaleString("pt-BR")} resultado(s)` : "Nenhum resultado"}
                   </span>
                   {doePortal && (
-                    <a href={doePortal.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "#6b21a8", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                    <a href={doePortal.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "#6d4c41", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "3px" }}>
                       <Globe style={{ width: "10px", height: "10px" }} />
                       Portal oficial
                     </a>
@@ -1167,7 +1167,7 @@ function DiarioOficialContent() {
               </div>
               {doeGazettes.length > 0 ? (
                 <>
-                  <GazetteResultsTable gazettes={doeGazettes} bgColor="#faf5ff" />
+                  <GazetteResultsTable gazettes={doeGazettes} bgColor="#faf5f0" />
                   {doeTotalPages > 1 && (
                     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", padding: "14px", borderTop: "1px solid #e2e5ec" }}>
                       <button onClick={() => setDoeOffset(Math.max(0, doeOffset - doePageSize))} disabled={doeOffset <= 0} style={{ ...paginationBtnStyle, opacity: doeOffset <= 0 ? 0.4 : 1, cursor: doeOffset <= 0 ? "not-allowed" : "pointer" }}>
@@ -1188,7 +1188,7 @@ function DiarioOficialContent() {
                     {doeQuery.data?.message || `Nenhum resultado para "${doeSubmitted}" em ${doeState}.`}
                   </p>
                   {doePortal && (
-                    <a href={doePortal.searchUrl ? doePortal.searchUrl(doeSubmitted) : doePortal.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "6px", background: "#6b21a8", color: "white", textDecoration: "none", fontSize: "12px", fontWeight: 600, marginTop: "8px" }}>
+                    <a href={doePortal.searchUrl ? doePortal.searchUrl(doeSubmitted) : doePortal.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "6px", background: "#6d4c41", color: "white", textDecoration: "none", fontSize: "12px", fontWeight: 600, marginTop: "8px" }}>
                       <ExternalLink style={{ width: "12px", height: "12px" }} /> Buscar no portal oficial de {doeState}
                     </a>
                   )}
@@ -1208,11 +1208,11 @@ function DiarioOficialContent() {
               </div>
               <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
                 <div style={{ padding: "12px 20px", borderBottom: "1px solid #e2e5ec" }}>
-                  <h4 style={{ fontSize: "13px", fontWeight: 700, color: "#6b21a8" }}>Portais oficiais dos DOEs</h4>
+                  <h4 style={{ fontSize: "13px", fontWeight: 700, color: "#6d4c41" }}>Portais oficiais dos DOEs</h4>
                 </div>
                 <div style={{ padding: "14px 20px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
                   {doeLinks.map(doe => (
-                    <a key={doe.sigla} href={doe.url} target="_blank" rel="noopener noreferrer" title={doe.estado} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "6px 12px", borderRadius: "6px", border: "1px solid #e2e5ec", background: "#fafbfc", color: "#6b21a8", fontSize: "12px", fontWeight: 600, textDecoration: "none", transition: "all 0.15s" }}>
+                    <a key={doe.sigla} href={doe.url} target="_blank" rel="noopener noreferrer" title={doe.estado} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "6px 12px", borderRadius: "6px", border: "1px solid #e2e5ec", background: "#fafbfc", color: "#6d4c41", fontSize: "12px", fontWeight: 600, textDecoration: "none", transition: "all 0.15s" }}>
                       <Globe style={{ width: "11px", height: "11px" }} />
                       {doe.sigla}
                     </a>
@@ -1397,27 +1397,16 @@ export default function Legislacao() {
       <Navigation />
 
       <div style={{
-        background: "linear-gradient(135deg, #0d1642 0%, #1a237e 50%, #3949ab 100%)",
+        background: "linear-gradient(135deg, #3e2723 0%, #5d4037 50%, #795548 100%)",
         color: "white",
         padding: "20px 32px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
       }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <h1 style={{ fontSize: "20px", fontWeight: 700, letterSpacing: "-0.3px" }}>Painel de Legislação Educacional</h1>
-            <p style={{ opacity: 0.75, fontSize: "12px", marginTop: "2px" }}>
-              Normas e publicações dos diários oficiais (federal, estaduais e municipais)
-            </p>
-          </div>
-          <span style={{
-            background: "rgba(255,255,255,0.15)",
-            padding: "4px 12px",
-            borderRadius: "20px",
-            fontSize: "11px",
-            fontWeight: 500,
-          }}>
-            Fontes oficiais
-          </span>
+        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+          <h1 style={{ fontSize: "20px", fontWeight: 700, letterSpacing: "-0.3px" }}>Painel de Legislação Educacional</h1>
+          <p style={{ opacity: 0.75, fontSize: "12px", marginTop: "2px" }}>
+            Normas e publicações dos diários oficiais (federal, estaduais e municipais)
+          </p>
         </div>
       </div>
 
@@ -1448,7 +1437,7 @@ export default function Legislacao() {
                 textAlign: "center",
                 flexShrink: 0,
                 border: "none",
-                background: activeCategory === cat.id ? "#1a237e" : "none",
+                background: activeCategory === cat.id ? "#5d4037" : "none",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",

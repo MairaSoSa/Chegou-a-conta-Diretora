@@ -1017,7 +1017,7 @@ export async function registerRoutes(
       if (!q.trim()) {
         return res.status(400).json({ ok: false, message: "Termo de busca obrigatório" });
       }
-      const exactMatch = req.query.exact !== "false";
+      const exactMatch = req.query.exact === "true";
       const publishFrom = req.query.from ? String(req.query.from) : undefined;
       const publishTo = req.query.to ? String(req.query.to) : undefined;
       const maxResults = Math.min(parseInt(String(req.query.limit || "20"), 10), 50);
@@ -1137,12 +1137,14 @@ export async function registerRoutes(
       }
 
       const size = Math.min(parseInt(String(req.query.size || "10"), 10), 30);
-      const fetchSize = Math.min(size * 15, 100);
+      const offset = parseInt(String(req.query.offset || "0"), 10);
+      const fetchSize = Math.min(size * 15, 150);
+      const apiOffset = offset * 15;
 
       const params = new URLSearchParams();
       params.set("querystring", q);
       params.set("size", String(fetchSize));
-      params.set("offset", "0");
+      params.set("offset", String(apiOffset));
       params.set("excerpt_size", "200");
       params.set("number_of_excerpts", "1");
       params.set("pre_tags", "<mark>");
