@@ -8,7 +8,7 @@ import {
   MapPin, GraduationCap, Info, ExternalLink,
   School, Loader2, BarChart3, TrendingUp,
   BookOpen, Award, ChevronDown, ChevronUp,
-  Globe, Building2, TreePine, Filter, X, Clock
+  Globe, Building2, TreePine, Filter, X, Clock, Heart
 } from "lucide-react";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas } from "@/hooks/use-schools";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -261,10 +261,10 @@ export default function Dashboard() {
                     color="bg-accent/10"
                   />
                   <StatCard
-                    icon={<Users className="w-6 h-6 text-blue-600" />}
+                    icon={<Users className="w-6 h-6 text-accent" />}
                     value={formatNumber(stats.total_matriculas)}
                     label="Matrículas"
-                    color="bg-blue-600/10"
+                    color="bg-accent/10"
                   />
                   <StatCard
                     icon={<GraduationCap className="w-6 h-6 text-purple-600" />}
@@ -581,10 +581,10 @@ export default function Dashboard() {
                     color="bg-accent/10"
                   />
                   <StatCard
-                    icon={<GraduationCap className="w-5 h-5 text-blue-600" />}
+                    icon={<GraduationCap className="w-5 h-5 text-accent" />}
                     value={formatNumber(censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0)}
                     label={`Docentes (${latestAno})`}
-                    color="bg-blue-600/10"
+                    color="bg-accent/10"
                   />
                   <StatCard
                     icon={<BookOpen className="w-5 h-5 text-purple-600" />}
@@ -626,7 +626,7 @@ export default function Dashboard() {
                                 title="Docentes"
                                 data={evolutionCharts.docentes}
                                 lines={[{ key: "value", color: CHART_COLORS[1], name: "Docentes" }]}
-                                icon={<GraduationCap className="w-4 h-4 text-blue-600" />}
+                                icon={<GraduationCap className="w-4 h-4 text-accent" />}
                               />
                               <EvolutionChart
                                 title="Taxas de Rendimento (%)"
@@ -682,7 +682,7 @@ export default function Dashboard() {
                                 title="ICG - Complexidade de Gestão"
                                 data={evolutionCharts.icg}
                                 lines={[{ key: "nivel", color: CHART_COLORS[0], name: "Nível" }]}
-                                icon={<BarChart3 className="w-4 h-4 text-blue-600" />}
+                                icon={<BarChart3 className="w-4 h-4 text-accent" />}
                               />
                               <EvolutionChart
                                 title="IRD - Regularidade do Docente"
@@ -724,7 +724,7 @@ export default function Dashboard() {
                               title="Docentes"
                               data={evolutionCharts.docentes}
                               lines={[{ key: "value", color: CHART_COLORS[1], name: "Docentes" }]}
-                              icon={<GraduationCap className="w-4 h-4 text-blue-600" />}
+                              icon={<GraduationCap className="w-4 h-4 text-accent" />}
                             />
                             <EvolutionChart
                               title="Taxas de Rendimento (%)"
@@ -783,7 +783,7 @@ export default function Dashboard() {
                               title="ICG - Complexidade de Gestão"
                               data={evolutionCharts.icg}
                               lines={[{ key: "nivel", color: CHART_COLORS[0], name: "Nível" }]}
-                              icon={<BarChart3 className="w-4 h-4 text-blue-600" />}
+                              icon={<BarChart3 className="w-4 h-4 text-accent" />}
                             />
                             <EvolutionChart
                               title="IRD - Regularidade do Docente"
@@ -818,7 +818,7 @@ export default function Dashboard() {
                   <Card className="card-clay border-l-4 border-l-blue-500">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base flex items-center gap-2">
-                        <BarChart3 className="w-5 h-5 text-blue-600" />
+                        <BarChart3 className="w-5 h-5 text-accent" />
                         Indicadores Educacionais ({latestAno})
                       </CardTitle>
                     </CardHeader>
@@ -859,7 +859,7 @@ export default function Dashboard() {
                       {indicadoresLatest.icg && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <BarChart3 className="w-3.5 h-3.5 text-blue-600" /> ICG - Complexidade de Gestão
+                            <BarChart3 className="w-3.5 h-3.5 text-accent" /> ICG - Complexidade de Gestão
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             <InfoItem label="Nível" value={indicadoresLatest.icg.nivel_texto || `Nível ${indicadoresLatest.icg.nivel}`} highlight />
@@ -1038,14 +1038,53 @@ export default function Dashboard() {
                     <InfoItem label="Ed. Profissional" value={censoLatest.qt_mat_prof} />
                     <InfoItem label="EJA Fund." value={censoLatest.qt_mat_eja_fund} />
                     <InfoItem label="EJA Médio" value={censoLatest.qt_mat_eja_med} />
-                    <InfoItem label="Ed. Especial (inclusão)" value={censoLatest.qt_mat_esp_cc} />
-                    <InfoItem label="Ed. Especial (exclusiva)" value={censoLatest.qt_mat_esp_ce} />
+                  </div>
+                </IndicatorSection>
+
+                <IndicatorSection
+                  title="Educação Especial"
+                  icon={<Heart className="w-5 h-5 text-accent" />}
+                  expanded={expandedSections['educacao_especial'] ?? true}
+                  onToggle={() => toggleSection('educacao_especial')}
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">AEE - Atendimento Educacional Especializado</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <InfoItem label="AEE" value={censoLatest.tp_aee === 1 ? "Na própria escola" : censoLatest.tp_aee === 2 ? "Em outra escola" : censoLatest.tp_aee === 3 ? "Em instituição especializada" : censoLatest.tp_aee === 0 ? "Não oferece" : undefined} />
+                        <InfoItem label="Sala Atend. Especial" value={censoLatest.in_sala_atendimento_especial === 1 ? "Sim" : censoLatest.in_sala_atendimento_especial === 0 ? "Não" : undefined} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Matrículas</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <InfoItem label="Total Mat. Especial" value={censoLatest.qt_mat_esp} highlight />
+                        <InfoItem label="Classes Comuns (Inclusão)" value={censoLatest.qt_mat_esp_cc} />
+                        <InfoItem label="Classes Exclusivas" value={censoLatest.qt_mat_esp_ce} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Docentes</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <InfoItem label="Total Docentes Ed. Especial" value={censoLatest.qt_doc_esp} />
+                        <InfoItem label="Classes Comuns" value={censoLatest.qt_doc_esp_cc} />
+                        <InfoItem label="Classes Exclusivas" value={censoLatest.qt_doc_esp_ce} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Turmas</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <InfoItem label="Total Turmas Ed. Especial" value={censoLatest.qt_tur_esp} />
+                        <InfoItem label="Classes Comuns" value={censoLatest.qt_tur_esp_cc} />
+                        <InfoItem label="Classes Exclusivas" value={censoLatest.qt_tur_esp_ce} />
+                      </div>
+                    </div>
                   </div>
                 </IndicatorSection>
 
                 <IndicatorSection
                   title="Perfil dos Alunos"
-                  icon={<Users className="w-5 h-5 text-blue-600" />}
+                  icon={<Users className="w-5 h-5 text-accent" />}
                   expanded={expandedSections['perfil'] ?? true}
                   onToggle={() => toggleSection('perfil')}
                 >
@@ -1160,7 +1199,7 @@ export default function Dashboard() {
 
                 <IndicatorSection
                   title="Informações Gerais"
-                  icon={<Info className="w-5 h-5 text-blue-600" />}
+                  icon={<Info className="w-5 h-5 text-accent" />}
                   expanded={expandedSections['info'] ?? true}
                   onToggle={() => toggleSection('info')}
                 >
