@@ -121,8 +121,8 @@ const categoriaColors: Record<string, { bg: string; color: string }> = {
   "Base Legal": { bg: "#dcfce7", color: "#166534" },
   "Financiamento": { bg: "#ffedd5", color: "#9a3412" },
   "Programas FNDE": { bg: "#fee2e2", color: "#991b1b" },
-  "Planejamento": { bg: "#efebe9", color: "#6d4c41" },
-  "Gestão": { bg: "#efebe9", color: "#6d4c41" },
+  "Planejamento": { bg: "#e8f0e0", color: "#6d4c41" },
+  "Gestão": { bg: "#e8f0e0", color: "#6d4c41" },
 };
 
 const doeLinks: { estado: string; sigla: string; url: string; searchUrl?: (q: string) => string }[] = [
@@ -365,12 +365,12 @@ function NormasContent() {
   return (
     <>
       <div style={{
-        background: "#faf5f0",
-        borderLeft: "4px solid #8d6e63",
+        background: "#f0f5ed",
+        borderLeft: "4px solid #7d9070",
         padding: "16px 20px",
         borderRadius: "0 10px 10px 0",
         fontSize: "13px",
-        color: "#4e342e",
+        color: "#4a5d3e",
         marginBottom: "16px",
         lineHeight: 1.7,
       }}>
@@ -379,7 +379,7 @@ function NormasContent() {
           Normas
         </div>
         <p>Acervo completo de atos normativos do Ministério da Educação, com as {leisFundamentais.length} leis fundamentais da educação em destaque. Pesquise por palavras-chave, filtre por tipo e confira o status de vigência de cada norma.</p>
-        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #d7ccc8", fontSize: "12px", color: "#4e342e" }}>
+        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #c5d4b8", fontSize: "12px", color: "#4a5d3e" }}>
           <strong>Total no acervo: {tiposData?.totalGeral?.toLocaleString("pt-BR") || "carregando..."} normas | Fonte: MEC Normas - Ministério da Educação</strong>
         </div>
       </div>
@@ -397,9 +397,9 @@ function NormasContent() {
             padding: "16px 20px",
             boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
             border: "1px solid #e2e5ec",
-            borderLeft: "3px solid #5d4037",
+            borderLeft: "3px solid #5a6e4e",
           }}>
-            <div style={{ fontSize: "26px", fontWeight: 800, color: "#5d4037", lineHeight: 1.1 }}>
+            <div style={{ fontSize: "26px", fontWeight: 800, color: "#5a6e4e", lineHeight: 1.1 }}>
               {tiposData.totalGeral.toLocaleString("pt-BR")}
             </div>
             <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginTop: "4px" }}>
@@ -410,7 +410,7 @@ function NormasContent() {
             const colors = ["#2e7d32", "#ef6c00", "#c62828", "#6d4c41", "#1565c0"];
             return (
               <div key={tipo.id} style={{
-                background: selectedTipo === String(tipo.id) ? "#faf5f0" : "white",
+                background: selectedTipo === String(tipo.id) ? "#f0f5ed" : "white",
                 borderRadius: "10px",
                 padding: "16px 20px",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
@@ -420,7 +420,7 @@ function NormasContent() {
               }}
               onClick={() => { setSelectedTipo(selectedTipo === String(tipo.id) ? "" : String(tipo.id)); setPage(0); }}
               >
-                <div style={{ fontSize: "26px", fontWeight: 800, color: "#5d4037", lineHeight: 1.1 }}>
+                <div style={{ fontSize: "26px", fontWeight: 800, color: "#5a6e4e", lineHeight: 1.1 }}>
                   {tipo.total.toLocaleString("pt-BR")}
                 </div>
                 <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginTop: "4px" }}>
@@ -452,7 +452,7 @@ function NormasContent() {
                 padding: "8px 18px", border: "none", borderRadius: "6px",
                 fontSize: "13px", fontWeight: 600, cursor: searchTerm.trim() ? "pointer" : "not-allowed",
                 display: "inline-flex", alignItems: "center", gap: "6px",
-                background: searchTerm.trim() ? "#5d4037" : "#94a3b8", color: "white",
+                background: searchTerm.trim() ? "#5a6e4e" : "#94a3b8", color: "white",
               }}
             >
               <Search style={{ width: "14px", height: "14px" }} />
@@ -490,7 +490,7 @@ function NormasContent() {
 
         {isLoading && (
           <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#5d4037" }} />
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#5a6e4e" }} />
             <div style={{ fontSize: "13px" }}>Carregando normas do MEC...</div>
           </div>
         )}
@@ -536,7 +536,7 @@ function NormasContent() {
                 </thead>
                 <tbody>
                   {leisFundamentais.map((lei, index) => {
-                    const catColor = categoriaColors[lei.categoria] || { bg: "#efebe9", color: "#5d4037" };
+                    const catColor = categoriaColors[lei.categoria] || { bg: "#e8f0e0", color: "#5a6e4e" };
                     return (
                       <tr key={lei.numero} style={{ background: index % 2 === 0 ? "#fffef5" : "#fefce8" }}>
                         <td style={tdStyle}>
@@ -574,7 +574,7 @@ function NormasContent() {
                           <a href={lei.link} target="_blank" rel="noopener noreferrer"
                             style={{
                               padding: "6px 14px", border: "none", borderRadius: "6px",
-                              background: "#5d4037", color: "white", fontSize: "11px", fontWeight: 600,
+                              background: "#5a6e4e", color: "white", fontSize: "11px", fontWeight: 600,
                               textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
                             }}>
                             <ExternalLink style={{ width: "11px", height: "11px" }} />
@@ -596,7 +596,7 @@ function NormasContent() {
               justifyContent: "space-between",
               alignItems: "center",
             }}>
-              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#5d4037", display: "flex", alignItems: "center", gap: "8px" }}>
+              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#5a6e4e", display: "flex", alignItems: "center", gap: "8px" }}>
                 <FileText style={{ width: "16px", height: "16px" }} />
                 Demais Normas
               </h3>
@@ -666,7 +666,7 @@ function NormasContent() {
                           {tipo && (
                             <span style={{
                               display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                              fontSize: "11px", fontWeight: 600, background: "#efebe9", color: "#6d4c41",
+                              fontSize: "11px", fontWeight: 600, background: "#e8f0e0", color: "#6d4c41",
                             }}>
                               {tipo}
                             </span>
@@ -725,7 +725,7 @@ function NormasContent() {
                               rel="noopener noreferrer"
                               style={{
                                 padding: "4px 10px", border: "none", borderRadius: "4px",
-                                background: "#5d4037", color: "white", fontSize: "11px", fontWeight: 600,
+                                background: "#5a6e4e", color: "white", fontSize: "11px", fontWeight: 600,
                                 textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
                               }}
                             >
@@ -908,8 +908,8 @@ function DiarioOficialContent() {
   return (
     <>
       <div style={{
-        background: "#faf5f0",
-        borderLeft: "4px solid #8d6e63",
+        background: "#f0f5ed",
+        borderLeft: "4px solid #7d9070",
         padding: "14px 20px",
         borderRadius: "0 10px 10px 0",
         fontSize: "13px",
@@ -922,7 +922,7 @@ function DiarioOficialContent() {
           Diários Oficiais
         </div>
         <p>Busque publicações oficiais do DOU (federal), dos diários estaduais (DOE) e dos diários municipais. Escolha a aba desejada abaixo.</p>
-        <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid #d7ccc8", fontSize: "12px", color: "#4e342e" }}>
+        <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid #c5d4b8", fontSize: "12px", color: "#4a5d3e" }}>
           <strong>Fontes: Imprensa Nacional (in.gov.br) | Querido Diário API (queridodiario.ok.org.br)</strong>
         </div>
       </div>
@@ -979,7 +979,7 @@ function DiarioOficialContent() {
             <div style={{ padding: "0 20px 12px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
               <span style={{ fontSize: "11px", color: "#94a3b8", alignSelf: "center" }}>Sugestões:</span>
               {quickSearches.map((term) => (
-                <button key={term} onClick={() => { setDouSearch(term); setDouSubmitted(term); }} style={{ padding: "4px 10px", borderRadius: "20px", border: "none", fontSize: "11px", fontWeight: 500, cursor: "pointer", background: "#efebe9", color: "#6d4c41", transition: "all 0.15s" }}>
+                <button key={term} onClick={() => { setDouSearch(term); setDouSubmitted(term); }} style={{ padding: "4px 10px", borderRadius: "20px", border: "none", fontSize: "11px", fontWeight: 500, cursor: "pointer", background: "#e8f0e0", color: "#6d4c41", transition: "all 0.15s" }}>
                   {term}
                 </button>
               ))}
@@ -1024,7 +1024,7 @@ function DiarioOficialContent() {
                       </thead>
                       <tbody>
                         {douResults.map((item, index) => (
-                          <tr key={`dou-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#faf5f0" }}>
+                          <tr key={`dou-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#f0f5ed" }}>
                             <td style={tdStyle}>
                               <div style={{ maxWidth: "450px" }}>
                                 <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3, color: "#1e293b" }}>{item.title}</div>
@@ -1126,7 +1126,7 @@ function DiarioOficialContent() {
             <div style={{ padding: "0 20px 12px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
               <span style={{ fontSize: "11px", color: "#94a3b8", alignSelf: "center" }}>Sugestões:</span>
               {quickSearches.map((term) => (
-                <button key={term} onClick={() => { setDoeSearch(term); if (doeState) { setDoeSubmitted(term); setDoeOffset(0); } }} style={{ padding: "4px 10px", borderRadius: "20px", border: "none", fontSize: "11px", fontWeight: 500, cursor: "pointer", background: "#efebe9", color: "#6d4c41", transition: "all 0.15s" }}>
+                <button key={term} onClick={() => { setDoeSearch(term); if (doeState) { setDoeSubmitted(term); setDoeOffset(0); } }} style={{ padding: "4px 10px", borderRadius: "20px", border: "none", fontSize: "11px", fontWeight: 500, cursor: "pointer", background: "#e8f0e0", color: "#6d4c41", transition: "all 0.15s" }}>
                   {term}
                 </button>
               ))}
@@ -1167,7 +1167,7 @@ function DiarioOficialContent() {
               </div>
               {doeGazettes.length > 0 ? (
                 <>
-                  <GazetteResultsTable gazettes={doeGazettes} bgColor="#faf5f0" />
+                  <GazetteResultsTable gazettes={doeGazettes} bgColor="#f0f5ed" />
                   {doeTotalPages > 1 && (
                     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", padding: "14px", borderTop: "1px solid #e2e5ec" }}>
                       <button onClick={() => setDoeOffset(Math.max(0, doeOffset - doePageSize))} disabled={doeOffset <= 0} style={{ ...paginationBtnStyle, opacity: doeOffset <= 0 ? 0.4 : 1, cursor: doeOffset <= 0 ? "not-allowed" : "pointer" }}>
@@ -1397,7 +1397,7 @@ export default function Legislacao() {
       <Navigation />
 
       <div style={{
-        background: "linear-gradient(135deg, #3e2723 0%, #5d4037 50%, #795548 100%)",
+        background: "linear-gradient(135deg, #4a5d3e 0%, #5a6e4e 50%, #6b7f5e 100%)",
         color: "white",
         padding: "20px 32px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
@@ -1437,7 +1437,7 @@ export default function Legislacao() {
                 textAlign: "center",
                 flexShrink: 0,
                 border: "none",
-                background: activeCategory === cat.id ? "#5d4037" : "none",
+                background: activeCategory === cat.id ? "#5a6e4e" : "none",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",

@@ -114,7 +114,7 @@ export default function CalendarioPage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#faf9f6" }}>
       <Navigation />
       <div style={{
-        background: "linear-gradient(135deg, #1a237e 0%, #283593 50%, #1565c0 100%)",
+        background: "linear-gradient(135deg, #4a5d3e 0%, #5a6e4e 50%, #6b7f5e 100%)",
         color: "white", padding: "28px 24px 22px",
       }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -180,9 +180,9 @@ export default function CalendarioPage() {
                 style={{
                   padding: "10px 4px",
                   borderRadius: "8px",
-                  border: isSelecionado ? "2px solid #1a237e" : isAtual ? "2px solid #3b82f6" : "1px solid #e2e5ec",
-                  background: isSelecionado ? "#1a237e" : isAtual ? "#eff6ff" : "white",
-                  color: isSelecionado ? "white" : isAtual ? "#1e40af" : "#475569",
+                  border: isSelecionado ? "2px solid #5a6e4e" : isAtual ? "2px solid #7d9070" : "1px solid #e2e5ec",
+                  background: isSelecionado ? "#5a6e4e" : isAtual ? "#f0f5ed" : "white",
+                  color: isSelecionado ? "white" : isAtual ? "#4a5d3e" : "#475569",
                   cursor: "pointer",
                   textAlign: "center",
                   transition: "all 0.15s",
@@ -209,7 +209,7 @@ export default function CalendarioPage() {
         <div className="calendario-grid" style={{ display: "grid", gap: "20px", alignItems: "start" }}>
           <div>
             <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
-              <Clock style={{ width: "18px", height: "18px", color: "#1a237e" }} />
+              <Clock style={{ width: "18px", height: "18px", color: "#5a6e4e" }} />
               {mesSelecionado
                 ? `Prazos de ${MESES[mesSelecionado - 1]}`
                 : "Próximos Prazos"}
@@ -220,7 +220,7 @@ export default function CalendarioPage() {
 
             {prazosQuery.isLoading ? (
               <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>
-                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" style={{ color: "#1a237e" }} />
+                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" style={{ color: "#5a6e4e" }} />
                 <div style={{ fontSize: "13px" }}>Carregando prazos...</div>
               </div>
             ) : prazosFiltrados.length === 0 ? (
@@ -327,7 +327,7 @@ export default function CalendarioPage() {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
               <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", display: "flex", alignItems: "center", gap: "8px" }}>
-                <Newspaper style={{ width: "18px", height: "18px", color: "#1a237e" }} />
+                <Newspaper style={{ width: "18px", height: "18px", color: "#5a6e4e" }} />
                 Notícias Recentes
               </h2>
               <button
@@ -345,7 +345,7 @@ export default function CalendarioPage() {
 
             {noticiasQuery.isLoading ? (
               <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8", background: "white", borderRadius: "10px", border: "1px solid #e2e5ec" }}>
-                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" style={{ color: "#1a237e" }} />
+                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" style={{ color: "#5a6e4e" }} />
                 <div style={{ fontSize: "12px" }}>Buscando notícias do MEC, FNDE e INEP...</div>
               </div>
             ) : noticias.length === 0 ? (
