@@ -168,6 +168,54 @@ export const importacaoStatus = sqliteTable("importacao_status", {
   finalizadoEm: integer("finalizado_em"),
 });
 
+// === CADERNO DA DIRETORA: DOCUMENTS ===
+export const cadernoDocuments = sqliteTable("caderno_documents", {
+  id: integer("id").primaryKey(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  inep: text("inep"),
+  headerData: text("header_data"),
+  bodyHtml: text("body_html").default(""),
+  status: text("status").notNull().default("rascunho"),
+  qualityScore: text("quality_score").default("red"),
+  logoUrl: text("logo_url"),
+  createdAt: integer("created_at"),
+  updatedAt: integer("updated_at"),
+});
+
+export const cadernoDocumentVersions = sqliteTable("caderno_document_versions", {
+  id: integer("id").primaryKey(),
+  documentId: integer("document_id").notNull(),
+  bodyHtml: text("body_html").notNull(),
+  headerData: text("header_data"),
+  createdAt: integer("created_at"),
+});
+
+export const cadernoNotes = sqliteTable("caderno_notes", {
+  id: integer("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  sourceUrl: text("source_url"),
+  sourceTitle: text("source_title"),
+  sourceExcerpt: text("source_excerpt"),
+  tags: text("tags"),
+  documentId: integer("document_id"),
+  conversationId: integer("conversation_id"),
+  createdAt: integer("created_at"),
+});
+
+export const cadernoSources = sqliteTable("caderno_sources", {
+  id: integer("id").primaryKey(),
+  url: text("url"),
+  title: text("title").notNull(),
+  content: text("content"),
+  excerpt: text("excerpt"),
+  fetchedAt: integer("fetched_at"),
+  pinned: integer("pinned", { mode: "boolean" }).default(false),
+  category: text("category"),
+  conversationId: integer("conversation_id"),
+});
+
 // === UNANSWERED QUESTIONS ===
 export const unansweredQuestions = sqliteTable("unanswered_questions", {
   id: integer("id").primaryKey(),
@@ -188,6 +236,9 @@ export const insertDashboardDatasetSchema = createInsertSchema(dashboardDatasets
 export const insertAiDocumentSchema = createInsertSchema(aiDocuments).omit({ id: true, createdAt: true });
 export const insertAiDocumentEmbeddingSchema = createInsertSchema(aiDocumentEmbeddings).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertAiApiSourceSchema = createInsertSchema(aiApiSources).omit({ id: true });
+export const insertCadernoDocumentSchema = createInsertSchema(cadernoDocuments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertCadernoNoteSchema = createInsertSchema(cadernoNotes).omit({ id: true, createdAt: true });
+export const insertCadernoSourceSchema = createInsertSchema(cadernoSources).omit({ id: true });
 export const insertUnansweredQuestionSchema = createInsertSchema(unansweredQuestions).omit({ id: true, createdAt: true });
 
 // === TYPES ===
@@ -223,6 +274,15 @@ export type InsertAiDocumentEmbedding = z.infer<typeof insertAiDocumentEmbedding
 
 export type AiApiSource = typeof aiApiSources.$inferSelect;
 export type InsertAiApiSource = z.infer<typeof insertAiApiSourceSchema>;
+
+export type CadernoDocument = typeof cadernoDocuments.$inferSelect;
+export type InsertCadernoDocument = z.infer<typeof insertCadernoDocumentSchema>;
+
+export type CadernoNote = typeof cadernoNotes.$inferSelect;
+export type InsertCadernoNote = z.infer<typeof insertCadernoNoteSchema>;
+
+export type CadernoSource = typeof cadernoSources.$inferSelect;
+export type InsertCadernoSource = z.infer<typeof insertCadernoSourceSchema>;
 
 export type UnansweredQuestion = typeof unansweredQuestions.$inferSelect;
 export type InsertUnansweredQuestion = z.infer<typeof insertUnansweredQuestionSchema>;

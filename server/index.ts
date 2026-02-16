@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { ensureAiDocumentsCreatedAtColumn, ensureAiDocumentsLinkColumn } from "./db";
+import { ensureAiDocumentsCreatedAtColumn, ensureAiDocumentsLinkColumn, ensureCadernoTables } from "./db";
 import { seedDatabase } from "./seed";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -67,6 +67,7 @@ app.use((req, res, next) => {
 (async () => {
   ensureAiDocumentsCreatedAtColumn();
   ensureAiDocumentsLinkColumn();
+  ensureCadernoTables();
   await registerRoutes(httpServer, app);
   startMecNormasScheduler();
 

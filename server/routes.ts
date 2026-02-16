@@ -8,6 +8,7 @@ import mammoth from "mammoth";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { registerChatRoutes } from "./integrations/chat";
+import { registerCadernoRoutes } from "./caderno-routes";
 import { registerObjectStorageRoutes } from "./integrations/object_storage";
 import { fetchMecNormasFilters, syncMecNormas } from "./integrations/mecnormas";
 import { backfillAiDocumentEmbeddings } from "./integrations/embeddings";
@@ -118,6 +119,7 @@ export async function registerRoutes(
 ): Promise<Server> {
 
   registerChatRoutes(app);
+  registerCadernoRoutes(app);
   registerObjectStorageRoutes(app, adminAuth);
 
   app.post(

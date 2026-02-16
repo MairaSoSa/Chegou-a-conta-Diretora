@@ -19,6 +19,58 @@ try {
 
 export const db = drizzle(sqlite, { schema });
 
+export function ensureCadernoTables(): void {
+  try {
+    sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS caderno_documents (
+        id INTEGER PRIMARY KEY,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        inep TEXT,
+        header_data TEXT,
+        body_html TEXT DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'rascunho',
+        quality_score TEXT DEFAULT 'red',
+        logo_url TEXT,
+        created_at INTEGER,
+        updated_at INTEGER
+      );
+      CREATE TABLE IF NOT EXISTS caderno_document_versions (
+        id INTEGER PRIMARY KEY,
+        document_id INTEGER NOT NULL,
+        body_html TEXT NOT NULL,
+        header_data TEXT,
+        created_at INTEGER
+      );
+      CREATE TABLE IF NOT EXISTS caderno_notes (
+        id INTEGER PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        source_url TEXT,
+        source_title TEXT,
+        source_excerpt TEXT,
+        tags TEXT,
+        document_id INTEGER,
+        conversation_id INTEGER,
+        created_at INTEGER
+      );
+      CREATE TABLE IF NOT EXISTS caderno_sources (
+        id INTEGER PRIMARY KEY,
+        url TEXT,
+        title TEXT NOT NULL,
+        content TEXT,
+        excerpt TEXT,
+        fetched_at INTEGER,
+        pinned INTEGER DEFAULT 0,
+        category TEXT,
+        conversation_id INTEGER
+      );
+    `);
+  } catch (error) {
+    console.error("Failed to ensure caderno tables:", error);
+  }
+}
+
 export function ensureAiDocumentsCreatedAtColumn(): void {
         try {
                 const table = sqlite
