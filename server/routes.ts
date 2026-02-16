@@ -1137,7 +1137,7 @@ export async function registerRoutes(
       }
 
       const size = Math.min(parseInt(String(req.query.size || "10"), 10), 30);
-      const fetchSize = size * 8;
+      const fetchSize = Math.min(size * 15, 100);
 
       const params = new URLSearchParams();
       params.set("querystring", q);

@@ -1016,10 +1016,10 @@ function DiarioOficialContent() {
                     <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
                       <thead>
                         <tr>
-                          <th style={thStyle}>Publicação</th>
+                          <th style={thStyle}>Publicacao</th>
                           <th style={thStyle}>Data</th>
-                          <th style={thStyle}>Órgão</th>
-                          <th style={{ ...thStyle, textAlign: "center" }}>Ações</th>
+                          <th style={thStyle}>Orgao</th>
+                          <th style={{ ...thStyle, textAlign: "center" }}>Acoes</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1056,15 +1056,24 @@ function DiarioOficialContent() {
                   )}
                 </>
               ) : (
-                <div style={{ padding: "24px 20px", textAlign: "center" }}>
-                  <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "12px" }}>
+                <div style={{ padding: "28px 20px", textAlign: "center" }}>
+                  <Landmark className="w-8 h-8 mx-auto mb-3" style={{ color: "#1e40af", opacity: 0.5 }} />
+                  <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "6px" }}>
                     {douQuery.data?.message || `Nenhum resultado encontrado para "${douSubmitted}" no DOU.`}
                   </p>
+                  <p style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "14px" }}>
+                    O site da Imprensa Nacional pode exigir acesso direto para algumas buscas.
+                  </p>
                   {douSearchUrl && (
-                    <a href={douSearchUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "6px", background: "#1e40af", color: "white", textDecoration: "none", fontSize: "12px", fontWeight: 600 }}>
-                      <ExternalLink style={{ width: "12px", height: "12px" }} /> Buscar diretamente no site do DOU
+                    <a href={douSearchUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "8px", background: "#1e40af", color: "white", textDecoration: "none", fontSize: "14px", fontWeight: 600, boxShadow: "0 2px 8px rgba(30,64,175,0.3)", transition: "all 0.15s" }}>
+                      <Search style={{ width: "16px", height: "16px" }} />
+                      Buscar "{douSubmitted}" no site do DOU
+                      <ExternalLink style={{ width: "13px", height: "13px" }} />
                     </a>
                   )}
+                  <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "12px" }}>
+                    Dica: experimente buscar nas abas DOE Estados e Diários Municipais acima
+                  </p>
                 </div>
               )}
             </div>
