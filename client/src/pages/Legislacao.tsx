@@ -1,9 +1,9 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import {
-  ExternalLink, Scale, FileText, Search,
+  ExternalLink, Scale, FileText, Search, Landmark,
   Loader2, AlertCircle, Newspaper, BookMarked,
-  Calendar, Building2, Info, MapPin, Globe
+  Info, MapPin, Globe
 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { useMecNormasAll, useMecNormasTipos } from "@/hooks/use-mecnormas";
@@ -156,24 +156,17 @@ const doeLinks: { estado: string; sigla: string; url: string }[] = [
 ];
 
 type CategoryId = "cat-normas" | "cat-dou";
-type SubTabId = "dou-federal" | "dou-municipal" | "dou-estadual";
 
-const categories: { id: CategoryId; label: string; icon: string; subTabs: { id: SubTabId; label: string }[] }[] = [
+const categories: { id: CategoryId; label: string; icon: string }[] = [
   {
     id: "cat-normas",
-    label: "Normas do MEC",
+    label: "Normas",
     icon: "\uD83D\uDCD6",
-    subTabs: [],
   },
   {
     id: "cat-dou",
     label: "Diário Oficial",
     icon: "\uD83D\uDCF0",
-    subTabs: [
-      { id: "dou-federal", label: "DOU (Federal)" },
-      { id: "dou-municipal", label: "Diários Municipais" },
-      { id: "dou-estadual", label: "DOE (Estados)" },
-    ],
   },
 ];
 
@@ -224,7 +217,7 @@ function NormasContent() {
       }}>
         <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
           <Info className="w-4 h-4" />
-          Normas do MEC
+          Normas
         </div>
         <p>Acervo completo de atos normativos do Ministério da Educação, com as {leisFundamentais.length} leis fundamentais da educação em destaque. Pesquise por palavras-chave, filtre por tipo e confira o status de vigência de cada norma.</p>
         <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
@@ -446,7 +439,7 @@ function NormasContent() {
             }}>
               <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#1a237e", display: "flex", alignItems: "center", gap: "8px" }}>
                 <FileText style={{ width: "16px", height: "16px" }} />
-                Demais Normas do MEC
+                Demais Normas
               </h3>
               <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
                 {total.toLocaleString("pt-BR")} norma(s) no acervo
@@ -458,7 +451,7 @@ function NormasContent() {
         {!showFundamentais && normas.length > 0 && (
           <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ fontSize: "15px", fontWeight: 600 }}>
-              {submittedSearch ? `Resultados para "${submittedSearch}"` : "Normas do MEC"}
+              {submittedSearch ? `Resultados para "${submittedSearch}"` : "Normas"}
             </h3>
             <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
               {total.toLocaleString("pt-BR")} norma(s)
@@ -557,7 +550,17 @@ function NormasContent() {
                           </div>
                         </td>
                         <td style={tdStyle}>
-                          <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
+                          {ementa ? (
+                            <div style={{
+                              fontSize: "12px", color: "#4a5568", lineHeight: 1.5, maxWidth: "300px",
+                              background: "#f8fafc", padding: "6px 10px", borderRadius: "6px",
+                              borderLeft: "3px solid #94a3b8",
+                            }}>
+                              {ementa.length > 120 ? ementa.slice(0, 120) + "..." : ementa}
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
+                          )}
                         </td>
                         <td style={{ ...tdStyle, textAlign: "center" }}>
                           {link && (
@@ -614,18 +617,26 @@ function NormasContent() {
   );
 }
 
-function DOUFederalContent() {
+function DiarioOficialContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [submittedTerm, setSubmittedTerm] = useState("");
+  const [munOffset, setMunOffset] = useState(0);
+  const munPageSize = 10;
 
-  const { data, isLoading, error } = useDOUSearch(
+  const douQuery = useDOUSearch(
     { q: submittedTerm, exact: false, limit: 20 },
+    !!submittedTerm
+  );
+
+  const munQuery = useMunicipalGazetteSearch(
+    { q: submittedTerm, size: munPageSize, offset: munOffset },
     !!submittedTerm
   );
 
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     setSubmittedTerm(searchTerm.trim());
+    setMunOffset(0);
   }, [searchTerm]);
 
   const quickSearches = [
@@ -633,8 +644,62 @@ function DOUFederalContent() {
     "PNAE alimentação escolar",
     "PNATE transporte escolar",
     "FUNDEB educação básica",
-    "INEP censo escolar",
+    "educação escolar",
   ];
+
+  const douResults = douQuery.data?.results || [];
+  const douSearchUrl = douQuery.data?.searchUrl;
+  const munGazettes = munQuery.data?.gazettes || [];
+  const munTotal = munQuery.data?.total || 0;
+  const munTotalPages = Math.ceil(munTotal / munPageSize);
+  const munCurrentPage = Math.floor(munOffset / munPageSize);
+  const isLoading = douQuery.isLoading || munQuery.isLoading;
+  const hasResults = douResults.length > 0 || munGazettes.length > 0;
+
+  type UnifiedResult = {
+    type: "federal" | "municipal";
+    title: string;
+    subtitle: string;
+    date: string;
+    source: string;
+    badge: string;
+    link: string;
+    extraLink?: string;
+    excerpt?: string;
+  };
+
+  const unifiedResults: UnifiedResult[] = [];
+
+  douResults.forEach(item => {
+    unifiedResults.push({
+      type: "federal",
+      title: item.title,
+      subtitle: item.abstract || "",
+      date: item.date || "",
+      source: item.hierarchy || "Governo Federal",
+      badge: "União",
+      link: item.href,
+    });
+  });
+
+  munGazettes.forEach(g => {
+    unifiedResults.push({
+      type: "municipal",
+      title: g.territory_name,
+      subtitle: g.excerpts && g.excerpts.length > 0 ? g.excerpts[0] : "",
+      date: g.date ? new Date(g.date + "T12:00:00").toLocaleDateString("pt-BR") : "",
+      source: `${g.territory_name} - ${g.state_code}`,
+      badge: "Município",
+      link: g.url,
+      extraLink: g.txt_url || undefined,
+    });
+  });
+
+  const sourceBadgeStyle = (type: string): React.CSSProperties => {
+    if (type === "federal") return { display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "#dbeafe", color: "#1e40af", border: "1px solid #93c5fd" };
+    if (type === "municipal") return { display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "#dcfce7", color: "#166534", border: "1px solid #86efac" };
+    return { display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "#f3e8ff", color: "#6b21a8", border: "1px solid #c4b5fd" };
+  };
 
   return (
     <>
@@ -650,11 +715,26 @@ function DOUFederalContent() {
       }}>
         <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
           <Info className="w-4 h-4" />
-          Diário Oficial da União (DOU)
+          Diários Oficiais
         </div>
-        <p>Pesquise publicações oficiais no Diário Oficial da União para verificar vigência de normas, encontrar novas resoluções e acompanhar alterações na legislação educacional federal.</p>
+        <p>Busca unificada nos diários oficiais: DOU (União), diários municipais (350+ cidades via Querido Diário) e portais estaduais (27 DOEs). Os resultados são classificados por origem.</p>
         <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
-          <strong>Fonte: Portal da Imprensa Nacional (in.gov.br)</strong>
+          <strong>Fontes: Imprensa Nacional (in.gov.br) | Querido Diário (queridodiario.ok.org.br) | Portais estaduais</strong>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap" }}>
+        <div style={{ ...sourceBadgeStyle("federal"), cursor: "default" }}>
+          <Landmark style={{ width: "12px", height: "12px" }} />
+          União (DOU)
+        </div>
+        <div style={{ ...sourceBadgeStyle("municipal"), cursor: "default" }}>
+          <MapPin style={{ width: "12px", height: "12px" }} />
+          Município (350+ cidades)
+        </div>
+        <div style={{ ...sourceBadgeStyle("estado"), cursor: "default" }}>
+          <Globe style={{ width: "12px", height: "12px" }} />
+          Estados ({doeLinks.length} portais)
         </div>
       </div>
 
@@ -662,12 +742,12 @@ function DOUFederalContent() {
         <form onSubmit={handleSearch}>
           <div style={{ padding: "16px 20px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1, minWidth: "200px" }}>
-              <label style={labelStyle}>Buscar publicações</label>
+              <label style={labelStyle}>Buscar nos diários oficiais</label>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar no Diário Oficial da União..."
+                placeholder="Ex: PDDE, alimentação escolar, prestação de contas..."
                 style={inputStyle}
               />
             </div>
@@ -692,7 +772,7 @@ function DOUFederalContent() {
           {quickSearches.map((term) => (
             <button
               key={term}
-              onClick={() => { setSearchTerm(term); setSubmittedTerm(term); }}
+              onClick={() => { setSearchTerm(term); setSubmittedTerm(term); setMunOffset(0); }}
               style={{
                 padding: "4px 10px", borderRadius: "20px", border: "none",
                 fontSize: "11px", fontWeight: 500, cursor: "pointer",
@@ -709,30 +789,35 @@ function DOUFederalContent() {
       {isLoading && (
         <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#1a237e" }} />
-          <div style={{ fontSize: "13px" }}>Consultando o Diário Oficial...</div>
+          <div style={{ fontSize: "13px" }}>Consultando diários oficiais (federal e municipais)...</div>
         </div>
       )}
 
-      {error && (
+      {(douQuery.error || munQuery.error) && (
         <div style={{
           background: "#fffbeb", borderLeft: "3px solid #f59e0b",
           padding: "10px 14px", borderRadius: "0 6px 6px 0",
           fontSize: "12px", color: "#92400e", marginTop: "16px",
         }}>
           <AlertCircle className="w-4 h-4 inline mr-2" />
-          Não foi possível consultar o DOU. O portal pode estar temporariamente indisponível.
+          {douQuery.error && munQuery.error
+            ? "Não foi possível consultar os diários oficiais. Tente novamente em alguns instantes."
+            : douQuery.error
+              ? "DOU temporariamente indisponível. Mostrando resultados municipais."
+              : "Diários municipais temporariamente indisponíveis. Mostrando resultados do DOU."
+          }
         </div>
       )}
 
-      {!isLoading && !error && data && data.results.length === 0 && (
+      {!isLoading && submittedTerm && !hasResults && (
         <div style={{ textAlign: "center", padding: "48px" }}>
           <Newspaper className="w-10 h-10 mx-auto mb-3" style={{ color: "#3b82f6", opacity: 0.6 }} />
           <p style={{ fontSize: "14px", color: "#94a3b8", marginBottom: "12px" }}>
-            Busca preparada para "{submittedTerm}"
+            Nenhum resultado encontrado para "{submittedTerm}"
           </p>
-          {data.searchUrl && (
+          {douSearchUrl && (
             <a
-              href={data.searchUrl}
+              href={douSearchUrl}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -743,283 +828,79 @@ function DOUFederalContent() {
               }}
             >
               <ExternalLink style={{ width: "14px", height: "14px" }} />
-              Abrir busca no site oficial do DOU
+              Tentar busca direta no site do DOU
             </a>
           )}
-          <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "12px", maxWidth: "400px", margin: "12px auto 0" }}>
-            O portal do Diário Oficial requer acesso direto pelo navegador.
-          </p>
         </div>
       )}
 
-      {data && data.results.length > 0 && (
+      {hasResults && (
         <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec", marginTop: "16px" }}>
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h3 style={{ fontSize: "15px", fontWeight: 600 }}>Publicações encontradas</h3>
-            <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
-              {data.total} publicação(ões)
-            </span>
-          </div>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>Publicação</th>
-                  <th style={thStyle}>Seção</th>
-                  <th style={thStyle}>Data</th>
-                  <th style={thStyle}>Órgão</th>
-                  <th style={{ ...thStyle, textAlign: "center" }}>Link</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.results.map((item, index) => (
-                  <tr key={`${item.href}-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
-                    <td style={tdStyle}>
-                      <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3, maxWidth: "400px" }}>{item.title}</div>
-                      {item.abstract && (
-                        <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px", lineHeight: 1.4, maxWidth: "400px" }}>
-                          {item.abstract.length > 120 ? item.abstract.slice(0, 120) + "..." : item.abstract}
-                        </div>
-                      )}
-                    </td>
-                    <td style={tdStyle}>
-                      {item.section && (
-                        <span style={{
-                          display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                          fontSize: "11px", fontWeight: 600, background: "#dbeafe", color: "#1e40af",
-                          textTransform: "capitalize",
-                        }}>
-                          {item.section}
-                        </span>
-                      )}
-                    </td>
-                    <td style={tdStyle}>
-                      <span style={{ fontSize: "12px", color: "#64748b" }}>{item.date || "—"}</span>
-                    </td>
-                    <td style={tdStyle}>
-                      <span style={{ fontSize: "12px", color: "#64748b" }}>{item.hierarchy || "—"}</span>
-                    </td>
-                    <td style={{ ...tdStyle, textAlign: "center" }}>
-                      <a
-                        href={item.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          padding: "4px 10px", border: "none", borderRadius: "4px",
-                          background: "#1a237e", color: "white", fontSize: "11px", fontWeight: 600,
-                          textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
-                        }}
-                      >
-                        <ExternalLink style={{ width: "11px", height: "11px" }} />
-                        Abrir
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {!submittedTerm && (
-        <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-          <Newspaper className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.3 }} />
-          <p style={{ fontSize: "14px" }}>Pesquise publicações no Diário Oficial da União</p>
-          <p style={{ fontSize: "12px", marginTop: "4px", opacity: 0.7 }}>
-            Encontre resoluções, portarias e outros atos publicados pelo governo federal
-          </p>
-        </div>
-      )}
-    </>
-  );
-}
-
-function DOUMunicipalContent() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [submittedTerm, setSubmittedTerm] = useState("");
-  const [offset, setOffset] = useState(0);
-  const pageSize = 10;
-
-  const { data, isLoading, error } = useMunicipalGazetteSearch(
-    { q: submittedTerm, size: pageSize, offset },
-    !!submittedTerm
-  );
-
-  const handleSearch = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmittedTerm(searchTerm.trim());
-    setOffset(0);
-  }, [searchTerm]);
-
-  const quickSearches = [
-    "educação escolar",
-    "PDDE prestação de contas",
-    "alimentação escolar",
-    "transporte escolar",
-    "conselho escolar",
-  ];
-
-  const total = data?.total || 0;
-  const gazettes = data?.gazettes || [];
-  const totalPages = Math.ceil(total / pageSize);
-  const currentPage = Math.floor(offset / pageSize);
-
-  return (
-    <>
-      <div style={{
-        background: "#eff6ff",
-        borderLeft: "4px solid #3b82f6",
-        padding: "16px 20px",
-        borderRadius: "0 10px 10px 0",
-        fontSize: "13px",
-        color: "#1e40af",
-        marginBottom: "16px",
-        lineHeight: 1.7,
-      }}>
-        <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <Info className="w-4 h-4" />
-          Diários Oficiais Municipais
-        </div>
-        <p>Pesquise publicações nos diários oficiais de mais de 350 municípios brasileiros. Os dados são fornecidos pelo projeto Querido Diário (Open Knowledge Brasil), que coleta e disponibiliza diários oficiais municipais em formato aberto.</p>
-        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
-          <strong>Fonte: Querido Diário (queridodiario.ok.org.br) | Dados abertos - Creative Commons 4.0</strong>
-        </div>
-      </div>
-
-      <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
-        <form onSubmit={handleSearch}>
-          <div style={{ padding: "16px 20px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1, minWidth: "200px" }}>
-              <label style={labelStyle}>Buscar nos diários municipais</label>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Ex: educação, PDDE, alimentação escolar..."
-                style={inputStyle}
-              />
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+            <h3 style={{ fontSize: "15px", fontWeight: 600 }}>Resultados para "{submittedTerm}"</h3>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              {douResults.length > 0 && (
+                <span style={{ fontSize: "11px", color: "#1e40af", background: "#dbeafe", padding: "3px 10px", borderRadius: "12px", fontWeight: 600 }}>
+                  {douResults.length} da União
+                </span>
+              )}
+              {munTotal > 0 && (
+                <span style={{ fontSize: "11px", color: "#166534", background: "#dcfce7", padding: "3px 10px", borderRadius: "12px", fontWeight: 600 }}>
+                  {munTotal.toLocaleString("pt-BR")} municipais
+                </span>
+              )}
             </div>
-            <button
-              type="submit"
-              disabled={!searchTerm.trim()}
-              style={{
-                padding: "8px 18px", border: "none", borderRadius: "6px",
-                fontSize: "13px", fontWeight: 600, cursor: searchTerm.trim() ? "pointer" : "not-allowed",
-                display: "inline-flex", alignItems: "center", gap: "6px",
-                background: searchTerm.trim() ? "#1a237e" : "#94a3b8", color: "white",
-                transition: "all 0.15s",
-              }}
-            >
-              <Search style={{ width: "14px", height: "14px" }} />
-              Buscar
-            </button>
-          </div>
-        </form>
-        <div style={{ padding: "0 20px 12px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          <span style={{ fontSize: "11px", color: "#94a3b8", alignSelf: "center" }}>Sugestões:</span>
-          {quickSearches.map((term) => (
-            <button
-              key={term}
-              onClick={() => { setSearchTerm(term); setSubmittedTerm(term); setOffset(0); }}
-              style={{
-                padding: "4px 10px", borderRadius: "20px", border: "none",
-                fontSize: "11px", fontWeight: 500, cursor: "pointer",
-                background: "#dbeafe", color: "#1e40af",
-                transition: "all 0.15s",
-              }}
-            >
-              {term}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {isLoading && (
-        <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#1a237e" }} />
-          <div style={{ fontSize: "13px" }}>Consultando diários municipais...</div>
-        </div>
-      )}
-
-      {error && (
-        <div style={{
-          background: "#fffbeb", borderLeft: "3px solid #f59e0b",
-          padding: "10px 14px", borderRadius: "0 6px 6px 0",
-          fontSize: "12px", color: "#92400e", marginTop: "16px",
-        }}>
-          <AlertCircle className="w-4 h-4 inline mr-2" />
-          Não foi possível consultar os diários municipais. Tente novamente em alguns instantes.
-        </div>
-      )}
-
-      {!isLoading && !error && data && gazettes.length === 0 && submittedTerm && (
-        <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-          <MapPin className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.4 }} />
-          <p style={{ fontSize: "14px" }}>Nenhuma publicação encontrada para "{submittedTerm}"</p>
-          <p style={{ fontSize: "12px", marginTop: "4px", opacity: 0.7 }}>Tente outros termos ou verifique se o município está disponível no Querido Diário</p>
-        </div>
-      )}
-
-      {gazettes.length > 0 && (
-        <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec", marginTop: "16px" }}>
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h3 style={{ fontSize: "15px", fontWeight: 600 }}>Publicações Municipais</h3>
-            <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
-              {total.toLocaleString("pt-BR")} resultado(s)
-            </span>
           </div>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
               <thead>
                 <tr>
-                  <th style={thStyle}>Município</th>
-                  <th style={thStyle}>UF</th>
+                  <th style={thStyle}>Origem</th>
+                  <th style={thStyle}>Publicação</th>
                   <th style={thStyle}>Data</th>
-                  <th style={thStyle}>Trecho</th>
-                  <th style={{ ...thStyle, textAlign: "center" }}>Link</th>
+                  <th style={thStyle}>Fonte</th>
+                  <th style={{ ...thStyle, textAlign: "center" }}>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {gazettes.map((g, index) => (
-                  <tr key={`${g.territory_id}-${g.date}-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
+                {unifiedResults.map((r, index) => (
+                  <tr key={`${r.type}-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
                     <td style={tdStyle}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <MapPin style={{ width: "14px", height: "14px", color: "#3949ab", flexShrink: 0 }} />
-                        <span style={{ fontWeight: 600, fontSize: "13px" }}>{g.territory_name}</span>
+                      <span style={sourceBadgeStyle(r.type)}>
+                        {r.type === "federal" && <Landmark style={{ width: "11px", height: "11px" }} />}
+                        {r.type === "municipal" && <MapPin style={{ width: "11px", height: "11px" }} />}
+                        {r.badge}
+                      </span>
+                    </td>
+                    <td style={tdStyle}>
+                      <div style={{ maxWidth: "400px" }}>
+                        <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3 }}>{r.title}</div>
+                        {r.subtitle && (
+                          r.type === "municipal" ? (
+                            <div
+                              style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px", lineHeight: 1.4, maxWidth: "400px" }}
+                              dangerouslySetInnerHTML={{
+                                __html: r.subtitle.length > 150 ? r.subtitle.slice(0, 150) + "..." : r.subtitle
+                              }}
+                            />
+                          ) : (
+                            <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px", lineHeight: 1.4, maxWidth: "400px" }}>
+                              {r.subtitle.length > 150 ? r.subtitle.slice(0, 150) + "..." : r.subtitle}
+                            </div>
+                          )
+                        )}
                       </div>
                     </td>
                     <td style={tdStyle}>
-                      <span style={{
-                        display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                        fontSize: "11px", fontWeight: 600, background: "#dbeafe", color: "#1e40af",
-                      }}>
-                        {g.state_code}
-                      </span>
+                      <span style={{ fontSize: "12px", color: "#64748b" }}>{r.date || "—"}</span>
                     </td>
                     <td style={tdStyle}>
-                      <span style={{ fontSize: "12px", color: "#64748b" }}>
-                        {g.date ? new Date(g.date + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
-                      </span>
-                    </td>
-                    <td style={tdStyle}>
-                      {g.excerpts && g.excerpts.length > 0 ? (
-                        <div
-                          style={{ fontSize: "12px", color: "#64748b", lineHeight: 1.5, maxWidth: "400px" }}
-                          dangerouslySetInnerHTML={{
-                            __html: g.excerpts[0].length > 200
-                              ? g.excerpts[0].slice(0, 200) + "..."
-                              : g.excerpts[0]
-                          }}
-                        />
-                      ) : (
-                        <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
-                      )}
+                      <span style={{ fontSize: "12px", color: "#64748b" }}>{r.source}</span>
                     </td>
                     <td style={{ ...tdStyle, textAlign: "center" }}>
                       <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
                         <a
-                          href={g.url}
+                          href={r.link}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
@@ -1029,11 +910,11 @@ function DOUMunicipalContent() {
                           }}
                         >
                           <ExternalLink style={{ width: "11px", height: "11px" }} />
-                          PDF
+                          {r.type === "municipal" ? "PDF" : "Abrir"}
                         </a>
-                        {g.txt_url && (
+                        {r.extraLink && (
                           <a
-                            href={g.txt_url}
+                            href={r.extraLink}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -1054,25 +935,26 @@ function DOUMunicipalContent() {
             </table>
           </div>
 
-          {totalPages > 1 && (
+          {munTotalPages > 1 && (
             <div style={{
               display: "flex", justifyContent: "center", alignItems: "center",
               gap: "8px", padding: "14px", borderTop: "1px solid #e2e5ec",
             }}>
+              <span style={{ fontSize: "11px", color: "#94a3b8", marginRight: "8px" }}>Resultados municipais:</span>
               <button
-                onClick={() => setOffset(Math.max(0, offset - pageSize))}
-                disabled={offset <= 0}
-                style={{ ...paginationBtnStyle, opacity: offset <= 0 ? 0.4 : 1, cursor: offset <= 0 ? "not-allowed" : "pointer" }}
+                onClick={() => setMunOffset(Math.max(0, munOffset - munPageSize))}
+                disabled={munOffset <= 0}
+                style={{ ...paginationBtnStyle, opacity: munOffset <= 0 ? 0.4 : 1, cursor: munOffset <= 0 ? "not-allowed" : "pointer" }}
               >
                 Anterior
               </button>
               <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-                Página {currentPage + 1} de {totalPages > 100 ? "100+" : totalPages}
+                Página {munCurrentPage + 1} de {munTotalPages > 100 ? "100+" : munTotalPages}
               </span>
               <button
-                onClick={() => setOffset(offset + pageSize)}
-                disabled={currentPage >= totalPages - 1 || currentPage >= 99}
-                style={{ ...paginationBtnStyle, opacity: currentPage >= totalPages - 1 ? 0.4 : 1, cursor: currentPage >= totalPages - 1 ? "not-allowed" : "pointer" }}
+                onClick={() => setMunOffset(munOffset + munPageSize)}
+                disabled={munCurrentPage >= munTotalPages - 1 || munCurrentPage >= 99}
+                style={{ ...paginationBtnStyle, opacity: munCurrentPage >= munTotalPages - 1 ? 0.4 : 1, cursor: munCurrentPage >= munTotalPages - 1 ? "not-allowed" : "pointer" }}
               >
                 Próxima
               </button>
@@ -1082,160 +964,54 @@ function DOUMunicipalContent() {
       )}
 
       {!submittedTerm && (
-        <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-          <MapPin className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.3 }} />
-          <p style={{ fontSize: "14px" }}>Pesquise nos diários oficiais municipais</p>
-          <p style={{ fontSize: "12px", marginTop: "4px", opacity: 0.7 }}>
-            Mais de 350 municípios disponíveis via Querido Diário
-          </p>
-        </div>
-      )}
-    </>
-  );
-}
-
-function DOEEstadualContent() {
-  const [filterState, setFilterState] = useState("");
-
-  const filtered = filterState
-    ? doeLinks.filter(d => d.sigla === filterState)
-    : doeLinks;
-
-  const regions: Record<string, string[]> = {
-    "Norte": ["AC", "AP", "AM", "PA", "RO", "RR", "TO"],
-    "Nordeste": ["AL", "BA", "CE", "MA", "PB", "PE", "PI", "RN", "SE"],
-    "Centro-Oeste": ["DF", "GO", "MT", "MS"],
-    "Sudeste": ["ES", "MG", "RJ", "SP"],
-    "Sul": ["PR", "RS", "SC"],
-  };
-
-  return (
-    <>
-      <div style={{
-        background: "#eff6ff",
-        borderLeft: "4px solid #3b82f6",
-        padding: "16px 20px",
-        borderRadius: "0 10px 10px 0",
-        fontSize: "13px",
-        color: "#1e40af",
-        marginBottom: "16px",
-        lineHeight: 1.7,
-      }}>
-        <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <Info className="w-4 h-4" />
-          Diários Oficiais dos Estados (DOE)
-        </div>
-        <p>Acesse os diários oficiais de cada estado brasileiro. Cada estado possui seu próprio portal de publicações oficiais, onde é possível encontrar decretos, resoluções e atos normativos estaduais relacionados à educação.</p>
-        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
-          <strong>Total: {doeLinks.length} portais estaduais + Distrito Federal | Links diretos para os portais oficiais</strong>
-        </div>
-      </div>
-
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-        gap: "12px",
-        marginBottom: "16px",
-      }}>
-        {Object.entries(regions).map(([region, states]) => {
-          const regionColors: Record<string, string> = {
-            "Norte": "#2e7d32",
-            "Nordeste": "#ef6c00",
-            "Centro-Oeste": "#c62828",
-            "Sudeste": "#1565c0",
-            "Sul": "#6b21a8",
-          };
-          return (
-            <div key={region} style={{
-              background: "white",
-              borderRadius: "10px",
-              padding: "16px 20px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
-              border: "1px solid #e2e5ec",
-              borderLeft: `3px solid ${regionColors[region] || "#1a237e"}`,
-            }}>
-              <div style={{ fontSize: "26px", fontWeight: 800, color: "#1a237e", lineHeight: 1.1 }}>
-                {states.length}
-              </div>
-              <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginTop: "4px" }}>{region}</div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-          <h3 style={{ fontSize: "15px", fontWeight: 600 }}>Portais Estaduais</h3>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <select
-              value={filterState}
-              onChange={(e) => setFilterState(e.target.value)}
-              style={selectStyle}
-            >
-              <option value="">Todos os estados</option>
-              {doeLinks.map(d => (
-                <option key={d.sigla} value={d.sigla}>{d.sigla} - {d.estado}</option>
-              ))}
-            </select>
-            <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
-              {filtered.length} estado(s)
-            </span>
+        <>
+          <div style={{ textAlign: "center", padding: "32px 48px", color: "#94a3b8" }}>
+            <Newspaper className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.3 }} />
+            <p style={{ fontSize: "14px" }}>Pesquise nos diários oficiais (federal e municipais)</p>
+            <p style={{ fontSize: "12px", marginTop: "4px", opacity: 0.7 }}>
+              A busca consulta simultaneamente o DOU e mais de 350 diários municipais
+            </p>
           </div>
-        </div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "500px" }}>
-            <thead>
-              <tr>
-                <th style={thStyle}>Estado</th>
-                <th style={thStyle}>UF</th>
-                <th style={thStyle}>Região</th>
-                <th style={{ ...thStyle, textAlign: "center" }}>Portal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((doe, index) => {
-                const region = Object.entries(regions).find(([_, states]) => states.includes(doe.sigla));
-                return (
-                  <tr key={doe.sigla} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
-                    <td style={tdStyle}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <Globe style={{ width: "14px", height: "14px", color: "#3949ab", flexShrink: 0 }} />
-                        <span style={{ fontWeight: 600, fontSize: "13px" }}>{doe.estado}</span>
-                      </div>
-                    </td>
-                    <td style={tdStyle}>
-                      <span style={{
-                        display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                        fontSize: "11px", fontWeight: 600, background: "#e8eaf6", color: "#3949ab",
-                      }}>
-                        {doe.sigla}
-                      </span>
-                    </td>
-                    <td style={tdStyle}>
-                      <span style={{ fontSize: "12px", color: "#64748b" }}>{region ? region[0] : "—"}</span>
-                    </td>
-                    <td style={{ ...tdStyle, textAlign: "center" }}>
-                      <a
-                        href={doe.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          padding: "6px 14px", border: "none", borderRadius: "6px",
-                          background: "#1a237e", color: "white", fontSize: "12px", fontWeight: 600,
-                          textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px",
-                        }}
-                      >
-                        <ExternalLink style={{ width: "12px", height: "12px" }} />
-                        Acessar DOE
-                      </a>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+
+          <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec", marginTop: "8px" }}>
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ fontSize: "15px", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
+                <Globe style={{ width: "16px", height: "16px", color: "#6b21a8" }} />
+                Portais Estaduais (DOE)
+              </h3>
+              <span style={{ fontSize: "12px", color: "#6b21a8", background: "#f3e8ff", padding: "3px 10px", borderRadius: "12px", fontWeight: 600 }}>
+                {doeLinks.length} estados
+              </span>
+            </div>
+            <div style={{ padding: "16px 20px" }}>
+              <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "12px" }}>
+                Os diários estaduais possuem portais próprios. Clique em um estado para acessar diretamente:
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {doeLinks.map(doe => (
+                  <a
+                    key={doe.sigla}
+                    href={doe.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: "4px",
+                      padding: "6px 12px", borderRadius: "6px",
+                      border: "1px solid #e2e5ec", background: "#fafbfc",
+                      color: "#3949ab", fontSize: "12px", fontWeight: 600,
+                      textDecoration: "none",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <Globe style={{ width: "11px", height: "11px" }} />
+                    {doe.sigla}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
@@ -1299,28 +1075,13 @@ const paginationBtnStyle: React.CSSProperties = {
 
 export default function Legislacao() {
   const [activeCategory, setActiveCategory] = useState<CategoryId>("cat-normas");
-  const [activeSubTab, setActiveSubTab] = useState<SubTabId>("dou-federal");
-
-  const switchCategory = (catId: CategoryId) => {
-    setActiveCategory(catId);
-    const cat = categories.find(c => c.id === catId);
-    if (cat && cat.subTabs.length > 0) {
-      setActiveSubTab(cat.subTabs[0].id);
-    }
-  };
 
   const renderContent = () => {
     if (activeCategory === "cat-normas") {
       return <NormasContent />;
     }
-    if (activeSubTab === "dou-federal") {
-      return <DOUFederalContent />;
-    }
-    if (activeSubTab === "dou-municipal") {
-      return <DOUMunicipalContent />;
-    }
-    if (activeSubTab === "dou-estadual") {
-      return <DOEEstadualContent />;
+    if (activeCategory === "cat-dou") {
+      return <DiarioOficialContent />;
     }
     return null;
   };
@@ -1339,7 +1100,7 @@ export default function Legislacao() {
           <div>
             <h1 style={{ fontSize: "20px", fontWeight: 700, letterSpacing: "-0.3px" }}>Painel de Legislação Educacional</h1>
             <p style={{ opacity: 0.75, fontSize: "12px", marginTop: "2px" }}>
-              Normas do MEC e publicações dos diários oficiais (federal, estaduais e municipais)
+              Normas e publicações dos diários oficiais (federal, estaduais e municipais)
             </p>
           </div>
           <span style={{
@@ -1368,7 +1129,7 @@ export default function Legislacao() {
           {categories.map(cat => (
             <button
               key={cat.id}
-              onClick={() => switchCategory(cat.id)}
+              onClick={() => setActiveCategory(cat.id)}
               style={{
                 padding: "12px 20px",
                 borderRadius: "8px 8px 0 0",
@@ -1393,50 +1154,7 @@ export default function Legislacao() {
           ))}
         </nav>
 
-        {categories.map(cat => (
-          cat.subTabs.length > 0 ? (
-            <div
-              key={cat.id}
-              style={{
-                display: activeCategory === cat.id ? "flex" : "none",
-                gap: "2px",
-                background: "#f1f5f9",
-                borderRadius: "0 0 10px 10px",
-                padding: "4px 6px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                overflowX: "auto",
-                WebkitOverflowScrolling: "touch",
-                marginBottom: "20px",
-              }}
-            >
-              {cat.subTabs.map(sub => (
-                <button
-                  key={sub.id}
-                  onClick={() => setActiveSubTab(sub.id)}
-                  style={{
-                    padding: "8px 14px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontSize: "13px",
-                    fontWeight: activeSubTab === sub.id ? 600 : 500,
-                    color: activeSubTab === sub.id ? "#1a237e" : "#64748b",
-                    transition: "all 0.15s",
-                    whiteSpace: "nowrap",
-                    textAlign: "center",
-                    flexShrink: 0,
-                    border: "none",
-                    background: activeSubTab === sub.id ? "white" : "none",
-                    boxShadow: activeSubTab === sub.id ? "0 1px 3px rgba(0,0,0,0.06)" : "none",
-                  }}
-                >
-                  {sub.label}
-                </button>
-              ))}
-            </div>
-          ) : activeCategory === cat.id ? (
-            <div key={cat.id} style={{ marginBottom: "20px" }} />
-          ) : null
-        ))}
+        <div style={{ marginBottom: "20px" }} />
 
         {renderContent()}
 
@@ -1450,7 +1168,7 @@ export default function Legislacao() {
           marginTop: "24px",
         }}>
           <strong>Nota:</strong> Esta seção reúne normas e publicações oficiais para a gestão escolar.
-          As abas "Normas do MEC" e "Diário Oficial" consultam dados diretamente dos portais oficiais do governo.
+          As abas "Normas" e "Diário Oficial" consultam dados diretamente dos portais oficiais do governo.
           Para dúvidas específicas sobre a aplicação dessas normas, consulte o{" "}
           <a href="/chat" style={{ color: "#1565c0", fontWeight: 600 }}>Caderno da Diretora</a>.
         </div>
