@@ -19,6 +19,7 @@ interface PrazoEducacional {
   fonte: string;
   urgencia: "alta" | "media" | "baixa";
   url?: string;
+  aConfirmar?: boolean;
 }
 
 interface NoticiaEducacao {
@@ -55,7 +56,8 @@ const URGENCIA_BADGE: Record<string, { bg: string; text: string; label: string }
 
 export default function CalendarioPage() {
   const currentDate = new Date();
-  const [ano, setAno] = useState(currentDate.getFullYear());
+  const anoAtual = Math.max(currentDate.getFullYear(), 2026);
+  const [ano, setAno] = useState(anoAtual);
   const [mesSelecionado, setMesSelecionado] = useState<number | null>(null);
 
   const prazosQuery = useQuery<{ ok: boolean; prazos: PrazoEducacional[]; ano: number }>({
@@ -126,7 +128,7 @@ export default function CalendarioPage() {
             </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <button onClick={() => setAno(ano - 1)} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "6px", padding: "6px", cursor: "pointer", color: "white" }}>
+            <button onClick={() => ano > 2026 && setAno(ano - 1)} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "6px", padding: "6px", cursor: ano <= 2026 ? "not-allowed" : "pointer", color: "white", opacity: ano <= 2026 ? 0.4 : 1 }}>
               <ChevronLeft style={{ width: "18px", height: "18px" }} />
             </button>
             <span style={{ fontSize: "18px", fontWeight: 700, minWidth: "60px", textAlign: "center" }}>{ano}</span>
@@ -149,6 +151,20 @@ export default function CalendarioPage() {
           </div>
           <p>Clique em um mês para filtrar os prazos. As datas são baseadas nos cronogramas típicos do MEC, FNDE e INEP. Confira sempre os editais oficiais para datas exatas de cada ano.</p>
         </div>
+
+        {ano > 2026 && (
+          <div style={{
+            background: "#fffbeb", borderLeft: "4px solid #f59e0b",
+            padding: "14px 18px", borderRadius: "0 10px 10px 0",
+            fontSize: "13px", color: "#92400e", marginBottom: "20px", lineHeight: 1.6,
+          }}>
+            <div style={{ fontWeight: 700, fontSize: "14px", marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
+              <AlertTriangle className="w-4 h-4" />
+              Datas ainda não confirmadas
+            </div>
+            <p>Os prazos para {ano} são baseados nos padrões dos anos anteriores. As datas exatas serão atualizadas quando forem publicadas oficialmente pelo MEC, FNDE e INEP.</p>
+          </div>
+        )}
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(85px, 1fr))", gap: "8px", marginBottom: "24px" }}>
           {MESES.map((nome, i) => {
@@ -270,7 +286,13 @@ export default function CalendarioPage() {
                             <span style={{ fontSize: "10px", color: "#94a3b8" }}>
                               Fonte: {prazo.fonte}
                             </span>
-                            {prazo.dataFim && (
+                            {prazo.aConfirmar && (
+                              <span style={{ fontSize: "10px", color: "#d97706", fontWeight: 700, display: "flex", alignItems: "center", gap: "3px", background: "#fffbeb", padding: "1px 6px", borderRadius: "4px", border: "1px solid #fcd34d" }}>
+                                <Clock style={{ width: "10px", height: "10px" }} />
+                                Datas a confirmar
+                              </span>
+                            )}
+                            {prazo.dataFim && !prazo.aConfirmar && (
                               <span style={{ fontSize: "10px", color: "#dc2626", fontWeight: 600, display: "flex", alignItems: "center", gap: "3px" }}>
                                 <AlertTriangle style={{ width: "10px", height: "10px" }} />
                                 Até {new Date(prazo.dataFim + "T12:00:00").toLocaleDateString("pt-BR")}

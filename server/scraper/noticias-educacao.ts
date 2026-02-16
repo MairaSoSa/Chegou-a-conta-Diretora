@@ -223,10 +223,19 @@ export interface PrazoEducacional {
   fonte: string;
   urgencia: "alta" | "media" | "baixa";
   url?: string;
+  aConfirmar?: boolean;
 }
 
+const ANO_CONFIRMADO = 2026;
+
 export function getPrazosEducacionais(ano: number): PrazoEducacional[] {
-  return [
+  if (ano < 2026) {
+    return [];
+  }
+
+  const confirmado = ano <= ANO_CONFIRMADO;
+
+  const prazos: PrazoEducacional[] = [
     {
       titulo: "Início do Ano Letivo — Planejamento Escolar",
       descricao: "Período para organizar o Projeto Pedagógico (PPP), definir o calendário escolar e planejar o uso dos recursos recebidos no ano anterior.",
@@ -247,8 +256,8 @@ export function getPrazosEducacionais(ano: number): PrazoEducacional[] {
     {
       titulo: "Censo Escolar — Coleta de Dados (Matrícula Inicial)",
       descricao: `Período de coleta da Matrícula Inicial do Censo Escolar ${ano}. A diretora deve cadastrar todos os alunos, turmas e profissionais no sistema Educacenso.`,
-      dataInicio: `${ano}-05-25`,
-      dataFim: `${ano}-08-30`,
+      dataInicio: confirmado ? `${ano}-05-25` : undefined,
+      dataFim: confirmado ? `${ano}-08-30` : undefined,
       mes: 5,
       categoria: "CENSO",
       fonte: "INEP",
@@ -267,7 +276,7 @@ export function getPrazosEducacionais(ano: number): PrazoEducacional[] {
     {
       titulo: "PDDE — Prestação de Contas (exercício anterior)",
       descricao: `Prazo para a UEx (conselho escolar) enviar a prestação de contas do PDDE do exercício ${ano - 1}. Reunir notas fiscais, extratos bancários e atas de deliberação.`,
-      dataFim: `${ano}-02-28`,
+      dataFim: confirmado ? `${ano}-02-28` : undefined,
       mes: 2,
       categoria: "PRESTAÇÃO",
       fonte: "FNDE/PDDE",
@@ -277,8 +286,8 @@ export function getPrazosEducacionais(ano: number): PrazoEducacional[] {
     {
       titulo: "Censo Escolar — Situação do Aluno",
       descricao: `Período para informar a situação final dos alunos (aprovado, reprovado, transferido) no Educacenso referente ao ano de ${ano - 1}.`,
-      dataInicio: `${ano}-02-01`,
-      dataFim: `${ano}-03-15`,
+      dataInicio: confirmado ? `${ano}-02-01` : undefined,
+      dataFim: confirmado ? `${ano}-03-15` : undefined,
       mes: 2,
       categoria: "CENSO",
       fonte: "INEP",
@@ -337,7 +346,7 @@ export function getPrazosEducacionais(ano: number): PrazoEducacional[] {
     {
       titulo: "Censo Escolar — Encerramento da Coleta",
       descricao: "Prazo final para envio dos dados da Matrícula Inicial. Verificar se todos os dados estão corretos antes do fechamento.",
-      dataFim: `${ano}-08-30`,
+      dataFim: confirmado ? `${ano}-08-30` : undefined,
       mes: 8,
       categoria: "CENSO",
       fonte: "INEP",
@@ -384,4 +393,13 @@ export function getPrazosEducacionais(ano: number): PrazoEducacional[] {
       urgencia: "media",
     },
   ];
+
+  if (!confirmado) {
+    return prazos.map(p => ({
+      ...p,
+      aConfirmar: true,
+    }));
+  }
+
+  return prazos;
 }
