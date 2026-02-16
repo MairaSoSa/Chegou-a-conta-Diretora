@@ -814,7 +814,7 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
 
-                {(indicadoresLatest.icg || indicadoresLatest.tdi || indicadoresLatest.ird || indicadoresLatest.taxas_rendimento || indicadoresLatest.atu || indicadoresLatest.had || indicadoresLatest.dsu || indicadoresLatest.ideb || indicadoresLatest.inse) && (
+                {(indicadoresLatest.icg || indicadoresLatest.tdi || indicadoresLatest.ird || indicadoresLatest.taxas_rendimento || indicadoresLatest.atu || indicadoresLatest.had || indicadoresLatest.dsu || indicadoresLatest.afd || indicadoresLatest.ideb || indicadoresLatest.inse) && (
                   <Card className="card-clay border-l-4 border-l-blue-500">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base flex items-center gap-2">
@@ -822,19 +822,37 @@ export default function Dashboard() {
                         Indicadores Educacionais ({latestAno})
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-5">
                       {indicadoresLatest.ideb && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <Award className="w-3.5 h-3.5 text-amber-600" /> IDEB
                           </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                            <InfoItem label="IDEB" value={indicadoresLatest.ideb.ideb} highlight />
-                            <InfoItem label="Meta" value={indicadoresLatest.ideb.projecao || indicadoresLatest.ideb.meta} />
-                            <InfoItem label="Nota SAEB Mat." value={indicadoresLatest.ideb.nota_saeb_mat || indicadoresLatest.ideb.nota_mat} />
-                            <InfoItem label="Nota SAEB Port." value={indicadoresLatest.ideb.nota_saeb_lp || indicadoresLatest.ideb.nota_lp} />
-                            <InfoItem label="Rendimento" value={indicadoresLatest.ideb.indicador_rendimento} />
-                          </div>
+                          {(indicadoresLatest.ideb.ideb_ai || indicadoresLatest.ideb.ideb_af) && (
+                            <div className="mb-2">
+                              <p className="text-[10px] text-muted-foreground mb-1 font-medium">Fundamental</p>
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                                <InfoItem label="IDEB Anos Iniciais" value={indicadoresLatest.ideb.ideb_ai} highlight />
+                                <InfoItem label="IDEB Anos Finais" value={indicadoresLatest.ideb.ideb_af} highlight />
+                                <InfoItem label="Nota Matemática AF" value={indicadoresLatest.ideb.nota_mt_af} />
+                                <InfoItem label="Nota Português AF" value={indicadoresLatest.ideb.nota_lp_af} />
+                                <InfoItem label="Rendimento AF" value={indicadoresLatest.ideb.rendimento_af != null ? (indicadoresLatest.ideb.rendimento_af * 100).toFixed(1) + '%' : null} />
+                                <InfoItem label="Projeção AF" value={indicadoresLatest.ideb.projecao_af} />
+                              </div>
+                            </div>
+                          )}
+                          {indicadoresLatest.ideb.ideb_em && (
+                            <div>
+                              <p className="text-[10px] text-muted-foreground mb-1 font-medium">Ensino Médio</p>
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                                <InfoItem label="IDEB Ensino Médio" value={indicadoresLatest.ideb.ideb_em} highlight />
+                                <InfoItem label="Nota Matemática EM" value={indicadoresLatest.ideb.nota_mt_em} />
+                                <InfoItem label="Nota Português EM" value={indicadoresLatest.ideb.nota_lp_em} />
+                                <InfoItem label="Rendimento EM" value={indicadoresLatest.ideb.rendimento_em != null ? (indicadoresLatest.ideb.rendimento_em * 100).toFixed(1) + '%' : null} />
+                                <InfoItem label="Projeção EM" value={indicadoresLatest.ideb.projecao_em} />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -844,8 +862,7 @@ export default function Dashboard() {
                             <BarChart3 className="w-3.5 h-3.5 text-blue-600" /> ICG - Complexidade de Gestão
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Nível" value={indicadoresLatest.icg.nivel_texto || indicadoresLatest.icg.nivel} highlight />
-                            <InfoItem label="Valor" value={indicadoresLatest.icg.valor} />
+                            <InfoItem label="Nível" value={indicadoresLatest.icg.nivel_texto || `Nível ${indicadoresLatest.icg.nivel}`} highlight />
                           </div>
                         </div>
                       )}
@@ -855,9 +872,10 @@ export default function Dashboard() {
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                             <TrendingUp className="w-3.5 h-3.5 text-purple-600" /> INSE - Nível Socioeconômico
                           </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Classificação" value={indicadoresLatest.inse.classificacao || indicadoresLatest.inse.nivel} highlight />
-                            <InfoItem label="Valor INSE" value={indicadoresLatest.inse.media_inse || indicadoresLatest.inse.valor} />
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            <InfoItem label="Classificação" value={indicadoresLatest.inse.inse_classificacao || indicadoresLatest.inse.nivel_inse} highlight />
+                            <InfoItem label="Média INSE" value={indicadoresLatest.inse.media_inse} />
+                            <InfoItem label="Alunos avaliados" value={indicadoresLatest.inse.qtd_alunos_inse} />
                           </div>
                         </div>
                       )}
@@ -865,10 +883,21 @@ export default function Dashboard() {
                       {indicadoresLatest.tdi && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <BarChart3 className="w-3.5 h-3.5 text-orange-600" /> TDI - Distorção Idade-Série
+                            <BarChart3 className="w-3.5 h-3.5 text-orange-600" /> TDI - Distorção Idade-Série (%)
                           </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <IndicatorRows data={indicadoresLatest.tdi} />
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            <InfoItem label="Fundamental Total" value={indicadoresLatest.tdi.fundamental_total} highlight />
+                            <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.tdi.fundamental_ai} />
+                            <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.tdi.fundamental_af} />
+                            <InfoItem label="Fund. 6º ano" value={indicadoresLatest.tdi.fund_6ano} />
+                            <InfoItem label="Fund. 7º ano" value={indicadoresLatest.tdi.fund_7ano} />
+                            <InfoItem label="Fund. 8º ano" value={indicadoresLatest.tdi.fund_8ano} />
+                            <InfoItem label="Fund. 9º ano" value={indicadoresLatest.tdi.fund_9ano} />
+                            <InfoItem label="Médio Total" value={indicadoresLatest.tdi.medio_total} highlight />
+                            <InfoItem label="Médio 1ª série" value={indicadoresLatest.tdi.medio_1serie} />
+                            <InfoItem label="Médio 2ª série" value={indicadoresLatest.tdi.medio_2serie} />
+                            <InfoItem label="Médio 3ª série" value={indicadoresLatest.tdi.medio_3serie} />
+                            <InfoItem label="Médio 4ª série" value={indicadoresLatest.tdi.medio_4serie} />
                           </div>
                         </div>
                       )}
@@ -879,7 +908,7 @@ export default function Dashboard() {
                             <BarChart3 className="w-3.5 h-3.5 text-teal-600" /> IRD - Regularidade do Docente
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <IndicatorRows data={indicadoresLatest.ird} />
+                            <InfoItem label="Média IRD" value={indicadoresLatest.ird.media_ird != null ? Number(indicadoresLatest.ird.media_ird).toFixed(2) : null} highlight />
                           </div>
                         </div>
                       )}
@@ -887,10 +916,21 @@ export default function Dashboard() {
                       {indicadoresLatest.taxas_rendimento && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <TrendingUp className="w-3.5 h-3.5 text-green-600" /> Taxas de Rendimento
+                            <TrendingUp className="w-3.5 h-3.5 text-green-600" /> Taxas de Rendimento (%)
                           </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <IndicatorRows data={indicadoresLatest.taxas_rendimento} />
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            <InfoItem label="Aprovação Fund." value={indicadoresLatest.taxas_rendimento.aprovacao_fund} />
+                            <InfoItem label="Aprovação Fund. AI" value={indicadoresLatest.taxas_rendimento.aprovacao_fund_ai} />
+                            <InfoItem label="Aprovação Fund. AF" value={indicadoresLatest.taxas_rendimento.aprovacao_fund_af} />
+                            <InfoItem label="Aprovação Médio" value={indicadoresLatest.taxas_rendimento.aprovacao_med} />
+                            <InfoItem label="Reprovação Fund." value={indicadoresLatest.taxas_rendimento.reprovacao_fund} />
+                            <InfoItem label="Reprovação Fund. AI" value={indicadoresLatest.taxas_rendimento.reprovacao_fund_ai} />
+                            <InfoItem label="Reprovação Fund. AF" value={indicadoresLatest.taxas_rendimento.reprovacao_fund_af} />
+                            <InfoItem label="Reprovação Médio" value={indicadoresLatest.taxas_rendimento.reprovacao_med} />
+                            <InfoItem label="Abandono Fund." value={indicadoresLatest.taxas_rendimento.abandono_fund} />
+                            <InfoItem label="Abandono Fund. AI" value={indicadoresLatest.taxas_rendimento.abandono_fund_ai} />
+                            <InfoItem label="Abandono Fund. AF" value={indicadoresLatest.taxas_rendimento.abandono_fund_af} />
+                            <InfoItem label="Abandono Médio" value={indicadoresLatest.taxas_rendimento.abandono_med} />
                           </div>
                         </div>
                       )}
@@ -926,13 +966,43 @@ export default function Dashboard() {
                       {indicadoresLatest.dsu && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <GraduationCap className="w-3.5 h-3.5 text-emerald-600" /> DSU - Docentes com Curso Superior
+                            <GraduationCap className="w-3.5 h-3.5 text-emerald-600" /> DSU - Docentes com Curso Superior (%)
                           </p>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Fundamental Total" value={indicadoresLatest.dsu.percentual_fund != null ? `${indicadoresLatest.dsu.percentual_fund}%` : null} />
-                            <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.dsu.percentual_fund_ai != null ? `${indicadoresLatest.dsu.percentual_fund_ai}%` : null} />
-                            <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.dsu.percentual_fund_af != null ? `${indicadoresLatest.dsu.percentual_fund_af}%` : null} />
-                            <InfoItem label="Ensino Médio" value={indicadoresLatest.dsu.percentual_med != null ? `${indicadoresLatest.dsu.percentual_med}%` : null} />
+                            <InfoItem label="Fundamental Total" value={indicadoresLatest.dsu.percentual_fund} />
+                            <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.dsu.percentual_fund_ai} />
+                            <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.dsu.percentual_fund_af} />
+                            <InfoItem label="Ensino Médio" value={indicadoresLatest.dsu.percentual_med} />
+                          </div>
+                        </div>
+                      )}
+
+                      {indicadoresLatest.afd && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <GraduationCap className="w-3.5 h-3.5 text-rose-600" /> AFD - Adequação da Formação Docente (%)
+                          </p>
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-[10px] text-muted-foreground mb-1 font-medium">Fundamental</p>
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                                <InfoItem label="Grupo 1" value={indicadoresLatest.afd.fun_cat_1} />
+                                <InfoItem label="Grupo 2" value={indicadoresLatest.afd.fun_cat_2} />
+                                <InfoItem label="Grupo 3" value={indicadoresLatest.afd.fun_cat_3} />
+                                <InfoItem label="Grupo 4" value={indicadoresLatest.afd.fun_cat_4} />
+                                <InfoItem label="Grupo 5" value={indicadoresLatest.afd.fun_cat_5} />
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-muted-foreground mb-1 font-medium">Ensino Médio</p>
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                                <InfoItem label="Grupo 1" value={indicadoresLatest.afd.med_cat_1} />
+                                <InfoItem label="Grupo 2" value={indicadoresLatest.afd.med_cat_2} />
+                                <InfoItem label="Grupo 3" value={indicadoresLatest.afd.med_cat_3} />
+                                <InfoItem label="Grupo 4" value={indicadoresLatest.afd.med_cat_4} />
+                                <InfoItem label="Grupo 5" value={indicadoresLatest.afd.med_cat_5} />
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )}
