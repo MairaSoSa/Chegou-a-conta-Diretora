@@ -639,3 +639,13 @@
 .dyslexia-font .text-sm {
   font-size: 0.925rem !important;
 }
+
+.calendario-grid {
+  grid-template-columns: 1fr 380px;
+}
+
+@media (max-width: 900px) {
+  .calendario-grid {
+    grid-template-columns: 1fr;
+  }
+}

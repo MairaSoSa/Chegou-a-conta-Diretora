@@ -1124,6 +1124,29 @@ export async function registerRoutes(
     }
   });
 
+  // === CALENDAR: NEWS & DEADLINES ===
+  app.get("/api/noticias-educacao", async (req, res) => {
+    try {
+      const { buscarNoticiasEducacao } = await import("./scraper/noticias-educacao.js");
+      const limit = Math.min(parseInt(String(req.query.limit || "15")), 30);
+      const result = await buscarNoticiasEducacao(limit);
+      res.json(result);
+    } catch (e: any) {
+      res.status(500).json({ ok: false, noticias: [], total: 0, error: e.message });
+    }
+  });
+
+  app.get("/api/prazos-educacionais", async (req, res) => {
+    try {
+      const { getPrazosEducacionais } = await import("./scraper/noticias-educacao.js");
+      const ano = parseInt(String(req.query.ano || new Date().getFullYear()));
+      const prazos = getPrazosEducacionais(ano);
+      res.json({ ok: true, prazos, ano });
+    } catch (e: any) {
+      res.status(500).json({ ok: false, prazos: [], error: e.message });
+    }
+  });
+
   // === ADMIN: AI DOCUMENTS ===
   app.post("/api/admin/ai-documents", adminAuth, async (req, res) => {
     try {

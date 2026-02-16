@@ -16,6 +16,7 @@ import Chat from "@/pages/Chat";
 import Legislacao from "@/pages/Legislacao";
 import QuemSomos from "@/pages/QuemSomos";
 import Admin from "@/pages/Admin";
+import Calendario from "@/pages/Calendario";
 
 const AccessibilityContext = createContext<{ isOpen: boolean; toggle: () => void }>({ isOpen: false, toggle: () => {} });
 export const useAccessibility = () => useContext(AccessibilityContext);
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/ferramentas" component={Ferramentas} />
       <Route path="/chat" component={Chat} />
       <Route path="/quem-somos" component={QuemSomos} />
+      <Route path="/calendario" component={Calendario} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
