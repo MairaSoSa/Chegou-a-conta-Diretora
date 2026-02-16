@@ -81,6 +81,14 @@ export async function importCensoCsvFromFile(filePath: string, ano: number) {
       }
     }
 
+    const endereco = get("DS_ENDERECO") || undefined;
+    const numero = get("DS_NUMERO") || undefined;
+    const complemento = get("DS_COMPLEMENTO") || undefined;
+    const bairro = get("NO_BAIRRO") || undefined;
+    const cep = get("CO_CEP") || undefined;
+    const ddd = get("NU_DDD") || undefined;
+    const telefone = get("NU_TELEFONE") || undefined;
+
     const dados = {
       co_entidade: parseInt(inep),
       no_entidade: get("NO_ENTIDADE"),
@@ -91,6 +99,12 @@ export async function importCensoCsvFromFile(filePath: string, ano: number) {
       ds_dependencia: DEP_MAP[depCode] || depCode,
       ds_localizacao: LOC_MAP[locCode] || locCode,
       ds_situacao: SIT_MAP[sitCode] || sitCode,
+      ...(endereco && { ds_endereco: endereco }),
+      ...(numero && { ds_numero: numero }),
+      ...(complemento && { ds_complemento: complemento }),
+      ...(bairro && { no_bairro: bairro }),
+      ...(cep && { co_cep: cep }),
+      ...(ddd && telefone && { telefone: `(${ddd}) ${telefone}` }),
       ...keyData,
     };
 

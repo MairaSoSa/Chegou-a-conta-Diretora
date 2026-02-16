@@ -629,6 +629,14 @@ export default function Dashboard() {
                           <MapPin className="w-3 h-3" />
                           {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}
                         </p>
+                        {censoLatest.ds_endereco && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {censoLatest.ds_endereco}{censoLatest.ds_numero ? `, ${censoLatest.ds_numero}` : ""}{censoLatest.ds_complemento ? `, ${censoLatest.ds_complemento}` : ""}{censoLatest.no_bairro ? `, ${censoLatest.no_bairro}` : ""}{censoLatest.co_cep ? `. ${censoLatest.co_cep.toString().replace(/(\d{5})(\d{3})/, "$1-$2")}` : ""} - {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}
+                          </p>
+                        )}
+                        {censoLatest.telefone && (
+                          <p className="text-xs text-muted-foreground mt-0.5">Tel: {censoLatest.telefone}</p>
+                        )}
                         <p className="text-xs text-muted-foreground mt-1">
                           Anos disponíveis: {evolucaoData.anos_disponiveis.join(", ")}
                         </p>
