@@ -86,7 +86,7 @@ export interface SigpcHistoricoAnalise {
 // ============================================================================
 
 export function useSigpcLocalizar(cnpj?: string, anoConcessao?: number) {
-  return useQuery<{ ok: boolean; prestacoes: SigpcPrestacaoListItem[] }>({
+  return useQuery<{ ok: boolean; prestacoes: SigpcPrestacaoListItem[]; error?: string; fonte?: string }>({
     queryKey: ["sigpc-localizar", cnpj, anoConcessao],
     queryFn: async () => {
       if (!cnpj) throw new Error("CNPJ é obrigatório");

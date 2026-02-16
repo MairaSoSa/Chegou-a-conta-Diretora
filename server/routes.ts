@@ -337,11 +337,11 @@ export async function registerRoutes(
       const cnpj = decodeURIComponent(req.params.cnpj);
       const anoConcessao = req.query.anoConcessao ? parseInt(req.query.anoConcessao as string) : undefined;
 
-      const prestacoes = await localizarPrestacoesPorCnpj(cnpj, anoConcessao);
-      res.json({ ok: true, prestacoes });
+      const result = await localizarPrestacoesPorCnpj(cnpj, anoConcessao);
+      res.json(result);
     } catch (err: any) {
       console.error("SIGPC localizar error:", err.message);
-      res.status(500).json({ ok: false, error: "Erro ao localizar prestações" });
+      res.status(500).json({ ok: false, error: "Erro ao localizar prestações", prestacoes: [], fonte: "indisponivel" });
     }
   });
 

@@ -1,13 +1,16 @@
-// ============================================================================
-// SIGPC/FNDE - Sistema de Prestação de Contas
-// ============================================================================
-// API oficial bloqueada por WAF - usando mock data realista
-// Endpoints reais: localizarPc, detalharOPC, ConferirDocumentos
-// ============================================================================
+import iconv from "iconv-lite";
 
-// ============================================================================
-// TIPOS (baseados na API real do SIGPC)
-// ============================================================================
+const SIGPC_BASE = "https://www.fnde.gov.br/sigpcadm";
+const SIGPC_API = `${SIGPC_BASE}/publico/json/util`;
+
+const HEADERS: Record<string, string> = {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Accept": "application/json, text/html, */*",
+  "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+  "Referer": "https://www.fnde.gov.br/sigpcadm/actionPublico.pu?tilesPublico=ConsultarSituacao",
+  "Accept-Encoding": "identity",
+  "Connection": "keep-alive"
+};
 
 export interface SigpcPrestacaoListItem {
   pcId: number;
@@ -20,6 +23,7 @@ export interface SigpcPrestacaoListItem {
   anoConcessao: number;
   convenioNumero?: string;
   valorConcessao: number;
+  fonte?: string;
 }
 
 export interface SigpcPrestacaoDetalhada {
@@ -47,6 +51,7 @@ export interface SigpcPrestacaoDetalhada {
   parcelas: SigpcParcela[];
   dirigentes: SigpcDirigente[];
   documentos: SigpcDocumento[];
+  fonte?: string;
 }
 
 export interface SigpcParcela {
@@ -86,262 +91,146 @@ export interface SigpcHistoricoAnalise {
   documentosAnalisados: string[];
 }
 
-// ============================================================================
-// ENDPOINT 1: localizarPc (busca inicial)
-// GET /sigpcadm/publico/json/util/localizarPc?cnpj=XXXX
-// ============================================================================
+async function tryRealSigpcApi(cnpj: string): Promise<any[] | null> {
+  try {
+    const cleanCnpj = cnpj.replace(/[^\d]/g, "");
+    const url = `${SIGPC_API}/localizarPc?cnpj=${cleanCnpj}`;
+    console.log(`[SIGPC] Trying real API: ${url}`);
 
-export async function localizarPrestacoesPorCnpj(
-  cnpj: string, 
-  anoConcessao?: number
-): Promise<SigpcPrestacaoListItem[]> {
-  await new Promise(resolve => setTimeout(resolve, 300));
+    const response = await fetch(url, {
+      headers: HEADERS,
+      signal: AbortSignal.timeout(15000),
+    });
 
-  const anos = anoConcessao ? [anoConcessao] : [2024, 2023, 2022];
-  const prestacoes: SigpcPrestacaoListItem[] = [];
-
-  anos.forEach((ano) => {
-    const numPrestacoes = ano === 2024 ? 4 : ano === 2023 ? 3 : 2;
-    
-    for (let i = 0; i < numPrestacoes; i++) {
-      const pcId = parseInt(`${ano}${i}${Math.floor(Math.random() * 10000)}`);
-      
-      const rand = Math.random();
-      let situacaoNome: string, faseNome: string;
-      if (rand < 0.6) {
-        situacaoNome = "Aprovada";
-        faseNome = "Concluída";
-      } else if (rand < 0.85) {
-        situacaoNome = "Aguardando Análise";
-        faseNome = "Em análise documental";
-      } else {
-        situacaoNome = "Irregular";
-        faseNome = "Aguardando regularização";
-      }
-
-      const programas = [
-        { nome: "PDDE - Básico", codigo: "PDDE-B" },
-        { nome: "PDDE - Qualidade", codigo: "PDDE-Q" },
-        { nome: "PDDE - Água e Esgoto Sanitário", codigo: "PDDE-AE" },
-        { nome: "PDDE - Estrutura", codigo: "PDDE-E" },
-        { nome: "Novo Mais Educação", codigo: "NME" }
-      ];
-      
-      const programa = programas[i % programas.length];
-
-      prestacoes.push({
-        pcId,
-        processoNumero: `23034.${String(pcId).slice(0, 6)}/${ano}-11`,
-        programaNome: programa.nome,
-        entidadeNome: "UEx Escola Estadual Exemplo",
-        cnpj: cnpj,
-        situacaoNome,
-        faseNome,
-        anoConcessao: ano,
-        convenioNumero: `${ano}${String(pcId).slice(-6)}`,
-        valorConcessao: Math.floor(Math.random() * 50000) + 10000
-      });
+    if (!response.ok) {
+      console.log(`[SIGPC] Real API returned HTTP ${response.status}`);
+      return null;
     }
-  });
 
-  return prestacoes;
+    const contentType = response.headers.get("content-type") || "";
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const text = contentType.includes("charset=iso") || contentType.includes("latin")
+      ? iconv.decode(buffer, "latin1")
+      : buffer.toString("utf8");
+
+    if (text.includes("Request Rejected") || text.includes("<html>")) {
+      console.log("[SIGPC] Real API blocked by WAF");
+      return null;
+    }
+
+    const data = JSON.parse(text);
+    console.log("[SIGPC] Real API returned data:", JSON.stringify(data).substring(0, 200));
+    return Array.isArray(data) ? data : data.prestacoes || data.dados || null;
+  } catch (err: any) {
+    console.log(`[SIGPC] Real API unavailable: ${err.message}`);
+    return null;
+  }
 }
 
-// ============================================================================
-// ENDPOINT 2: detalharOPC (detalhes completos)
-// GET /sigpcadm/publico/json/util/detalharOPC?pcId=12345
-// ============================================================================
+export interface SigpcLocalizarResult {
+  ok: boolean;
+  prestacoes: SigpcPrestacaoListItem[];
+  fonte: "sigpc-real" | "indisponivel";
+  error?: string;
+}
 
-export async function detalharPrestacao(pcId: number): Promise<SigpcPrestacaoDetalhada | null> {
-  await new Promise(resolve => setTimeout(resolve, 400));
-
-  const ano = parseInt(String(pcId).slice(0, 4));
-  const programaIdx = parseInt(String(pcId).charAt(4)) || 0;
-  
-  const programas = [
-    { nome: "PDDE - Básico", codigo: "PDDE-B" },
-    { nome: "PDDE - Qualidade", codigo: "PDDE-Q" },
-    { nome: "PDDE - Água e Esgoto Sanitário", codigo: "PDDE-AE" },
-    { nome: "PDDE - Estrutura", codigo: "PDDE-E" },
-    { nome: "Novo Mais Educação", codigo: "NME" }
-  ];
-  
-  const programa = programas[programaIdx % programas.length];
-  
-  const rand = Math.random();
-  let situacaoNome: string, faseNome: string, dataAprovacao: string | undefined;
-  if (rand < 0.6) {
-    situacaoNome = "Aprovada";
-    faseNome = "Concluída";
-    dataAprovacao = `${ano}-11-20`;
-  } else if (rand < 0.85) {
-    situacaoNome = "Aguardando Análise";
-    faseNome = "Em análise documental";
-  } else {
-    situacaoNome = "Irregular";
-    faseNome = "Aguardando regularização";
+export async function localizarPrestacoesPorCnpj(
+  cnpj: string,
+  anoConcessao?: number
+): Promise<SigpcLocalizarResult> {
+  const realData = await tryRealSigpcApi(cnpj);
+  if (realData && realData.length > 0) {
+    console.log(`[SIGPC] Using real data: ${realData.length} records`);
+    return {
+      ok: true,
+      fonte: "sigpc-real",
+      prestacoes: realData.map((item: any) => ({
+        pcId: item.pcId || item.id || 0,
+        processoNumero: item.processoNumero || item.processo || "",
+        programaNome: item.programaNome || item.programa || "",
+        entidadeNome: item.entidadeNome || item.entidade || "",
+        cnpj: item.cnpj || cnpj,
+        situacaoNome: item.situacaoNome || item.situacao || "",
+        faseNome: item.faseNome || item.fase || "",
+        anoConcessao: item.anoConcessao || item.ano || 0,
+        convenioNumero: item.convenioNumero || item.convenio,
+        valorConcessao: item.valorConcessao || item.valor || 0,
+        fonte: "sigpc-real"
+      }))
+    };
   }
 
-  const valorConcessao = Math.floor(Math.random() * 50000) + 10000;
-  const valorLiberado = situacaoNome === "Aprovada" ? valorConcessao : Math.floor(valorConcessao * 0.5);
-  const valorExecutado = Math.floor(valorLiberado * 0.85);
-  const saldoConta = valorLiberado - valorExecutado;
+  if (realData === null) {
+    console.log("[SIGPC] API blocked by WAF, returning unavailable status");
+    return {
+      ok: false,
+      fonte: "indisponivel",
+      prestacoes: [],
+      error: "O sistema SIGPC do FNDE está temporariamente indisponível. Tente novamente mais tarde."
+    };
+  }
 
   return {
-    pcId,
-    processoNumero: `23034.${String(pcId).slice(0, 6)}/${ano}-11`,
-    programaNome: programa.nome,
-    programaCodigo: programa.codigo,
-    entidadeNome: "UEx Escola Estadual Exemplo",
-    cnpj: "49.263.742/0001-07",
-    endereco: "Rua Exemplo, 123 - Centro",
-    municipio: "Cidade Exemplo",
-    uf: "SP",
-    situacaoNome,
-    faseNome,
-    anoConcessao: ano,
-    convenioNumero: `${ano}${String(pcId).slice(-6)}`,
-    valorConcessao,
-    valorLiberado,
-    valorExecutado,
-    saldoConta,
-    dataInicio: `${ano}-01-15`,
-    dataFim: `${ano}-12-31`,
-    dataAprovacao,
-    concessaoId: pcId * 10,
-    parcelas: gerarParcelas(valorConcessao, situacaoNome, ano),
-    dirigentes: gerarDirigentes(),
-    documentos: gerarDocumentos(situacaoNome, ano)
+    ok: true,
+    fonte: "sigpc-real",
+    prestacoes: [],
   };
 }
 
-// ============================================================================
-// ENDPOINT 3: ConferirDocumentos (histórico de análise)
-// GET /sigpcadm/publico/json/conferirdocumentos/ConferirDocumentos
-//     ?concessaoId=123&comando=recuperarHistoricoAnalise
-// ============================================================================
+export async function detalharPrestacao(pcId: number): Promise<SigpcPrestacaoDetalhada | null> {
+  try {
+    const url = `${SIGPC_API}/detalharOPC?pcId=${pcId}`;
+    console.log(`[SIGPC] Trying detail API: ${url}`);
 
-export async function recuperarHistoricoAnalise(concessaoId: number): Promise<SigpcHistoricoAnalise[]> {
-  await new Promise(resolve => setTimeout(resolve, 300));
-
-  const pcId = Math.floor(concessaoId / 10);
-  const ano = parseInt(String(pcId).slice(0, 4));
-
-  const historico: SigpcHistoricoAnalise[] = [
-    {
-      historicoId: 1,
-      dataAnalise: `${ano}-02-10`,
-      analista: "Maria Silva Santos",
-      tipoAnalise: "Análise Documental Inicial",
-      resultado: "Aprovado",
-      parecer: "Documentação completa e adequada. Todos os documentos obrigatórios foram apresentados.",
-      documentosAnalisados: ["Plano de aplicação", "Estatuto da UEx", "Ata de eleição"]
-    },
-    {
-      historicoId: 2,
-      dataAnalise: `${ano}-06-15`,
-      analista: "João Pedro Oliveira",
-      tipoAnalise: "Análise de Prestação de Contas",
-      resultado: "Aprovado com ressalvas",
-      parecer: "Prestação de contas aprovada. Recomenda-se maior detalhamento nas notas fiscais.",
-      documentosAnalisados: ["Extrato bancário", "Notas fiscais", "Termo de doação"]
-    },
-    {
-      historicoId: 3,
-      dataAnalise: `${ano}-11-20`,
-      analista: "Ana Paula Costa",
-      tipoAnalise: "Análise Final",
-      resultado: "Aprovado",
-      parecer: "Prestação de contas final aprovada. Recursos aplicados corretamente conforme plano aprovado.",
-      documentosAnalisados: ["Relatório final", "Demonstrativo financeiro", "Fotos de comprovação"]
-    }
-  ];
-
-  return historico;
-}
-
-// ============================================================================
-// FUNÇÕES AUXILIARES
-// ============================================================================
-
-function gerarParcelas(valorTotal: number, situacao: string, ano: number): SigpcParcela[] {
-  const numParcelas = Math.floor(Math.random() * 2) + 2; // 2-3 parcelas
-  const valorParcela = valorTotal / numParcelas;
-  
-  return Array.from({ length: numParcelas }, (_, i) => ({
-    parcelaId: i + 1,
-    numero: i + 1,
-    valor: Math.round(valorParcela * 100) / 100,
-    dataLiberacao: `${ano}-${String((i * 4) + 2).padStart(2, '0')}-15`,
-    situacao: situacao === "Aprovada" ? "Liberada" : i === 0 ? "Liberada" : "Pendente"
-  }));
-}
-
-function gerarDirigentes(): SigpcDirigente[] {
-  return [
-    {
-      dirigenteId: 1,
-      nome: "Maria José da Silva",
-      cpf: "123.456.789-00",
-      cargo: "Presidente da UEx",
-      dataInicio: "2023-01-15",
-      situacao: "Ativo"
-    },
-    {
-      dirigenteId: 2,
-      nome: "João Carlos Santos",
-      cpf: "987.654.321-00",
-      cargo: "Tesoureiro",
-      dataInicio: "2023-01-15",
-      situacao: "Ativo"
-    },
-    {
-      dirigenteId: 3,
-      nome: "Ana Paula Oliveira",
-      cpf: "456.789.123-00",
-      cargo: "Secretário",
-      dataInicio: "2023-01-15",
-      situacao: "Ativo"
-    }
-  ];
-}
-
-function gerarDocumentos(situacao: string, ano: number): SigpcDocumento[] {
-  const docs: SigpcDocumento[] = [
-    {
-      documentoId: 1,
-      tipo: "Plano de Aplicação",
-      numero: `PA-${ano}-001`,
-      dataEmissao: `${ano}-01-20`,
-      situacao: "Aprovado"
-    },
-    {
-      documentoId: 2,
-      tipo: "Prestação de Contas",
-      numero: `PC-${ano}-001`,
-      dataEmissao: `${ano}-06-30`,
-      situacao: situacao === "Aprovada" ? "Aprovado" : "Em análise"
-    },
-    {
-      documentoId: 3,
-      tipo: "Extrato Bancário",
-      numero: `EB-${ano}-001`,
-      dataEmissao: `${ano}-12-15`,
-      situacao: situacao === "Aprovada" ? "Conferido" : "Pendente",
-      observacao: "Extrato do período completo de execução"
-    }
-  ];
-
-  if (situacao === "Aprovada") {
-    docs.push({
-      documentoId: 4,
-      tipo: "Parecer Final",
-      numero: `PF-${ano}-001`,
-      dataEmissao: `${ano}-11-20`,
-      situacao: "Emitido",
-      observacao: "Prestação de contas aprovada sem ressalvas"
+    const response = await fetch(url, {
+      headers: HEADERS,
+      signal: AbortSignal.timeout(15000),
     });
+
+    if (response.ok) {
+      const contentType = response.headers.get("content-type") || "";
+      const buffer = Buffer.from(await response.arrayBuffer());
+      const text = contentType.includes("charset=iso") || contentType.includes("latin")
+        ? iconv.decode(buffer, "latin1")
+        : buffer.toString("utf8");
+
+      if (!text.includes("Request Rejected") && !text.includes("<html>")) {
+        const data = JSON.parse(text);
+        console.log("[SIGPC] Detail API returned data");
+        return { ...data, fonte: "sigpc-real" };
+      }
+    }
+  } catch (err: any) {
+    console.log(`[SIGPC] Detail API unavailable: ${err.message}`);
   }
 
-  return docs;
+  console.log("[SIGPC] Detail API blocked, returning null");
+  return null;
+}
+
+export async function recuperarHistoricoAnalise(concessaoId: number): Promise<SigpcHistoricoAnalise[]> {
+  try {
+    const url = `${SIGPC_API}/conferirdocumentos/ConferirDocumentos?concessaoId=${concessaoId}&comando=recuperarHistoricoAnalise`;
+    console.log(`[SIGPC] Trying history API: ${url}`);
+
+    const response = await fetch(url, {
+      headers: HEADERS,
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (response.ok) {
+      const buffer = Buffer.from(await response.arrayBuffer());
+      const text = buffer.toString("utf8");
+
+      if (!text.includes("Request Rejected") && !text.includes("<html>")) {
+        const data = JSON.parse(text);
+        return Array.isArray(data) ? data : [];
+      }
+    }
+  } catch (err: any) {
+    console.log(`[SIGPC] History API unavailable: ${err.message}`);
+  }
+
+  console.log("[SIGPC] History API blocked, returning empty");
+  return [];
 }

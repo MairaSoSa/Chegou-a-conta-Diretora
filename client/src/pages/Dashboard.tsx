@@ -1689,6 +1689,227 @@ export default function Dashboard() {
                   </div>
                 </IndicatorSection>
 
+                <IndicatorSection
+                  title="Dados Financeiros (PDDE / SIGPC)"
+                  icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
+                  expanded={expandedSections['financeiro'] ?? false}
+                  onToggle={() => toggleSection('financeiro')}
+                >
+                  <div className="space-y-5">
+                    {(pddeLoading || sigpcLoading) && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground py-4 justify-center">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Consultando dados financeiros do FNDE...
+                      </div>
+                    )}
+
+                    {pddeData && !pddeLoading && (
+                      <>
+                        {pddeData.ok ? (
+                          <div className="space-y-4">
+                            {pddeData.uex && (
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                                  <Landmark className="w-3.5 h-3.5" />
+                                  Unidade Executora (UEx)
+                                </p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                  <InfoItem label="Executora" value={pddeData.uex.executora} />
+                                  <InfoItem label="CNPJ" value={pddeData.uex.cnpj} />
+                                  <InfoItem label="UF" value={pddeData.uex.uf} />
+                                  <InfoItem label="Município" value={pddeData.uex.municipio} />
+                                </div>
+                              </div>
+                            )}
+
+                            {pddeData.matriculas_total != null && (
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                                  Matrículas PDDE ({pddeData.ano})
+                                </p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                  <InfoItem label="Total" value={pddeData.matriculas_total} highlight />
+                                  {pddeData.matriculas_por_nivel && Object.entries(pddeData.matriculas_por_nivel).map(([nivel, qt]) => (
+                                    <InfoItem key={nivel} label={nivel} value={qt} />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {pddeData.contas && pddeData.contas.length > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                                  <BanknoteIcon className="w-3.5 h-3.5" />
+                                  Contas Bancárias
+                                </p>
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-sm">
+                                    <thead>
+                                      <tr className="border-b border-border/30">
+                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Programa</th>
+                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Banco</th>
+                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Agência</th>
+                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Conta</th>
+                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Saldo</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {pddeData.contas.map((conta, idx) => (
+                                        <tr key={idx} className="border-b border-border/10">
+                                          <td className="py-2 px-2 text-xs font-medium">{conta.programa}</td>
+                                          <td className="py-2 px-2 text-xs">{conta.banco}</td>
+                                          <td className="py-2 px-2 text-xs font-mono">{conta.agencia}</td>
+                                          <td className="py-2 px-2 text-xs font-mono">{conta.conta}</td>
+                                          <td className="py-2 px-2 text-xs text-right font-mono">
+                                            {conta.saldo != null ? `R$ ${conta.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            )}
+
+                            {pddeData.destinacoes && pddeData.destinacoes.length > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                                  <Wallet className="w-3.5 h-3.5" />
+                                  Repasses e Destinações ({pddeData.ano})
+                                </p>
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-sm">
+                                    <thead>
+                                      <tr className="border-b border-border/30">
+                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Destinação</th>
+                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Devido</th>
+                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Pago</th>
+                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs hidden md:table-cell">Data Pgto</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {pddeData.destinacoes.map((dest, idx) => (
+                                        <tr key={idx} className="border-b border-border/10">
+                                          <td className="py-2 px-2 text-xs font-medium">{dest.destinacao}</td>
+                                          <td className="py-2 px-2 text-xs text-right font-mono">
+                                            {dest.devido_total != null ? `R$ ${dest.devido_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                                          </td>
+                                          <td className="py-2 px-2 text-xs text-right font-mono">
+                                            {dest.pago_total != null ? `R$ ${dest.pago_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                                          </td>
+                                          <td className="py-2 px-2 text-xs text-right hidden md:table-cell">{dest.data_ordem_pgto || '-'}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            )}
+
+                            {pddeData.situacao_uex && (
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                                  Situação da UEx
+                                </p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                  <InfoItem label="Mandato Início" value={pddeData.situacao_uex.mandato_inicio} />
+                                  <InfoItem label="Mandato Fim" value={pddeData.situacao_uex.mandato_fim} />
+                                  <InfoItem label="Dados Cadastrais" value={pddeData.situacao_uex.dados_cadastrais} />
+                                  <InfoItem label="Prestação de Contas" value={pddeData.situacao_uex.prestacao_contas} />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50/50 border border-amber-200/50">
+                            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-medium text-amber-800">PDDE Info indisponível</p>
+                              <p className="text-xs text-amber-600 mt-1">
+                                {pddeData.error || "O portal do FNDE pode estar temporariamente indisponível. Tente novamente mais tarde."}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {sigpcData && !sigpcLoading && (
+                      <>
+                        {sigpcData.prestacoes && sigpcData.prestacoes.length > 0 ? (
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                              <FileText className="w-3.5 h-3.5" />
+                              Prestações de Contas (SIGPC)
+                            </p>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b border-border/30">
+                                    <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Programa</th>
+                                    <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Ano</th>
+                                    <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Situação</th>
+                                    <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs hidden md:table-cell">Fase</th>
+                                    <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Valor</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {sigpcData.prestacoes.map((pc: any, idx: number) => (
+                                    <tr key={idx} className="border-b border-border/10">
+                                      <td className="py-2 px-2 text-xs font-medium">{pc.programaNome}</td>
+                                      <td className="py-2 px-2 text-xs">{pc.anoConcessao}</td>
+                                      <td className="py-2 px-2 text-xs">
+                                        <Badge variant={pc.situacaoNome === 'Aprovada' ? 'default' : pc.situacaoNome === 'Irregular' ? 'destructive' : 'outline'} className="text-xs">
+                                          {pc.situacaoNome}
+                                        </Badge>
+                                      </td>
+                                      <td className="py-2 px-2 text-xs hidden md:table-cell">{pc.faseNome}</td>
+                                      <td className="py-2 px-2 text-xs text-right font-mono">
+                                        R$ {pc.valorConcessao?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        ) : sigpcData.ok === false ? (
+                          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50/50 border border-amber-200/50">
+                            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-medium text-amber-800">SIGPC indisponível</p>
+                              <p className="text-xs text-amber-600 mt-1">
+                                {sigpcData.error || "O sistema de prestação de contas do FNDE está temporariamente indisponível."}
+                              </p>
+                            </div>
+                          </div>
+                        ) : null}
+                      </>
+                    )}
+
+                    {!pddeLoading && !sigpcLoading && (!pddeData || (!pddeData.ok && !pddeData.error)) && !sigpcData && (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-muted-foreground">
+                          Dados financeiros não disponíveis para esta escola no momento.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="pt-2 border-t border-border/20">
+                      <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                        Dados obtidos do PDDE Info e SIGPC do FNDE. Podem apresentar atraso ou indisponibilidade temporária.
+                        Para dados oficiais, acesse{' '}
+                        <a href="https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar" target="_blank" rel="noopener noreferrer" className="underline hover:text-accent">
+                          PDDE Info
+                        </a>{' '}ou{' '}
+                        <a href="https://www.fnde.gov.br/sigpcadm/actionPublico.pu?tilesPublico=ConsultarSituacao" target="_blank" rel="noopener noreferrer" className="underline hover:text-accent">
+                          SIGPC
+                        </a>.
+                      </p>
+                    </div>
+                  </div>
+                </IndicatorSection>
+
                 <Card className="card-clay">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
