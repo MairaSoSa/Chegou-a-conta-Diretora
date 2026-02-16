@@ -278,6 +278,8 @@ export async function registerRoutes(
     "had": "had",
     "dsu": "dsu",
     "afd": "afd",
+    "ied": "ied",
+    "taxa-nao-resposta": "taxa_nao_resposta",
   };
 
   for (const [apiPath, tipoDb] of Object.entries(INDICATOR_TIPO_MAP)) {

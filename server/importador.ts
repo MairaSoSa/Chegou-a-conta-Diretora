@@ -466,6 +466,10 @@ export async function getEscolaEvolucaoCompleta(inep: string) {
     { tipo: "atu", apiPath: "atu", anos: [2020, 2021, 2022, 2023, 2024] },
     { tipo: "had", apiPath: "had", anos: [2020, 2021, 2022, 2023, 2024] },
     { tipo: "dsu", apiPath: "dsu", anos: [2020, 2021, 2022, 2023, 2024] },
+    { tipo: "afd", apiPath: "afd", anos: [2020, 2021, 2022, 2023, 2024] },
+    { tipo: "ied", apiPath: "ied", anos: [2020, 2021, 2022, 2023, 2024] },
+    { tipo: "taxa_nao_resposta", apiPath: "taxa-nao-resposta", anos: [2020, 2021, 2022, 2023, 2024] },
+    { tipo: "saeb", apiPath: "saeb", anos: [2019, 2021, 2023] },
   ];
 
   const fetchTasks: Promise<void>[] = [];

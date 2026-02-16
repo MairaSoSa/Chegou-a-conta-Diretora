@@ -169,6 +169,21 @@ export default function Dashboard() {
         if (!ins) return { ano: a };
         return { ano: a, media: ins.media_inse ?? ins.valor ?? null };
       }),
+      saeb: anos.map((a: number) => {
+        const s = indicadores[a]?.saeb;
+        if (!s) return { ano: a };
+        return { ano: a, mt_ai: s.nota_mt_ai ?? null, lp_ai: s.nota_lp_ai ?? null, mt_af: s.nota_mt_af ?? null, lp_af: s.nota_lp_af ?? null };
+      }),
+      ied: anos.map((a: number) => {
+        const ie = indicadores[a]?.ied;
+        if (!ie) return { ano: a };
+        return { ano: a, nivel_1: ie.nivel_1 ?? null, nivel_6: ie.nivel_6 ?? null };
+      }),
+      tnr: anos.map((a: number) => {
+        const t = indicadores[a]?.taxa_nao_resposta;
+        if (!t) return { ano: a };
+        return { ano: a, fund: t.taxa_nao_resposta_fund ?? t.tnr_fund ?? null, med: t.taxa_nao_resposta_med ?? t.tnr_med ?? null };
+      }),
     };
   }, [evolucaoData]);
 
@@ -807,6 +822,35 @@ export default function Dashboard() {
                               lines={[{ key: "media", color: CHART_COLORS[3], name: "Média INSE" }]}
                               icon={<TrendingUp className="w-4 h-4 text-purple-600" />}
                             />
+                            <EvolutionChart
+                              title="SAEB - Proficiência"
+                              data={evolutionCharts.saeb}
+                              lines={[
+                                { key: "mt_ai", color: CHART_COLORS[0], name: "Mat. AI" },
+                                { key: "lp_ai", color: CHART_COLORS[1], name: "Port. AI" },
+                                { key: "mt_af", color: CHART_COLORS[2], name: "Mat. AF" },
+                                { key: "lp_af", color: CHART_COLORS[3], name: "Port. AF" },
+                              ]}
+                              icon={<Award className="w-4 h-4 text-blue-600" />}
+                            />
+                            <EvolutionChart
+                              title="IED - Esforço Docente"
+                              data={evolutionCharts.ied}
+                              lines={[
+                                { key: "nivel_1", color: CHART_COLORS[0], name: "Nível 1" },
+                                { key: "nivel_6", color: EXTRA_COLORS[0], name: "Nível 6" },
+                              ]}
+                              icon={<GraduationCap className="w-4 h-4 text-pink-600" />}
+                            />
+                            <EvolutionChart
+                              title="Taxa de Não-Resposta"
+                              data={evolutionCharts.tnr}
+                              lines={[
+                                { key: "fund", color: CHART_COLORS[0], name: "Fundamental" },
+                                { key: "med", color: EXTRA_COLORS[2], name: "Médio" },
+                              ]}
+                              icon={<BarChart3 className="w-4 h-4 text-yellow-600" />}
+                            />
                           </>
                         )}
                       </div>
@@ -814,7 +858,7 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
 
-                {(indicadoresLatest.icg || indicadoresLatest.tdi || indicadoresLatest.ird || indicadoresLatest.taxas_rendimento || indicadoresLatest.atu || indicadoresLatest.had || indicadoresLatest.dsu || indicadoresLatest.afd || indicadoresLatest.ideb || indicadoresLatest.inse) && (
+                {(indicadoresLatest.icg || indicadoresLatest.tdi || indicadoresLatest.ird || indicadoresLatest.taxas_rendimento || indicadoresLatest.atu || indicadoresLatest.had || indicadoresLatest.dsu || indicadoresLatest.afd || indicadoresLatest.ideb || indicadoresLatest.inse || indicadoresLatest.saeb || indicadoresLatest.ied || indicadoresLatest.taxa_nao_resposta) && (
                   <Card className="card-clay border-l-4 border-l-blue-500">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base flex items-center gap-2">
@@ -1003,6 +1047,72 @@ export default function Dashboard() {
                                 <InfoItem label="Grupo 5" value={indicadoresLatest.afd.med_cat_5} />
                               </div>
                             </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {indicadoresLatest.saeb && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <Award className="w-3.5 h-3.5 text-blue-600" /> SAEB - Proficiência
+                          </p>
+                          <div className="space-y-2">
+                            {(indicadoresLatest.saeb.nota_mt_ai || indicadoresLatest.saeb.nota_lp_ai || indicadoresLatest.saeb.nota_mt_af || indicadoresLatest.saeb.nota_lp_af) && (
+                              <div>
+                                <p className="text-[10px] text-muted-foreground mb-1 font-medium">Fundamental</p>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                  <InfoItem label="Matemática AI" value={indicadoresLatest.saeb.nota_mt_ai} />
+                                  <InfoItem label="Português AI" value={indicadoresLatest.saeb.nota_lp_ai} />
+                                  <InfoItem label="Matemática AF" value={indicadoresLatest.saeb.nota_mt_af} />
+                                  <InfoItem label="Português AF" value={indicadoresLatest.saeb.nota_lp_af} />
+                                </div>
+                              </div>
+                            )}
+                            {(indicadoresLatest.saeb.nota_mt_em || indicadoresLatest.saeb.nota_lp_em) && (
+                              <div>
+                                <p className="text-[10px] text-muted-foreground mb-1 font-medium">Ensino Médio</p>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                  <InfoItem label="Matemática EM" value={indicadoresLatest.saeb.nota_mt_em} />
+                                  <InfoItem label="Português EM" value={indicadoresLatest.saeb.nota_lp_em} />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {indicadoresLatest.ied && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <GraduationCap className="w-3.5 h-3.5 text-pink-600" /> IED - Esforço Docente (%)
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                            <InfoItem label="Nível 1" value={indicadoresLatest.ied.nivel_1} />
+                            <InfoItem label="Nível 2" value={indicadoresLatest.ied.nivel_2} />
+                            <InfoItem label="Nível 3" value={indicadoresLatest.ied.nivel_3} />
+                            <InfoItem label="Nível 4" value={indicadoresLatest.ied.nivel_4} />
+                            <InfoItem label="Nível 5" value={indicadoresLatest.ied.nivel_5} />
+                            <InfoItem label="Nível 6" value={indicadoresLatest.ied.nivel_6} />
+                          </div>
+                          {(indicadoresLatest.ied.percentual_fund || indicadoresLatest.ied.percentual_med) && (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+                              <InfoItem label="Fundamental" value={indicadoresLatest.ied.percentual_fund} />
+                              <InfoItem label="Ensino Médio" value={indicadoresLatest.ied.percentual_med} />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {indicadoresLatest.taxa_nao_resposta && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <BarChart3 className="w-3.5 h-3.5 text-yellow-600" /> Taxa de Não-Resposta (%)
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            <InfoItem label="Fundamental" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_fund ?? indicadoresLatest.taxa_nao_resposta.tnr_fund} />
+                            <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_fund_ai ?? indicadoresLatest.taxa_nao_resposta.tnr_fund_ai} />
+                            <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_fund_af ?? indicadoresLatest.taxa_nao_resposta.tnr_fund_af} />
+                            <InfoItem label="Ensino Médio" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_med ?? indicadoresLatest.taxa_nao_resposta.tnr_med} />
                           </div>
                         </div>
                       )}
