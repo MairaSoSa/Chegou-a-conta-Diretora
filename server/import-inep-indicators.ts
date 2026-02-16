@@ -84,25 +84,29 @@ const INDICATORS: IndicatorDef[] = [
     zipUrl: (ano) => `${INEP_BASE}/${ano}/tx_rend_escolas_${ano}.zip`,
     xlsxPattern: /tx_rend.*escolas.*\.xlsx$/i,
     extractData: (headers, values) => {
-      const get = (col: string) => {
-        const idx = headers.indexOf(col);
-        if (idx < 0) return undefined;
-        const v = values[idx];
-        return v === "--" || v === "" || v === null || v === undefined ? null : Number(v);
+      const get = (...cols: string[]) => {
+        for (const col of cols) {
+          const idx = headers.indexOf(col);
+          if (idx >= 0) {
+            const v = values[idx];
+            return v === "--" || v === "" || v === null || v === undefined ? null : Number(v);
+          }
+        }
+        return undefined;
       };
       return {
-        aprovacao_fund: get("1_CAT_FUN"),
-        aprovacao_fund_ai: get("1_CAT_FUN_AI"),
-        aprovacao_fund_af: get("1_CAT_FUN_AF"),
-        aprovacao_med: get("1_CAT_MED"),
-        reprovacao_fund: get("2_CAT_FUN"),
-        reprovacao_fund_ai: get("2_CAT_FUN_AI"),
-        reprovacao_fund_af: get("2_CAT_FUN_AF"),
-        reprovacao_med: get("2_CAT_MED"),
-        abandono_fund: get("3_CAT_FUN"),
-        abandono_fund_ai: get("3_CAT_FUN_AI"),
-        abandono_fund_af: get("3_CAT_FUN_AF"),
-        abandono_med: get("3_CAT_MED"),
+        aprovacao_fund: get("1_CAT_FUN", "tap_FUN"),
+        aprovacao_fund_ai: get("1_CAT_FUN_AI", "tap_F14"),
+        aprovacao_fund_af: get("1_CAT_FUN_AF", "tap_F58"),
+        aprovacao_med: get("1_CAT_MED", "tap_MED"),
+        reprovacao_fund: get("2_CAT_FUN", "tre_FUN"),
+        reprovacao_fund_ai: get("2_CAT_FUN_AI", "tre_F14"),
+        reprovacao_fund_af: get("2_CAT_FUN_AF", "tre_F58"),
+        reprovacao_med: get("2_CAT_MED", "tre_MED"),
+        abandono_fund: get("3_CAT_FUN", "tab_FUN"),
+        abandono_fund_ai: get("3_CAT_FUN_AI", "tab_F14"),
+        abandono_fund_af: get("3_CAT_FUN_AF", "tab_F58"),
+        abandono_med: get("3_CAT_MED", "tab_MED"),
       };
     },
   },
@@ -184,6 +188,29 @@ const INDICATORS: IndicatorDef[] = [
       return Object.keys(data).length > 0 ? data : null;
     },
   },
+  {
+    tipo: "taxa_nao_resposta",
+    zipUrl: (ano) => `${INEP_BASE}/${ano}/tx_rend_escolas_${ano}.zip`,
+    xlsxPattern: /tx_rend.*escolas.*\.xlsx$/i,
+    extractData: (headers, values) => {
+      const get = (...cols: string[]) => {
+        for (const col of cols) {
+          const idx = headers.indexOf(col);
+          if (idx >= 0) {
+            const v = values[idx];
+            return v === "--" || v === "" || v === null || v === undefined ? null : Number(v);
+          }
+        }
+        return undefined;
+      };
+      return {
+        fund_total: get("4_CAT_FUN", "tnr_FUN"),
+        fund_ai: get("4_CAT_FUN_AI", "tnr_F14"),
+        fund_af: get("4_CAT_FUN_AF", "tnr_F58"),
+        medio_total: get("4_CAT_MED", "tnr_MED"),
+      };
+    },
+  },
 ];
 
 const TMP_DIR = "/tmp/inep_indicators";
@@ -209,6 +236,7 @@ function updateStatus(tipo: string, ano: number, status: string, imported: numbe
 
 async function downloadAndExtract(url: string, tipo: string, ano: number): Promise<string | null> {
   const dir = path.join(TMP_DIR, `${tipo}_${ano}`);
+  try { execSync(`rm -rf "${dir}"`); } catch {}
   fs.mkdirSync(dir, { recursive: true });
   const zipPath = path.join(dir, "data.zip");
 
@@ -219,7 +247,8 @@ async function downloadAndExtract(url: string, tipo: string, ano: number): Promi
       console.log(`[INEP] Download failed or file too small for ${tipo} ${ano}`);
       return null;
     }
-    execSync(`unzip -o "${zipPath}" -d "${dir}"`, { timeout: 60000 });
+    execSync(`chmod -R u+w "${dir}" 2>/dev/null; unzip -o "${zipPath}" -d "${dir}"`, { timeout: 60000 });
+    execSync(`chmod -R u+w "${dir}" 2>/dev/null`, { timeout: 5000 });
     return dir;
   } catch (err: any) {
     console.error(`[INEP] Download/extract error for ${tipo} ${ano}:`, err.message);
@@ -285,6 +314,9 @@ async function importIndicatorFile(def: IndicatorDef, ano: number): Promise<{ im
 
   const coEntidadeIdx = headers.indexOf("CO_ENTIDADE");
   console.log(`[INEP] Headers found at row ${headerRowIdx}, CO_ENTIDADE at col ${coEntidadeIdx}`);
+  console.log(`[INEP] Sample headers (first 30): ${headers.slice(0, 30).join(', ')}`);
+  const catHeaders = headers.filter(h => h.startsWith('3_') || h.startsWith('4_') || h.startsWith('tnr') || h.startsWith('tab'));
+  if (catHeaders.length > 0) console.log(`[INEP] TNR/Abandono headers: ${catHeaders.join(', ')}`);
   console.log(`[INEP] Total rows: ${allData.length - headerRowIdx - 1}`);
 
   db.run(sql`DELETE FROM indicadores_educacionais WHERE tipo = ${def.tipo} AND ano = ${ano}`);
@@ -395,4 +427,346 @@ export function getIndicatorImportRunning() {
 
 export function getAvailableIndicators() {
   return INDICATORS.map(d => d.tipo);
+}
+
+const IDEB_BASE = "https://download.inep.gov.br/ideb/resultados";
+
+interface IdebFileDef {
+  etapa: string;
+  zipUrl: (ano: number) => string;
+  xlsxPattern: RegExp;
+  prefix: string;
+}
+
+const IDEB_FILES: IdebFileDef[] = [
+  {
+    etapa: "ai",
+    zipUrl: (ano) => `${IDEB_BASE}/divulgacao_anos_iniciais_escolas_${ano}.zip`,
+    xlsxPattern: /anos_iniciais.*escolas.*\.xlsx$/i,
+    prefix: "ai",
+  },
+  {
+    etapa: "af",
+    zipUrl: (ano) => `${IDEB_BASE}/divulgacao_anos_finais_escolas_${ano}.zip`,
+    xlsxPattern: /anos_finais.*escolas.*\.xlsx$/i,
+    prefix: "af",
+  },
+  {
+    etapa: "em",
+    zipUrl: (ano) => `${IDEB_BASE}/divulgacao_ensino_medio_escolas_${ano}.zip`,
+    xlsxPattern: /ensino_medio.*escolas.*\.xlsx$/i,
+    prefix: "em",
+  },
+];
+
+const IDEB_YEARS = [2019, 2021, 2023];
+
+export async function importIdeb(anos?: number[]) {
+  if (indicatorImportRunning) return { error: "Importação já em andamento" };
+  indicatorImportRunning = true;
+
+  fs.mkdirSync(TMP_DIR, { recursive: true });
+  const results: Record<string, any> = {};
+  const errors: string[] = [];
+  const latestIdebYear = 2023;
+
+  try {
+    for (const fileDef of IDEB_FILES) {
+      const url = fileDef.zipUrl(latestIdebYear);
+      console.log(`[INEP] Downloading IDEB ${fileDef.etapa}...`);
+      updateStatus(`ideb_${fileDef.etapa}`, latestIdebYear, "baixando", 0, 0);
+
+      const dir = await downloadAndExtract(url, `ideb_${fileDef.etapa}`, latestIdebYear);
+      if (!dir) {
+        errors.push(`ideb_${fileDef.etapa}: Download failed`);
+        updateStatus(`ideb_${fileDef.etapa}`, latestIdebYear, "erro", 0, 0, "Falha no download");
+        continue;
+      }
+
+      const xlsxPath = findXlsx(dir, fileDef.xlsxPattern);
+      if (!xlsxPath) {
+        const allFiles = fs.readdirSync(dir, { recursive: true }) as string[];
+        const xlsxFiles = allFiles.filter(f => String(f).endsWith('.xlsx'));
+        if (xlsxFiles.length > 0) {
+          const firstXlsx = path.join(dir, String(xlsxFiles[0]));
+          await processIdebFile(firstXlsx, fileDef, anos || IDEB_YEARS, results, errors);
+        } else {
+          errors.push(`ideb_${fileDef.etapa}: XLSX not found`);
+          updateStatus(`ideb_${fileDef.etapa}`, latestIdebYear, "erro", 0, 0, "XLSX não encontrado");
+        }
+      } else {
+        await processIdebFile(xlsxPath, fileDef, anos || IDEB_YEARS, results, errors);
+      }
+
+      try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    }
+  } finally {
+    indicatorImportRunning = false;
+  }
+
+  return { success: true, results, errors };
+}
+
+async function processIdebFile(xlsxPath: string, fileDef: IdebFileDef, anosToProcess: number[], results: Record<string, any>, errors: string[]) {
+  console.log(`[INEP] Reading IDEB ${fileDef.etapa}: ${xlsxPath}`);
+  const XLSX = await XLSX_IMPORT();
+  const wb = XLSX.readFile(xlsxPath);
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const allData: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+  let headerRowIdx = -1;
+  let headers: string[] = [];
+  for (let i = 0; i < Math.min(allData.length, 20); i++) {
+    const row = allData[i];
+    if (Array.isArray(row)) {
+      const rowStrs = row.map((h: any) => String(h || "").trim());
+      if (rowStrs.some(h => h.includes("CO_ENTIDADE") || h.includes("CO_ESCOLA") || h === "SG_UF")) {
+        headerRowIdx = i;
+        headers = rowStrs;
+        break;
+      }
+    }
+  }
+
+  if (headerRowIdx < 0) {
+    errors.push(`ideb_${fileDef.etapa}: Header row not found`);
+    return;
+  }
+
+  const coEntidadeIdx = headers.findIndex(h => h === "CO_ENTIDADE" || h === "CO_ESCOLA");
+  if (coEntidadeIdx < 0) {
+    errors.push(`ideb_${fileDef.etapa}: CO_ENTIDADE/CO_ESCOLA column not found`);
+    return;
+  }
+
+  console.log(`[INEP] IDEB ${fileDef.etapa} headers: ${headers.slice(0, 10).join(', ')}...`);
+
+  for (const ano of anosToProcess) {
+    const suffix = String(ano);
+    const idebCol = headers.findIndex(h => h.includes("VL_OBSERVADO") && h.includes(suffix));
+    const rendCol = headers.findIndex(h => h.includes("VL_INDICADOR_REND") && h.includes(suffix));
+    const matCol = headers.findIndex(h => (h.includes("VL_NOTA_MATEMATICA") || h.includes("VL_NOTA_MT")) && h.includes(suffix));
+    const ptCol = headers.findIndex(h => (h.includes("VL_NOTA_PORTUGUES") || h.includes("VL_NOTA_LP")) && h.includes(suffix));
+    const projCol = headers.findIndex(h => h.includes("VL_PROJECAO") && h.includes(suffix));
+
+    if (idebCol < 0) {
+      console.log(`[INEP] IDEB ${fileDef.etapa} ${ano}: No VL_OBSERVADO column found`);
+      continue;
+    }
+
+    console.log(`[INEP] Processing IDEB ${fileDef.etapa} ${ano}...`);
+    let imported = 0;
+    const batchValues: any[] = [];
+
+    for (let i = headerRowIdx + 1; i < allData.length; i++) {
+      const row = allData[i];
+      if (!row || !row[coEntidadeIdx]) continue;
+
+      const inep = String(row[coEntidadeIdx]).trim();
+      if (!inep || inep.length < 6) continue;
+
+      const getValue = (idx: number) => {
+        if (idx < 0) return null;
+        const v = row[idx];
+        if (v === "--" || v === "" || v === null || v === undefined || v === "ND" || v === "N/D") return null;
+        const num = Number(v);
+        return isNaN(num) ? null : num;
+      };
+
+      const idebValue = getValue(idebCol);
+      if (idebValue === null) continue;
+
+      const data: Record<string, any> = {
+        co_entidade: parseInt(inep),
+        [`ideb_${fileDef.prefix}`]: idebValue,
+        [`nota_mt_${fileDef.prefix}`]: getValue(matCol),
+        [`nota_lp_${fileDef.prefix}`]: getValue(ptCol),
+        [`rendimento_${fileDef.prefix}`]: getValue(rendCol),
+        [`projecao_${fileDef.prefix}`]: getValue(projCol),
+      };
+
+      const existing = db.select().from(indicadoresEducacionais)
+        .where(and(
+          eq(indicadoresEducacionais.inep, inep),
+          eq(indicadoresEducacionais.ano, ano),
+          eq(indicadoresEducacionais.tipo, "ideb")
+        ))
+        .get();
+
+      if (existing) {
+        const existingData = existing.dados ? JSON.parse(existing.dados) : {};
+        const mergedData = { ...existingData, ...data };
+        db.update(indicadoresEducacionais)
+          .set({ dados: JSON.stringify(mergedData), updatedAt: Date.now() })
+          .where(eq(indicadoresEducacionais.id, existing.id))
+          .run();
+      } else {
+        batchValues.push({
+          inep, ano, tipo: "ideb",
+          dados: JSON.stringify(data),
+          updatedAt: Date.now(),
+        });
+      }
+
+      imported++;
+      if (batchValues.length >= 1000) {
+        db.transaction((tx) => {
+          for (const rec of batchValues) tx.insert(indicadoresEducacionais).values(rec).run();
+        });
+        batchValues.length = 0;
+      }
+    }
+
+    if (batchValues.length > 0) {
+      db.transaction((tx) => {
+        for (const rec of batchValues) tx.insert(indicadoresEducacionais).values(rec).run();
+      });
+    }
+
+    console.log(`[INEP] IDEB ${fileDef.etapa} ${ano}: ${imported} records`);
+    updateStatus(`ideb_${fileDef.etapa}`, ano, "completo", imported, imported);
+    results[`ideb_${fileDef.etapa}_${ano}`] = { imported };
+  }
+}
+
+const INSE_BASE = "https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais";
+
+export async function importInse(anos?: number[]) {
+  if (indicatorImportRunning) return { error: "Importação já em andamento" };
+  indicatorImportRunning = true;
+
+  fs.mkdirSync(TMP_DIR, { recursive: true });
+  const results: Record<string, any> = {};
+  const errors: string[] = [];
+  const anosToImport = anos || [2021, 2023];
+
+  try {
+    for (const ano of anosToImport) {
+      const urls = [
+        `${INSE_BASE}/${ano}/INSE_${ano}_ESCOLAS.zip`,
+        `${INSE_BASE}/${ano}/INSE_${ano}.zip`,
+        `https://download.inep.gov.br/educacao_basica/saeb/${ano}/INSE_${ano}_ESCOLAS.zip`,
+      ];
+
+      let dir: string | null = null;
+      for (const url of urls) {
+        dir = await downloadAndExtract(url, `inse`, ano);
+        if (dir) break;
+      }
+
+      if (!dir) {
+        errors.push(`inse ${ano}: Download failed (all URLs tried)`);
+        updateStatus("inse", ano, "erro", 0, 0, "Falha no download");
+        continue;
+      }
+
+      const xlsxPath = findXlsx(dir, /INSE.*\.xlsx$/i) || findXlsx(dir, /\.xlsx$/i);
+      if (!xlsxPath) {
+        errors.push(`inse ${ano}: XLSX not found`);
+        updateStatus("inse", ano, "erro", 0, 0, "XLSX não encontrado");
+        try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+        continue;
+      }
+
+      console.log(`[INEP] Reading INSE ${ano}: ${xlsxPath}`);
+      updateStatus("inse", ano, "processando", 0, 0);
+
+      const XLSX = await XLSX_IMPORT();
+      const wb = XLSX.readFile(xlsxPath);
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const allData: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+      let headerRowIdx = -1;
+      let headers: string[] = [];
+      for (let i = 0; i < Math.min(allData.length, 20); i++) {
+        const row = allData[i];
+        if (Array.isArray(row)) {
+          const rowStrs = row.map((h: any) => String(h || "").trim());
+          if (rowStrs.some(h => h.includes("CO_ENTIDADE") || h.includes("CO_ESCOLA"))) {
+            headerRowIdx = i;
+            headers = rowStrs;
+            break;
+          }
+        }
+      }
+
+      if (headerRowIdx < 0) {
+        errors.push(`inse ${ano}: Header row not found`);
+        try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+        continue;
+      }
+
+      const coIdx = headers.findIndex(h => h === "CO_ENTIDADE" || h === "CO_ESCOLA");
+      const get = (row: any[], col: string) => {
+        const idx = headers.indexOf(col);
+        if (idx < 0) return undefined;
+        const v = row[idx];
+        if (v === "--" || v === "" || v === null || v === undefined) return null;
+        return typeof v === "string" ? (isNaN(Number(v)) ? v : Number(v)) : v;
+      };
+
+      db.run(sql`DELETE FROM indicadores_educacionais WHERE tipo = 'inse' AND ano = ${ano}`);
+
+      let imported = 0;
+      let batchValues: any[] = [];
+
+      for (let i = headerRowIdx + 1; i < allData.length; i++) {
+        const row = allData[i];
+        if (!row || !row[coIdx]) continue;
+        const inep = String(row[coIdx]).trim();
+        if (!inep || inep.length < 6) continue;
+
+        const mediaInse = get(row, "MEDIA_INSE") ?? get(row, "INSE_VALOR") ?? get(row, "VL_INSE");
+        const nivelInse = get(row, "INSE_CLASSIFICACAO") ?? get(row, "NIVEL_INSE") ?? get(row, "TP_CLASSIFICACAO_INSE");
+
+        if (mediaInse === undefined && nivelInse === undefined) continue;
+
+        const data: Record<string, any> = { co_entidade: parseInt(inep) };
+        if (mediaInse !== undefined) data.media_inse = mediaInse;
+        if (nivelInse !== undefined) data.nivel_inse = nivelInse;
+
+        for (const h of headers) {
+          if (h !== "CO_ENTIDADE" && h !== "CO_ESCOLA" && !data[h.toLowerCase()]) {
+            const v = get(row, h);
+            if (v !== undefined && v !== null) data[h.toLowerCase()] = v;
+          }
+        }
+
+        batchValues.push({
+          inep, ano, tipo: "inse",
+          dados: JSON.stringify(data),
+          updatedAt: Date.now(),
+        });
+
+        if (batchValues.length >= 1000) {
+          db.transaction((tx) => {
+            for (const rec of batchValues) tx.insert(indicadoresEducacionais).values(rec).run();
+          });
+          imported += batchValues.length;
+          batchValues = [];
+          if (imported % 10000 === 0) {
+            console.log(`[INEP] INSE ${ano}: ${imported} records`);
+            updateStatus("inse", ano, "importando", imported, allData.length);
+          }
+        }
+      }
+
+      if (batchValues.length > 0) {
+        db.transaction((tx) => {
+          for (const rec of batchValues) tx.insert(indicadoresEducacionais).values(rec).run();
+        });
+        imported += batchValues.length;
+      }
+
+      console.log(`[INEP] INSE ${ano}: completed with ${imported} records`);
+      updateStatus("inse", ano, "completo", imported, imported);
+      results[`inse_${ano}`] = { imported };
+
+      try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    }
+  } finally {
+    indicatorImportRunning = false;
+  }
+
+  return { success: true, results, errors };
 }

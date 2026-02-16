@@ -18,7 +18,7 @@ import {
   listCensoEscolar, getCensoEscolarDetail, getCensoEstatisticas,
   listIndicador, getIndicadorDetail, getEscolaCompleta, getApiInfo,
 } from "./importador";
-import { importAllIndicators, getIndicatorImportRunning, getAvailableIndicators } from "./import-inep-indicators";
+import { importAllIndicators, getIndicatorImportRunning, getAvailableIndicators, importIdeb, importInse } from "./import-inep-indicators";
 import { 
   localizarPrestacoesPorCnpj,
   detalharPrestacao,
@@ -274,6 +274,10 @@ export async function registerRoutes(
     "taxa-rendimento": "taxas_rendimento",
     "taxa-nao-resposta": "taxa_nao_resposta",
     "saeb": "saeb",
+    "atu": "atu",
+    "had": "had",
+    "dsu": "dsu",
+    "afd": "afd",
   };
 
   for (const [apiPath, tipoDb] of Object.entries(INDICATOR_TIPO_MAP)) {
@@ -662,6 +666,61 @@ export async function registerRoutes(
       console.log("[INEP] Indicator import finished:", JSON.stringify(result.errors?.length || 0), "errors");
     });
     res.json({ mensagem: "Importação de indicadores INEP iniciada em background", disponíveis: getAvailableIndicators() });
+  });
+
+  app.post("/api/admin/importar-ideb", adminAuth, async (req, res) => {
+    if (getIndicatorImportRunning()) {
+      return res.status(409).json({ error: "Importação já em andamento" });
+    }
+    const anos = req.body.anos as number[] | undefined;
+    importIdeb(anos).then(result => {
+      console.log("[INEP] IDEB import finished:", JSON.stringify(result.errors?.length || 0), "errors");
+    });
+    res.json({ mensagem: "Importação de IDEB iniciada em background" });
+  });
+
+  app.post("/api/admin/importar-inse", adminAuth, async (req, res) => {
+    if (getIndicatorImportRunning()) {
+      return res.status(409).json({ error: "Importação já em andamento" });
+    }
+    const anos = req.body.anos as number[] | undefined;
+    importInse(anos).then(result => {
+      console.log("[INEP] INSE import finished:", JSON.stringify(result.errors?.length || 0), "errors");
+    });
+    res.json({ mensagem: "Importação de INSE iniciada em background" });
+  });
+
+  app.post("/api/:tipo/importar", adminAuth, async (req, res) => {
+    const tipo = req.params.tipo;
+    const tipoMap: Record<string, string> = {
+      "censo-escolar": "censo_escolar",
+      "ideb": "ideb", "icg": "icg", "inse": "inse",
+      "tdi": "tdi", "ird": "ird",
+      "taxa-rendimento": "taxas_rendimento",
+      "taxa-nao-resposta": "taxa_nao_resposta",
+      "atu": "atu", "had": "had", "dsu": "dsu", "afd": "afd",
+    };
+    const dbTipo = tipoMap[tipo as string];
+    if (!dbTipo) return res.status(404).json({ erro: "Tipo de indicador não encontrado" });
+
+    const ano = parseInt(req.query.ano as string) || 2024;
+
+    if (dbTipo === "ideb") {
+      if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
+      importIdeb([ano]).then(r => console.log("[INEP] IDEB import done:", r.errors?.length || 0, "errors"));
+      return res.json({ mensagem: `Importação de IDEB ${ano} iniciada` });
+    }
+    if (dbTipo === "inse") {
+      if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
+      importInse([ano]).then(r => console.log("[INEP] INSE import done:", r.errors?.length || 0, "errors"));
+      return res.json({ mensagem: `Importação de INSE ${ano} iniciada` });
+    }
+
+    if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
+    importAllIndicators([dbTipo], [ano]).then(r => {
+      console.log(`[INEP] ${dbTipo} import done:`, r.errors?.length || 0, "errors");
+    });
+    res.json({ mensagem: `Importação de ${tipo} ${ano} iniciada` });
   });
 
   app.get("/api/admin/indicadores-status", adminAuth, async (_req, res) => {
