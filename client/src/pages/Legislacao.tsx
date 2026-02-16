@@ -1397,14 +1397,14 @@ export default function Legislacao() {
       <Navigation />
 
       <div style={{
-        background: "linear-gradient(135deg, #4a5d3e 0%, #5a6e4e 50%, #6b7f5e 100%)",
-        color: "white",
+        background: "#f0f5ed",
+        color: "#3d4f34",
         padding: "20px 32px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        borderBottom: "2px solid #c5d4b8",
       }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
           <h1 style={{ fontSize: "20px", fontWeight: 700, letterSpacing: "-0.3px" }}>Painel de Legislação Educacional</h1>
-          <p style={{ opacity: 0.75, fontSize: "12px", marginTop: "2px" }}>
+          <p style={{ opacity: 0.7, fontSize: "12px", marginTop: "2px" }}>
             Normas e publicações dos diários oficiais (federal, estaduais e municipais)
           </p>
         </div>

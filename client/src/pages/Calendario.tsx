@@ -114,8 +114,9 @@ export default function CalendarioPage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#faf9f6" }}>
       <Navigation />
       <div style={{
-        background: "linear-gradient(135deg, #4a5d3e 0%, #5a6e4e 50%, #6b7f5e 100%)",
-        color: "white", padding: "28px 24px 22px",
+        background: "#f0f5ed",
+        color: "#3d4f34", padding: "28px 24px 22px",
+        borderBottom: "2px solid #c5d4b8",
       }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
@@ -128,11 +129,11 @@ export default function CalendarioPage() {
             </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <button onClick={() => ano > 2026 && setAno(ano - 1)} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "6px", padding: "6px", cursor: ano <= 2026 ? "not-allowed" : "pointer", color: "white", opacity: ano <= 2026 ? 0.4 : 1 }}>
+            <button onClick={() => ano > 2026 && setAno(ano - 1)} style={{ background: "rgba(0,0,0,0.08)", border: "none", borderRadius: "6px", padding: "6px", cursor: ano <= 2026 ? "not-allowed" : "pointer", color: "#3d4f34", opacity: ano <= 2026 ? 0.4 : 1 }}>
               <ChevronLeft style={{ width: "18px", height: "18px" }} />
             </button>
             <span style={{ fontSize: "18px", fontWeight: 700, minWidth: "60px", textAlign: "center" }}>{ano}</span>
-            <button onClick={() => setAno(ano + 1)} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "6px", padding: "6px", cursor: "pointer", color: "white" }}>
+            <button onClick={() => setAno(ano + 1)} style={{ background: "rgba(0,0,0,0.08)", border: "none", borderRadius: "6px", padding: "6px", cursor: "pointer", color: "#3d4f34" }}>
               <ChevronRight style={{ width: "18px", height: "18px" }} />
             </button>
           </div>
@@ -324,9 +325,17 @@ export default function CalendarioPage() {
             </div>
           </div>
 
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-              <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{
+            background: "white",
+            borderRadius: "10px",
+            border: "1px solid #e2e5ec",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+            overflow: "hidden",
+            position: "sticky",
+            top: "16px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: "1px solid #e2e5ec", background: "#f8faf7" }}>
+              <h2 style={{ fontSize: "15px", fontWeight: 700, color: "#1e293b", display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
                 <Newspaper style={{ width: "18px", height: "18px", color: "#5a6e4e" }} />
                 Notícias Recentes
               </h2>
@@ -343,13 +352,14 @@ export default function CalendarioPage() {
               </button>
             </div>
 
+            <div style={{ maxHeight: "520px", overflowY: "auto", padding: "10px" }}>
             {noticiasQuery.isLoading ? (
-              <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8", background: "white", borderRadius: "10px", border: "1px solid #e2e5ec" }}>
+              <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>
                 <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" style={{ color: "#5a6e4e" }} />
                 <div style={{ fontSize: "12px" }}>Buscando notícias do MEC, FNDE e INEP...</div>
               </div>
             ) : noticias.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8", background: "white", borderRadius: "10px", border: "1px solid #e2e5ec" }}>
+              <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>
                 <Newspaper className="w-8 h-8 mx-auto mb-2" style={{ opacity: 0.3 }} />
                 <p style={{ fontSize: "12px" }}>Nenhuma notícia encontrada no momento.</p>
                 <p style={{ fontSize: "11px", marginTop: "4px" }}>As notícias são buscadas diretamente nos portais oficiais.</p>
@@ -364,7 +374,7 @@ export default function CalendarioPage() {
                     rel="noopener noreferrer"
                     style={{
                       display: "block",
-                      background: "white",
+                      background: "#fafbfa",
                       borderRadius: "8px",
                       border: "1px solid #e2e5ec",
                       padding: "12px 14px",
@@ -408,8 +418,9 @@ export default function CalendarioPage() {
                 ))}
               </div>
             )}
+            </div>
 
-            <div style={{ marginTop: "12px", textAlign: "center" }}>
+            <div style={{ padding: "10px 16px", borderTop: "1px solid #e2e5ec", background: "#f8faf7", textAlign: "center" }}>
               <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap" }}>
                 <a href="https://www.gov.br/mec/pt-br/assuntos/noticias" target="_blank" rel="noopener noreferrer" style={{ fontSize: "10px", color: "#1e40af", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "3px", padding: "4px 8px", borderRadius: "4px", background: "#dbeafe" }}>
                   <Landmark style={{ width: "10px", height: "10px" }} /> MEC
