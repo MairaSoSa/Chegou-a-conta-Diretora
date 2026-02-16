@@ -37,7 +37,7 @@ export default function Dashboard() {
   const [selectedInep, setSelectedInep] = useState<string | null>(null);
   const [selectedAno, setSelectedAno] = useState(2024);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  const [activeTab, setActiveTab] = useState<"overview" | "search" | "detail">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "search">("overview");
   const [filterUf, setFilterUf] = useState("");
   const [filterDep, setFilterDep] = useState("");
   const [listPage, setListPage] = useState(1);
@@ -61,7 +61,7 @@ export default function Dashboard() {
 
   const selectSchool = (inep: string) => {
     setSelectedInep(inep);
-    setActiveTab("detail");
+    if (activeTab !== "search") setActiveTab("search");
   };
 
   const latestAno = useMemo(() => {
@@ -226,7 +226,6 @@ export default function Dashboard() {
           {[
             { key: "overview" as const, label: "Visão Geral", icon: BarChart3 },
             { key: "search" as const, label: "Buscar Escolas", icon: Search },
-            ...(selectedInep ? [{ key: "detail" as const, label: "Detalhe da Escola", icon: School }] : []),
           ].map(tab => (
             <button
               key={tab.key}
@@ -601,20 +600,9 @@ export default function Dashboard() {
                 )}
               </CardContent>
             </Card>
-          </div>
-        )}
 
-        {activeTab === "detail" && selectedInep && (
-          <div className="space-y-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setActiveTab("search")}
-              className="text-muted-foreground"
-            >
-              <ArrowLeft className="w-4 h-4 mr-1" /> Voltar à lista
-            </Button>
-
+            {selectedInep && (
+              <>
             {evolucaoLoading ? (
               <Card className="card-clay">
                 <CardContent className="py-12 text-center">
@@ -627,6 +615,14 @@ export default function Dashboard() {
                 <Card className="card-clay border-l-4 border-l-accent">
                   <CardContent className="p-5">
                     <div className="flex flex-wrap items-start gap-3">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setSelectedInep(null)}
+                        className="shrink-0 text-muted-foreground hover:text-foreground -ml-1 -mt-1"
+                      >
+                        <X className="w-5 h-5" />
+                      </Button>
                       <div className="flex-1 min-w-0">
                         <h2 className="text-lg font-bold text-foreground">{evolucaoData.escola.no_entidade}</h2>
                         <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
@@ -1460,11 +1456,13 @@ export default function Dashboard() {
                 <CardContent className="py-12 text-center">
                   <School className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                   <p className="text-muted-foreground">Escola não encontrada.</p>
-                  <Button variant="outline" size="sm" className="mt-3" onClick={() => setActiveTab("search")}>
-                    Voltar à busca
+                  <Button variant="outline" size="sm" className="mt-3" onClick={() => setSelectedInep(null)}>
+                    Fechar
                   </Button>
                 </CardContent>
               </Card>
+            )}
+              </>
             )}
           </div>
         )}
