@@ -125,23 +125,23 @@ const categoriaColors: Record<string, { bg: string; color: string }> = {
   "Gestão": { bg: "#dbeafe", color: "#1e40af" },
 };
 
-const doeLinks: { estado: string; sigla: string; url: string }[] = [
-  { estado: "Acre", sigla: "AC", url: "https://www.diario.ac.gov.br/" },
+const doeLinks: { estado: string; sigla: string; url: string; searchUrl?: (q: string) => string }[] = [
+  { estado: "Acre", sigla: "AC", url: "https://www.diario.ac.gov.br/", searchUrl: (q) => `https://www.diario.ac.gov.br/?s=${encodeURIComponent(q)}` },
   { estado: "Alagoas", sigla: "AL", url: "https://www.imprensaoficialal.com.br/" },
   { estado: "Amapá", sigla: "AP", url: "https://doe.ap.gov.br/" },
   { estado: "Amazonas", sigla: "AM", url: "https://diario.imprensaoficial.am.gov.br/" },
   { estado: "Bahia", sigla: "BA", url: "https://dool.egba.ba.gov.br/" },
   { estado: "Ceará", sigla: "CE", url: "https://www.ceara.gov.br/diario-oficial/" },
-  { estado: "Distrito Federal", sigla: "DF", url: "https://www.dodf.df.gov.br/" },
-  { estado: "Espírito Santo", sigla: "ES", url: "https://ioes.dio.es.gov.br/" },
+  { estado: "Distrito Federal", sigla: "DF", url: "https://www.dodf.df.gov.br/", searchUrl: (q) => `https://www.dodf.df.gov.br/index/pesquisar/q/${encodeURIComponent(q)}` },
+  { estado: "Espírito Santo", sigla: "ES", url: "https://ioes.dio.es.gov.br/", searchUrl: (q) => `https://ioes.dio.es.gov.br/portal/visualizacoes/diario_oficial?txtPesquisa=${encodeURIComponent(q)}` },
   { estado: "Goiás", sigla: "GO", url: "https://diariooficial.abc.go.gov.br/" },
   { estado: "Maranhão", sigla: "MA", url: "https://www.diariooficial.ma.gov.br/" },
   { estado: "Mato Grosso", sigla: "MT", url: "https://www.iomat.mt.gov.br/" },
   { estado: "Mato Grosso do Sul", sigla: "MS", url: "https://www.do.ms.gov.br/" },
-  { estado: "Minas Gerais", sigla: "MG", url: "https://www.jornalminasgerais.mg.gov.br/" },
+  { estado: "Minas Gerais", sigla: "MG", url: "https://www.jornalminasgerais.mg.gov.br/", searchUrl: (q) => `https://www.jornalminasgerais.mg.gov.br/pesquisa/pesquisar?texto=${encodeURIComponent(q)}` },
   { estado: "Pará", sigla: "PA", url: "https://www.ioepa.com.br/" },
   { estado: "Paraíba", sigla: "PB", url: "https://auniao.pb.gov.br/doe/" },
-  { estado: "Paraná", sigla: "PR", url: "https://www.legislacao.pr.gov.br/diario" },
+  { estado: "Paraná", sigla: "PR", url: "https://www.legislacao.pr.gov.br/diario", searchUrl: (q) => `https://www.legislacao.pr.gov.br/diario/pesquisar?txtPesquisa=${encodeURIComponent(q)}` },
   { estado: "Pernambuco", sigla: "PE", url: "https://www.cepe.com.br/diariooficial" },
   { estado: "Piauí", sigla: "PI", url: "https://www.diariooficial.pi.gov.br/" },
   { estado: "Rio de Janeiro", sigla: "RJ", url: "https://www.ioerj.com.br/" },
@@ -150,7 +150,7 @@ const doeLinks: { estado: string; sigla: string; url: string }[] = [
   { estado: "Rondônia", sigla: "RO", url: "https://diof.ro.gov.br/" },
   { estado: "Roraima", sigla: "RR", url: "https://www.imprensaoficial.rr.gov.br/" },
   { estado: "Santa Catarina", sigla: "SC", url: "https://www.doe.sea.sc.gov.br/" },
-  { estado: "São Paulo", sigla: "SP", url: "https://www.doe.sp.gov.br/" },
+  { estado: "São Paulo", sigla: "SP", url: "https://www.doe.sp.gov.br/", searchUrl: (q) => `https://www.doe.sp.gov.br/executivo/pesquisa?q=${encodeURIComponent(q)}` },
   { estado: "Sergipe", sigla: "SE", url: "https://www.diarioficial.se.gov.br/" },
   { estado: "Tocantins", sigla: "TO", url: "https://diariooficial.to.gov.br/" },
 ];
@@ -1014,16 +1014,27 @@ function DiarioOficialContent() {
             </div>
             <div style={{ padding: "16px 20px" }}>
               <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "12px" }}>
-                Os diários estaduais possuem portais próprios. Clique no estado desejado para buscar diretamente:
+                {submittedTerm
+                  ? `Clique no estado para buscar "${submittedTerm}" diretamente no portal do DOE:`
+                  : "Os diários estaduais possuem portais próprios. Clique no estado desejado para buscar diretamente:"}
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                {doeLinks.map(doe => (
-                  <a key={doe.sigla} href={doe.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "6px 12px", borderRadius: "6px", border: "1px solid #e2e5ec", background: "#fafbfc", color: "#6b21a8", fontSize: "12px", fontWeight: 600, textDecoration: "none", transition: "all 0.15s" }}>
-                    <Globe style={{ width: "11px", height: "11px" }} />
-                    {doe.sigla}
-                  </a>
-                ))}
+                {doeLinks.map(doe => {
+                  const href = submittedTerm && doe.searchUrl ? doe.searchUrl(submittedTerm) : doe.url;
+                  const hasSearch = !!(submittedTerm && doe.searchUrl);
+                  return (
+                    <a key={doe.sigla} href={href} target="_blank" rel="noopener noreferrer" title={`${doe.estado}${hasSearch ? ` — buscar "${submittedTerm}"` : ""}`} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "6px 12px", borderRadius: "6px", border: hasSearch ? "1px solid #c4b5fd" : "1px solid #e2e5ec", background: hasSearch ? "#f3e8ff" : "#fafbfc", color: "#6b21a8", fontSize: "12px", fontWeight: 600, textDecoration: "none", transition: "all 0.15s" }}>
+                      {hasSearch ? <Search style={{ width: "11px", height: "11px" }} /> : <Globe style={{ width: "11px", height: "11px" }} />}
+                      {doe.sigla}
+                    </a>
+                  );
+                })}
               </div>
+              {submittedTerm && (
+                <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "8px" }}>
+                  Estados com destaque roxo abrem a busca com o termo "{submittedTerm}" pré-preenchido.
+                </p>
+              )}
             </div>
           </div>
 
@@ -1142,11 +1153,11 @@ function DiarioOficialContent() {
             </div>
             <div style={{ padding: "16px 20px" }}>
               <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "12px" }}>
-                Os diários estaduais possuem portais próprios. Clique no estado desejado para buscar diretamente:
+                Os diários estaduais possuem portais próprios. Clique no estado desejado para acessar:
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {doeLinks.map(doe => (
-                  <a key={doe.sigla} href={doe.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "6px 12px", borderRadius: "6px", border: "1px solid #e2e5ec", background: "#fafbfc", color: "#6b21a8", fontSize: "12px", fontWeight: 600, textDecoration: "none", transition: "all 0.15s" }}>
+                  <a key={doe.sigla} href={doe.url} target="_blank" rel="noopener noreferrer" title={doe.estado} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "6px 12px", borderRadius: "6px", border: "1px solid #e2e5ec", background: "#fafbfc", color: "#6b21a8", fontSize: "12px", fontWeight: 600, textDecoration: "none", transition: "all 0.15s" }}>
                     <Globe style={{ width: "11px", height: "11px" }} />
                     {doe.sigla}
                   </a>

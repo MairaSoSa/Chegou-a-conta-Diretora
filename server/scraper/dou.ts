@@ -21,6 +21,13 @@ export interface DOUSearchResponse {
   searchUrl?: string;
 }
 
+function formatDateBR(d: Date): string {
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+}
+
 export async function searchDOU(params: {
   query: string;
   exactMatch?: boolean;
@@ -43,20 +50,23 @@ export async function searchDOU(params: {
       searchParams.set("publishFrom", publishFrom);
       searchParams.set("publishTo", publishTo);
     } else {
-      searchParams.set("exactDate", "anydate");
+      const now = new Date();
+      const oneYearAgo = new Date(now);
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      searchParams.set("exactDate", "personalizado");
+      searchParams.set("publishFrom", formatDateBR(oneYearAgo));
+      searchParams.set("publishTo", formatDateBR(now));
     }
 
     const searchUrl = `${IN_API_BASE_URL}?${searchParams.toString()}`;
 
     const response = await fetch(searchUrl, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+        "User-Agent": "Mozilla/5.0 (compatible; Ro-DOU/0.7; +https://github.com/gestaogovbr/Ro-dou)",
+        "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
         "Cache-Control": "no-cache",
-        "Referer": "https://www.in.gov.br/consulta",
       },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(20000),
     });
 
     if (!response.ok) {
@@ -107,7 +117,7 @@ export async function searchDOU(params: {
         ok: true,
         results: [],
         total: 0,
-        message: "Acesse o link abaixo para buscar diretamente no site do DOU.",
+        message: `Nenhuma publicação encontrada para "${query}" no DOU no último ano.`,
         searchUrl,
       };
     }
@@ -124,13 +134,13 @@ export async function searchDOU(params: {
 
     return { ok: true, results, total: results.length, searchUrl };
   } catch (error: any) {
-    const searchUrl = `${IN_API_BASE_URL}?q=${encodeURIComponent(params.query)}&exactDate=anydate&sortType=0`;
+    const searchUrl = buildDOUSearchUrl(params.query);
     if (error.name === "TimeoutError" || error.name === "AbortError") {
       return {
         ok: true,
         results: [],
         total: 0,
-        message: "Acesse o link abaixo para buscar diretamente no site do DOU.",
+        message: "O site do DOU demorou para responder. Tente novamente ou acesse diretamente.",
         searchUrl,
       };
     }
@@ -138,7 +148,7 @@ export async function searchDOU(params: {
       ok: true,
       results: [],
       total: 0,
-      message: "Acesse o link abaixo para buscar diretamente no site do DOU.",
+      message: "Não foi possível consultar o DOU. Busque diretamente no site oficial.",
       searchUrl,
     };
   }
