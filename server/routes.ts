@@ -12,6 +12,7 @@ import { registerObjectStorageRoutes } from "./integrations/object_storage";
 import { fetchMecNormasFilters, syncMecNormas } from "./integrations/mecnormas";
 import { backfillAiDocumentEmbeddings } from "./integrations/embeddings";
 import { getPddeInfo } from "./scraper/pdde";
+import { searchDOU, searchDOUForNorma } from "./scraper/dou";
 import {
   searchSchoolsLocal, getEscolaCompletaLocal, getEscolaEvolucaoLocal,
   importFromExternalApi, getImportStatus, getLocalSchoolCount, getLocalStats,
@@ -827,6 +828,96 @@ export async function registerRoutes(
       res.json(filters);
     } catch (e: any) {
       res.status(500).json({ message: e.message || "Erro ao buscar filtros do MEC Normas" });
+    }
+  });
+
+  // === PUBLIC: MEC NORMAS SEARCH ===
+  app.get("/api/mecnormas/search", async (req, res) => {
+    try {
+      const q = String(req.query.q || "");
+      const exata = req.query.exata === "true";
+      const tipo = req.query.tipo ? String(req.query.tipo) : undefined;
+      const assunto = req.query.assunto ? String(req.query.assunto) : undefined;
+      const unidade = req.query.unidade ? String(req.query.unidade) : undefined;
+      const ordenacao = req.query.ordenacao ? String(req.query.ordenacao) : "2";
+      const page = parseInt(String(req.query.page || "1"), 10);
+      const pageSize = Math.min(parseInt(String(req.query.pageSize || "20"), 10), 50);
+
+      const url = new URL("https://mecnormas.mec.gov.br/pesquisa/api/atos");
+      if (q) url.searchParams.set("buscaTextual", q);
+      url.searchParams.set("exata", String(exata));
+      if (tipo) url.searchParams.set("tipo", tipo);
+      if (assunto) url.searchParams.set("assunto", assunto);
+      if (unidade) url.searchParams.set("unidade", unidade);
+      url.searchParams.set("ordenacao", ordenacao);
+      url.searchParams.set("pageSize", String(pageSize));
+      url.searchParams.set("currentPage", String(page));
+
+      const response = await fetch(url.toString(), {
+        headers: { "User-Agent": "chegou-a-conta-bot" },
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (!response.ok) {
+        return res.status(502).json({ ok: false, message: "MEC Normas indisponível" });
+      }
+
+      const data = await response.json();
+      res.json({ ok: true, data });
+    } catch (e: any) {
+      res.status(500).json({ ok: false, message: e.message || "Erro ao buscar normas" });
+    }
+  });
+
+  // === PUBLIC: MEC NORMAS DETAIL ===
+  app.get("/api/mecnormas/atos/:id", async (req, res) => {
+    try {
+      const atoId = getParam(req.params, "id");
+      const url = `https://mecnormas.mec.gov.br/pesquisa/api/atos/${atoId}`;
+      const response = await fetch(url, {
+        headers: { "User-Agent": "chegou-a-conta-bot" },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok) {
+        return res.status(502).json({ ok: false, message: "Ato não encontrado" });
+      }
+      const data = await response.json();
+      res.json({ ok: true, data });
+    } catch (e: any) {
+      res.status(500).json({ ok: false, message: e.message || "Erro ao buscar ato" });
+    }
+  });
+
+  // === PUBLIC: DOU SEARCH ===
+  app.get("/api/dou/search", async (req, res) => {
+    try {
+      const q = String(req.query.q || "");
+      if (!q.trim()) {
+        return res.status(400).json({ ok: false, message: "Termo de busca obrigatório" });
+      }
+      const exactMatch = req.query.exact !== "false";
+      const publishFrom = req.query.from ? String(req.query.from) : undefined;
+      const publishTo = req.query.to ? String(req.query.to) : undefined;
+      const maxResults = Math.min(parseInt(String(req.query.limit || "20"), 10), 50);
+
+      const result = await searchDOU({ query: q, exactMatch, publishFrom, publishTo, maxResults });
+      res.json(result);
+    } catch (e: any) {
+      res.status(500).json({ ok: false, results: [], total: 0, message: e.message });
+    }
+  });
+
+  // === PUBLIC: DOU CROSS-REFERENCE FOR NORMA ===
+  app.get("/api/dou/cross-reference", async (req, res) => {
+    try {
+      const norma = String(req.query.norma || "");
+      if (!norma.trim()) {
+        return res.status(400).json({ ok: false, message: "Nome da norma obrigatório" });
+      }
+      const result = await searchDOUForNorma(norma);
+      res.json(result);
+    } catch (e: any) {
+      res.status(500).json({ ok: false, results: [], total: 0, message: e.message });
     }
   });
 

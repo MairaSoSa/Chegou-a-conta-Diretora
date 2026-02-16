@@ -1,8 +1,14 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
-import { motion } from "framer-motion";
-import { ExternalLink, Scale, FileText, BookOpen, Landmark, GraduationCap, Utensils, Bus, Coins, Users, ShieldCheck, ClipboardList } from "lucide-react";
-import { useState } from "react";
+import {
+  ExternalLink, Scale, FileText, BookOpen, Landmark, GraduationCap,
+  Utensils, Bus, Coins, Users, ShieldCheck, ClipboardList, Search,
+  Loader2, AlertCircle, Newspaper, ChevronDown, ChevronUp, BookMarked,
+  Calendar, Building2, Info
+} from "lucide-react";
+import { useState, useCallback } from "react";
+import { useMecNormasSearch, useMecNormasFilters } from "@/hooks/use-mecnormas";
+import { useDOUSearch, useDOUCrossReference } from "@/hooks/use-dou";
 
 interface Lei {
   titulo: string;
@@ -129,103 +135,1218 @@ const categoriaColors: Record<string, string> = {
   "Gestão": "bg-sky-100 text-sky-800",
 };
 
-export default function Legislacao() {
-  const [categoriaAtiva, setCategoriaAtiva] = useState("Todos");
+type CategoryId = "cat-leis" | "cat-normas" | "cat-dou";
+type SubTabId = "leis-todas" | "leis-base" | "leis-financiamento" | "leis-programas" | "leis-gestao" | "normas-busca" | "dou-busca" | "dou-crossref";
 
-  const leisFiltradas = categoriaAtiva === "Todos"
-    ? legislacoes
-    : legislacoes.filter(l => l.categoria === categoriaAtiva);
+const categories: { id: CategoryId; label: string; icon: string; subTabs: { id: SubTabId; label: string }[] }[] = [
+  {
+    id: "cat-leis",
+    label: "Leis Fundamentais",
+    icon: "\u2696\uFE0F",
+    subTabs: [
+      { id: "leis-todas", label: "Todas as Leis" },
+      { id: "leis-base", label: "Base Legal" },
+      { id: "leis-financiamento", label: "Financiamento" },
+      { id: "leis-programas", label: "Programas FNDE" },
+      { id: "leis-gestao", label: "Planejamento e Gestão" },
+    ],
+  },
+  {
+    id: "cat-normas",
+    label: "Normas do MEC",
+    icon: "\uD83D\uDCD6",
+    subTabs: [
+      { id: "normas-busca", label: "Buscar Normas" },
+    ],
+  },
+  {
+    id: "cat-dou",
+    label: "Diário Oficial",
+    icon: "\uD83D\uDCF0",
+    subTabs: [
+      { id: "dou-busca", label: "Buscar no DOU" },
+      { id: "dou-crossref", label: "Verificar Vigência" },
+    ],
+  },
+];
+
+function DOUCrossRef({ normaTitle }: { normaTitle: string }) {
+  const [enabled, setEnabled] = useState(false);
+  const { data, isLoading, error } = useDOUCrossReference(normaTitle, enabled);
+
+  if (!enabled) {
+    return (
+      <button
+        onClick={() => setEnabled(true)}
+        className="inline-flex items-center gap-1.5 text-xs font-semibold"
+        style={{ color: "#1565c0" }}
+      >
+        <Newspaper className="w-3 h-3" />
+        Verificar no DOU
+      </button>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: "#64748b" }}>
+        <Loader2 className="w-3 h-3 animate-spin" />
+        Consultando DOU...
+      </span>
+    );
+  }
+
+  if (error || !data?.ok) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs" style={{ color: "#ef6c00" }}>
+        <AlertCircle className="w-3 h-3" />
+        DOU indisponível
+      </span>
+    );
+  }
+
+  if (data.results.length === 0 && data.searchUrl) {
+    return (
+      <a
+        href={data.searchUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold"
+        style={{ color: "#1565c0" }}
+      >
+        <ExternalLink className="w-3 h-3" />
+        Buscar no DOU
+      </a>
+    );
+  }
+
+  if (data.results.length > 0) {
+    return (
+      <div className="space-y-1">
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: "#2e7d32" }}>
+          <Newspaper className="w-3 h-3" />
+          {data.results.length} publicação(ões)
+        </span>
+        {data.results.slice(0, 2).map((r, i) => (
+          <a
+            key={i}
+            href={r.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-xs pl-4 hover:underline"
+            style={{ color: "#1565c0" }}
+          >
+            {r.title} ({r.date})
+          </a>
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navigation />
+    <span className="text-xs" style={{ color: "#64748b" }}>
+      Nenhuma publicação encontrada
+    </span>
+  );
+}
 
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Legislação Educacional</h1>
-            <p className="text-muted-foreground">
-              Principais leis, decretos e resoluções que orientam a gestão financeira e pedagógica das escolas públicas brasileiras.
-            </p>
+function LeisFundamentaisContent({ subTab }: { subTab: SubTabId }) {
+  const filterMap: Record<string, string> = {
+    "leis-todas": "Todos",
+    "leis-base": "Base Legal",
+    "leis-financiamento": "Financiamento",
+    "leis-programas": "Programas FNDE",
+    "leis-gestao": "Gestão",
+  };
+
+  const categoria = filterMap[subTab] || "Todos";
+  const leis = categoria === "Todos"
+    ? legislacoes
+    : subTab === "leis-gestao"
+      ? legislacoes.filter(l => l.categoria === "Planejamento" || l.categoria === "Gestão")
+      : legislacoes.filter(l => l.categoria === categoria);
+
+  const descriptions: Record<string, { title: string; text: string; detail: string }> = {
+    "leis-todas": {
+      title: "Legislação Educacional Completa",
+      text: "Conjunto das principais leis, decretos e resoluções que orientam a gestão financeira e pedagógica das escolas públicas brasileiras. Inclui a base legal constitucional, normas de financiamento, programas do FNDE e instrumentos de planejamento e gestão.",
+      detail: "Total: " + legislacoes.length + " normas fundamentais | Categorias: Base Legal, Financiamento, Programas FNDE, Planejamento, Gestão",
+    },
+    "leis-base": {
+      title: "Base Legal da Educação",
+      text: "Leis fundamentais que estruturam o sistema educacional brasileiro: a Constituição Federal, a Lei de Diretrizes e Bases (LDB) e o Estatuto da Criança e do Adolescente (ECA). Essas normas estabelecem os princípios, direitos e deveres da educação nacional.",
+      detail: "Fonte: Planalto - Legislação Federal Brasileira",
+    },
+    "leis-financiamento": {
+      title: "Financiamento da Educação",
+      text: "Normas que regulam o financiamento da educação pública, incluindo o FUNDEB (principal fundo de financiamento), a Lei de Responsabilidade Fiscal e as regras de aplicação mínima de recursos em educação.",
+      detail: "O FUNDEB representa cerca de 63% do financiamento da educação básica pública",
+    },
+    "leis-programas": {
+      title: "Programas do FNDE",
+      text: "Legislação dos programas federais administrados pelo FNDE que transferem recursos diretamente às escolas ou aos entes federativos: PDDE (dinheiro direto na escola), PNAE (alimentação), PNATE (transporte) e PNLD (livros didáticos).",
+      detail: "Os programas do FNDE atendem mais de 40 milhões de estudantes da educação básica",
+    },
+    "leis-gestao": {
+      title: "Planejamento e Gestão",
+      text: "Normas sobre planejamento educacional (PNE com 18 metas para 2024-2034) e gestão democrática das escolas, incluindo a escolha de diretores e a participação da comunidade escolar.",
+      detail: "A gestão democrática é princípio constitucional da educação pública (Art. 206, VI)",
+    },
+  };
+
+  const desc = descriptions[subTab] || descriptions["leis-todas"];
+
+  return (
+    <>
+      <div style={{
+        background: "#eff6ff",
+        borderLeft: "4px solid #3b82f6",
+        padding: "16px 20px",
+        borderRadius: "0 10px 10px 0",
+        fontSize: "13px",
+        color: "#1e40af",
+        marginBottom: "16px",
+        lineHeight: 1.7,
+      }}>
+        <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <Info className="w-4 h-4" />
+          {desc.title}
+        </div>
+        <p>{desc.text}</p>
+        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
+          <strong>{desc.detail}</strong>
+        </div>
+      </div>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        gap: "12px",
+        marginBottom: "16px",
+      }}>
+        {categorias.filter(c => c !== "Todos").map(cat => {
+          const count = legislacoes.filter(l => l.categoria === cat).length;
+          return (
+            <div key={cat} style={{
+              background: "white",
+              borderRadius: "10px",
+              padding: "16px 20px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+              border: "1px solid #e2e5ec",
+              borderLeft: `3px solid ${cat === "Base Legal" ? "#2e7d32" : cat === "Financiamento" ? "#ef6c00" : cat === "Programas FNDE" ? "#c62828" : "#1a237e"}`,
+            }}>
+              <div style={{ fontSize: "26px", fontWeight: 800, color: "#1a237e", lineHeight: 1.1 }}>{count}</div>
+              <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginTop: "4px" }}>{cat}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ fontSize: "15px", fontWeight: 600 }}>Legislação</h3>
+          <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
+            {leis.length} norma(s)
+          </span>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Norma</th>
+                <th style={thStyle}>Número</th>
+                <th style={thStyle}>Categoria</th>
+                <th style={thStyle}>Destaque</th>
+                <th style={{ ...thStyle, textAlign: "center" }}>Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leis.map((lei, index) => (
+                <tr key={lei.numero} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
+                  <td style={tdStyle}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div style={{
+                        width: "32px", height: "32px", borderRadius: "6px",
+                        background: "#e8eaf6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                      }}>
+                        <lei.icon style={{ width: "16px", height: "16px", color: "#3949ab" }} />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3 }}>{lei.titulo}</div>
+                        <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px", lineHeight: 1.4, maxWidth: "400px" }}>
+                          {lei.descricao.length > 120 ? lei.descricao.slice(0, 120) + "..." : lei.descricao}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={tdStyle}>
+                    <span style={{ fontSize: "12px", fontFamily: "monospace", color: "#64748b" }}>{lei.numero}</span>
+                  </td>
+                  <td style={tdStyle}>
+                    <span style={{
+                      display: "inline-block", padding: "2px 8px", borderRadius: "4px",
+                      fontSize: "11px", fontWeight: 600, letterSpacing: "0.2px",
+                      ...(lei.categoria === "Base Legal" ? { background: "#dcfce7", color: "#166534" } :
+                        lei.categoria === "Financiamento" ? { background: "#ffedd5", color: "#9a3412" } :
+                        lei.categoria === "Programas FNDE" ? { background: "#fee2e2", color: "#991b1b" } :
+                        lei.categoria === "Planejamento" ? { background: "#f3e8ff", color: "#6b21a8" } :
+                        { background: "#dbeafe", color: "#1e40af" }),
+                    }}>
+                      {lei.categoria}
+                    </span>
+                  </td>
+                  <td style={tdStyle}>
+                    {lei.destaque ? (
+                      <span style={{ fontSize: "11px", color: "#1565c0", fontWeight: 500 }}>
+                        {lei.destaque}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
+                    )}
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: "center" }}>
+                    <a
+                      href={lei.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: "6px",
+                        padding: "6px 14px", border: "none", borderRadius: "6px",
+                        fontSize: "12px", fontWeight: 600, cursor: "pointer",
+                        background: "#1a237e", color: "white", textDecoration: "none",
+                      }}
+                    >
+                      <ExternalLink style={{ width: "12px", height: "12px" }} />
+                      Abrir
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function NormasBuscaContent() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [submittedTerm, setSubmittedTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [expandedId, setExpandedId] = useState<string | number | null>(null);
+
+  const { data: filters } = useMecNormasFilters();
+  const [selectedTipo, setSelectedTipo] = useState("");
+  const [selectedAssunto, setSelectedAssunto] = useState("");
+
+  const { data, isLoading, error } = useMecNormasSearch({
+    q: submittedTerm,
+    tipo: selectedTipo || undefined,
+    assunto: selectedAssunto || undefined,
+    page,
+    pageSize: 15,
+  }, !!submittedTerm);
+
+  const handleSearch = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittedTerm(searchTerm.trim());
+    setPage(1);
+  }, [searchTerm]);
+
+  const normas: any[] = data?.data?.entidades || data?.data?.content || [];
+  const total = data?.data?.total ?? data?.data?.totalElements ?? data?.data?.totalRegistros ?? 0;
+  const totalPages = Math.ceil(total / 15);
+
+  return (
+    <>
+      <div style={{
+        background: "#eff6ff",
+        borderLeft: "4px solid #3b82f6",
+        padding: "16px 20px",
+        borderRadius: "0 10px 10px 0",
+        fontSize: "13px",
+        color: "#1e40af",
+        marginBottom: "16px",
+        lineHeight: 1.7,
+      }}>
+        <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <Info className="w-4 h-4" />
+          Busca de Normas do MEC
+        </div>
+        <p>Pesquise resoluções, portarias, pareceres e demais atos normativos do Ministério da Educação. Os dados são consultados diretamente no portal oficial <strong>MEC Normas</strong> (mecnormas.mec.gov.br).</p>
+        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
+          <strong>Dica:</strong> Use termos como "PDDE", "PNAE", "prestação de contas", "alimentação escolar" para encontrar normas específicas. Combine com os filtros de tipo e assunto para refinar a busca.
+        </div>
+      </div>
+
+      <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
+        <form onSubmit={handleSearch}>
+          <div style={{ padding: "16px 20px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1, minWidth: "200px" }}>
+              <label style={labelStyle}>Termo de busca</label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Ex: PDDE, PNAE, alimentação escolar..."
+                style={inputStyle}
+              />
+            </div>
+            {filters && (
+              <>
+                <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                  <label style={labelStyle}>Tipo</label>
+                  <select
+                    value={selectedTipo}
+                    onChange={(e) => { setSelectedTipo(e.target.value); setPage(1); }}
+                    style={selectStyle}
+                  >
+                    <option value="">Todos</option>
+                    {(filters.tipos || []).map((t: any) => (
+                      <option key={t.id} value={t.id}>{t.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                  <label style={labelStyle}>Assunto</label>
+                  <select
+                    value={selectedAssunto}
+                    onChange={(e) => { setSelectedAssunto(e.target.value); setPage(1); }}
+                    style={selectStyle}
+                  >
+                    <option value="">Todos</option>
+                    {(filters.assuntos || []).map((a: any) => (
+                      <option key={a.id} value={a.id}>{a.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+            <button
+              type="submit"
+              disabled={!searchTerm.trim()}
+              style={{
+                padding: "8px 18px", border: "none", borderRadius: "6px",
+                fontSize: "13px", fontWeight: 600, cursor: searchTerm.trim() ? "pointer" : "not-allowed",
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                background: searchTerm.trim() ? "#1a237e" : "#94a3b8", color: "white",
+                transition: "all 0.15s",
+              }}
+            >
+              <Search style={{ width: "14px", height: "14px" }} />
+              Buscar
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {isLoading && (
+        <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#1a237e" }} />
+          <div style={{ fontSize: "13px" }}>Buscando normas no MEC Normas...</div>
+        </div>
+      )}
+
+      {error && (
+        <div style={{
+          background: "#fffbeb", borderLeft: "3px solid #f59e0b",
+          padding: "10px 14px", borderRadius: "0 6px 6px 0",
+          fontSize: "12px", color: "#92400e", marginTop: "16px",
+        }}>
+          <AlertCircle className="w-4 h-4 inline mr-2" />
+          Não foi possível consultar o MEC Normas. Tente novamente em alguns instantes.
+        </div>
+      )}
+
+      {!isLoading && !error && submittedTerm && normas.length === 0 && (
+        <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
+          <BookMarked className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.4 }} />
+          <p style={{ fontSize: "14px" }}>Nenhuma norma encontrada para "{submittedTerm}"</p>
+        </div>
+      )}
+
+      {normas.length > 0 && (
+        <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec", marginTop: "16px" }}>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h3 style={{ fontSize: "15px", fontWeight: 600 }}>Resultados</h3>
+            <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
+              {total} norma(s) encontrada(s)
+            </span>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Norma</th>
+                  <th style={thStyle}>Tipo</th>
+                  <th style={thStyle}>Data</th>
+                  <th style={thStyle}>DOU</th>
+                  <th style={{ ...thStyle, textAlign: "center" }}>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {normas.map((norma: any, index: number) => {
+                  const title = norma.titulo || norma.tituloAto || norma.identificacao || `Ato ${norma.id}`;
+                  const ementa = norma.ementa || norma.resumo || "";
+                  const date = norma.dataPublicacao || norma.dataPublicacaoAto || "";
+                  const tipo = norma.tipo?.nome || "";
+                  const link = norma.disponivelEm || norma.disponivel_em || "";
+                  const isExpanded = expandedId === norma.id;
+
+                  return (
+                    <tr key={norma.id} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
+                      <td style={tdStyle}>
+                        <div>
+                          <div
+                            onClick={() => setExpandedId(isExpanded ? null : norma.id)}
+                            style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3, cursor: "pointer", color: "#1565c0" }}
+                          >
+                            {title}
+                          </div>
+                          {isExpanded && ementa && (
+                            <div style={{ fontSize: "12px", color: "#64748b", marginTop: "6px", lineHeight: 1.5, maxWidth: "500px" }}>
+                              {ementa}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td style={tdStyle}>
+                        {tipo && (
+                          <span style={{
+                            display: "inline-block", padding: "2px 8px", borderRadius: "4px",
+                            fontSize: "11px", fontWeight: 600, background: "#f3e8ff", color: "#6b21a8",
+                          }}>
+                            {tipo}
+                          </span>
+                        )}
+                      </td>
+                      <td style={tdStyle}>
+                        <span style={{ fontSize: "12px", color: "#64748b" }}>{date || "—"}</span>
+                      </td>
+                      <td style={tdStyle}>
+                        <DOUCrossRef normaTitle={title} />
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "center" }}>
+                        <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                          <button
+                            onClick={() => setExpandedId(isExpanded ? null : norma.id)}
+                            style={{
+                              padding: "4px 8px", border: "1px solid #e2e5ec", borderRadius: "4px",
+                              background: "white", cursor: "pointer", fontSize: "12px", color: "#64748b",
+                            }}
+                          >
+                            {isExpanded ? <ChevronUp style={{ width: "14px", height: "14px" }} /> : <ChevronDown style={{ width: "14px", height: "14px" }} />}
+                          </button>
+                          {link && (
+                            <a
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                padding: "4px 10px", border: "none", borderRadius: "4px",
+                                background: "#1a237e", color: "white", fontSize: "11px", fontWeight: 600,
+                                textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
+                              }}
+                            >
+                              <ExternalLink style={{ width: "11px", height: "11px" }} />
+                              Abrir
+                            </a>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-8">
-            {categorias.map(cat => (
+          {totalPages > 1 && (
+            <div style={{
+              display: "flex", justifyContent: "center", alignItems: "center",
+              gap: "8px", padding: "14px", borderTop: "1px solid #e2e5ec",
+            }}>
               <button
-                key={cat}
-                onClick={() => setCategoriaAtiva(cat)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  categoriaAtiva === cat
-                    ? "bg-accent text-white shadow-sm"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                style={{ ...paginationBtnStyle, opacity: page <= 1 ? 0.4 : 1, cursor: page <= 1 ? "not-allowed" : "pointer" }}
               >
-                {cat}
+                Anterior
+              </button>
+              <span style={{ fontSize: "12px", color: "#94a3b8" }}>
+                Página {page} de {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                style={{ ...paginationBtnStyle, opacity: page >= totalPages ? 0.4 : 1, cursor: page >= totalPages ? "not-allowed" : "pointer" }}
+              >
+                Próxima
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!submittedTerm && (
+        <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
+          <Search className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.3 }} />
+          <p style={{ fontSize: "14px" }}>Digite um termo para buscar normas do MEC</p>
+          <p style={{ fontSize: "12px", marginTop: "4px", opacity: 0.7 }}>Exemplo: PDDE, PNAE, prestação de contas, transporte escolar</p>
+        </div>
+      )}
+    </>
+  );
+}
+
+function DOUBuscaContent() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [submittedTerm, setSubmittedTerm] = useState("");
+
+  const { data, isLoading, error } = useDOUSearch(
+    { q: submittedTerm, exact: false, limit: 20 },
+    !!submittedTerm
+  );
+
+  const handleSearch = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittedTerm(searchTerm.trim());
+  }, [searchTerm]);
+
+  const quickSearches = [
+    "PDDE FNDE",
+    "PNAE alimentação escolar",
+    "PNATE transporte escolar",
+    "FUNDEB educação básica",
+    "INEP censo escolar",
+  ];
+
+  return (
+    <>
+      <div style={{
+        background: "#eff6ff",
+        borderLeft: "4px solid #3b82f6",
+        padding: "16px 20px",
+        borderRadius: "0 10px 10px 0",
+        fontSize: "13px",
+        color: "#1e40af",
+        marginBottom: "16px",
+        lineHeight: 1.7,
+      }}>
+        <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <Info className="w-4 h-4" />
+          Diário Oficial da União (DOU)
+        </div>
+        <p>Pesquise publicações oficiais no Diário Oficial da União para verificar vigência de normas, encontrar novas resoluções e acompanhar alterações na legislação educacional.</p>
+        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
+          <strong>Fonte:</strong> Portal da Imprensa Nacional (in.gov.br) | Os resultados são buscados diretamente no portal oficial
+        </div>
+      </div>
+
+      <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
+        <form onSubmit={handleSearch}>
+          <div style={{ padding: "16px 20px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1, minWidth: "200px" }}>
+              <label style={labelStyle}>Buscar publicações</label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar no Diário Oficial da União..."
+                style={inputStyle}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={!searchTerm.trim()}
+              style={{
+                padding: "8px 18px", border: "none", borderRadius: "6px",
+                fontSize: "13px", fontWeight: 600, cursor: searchTerm.trim() ? "pointer" : "not-allowed",
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                background: searchTerm.trim() ? "#1a237e" : "#94a3b8", color: "white",
+                transition: "all 0.15s",
+              }}
+            >
+              <Search style={{ width: "14px", height: "14px" }} />
+              Buscar
+            </button>
+          </div>
+        </form>
+        <div style={{ padding: "0 20px 12px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
+          <span style={{ fontSize: "11px", color: "#94a3b8", alignSelf: "center" }}>Sugestões:</span>
+          {quickSearches.map((term) => (
+            <button
+              key={term}
+              onClick={() => { setSearchTerm(term); setSubmittedTerm(term); }}
+              style={{
+                padding: "4px 10px", borderRadius: "20px", border: "none",
+                fontSize: "11px", fontWeight: 500, cursor: "pointer",
+                background: "#dbeafe", color: "#1e40af",
+                transition: "all 0.15s",
+              }}
+            >
+              {term}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {isLoading && (
+        <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#1a237e" }} />
+          <div style={{ fontSize: "13px" }}>Consultando o Diário Oficial...</div>
+        </div>
+      )}
+
+      {error && (
+        <div style={{
+          background: "#fffbeb", borderLeft: "3px solid #f59e0b",
+          padding: "10px 14px", borderRadius: "0 6px 6px 0",
+          fontSize: "12px", color: "#92400e", marginTop: "16px",
+        }}>
+          <AlertCircle className="w-4 h-4 inline mr-2" />
+          Não foi possível consultar o DOU. O portal pode estar temporariamente indisponível.
+        </div>
+      )}
+
+      {!isLoading && !error && data && data.results.length === 0 && (
+        <div style={{ textAlign: "center", padding: "48px" }}>
+          <Newspaper className="w-10 h-10 mx-auto mb-3" style={{ color: "#3b82f6", opacity: 0.6 }} />
+          <p style={{ fontSize: "14px", color: "#94a3b8", marginBottom: "12px" }}>
+            Busca preparada para "{submittedTerm}"
+          </p>
+          {data.searchUrl && (
+            <a
+              href={data.searchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "8px",
+                padding: "10px 20px", borderRadius: "6px",
+                background: "#1a237e", color: "white", textDecoration: "none",
+                fontSize: "13px", fontWeight: 600,
+              }}
+            >
+              <ExternalLink style={{ width: "14px", height: "14px" }} />
+              Abrir busca no site oficial do DOU
+            </a>
+          )}
+          <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "12px", maxWidth: "400px", margin: "12px auto 0" }}>
+            O portal do Diário Oficial requer acesso direto pelo navegador. 
+            Clique no botão acima para ver os resultados no site da Imprensa Nacional.
+          </p>
+        </div>
+      )}
+
+      {data && data.results.length > 0 && (
+        <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec", marginTop: "16px" }}>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h3 style={{ fontSize: "15px", fontWeight: 600 }}>Publicações encontradas</h3>
+            <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
+              {data.total} publicação(ões)
+            </span>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Publicação</th>
+                  <th style={thStyle}>Seção</th>
+                  <th style={thStyle}>Data</th>
+                  <th style={thStyle}>Órgão</th>
+                  <th style={{ ...thStyle, textAlign: "center" }}>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.results.map((item, index) => (
+                  <tr key={`${item.href}-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
+                    <td style={tdStyle}>
+                      <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3, maxWidth: "400px" }}>{item.title}</div>
+                      {item.abstract && (
+                        <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px", lineHeight: 1.4, maxWidth: "400px" }}>
+                          {item.abstract.length > 120 ? item.abstract.slice(0, 120) + "..." : item.abstract}
+                        </div>
+                      )}
+                    </td>
+                    <td style={tdStyle}>
+                      {item.section && (
+                        <span style={{
+                          display: "inline-block", padding: "2px 8px", borderRadius: "4px",
+                          fontSize: "11px", fontWeight: 600, background: "#dbeafe", color: "#1e40af",
+                          textTransform: "capitalize",
+                        }}>
+                          {item.section}
+                        </span>
+                      )}
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{ fontSize: "12px", color: "#64748b" }}>{item.date || "—"}</span>
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{ fontSize: "12px", color: "#64748b" }}>{item.hierarchy || "—"}</span>
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: "center" }}>
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: "4px 10px", border: "none", borderRadius: "4px",
+                          background: "#1a237e", color: "white", fontSize: "11px", fontWeight: 600,
+                          textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
+                        }}
+                      >
+                        <ExternalLink style={{ width: "11px", height: "11px" }} />
+                        Abrir
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {!submittedTerm && (
+        <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
+          <Newspaper className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.3 }} />
+          <p style={{ fontSize: "14px" }}>Pesquise publicações no Diário Oficial da União</p>
+          <p style={{ fontSize: "12px", marginTop: "4px", opacity: 0.7 }}>
+            Encontre resoluções, portarias e outros atos publicados pelo governo federal
+          </p>
+        </div>
+      )}
+    </>
+  );
+}
+
+function DOUCrossRefContent() {
+  const [normaText, setNormaText] = useState("");
+  const [submittedNorma, setSubmittedNorma] = useState("");
+
+  const { data, isLoading, error } = useDOUCrossReference(
+    submittedNorma || null,
+    !!submittedNorma
+  );
+
+  const handleSearch = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittedNorma(normaText.trim());
+  }, [normaText]);
+
+  const quickNormas = [
+    "Resolução FNDE 15/2021",
+    "Lei 11.947/2009",
+    "Lei 14.113/2020",
+    "Resolução FNDE PDDE",
+  ];
+
+  return (
+    <>
+      <div style={{
+        background: "#eff6ff",
+        borderLeft: "4px solid #3b82f6",
+        padding: "16px 20px",
+        borderRadius: "0 10px 10px 0",
+        fontSize: "13px",
+        color: "#1e40af",
+        marginBottom: "16px",
+        lineHeight: 1.7,
+      }}>
+        <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <Info className="w-4 h-4" />
+          Verificação de Vigência no DOU
+        </div>
+        <p>Verifique se uma norma específica foi publicada, alterada ou revogada consultando o Diário Oficial da União. Útil para confirmar a vigência de resoluções do FNDE, portarias do MEC e demais atos normativos.</p>
+        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #bfdbfe", fontSize: "12px", color: "#1e3a8a" }}>
+          <strong>Como usar:</strong> Digite o nome ou número da norma (ex: "Resolução FNDE 15/2021") para encontrar publicações relacionadas no DOU.
+        </div>
+      </div>
+
+      <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
+        <form onSubmit={handleSearch}>
+          <div style={{ padding: "16px 20px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1, minWidth: "200px" }}>
+              <label style={labelStyle}>Nome ou número da norma</label>
+              <input
+                type="text"
+                value={normaText}
+                onChange={(e) => setNormaText(e.target.value)}
+                placeholder="Ex: Resolução FNDE 15/2021..."
+                style={inputStyle}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={!normaText.trim()}
+              style={{
+                padding: "8px 18px", border: "none", borderRadius: "6px",
+                fontSize: "13px", fontWeight: 600, cursor: normaText.trim() ? "pointer" : "not-allowed",
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                background: normaText.trim() ? "#1a237e" : "#94a3b8", color: "white",
+                transition: "all 0.15s",
+              }}
+            >
+              <Search style={{ width: "14px", height: "14px" }} />
+              Verificar
+            </button>
+          </div>
+        </form>
+        <div style={{ padding: "0 20px 12px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
+          <span style={{ fontSize: "11px", color: "#94a3b8", alignSelf: "center" }}>Exemplos:</span>
+          {quickNormas.map((term) => (
+            <button
+              key={term}
+              onClick={() => { setNormaText(term); setSubmittedNorma(term); }}
+              style={{
+                padding: "4px 10px", borderRadius: "20px", border: "none",
+                fontSize: "11px", fontWeight: 500, cursor: "pointer",
+                background: "#dbeafe", color: "#1e40af",
+                transition: "all 0.15s",
+              }}
+            >
+              {term}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {isLoading && (
+        <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#1a237e" }} />
+          <div style={{ fontSize: "13px" }}>Verificando no Diário Oficial...</div>
+        </div>
+      )}
+
+      {error && (
+        <div style={{
+          background: "#fffbeb", borderLeft: "3px solid #f59e0b",
+          padding: "10px 14px", borderRadius: "0 6px 6px 0",
+          fontSize: "12px", color: "#92400e", marginTop: "16px",
+        }}>
+          <AlertCircle className="w-4 h-4 inline mr-2" />
+          Não foi possível consultar o DOU. O portal pode estar temporariamente indisponível.
+        </div>
+      )}
+
+      {!isLoading && !error && data && submittedNorma && (
+        <div style={{ marginTop: "16px" }}>
+          {data.results.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "48px" }}>
+              <Newspaper className="w-10 h-10 mx-auto mb-3" style={{ color: "#3b82f6", opacity: 0.6 }} />
+              <p style={{ fontSize: "14px", color: "#94a3b8", marginBottom: "12px" }}>
+                Busca preparada para "{submittedNorma}"
+              </p>
+              {data.searchUrl && (
+                <a
+                  href={data.searchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "8px",
+                    padding: "10px 20px", borderRadius: "6px",
+                    background: "#1a237e", color: "white", textDecoration: "none",
+                    fontSize: "13px", fontWeight: 600,
+                  }}
+                >
+                  <ExternalLink style={{ width: "14px", height: "14px" }} />
+                  Verificar no site oficial do DOU
+                </a>
+              )}
+            </div>
+          ) : (
+            <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
+              <div style={{
+                background: "#f0fdf4", borderLeft: "3px solid #2e7d32",
+                padding: "10px 14px", borderRadius: "0 6px 6px 0",
+                fontSize: "12px", color: "#2e7d32", margin: "16px 16px 0",
+              }}>
+                {data.results.length} publicação(ões) encontrada(s) no DOU para "{submittedNorma}"
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>Publicação</th>
+                      <th style={thStyle}>Seção</th>
+                      <th style={thStyle}>Data</th>
+                      <th style={{ ...thStyle, textAlign: "center" }}>Link</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.results.map((item, index) => (
+                      <tr key={`${item.href}-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
+                        <td style={tdStyle}>
+                          <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3 }}>{item.title}</div>
+                          {item.abstract && (
+                            <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px", lineHeight: 1.4 }}>
+                              {item.abstract.length > 150 ? item.abstract.slice(0, 150) + "..." : item.abstract}
+                            </div>
+                          )}
+                        </td>
+                        <td style={tdStyle}>
+                          {item.section && (
+                            <span style={{
+                              display: "inline-block", padding: "2px 8px", borderRadius: "4px",
+                              fontSize: "11px", fontWeight: 600, background: "#dbeafe", color: "#1e40af",
+                            }}>
+                              {item.section}
+                            </span>
+                          )}
+                        </td>
+                        <td style={tdStyle}>
+                          <span style={{ fontSize: "12px", color: "#64748b" }}>{item.date || "—"}</span>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "center" }}>
+                          <a
+                            href={item.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              padding: "4px 10px", border: "none", borderRadius: "4px",
+                              background: "#1a237e", color: "white", fontSize: "11px", fontWeight: 600,
+                              textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
+                            }}
+                          >
+                            <ExternalLink style={{ width: "11px", height: "11px" }} />
+                            Abrir
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!submittedNorma && (
+        <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
+          <Scale className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.3 }} />
+          <p style={{ fontSize: "14px" }}>Verifique a vigência de normas no DOU</p>
+          <p style={{ fontSize: "12px", marginTop: "4px", opacity: 0.7 }}>
+            Confirme se resoluções e atos normativos foram publicados, alterados ou revogados
+          </p>
+        </div>
+      )}
+    </>
+  );
+}
+
+const thStyle: React.CSSProperties = {
+  background: "#f8fafc",
+  padding: "10px 14px",
+  textAlign: "left",
+  fontSize: "11px",
+  fontWeight: 700,
+  color: "#64748b",
+  textTransform: "uppercase",
+  letterSpacing: "0.5px",
+  borderBottom: "2px solid #e2e5ec",
+};
+
+const tdStyle: React.CSSProperties = {
+  padding: "10px 14px",
+  borderBottom: "1px solid #f1f5f9",
+  fontSize: "13px",
+  verticalAlign: "middle",
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: "11px",
+  fontWeight: 600,
+  color: "#64748b",
+  textTransform: "uppercase",
+  letterSpacing: "0.4px",
+};
+
+const inputStyle: React.CSSProperties = {
+  padding: "8px 12px",
+  border: "1px solid #e2e5ec",
+  borderRadius: "6px",
+  fontSize: "13px",
+  background: "#fafbfc",
+  color: "#1e293b",
+  width: "100%",
+  outline: "none",
+};
+
+const selectStyle: React.CSSProperties = {
+  padding: "8px 12px",
+  border: "1px solid #e2e5ec",
+  borderRadius: "6px",
+  fontSize: "13px",
+  background: "#fafbfc",
+  color: "#1e293b",
+};
+
+const paginationBtnStyle: React.CSSProperties = {
+  padding: "6px 14px",
+  border: "1px solid #e2e5ec",
+  borderRadius: "6px",
+  background: "white",
+  fontSize: "12px",
+  fontWeight: 500,
+  color: "#64748b",
+};
+
+export default function Legislacao() {
+  const [activeCategory, setActiveCategory] = useState<CategoryId>("cat-leis");
+  const [activeSubTab, setActiveSubTab] = useState<SubTabId>("leis-todas");
+
+  const switchCategory = (catId: CategoryId) => {
+    setActiveCategory(catId);
+    const cat = categories.find(c => c.id === catId);
+    if (cat && cat.subTabs.length > 0) {
+      setActiveSubTab(cat.subTabs[0].id);
+    }
+  };
+
+  const renderContent = () => {
+    if (activeSubTab.startsWith("leis-")) {
+      return <LeisFundamentaisContent subTab={activeSubTab} />;
+    }
+    if (activeSubTab === "normas-busca") {
+      return <NormasBuscaContent />;
+    }
+    if (activeSubTab === "dou-busca") {
+      return <DOUBuscaContent />;
+    }
+    if (activeSubTab === "dou-crossref") {
+      return <DOUCrossRefContent />;
+    }
+    return null;
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col" style={{ background: "#f5f6fa", fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif", color: "#1e293b", fontSize: "14px", lineHeight: 1.5 }}>
+      <Navigation />
+
+      <div style={{
+        background: "linear-gradient(135deg, #0d1642 0%, #1a237e 50%, #3949ab 100%)",
+        color: "white",
+        padding: "20px 32px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+      }}>
+        <div style={{ maxWidth: "1400px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <h1 style={{ fontSize: "20px", fontWeight: 700, letterSpacing: "-0.3px" }}>Painel de Legislação Educacional</h1>
+            <p style={{ opacity: 0.75, fontSize: "12px", marginTop: "2px" }}>
+              Leis fundamentais, normas do MEC e publicações do Diário Oficial da União
+            </p>
+          </div>
+          <span style={{
+            background: "rgba(255,255,255,0.15)",
+            padding: "4px 12px",
+            borderRadius: "20px",
+            fontSize: "11px",
+            fontWeight: 500,
+          }}>
+            Fontes oficiais
+          </span>
+        </div>
+      </div>
+
+      <main style={{ maxWidth: "1400px", margin: "0 auto", padding: "20px 24px", flex: 1, width: "100%" }}>
+        <nav style={{
+          display: "flex",
+          gap: "6px",
+          background: "white",
+          borderRadius: "10px 10px 0 0",
+          padding: "6px 6px 0",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          overflowX: "auto",
+          WebkitOverflowScrolling: "touch",
+        }}>
+          {categories.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => switchCategory(cat.id)}
+              style={{
+                padding: "12px 20px",
+                borderRadius: "8px 8px 0 0",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: activeCategory === cat.id ? "white" : "#64748b",
+                transition: "all 0.15s",
+                whiteSpace: "nowrap",
+                textAlign: "center",
+                flexShrink: 0,
+                border: "none",
+                background: activeCategory === cat.id ? "#1a237e" : "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <span style={{ fontSize: "18px" }}>{cat.icon}</span>
+              {cat.label}
+            </button>
+          ))}
+        </nav>
+
+        {categories.map(cat => (
+          <div
+            key={cat.id}
+            style={{
+              display: activeCategory === cat.id ? "flex" : "none",
+              gap: "2px",
+              background: "#f1f5f9",
+              borderRadius: "0 0 10px 10px",
+              padding: "4px 6px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
+              marginBottom: "20px",
+            }}
+          >
+            {cat.subTabs.map(sub => (
+              <button
+                key={sub.id}
+                onClick={() => setActiveSubTab(sub.id)}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: activeSubTab === sub.id ? 600 : 500,
+                  color: activeSubTab === sub.id ? "#1a237e" : "#64748b",
+                  transition: "all 0.15s",
+                  whiteSpace: "nowrap",
+                  textAlign: "center",
+                  flexShrink: 0,
+                  border: "none",
+                  background: activeSubTab === sub.id ? "white" : "none",
+                  boxShadow: activeSubTab === sub.id ? "0 1px 3px rgba(0,0,0,0.06)" : "none",
+                }}
+              >
+                {sub.label}
               </button>
             ))}
           </div>
+        ))}
 
-          <div className="grid gap-4">
-            {leisFiltradas.map((lei, index) => (
-              <motion.div
-                key={lei.numero}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-              >
-                <a
-                  href={lei.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block p-5 rounded-xl border bg-card hover:border-accent/40 hover:shadow-md transition-all group"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                      <lei.icon className="w-5 h-5 text-accent" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors leading-snug">
-                            {lei.titulo}
-                          </h3>
-                          <div className="flex items-center gap-2 mt-1.5">
-                            <span className="text-sm text-muted-foreground font-mono">{lei.numero}</span>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${categoriaColors[lei.categoria] || "bg-gray-100 text-gray-700"}`}>
-                              {lei.categoria}
-                            </span>
-                          </div>
-                        </div>
-                        <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-accent transition-colors flex-shrink-0 mt-1" />
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                        {lei.descricao}
-                      </p>
-                      {lei.destaque && (
-                        <div className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-accent bg-accent/5 px-2.5 py-1 rounded-full">
-                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                          {lei.destaque}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </a>
-              </motion.div>
-            ))}
-          </div>
+        {renderContent()}
 
-          <div className="mt-10 p-5 rounded-xl bg-accent/5 border border-accent/20">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              <strong className="text-foreground">Nota:</strong> Esta seção reúne as principais legislações de referência para a gestão escolar. 
-              Os links direcionam para os textos oficiais publicados no portal do Planalto ou do FNDE. 
-              Para dúvidas específicas sobre a aplicação dessas normas, consulte o <a href="/chat" className="text-accent hover:underline font-medium">Caderno da Diretora</a>.
-            </p>
-          </div>
-        </motion.div>
+        <div style={{
+          background: "#fffbeb",
+          borderLeft: "3px solid #f59e0b",
+          padding: "10px 14px",
+          borderRadius: "0 6px 6px 0",
+          fontSize: "12px",
+          color: "#92400e",
+          marginTop: "24px",
+        }}>
+          <strong>Nota:</strong> Esta seção reúne as principais legislações de referência para a gestão escolar. 
+          As abas "Normas do MEC" e "Diário Oficial" consultam dados diretamente dos portais oficiais do governo.
+          Para dúvidas específicas sobre a aplicação dessas normas, consulte o{" "}
+          <a href="/chat" style={{ color: "#1565c0", fontWeight: 600 }}>Caderno da Diretora</a>.
+        </div>
       </main>
 
       <Footer />

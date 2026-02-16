@@ -9,6 +9,7 @@
 - **Programs Library**: A repository of documentation for government funding programs.
 - **Tools (Ferramentas)**: Curated templates, checklists, and spreadsheets to assist in various financial tasks.
 - **AI Chat**: An intelligent assistant for answering financial management queries.
+- **Legislation Section**: A three-tab interface providing: (1) fundamental education laws, (2) MEC Normas search with filters (tipo, assunto) via `mecnormas.mec.gov.br/pesquisa/api`, and (3) DOU (Diário Oficial da União) search via Imprensa Nacional API (`in.gov.br`) for cross-referencing vigência and finding recent publications.
 - **Admin Panel**: A secure content management system for platform administrators.
 
 The project envisions a user-friendly experience with a warm, nature-inspired "Ghibli/territorial" visual style, utilizing earthy colors and hand-drawn aesthetics to make financial management more accessible.
