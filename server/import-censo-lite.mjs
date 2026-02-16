@@ -134,6 +134,8 @@ const years = process.argv.slice(2);
     const paths = [
       `/tmp/inep-data/censo_${year}/microdados_ed_basica_${year}.csv`,
       `/tmp/inep-data/censo_${year}/microdados_ed_basica_${year}.CSV`,
+      `/tmp/inep-data/microdados_censo_escolar_${year}/dados/microdados_ed_basica_${year}.csv`,
+      `/tmp/inep-data/microdados_censo_escolar_${year}/dados/microdados_ed_basica_${year}.CSV`,
     ];
     const filePath = paths.find(p => fs.existsSync(p));
     if (!filePath) { console.log(`No CSV for ${year}`); continue; }

@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db, sqlite } from "./db";
 import { censoEscolar, indicadoresEducacionais, importacaoStatus } from "@shared/schema";
 import { eq, and, like, sql } from "drizzle-orm";
 
@@ -725,33 +725,23 @@ export function getCensoEscolarDetail(ano: number, inep: string) {
 }
 
 export function getCensoEstatisticas(ano: number) {
-  const totals = db.select({
-    total_escolas: sql<number>`count(*)`,
-    total_matriculas: sql<number>`coalesce(sum(${censoEscolar.matriculas}), 0)`,
-    total_docentes: sql<number>`coalesce(sum(${censoEscolar.docentes}), 0)`,
-    total_turmas: sql<number>`coalesce(sum(${censoEscolar.turmas}), 0)`,
-  }).from(censoEscolar).where(eq(censoEscolar.ano, ano)).get();
-
-  const groupBy = (col: any) => {
-    const rows = db.select({
-      key: col,
-      count: sql<number>`count(*)`,
-    }).from(censoEscolar).where(and(eq(censoEscolar.ano, ano), sql`${col} IS NOT NULL`)).groupBy(col).all();
+  const row = sqlite.prepare(`SELECT count(*) as total_escolas, coalesce(sum(matriculas),0) as total_matriculas, coalesce(sum(docentes),0) as total_docentes, coalesce(sum(turmas),0) as total_turmas FROM censo_escolar WHERE ano = ?`).get(ano) as any;
+  const groupByRaw = (col: string) => {
+    const rows = sqlite.prepare(`SELECT ${col} as key, count(*) as count FROM censo_escolar WHERE ano = ? AND ${col} IS NOT NULL GROUP BY ${col}`).all(ano) as any[];
     const result: Record<string, number> = {};
-    for (const r of rows) result[r.key as string] = r.count;
+    for (const r of rows) result[r.key] = r.count;
     return result;
   };
-
   return {
     ano,
-    total_escolas: totals?.total_escolas || 0,
-    total_matriculas: totals?.total_matriculas || 0,
-    total_docentes: totals?.total_docentes || 0,
-    total_turmas: totals?.total_turmas || 0,
-    por_dependencia: groupBy(censoEscolar.dependencia),
-    por_localizacao: groupBy(censoEscolar.localizacao),
-    por_uf: groupBy(censoEscolar.uf),
-    por_situacao: groupBy(censoEscolar.situacao),
+    total_escolas: row?.total_escolas || 0,
+    total_matriculas: row?.total_matriculas || 0,
+    total_docentes: row?.total_docentes || 0,
+    total_turmas: row?.total_turmas || 0,
+    por_dependencia: groupByRaw('dependencia'),
+    por_localizacao: groupByRaw('localizacao'),
+    por_uf: groupByRaw('uf'),
+    por_situacao: groupByRaw('situacao'),
   };
 }
 

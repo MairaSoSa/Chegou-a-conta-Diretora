@@ -8,6 +8,14 @@ const resolvedPath = path.isAbsolute(dbPath) ? dbPath : path.join(process.cwd(),
 
 export const sqlite = new Database(resolvedPath);
 sqlite.pragma("journal_mode = WAL");
+sqlite.pragma("cache_size = -64000");
+
+try {
+  sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_ano_dep ON censo_escolar(ano, dependencia)");
+  sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_ano_loc ON censo_escolar(ano, localizacao)");
+  sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_ano_sit ON censo_escolar(ano, situacao)");
+  sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_ano_uf_mat ON censo_escolar(ano, uf)");
+} catch {}
 
 export const db = drizzle(sqlite, { schema });
 
