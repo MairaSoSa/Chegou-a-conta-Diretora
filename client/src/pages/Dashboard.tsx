@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
-  LineChart, Line, AreaChart, Area
+  LineChart, Line
 } from "recharts";
 
 const UF_NAMES: Record<string, string> = {
@@ -2310,15 +2310,7 @@ function EvolutionChart({ title, data, lines, icon, description, unit }: { title
             ))}
           </BarChart>
         ) : (
-          <AreaChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
-            <defs>
-              {lines.map((line) => (
-                <linearGradient key={`grad-${line.key}`} id={`grad-${line.key}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={line.color} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={line.color} stopOpacity={0.02} />
-                </linearGradient>
-              ))}
-            </defs>
+          <BarChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
             <XAxis dataKey="ano" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}${unitSuffix}`} axisLine={false} tickLine={false} />
@@ -2329,20 +2321,9 @@ function EvolutionChart({ title, data, lines, icon, description, unit }: { title
             />
             <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
             {lines.map((line) => (
-              <Area
-                key={line.key}
-                type="monotone"
-                dataKey={line.key}
-                stroke={line.color}
-                fill={`url(#grad-${line.key})`}
-                name={line.name}
-                strokeWidth={2.5}
-                dot={{ r: 3, fill: line.color, strokeWidth: 2, stroke: '#fff' }}
-                activeDot={{ r: 6, fill: line.color, strokeWidth: 2, stroke: '#fff' }}
-                connectNulls
-              />
+              <Bar key={line.key} dataKey={line.key} fill={line.color} name={line.name} radius={[4, 4, 0, 0]} />
             ))}
-          </AreaChart>
+          </BarChart>
         )}
       </ResponsiveContainer>
     </div>
@@ -2422,7 +2403,7 @@ function InfoItem({ label, value, highlight }: { label: string; value: string | 
   return (
     <div className={`flex items-baseline justify-between gap-2 px-3 py-2 rounded-lg border ${highlight ? 'bg-accent/5 border-accent/20' : 'bg-card border-border/40'}`}>
       <span className="text-xs text-muted-foreground leading-tight">{label}</span>
-      <span className={`text-sm font-semibold tabular-nums ${isZero ? 'text-muted-foreground/40' : highlight ? 'text-accent' : 'text-foreground'}`}>{displayValue}</span>
+      <span className={`text-sm font-semibold tabular-nums ${isZero ? 'text-muted-foreground/40' : highlight ? 'text-accent' : 'text-emerald-700'}`}>{displayValue}</span>
     </div>
   );
 }
