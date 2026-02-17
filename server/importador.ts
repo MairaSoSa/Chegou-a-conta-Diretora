@@ -973,3 +973,53 @@ export function getApiInfo() {
     },
   };
 }
+
+const mediasNacionaisCache: { key: string; data: any; ts: number } = { key: '', data: null, ts: 0 };
+const MEDIAS_CACHE_TTL = 60 * 60 * 1000;
+
+export function getMediasNacionais(ano?: number) {
+  const cacheKey = `medias_${ano || 'latest'}`;
+  if (mediasNacionaisCache.key === cacheKey && mediasNacionaisCache.data && (Date.now() - mediasNacionaisCache.ts) < MEDIAS_CACHE_TTL) {
+    return mediasNacionaisCache.data;
+  }
+
+  const tiposParaMedias = ['ideb', 'taxas_rendimento', 'tdi', 'atu', 'had', 'afd', 'dsu', 'ird', 'icg', 'inse'];
+  const result: Record<string, any> = {};
+
+  for (const tipo of tiposParaMedias) {
+    const anoQuery = ano
+      ? sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo = ? AND ano = ?`).all(tipo, ano) as any[]
+      : sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo = ? AND ano = (SELECT MAX(ano) FROM indicadores_educacionais WHERE tipo = ?)`).all(tipo, tipo) as any[];
+
+    if (anoQuery.length === 0) continue;
+
+    const avgFields: Record<string, { sum: number; count: number }> = {};
+    let totalParsed = 0;
+    for (const r of anoQuery) {
+      const d = r.dados ? JSON.parse(r.dados) : null;
+      if (!d) continue;
+      totalParsed++;
+      for (const [k, v] of Object.entries(d)) {
+        if (typeof v === 'number' && !isNaN(v) && k !== 'co_entidade' && k !== 'ano') {
+          if (!avgFields[k]) avgFields[k] = { sum: 0, count: 0 };
+          avgFields[k].sum += v;
+          avgFields[k].count += 1;
+        }
+      }
+    }
+
+    if (totalParsed === 0) continue;
+
+    const averages: Record<string, number> = {};
+    for (const [k, v] of Object.entries(avgFields)) {
+      if (v.count > 0) averages[k] = Number((v.sum / v.count).toFixed(2));
+    }
+    result[tipo] = { ...averages, _total_escolas: totalParsed };
+  }
+
+  mediasNacionaisCache.key = cacheKey;
+  mediasNacionaisCache.data = result;
+  mediasNacionaisCache.ts = Date.now();
+
+  return result;
+}

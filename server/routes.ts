@@ -19,6 +19,7 @@ import {
   importFromExternalApi, getImportStatus, getLocalSchoolCount, getLocalStats,
   listCensoEscolar, getCensoEscolarDetail, getCensoEstatisticas,
   listIndicador, getIndicadorDetail, getEscolaCompleta, getApiInfo,
+  getMediasNacionais,
 } from "./importador";
 import { importAllIndicators, getIndicatorImportRunning, getAvailableIndicators, importIdeb, importInse, generateSaebFromIdeb } from "./import-inep-indicators";
 import { 
@@ -207,6 +208,11 @@ export async function registerRoutes(
     const localData = getEscolaEvolucaoLocal(inep);
     if (localData) return res.json(localData);
     res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], escola: null, censo_por_ano: {}, indicadores_por_ano: {} });
+  });
+
+  app.get("/api/medias-nacionais", (req, res) => {
+    const ano = req.query.ano ? parseInt(req.query.ano as string) : undefined;
+    res.json(getMediasNacionais(ano));
   });
 
   // === PUBLIC: API INFO (mirrors api-escolas root) ===

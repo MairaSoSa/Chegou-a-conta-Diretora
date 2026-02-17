@@ -76,6 +76,19 @@ export function useEstatisticas(ano: number) {
   });
 }
 
+export function useMediasNacionais(ano?: number) {
+  return useQuery({
+    queryKey: ["medias-nacionais", ano],
+    queryFn: async () => {
+      const url = ano ? `/api/medias-nacionais?ano=${ano}` : '/api/medias-nacionais';
+      const res = await fetch(url);
+      if (!res.ok) return {};
+      return res.json();
+    },
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
 export function useListaEscolas(ano: number, filters: Record<string, string>, page: number, perPage: number = 20) {
   return useQuery({
     queryKey: ["lista-escolas", ano, filters, page, perPage],

@@ -11,7 +11,7 @@ import {
   Globe, Building2, TreePine, Filter, X, Clock, Heart,
   CheckCircle, CircleAlert
 } from "lucide-react";
-import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas } from "@/hooks/use-schools";
+import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais } from "@/hooks/use-schools";
 import { usePddeInfo } from "@/hooks/use-pdde";
 import { useSigpcLocalizar } from "@/hooks/use-sigpc";
 import { DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon } from "lucide-react";
@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
-  LineChart, Line
+  LineChart, Line, AreaChart, Area
 } from "recharts";
 
 const UF_NAMES: Record<string, string> = {
@@ -50,6 +50,7 @@ export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useEstatisticas(selectedAno);
   const { data: searchResults, refetch: refetchSearch, isLoading: searchLoading } = useSchoolSearch(searchQuery);
   const { data: evolucaoData, isLoading: evolucaoLoading } = useEscolaEvolucao(selectedInep || "");
+  const { data: mediasNacionais } = useMediasNacionais(selectedAno);
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, selectedAno);
   const pddeCnpj = pddeData?.uex?.cnpj || null;
   const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined);
@@ -1424,15 +1425,63 @@ export default function Dashboard() {
                     { tipo: 'taxa_nao_resposta', nome: 'TNR', key: 'taxa_nao_resposta' },
                   ];
 
+                  const getNacionalLabel = (tipo: string): string | null => {
+                    const mn = mediasNacionais as Record<string, any> | undefined;
+                    if (!mn?.[tipo]) return null;
+                    const d = mn[tipo];
+                    switch (tipo) {
+                      case 'ideb': {
+                        const parts: string[] = [];
+                        if (d.ideb_ai != null) parts.push(`AI: ${Number(d.ideb_ai).toFixed(1)}`);
+                        if (d.ideb_af != null) parts.push(`AF: ${Number(d.ideb_af).toFixed(1)}`);
+                        return parts.length > 0 ? parts.join(' | ') : null;
+                      }
+                      case 'taxas_rendimento': {
+                        const parts: string[] = [];
+                        if (d.aprovacao_fund != null) parts.push(`Aprov: ${Number(d.aprovacao_fund).toFixed(1)}%`);
+                        if (d.abandono_fund != null) parts.push(`Aband: ${Number(d.abandono_fund).toFixed(1)}%`);
+                        return parts.length > 0 ? parts.join(' | ') : null;
+                      }
+                      case 'tdi': {
+                        const parts: string[] = [];
+                        if (d.fundamental_total != null) parts.push(`Fund: ${Number(d.fundamental_total).toFixed(1)}%`);
+                        if (d.medio_total != null) parts.push(`Médio: ${Number(d.medio_total).toFixed(1)}%`);
+                        return parts.length > 0 ? parts.join(' | ') : null;
+                      }
+                      case 'atu': {
+                        const v = d.atu_fund ?? d.fundamental_total;
+                        return v != null ? `Fund: ${Number(v).toFixed(1)} alunos` : null;
+                      }
+                      case 'had': {
+                        const v = d.had_fund ?? d.fundamental_total;
+                        return v != null ? `Fund: ${Number(v).toFixed(1)}h` : null;
+                      }
+                      case 'dsu': {
+                        const v = d.dsu_fund ?? d.fundamental_total;
+                        return v != null ? `Fund: ${Number(v).toFixed(1)}%` : null;
+                      }
+                      case 'afd': {
+                        const v = d.grupo_1 ?? d.afd_grupo_1;
+                        return v != null ? `Grupo 1: ${Number(v).toFixed(1)}%` : null;
+                      }
+                      case 'ird': {
+                        const v = d.ird_fund ?? d.media;
+                        return v != null ? `${Number(v).toFixed(2)}` : null;
+                      }
+                      default: return null;
+                    }
+                  };
+
                   const rows = indicatorOrder
                     .map(ind => {
                       const data = indicadoresLatest[ind.key];
                       if (!data) return null;
                       const diag = getDiagnosis(ind.tipo, data);
                       if (!diag) return null;
-                      return { ...ind, data, diag, ano: data._ano };
+                      const mediaNacional = getNacionalLabel(ind.tipo);
+                      return { ...ind, data, diag, ano: data._ano, mediaNacional };
                     })
-                    .filter(Boolean) as { tipo: string; nome: string; key: string; data: any; diag: Diagnosis; ano?: number }[];
+                    .filter(Boolean) as { tipo: string; nome: string; key: string; data: any; diag: Diagnosis; ano?: number; mediaNacional?: string | null }[];
 
                   const allIndicatorKeys = indicatorOrder.map(i => i.key);
                   const missingCount = allIndicatorKeys.filter(k => !indicadoresLatest[k]).length;
@@ -1467,6 +1516,9 @@ export default function Dashboard() {
                                     </div>
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-0.5">{row.diag.explicacao}</p>
+                                  {row.mediaNacional && (
+                                    <p className="text-[11px] text-blue-600/70 mt-0.5">Média nacional: {row.mediaNacional}</p>
+                                  )}
                                   {row.diag.secundarios && row.diag.secundarios.length > 0 && (
                                     <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[11px] text-muted-foreground">
                                       {row.diag.secundarios.map((s, i) => <span key={i}>{s}</span>)}
@@ -1655,7 +1707,7 @@ export default function Dashboard() {
                 <IndicatorSection
                   title="Turmas"
                   icon={<BookOpen className="w-5 h-5 text-teal-600" />}
-                  expanded={expandedSections['turmas'] ?? false}
+                  expanded={expandedSections['turmas'] ?? true}
                   onToggle={() => toggleSection('turmas')}
                 >
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -1732,7 +1784,7 @@ export default function Dashboard() {
                 <IndicatorSection
                   title="Água, Energia e Saneamento"
                   icon={<Info className="w-5 h-5 text-cyan-600" />}
-                  expanded={expandedSections['saneamento'] ?? false}
+                  expanded={expandedSections['saneamento'] ?? true}
                   onToggle={() => toggleSection('saneamento')}
                 >
                   <div className="space-y-4">
@@ -1855,7 +1907,7 @@ export default function Dashboard() {
                 <IndicatorSection
                   title="Equipamentos e Tecnologia"
                   icon={<Info className="w-5 h-5 text-indigo-600" />}
-                  expanded={expandedSections['equipamentos'] ?? false}
+                  expanded={expandedSections['equipamentos'] ?? true}
                   onToggle={() => toggleSection('equipamentos')}
                 >
                   <div className="space-y-4">
@@ -1894,7 +1946,7 @@ export default function Dashboard() {
                 <IndicatorSection
                   title="Profissionais (não docentes)"
                   icon={<Users className="w-5 h-5 text-amber-600" />}
-                  expanded={expandedSections['profissionais'] ?? false}
+                  expanded={expandedSections['profissionais'] ?? true}
                   onToggle={() => toggleSection('profissionais')}
                 >
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -1920,7 +1972,7 @@ export default function Dashboard() {
                 <IndicatorSection
                   title="Materiais Pedagógicos"
                   icon={<BookOpen className="w-5 h-5 text-rose-600" />}
-                  expanded={expandedSections['materiais'] ?? false}
+                  expanded={expandedSections['materiais'] ?? true}
                   onToggle={() => toggleSection('materiais')}
                 >
                   <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
@@ -1943,7 +1995,7 @@ export default function Dashboard() {
                 <IndicatorSection
                   title="Dados Financeiros (PDDE / SIGPC)"
                   icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
-                  expanded={expandedSections['financeiro'] ?? false}
+                  expanded={expandedSections['financeiro'] ?? true}
                   onToggle={() => toggleSection('financeiro')}
                 >
                   <div className="space-y-5">
@@ -2258,30 +2310,39 @@ function EvolutionChart({ title, data, lines, icon, description, unit }: { title
             ))}
           </BarChart>
         ) : (
-          <LineChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey="ano" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}${unitSuffix}`} />
+          <AreaChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
+            <defs>
+              {lines.map((line) => (
+                <linearGradient key={`grad-${line.key}`} id={`grad-${line.key}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={line.color} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={line.color} stopOpacity={0.02} />
+                </linearGradient>
+              ))}
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+            <XAxis dataKey="ano" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}${unitSuffix}`} axisLine={false} tickLine={false} />
             <Tooltip
               formatter={(value: number, name: string) => [formatValue(value), name]}
               labelFormatter={(label) => `Ano: ${label}`}
-              contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "12px" }}
+              contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
             />
             <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
             {lines.map((line) => (
-              <Line
+              <Area
                 key={line.key}
                 type="monotone"
                 dataKey={line.key}
                 stroke={line.color}
+                fill={`url(#grad-${line.key})`}
                 name={line.name}
-                strokeWidth={2}
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
+                strokeWidth={2.5}
+                dot={{ r: 3, fill: line.color, strokeWidth: 2, stroke: '#fff' }}
+                activeDot={{ r: 6, fill: line.color, strokeWidth: 2, stroke: '#fff' }}
                 connectNulls
               />
             ))}
-          </LineChart>
+          </AreaChart>
         )}
       </ResponsiveContainer>
     </div>
