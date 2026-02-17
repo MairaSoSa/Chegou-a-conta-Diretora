@@ -744,29 +744,29 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <StatCard
-                    icon={<Users className="w-5 h-5 text-accent" />}
+                    icon={<Users className="w-3.5 h-3.5 text-accent" />}
                     value={formatNumber(censoLatest.qt_mat_bas || 0)}
-                    label={`Matrículas (${latestAno})`}
+                    label={`Matrículas ${latestAno}`}
                     color="bg-accent/10"
                   />
                   <StatCard
-                    icon={<GraduationCap className="w-5 h-5 text-accent" />}
+                    icon={<GraduationCap className="w-3.5 h-3.5 text-accent" />}
                     value={formatNumber(censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0)}
-                    label={`Docentes (${latestAno})`}
+                    label={`Docentes ${latestAno}`}
                     color="bg-accent/10"
                   />
                   <StatCard
-                    icon={<BookOpen className="w-5 h-5 text-purple-600" />}
+                    icon={<BookOpen className="w-3.5 h-3.5 text-purple-600" />}
                     value={formatNumber(censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0)}
-                    label={`Turmas (${latestAno})`}
+                    label={`Turmas ${latestAno}`}
                     color="bg-purple-600/10"
                   />
                   <StatCard
-                    icon={<School className="w-5 h-5 text-orange-600" />}
+                    icon={<School className="w-3.5 h-3.5 text-orange-600" />}
                     value={formatNumber(censoLatest.qt_salas_utilizadas || 0)}
-                    label={`Salas (${latestAno})`}
+                    label={`Salas ${latestAno}`}
                     color="bg-orange-600/10"
                   />
                 </div>
@@ -2214,85 +2214,12 @@ export default function Dashboard() {
               </>
             )}
 
-            <Card className="card-clay">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <School className="w-4 h-4 text-accent" />
-                  {listaEscolas ? `${formatNumber(listaEscolas.total)} escolas encontradas` : "Escolas"}
-                  {filterUf && <Badge variant="outline" className="text-xs">{filterUf}</Badge>}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {listaLoading ? (
-                  <div className="py-10 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-accent" />
-                  </div>
-                ) : listaEscolas?.dados?.length > 0 ? (
-                  <>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-border/30">
-                            <th className="text-left py-2 px-2 text-muted-foreground font-medium">INEP</th>
-                            <th className="text-left py-2 px-2 text-muted-foreground font-medium">Escola</th>
-                            <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden md:table-cell">Município</th>
-                            <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden sm:table-cell">UF</th>
-                            <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden lg:table-cell">Rede</th>
-                            <th className="text-right py-2 px-2 text-muted-foreground font-medium">Matrículas</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {listaEscolas.dados.map((escola: any) => (
-                            <tr
-                              key={escola.co_entidade}
-                              className="border-b border-border/10 hover:bg-accent/5 cursor-pointer transition-colors"
-                              onClick={() => selectSchool(String(escola.co_entidade))}
-                            >
-                              <td className="py-2.5 px-2 font-mono text-xs text-muted-foreground">{escola.co_entidade}</td>
-                              <td className="py-2.5 px-2 font-medium text-foreground max-w-[200px] truncate">{escola.no_entidade}</td>
-                              <td className="py-2.5 px-2 text-muted-foreground hidden md:table-cell">{escola.no_municipio}</td>
-                              <td className="py-2.5 px-2 hidden sm:table-cell">{escola.sg_uf}</td>
-                              <td className="py-2.5 px-2 hidden lg:table-cell">
-                                <Badge variant="outline" className="text-xs">{escola.ds_dependencia}</Badge>
-                              </td>
-                              <td className="py-2.5 px-2 text-right font-mono">{formatNumber(escola.qt_matriculas || 0)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {listaEscolas.total_paginas > 1 && (
-                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/20">
-                        <p className="text-xs text-muted-foreground">
-                          Página {listaEscolas.pagina} de {formatNumber(listaEscolas.total_paginas)}
-                        </p>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={listPage <= 1}
-                            onClick={() => setListPage(p => Math.max(1, p - 1))}
-                          >
-                            <ArrowLeft className="w-4 h-4 mr-1" /> Anterior
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={listPage >= listaEscolas.total_paginas}
-                            onClick={() => setListPage(p => p + 1)}
-                          >
-                            Próxima <ArrowRight className="w-4 h-4 ml-1" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">Nenhuma escola encontrada com esses filtros.</p>
-                )}
-              </CardContent>
-            </Card>
+            {!selectedInep && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Search className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">Digite o nome ou código INEP de uma escola para ver seus dados.</p>
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -2368,17 +2295,15 @@ function EvolutionChart({ title, data, lines, icon }: { title: string; data: any
 
 function StatCard({ icon, value, label, color }: { icon: React.ReactNode; value: string; label: string; color: string }) {
   return (
-    <Card className="card-clay p-4">
-      <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center flex-shrink-0`}>
-          {icon}
-        </div>
-        <div className="min-w-0">
-          <p className="text-xl font-bold truncate">{value}</p>
-          <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        </div>
+    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${color} border border-border/10`}>
+      <div className="w-7 h-7 rounded-lg bg-white/60 flex items-center justify-center flex-shrink-0">
+        {icon}
       </div>
-    </Card>
+      <div className="min-w-0">
+        <p className="text-sm font-bold leading-tight truncate">{value}</p>
+        <p className="text-[10px] font-medium text-muted-foreground leading-tight">{label}</p>
+      </div>
+    </div>
   );
 }
 
