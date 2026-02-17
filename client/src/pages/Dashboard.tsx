@@ -1494,7 +1494,7 @@ export default function Dashboard() {
                   expanded={expandedSections['matriculas'] ?? true}
                   onToggle={() => toggleSection('matriculas')}
                 >
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     <InfoItem label="Ed. Infantil - Creche" value={censoLatest.qt_mat_inf_cre} />
                     <InfoItem label="Ed. Infantil - Pré-escola" value={censoLatest.qt_mat_inf_pre} />
                     <InfoItem label="Fund. Anos Iniciais" value={censoLatest.qt_mat_fund_ai} />
@@ -1637,7 +1637,7 @@ export default function Dashboard() {
                   expanded={expandedSections['docentes'] ?? true}
                   onToggle={() => toggleSection('docentes')}
                 >
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     <InfoItem label="Total" value={censoLatest.qt_doc_bas} highlight />
                     <InfoItem label="Ed. Infantil" value={censoLatest.qt_doc_inf} />
                     <InfoItem label="Infantil Creche" value={censoLatest.qt_doc_inf_cre} />
@@ -1658,7 +1658,7 @@ export default function Dashboard() {
                   expanded={expandedSections['turmas'] ?? false}
                   onToggle={() => toggleSection('turmas')}
                 >
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     <InfoItem label="Total" value={censoLatest.qt_tur_bas} highlight />
                     <InfoItem label="Ed. Infantil" value={censoLatest.qt_tur_inf} />
                     <InfoItem label="Infantil Creche" value={censoLatest.qt_tur_inf_cre} />
@@ -1684,7 +1684,7 @@ export default function Dashboard() {
                   <div className="space-y-4">
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Dados Básicos</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                         <InfoItem label="Situação" value={censoLatest.ds_situacao} />
                         <InfoItem label="Dependência" value={censoLatest.ds_dependencia} />
                         <InfoItem label="Localização" value={censoLatest.ds_localizacao} />
@@ -1788,7 +1788,7 @@ export default function Dashboard() {
                   <div className="space-y-4">
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Salas</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                         <InfoItem label="Salas Utilizadas" value={censoLatest.qt_salas_utilizadas} />
                         <InfoItem label="Salas Dentro" value={censoLatest.qt_salas_utilizadas_dentro} />
                         <InfoItem label="Salas Fora" value={censoLatest.qt_salas_utilizadas_fora} />
@@ -1861,7 +1861,7 @@ export default function Dashboard() {
                   <div className="space-y-4">
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Equipamentos</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                         <InfraItem label="Computador" value={censoLatest.in_computador} />
                         <InfoItem label="Desktops p/ Alunos" value={censoLatest.qt_desktop_aluno} />
                         <InfoItem label="Notebooks p/ Alunos" value={censoLatest.qt_comp_portatil_aluno} />
@@ -1897,7 +1897,7 @@ export default function Dashboard() {
                   expanded={expandedSections['profissionais'] ?? false}
                   onToggle={() => toggleSection('profissionais')}
                 >
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     <InfoItem label="Administrativos" value={censoLatest.qt_prof_administrativos} />
                     <InfoItem label="Serviços Gerais" value={censoLatest.qt_prof_servicos_gerais} />
                     <InfoItem label="Bibliotecários" value={censoLatest.qt_prof_bibliotecario} />
@@ -2331,7 +2331,7 @@ function IndicatorRows({ data }: { data: any }) {
       <>
         {data.map((item: any, idx: number) => (
           <div key={idx} className="col-span-full">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {Object.entries(item)
                 .filter(([k]) => k !== 'co_entidade' && k !== 'ano')
                 .map(([k, v]) => (
@@ -2356,11 +2356,12 @@ function IndicatorRows({ data }: { data: any }) {
 
 function InfoItem({ label, value, highlight }: { label: string; value: string | number | null | undefined; highlight?: boolean }) {
   if (value === null || value === undefined || value === '') return null;
-  const displayValue = typeof value === 'number' ? (Number.isInteger(value) ? value.toLocaleString('pt-BR') : value.toFixed(2)) : String(value);
+  const displayValue = typeof value === 'number' ? (Number.isInteger(value) ? value.toLocaleString('pt-BR') : value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })) : String(value);
+  const isZero = value === 0;
   return (
-    <div className="p-2 rounded-lg bg-muted/30">
-      <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
-      <p className={`text-sm font-medium ${highlight ? 'text-accent font-bold text-base' : ''}`}>{displayValue}</p>
+    <div className={`flex items-baseline justify-between gap-2 px-3 py-2 rounded-lg border ${highlight ? 'bg-accent/5 border-accent/20' : 'bg-card border-border/40'}`}>
+      <span className="text-xs text-muted-foreground leading-tight">{label}</span>
+      <span className={`text-sm font-semibold tabular-nums ${isZero ? 'text-muted-foreground/40' : highlight ? 'text-accent' : 'text-foreground'}`}>{displayValue}</span>
     </div>
   );
 }
