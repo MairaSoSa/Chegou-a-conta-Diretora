@@ -1701,7 +1701,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Etapas e Modalidades Oferecidas</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
                         <InfraItem label="Ed. Infantil" value={censoLatest.in_inf} />
                         <InfraItem label="Creche" value={censoLatest.in_inf_cre} />
                         <InfraItem label="Pré-escola" value={censoLatest.in_inf_pre} />
@@ -1718,7 +1718,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Organização</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
                         <InfraItem label="Conselho Escolar" value={censoLatest.in_orgao_conselho_escolar} />
                         <InfraItem label="APM / APP" value={censoLatest.in_orgao_ass_pais_mestres} />
                         <InfraItem label="Grêmio Estudantil" value={censoLatest.in_orgao_gremio_estudantil} />
@@ -1738,7 +1738,7 @@ export default function Dashboard() {
                   <div className="space-y-4">
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Água</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
                         <InfraItem label="Água Potável" value={censoLatest.in_agua_potavel} />
                         <InfraItem label="Rede Pública" value={censoLatest.in_agua_rede_publica} />
                         <InfraItem label="Poço Artesiano" value={censoLatest.in_agua_poco_artesiano} />
@@ -1750,7 +1750,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Energia</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
                         <InfraItem label="Rede Pública" value={censoLatest.in_energia_rede_publica} />
                         <InfraItem label="Gerador Fóssil" value={censoLatest.in_energia_gerador_fossil} />
                         <InfraItem label="Renovável" value={censoLatest.in_energia_renovavel} />
@@ -1759,7 +1759,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Esgoto</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
                         <InfraItem label="Rede Pública" value={censoLatest.in_esgoto_rede_publica} />
                         <InfraItem label="Fossa Séptica" value={censoLatest.in_esgoto_fossa_septica} />
                         <InfraItem label="Fossa Comum" value={censoLatest.in_esgoto_fossa_comum} />
@@ -1768,7 +1768,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Lixo</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
                         <InfraItem label="Coleta" value={censoLatest.in_lixo_servico_coleta} />
                         <InfraItem label="Queima" value={censoLatest.in_lixo_queima} />
                         <InfraItem label="Enterra" value={censoLatest.in_lixo_enterra} />
@@ -1798,7 +1798,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Espaços</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
                         <InfraItem label="Biblioteca" value={censoLatest.in_biblioteca} />
                         <InfraItem label="Sala de Leitura" value={censoLatest.in_biblioteca_sala_leitura} />
                         <InfraItem label="Lab. Informática" value={censoLatest.in_laboratorio_informatica} />
@@ -1828,7 +1828,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Banheiros</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
                         <InfraItem label="Banheiro" value={censoLatest.in_banheiro} />
                         <InfraItem label="Banheiro Ed. Infantil" value={censoLatest.in_banheiro_ei} />
                         <InfraItem label="Banheiro PNE" value={censoLatest.in_banheiro_pne} />
@@ -1838,7 +1838,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Acessibilidade</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
                         <InfraItem label="Rampas" value={censoLatest.in_acessibilidade_rampas} />
                         <InfraItem label="Corrimão" value={censoLatest.in_acessibilidade_corrimao} />
                         <InfraItem label="Elevador" value={censoLatest.in_acessibilidade_elevador} />
@@ -1877,7 +1877,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Internet e Conectividade</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
                         <InfraItem label="Internet" value={censoLatest.in_internet} />
                         <InfraItem label="Banda Larga" value={censoLatest.in_banda_larga} />
                         <InfraItem label="Internet p/ Alunos" value={censoLatest.in_internet_alunos} />
@@ -1923,7 +1923,7 @@ export default function Dashboard() {
                   expanded={expandedSections['materiais'] ?? false}
                   onToggle={() => toggleSection('materiais')}
                 >
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
                     <InfraItem label="Multimídia" value={censoLatest.in_material_ped_multimidia} />
                     <InfraItem label="Infantil" value={censoLatest.in_material_ped_infantil} />
                     <InfraItem label="Científico" value={censoLatest.in_material_ped_cientifico} />
@@ -2367,10 +2367,11 @@ function InfoItem({ label, value, highlight }: { label: string; value: string | 
 
 function InfraItem({ label, value }: { label: string; value: number | undefined | null }) {
   if (value === undefined || value === null) return null;
+  const yes = value === 1;
   return (
-    <div className={`p-3 rounded-xl ${value === 1 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-400'}`}>
-      <p className="text-xs opacity-70 mb-1">{label}</p>
-      <p className="font-medium">{value === 1 ? "Sim" : "Não"}</p>
+    <div className="flex items-center gap-2 py-1 px-2">
+      <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${yes ? 'bg-green-500' : 'bg-red-300'}`} />
+      <span className={`text-xs ${yes ? 'text-foreground' : 'text-muted-foreground/60 line-through decoration-muted-foreground/30'}`}>{label}</span>
     </div>
   );
 }
