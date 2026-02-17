@@ -2274,8 +2274,8 @@ function EvolutionChart({ title, data, lines, icon, description, unit }: { title
   const hasData = data.some(d => lines.some(l => d[l.key] != null && d[l.key] !== 0));
   if (!hasData) return null;
 
-  const isSinglePoint = data.length <= 1;
   const unitSuffix = unit || '';
+  const multiSeries = lines.length > 1;
 
   const formatValue = (value: number) => {
     if (typeof value !== 'number') return value;
@@ -2284,47 +2284,30 @@ function EvolutionChart({ title, data, lines, icon, description, unit }: { title
   };
 
   return (
-    <div className="p-4 rounded-xl bg-muted/20 border border-border/30">
-      <p className="text-sm font-semibold text-foreground mb-0.5 flex items-center gap-2">
+    <div className="p-3 rounded-xl bg-muted/20 border border-border/30">
+      <p className="text-xs font-semibold text-foreground mb-0.5 flex items-center gap-1.5">
         {icon}
         {title}
       </p>
       {description && (
-        <p className="text-[10px] text-muted-foreground mb-3 ml-6">{description}</p>
+        <p className="text-[10px] text-muted-foreground mb-2 ml-5">{description}</p>
       )}
-      {!description && <div className="mb-3" />}
-      <ResponsiveContainer width="100%" height={200}>
-        {isSinglePoint ? (
-          <BarChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey="ano" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}${unitSuffix}`} />
-            <Tooltip
-              formatter={(value: number, name: string) => [formatValue(value), name]}
-              labelFormatter={(label) => `Ano: ${label}`}
-              contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "12px" }}
-            />
-            <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
-            {lines.map((line) => (
-              <Bar key={line.key} dataKey={line.key} fill={line.color} name={line.name} radius={[4, 4, 0, 0]} />
-            ))}
-          </BarChart>
-        ) : (
-          <BarChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-            <XAxis dataKey="ano" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}${unitSuffix}`} axisLine={false} tickLine={false} />
-            <Tooltip
-              formatter={(value: number, name: string) => [formatValue(value), name]}
-              labelFormatter={(label) => `Ano: ${label}`}
-              contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
-            />
-            <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
-            {lines.map((line) => (
-              <Bar key={line.key} dataKey={line.key} fill={line.color} name={line.name} radius={[4, 4, 0, 0]} />
-            ))}
-          </BarChart>
-        )}
+      {!description && <div className="mb-2" />}
+      <ResponsiveContainer width="100%" height={140}>
+        <BarChart data={data} margin={{ top: 0, right: 5, bottom: 0, left: -15 }} barCategoryGap="30%">
+          <XAxis dataKey="ano" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${v}${unitSuffix}`} axisLine={false} tickLine={false} width={40} />
+          <Tooltip
+            formatter={(value: number, name: string) => [formatValue(value), name]}
+            labelFormatter={(label) => `${label}`}
+            contentStyle={{ borderRadius: "10px", border: "none", fontSize: "11px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", padding: "6px 10px" }}
+            cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+          />
+          {multiSeries && <Legend iconSize={8} wrapperStyle={{ fontSize: "10px", paddingTop: 0 }} />}
+          {lines.map((line) => (
+            <Bar key={line.key} dataKey={line.key} fill={line.color} name={line.name} radius={[3, 3, 0, 0]} maxBarSize={32} />
+          ))}
+        </BarChart>
       </ResponsiveContainer>
     </div>
   );
