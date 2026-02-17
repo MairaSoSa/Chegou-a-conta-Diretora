@@ -8,7 +8,8 @@ import {
   MapPin, GraduationCap, Info, ExternalLink,
   School, Loader2, BarChart3, TrendingUp,
   BookOpen, Award, ChevronDown, ChevronUp,
-  Globe, Building2, TreePine, Filter, X, Clock, Heart
+  Globe, Building2, TreePine, Filter, X, Clock, Heart,
+  CheckCircle, CircleAlert
 } from "lucide-react";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas } from "@/hooks/use-schools";
 import { usePddeInfo } from "@/hooks/use-pdde";
@@ -97,6 +98,144 @@ export default function Dashboard() {
     }
     return merged;
   }, [evolucaoData, latestAno]);
+
+  const alertasPreocupantes = useMemo(() => {
+    const alertas: { tipo: 'critical' | 'warning'; titulo: string; descricao: string; indicador: string }[] = [];
+    const ind = indicadoresLatest;
+
+    if (ind.ideb) {
+      const vals = [
+        { v: ind.ideb.ideb_ai, name: 'Anos Iniciais' },
+        { v: ind.ideb.ideb_af, name: 'Anos Finais' },
+        { v: ind.ideb.ideb_em, name: 'Ensino Médio' },
+      ];
+      for (const { v, name } of vals) {
+        if (v != null && Number(v) > 0) {
+          if (Number(v) < 4.0) {
+            alertas.push({ tipo: 'critical', titulo: `IDEB ${name} muito baixo: ${Number(v).toFixed(1)}`, descricao: `O IDEB de ${name} está abaixo de 4,0, o que indica necessidade urgente de ações para melhoria da qualidade do ensino.`, indicador: 'ideb' });
+          } else if (Number(v) < 5.0) {
+            alertas.push({ tipo: 'warning', titulo: `IDEB ${name} requer atenção: ${Number(v).toFixed(1)}`, descricao: `O IDEB de ${name} está entre 4,0 e 5,0. Recomenda-se acompanhamento e planejamento de ações pedagógicas.`, indicador: 'ideb' });
+          }
+        }
+      }
+    }
+
+    if (ind.taxas_rendimento) {
+      const abandono = [
+        { v: ind.taxas_rendimento.abandono_fund, name: 'Fundamental' },
+        { v: ind.taxas_rendimento.abandono_med, name: 'Ensino Médio' },
+      ];
+      for (const { v, name } of abandono) {
+        if (v != null) {
+          if (Number(v) > 5) {
+            alertas.push({ tipo: 'critical', titulo: `Abandono escolar elevado no ${name}: ${Number(v).toFixed(1)}%`, descricao: `A taxa de abandono acima de 5% exige ações imediatas de busca ativa e acolhimento dos alunos.`, indicador: 'taxas_rendimento' });
+          } else if (Number(v) > 2) {
+            alertas.push({ tipo: 'warning', titulo: `Abandono escolar no ${name}: ${Number(v).toFixed(1)}%`, descricao: `A taxa de abandono entre 2% e 5% merece atenção. Identifique os alunos em risco e implemente estratégias de permanência.`, indicador: 'taxas_rendimento' });
+          }
+        }
+      }
+      const reprov = [
+        { v: ind.taxas_rendimento.reprovacao_fund, name: 'Fundamental' },
+        { v: ind.taxas_rendimento.reprovacao_med, name: 'Ensino Médio' },
+      ];
+      for (const { v, name } of reprov) {
+        if (v != null) {
+          if (Number(v) > 20) {
+            alertas.push({ tipo: 'critical', titulo: `Reprovação alta no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Taxa de reprovação acima de 20% indica necessidade urgente de revisão das práticas pedagógicas e avaliativas.`, indicador: 'taxas_rendimento' });
+          } else if (Number(v) > 10) {
+            alertas.push({ tipo: 'warning', titulo: `Reprovação no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Taxa de reprovação entre 10% e 20%. Avalie as causas e considere reforço escolar e acompanhamento individualizado.`, indicador: 'taxas_rendimento' });
+          }
+        }
+      }
+    }
+
+    if (ind.tdi) {
+      const tdiVals = [
+        { v: ind.tdi.fundamental_total, name: 'Fundamental' },
+        { v: ind.tdi.medio_total, name: 'Ensino Médio' },
+      ];
+      for (const { v, name } of tdiVals) {
+        if (v != null) {
+          if (Number(v) > 30) {
+            alertas.push({ tipo: 'critical', titulo: `Distorção idade-série alta no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Mais de 30% dos alunos estão com idade acima da esperada para a série. Considere programas de correção de fluxo.`, indicador: 'tdi' });
+          } else if (Number(v) > 20) {
+            alertas.push({ tipo: 'warning', titulo: `Distorção idade-série no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Entre 20% e 30% dos alunos estão com defasagem. Monitore e planeje intervenções pedagógicas.`, indicador: 'tdi' });
+          }
+        }
+      }
+    }
+
+    if (ind.dsu) {
+      const dsuVals = [
+        { v: ind.dsu.percentual_fund, name: 'Fundamental' },
+        { v: ind.dsu.percentual_med, name: 'Ensino Médio' },
+      ];
+      for (const { v, name } of dsuVals) {
+        if (v != null && Number(v) > 0) {
+          if (Number(v) < 60) {
+            alertas.push({ tipo: 'critical', titulo: `Poucos docentes com curso superior no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Menos de 60% dos docentes possuem formação superior. Isso impacta diretamente a qualidade do ensino.`, indicador: 'dsu' });
+          } else if (Number(v) < 80) {
+            alertas.push({ tipo: 'warning', titulo: `Formação docente no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Entre 60% e 80% dos docentes têm curso superior. Incentive a formação continuada.`, indicador: 'dsu' });
+          }
+        }
+      }
+    }
+
+    if (ind.had) {
+      const hadVals = [
+        { v: ind.had.media_fund, name: 'Fundamental' },
+        { v: ind.had.media_med, name: 'Ensino Médio' },
+      ];
+      for (const { v, name } of hadVals) {
+        if (v != null && Number(v) > 0 && Number(v) < 4) {
+          alertas.push({ tipo: 'warning', titulo: `Carga horária baixa no ${name}: ${Number(v).toFixed(1)}h/dia`, descricao: `A média de horas-aula diária está abaixo de 4 horas. Considere ampliar a jornada escolar.`, indicador: 'had' });
+        }
+      }
+    }
+
+    if (ind.atu) {
+      const atuVals = [
+        { v: ind.atu.media_fund, name: 'Fundamental' },
+        { v: ind.atu.media_med, name: 'Ensino Médio' },
+      ];
+      for (const { v, name } of atuVals) {
+        if (v != null && Number(v) > 35) {
+          alertas.push({ tipo: 'warning', titulo: `Turmas superlotadas no ${name}: ${Number(v).toFixed(1)} alunos/turma`, descricao: `A média de alunos por turma acima de 35 prejudica a qualidade do atendimento pedagógico.`, indicador: 'atu' });
+        }
+      }
+    }
+
+    if (ind.icg) {
+      const nivel = Number(ind.icg.nivel);
+      if (nivel === 5 || nivel === 6) {
+        alertas.push({ tipo: 'warning', titulo: `Alta complexidade de gestão: Nível ${nivel}`, descricao: `A escola possui nível elevado de complexidade de gestão, o que demanda maior suporte administrativo e pedagógico.`, indicador: 'icg' });
+      }
+    }
+
+    if (ind.ird) {
+      const media = Number(ind.ird.media_ird ?? ind.ird.media);
+      if (media > 0 && media < 2.0) {
+        alertas.push({ tipo: 'warning', titulo: `Baixa regularidade docente: ${media.toFixed(2)}`, descricao: `O índice de regularidade do corpo docente está abaixo de 2,0, indicando alta rotatividade de professores.`, indicador: 'ird' });
+      }
+    }
+
+    if (ind.afd) {
+      const funCat1 = Number(ind.afd.fun_cat_1);
+      if (funCat1 > 0 && funCat1 < 50) {
+        alertas.push({ tipo: 'warning', titulo: `Adequação da formação docente baixa: ${funCat1.toFixed(1)}%`, descricao: `Menos de 50% dos docentes do Fundamental possuem formação adequada (Grupo 1). Isso afeta a qualidade do ensino.`, indicador: 'afd' });
+      }
+    }
+
+    if (ind.ied) {
+      const n5 = Number(ind.ied.nivel_5 || 0);
+      const n6 = Number(ind.ied.nivel_6 || 0);
+      if ((n5 + n6) > 50) {
+        alertas.push({ tipo: 'warning', titulo: `Alto esforço docente: ${(n5 + n6).toFixed(1)}% nos níveis 5 e 6`, descricao: `Mais da metade dos docentes atuam com sobrecarga (múltiplas escolas e turnos). Isso pode impactar a qualidade do trabalho pedagógico.`, indicador: 'ied' });
+      }
+    }
+
+    return alertas;
+  }, [indicadoresLatest]);
 
   const evolutionCharts = useMemo(() => {
     if (!evolucaoData) return null;
@@ -632,6 +771,73 @@ export default function Dashboard() {
                   />
                 </div>
 
+                {(() => {
+                  const criticals = alertasPreocupantes.filter(a => a.tipo === 'critical');
+                  const warnings = alertasPreocupantes.filter(a => a.tipo === 'warning');
+                  const total = alertasPreocupantes.length;
+                  const borderColor = criticals.length > 0 ? 'border-l-red-500' : warnings.length > 0 ? 'border-l-amber-400' : 'border-l-green-500';
+
+                  return (
+                    <Card className={`card-clay border-l-4 ${borderColor}`}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <AlertTriangle className={`w-5 h-5 ${criticals.length > 0 ? 'text-red-500' : warnings.length > 0 ? 'text-amber-500' : 'text-green-500'}`} />
+                          Análise dos Dados
+                        </CardTitle>
+                        <p className="text-xs text-muted-foreground">
+                          {total > 0 ? `${total} ponto${total > 1 ? 's' : ''} de atenção identificado${total > 1 ? 's' : ''}` : 'Nenhum ponto de atenção identificado'}
+                        </p>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {total === 0 ? (
+                          <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border border-green-200">
+                            <CheckCircle className="w-6 h-6 text-green-600 shrink-0" />
+                            <div>
+                              <p className="font-semibold text-green-800">Parabéns!</p>
+                              <p className="text-sm text-green-700">Os indicadores da escola estão dentro das faixas esperadas. Continue o bom trabalho!</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {criticals.length > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">Pontos Críticos</p>
+                                <div className="space-y-2">
+                                  {criticals.map((alerta, i) => (
+                                    <div key={i} className="flex items-start gap-2.5 p-3 rounded-lg bg-red-50 border border-red-100">
+                                      <CircleAlert className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                                      <div>
+                                        <p className="text-sm font-semibold text-red-800">{alerta.titulo}</p>
+                                        <p className="text-xs text-red-700 mt-0.5 leading-snug">{alerta.descricao}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {warnings.length > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-2">Pontos de Atenção</p>
+                                <div className="space-y-2">
+                                  {warnings.map((alerta, i) => (
+                                    <div key={i} className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 border border-amber-100">
+                                      <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                                      <div>
+                                        <p className="text-sm font-semibold text-amber-800">{alerta.titulo}</p>
+                                        <p className="text-xs text-amber-700 mt-0.5 leading-snug">{alerta.descricao}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+
                 <Card className="card-clay border-l-4 border-l-green-500">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
@@ -917,187 +1123,229 @@ export default function Dashboard() {
                 </Card>
 
                 {(indicadoresLatest.icg || indicadoresLatest.tdi || indicadoresLatest.ird || indicadoresLatest.taxas_rendimento || indicadoresLatest.atu || indicadoresLatest.had || indicadoresLatest.dsu || indicadoresLatest.afd || indicadoresLatest.ideb || indicadoresLatest.inse || indicadoresLatest.saeb || indicadoresLatest.ied || indicadoresLatest.taxa_nao_resposta) && (
-                  <Card className="card-clay border-l-4 border-l-blue-500">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <BarChart3 className="w-5 h-5 text-accent" />
-                        Indicadores Educacionais (dados mais recentes)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-5">
+                  <>
+                    <div className="flex items-center gap-2 mt-2">
+                      <BarChart3 className="w-5 h-5 text-accent" />
+                      <h3 className="text-base font-semibold text-foreground">Indicadores Educacionais (dados mais recentes)</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {indicadoresLatest.ideb && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <Award className="w-3.5 h-3.5 text-amber-600" /> IDEB
-                            {indicadoresLatest.ideb._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.ideb._ano}</span>}
-                          </p>
-                          {(indicadoresLatest.ideb.ideb_ai || indicadoresLatest.ideb.ideb_af) && (
-                            <div className="mb-2">
-                              <p className="text-[10px] text-muted-foreground mb-1 font-medium">Fundamental</p>
-                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                                <InfoItem label="IDEB Anos Iniciais" value={indicadoresLatest.ideb.ideb_ai} highlight />
-                                <InfoItem label="IDEB Anos Finais" value={indicadoresLatest.ideb.ideb_af} highlight />
-                                <InfoItem label="Nota Matemática AF" value={indicadoresLatest.ideb.nota_mt_af} />
-                                <InfoItem label="Nota Português AF" value={indicadoresLatest.ideb.nota_lp_af} />
-                                <InfoItem label="Rendimento AF" value={indicadoresLatest.ideb.rendimento_af != null ? (indicadoresLatest.ideb.rendimento_af * 100).toFixed(1) + '%' : null} />
-                                <InfoItem label="Projeção AF" value={indicadoresLatest.ideb.projecao_af} />
+                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
+                          <CardHeader className="pb-1 pt-3 px-3">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-amber-100 flex items-center justify-center"><Award className="w-3 h-3 text-amber-600" /></span>
+                              IDEB
+                              {indicadoresLatest.ideb._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.ideb._ano}</span>}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-3 pb-3 pt-1">
+                            {(indicadoresLatest.ideb.ideb_ai || indicadoresLatest.ideb.ideb_af) && (
+                              <div className="mb-2">
+                                <p className="text-[10px] text-muted-foreground mb-1 font-medium">Fundamental</p>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                                  <InfoItem label="IDEB Anos Iniciais" value={indicadoresLatest.ideb.ideb_ai} highlight />
+                                  <InfoItem label="IDEB Anos Finais" value={indicadoresLatest.ideb.ideb_af} highlight />
+                                  <InfoItem label="Nota Matemática AF" value={indicadoresLatest.ideb.nota_mt_af} />
+                                  <InfoItem label="Nota Português AF" value={indicadoresLatest.ideb.nota_lp_af} />
+                                  <InfoItem label="Rendimento AF" value={indicadoresLatest.ideb.rendimento_af != null ? (indicadoresLatest.ideb.rendimento_af * 100).toFixed(1) + '%' : null} />
+                                  <InfoItem label="Projeção AF" value={indicadoresLatest.ideb.projecao_af} />
+                                </div>
                               </div>
-                            </div>
-                          )}
-                          {indicadoresLatest.ideb.ideb_em && (
-                            <div>
-                              <p className="text-[10px] text-muted-foreground mb-1 font-medium">Ensino Médio</p>
-                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                                <InfoItem label="IDEB Ensino Médio" value={indicadoresLatest.ideb.ideb_em} highlight />
-                                <InfoItem label="Nota Matemática EM" value={indicadoresLatest.ideb.nota_mt_em} />
-                                <InfoItem label="Nota Português EM" value={indicadoresLatest.ideb.nota_lp_em} />
-                                <InfoItem label="Rendimento EM" value={indicadoresLatest.ideb.rendimento_em != null ? (indicadoresLatest.ideb.rendimento_em * 100).toFixed(1) + '%' : null} />
-                                <InfoItem label="Projeção EM" value={indicadoresLatest.ideb.projecao_em} />
+                            )}
+                            {indicadoresLatest.ideb.ideb_em && (
+                              <div>
+                                <p className="text-[10px] text-muted-foreground mb-1 font-medium">Ensino Médio</p>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                                  <InfoItem label="IDEB Ensino Médio" value={indicadoresLatest.ideb.ideb_em} highlight />
+                                  <InfoItem label="Nota Matemática EM" value={indicadoresLatest.ideb.nota_mt_em} />
+                                  <InfoItem label="Nota Português EM" value={indicadoresLatest.ideb.nota_lp_em} />
+                                  <InfoItem label="Rendimento EM" value={indicadoresLatest.ideb.rendimento_em != null ? (indicadoresLatest.ideb.rendimento_em * 100).toFixed(1) + '%' : null} />
+                                  <InfoItem label="Projeção EM" value={indicadoresLatest.ideb.projecao_em} />
+                                </div>
                               </div>
-                            </div>
-                          )}
-                        </div>
+                            )}
+                          </CardContent>
+                        </Card>
                       )}
 
                       {indicadoresLatest.icg && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <BarChart3 className="w-3.5 h-3.5 text-accent" /> ICG - Complexidade de Gestão
-                            {indicadoresLatest.icg._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.icg._ano}</span>}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Nível" value={indicadoresLatest.icg.nivel_texto || `Nível ${indicadoresLatest.icg.nivel}`} highlight />
-                          </div>
-                        </div>
+                        <Card className="card-clay">
+                          <CardHeader className="pb-1 pt-3 px-3">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-accent/10 flex items-center justify-center"><BarChart3 className="w-3 h-3 text-accent" /></span>
+                              ICG
+                              {indicadoresLatest.icg._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.icg._ano}</span>}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-3 pb-3 pt-1">
+                            <InfoItem label="Complexidade de Gestão" value={indicadoresLatest.icg.nivel_texto || `Nível ${indicadoresLatest.icg.nivel}`} highlight />
+                          </CardContent>
+                        </Card>
                       )}
 
                       {indicadoresLatest.inse && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <TrendingUp className="w-3.5 h-3.5 text-purple-600" /> INSE - Nível Socioeconômico
-                            {indicadoresLatest.inse._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.inse._ano}</span>}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            <InfoItem label="Classificação" value={indicadoresLatest.inse.inse_classificacao || indicadoresLatest.inse.nivel_inse} highlight />
-                            <InfoItem label="Média INSE" value={indicadoresLatest.inse.media_inse} />
-                            <InfoItem label="Alunos avaliados" value={indicadoresLatest.inse.qtd_alunos_inse} />
-                          </div>
-                        </div>
-                      )}
-
-                      {indicadoresLatest.tdi && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <BarChart3 className="w-3.5 h-3.5 text-orange-600" /> TDI - Distorção Idade-Série (%)
-                            {indicadoresLatest.tdi._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.tdi._ano}</span>}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            <InfoItem label="Fundamental Total" value={indicadoresLatest.tdi.fundamental_total} highlight />
-                            <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.tdi.fundamental_ai} />
-                            <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.tdi.fundamental_af} />
-                            <InfoItem label="Fund. 6º ano" value={indicadoresLatest.tdi.fund_6ano} />
-                            <InfoItem label="Fund. 7º ano" value={indicadoresLatest.tdi.fund_7ano} />
-                            <InfoItem label="Fund. 8º ano" value={indicadoresLatest.tdi.fund_8ano} />
-                            <InfoItem label="Fund. 9º ano" value={indicadoresLatest.tdi.fund_9ano} />
-                            <InfoItem label="Médio Total" value={indicadoresLatest.tdi.medio_total} highlight />
-                            <InfoItem label="Médio 1ª série" value={indicadoresLatest.tdi.medio_1serie} />
-                            <InfoItem label="Médio 2ª série" value={indicadoresLatest.tdi.medio_2serie} />
-                            <InfoItem label="Médio 3ª série" value={indicadoresLatest.tdi.medio_3serie} />
-                            <InfoItem label="Médio 4ª série" value={indicadoresLatest.tdi.medio_4serie} />
-                          </div>
-                        </div>
+                        <Card className="card-clay">
+                          <CardHeader className="pb-1 pt-3 px-3">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-purple-100 flex items-center justify-center"><TrendingUp className="w-3 h-3 text-purple-600" /></span>
+                              INSE
+                              {indicadoresLatest.inse._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.inse._ano}</span>}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-3 pb-3 pt-1">
+                            <div className="grid grid-cols-1 gap-2">
+                              <InfoItem label="Classificação" value={indicadoresLatest.inse.inse_classificacao || indicadoresLatest.inse.nivel_inse} highlight />
+                              <InfoItem label="Média INSE" value={indicadoresLatest.inse.media_inse} />
+                              <InfoItem label="Alunos avaliados" value={indicadoresLatest.inse.qtd_alunos_inse} />
+                            </div>
+                          </CardContent>
+                        </Card>
                       )}
 
                       {indicadoresLatest.ird && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <BarChart3 className="w-3.5 h-3.5 text-teal-600" /> IRD - Regularidade do Docente
-                            {indicadoresLatest.ird._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.ird._ano}</span>}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Média IRD" value={indicadoresLatest.ird.media_ird != null ? Number(indicadoresLatest.ird.media_ird).toFixed(2) : null} highlight />
-                          </div>
-                        </div>
+                        <Card className="card-clay">
+                          <CardHeader className="pb-1 pt-3 px-3">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-teal-100 flex items-center justify-center"><BarChart3 className="w-3 h-3 text-teal-600" /></span>
+                              IRD
+                              {indicadoresLatest.ird._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.ird._ano}</span>}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-3 pb-3 pt-1">
+                            <InfoItem label="Regularidade do Docente" value={indicadoresLatest.ird.media_ird != null ? Number(indicadoresLatest.ird.media_ird).toFixed(2) : null} highlight />
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {indicadoresLatest.tdi && (
+                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
+                          <CardHeader className="pb-1 pt-3 px-3">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-orange-100 flex items-center justify-center"><BarChart3 className="w-3 h-3 text-orange-600" /></span>
+                              TDI - Distorção Idade-Série (%)
+                              {indicadoresLatest.tdi._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.tdi._ano}</span>}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-3 pb-3 pt-1">
+                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                              <InfoItem label="Fundamental Total" value={indicadoresLatest.tdi.fundamental_total} highlight />
+                              <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.tdi.fundamental_ai} />
+                              <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.tdi.fundamental_af} />
+                              <InfoItem label="Fund. 6º ano" value={indicadoresLatest.tdi.fund_6ano} />
+                              <InfoItem label="Fund. 7º ano" value={indicadoresLatest.tdi.fund_7ano} />
+                              <InfoItem label="Fund. 8º ano" value={indicadoresLatest.tdi.fund_8ano} />
+                              <InfoItem label="Fund. 9º ano" value={indicadoresLatest.tdi.fund_9ano} />
+                              <InfoItem label="Médio Total" value={indicadoresLatest.tdi.medio_total} highlight />
+                              <InfoItem label="Médio 1ª série" value={indicadoresLatest.tdi.medio_1serie} />
+                              <InfoItem label="Médio 2ª série" value={indicadoresLatest.tdi.medio_2serie} />
+                              <InfoItem label="Médio 3ª série" value={indicadoresLatest.tdi.medio_3serie} />
+                              <InfoItem label="Médio 4ª série" value={indicadoresLatest.tdi.medio_4serie} />
+                            </div>
+                          </CardContent>
+                        </Card>
                       )}
 
                       {indicadoresLatest.taxas_rendimento && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <TrendingUp className="w-3.5 h-3.5 text-green-600" /> Taxas de Rendimento (%)
-                            {indicadoresLatest.taxas_rendimento._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.taxas_rendimento._ano}</span>}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            <InfoItem label="Aprovação Fund." value={indicadoresLatest.taxas_rendimento.aprovacao_fund} />
-                            <InfoItem label="Aprovação Fund. AI" value={indicadoresLatest.taxas_rendimento.aprovacao_fund_ai} />
-                            <InfoItem label="Aprovação Fund. AF" value={indicadoresLatest.taxas_rendimento.aprovacao_fund_af} />
-                            <InfoItem label="Aprovação Médio" value={indicadoresLatest.taxas_rendimento.aprovacao_med} />
-                            <InfoItem label="Reprovação Fund." value={indicadoresLatest.taxas_rendimento.reprovacao_fund} />
-                            <InfoItem label="Reprovação Fund. AI" value={indicadoresLatest.taxas_rendimento.reprovacao_fund_ai} />
-                            <InfoItem label="Reprovação Fund. AF" value={indicadoresLatest.taxas_rendimento.reprovacao_fund_af} />
-                            <InfoItem label="Reprovação Médio" value={indicadoresLatest.taxas_rendimento.reprovacao_med} />
-                            <InfoItem label="Abandono Fund." value={indicadoresLatest.taxas_rendimento.abandono_fund} />
-                            <InfoItem label="Abandono Fund. AI" value={indicadoresLatest.taxas_rendimento.abandono_fund_ai} />
-                            <InfoItem label="Abandono Fund. AF" value={indicadoresLatest.taxas_rendimento.abandono_fund_af} />
-                            <InfoItem label="Abandono Médio" value={indicadoresLatest.taxas_rendimento.abandono_med} />
-                          </div>
-                        </div>
+                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
+                          <CardHeader className="pb-1 pt-3 px-3">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-green-100 flex items-center justify-center"><TrendingUp className="w-3 h-3 text-green-600" /></span>
+                              Taxas de Rendimento (%)
+                              {indicadoresLatest.taxas_rendimento._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.taxas_rendimento._ano}</span>}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-3 pb-3 pt-1">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                              <InfoItem label="Aprovação Fund." value={indicadoresLatest.taxas_rendimento.aprovacao_fund} />
+                              <InfoItem label="Aprovação Fund. AI" value={indicadoresLatest.taxas_rendimento.aprovacao_fund_ai} />
+                              <InfoItem label="Aprovação Fund. AF" value={indicadoresLatest.taxas_rendimento.aprovacao_fund_af} />
+                              <InfoItem label="Aprovação Médio" value={indicadoresLatest.taxas_rendimento.aprovacao_med} />
+                              <InfoItem label="Reprovação Fund." value={indicadoresLatest.taxas_rendimento.reprovacao_fund} />
+                              <InfoItem label="Reprovação Fund. AI" value={indicadoresLatest.taxas_rendimento.reprovacao_fund_ai} />
+                              <InfoItem label="Reprovação Fund. AF" value={indicadoresLatest.taxas_rendimento.reprovacao_fund_af} />
+                              <InfoItem label="Reprovação Médio" value={indicadoresLatest.taxas_rendimento.reprovacao_med} />
+                              <InfoItem label="Abandono Fund." value={indicadoresLatest.taxas_rendimento.abandono_fund} />
+                              <InfoItem label="Abandono Fund. AI" value={indicadoresLatest.taxas_rendimento.abandono_fund_ai} />
+                              <InfoItem label="Abandono Fund. AF" value={indicadoresLatest.taxas_rendimento.abandono_fund_af} />
+                              <InfoItem label="Abandono Médio" value={indicadoresLatest.taxas_rendimento.abandono_med} />
+                            </div>
+                          </CardContent>
+                        </Card>
                       )}
 
                       {indicadoresLatest.atu && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <Users className="w-3.5 h-3.5 text-indigo-600" /> ATU - Média de Alunos por Turma
-                            {indicadoresLatest.atu._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.atu._ano}</span>}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Fundamental Total" value={indicadoresLatest.atu.media_fund} />
-                            <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.atu.media_fund_ai} />
-                            <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.atu.media_fund_af} />
-                            <InfoItem label="Ensino Médio" value={indicadoresLatest.atu.media_med} />
-                          </div>
-                        </div>
+                        <Card className="card-clay">
+                          <CardHeader className="pb-1 pt-3 px-3">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-indigo-100 flex items-center justify-center"><Users className="w-3 h-3 text-indigo-600" /></span>
+                              ATU
+                              {indicadoresLatest.atu._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.atu._ano}</span>}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-3 pb-3 pt-1">
+                            <div className="grid grid-cols-2 gap-2">
+                              <InfoItem label="Fund. Total" value={indicadoresLatest.atu.media_fund} />
+                              <InfoItem label="Fund. AI" value={indicadoresLatest.atu.media_fund_ai} />
+                              <InfoItem label="Fund. AF" value={indicadoresLatest.atu.media_fund_af} />
+                              <InfoItem label="Ens. Médio" value={indicadoresLatest.atu.media_med} />
+                            </div>
+                          </CardContent>
+                        </Card>
                       )}
 
                       {indicadoresLatest.had && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-cyan-600" /> HAD - Horas-Aula Diária
-                            {indicadoresLatest.had._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.had._ano}</span>}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Fundamental Total" value={indicadoresLatest.had.media_fund} />
-                            <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.had.media_fund_ai} />
-                            <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.had.media_fund_af} />
-                            <InfoItem label="Ensino Médio" value={indicadoresLatest.had.media_med} />
-                          </div>
-                        </div>
+                        <Card className="card-clay">
+                          <CardHeader className="pb-1 pt-3 px-3">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-cyan-100 flex items-center justify-center"><Clock className="w-3 h-3 text-cyan-600" /></span>
+                              HAD
+                              {indicadoresLatest.had._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.had._ano}</span>}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-3 pb-3 pt-1">
+                            <div className="grid grid-cols-2 gap-2">
+                              <InfoItem label="Fund. Total" value={indicadoresLatest.had.media_fund} />
+                              <InfoItem label="Fund. AI" value={indicadoresLatest.had.media_fund_ai} />
+                              <InfoItem label="Fund. AF" value={indicadoresLatest.had.media_fund_af} />
+                              <InfoItem label="Ens. Médio" value={indicadoresLatest.had.media_med} />
+                            </div>
+                          </CardContent>
+                        </Card>
                       )}
 
                       {indicadoresLatest.dsu && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <GraduationCap className="w-3.5 h-3.5 text-emerald-600" /> DSU - Docentes com Curso Superior (%)
-                            {indicadoresLatest.dsu._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.dsu._ano}</span>}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Fundamental Total" value={indicadoresLatest.dsu.percentual_fund} />
-                            <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.dsu.percentual_fund_ai} />
-                            <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.dsu.percentual_fund_af} />
-                            <InfoItem label="Ensino Médio" value={indicadoresLatest.dsu.percentual_med} />
-                          </div>
-                        </div>
+                        <Card className="card-clay">
+                          <CardHeader className="pb-1 pt-3 px-3">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-emerald-100 flex items-center justify-center"><GraduationCap className="w-3 h-3 text-emerald-600" /></span>
+                              DSU (%)
+                              {indicadoresLatest.dsu._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.dsu._ano}</span>}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-3 pb-3 pt-1">
+                            <div className="grid grid-cols-2 gap-2">
+                              <InfoItem label="Fund. Total" value={indicadoresLatest.dsu.percentual_fund} />
+                              <InfoItem label="Fund. AI" value={indicadoresLatest.dsu.percentual_fund_ai} />
+                              <InfoItem label="Fund. AF" value={indicadoresLatest.dsu.percentual_fund_af} />
+                              <InfoItem label="Ens. Médio" value={indicadoresLatest.dsu.percentual_med} />
+                            </div>
+                          </CardContent>
+                        </Card>
                       )}
 
                       {indicadoresLatest.afd && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <GraduationCap className="w-3.5 h-3.5 text-rose-600" /> AFD - Adequação da Formação Docente (%)
-                            {indicadoresLatest.afd._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.afd._ano}</span>}
-                          </p>
-                          <div className="space-y-2">
+                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
+                          <CardHeader className="pb-1 pt-3 px-3">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-rose-100 flex items-center justify-center"><GraduationCap className="w-3 h-3 text-rose-600" /></span>
+                              AFD - Adequação da Formação Docente (%)
+                              {indicadoresLatest.afd._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.afd._ano}</span>}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-3 pb-3 pt-1 space-y-2">
                             <div>
                               <p className="text-[10px] text-muted-foreground mb-1 font-medium">Fundamental</p>
-                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
                                 <InfoItem label="Grupo 1" value={indicadoresLatest.afd.fun_cat_1} />
                                 <InfoItem label="Grupo 2" value={indicadoresLatest.afd.fun_cat_2} />
                                 <InfoItem label="Grupo 3" value={indicadoresLatest.afd.fun_cat_3} />
@@ -1107,7 +1355,7 @@ export default function Dashboard() {
                             </div>
                             <div>
                               <p className="text-[10px] text-muted-foreground mb-1 font-medium">Ensino Médio</p>
-                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
                                 <InfoItem label="Grupo 1" value={indicadoresLatest.afd.med_cat_1} />
                                 <InfoItem label="Grupo 2" value={indicadoresLatest.afd.med_cat_2} />
                                 <InfoItem label="Grupo 3" value={indicadoresLatest.afd.med_cat_3} />
@@ -1115,21 +1363,24 @@ export default function Dashboard() {
                                 <InfoItem label="Grupo 5" value={indicadoresLatest.afd.med_cat_5} />
                               </div>
                             </div>
-                          </div>
-                        </div>
+                          </CardContent>
+                        </Card>
                       )}
 
                       {indicadoresLatest.saeb && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <Award className="w-3.5 h-3.5 text-blue-600" /> SAEB - Proficiência
-                            {indicadoresLatest.saeb._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.saeb._ano}</span>}
-                          </p>
-                          <div className="space-y-2">
+                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
+                          <CardHeader className="pb-1 pt-3 px-3">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-blue-100 flex items-center justify-center"><Award className="w-3 h-3 text-blue-600" /></span>
+                              SAEB - Proficiência
+                              {indicadoresLatest.saeb._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.saeb._ano}</span>}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-3 pb-3 pt-1 space-y-2">
                             {(indicadoresLatest.saeb.nota_mt_ai || indicadoresLatest.saeb.nota_lp_ai || indicadoresLatest.saeb.nota_mt_af || indicadoresLatest.saeb.nota_lp_af) && (
                               <div>
                                 <p className="text-[10px] text-muted-foreground mb-1 font-medium">Fundamental</p>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                   <InfoItem label="Matemática AI" value={indicadoresLatest.saeb.nota_mt_ai} />
                                   <InfoItem label="Português AI" value={indicadoresLatest.saeb.nota_lp_ai} />
                                   <InfoItem label="Matemática AF" value={indicadoresLatest.saeb.nota_mt_af} />
@@ -1140,55 +1391,65 @@ export default function Dashboard() {
                             {(indicadoresLatest.saeb.nota_mt_em || indicadoresLatest.saeb.nota_lp_em) && (
                               <div>
                                 <p className="text-[10px] text-muted-foreground mb-1 font-medium">Ensino Médio</p>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                   <InfoItem label="Matemática EM" value={indicadoresLatest.saeb.nota_mt_em} />
                                   <InfoItem label="Português EM" value={indicadoresLatest.saeb.nota_lp_em} />
                                 </div>
                               </div>
                             )}
-                          </div>
-                        </div>
+                          </CardContent>
+                        </Card>
                       )}
 
                       {indicadoresLatest.ied && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <GraduationCap className="w-3.5 h-3.5 text-pink-600" /> IED - Esforço Docente (%)
-                            {indicadoresLatest.ied._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.ied._ano}</span>}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                            <InfoItem label="Nível 1" value={indicadoresLatest.ied.nivel_1} />
-                            <InfoItem label="Nível 2" value={indicadoresLatest.ied.nivel_2} />
-                            <InfoItem label="Nível 3" value={indicadoresLatest.ied.nivel_3} />
-                            <InfoItem label="Nível 4" value={indicadoresLatest.ied.nivel_4} />
-                            <InfoItem label="Nível 5" value={indicadoresLatest.ied.nivel_5} />
-                            <InfoItem label="Nível 6" value={indicadoresLatest.ied.nivel_6} />
-                          </div>
-                          {(indicadoresLatest.ied.percentual_fund || indicadoresLatest.ied.percentual_med) && (
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
-                              <InfoItem label="Fundamental" value={indicadoresLatest.ied.percentual_fund} />
-                              <InfoItem label="Ensino Médio" value={indicadoresLatest.ied.percentual_med} />
+                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
+                          <CardHeader className="pb-1 pt-3 px-3">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-pink-100 flex items-center justify-center"><GraduationCap className="w-3 h-3 text-pink-600" /></span>
+                              IED - Esforço Docente (%)
+                              {indicadoresLatest.ied._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.ied._ano}</span>}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-3 pb-3 pt-1">
+                            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                              <InfoItem label="Nível 1" value={indicadoresLatest.ied.nivel_1} />
+                              <InfoItem label="Nível 2" value={indicadoresLatest.ied.nivel_2} />
+                              <InfoItem label="Nível 3" value={indicadoresLatest.ied.nivel_3} />
+                              <InfoItem label="Nível 4" value={indicadoresLatest.ied.nivel_4} />
+                              <InfoItem label="Nível 5" value={indicadoresLatest.ied.nivel_5} />
+                              <InfoItem label="Nível 6" value={indicadoresLatest.ied.nivel_6} />
                             </div>
-                          )}
-                        </div>
+                            {(indicadoresLatest.ied.percentual_fund || indicadoresLatest.ied.percentual_med) && (
+                              <div className="grid grid-cols-2 gap-2 mt-2">
+                                <InfoItem label="Fundamental" value={indicadoresLatest.ied.percentual_fund} />
+                                <InfoItem label="Ensino Médio" value={indicadoresLatest.ied.percentual_med} />
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
                       )}
 
                       {indicadoresLatest.taxa_nao_resposta && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <BarChart3 className="w-3.5 h-3.5 text-yellow-600" /> Taxa de Não-Resposta (%)
-                            {indicadoresLatest.taxa_nao_resposta._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.taxa_nao_resposta._ano}</span>}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            <InfoItem label="Fundamental" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_fund ?? indicadoresLatest.taxa_nao_resposta.tnr_fund} />
-                            <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_fund_ai ?? indicadoresLatest.taxa_nao_resposta.tnr_fund_ai} />
-                            <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_fund_af ?? indicadoresLatest.taxa_nao_resposta.tnr_fund_af} />
-                            <InfoItem label="Ensino Médio" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_med ?? indicadoresLatest.taxa_nao_resposta.tnr_med} />
-                          </div>
-                        </div>
+                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
+                          <CardHeader className="pb-1 pt-3 px-3">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-yellow-100 flex items-center justify-center"><BarChart3 className="w-3 h-3 text-yellow-600" /></span>
+                              Taxa de Não-Resposta (%)
+                              {indicadoresLatest.taxa_nao_resposta._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.taxa_nao_resposta._ano}</span>}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-3 pb-3 pt-1">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                              <InfoItem label="Fundamental" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_fund ?? indicadoresLatest.taxa_nao_resposta.tnr_fund} />
+                              <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_fund_ai ?? indicadoresLatest.taxa_nao_resposta.tnr_fund_ai} />
+                              <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_fund_af ?? indicadoresLatest.taxa_nao_resposta.tnr_fund_af} />
+                              <InfoItem label="Ensino Médio" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_med ?? indicadoresLatest.taxa_nao_resposta.tnr_med} />
+                            </div>
+                          </CardContent>
+                        </Card>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </>
                 )}
 
                 {(() => {
@@ -2174,9 +2435,9 @@ function InfoItem({ label, value, highlight }: { label: string; value: string | 
   if (value === null || value === undefined || value === '') return null;
   const displayValue = typeof value === 'number' ? (Number.isInteger(value) ? value.toLocaleString('pt-BR') : value.toFixed(2)) : String(value);
   return (
-    <div className="p-3 rounded-xl bg-muted/30">
-      <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      <p className={`font-medium ${highlight ? 'text-accent font-bold text-lg' : ''}`}>{displayValue}</p>
+    <div className="p-2 rounded-lg bg-muted/30">
+      <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
+      <p className={`text-sm font-medium ${highlight ? 'text-accent font-bold text-base' : ''}`}>{displayValue}</p>
     </div>
   );
 }
