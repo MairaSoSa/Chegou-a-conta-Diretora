@@ -867,48 +867,81 @@ export default function Dashboard() {
                     )}
                     {evolutionCharts && (() => {
                       const chartOptions = [
-                        { id: "matriculas", label: "Matrículas", icon: <Users className="w-4 h-4" />, color: "#2d6a4f", description: "Total de alunos matriculados na escola em cada ano. Acompanhe se a escola está crescendo ou perdendo alunos.", data: evolutionCharts.matriculas, lines: [{ key: "value", color: "#2d6a4f", name: "Matrículas" }], unit: " alunos" },
-                        { id: "docentes", label: "Docentes", icon: <GraduationCap className="w-4 h-4" />, color: "#40916c", description: "Quantidade de professores atuando na escola. Mais docentes pode significar menor sobrecarga e turmas menores.", data: evolutionCharts.docentes, lines: [{ key: "value", color: "#40916c", name: "Docentes" }] },
-                        { id: "taxas", label: "Taxas de Rendimento", icon: <TrendingUp className="w-4 h-4" />, color: "#52b788", description: "Mostra o percentual de alunos aprovados, reprovados e que abandonaram a escola. O ideal é aprovação alta e abandono zero.", data: evolutionCharts.taxasRendimento, lines: [{ key: "aprovacao", color: "#2d6a4f", name: "Aprovação" }, { key: "reprovacao", color: "#e76f51", name: "Reprovação" }, { key: "abandono", color: "#264653", name: "Abandono" }], unit: "%" },
-                        { id: "ideb", label: "IDEB", icon: <Award className="w-4 h-4" />, color: "#e9c46a", description: "Índice de Desenvolvimento da Educação Básica — a nota da escola no MEC. Combina desempenho nas provas e aprovação. Vai de 0 a 10.", data: evolutionCharts.ideb, lines: [{ key: "ideb_ai", color: "#2d6a4f", name: "Anos Iniciais" }, { key: "ideb_af", color: "#e76f51", name: "Anos Finais" }, { key: "ideb_em", color: "#264653", name: "Ensino Médio" }] },
-                        { id: "tdi", label: "Distorção Idade-Série", icon: <BarChart3 className="w-4 h-4" />, color: "#e76f51", description: "Percentual de alunos com 2 ou mais anos acima da idade esperada para sua série. Quanto menor, melhor — indica que os alunos estão na série certa.", data: evolutionCharts.tdi, lines: [{ key: "fund_total", color: "#e76f51", name: "Fund. Total" }, { key: "fund_af", color: "#264653", name: "Fund. AF" }, { key: "medio", color: "#2a9d8f", name: "Médio" }], unit: "%" },
-                        { id: "atu", label: "Alunos por Turma", icon: <Users className="w-4 h-4" />, color: "#6366f1", description: "Média de alunos em cada turma. Turmas muito grandes (acima de 35) dificultam o trabalho do professor e a aprendizagem.", data: evolutionCharts.atu, lines: hasMultipleYears ? [{ key: "fund", color: "#2d6a4f", name: "Fund. Total" }, { key: "fund_ai", color: "#40916c", name: "Fund. AI" }, { key: "fund_af", color: "#e76f51", name: "Fund. AF" }, { key: "medio", color: "#264653", name: "Médio" }] : [{ key: "fund", color: "#2d6a4f", name: "Fund. Total" }, { key: "fund_af", color: "#e76f51", name: "Fund. AF" }, { key: "medio", color: "#264653", name: "Médio" }] },
-                        { id: "had", label: "Horas-Aula Diária", icon: <Clock className="w-4 h-4" />, color: "#0891b2", description: "Quantas horas de aula os alunos têm por dia. O MEC recomenda no mínimo 4 horas para parcial e 7 horas para integral.", data: evolutionCharts.had, lines: hasMultipleYears ? [{ key: "fund", color: "#2d6a4f", name: "Fund. Total" }, { key: "fund_ai", color: "#40916c", name: "Fund. AI" }, { key: "fund_af", color: "#e76f51", name: "Fund. AF" }, { key: "medio", color: "#264653", name: "Médio" }] : [{ key: "fund", color: "#2d6a4f", name: "Fund. Total" }, { key: "fund_af", color: "#e76f51", name: "Fund. AF" }, { key: "medio", color: "#264653", name: "Médio" }], unit: "h" },
-                        { id: "dsu", label: "Docentes c/ Superior", icon: <GraduationCap className="w-4 h-4" />, color: "#059669", description: "Percentual de professores com diploma universitário. A LDB exige formação superior para atuar na educação básica.", data: evolutionCharts.dsu, lines: hasMultipleYears ? [{ key: "fund", color: "#2d6a4f", name: "Fund. Total" }, { key: "fund_ai", color: "#40916c", name: "Fund. AI" }, { key: "fund_af", color: "#e76f51", name: "Fund. AF" }, { key: "medio", color: "#264653", name: "Médio" }] : [{ key: "fund", color: "#2d6a4f", name: "Fund. Total" }, { key: "fund_af", color: "#e76f51", name: "Fund. AF" }, { key: "medio", color: "#264653", name: "Médio" }], unit: "%" },
-                        { id: "icg", label: "Complexidade de Gestão", icon: <BarChart3 className="w-4 h-4" />, color: "#b45309", description: "Nível de 1 a 6 que indica a complexidade da gestão escolar. Considera quantidade de turnos, etapas e tamanho da escola.", data: evolutionCharts.icg, lines: [{ key: "nivel", color: "#b45309", name: "Nível" }] },
-                        { id: "ird", label: "Regularidade Docente", icon: <BarChart3 className="w-4 h-4" />, color: "#0d9488", description: "Mede a permanência dos professores na escola (0 a 5). Quanto maior, mais os professores ficam na mesma escola — isso é bom para a continuidade pedagógica.", data: evolutionCharts.ird, lines: [{ key: "media", color: "#0d9488", name: "Média IRD" }] },
-                        { id: "inse", label: "Nível Socioeconômico", icon: <TrendingUp className="w-4 h-4" />, color: "#7c3aed", description: "Indicador do nível socioeconômico médio dos alunos. Ajuda a entender o contexto social da escola e planejar ações.", data: evolutionCharts.inse, lines: [{ key: "media", color: "#7c3aed", name: "Média INSE" }] },
-                        { id: "saeb", label: "SAEB - Proficiência", icon: <Award className="w-4 h-4" />, color: "#2563eb", description: "Notas nas provas do SAEB em Matemática e Português. São as avaliações nacionais que compõem o IDEB.", data: evolutionCharts.saeb, lines: [{ key: "mt_ai", color: "#2d6a4f", name: "Mat. AI" }, { key: "lp_ai", color: "#40916c", name: "Port. AI" }, { key: "mt_af", color: "#e76f51", name: "Mat. AF" }, { key: "lp_af", color: "#264653", name: "Port. AF" }, { key: "mt_em", color: "#7c3aed", name: "Mat. EM" }, { key: "lp_em", color: "#0891b2", name: "Port. EM" }] },
-                        { id: "ied", label: "Esforço Docente", icon: <GraduationCap className="w-4 h-4" />, color: "#db2777", description: "Distribuição dos professores por nível de esforço (1 a 6). Nível 1 = menor esforço, Nível 6 = maior esforço (muitas turmas, escolas e turnos).", data: evolutionCharts.ied, lines: [{ key: "nivel_1", color: "#2d6a4f", name: "Nível 1" }, { key: "nivel_2", color: "#40916c", name: "Nível 2" }, { key: "nivel_3", color: "#52b788", name: "Nível 3" }, { key: "nivel_4", color: "#e9c46a", name: "Nível 4" }, { key: "nivel_5", color: "#e76f51", name: "Nível 5" }, { key: "nivel_6", color: "#264653", name: "Nível 6" }], unit: "%" },
-                        { id: "tnr", label: "Taxa de Não-Resposta", icon: <BarChart3 className="w-4 h-4" />, color: "#ca8a04", description: "Percentual de itens não respondidos nas avaliações. Taxa alta pode indicar que alunos não estão completando as provas.", data: evolutionCharts.tnr, lines: [{ key: "fund", color: "#2d6a4f", name: "Fundamental" }, { key: "med", color: "#e76f51", name: "Médio" }], unit: "%" },
+                        { id: "matriculas", label: "Matrículas", icon: <Users className="w-4 h-4" />, color: "#0ea5e9", description: "Total de alunos matriculados na escola em cada ano. Acompanhe se a escola está crescendo ou perdendo alunos.", data: evolutionCharts.matriculas, lines: [{ key: "value", color: "#0ea5e9", name: "Matrículas" }], unit: " alunos" },
+                        { id: "docentes", label: "Docentes", icon: <GraduationCap className="w-4 h-4" />, color: "#8b5cf6", description: "Quantidade de professores atuando na escola. Mais docentes pode significar menor sobrecarga e turmas menores.", data: evolutionCharts.docentes, lines: [{ key: "value", color: "#8b5cf6", name: "Docentes" }] },
+                        { id: "taxas", label: "Taxas de Rendimento", icon: <TrendingUp className="w-4 h-4" />, color: "#10b981", description: "Mostra o percentual de alunos aprovados, reprovados e que abandonaram a escola. O ideal é aprovação alta e abandono zero.", data: evolutionCharts.taxasRendimento, lines: [{ key: "aprovacao", color: "#10b981", name: "Aprovação" }, { key: "reprovacao", color: "#ef4444", name: "Reprovação" }, { key: "abandono", color: "#f59e0b", name: "Abandono" }], unit: "%" },
+                        { id: "ideb", label: "IDEB", icon: <Award className="w-4 h-4" />, color: "#f59e0b", description: "Índice de Desenvolvimento da Educação Básica — a nota da escola no MEC. Combina desempenho nas provas e aprovação. Vai de 0 a 10.", data: evolutionCharts.ideb, lines: [{ key: "ideb_ai", color: "#10b981", name: "Anos Iniciais" }, { key: "ideb_af", color: "#f59e0b", name: "Anos Finais" }, { key: "ideb_em", color: "#8b5cf6", name: "Ensino Médio" }] },
+                        { id: "tdi", label: "Distorção Idade-Série", icon: <BarChart3 className="w-4 h-4" />, color: "#ef4444", description: "Percentual de alunos com 2 ou mais anos acima da idade esperada para sua série. Quanto menor, melhor — indica que os alunos estão na série certa.", data: evolutionCharts.tdi, lines: [{ key: "fund_total", color: "#ef4444", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#6366f1", name: "Médio" }], unit: "%" },
+                        { id: "atu", label: "Alunos por Turma", icon: <Users className="w-4 h-4" />, color: "#6366f1", description: "Média de alunos em cada turma. Turmas muito grandes (acima de 35) dificultam o trabalho do professor e a aprendizagem.", data: evolutionCharts.atu, lines: hasMultipleYears ? [{ key: "fund", color: "#0ea5e9", name: "Fund. Total" }, { key: "fund_ai", color: "#10b981", name: "Fund. AI" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }] : [{ key: "fund", color: "#0ea5e9", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }] },
+                        { id: "had", label: "Horas-Aula Diária", icon: <Clock className="w-4 h-4" />, color: "#06b6d4", description: "Quantas horas de aula os alunos têm por dia. O MEC recomenda no mínimo 4 horas para parcial e 7 horas para integral.", data: evolutionCharts.had, lines: hasMultipleYears ? [{ key: "fund", color: "#06b6d4", name: "Fund. Total" }, { key: "fund_ai", color: "#10b981", name: "Fund. AI" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#ec4899", name: "Médio" }] : [{ key: "fund", color: "#06b6d4", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#ec4899", name: "Médio" }], unit: "h" },
+                        { id: "dsu", label: "Docentes c/ Superior", icon: <GraduationCap className="w-4 h-4" />, color: "#10b981", description: "Percentual de professores com diploma universitário. A LDB exige formação superior para atuar na educação básica.", data: evolutionCharts.dsu, lines: hasMultipleYears ? [{ key: "fund", color: "#10b981", name: "Fund. Total" }, { key: "fund_ai", color: "#0ea5e9", name: "Fund. AI" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }] : [{ key: "fund", color: "#10b981", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }], unit: "%" },
+                        { id: "icg", label: "Complexidade de Gestão", icon: <BarChart3 className="w-4 h-4" />, color: "#f97316", description: "Nível de 1 a 6 que indica a complexidade da gestão escolar. Considera quantidade de turnos, etapas e tamanho da escola.", data: evolutionCharts.icg, lines: [{ key: "nivel", color: "#f97316", name: "Nível" }] },
+                        { id: "ird", label: "Regularidade Docente", icon: <BarChart3 className="w-4 h-4" />, color: "#14b8a6", description: "Mede a permanência dos professores na escola (0 a 5). Quanto maior, mais os professores ficam na mesma escola — isso é bom para a continuidade pedagógica.", data: evolutionCharts.ird, lines: [{ key: "media", color: "#14b8a6", name: "Média IRD" }] },
+                        { id: "inse", label: "Nível Socioeconômico", icon: <TrendingUp className="w-4 h-4" />, color: "#a855f7", description: "Indicador do nível socioeconômico médio dos alunos. Ajuda a entender o contexto social da escola e planejar ações.", data: evolutionCharts.inse, lines: [{ key: "media", color: "#a855f7", name: "Média INSE" }] },
+                        { id: "saeb", label: "SAEB - Proficiência", icon: <Award className="w-4 h-4" />, color: "#3b82f6", description: "Notas nas provas do SAEB em Matemática e Português. São as avaliações nacionais que compõem o IDEB.", data: evolutionCharts.saeb, lines: [{ key: "mt_ai", color: "#10b981", name: "Mat. AI" }, { key: "lp_ai", color: "#0ea5e9", name: "Port. AI" }, { key: "mt_af", color: "#f59e0b", name: "Mat. AF" }, { key: "lp_af", color: "#ef4444", name: "Port. AF" }, { key: "mt_em", color: "#8b5cf6", name: "Mat. EM" }, { key: "lp_em", color: "#ec4899", name: "Port. EM" }] },
+                        { id: "ied", label: "Esforço Docente", icon: <GraduationCap className="w-4 h-4" />, color: "#ec4899", description: "Distribuição dos professores por nível de esforço (1 a 6). Nível 1 = menor esforço, Nível 6 = maior esforço (muitas turmas, escolas e turnos).", data: evolutionCharts.ied, lines: [{ key: "nivel_1", color: "#10b981", name: "Nível 1" }, { key: "nivel_2", color: "#0ea5e9", name: "Nível 2" }, { key: "nivel_3", color: "#f59e0b", name: "Nível 3" }, { key: "nivel_4", color: "#f97316", name: "Nível 4" }, { key: "nivel_5", color: "#ef4444", name: "Nível 5" }, { key: "nivel_6", color: "#7c3aed", name: "Nível 6" }], unit: "%" },
+                        { id: "tnr", label: "Taxa de Não-Resposta", icon: <BarChart3 className="w-4 h-4" />, color: "#eab308", description: "Percentual de itens não respondidos nas avaliações. Taxa alta pode indicar que alunos não estão completando as provas.", data: evolutionCharts.tnr, lines: [{ key: "fund", color: "#0ea5e9", name: "Fundamental" }, { key: "med", color: "#ef4444", name: "Médio" }], unit: "%" },
                       ];
                       const available = chartOptions.filter(c => c.data && c.data.some((d: any) => c.lines.some(l => d[l.key] != null && d[l.key] !== 0)));
                       const current = available.find(c => c.id === selectedChart) || available[0];
                       if (!current) return null;
 
+                      const latestData = current.data && current.data.length > 0 ? current.data[current.data.length - 1] : null;
+                      const prevData = current.data && current.data.length > 1 ? current.data[current.data.length - 2] : null;
+                      const summaryItems = current.lines.map(l => {
+                        const val = latestData ? latestData[l.key] : null;
+                        const prev = prevData ? prevData[l.key] : null;
+                        const delta = (val != null && prev != null && prev !== 0) ? ((val - prev) / Math.abs(prev) * 100) : null;
+                        return { name: l.name, color: l.color, value: val, delta };
+                      }).filter(s => s.value != null && s.value !== 0);
+
                       return (
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-3">
-                            <select
-                              value={current.id}
-                              onChange={(e) => setSelectedChart(e.target.value)}
-                              className="flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent/30"
-                            >
-                              {available.map(opt => (
-                                <option key={opt.id} value={opt.id}>{opt.label}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="p-4 rounded-xl border border-border/40 bg-card">
-                            <p className="text-sm text-muted-foreground leading-relaxed mb-4">{current.description}</p>
-                            <EvolutionChart
-                              title={current.label}
-                              data={current.data}
-                              lines={current.lines}
-                              icon={current.icon}
-                              unit={current.unit}
-                              large
-                            />
+                        <div className="space-y-3">
+                          <select
+                            value={current.id}
+                            onChange={(e) => setSelectedChart(e.target.value)}
+                            className="w-full rounded-xl border-2 border-border/60 bg-card px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40 transition-colors"
+                          >
+                            {available.map(opt => (
+                              <option key={opt.id} value={opt.id}>{opt.label}</option>
+                            ))}
+                          </select>
+                          <div className="rounded-2xl border border-border/40 bg-gradient-to-br from-card to-muted/30 overflow-hidden">
+                            <div className="px-5 pt-4 pb-2">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="p-1.5 rounded-lg" style={{ backgroundColor: current.color + '20', color: current.color }}>{current.icon}</span>
+                                <h4 className="text-base font-bold text-foreground">{current.label}</h4>
+                              </div>
+                              <p className="text-sm text-muted-foreground leading-relaxed">{current.description}</p>
+                            </div>
+                            {summaryItems.length > 0 && (
+                              <div className="px-5 pb-2">
+                                <div className="flex flex-wrap gap-3">
+                                  {summaryItems.map((s, i) => (
+                                    <div key={i} className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-1.5 border border-border/20">
+                                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                                      <span className="text-xs text-muted-foreground">{s.name}:</span>
+                                      <span className="text-sm font-bold" style={{ color: s.color }}>
+                                        {typeof s.value === 'number' ? (Number.isInteger(s.value) ? s.value.toLocaleString('pt-BR') : s.value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })) : s.value}{current.unit || ''}
+                                      </span>
+                                      {s.delta != null && (
+                                        <span className={`text-[10px] font-semibold ${s.delta >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                          {s.delta >= 0 ? '▲' : '▼'}{Math.abs(s.delta).toFixed(1)}%
+                                        </span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            <div className="px-3 pb-4">
+                              <EvolutionChart
+                                data={current.data}
+                                lines={current.lines}
+                                unit={current.unit}
+                                large
+                              />
+                            </div>
                           </div>
                         </div>
                       );
@@ -2009,7 +2042,7 @@ export default function Dashboard() {
   );
 }
 
-function EvolutionChart({ title, data, lines, icon, description, unit, large }: { title: string; data: any[]; lines: { key: string; color: string; name: string }[]; icon?: React.ReactNode; description?: string; unit?: string; large?: boolean }) {
+function EvolutionChart({ data, lines, unit, large }: { title?: string; data: any[]; lines: { key: string; color: string; name: string }[]; icon?: React.ReactNode; description?: string; unit?: string; large?: boolean }) {
   const hasData = data.some(d => lines.some(l => d[l.key] != null && d[l.key] !== 0));
   if (!hasData) return null;
 
@@ -2022,21 +2055,42 @@ function EvolutionChart({ title, data, lines, icon, description, unit, large }: 
     return `${formatted}${unitSuffix}`;
   };
 
+  const renderLabel = (props: any) => {
+    if (!large) return null;
+    const { x, y, width, value } = props;
+    if (value == null || value === 0) return null;
+    const display = typeof value === 'number' ? (Number.isInteger(value) ? value.toLocaleString('pt-BR') : value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })) : value;
+    return (
+      <text x={x + width / 2} y={y - 4} textAnchor="middle" fontSize={10} fontWeight={600} fill="#555">
+        {display}{unitSuffix}
+      </text>
+    );
+  };
+
   return (
     <div>
-      <ResponsiveContainer width="100%" height={large ? 260 : 140}>
-        <BarChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: -10 }} barCategoryGap={large ? "20%" : "30%"}>
-          <XAxis dataKey="ano" tick={{ fontSize: large ? 12 : 10 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fontSize: large ? 11 : 9 }} tickFormatter={(v) => `${v}${unitSuffix}`} axisLine={false} tickLine={false} width={45} />
+      <ResponsiveContainer width="100%" height={large ? 300 : 140}>
+        <BarChart data={data} margin={{ top: large ? 25 : 5, right: 5, bottom: 5, left: -10 }} barCategoryGap={large ? "25%" : "30%"}>
+          <defs>
+            {lines.map((line) => (
+              <linearGradient key={`bg-${line.key}`} id={`bg-${line.key}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={line.color} stopOpacity={1} />
+                <stop offset="100%" stopColor={line.color} stopOpacity={0.6} />
+              </linearGradient>
+            ))}
+          </defs>
+          {large && <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} opacity={0.5} />}
+          <XAxis dataKey="ano" tick={{ fontSize: large ? 13 : 10, fontWeight: large ? 600 : 400 }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fontSize: large ? 11 : 9 }} tickFormatter={(v) => `${v}${unitSuffix}`} axisLine={false} tickLine={false} width={50} />
           <Tooltip
             formatter={(value: number, name: string) => [formatValue(value), name]}
             labelFormatter={(label) => `${label}`}
-            contentStyle={{ borderRadius: "10px", border: "none", fontSize: large ? "13px" : "11px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", padding: "8px 12px" }}
-            cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+            contentStyle={{ borderRadius: "12px", border: "none", fontSize: large ? "13px" : "11px", boxShadow: "0 4px 16px rgba(0,0,0,0.12)", padding: "10px 14px", background: "white" }}
+            cursor={{ fill: 'rgba(0,0,0,0.04)', radius: 4 }}
           />
-          {multiSeries && <Legend iconSize={large ? 10 : 8} wrapperStyle={{ fontSize: large ? "12px" : "10px", paddingTop: 4 }} />}
+          {multiSeries && <Legend iconType="circle" iconSize={large ? 10 : 8} wrapperStyle={{ fontSize: large ? "12px" : "10px", paddingTop: 8 }} />}
           {lines.map((line) => (
-            <Bar key={line.key} dataKey={line.key} fill={line.color} name={line.name} radius={[4, 4, 0, 0]} maxBarSize={large ? 48 : 32} />
+            <Bar key={line.key} dataKey={line.key} fill={`url(#bg-${line.key})`} name={line.name} radius={[6, 6, 0, 0]} maxBarSize={large ? 44 : 32} label={large && lines.length <= 2 ? renderLabel : undefined} />
           ))}
         </BarChart>
       </ResponsiveContainer>
