@@ -83,6 +83,14 @@ export default function Dashboard() {
     return evolucaoData.censo_por_ano?.[latestAno] || null;
   }, [evolucaoData, latestAno]);
 
+  const censoPrev = useMemo(() => {
+    if (!latestAno || !evolucaoData?.anos_disponiveis?.length) return null;
+    const sortedAnos = [...evolucaoData.anos_disponiveis].sort((a: number, b: number) => b - a);
+    const prevAno = sortedAnos.find((a: number) => a < latestAno);
+    if (!prevAno || !evolucaoData?.censo_por_ano?.[prevAno]) return null;
+    return evolucaoData.censo_por_ano[prevAno];
+  }, [evolucaoData, latestAno]);
+
   const indicadoresLatest = useMemo(() => {
     if (!evolucaoData || !latestAno) return {};
     const allIndicadores = evolucaoData.indicadores_por_ano || {};
@@ -750,24 +758,28 @@ export default function Dashboard() {
                     value={formatNumber(censoLatest.qt_mat_bas || 0)}
                     label={`Matrículas ${latestAno}`}
                     color="bg-accent/10"
+                    delta={censoPrev ? (censoLatest.qt_mat_bas || 0) - (censoPrev.qt_mat_bas || 0) : undefined}
                   />
                   <StatCard
                     icon={<GraduationCap className="w-3.5 h-3.5 text-accent" />}
                     value={formatNumber(censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0)}
                     label={`Docentes ${latestAno}`}
                     color="bg-accent/10"
+                    delta={censoPrev ? (censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0) - (censoPrev.qt_doc_bas || censoPrev.qt_docentes || 0) : undefined}
                   />
                   <StatCard
                     icon={<BookOpen className="w-3.5 h-3.5 text-purple-600" />}
                     value={formatNumber(censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0)}
                     label={`Turmas ${latestAno}`}
                     color="bg-purple-600/10"
+                    delta={censoPrev ? (censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0) - (censoPrev.qt_tur_bas || censoPrev.qt_turmas || 0) : undefined}
                   />
                   <StatCard
                     icon={<School className="w-3.5 h-3.5 text-orange-600" />}
                     value={formatNumber(censoLatest.qt_salas_utilizadas || 0)}
                     label={`Salas ${latestAno}`}
                     color="bg-orange-600/10"
+                    delta={censoPrev ? (censoLatest.qt_salas_utilizadas || 0) - (censoPrev.qt_salas_utilizadas || 0) : undefined}
                   />
                 </div>
 
@@ -859,12 +871,15 @@ export default function Dashboard() {
                                 data={evolutionCharts.matriculas}
                                 lines={[{ key: "value", color: CHART_COLORS[0], name: "Matrículas" }]}
                                 icon={<Users className="w-4 h-4 text-accent" />}
+                                description="Quantidade de alunos matriculados ao longo dos anos"
+                                unit=" alunos"
                               />
                               <EvolutionChart
                                 title="Docentes"
                                 data={evolutionCharts.docentes}
                                 lines={[{ key: "value", color: CHART_COLORS[1], name: "Docentes" }]}
                                 icon={<GraduationCap className="w-4 h-4 text-accent" />}
+                                description="Número de professores"
                               />
                               <EvolutionChart
                                 title="Taxas de Rendimento (%)"
@@ -875,6 +890,8 @@ export default function Dashboard() {
                                   { key: "abandono", color: EXTRA_COLORS[1], name: "Abandono" },
                                 ]}
                                 icon={<TrendingUp className="w-4 h-4 text-green-600" />}
+                                description="Percentual de aprovação, reprovação e abandono"
+                                unit="%"
                               />
                               <EvolutionChart
                                 title="ATU - Alunos por Turma"
@@ -885,6 +902,7 @@ export default function Dashboard() {
                                   { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
                                 ]}
                                 icon={<Users className="w-4 h-4 text-indigo-600" />}
+                                description="Média de alunos por turma"
                               />
                               <EvolutionChart
                                 title="HAD - Horas-Aula Diária"
@@ -895,6 +913,8 @@ export default function Dashboard() {
                                   { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
                                 ]}
                                 icon={<Clock className="w-4 h-4 text-cyan-600" />}
+                                description="Média de horas de aula por dia"
+                                unit="h"
                               />
                               <EvolutionChart
                                 title="DSU - Docentes com Superior (%)"
@@ -905,6 +925,8 @@ export default function Dashboard() {
                                   { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
                                 ]}
                                 icon={<GraduationCap className="w-4 h-4 text-emerald-600" />}
+                                description="Professores com diploma de curso superior"
+                                unit="%"
                               />
                               <EvolutionChart
                                 title="TDI - Distorção Idade-Série (%)"
@@ -915,18 +937,22 @@ export default function Dashboard() {
                                   { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
                                 ]}
                                 icon={<BarChart3 className="w-4 h-4 text-orange-600" />}
+                                description="Alunos com idade acima da esperada para a série"
+                                unit="%"
                               />
                               <EvolutionChart
                                 title="ICG - Complexidade de Gestão"
                                 data={evolutionCharts.icg}
                                 lines={[{ key: "nivel", color: CHART_COLORS[0], name: "Nível" }]}
                                 icon={<BarChart3 className="w-4 h-4 text-accent" />}
+                                description="Nível de complexidade administrativa (1 a 6)"
                               />
                               <EvolutionChart
                                 title="IRD - Regularidade do Docente"
                                 data={evolutionCharts.ird}
                                 lines={[{ key: "media", color: CHART_COLORS[2], name: "Média IRD" }]}
                                 icon={<BarChart3 className="w-4 h-4 text-teal-600" />}
+                                description="Permanência dos professores na escola"
                               />
                               <EvolutionChart
                                 title="IDEB"
@@ -937,12 +963,14 @@ export default function Dashboard() {
                                   { key: "ideb_em", color: EXTRA_COLORS[2], name: "Ensino Médio" },
                                 ]}
                                 icon={<Award className="w-4 h-4 text-amber-600" />}
+                                description="Índice de qualidade do ensino"
                               />
                               <EvolutionChart
                                 title="INSE - Nível Socioeconômico"
                                 data={evolutionCharts.inse}
                                 lines={[{ key: "media", color: CHART_COLORS[3], name: "Média INSE" }]}
                                 icon={<TrendingUp className="w-4 h-4 text-purple-600" />}
+                                description="Nível socioeconômico médio dos alunos"
                               />
                               <EvolutionChart
                                 title="SAEB - Proficiência"
@@ -956,6 +984,7 @@ export default function Dashboard() {
                                   { key: "lp_em", color: EXTRA_COLORS[1], name: "Port. EM" },
                                 ]}
                                 icon={<Award className="w-4 h-4 text-blue-600" />}
+                                description="Notas de proficiência em Matemática e Português"
                               />
                               <EvolutionChart
                                 title="IED - Esforço Docente (%)"
@@ -969,6 +998,8 @@ export default function Dashboard() {
                                   { key: "nivel_6", color: EXTRA_COLORS[1], name: "Nível 6" },
                                 ]}
                                 icon={<GraduationCap className="w-4 h-4 text-pink-600" />}
+                                description="Distribuição dos professores por nível de esforço"
+                                unit="%"
                               />
                               <EvolutionChart
                                 title="Taxa de Não-Resposta"
@@ -978,6 +1009,8 @@ export default function Dashboard() {
                                   { key: "med", color: EXTRA_COLORS[2], name: "Médio" },
                                 ]}
                                 icon={<BarChart3 className="w-4 h-4 text-yellow-600" />}
+                                description="Itens não respondidos nas avaliações"
+                                unit="%"
                               />
                             </>
                           )}
@@ -992,12 +1025,15 @@ export default function Dashboard() {
                               data={evolutionCharts.matriculas}
                               lines={[{ key: "value", color: CHART_COLORS[0], name: "Matrículas" }]}
                               icon={<Users className="w-4 h-4 text-accent" />}
+                              description="Quantidade de alunos matriculados ao longo dos anos"
+                              unit=" alunos"
                             />
                             <EvolutionChart
                               title="Docentes"
                               data={evolutionCharts.docentes}
                               lines={[{ key: "value", color: CHART_COLORS[1], name: "Docentes" }]}
                               icon={<GraduationCap className="w-4 h-4 text-accent" />}
+                              description="Número de professores"
                             />
                             <EvolutionChart
                               title="Taxas de Rendimento (%)"
@@ -1008,6 +1044,8 @@ export default function Dashboard() {
                                 { key: "abandono", color: EXTRA_COLORS[1], name: "Abandono" },
                               ]}
                               icon={<TrendingUp className="w-4 h-4 text-green-600" />}
+                              description="Percentual de aprovação, reprovação e abandono"
+                              unit="%"
                             />
                             <EvolutionChart
                               title="TDI - Distorção Idade-Série (%)"
@@ -1018,6 +1056,8 @@ export default function Dashboard() {
                                 { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
                               ]}
                               icon={<BarChart3 className="w-4 h-4 text-orange-600" />}
+                              description="Alunos com idade acima da esperada para a série"
+                              unit="%"
                             />
                             <EvolutionChart
                               title="ATU - Alunos por Turma"
@@ -1029,6 +1069,7 @@ export default function Dashboard() {
                                 { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
                               ]}
                               icon={<Users className="w-4 h-4 text-indigo-600" />}
+                              description="Média de alunos por turma"
                             />
                             <EvolutionChart
                               title="HAD - Horas-Aula Diária"
@@ -1040,6 +1081,8 @@ export default function Dashboard() {
                                 { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
                               ]}
                               icon={<Clock className="w-4 h-4 text-cyan-600" />}
+                              description="Média de horas de aula por dia"
+                              unit="h"
                             />
                             <EvolutionChart
                               title="DSU - Docentes com Superior (%)"
@@ -1051,18 +1094,22 @@ export default function Dashboard() {
                                 { key: "medio", color: EXTRA_COLORS[2], name: "Médio" },
                               ]}
                               icon={<GraduationCap className="w-4 h-4 text-emerald-600" />}
+                              description="Professores com diploma de curso superior"
+                              unit="%"
                             />
                             <EvolutionChart
                               title="ICG - Complexidade de Gestão"
                               data={evolutionCharts.icg}
                               lines={[{ key: "nivel", color: CHART_COLORS[0], name: "Nível" }]}
                               icon={<BarChart3 className="w-4 h-4 text-accent" />}
+                              description="Nível de complexidade administrativa (1 a 6)"
                             />
                             <EvolutionChart
                               title="IRD - Regularidade do Docente"
                               data={evolutionCharts.ird}
                               lines={[{ key: "media", color: CHART_COLORS[2], name: "Média IRD" }]}
                               icon={<BarChart3 className="w-4 h-4 text-teal-600" />}
+                              description="Permanência dos professores na escola"
                             />
                             <EvolutionChart
                               title="IDEB"
@@ -1073,12 +1120,14 @@ export default function Dashboard() {
                                 { key: "ideb_em", color: EXTRA_COLORS[2], name: "Ensino Médio" },
                               ]}
                               icon={<Award className="w-4 h-4 text-amber-600" />}
+                              description="Índice de qualidade do ensino"
                             />
                             <EvolutionChart
                               title="INSE - Nível Socioeconômico"
                               data={evolutionCharts.inse}
                               lines={[{ key: "media", color: CHART_COLORS[3], name: "Média INSE" }]}
                               icon={<TrendingUp className="w-4 h-4 text-purple-600" />}
+                              description="Nível socioeconômico médio dos alunos"
                             />
                             <EvolutionChart
                               title="SAEB - Proficiência"
@@ -1092,6 +1141,7 @@ export default function Dashboard() {
                                 { key: "lp_em", color: EXTRA_COLORS[1], name: "Port. EM" },
                               ]}
                               icon={<Award className="w-4 h-4 text-blue-600" />}
+                              description="Notas de proficiência em Matemática e Português"
                             />
                             <EvolutionChart
                               title="IED - Esforço Docente (%)"
@@ -1105,6 +1155,8 @@ export default function Dashboard() {
                                 { key: "nivel_6", color: EXTRA_COLORS[1], name: "Nível 6" },
                               ]}
                               icon={<GraduationCap className="w-4 h-4 text-pink-600" />}
+                              description="Distribuição dos professores por nível de esforço"
+                              unit="%"
                             />
                             <EvolutionChart
                               title="Taxa de Não-Resposta"
@@ -1114,6 +1166,8 @@ export default function Dashboard() {
                                 { key: "med", color: EXTRA_COLORS[2], name: "Médio" },
                               ]}
                               icon={<BarChart3 className="w-4 h-4 text-yellow-600" />}
+                              description="Itens não respondidos nas avaliações"
+                              unit="%"
                             />
                           </>
                         )}
@@ -2164,29 +2218,37 @@ export default function Dashboard() {
   );
 }
 
-function EvolutionChart({ title, data, lines, icon }: { title: string; data: any[]; lines: { key: string; color: string; name: string }[]; icon?: React.ReactNode }) {
+function EvolutionChart({ title, data, lines, icon, description, unit }: { title: string; data: any[]; lines: { key: string; color: string; name: string }[]; icon?: React.ReactNode; description?: string; unit?: string }) {
   const hasData = data.some(d => lines.some(l => d[l.key] != null && d[l.key] !== 0));
   if (!hasData) return null;
 
   const isSinglePoint = data.length <= 1;
+  const unitSuffix = unit || '';
+
+  const formatValue = (value: number) => {
+    if (typeof value !== 'number') return value;
+    const formatted = Number.isInteger(value) ? value.toLocaleString('pt-BR') : value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+    return `${formatted}${unitSuffix}`;
+  };
 
   return (
     <div className="p-4 rounded-xl bg-muted/20 border border-border/30">
-      <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+      <p className="text-sm font-semibold text-foreground mb-0.5 flex items-center gap-2">
         {icon}
         {title}
       </p>
+      {description && (
+        <p className="text-[10px] text-muted-foreground mb-3 ml-6">{description}</p>
+      )}
+      {!description && <div className="mb-3" />}
       <ResponsiveContainer width="100%" height={200}>
         {isSinglePoint ? (
           <BarChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis dataKey="ano" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}${unitSuffix}`} />
             <Tooltip
-              formatter={(value: number, name: string) => [
-                typeof value === 'number' ? (Number.isInteger(value) ? value.toLocaleString('pt-BR') : value.toFixed(2)) : value,
-                name
-              ]}
+              formatter={(value: number, name: string) => [formatValue(value), name]}
               labelFormatter={(label) => `Ano: ${label}`}
               contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "12px" }}
             />
@@ -2199,12 +2261,9 @@ function EvolutionChart({ title, data, lines, icon }: { title: string; data: any
           <LineChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis dataKey="ano" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}${unitSuffix}`} />
             <Tooltip
-              formatter={(value: number, name: string) => [
-                typeof value === 'number' ? (Number.isInteger(value) ? value.toLocaleString('pt-BR') : value.toFixed(2)) : value,
-                name
-              ]}
+              formatter={(value: number, name: string) => [formatValue(value), name]}
               labelFormatter={(label) => `Ano: ${label}`}
               contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "12px" }}
             />
@@ -2229,16 +2288,19 @@ function EvolutionChart({ title, data, lines, icon }: { title: string; data: any
   );
 }
 
-function StatCard({ icon, value, label, color }: { icon: React.ReactNode; value: string; label: string; color: string }) {
+function StatCard({ icon, value, label, color, delta }: { icon: React.ReactNode; value: string; label: string; color: string; delta?: number }) {
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${color} border border-border/10`}>
-      <div className="w-7 h-7 rounded-lg bg-white/60 flex items-center justify-center flex-shrink-0">
+    <div className={`px-3 py-2 rounded-xl ${color} border border-border/10`}>
+      <div className="flex items-center gap-1.5">
         {icon}
+        <span className="text-lg font-bold">{value}</span>
+        {delta != null && delta !== 0 && (
+          <span className={`text-[10px] font-semibold ml-auto ${delta > 0 ? 'text-green-600' : 'text-red-500'}`}>
+            {delta > 0 ? '▲' : '▼'} {Math.abs(delta).toLocaleString('pt-BR')}
+          </span>
+        )}
       </div>
-      <div className="min-w-0">
-        <p className="text-sm font-bold leading-tight truncate">{value}</p>
-        <p className="text-[10px] font-medium text-muted-foreground leading-tight">{label}</p>
-      </div>
+      <p className="text-[10px] font-medium text-muted-foreground leading-tight mt-0.5">{label}</p>
     </div>
   );
 }
