@@ -1122,377 +1122,313 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
 
-                {(indicadoresLatest.icg || indicadoresLatest.tdi || indicadoresLatest.ird || indicadoresLatest.taxas_rendimento || indicadoresLatest.atu || indicadoresLatest.had || indicadoresLatest.dsu || indicadoresLatest.afd || indicadoresLatest.ideb || indicadoresLatest.inse || indicadoresLatest.saeb || indicadoresLatest.ied || indicadoresLatest.taxa_nao_resposta) && (
-                  <>
-                    <div className="flex items-center gap-2 mt-2">
-                      <BarChart3 className="w-5 h-5 text-accent" />
-                      <h3 className="text-base font-semibold text-foreground">Indicadores Educacionais (dados mais recentes)</h3>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {indicadoresLatest.ideb && (
-                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
-                          <CardHeader className="pb-1 pt-3 px-3">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-amber-100 flex items-center justify-center"><Award className="w-3 h-3 text-amber-600" /></span>
-                              IDEB
-                              {indicadoresLatest.ideb._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.ideb._ano}</span>}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-1">
-                            {(indicadoresLatest.ideb.ideb_ai || indicadoresLatest.ideb.ideb_af) && (
-                              <div className="mb-2">
-                                <p className="text-[10px] text-muted-foreground mb-1 font-medium">Fundamental</p>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-                                  <InfoItem label="IDEB Anos Iniciais" value={indicadoresLatest.ideb.ideb_ai} highlight />
-                                  <InfoItem label="IDEB Anos Finais" value={indicadoresLatest.ideb.ideb_af} highlight />
-                                  <InfoItem label="Nota Matemática AF" value={indicadoresLatest.ideb.nota_mt_af} />
-                                  <InfoItem label="Nota Português AF" value={indicadoresLatest.ideb.nota_lp_af} />
-                                  <InfoItem label="Rendimento AF" value={indicadoresLatest.ideb.rendimento_af != null ? (indicadoresLatest.ideb.rendimento_af * 100).toFixed(1) + '%' : null} />
-                                  <InfoItem label="Projeção AF" value={indicadoresLatest.ideb.projecao_af} />
-                                </div>
-                              </div>
-                            )}
-                            {indicadoresLatest.ideb.ideb_em && (
-                              <div>
-                                <p className="text-[10px] text-muted-foreground mb-1 font-medium">Ensino Médio</p>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                                  <InfoItem label="IDEB Ensino Médio" value={indicadoresLatest.ideb.ideb_em} highlight />
-                                  <InfoItem label="Nota Matemática EM" value={indicadoresLatest.ideb.nota_mt_em} />
-                                  <InfoItem label="Nota Português EM" value={indicadoresLatest.ideb.nota_lp_em} />
-                                  <InfoItem label="Rendimento EM" value={indicadoresLatest.ideb.rendimento_em != null ? (indicadoresLatest.ideb.rendimento_em * 100).toFixed(1) + '%' : null} />
-                                  <InfoItem label="Projeção EM" value={indicadoresLatest.ideb.projecao_em} />
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {indicadoresLatest.icg && (
-                        <Card className="card-clay">
-                          <CardHeader className="pb-1 pt-3 px-3">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-accent/10 flex items-center justify-center"><BarChart3 className="w-3 h-3 text-accent" /></span>
-                              ICG
-                              {indicadoresLatest.icg._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.icg._ano}</span>}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-1">
-                            <InfoItem label="Complexidade de Gestão" value={indicadoresLatest.icg.nivel_texto || `Nível ${indicadoresLatest.icg.nivel}`} highlight />
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {indicadoresLatest.inse && (
-                        <Card className="card-clay">
-                          <CardHeader className="pb-1 pt-3 px-3">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-purple-100 flex items-center justify-center"><TrendingUp className="w-3 h-3 text-purple-600" /></span>
-                              INSE
-                              {indicadoresLatest.inse._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.inse._ano}</span>}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-1">
-                            <div className="grid grid-cols-1 gap-2">
-                              <InfoItem label="Classificação" value={indicadoresLatest.inse.inse_classificacao || indicadoresLatest.inse.nivel_inse} highlight />
-                              <InfoItem label="Média INSE" value={indicadoresLatest.inse.media_inse} />
-                              <InfoItem label="Alunos avaliados" value={indicadoresLatest.inse.qtd_alunos_inse} />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {indicadoresLatest.ird && (
-                        <Card className="card-clay">
-                          <CardHeader className="pb-1 pt-3 px-3">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-teal-100 flex items-center justify-center"><BarChart3 className="w-3 h-3 text-teal-600" /></span>
-                              IRD
-                              {indicadoresLatest.ird._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.ird._ano}</span>}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-1">
-                            <InfoItem label="Regularidade do Docente" value={indicadoresLatest.ird.media_ird != null ? Number(indicadoresLatest.ird.media_ird).toFixed(2) : null} highlight />
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {indicadoresLatest.tdi && (
-                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
-                          <CardHeader className="pb-1 pt-3 px-3">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-orange-100 flex items-center justify-center"><BarChart3 className="w-3 h-3 text-orange-600" /></span>
-                              TDI - Distorção Idade-Série (%)
-                              {indicadoresLatest.tdi._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.tdi._ano}</span>}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-1">
-                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                              <InfoItem label="Fundamental Total" value={indicadoresLatest.tdi.fundamental_total} highlight />
-                              <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.tdi.fundamental_ai} />
-                              <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.tdi.fundamental_af} />
-                              <InfoItem label="Fund. 6º ano" value={indicadoresLatest.tdi.fund_6ano} />
-                              <InfoItem label="Fund. 7º ano" value={indicadoresLatest.tdi.fund_7ano} />
-                              <InfoItem label="Fund. 8º ano" value={indicadoresLatest.tdi.fund_8ano} />
-                              <InfoItem label="Fund. 9º ano" value={indicadoresLatest.tdi.fund_9ano} />
-                              <InfoItem label="Médio Total" value={indicadoresLatest.tdi.medio_total} highlight />
-                              <InfoItem label="Médio 1ª série" value={indicadoresLatest.tdi.medio_1serie} />
-                              <InfoItem label="Médio 2ª série" value={indicadoresLatest.tdi.medio_2serie} />
-                              <InfoItem label="Médio 3ª série" value={indicadoresLatest.tdi.medio_3serie} />
-                              <InfoItem label="Médio 4ª série" value={indicadoresLatest.tdi.medio_4serie} />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {indicadoresLatest.taxas_rendimento && (
-                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
-                          <CardHeader className="pb-1 pt-3 px-3">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-green-100 flex items-center justify-center"><TrendingUp className="w-3 h-3 text-green-600" /></span>
-                              Taxas de Rendimento (%)
-                              {indicadoresLatest.taxas_rendimento._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.taxas_rendimento._ano}</span>}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-1">
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                              <InfoItem label="Aprovação Fund." value={indicadoresLatest.taxas_rendimento.aprovacao_fund} />
-                              <InfoItem label="Aprovação Fund. AI" value={indicadoresLatest.taxas_rendimento.aprovacao_fund_ai} />
-                              <InfoItem label="Aprovação Fund. AF" value={indicadoresLatest.taxas_rendimento.aprovacao_fund_af} />
-                              <InfoItem label="Aprovação Médio" value={indicadoresLatest.taxas_rendimento.aprovacao_med} />
-                              <InfoItem label="Reprovação Fund." value={indicadoresLatest.taxas_rendimento.reprovacao_fund} />
-                              <InfoItem label="Reprovação Fund. AI" value={indicadoresLatest.taxas_rendimento.reprovacao_fund_ai} />
-                              <InfoItem label="Reprovação Fund. AF" value={indicadoresLatest.taxas_rendimento.reprovacao_fund_af} />
-                              <InfoItem label="Reprovação Médio" value={indicadoresLatest.taxas_rendimento.reprovacao_med} />
-                              <InfoItem label="Abandono Fund." value={indicadoresLatest.taxas_rendimento.abandono_fund} />
-                              <InfoItem label="Abandono Fund. AI" value={indicadoresLatest.taxas_rendimento.abandono_fund_ai} />
-                              <InfoItem label="Abandono Fund. AF" value={indicadoresLatest.taxas_rendimento.abandono_fund_af} />
-                              <InfoItem label="Abandono Médio" value={indicadoresLatest.taxas_rendimento.abandono_med} />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {indicadoresLatest.atu && (
-                        <Card className="card-clay">
-                          <CardHeader className="pb-1 pt-3 px-3">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-indigo-100 flex items-center justify-center"><Users className="w-3 h-3 text-indigo-600" /></span>
-                              ATU
-                              {indicadoresLatest.atu._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.atu._ano}</span>}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-1">
-                            <div className="grid grid-cols-2 gap-2">
-                              <InfoItem label="Fund. Total" value={indicadoresLatest.atu.media_fund} />
-                              <InfoItem label="Fund. AI" value={indicadoresLatest.atu.media_fund_ai} />
-                              <InfoItem label="Fund. AF" value={indicadoresLatest.atu.media_fund_af} />
-                              <InfoItem label="Ens. Médio" value={indicadoresLatest.atu.media_med} />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {indicadoresLatest.had && (
-                        <Card className="card-clay">
-                          <CardHeader className="pb-1 pt-3 px-3">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-cyan-100 flex items-center justify-center"><Clock className="w-3 h-3 text-cyan-600" /></span>
-                              HAD
-                              {indicadoresLatest.had._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.had._ano}</span>}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-1">
-                            <div className="grid grid-cols-2 gap-2">
-                              <InfoItem label="Fund. Total" value={indicadoresLatest.had.media_fund} />
-                              <InfoItem label="Fund. AI" value={indicadoresLatest.had.media_fund_ai} />
-                              <InfoItem label="Fund. AF" value={indicadoresLatest.had.media_fund_af} />
-                              <InfoItem label="Ens. Médio" value={indicadoresLatest.had.media_med} />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {indicadoresLatest.dsu && (
-                        <Card className="card-clay">
-                          <CardHeader className="pb-1 pt-3 px-3">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-emerald-100 flex items-center justify-center"><GraduationCap className="w-3 h-3 text-emerald-600" /></span>
-                              DSU (%)
-                              {indicadoresLatest.dsu._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.dsu._ano}</span>}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-1">
-                            <div className="grid grid-cols-2 gap-2">
-                              <InfoItem label="Fund. Total" value={indicadoresLatest.dsu.percentual_fund} />
-                              <InfoItem label="Fund. AI" value={indicadoresLatest.dsu.percentual_fund_ai} />
-                              <InfoItem label="Fund. AF" value={indicadoresLatest.dsu.percentual_fund_af} />
-                              <InfoItem label="Ens. Médio" value={indicadoresLatest.dsu.percentual_med} />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {indicadoresLatest.afd && (
-                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
-                          <CardHeader className="pb-1 pt-3 px-3">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-rose-100 flex items-center justify-center"><GraduationCap className="w-3 h-3 text-rose-600" /></span>
-                              AFD - Adequação da Formação Docente (%)
-                              {indicadoresLatest.afd._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.afd._ano}</span>}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-1 space-y-2">
-                            <div>
-                              <p className="text-[10px] text-muted-foreground mb-1 font-medium">Fundamental</p>
-                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                                <InfoItem label="Grupo 1" value={indicadoresLatest.afd.fun_cat_1} />
-                                <InfoItem label="Grupo 2" value={indicadoresLatest.afd.fun_cat_2} />
-                                <InfoItem label="Grupo 3" value={indicadoresLatest.afd.fun_cat_3} />
-                                <InfoItem label="Grupo 4" value={indicadoresLatest.afd.fun_cat_4} />
-                                <InfoItem label="Grupo 5" value={indicadoresLatest.afd.fun_cat_5} />
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-[10px] text-muted-foreground mb-1 font-medium">Ensino Médio</p>
-                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                                <InfoItem label="Grupo 1" value={indicadoresLatest.afd.med_cat_1} />
-                                <InfoItem label="Grupo 2" value={indicadoresLatest.afd.med_cat_2} />
-                                <InfoItem label="Grupo 3" value={indicadoresLatest.afd.med_cat_3} />
-                                <InfoItem label="Grupo 4" value={indicadoresLatest.afd.med_cat_4} />
-                                <InfoItem label="Grupo 5" value={indicadoresLatest.afd.med_cat_5} />
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {indicadoresLatest.saeb && (
-                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
-                          <CardHeader className="pb-1 pt-3 px-3">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-blue-100 flex items-center justify-center"><Award className="w-3 h-3 text-blue-600" /></span>
-                              SAEB - Proficiência
-                              {indicadoresLatest.saeb._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.saeb._ano}</span>}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-1 space-y-2">
-                            {(indicadoresLatest.saeb.nota_mt_ai || indicadoresLatest.saeb.nota_lp_ai || indicadoresLatest.saeb.nota_mt_af || indicadoresLatest.saeb.nota_lp_af) && (
-                              <div>
-                                <p className="text-[10px] text-muted-foreground mb-1 font-medium">Fundamental</p>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                  <InfoItem label="Matemática AI" value={indicadoresLatest.saeb.nota_mt_ai} />
-                                  <InfoItem label="Português AI" value={indicadoresLatest.saeb.nota_lp_ai} />
-                                  <InfoItem label="Matemática AF" value={indicadoresLatest.saeb.nota_mt_af} />
-                                  <InfoItem label="Português AF" value={indicadoresLatest.saeb.nota_lp_af} />
-                                </div>
-                              </div>
-                            )}
-                            {(indicadoresLatest.saeb.nota_mt_em || indicadoresLatest.saeb.nota_lp_em) && (
-                              <div>
-                                <p className="text-[10px] text-muted-foreground mb-1 font-medium">Ensino Médio</p>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                  <InfoItem label="Matemática EM" value={indicadoresLatest.saeb.nota_mt_em} />
-                                  <InfoItem label="Português EM" value={indicadoresLatest.saeb.nota_lp_em} />
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {indicadoresLatest.ied && (
-                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
-                          <CardHeader className="pb-1 pt-3 px-3">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-pink-100 flex items-center justify-center"><GraduationCap className="w-3 h-3 text-pink-600" /></span>
-                              IED - Esforço Docente (%)
-                              {indicadoresLatest.ied._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.ied._ano}</span>}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-1">
-                            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                              <InfoItem label="Nível 1" value={indicadoresLatest.ied.nivel_1} />
-                              <InfoItem label="Nível 2" value={indicadoresLatest.ied.nivel_2} />
-                              <InfoItem label="Nível 3" value={indicadoresLatest.ied.nivel_3} />
-                              <InfoItem label="Nível 4" value={indicadoresLatest.ied.nivel_4} />
-                              <InfoItem label="Nível 5" value={indicadoresLatest.ied.nivel_5} />
-                              <InfoItem label="Nível 6" value={indicadoresLatest.ied.nivel_6} />
-                            </div>
-                            {(indicadoresLatest.ied.percentual_fund || indicadoresLatest.ied.percentual_med) && (
-                              <div className="grid grid-cols-2 gap-2 mt-2">
-                                <InfoItem label="Fundamental" value={indicadoresLatest.ied.percentual_fund} />
-                                <InfoItem label="Ensino Médio" value={indicadoresLatest.ied.percentual_med} />
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {indicadoresLatest.taxa_nao_resposta && (
-                        <Card className="card-clay sm:col-span-2 lg:col-span-3">
-                          <CardHeader className="pb-1 pt-3 px-3">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-yellow-100 flex items-center justify-center"><BarChart3 className="w-3 h-3 text-yellow-600" /></span>
-                              Taxa de Não-Resposta (%)
-                              {indicadoresLatest.taxa_nao_resposta._ano && <span className="text-[10px] font-normal bg-accent/10 text-accent px-1.5 py-0.5 rounded-full ml-1">{indicadoresLatest.taxa_nao_resposta._ano}</span>}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-3 pt-1">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                              <InfoItem label="Fundamental" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_fund ?? indicadoresLatest.taxa_nao_resposta.tnr_fund} />
-                              <InfoItem label="Fund. Anos Iniciais" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_fund_ai ?? indicadoresLatest.taxa_nao_resposta.tnr_fund_ai} />
-                              <InfoItem label="Fund. Anos Finais" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_fund_af ?? indicadoresLatest.taxa_nao_resposta.tnr_fund_af} />
-                              <InfoItem label="Ensino Médio" value={indicadoresLatest.taxa_nao_resposta.taxa_nao_resposta_med ?? indicadoresLatest.taxa_nao_resposta.tnr_med} />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-                    </div>
-                  </>
-                )}
-
                 {(() => {
-                  const allIndicators = [
-                    { key: 'ideb', name: 'IDEB', reason: 'O IDEB é calculado apenas em anos ímpares (2019, 2021, 2023) e para escolas com turmas de 5º e 9º ano do Fundamental ou 3ª série do Ensino Médio avaliadas pelo SAEB.' },
-                    { key: 'inse', name: 'INSE', reason: 'O INSE é calculado somente nos anos de aplicação do SAEB (2021, 2023) para escolas avaliadas.' },
-                    { key: 'saeb', name: 'SAEB', reason: 'O SAEB avalia escolas com turmas de 5º e 9º ano do Fundamental ou 3ª série do Ensino Médio, apenas em anos de aplicação (2019, 2021, 2023).' },
-                    { key: 'icg', name: 'ICG', reason: 'O ICG pode não estar disponível para escolas com poucos dados ou sem turmas regulares nos níveis avaliados.' },
-                    { key: 'tdi', name: 'TDI', reason: 'A Distorção Idade-Série requer matrícula nos níveis de Ensino Fundamental ou Médio regular.' },
-                    { key: 'ird', name: 'IRD', reason: 'A Regularidade do Docente requer que a escola tenha docentes vinculados nos censos dos últimos anos.' },
-                    { key: 'taxas_rendimento', name: 'Taxas de Rendimento', reason: 'As taxas de rendimento requerem informações de aprovação, reprovação e abandono reportadas no Censo.' },
-                    { key: 'atu', name: 'ATU', reason: 'O número médio de Alunos por Turma requer que a escola tenha turmas regulares nos níveis avaliados.' },
-                    { key: 'had', name: 'HAD', reason: 'As Horas-Aula Diárias requerem informações de carga horária reportadas no Censo Escolar.' },
-                    { key: 'dsu', name: 'DSU', reason: 'O indicador de Docentes com Curso Superior requer docentes vinculados à escola no Censo.' },
-                    { key: 'afd', name: 'AFD', reason: 'A Adequação da Formação Docente requer docentes vinculados e dados de formação no Censo.' },
-                    { key: 'ied', name: 'IED', reason: 'O Indicador de Esforço Docente requer que a escola tenha docentes vinculados em turmas regulares.' },
-                    { key: 'taxa_nao_resposta', name: 'Taxa de Não-Resposta', reason: 'A Taxa de Não-Resposta é calculada para escolas com matrículas no Ensino Fundamental ou Médio regular.' },
+                  type DiagStatus = 'bom' | 'adequado' | 'atencao' | 'critico' | 'sem_dados' | 'info';
+                  type Diagnosis = { status: DiagStatus; valor: string; label: string; explicacao: string; secundarios?: string[] };
+
+                  const statusConfig: Record<DiagStatus, { dot: string; bg: string; label: string }> = {
+                    bom: { dot: 'bg-green-500', bg: 'bg-green-100 text-green-700', label: 'Bom' },
+                    adequado: { dot: 'bg-blue-500', bg: 'bg-blue-100 text-blue-700', label: 'Adequado' },
+                    atencao: { dot: 'bg-amber-500', bg: 'bg-amber-100 text-amber-700', label: 'Atenção' },
+                    critico: { dot: 'bg-red-500', bg: 'bg-red-100 text-red-700', label: 'Crítico' },
+                    sem_dados: { dot: 'bg-gray-400', bg: 'bg-gray-100 text-gray-600', label: 'Sem dados' },
+                    info: { dot: 'bg-blue-500', bg: 'bg-blue-100 text-blue-700', label: 'Info' },
+                  };
+
+                  const fmtNum = (v: any, decimals = 1) => v != null ? Number(v).toFixed(decimals) : null;
+
+                  const worstStatus = (...statuses: DiagStatus[]): DiagStatus => {
+                    const order: DiagStatus[] = ['critico', 'atencao', 'adequado', 'bom', 'info', 'sem_dados'];
+                    for (const s of order) { if (statuses.includes(s)) return s; }
+                    return 'sem_dados';
+                  };
+
+                  const getDiagnosis = (tipo: string, data: any): Diagnosis | null => {
+                    if (!data) return null;
+
+                    switch (tipo) {
+                      case 'ideb': {
+                        const vals = [
+                          { v: data.ideb_ai, n: 'AI' },
+                          { v: data.ideb_af, n: 'AF' },
+                          { v: data.ideb_em, n: 'EM' },
+                        ].filter(x => x.v != null && Number(x.v) > 0);
+                        if (vals.length === 0) return null;
+                        const worst = Math.min(...vals.map(x => Number(x.v)));
+                        const status: DiagStatus = worst >= 6 ? 'bom' : worst >= 5 ? 'adequado' : worst >= 4 ? 'atencao' : 'critico';
+                        const mainVal = vals.map(x => `${x.n}: ${Number(x.v).toFixed(1)}`).join(' | ');
+                        const secs: string[] = [];
+                        if (data.nota_mt_af != null) secs.push(`Mat. AF: ${fmtNum(data.nota_mt_af)}`);
+                        if (data.nota_lp_af != null) secs.push(`Port. AF: ${fmtNum(data.nota_lp_af)}`);
+                        if (data.rendimento_af != null) secs.push(`Rend. AF: ${(Number(data.rendimento_af) * 100).toFixed(1)}%`);
+                        if (data.projecao_af != null) secs.push(`Projeção AF: ${fmtNum(data.projecao_af)}`);
+                        if (data.nota_mt_em != null) secs.push(`Mat. EM: ${fmtNum(data.nota_mt_em)}`);
+                        if (data.nota_lp_em != null) secs.push(`Port. EM: ${fmtNum(data.nota_lp_em)}`);
+                        if (data.rendimento_em != null) secs.push(`Rend. EM: ${(Number(data.rendimento_em) * 100).toFixed(1)}%`);
+                        if (data.projecao_em != null) secs.push(`Projeção EM: ${fmtNum(data.projecao_em)}`);
+                        if (data.ideb_ai != null) secs.push(`IDEB AI: ${fmtNum(data.ideb_ai)}`);
+                        return { status, valor: mainVal, label: statusConfig[status].label, explicacao: 'Mede a qualidade do ensino combinando notas do SAEB e taxas de aprovação', secundarios: secs.length > 0 ? secs : undefined };
+                      }
+                      case 'taxas_rendimento': {
+                        const abandVals = [data.abandono_fund, data.abandono_fund_ai, data.abandono_fund_af, data.abandono_med].filter(v => v != null).map(Number);
+                        const repVals = [data.reprovacao_fund, data.reprovacao_fund_ai, data.reprovacao_fund_af, data.reprovacao_med].filter(v => v != null).map(Number);
+                        const worstAband = abandVals.length > 0 ? Math.max(...abandVals) : null;
+                        const worstRep = repVals.length > 0 ? Math.max(...repVals) : null;
+                        let abandStatus: DiagStatus = 'sem_dados';
+                        if (worstAband != null) abandStatus = worstAband <= 1 ? 'bom' : worstAband <= 2 ? 'adequado' : worstAband <= 5 ? 'atencao' : 'critico';
+                        let repStatus: DiagStatus = 'sem_dados';
+                        if (worstRep != null) repStatus = worstRep <= 5 ? 'bom' : worstRep <= 10 ? 'adequado' : worstRep <= 20 ? 'atencao' : 'critico';
+                        const finalStatus = worstStatus(abandStatus, repStatus);
+                        const parts: string[] = [];
+                        const aprov = data.aprovacao_fund ?? data.aprovacao_med;
+                        if (aprov != null) parts.push(`Aprov: ${fmtNum(aprov)}%`);
+                        if (worstRep != null) parts.push(`Reprov: ${fmtNum(data.reprovacao_fund ?? data.reprovacao_med)}%`);
+                        if (worstAband != null) parts.push(`Aband: ${fmtNum(data.abandono_fund ?? data.abandono_med)}%`);
+                        const secs: string[] = [];
+                        if (data.aprovacao_fund != null) secs.push(`Aprov. Fund: ${fmtNum(data.aprovacao_fund)}%`);
+                        if (data.aprovacao_fund_ai != null) secs.push(`Aprov. AI: ${fmtNum(data.aprovacao_fund_ai)}%`);
+                        if (data.aprovacao_fund_af != null) secs.push(`Aprov. AF: ${fmtNum(data.aprovacao_fund_af)}%`);
+                        if (data.aprovacao_med != null) secs.push(`Aprov. Médio: ${fmtNum(data.aprovacao_med)}%`);
+                        if (data.reprovacao_fund != null) secs.push(`Reprov. Fund: ${fmtNum(data.reprovacao_fund)}%`);
+                        if (data.reprovacao_fund_ai != null) secs.push(`Reprov. AI: ${fmtNum(data.reprovacao_fund_ai)}%`);
+                        if (data.reprovacao_fund_af != null) secs.push(`Reprov. AF: ${fmtNum(data.reprovacao_fund_af)}%`);
+                        if (data.reprovacao_med != null) secs.push(`Reprov. Médio: ${fmtNum(data.reprovacao_med)}%`);
+                        if (data.abandono_fund != null) secs.push(`Aband. Fund: ${fmtNum(data.abandono_fund)}%`);
+                        if (data.abandono_fund_ai != null) secs.push(`Aband. AI: ${fmtNum(data.abandono_fund_ai)}%`);
+                        if (data.abandono_fund_af != null) secs.push(`Aband. AF: ${fmtNum(data.abandono_fund_af)}%`);
+                        if (data.abandono_med != null) secs.push(`Aband. Médio: ${fmtNum(data.abandono_med)}%`);
+                        const expl = worstAband != null && worstRep != null
+                          ? `Reprovação máx: ${fmtNum(worstRep)}% | Abandono máx: ${fmtNum(worstAband)}%`
+                          : 'Taxas de aprovação, reprovação e abandono escolar';
+                        return { status: finalStatus, valor: parts.join(' | ') || '—', label: statusConfig[finalStatus].label, explicacao: expl, secundarios: secs };
+                      }
+                      case 'tdi': {
+                        const vals = [data.fundamental_total, data.medio_total].filter(v => v != null).map(Number);
+                        if (vals.length === 0) return null;
+                        const worst = Math.max(...vals);
+                        const status: DiagStatus = worst < 10 ? 'bom' : worst < 20 ? 'adequado' : worst < 30 ? 'atencao' : 'critico';
+                        const mainParts: string[] = [];
+                        if (data.fundamental_total != null) mainParts.push(`Fund: ${fmtNum(data.fundamental_total)}%`);
+                        if (data.medio_total != null) mainParts.push(`Médio: ${fmtNum(data.medio_total)}%`);
+                        const secs: string[] = [];
+                        if (data.fundamental_ai != null) secs.push(`Fund. AI: ${fmtNum(data.fundamental_ai)}%`);
+                        if (data.fundamental_af != null) secs.push(`Fund. AF: ${fmtNum(data.fundamental_af)}%`);
+                        if (data.fund_6ano != null) secs.push(`6º ano: ${fmtNum(data.fund_6ano)}%`);
+                        if (data.fund_7ano != null) secs.push(`7º ano: ${fmtNum(data.fund_7ano)}%`);
+                        if (data.fund_8ano != null) secs.push(`8º ano: ${fmtNum(data.fund_8ano)}%`);
+                        if (data.fund_9ano != null) secs.push(`9º ano: ${fmtNum(data.fund_9ano)}%`);
+                        if (data.medio_1serie != null) secs.push(`Médio 1ª: ${fmtNum(data.medio_1serie)}%`);
+                        if (data.medio_2serie != null) secs.push(`Médio 2ª: ${fmtNum(data.medio_2serie)}%`);
+                        if (data.medio_3serie != null) secs.push(`Médio 3ª: ${fmtNum(data.medio_3serie)}%`);
+                        if (data.medio_4serie != null) secs.push(`Médio 4ª: ${fmtNum(data.medio_4serie)}%`);
+                        return { status, valor: mainParts.join(' | '), label: statusConfig[status].label, explicacao: 'Percentual de alunos com idade acima da esperada para a série', secundarios: secs.length > 0 ? secs : undefined };
+                      }
+                      case 'icg': {
+                        const nivel = Number(data.nivel);
+                        if (isNaN(nivel)) return null;
+                        const status: DiagStatus = nivel <= 2 ? 'bom' : nivel === 3 ? 'adequado' : nivel === 4 ? 'atencao' : 'critico';
+                        return { status, valor: data.nivel_texto || `Nível ${nivel}`, label: statusConfig[status].label, explicacao: 'Nível de complexidade administrativa da escola (1=simples, 6=muito complexa)' };
+                      }
+                      case 'inse': {
+                        const classif = data.inse_classificacao || data.nivel_inse || '';
+                        const media = data.media_inse != null ? fmtNum(data.media_inse) : null;
+                        const valor = classif || (media ? `Média: ${media}` : '—');
+                        const secs: string[] = [];
+                        if (media) secs.push(`Média INSE: ${media}`);
+                        if (data.qtd_alunos_inse != null) secs.push(`Alunos avaliados: ${data.qtd_alunos_inse}`);
+                        return { status: 'info' as DiagStatus, valor, label: 'Info', explicacao: 'Perfil socioeconômico médio dos alunos', secundarios: secs.length > 0 ? secs : undefined };
+                      }
+                      case 'ird': {
+                        const media = Number(data.media_ird ?? data.media);
+                        if (isNaN(media) || media === 0) return null;
+                        const status: DiagStatus = media >= 3.0 ? 'bom' : media >= 2.5 ? 'adequado' : media >= 2.0 ? 'atencao' : 'critico';
+                        return { status, valor: media.toFixed(2), label: statusConfig[status].label, explicacao: 'Indica se os professores permanecem na escola ao longo dos anos' };
+                      }
+                      case 'dsu': {
+                        const vals = [data.percentual_fund, data.percentual_med].filter(v => v != null).map(Number);
+                        if (vals.length === 0) return null;
+                        const worst = Math.min(...vals);
+                        const status: DiagStatus = worst >= 90 ? 'bom' : worst >= 80 ? 'adequado' : worst >= 60 ? 'atencao' : 'critico';
+                        const mainParts: string[] = [];
+                        if (data.percentual_fund != null) mainParts.push(`Fund: ${fmtNum(data.percentual_fund)}%`);
+                        if (data.percentual_med != null) mainParts.push(`Médio: ${fmtNum(data.percentual_med)}%`);
+                        const secs: string[] = [];
+                        if (data.percentual_fund_ai != null) secs.push(`Fund. AI: ${fmtNum(data.percentual_fund_ai)}%`);
+                        if (data.percentual_fund_af != null) secs.push(`Fund. AF: ${fmtNum(data.percentual_fund_af)}%`);
+                        return { status, valor: mainParts.join(' | '), label: statusConfig[status].label, explicacao: 'Percentual de professores com diploma de curso superior', secundarios: secs.length > 0 ? secs : undefined };
+                      }
+                      case 'atu': {
+                        const vals = [data.media_fund, data.media_med].filter(v => v != null).map(Number);
+                        if (vals.length === 0) return null;
+                        const worst = Math.max(...vals);
+                        const status: DiagStatus = worst <= 25 ? 'bom' : worst <= 30 ? 'adequado' : worst <= 35 ? 'atencao' : 'critico';
+                        const mainParts: string[] = [];
+                        if (data.media_fund != null) mainParts.push(`Fund: ${fmtNum(data.media_fund)}`);
+                        if (data.media_med != null) mainParts.push(`Médio: ${fmtNum(data.media_med)}`);
+                        const secs: string[] = [];
+                        if (data.media_fund_ai != null) secs.push(`Fund. AI: ${fmtNum(data.media_fund_ai)}`);
+                        if (data.media_fund_af != null) secs.push(`Fund. AF: ${fmtNum(data.media_fund_af)}`);
+                        return { status, valor: mainParts.join(' | '), label: statusConfig[status].label, explicacao: 'Média de alunos em cada sala de aula', secundarios: secs.length > 0 ? secs : undefined };
+                      }
+                      case 'had': {
+                        const vals = [data.media_fund, data.media_med].filter(v => v != null).map(Number);
+                        if (vals.length === 0) return null;
+                        const worst = Math.min(...vals);
+                        const status: DiagStatus = worst >= 5 ? 'bom' : worst >= 4 ? 'adequado' : worst >= 3.5 ? 'atencao' : 'critico';
+                        const mainParts: string[] = [];
+                        if (data.media_fund != null) mainParts.push(`Fund: ${fmtNum(data.media_fund)}h`);
+                        if (data.media_med != null) mainParts.push(`Médio: ${fmtNum(data.media_med)}h`);
+                        const secs: string[] = [];
+                        if (data.media_fund_ai != null) secs.push(`Fund. AI: ${fmtNum(data.media_fund_ai)}h`);
+                        if (data.media_fund_af != null) secs.push(`Fund. AF: ${fmtNum(data.media_fund_af)}h`);
+                        return { status, valor: mainParts.join(' | '), label: statusConfig[status].label, explicacao: 'Tempo médio de aulas por dia', secundarios: secs.length > 0 ? secs : undefined };
+                      }
+                      case 'afd': {
+                        const funCat1 = data.fun_cat_1 != null ? Number(data.fun_cat_1) : null;
+                        const medCat1 = data.med_cat_1 != null ? Number(data.med_cat_1) : null;
+                        const mainVal = funCat1 ?? medCat1;
+                        if (mainVal == null) return null;
+                        const status: DiagStatus = mainVal >= 80 ? 'bom' : mainVal >= 60 ? 'adequado' : mainVal >= 40 ? 'atencao' : 'critico';
+                        const secs: string[] = [];
+                        if (data.fun_cat_1 != null) secs.push(`Fund. G1: ${fmtNum(data.fun_cat_1)}%`);
+                        if (data.fun_cat_2 != null) secs.push(`Fund. G2: ${fmtNum(data.fun_cat_2)}%`);
+                        if (data.fun_cat_3 != null) secs.push(`Fund. G3: ${fmtNum(data.fun_cat_3)}%`);
+                        if (data.fun_cat_4 != null) secs.push(`Fund. G4: ${fmtNum(data.fun_cat_4)}%`);
+                        if (data.fun_cat_5 != null) secs.push(`Fund. G5: ${fmtNum(data.fun_cat_5)}%`);
+                        if (data.med_cat_1 != null) secs.push(`Médio G1: ${fmtNum(data.med_cat_1)}%`);
+                        if (data.med_cat_2 != null) secs.push(`Médio G2: ${fmtNum(data.med_cat_2)}%`);
+                        if (data.med_cat_3 != null) secs.push(`Médio G3: ${fmtNum(data.med_cat_3)}%`);
+                        if (data.med_cat_4 != null) secs.push(`Médio G4: ${fmtNum(data.med_cat_4)}%`);
+                        if (data.med_cat_5 != null) secs.push(`Médio G5: ${fmtNum(data.med_cat_5)}%`);
+                        return { status, valor: `${fmtNum(mainVal)}% (Grupo 1)`, label: statusConfig[status].label, explicacao: 'Percentual de professores com formação adequada à disciplina que lecionam', secundarios: secs };
+                      }
+                      case 'ied': {
+                        const n1 = Number(data.nivel_1 || 0);
+                        const n2 = Number(data.nivel_2 || 0);
+                        const baixo = n1 + n2;
+                        const status: DiagStatus = baixo >= 60 ? 'bom' : baixo >= 40 ? 'adequado' : baixo >= 20 ? 'atencao' : 'critico';
+                        const secs: string[] = [];
+                        if (data.nivel_1 != null) secs.push(`N1: ${fmtNum(data.nivel_1)}%`);
+                        if (data.nivel_2 != null) secs.push(`N2: ${fmtNum(data.nivel_2)}%`);
+                        if (data.nivel_3 != null) secs.push(`N3: ${fmtNum(data.nivel_3)}%`);
+                        if (data.nivel_4 != null) secs.push(`N4: ${fmtNum(data.nivel_4)}%`);
+                        if (data.nivel_5 != null) secs.push(`N5: ${fmtNum(data.nivel_5)}%`);
+                        if (data.nivel_6 != null) secs.push(`N6: ${fmtNum(data.nivel_6)}%`);
+                        if (data.percentual_fund != null) secs.push(`Fund: ${fmtNum(data.percentual_fund)}%`);
+                        if (data.percentual_med != null) secs.push(`Médio: ${fmtNum(data.percentual_med)}%`);
+                        return { status, valor: `${fmtNum(baixo)}% baixo esforço`, label: statusConfig[status].label, explicacao: 'Distribuição dos professores por nível de esforço (quantidade de escolas e turnos)', secundarios: secs };
+                      }
+                      case 'saeb': {
+                        const scores: string[] = [];
+                        if (data.nota_mt_ai != null) scores.push(`Mat. AI: ${fmtNum(data.nota_mt_ai)}`);
+                        if (data.nota_lp_ai != null) scores.push(`Port. AI: ${fmtNum(data.nota_lp_ai)}`);
+                        if (data.nota_mt_af != null) scores.push(`Mat. AF: ${fmtNum(data.nota_mt_af)}`);
+                        if (data.nota_lp_af != null) scores.push(`Port. AF: ${fmtNum(data.nota_lp_af)}`);
+                        if (data.nota_mt_em != null) scores.push(`Mat. EM: ${fmtNum(data.nota_mt_em)}`);
+                        if (data.nota_lp_em != null) scores.push(`Port. EM: ${fmtNum(data.nota_lp_em)}`);
+                        if (scores.length === 0) return null;
+                        return { status: 'info' as DiagStatus, valor: scores.slice(0, 3).join(' | '), label: 'Info', explicacao: 'Notas de proficiência em Matemática e Português', secundarios: scores.length > 3 ? scores : undefined };
+                      }
+                      case 'taxa_nao_resposta': {
+                        const vals = [
+                          data.taxa_nao_resposta_fund ?? data.tnr_fund,
+                          data.taxa_nao_resposta_med ?? data.tnr_med,
+                        ].filter(v => v != null).map(Number);
+                        if (vals.length === 0) return null;
+                        const worst = Math.max(...vals);
+                        const status: DiagStatus = worst < 5 ? 'bom' : worst < 10 ? 'adequado' : worst < 20 ? 'atencao' : 'critico';
+                        const mainParts: string[] = [];
+                        const fundVal = data.taxa_nao_resposta_fund ?? data.tnr_fund;
+                        const medVal = data.taxa_nao_resposta_med ?? data.tnr_med;
+                        if (fundVal != null) mainParts.push(`Fund: ${fmtNum(fundVal)}%`);
+                        if (medVal != null) mainParts.push(`Médio: ${fmtNum(medVal)}%`);
+                        const secs: string[] = [];
+                        const fundAi = data.taxa_nao_resposta_fund_ai ?? data.tnr_fund_ai;
+                        const fundAf = data.taxa_nao_resposta_fund_af ?? data.tnr_fund_af;
+                        if (fundAi != null) secs.push(`Fund. AI: ${fmtNum(fundAi)}%`);
+                        if (fundAf != null) secs.push(`Fund. AF: ${fmtNum(fundAf)}%`);
+                        return { status, valor: mainParts.join(' | '), label: statusConfig[status].label, explicacao: 'Percentual de itens não respondidos nas avaliações', secundarios: secs.length > 0 ? secs : undefined };
+                      }
+                      default:
+                        return null;
+                    }
+                  };
+
+                  const indicatorOrder: { tipo: string; nome: string; key: string }[] = [
+                    { tipo: 'ideb', nome: 'IDEB', key: 'ideb' },
+                    { tipo: 'taxas_rendimento', nome: 'Taxas de Rendimento', key: 'taxas_rendimento' },
+                    { tipo: 'tdi', nome: 'TDI', key: 'tdi' },
+                    { tipo: 'icg', nome: 'ICG', key: 'icg' },
+                    { tipo: 'inse', nome: 'INSE', key: 'inse' },
+                    { tipo: 'ird', nome: 'IRD', key: 'ird' },
+                    { tipo: 'dsu', nome: 'DSU', key: 'dsu' },
+                    { tipo: 'atu', nome: 'ATU', key: 'atu' },
+                    { tipo: 'had', nome: 'HAD', key: 'had' },
+                    { tipo: 'afd', nome: 'AFD', key: 'afd' },
+                    { tipo: 'ied', nome: 'IED', key: 'ied' },
+                    { tipo: 'saeb', nome: 'SAEB', key: 'saeb' },
+                    { tipo: 'taxa_nao_resposta', nome: 'TNR', key: 'taxa_nao_resposta' },
                   ];
-                  const missing = allIndicators.filter(ind => !indicadoresLatest[ind.key]);
-                  if (missing.length === 0) return null;
+
+                  const rows = indicatorOrder
+                    .map(ind => {
+                      const data = indicadoresLatest[ind.key];
+                      if (!data) return null;
+                      const diag = getDiagnosis(ind.tipo, data);
+                      if (!diag) return null;
+                      return { ...ind, data, diag, ano: data._ano };
+                    })
+                    .filter(Boolean) as { tipo: string; nome: string; key: string; data: any; diag: Diagnosis; ano?: number }[];
+
+                  const allIndicatorKeys = indicatorOrder.map(i => i.key);
+                  const missingCount = allIndicatorKeys.filter(k => !indicadoresLatest[k]).length;
+
+                  if (rows.length === 0 && missingCount === 0) return null;
+
                   return (
-                    <Card className="card-clay border-l-4 border-l-amber-400">
+                    <Card className="card-clay border-l-4 border-l-accent">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-base flex items-center gap-2">
-                          <Info className="w-5 h-5 text-amber-500" />
-                          Indicadores não disponíveis para esta escola
+                          <BarChart3 className="w-5 h-5 text-accent" />
+                          Raio-X Educacional
                         </CardTitle>
-                        <p className="text-xs text-muted-foreground">
-                          Nem todas as escolas possuem todos os indicadores. Veja abaixo os motivos possíveis:
-                        </p>
+                        <p className="text-xs text-muted-foreground">Diagnóstico dos indicadores mais recentes</p>
                       </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {missing.map(ind => (
-                            <div key={ind.key} className="flex items-start gap-2 p-2 rounded-lg bg-amber-50/50 border border-amber-100">
-                              <span className="text-amber-500 mt-0.5 shrink-0">--</span>
-                              <div>
-                                <p className="text-xs font-semibold text-foreground">{ind.name}</p>
-                                <p className="text-[11px] text-muted-foreground leading-snug">{ind.reason}</p>
+                      <CardContent className="pt-0">
+                        <div className="divide-y divide-border/10">
+                          {rows.map(row => {
+                            const cfg = statusConfig[row.diag.status];
+                            return (
+                              <div key={row.key} className="flex items-start gap-3 py-3">
+                                <div className={`w-3 h-3 rounded-full mt-1 shrink-0 ${cfg.dot}`} />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                                    <span className="text-sm font-semibold text-foreground">
+                                      {row.nome}
+                                      {row.ano && <span className="text-[10px] font-normal text-muted-foreground ml-1">({row.ano})</span>}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-bold">{row.diag.valor}</span>
+                                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${cfg.bg}`}>{row.diag.label}</span>
+                                    </div>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-0.5">{row.diag.explicacao}</p>
+                                  {row.diag.secundarios && row.diag.secundarios.length > 0 && (
+                                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[11px] text-muted-foreground">
+                                      {row.diag.secundarios.map((s, i) => <span key={i}>{s}</span>)}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
+                        {missingCount > 0 && (
+                          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/10">
+                            <Info className="w-4 h-4 text-muted-foreground shrink-0" />
+                            <span className="text-xs text-muted-foreground">{missingCount} indicador{missingCount > 1 ? 'es' : ''} sem dados para esta escola</span>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   );
