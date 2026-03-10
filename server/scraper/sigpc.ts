@@ -297,3 +297,115 @@ export async function recuperarHistoricoAnalise(concessaoId: number): Promise<Si
   console.log("[SIGPC-OLINDA] History endpoint not available in OLINDA API");
   return [];
 }
+
+const PDDE_BASICO_BASE = "https://www.fnde.gov.br/olinda-ide/servico/DADOS_ABERTOS_PDDE_BASICO/versao/v1/odata";
+
+export interface PddeSaldoConta {
+  an_exercicio: number;
+  uf: string;
+  codigo_municipio: string;
+  nome_municipio: string;
+  co_escola: string;
+  no_escola: string;
+  regiao: string;
+  localizacao: string;
+  esfera_administrativa: string;
+  banco: string | null;
+  agencia: string | null;
+  conta: string | null;
+  saldo_acumulado: number;
+}
+
+export interface PddeSaldosResult {
+  ok: boolean;
+  saldos: PddeSaldoConta[];
+  anosDisponiveis: number[];
+  fonte: "olinda-pdde-basico" | "indisponivel";
+  error?: string;
+}
+
+async function fetchPddeSaldos(ano: number, coEscola: string): Promise<PddeSaldoConta[] | null> {
+  try {
+    const cleanCode = coEscola.replace(/'/g, "");
+    const url = `${PDDE_BASICO_BASE}/Saldo_Contas_UEX_Publico(Ano_consulta=@Ano_consulta)?$format=json&@Ano_consulta=${ano}&$top=50&$filter=co_escola eq '${cleanCode}'`;
+    console.log(`[PDDE-SALDOS] Fetching saldos: escola=${coEscola}, ano=${ano}`);
+
+    const response = await fetch(url, {
+      headers: HEADERS,
+      signal: AbortSignal.timeout(20000),
+    });
+
+    if (!response.ok) {
+      console.log(`[PDDE-SALDOS] HTTP ${response.status}`);
+      return null;
+    }
+
+    const text = await response.text();
+    const data = parseOlindaResponse(text);
+    if (!data || data.codigo) return null;
+
+    const records = data.value || [];
+    return records
+      .filter((r: any) => r.banco || parseFloat(r.saldo_acumulado || "0") > 0)
+      .map((r: any) => ({
+        an_exercicio: r.an_exercicio,
+        uf: r.uf,
+        codigo_municipio: r.codigo_municipio,
+        nome_municipio: r.nome_municipio,
+        co_escola: r.co_escola,
+        no_escola: r.no_escola,
+        regiao: r.regiao,
+        localizacao: r.localizacao,
+        esfera_administrativa: r.esfera_administrativa,
+        banco: r.banco,
+        agencia: r.agencia,
+        conta: r.conta,
+        saldo_acumulado: parseFloat(r.saldo_acumulado || "0"),
+      }));
+  } catch (err: any) {
+    console.log(`[PDDE-SALDOS] Error: ${err.message}`);
+    return null;
+  }
+}
+
+export async function consultarSaldosPdde(coEscola: string): Promise<PddeSaldosResult> {
+  const cleanCode = coEscola.replace(/[^\d]/g, "");
+  const anosToQuery = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
+
+  const results = await Promise.all(
+    anosToQuery.map(ano => fetchPddeSaldos(ano, cleanCode).then(records => ({ ano, records })))
+  );
+
+  const allSaldos: PddeSaldoConta[] = [];
+  const anosDisponiveis: number[] = [];
+  let apiAvailable = false;
+
+  for (const { ano, records } of results) {
+    if (records !== null) {
+      apiAvailable = true;
+      if (records.length > 0) {
+        anosDisponiveis.push(ano);
+        allSaldos.push(...records);
+      }
+    }
+  }
+
+  anosDisponiveis.sort((a, b) => b - a);
+
+  if (!apiAvailable) {
+    return {
+      ok: false,
+      saldos: [],
+      anosDisponiveis: [],
+      fonte: "indisponivel",
+      error: "A API OLINDA do PDDE Básico está temporariamente indisponível.",
+    };
+  }
+
+  return {
+    ok: true,
+    saldos: allSaldos,
+    anosDisponiveis,
+    fonte: "olinda-pdde-basico",
+  };
+}

@@ -1,5 +1,44 @@
 import { useQuery } from "@tanstack/react-query";
 
+export interface PddeSaldoConta {
+  an_exercicio: number;
+  uf: string;
+  codigo_municipio: string;
+  nome_municipio: string;
+  co_escola: string;
+  no_escola: string;
+  regiao: string;
+  localizacao: string;
+  esfera_administrativa: string;
+  banco: string | null;
+  agencia: string | null;
+  conta: string | null;
+  saldo_acumulado: number;
+}
+
+export interface PddeSaldosResult {
+  ok: boolean;
+  saldos: PddeSaldoConta[];
+  anosDisponiveis: number[];
+  fonte: "olinda-pdde-basico" | "indisponivel";
+  error?: string;
+}
+
+export function usePddeSaldos(coEscola: string | null) {
+  return useQuery<PddeSaldosResult>({
+    queryKey: ["pdde-saldos", coEscola],
+    queryFn: async () => {
+      if (!coEscola) return { ok: false, saldos: [], anosDisponiveis: [], fonte: "indisponivel" as const, error: "Sem código INEP" };
+      const res = await fetch(`/api/pdde/saldos/${coEscola}`);
+      if (!res.ok) throw new Error("Erro ao consultar saldos PDDE");
+      return res.json();
+    },
+    enabled: !!coEscola && /^\d{8}$/.test(coEscola),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+}
+
 export interface PddeContaBancaria {
   programa: string;
   banco: string;

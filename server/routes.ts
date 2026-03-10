@@ -26,7 +26,8 @@ import {
   localizarPrestacoesPorCnpj,
   localizarPrestacoesPorUf,
   detalharPrestacao,
-  recuperarHistoricoAnalise
+  recuperarHistoricoAnalise,
+  consultarSaldosPdde
 } from "./scraper/sigpc";
 import { z } from "zod";
 import {
@@ -342,6 +343,20 @@ export async function registerRoutes(
 
   // === PUBLIC: SIGPC - PRESTAÇÃO DE CONTAS ===
   // Endpoint 1: Localizar prestações por CNPJ (busca inicial)
+  app.get("/api/pdde/saldos/:coEscola", async (req, res) => {
+    try {
+      const coEscola = req.params.coEscola.replace(/[^\d]/g, "");
+      if (!/^\d{8}$/.test(coEscola)) {
+        return res.status(400).json({ ok: false, saldos: [], anosDisponiveis: [], fonte: "indisponivel", error: "Código INEP inválido (deve ter 8 dígitos)" });
+      }
+      const result = await consultarSaldosPdde(coEscola);
+      res.json(result);
+    } catch (err: any) {
+      console.error("PDDE saldos error:", err.message);
+      res.status(500).json({ ok: false, saldos: [], anosDisponiveis: [], fonte: "indisponivel", error: "Erro ao consultar saldos PDDE" });
+    }
+  });
+
   app.get("/api/sigpc/localizar/:cnpj", async (req, res) => {
     try {
       const cnpj = decodeURIComponent(req.params.cnpj);

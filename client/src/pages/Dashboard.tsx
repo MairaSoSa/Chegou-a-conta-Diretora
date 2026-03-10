@@ -12,7 +12,7 @@ import {
   CheckCircle, CircleAlert
 } from "lucide-react";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais } from "@/hooks/use-schools";
-import { usePddeInfo } from "@/hooks/use-pdde";
+import { usePddeInfo, usePddeSaldos } from "@/hooks/use-pdde";
 import { useSigpcLocalizar } from "@/hooks/use-sigpc";
 import { DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,6 +55,7 @@ export default function Dashboard() {
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, selectedAno);
   const pddeCnpj = pddeData?.uex?.cnpj || null;
   const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined);
+  const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
 
   const listFilters = useMemo(() => {
     const f: Record<string, string> = {};
@@ -1765,13 +1766,13 @@ export default function Dashboard() {
                 </IndicatorSection>
 
                 <IndicatorSection
-                  title="Dados Financeiros (PDDE / SIGPC)"
+                  title="Dados Financeiros (PDDE)"
                   icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
                   expanded={expandedSections['financeiro'] ?? true}
                   onToggle={() => toggleSection('financeiro')}
                 >
                   <div className="space-y-5">
-                    {(pddeLoading || sigpcLoading) && (
+                    {(pddeLoading || pddeSaldosLoading) && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground py-4 justify-center">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         Consultando dados financeiros do FNDE...
@@ -1815,7 +1816,7 @@ export default function Dashboard() {
                               <div>
                                 <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                                   <BanknoteIcon className="w-3.5 h-3.5" />
-                                  Contas Bancárias
+                                  Contas Bancárias (PDDE Info)
                                 </p>
                                 <div className="overflow-x-auto">
                                   <table className="w-full text-sm">
@@ -1909,6 +1910,107 @@ export default function Dashboard() {
                       </>
                     )}
 
+                    {pddeSaldosData && !pddeSaldosLoading && (
+                      <>
+                        {pddeSaldosData.ok && pddeSaldosData.saldos.length > 0 ? (
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                                <BanknoteIcon className="w-3.5 h-3.5" />
+                                Saldos PDDE Básico — Dados Abertos FNDE ({pddeSaldosData.anosDisponiveis.join(', ')})
+                              </p>
+                              {(() => {
+                                const saldosByYear = pddeSaldosData.saldos.reduce((acc: Record<number, typeof pddeSaldosData.saldos>, s) => {
+                                  if (!acc[s.an_exercicio]) acc[s.an_exercicio] = [];
+                                  acc[s.an_exercicio].push(s);
+                                  return acc;
+                                }, {});
+                                const sortedYears = Object.keys(saldosByYear).map(Number).sort((a, b) => b - a);
+
+                                const chartData = sortedYears.map(year => {
+                                  const yearSaldos = saldosByYear[year];
+                                  const total = yearSaldos.reduce((sum, s) => sum + s.saldo_acumulado, 0);
+                                  return { ano: String(year), saldo: total };
+                                }).reverse();
+
+                                return (
+                                  <div className="space-y-4">
+                                    {chartData.length > 1 && (
+                                      <div className="h-48">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                          <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                            <XAxis dataKey="ano" tick={{ fontSize: 11 }} />
+                                            <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `R$ ${(v / 1000).toFixed(0)}k`} />
+                                            <Tooltip
+                                              formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Saldo']}
+                                              labelFormatter={(label: string) => `Exercício ${label}`}
+                                            />
+                                            <Bar dataKey="saldo" fill="#2d6a4f" radius={[4, 4, 0, 0]} />
+                                          </BarChart>
+                                        </ResponsiveContainer>
+                                      </div>
+                                    )}
+
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full text-sm">
+                                        <thead>
+                                          <tr className="border-b border-border/30">
+                                            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Exercício</th>
+                                            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Banco</th>
+                                            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Agência</th>
+                                            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Conta</th>
+                                            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Saldo Acumulado</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {sortedYears.map(year =>
+                                            saldosByYear[year].map((s, idx) => (
+                                              <tr key={`${year}-${idx}`} className="border-b border-border/10">
+                                                <td className="py-2 px-2 text-xs font-medium">{s.an_exercicio}</td>
+                                                <td className="py-2 px-2 text-xs">{s.banco || '-'}</td>
+                                                <td className="py-2 px-2 text-xs font-mono">{s.agencia || '-'}</td>
+                                                <td className="py-2 px-2 text-xs font-mono">{s.conta || '-'}</td>
+                                                <td className={`py-2 px-2 text-xs text-right font-mono ${s.saldo_acumulado > 0 ? 'text-emerald-700 font-semibold' : s.saldo_acumulado < 0 ? 'text-red-600 font-semibold' : ''}`}>
+                                                  R$ {s.saldo_acumulado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </td>
+                                              </tr>
+                                            ))
+                                          )}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        ) : pddeSaldosData.ok === false ? (
+                          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50/50 border border-amber-200/50">
+                            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-medium text-amber-800">Saldos PDDE indisponíveis</p>
+                              <p className="text-xs text-amber-600 mt-1">
+                                {pddeSaldosData.error || "A API de dados abertos do FNDE está temporariamente indisponível."}
+                              </p>
+                            </div>
+                          </div>
+                        ) : null}
+                      </>
+                    )}
+
+                    {pddeSaldosError && (
+                      <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50/50 border border-amber-200/50">
+                        <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-amber-800">Erro ao consultar saldos PDDE</p>
+                          <p className="text-xs text-amber-600 mt-1">
+                            Não foi possível conectar à API de dados abertos do FNDE. Tente novamente mais tarde.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {sigpcData && !sigpcLoading && (
                       <>
                         {sigpcData.prestacoes && sigpcData.prestacoes.length > 0 ? (
@@ -1949,11 +2051,11 @@ export default function Dashboard() {
                             </div>
                           </div>
                         ) : sigpcData.ok === false ? (
-                          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50/50 border border-amber-200/50">
-                            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                          <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50/50 border border-amber-200/50">
+                            <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                             <div>
-                              <p className="text-sm font-medium text-amber-800">SIGPC indisponível</p>
-                              <p className="text-xs text-amber-600 mt-1">
+                              <p className="text-xs font-medium text-amber-800">SIGPC indisponível</p>
+                              <p className="text-[10px] text-amber-600 mt-0.5">
                                 {sigpcData.error || "O sistema de prestação de contas do FNDE está temporariamente indisponível."}
                               </p>
                             </div>
@@ -1962,7 +2064,7 @@ export default function Dashboard() {
                       </>
                     )}
 
-                    {!pddeLoading && !sigpcLoading && (!pddeData || (!pddeData.ok && !pddeData.error)) && !sigpcData && (
+                    {!pddeLoading && !pddeSaldosLoading && (!pddeData || (!pddeData.ok && !pddeData.error)) && (!pddeSaldosData || !pddeSaldosData.ok) && (
                       <div className="text-center py-4">
                         <p className="text-sm text-muted-foreground">
                           Dados financeiros não disponíveis para esta escola no momento.
@@ -1972,13 +2074,13 @@ export default function Dashboard() {
 
                     <div className="pt-2 border-t border-border/20">
                       <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
-                        Dados obtidos do PDDE Info e SIGPC do FNDE. Podem apresentar atraso ou indisponibilidade temporária.
+                        Dados obtidos do PDDE Info e Dados Abertos do FNDE (2020-2026). Podem apresentar atraso ou indisponibilidade temporária.
                         Para dados oficiais, acesse{' '}
                         <a href="https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar" target="_blank" rel="noopener noreferrer" className="underline hover:text-accent">
                           PDDE Info
                         </a>{' '}ou{' '}
-                        <a href="https://www.fnde.gov.br/sigpcadm/actionPublico.pu?tilesPublico=ConsultarSituacao" target="_blank" rel="noopener noreferrer" className="underline hover:text-accent">
-                          SIGPC
+                        <a href="https://dados.gov.br/dados/conjuntos-dados/programa-dinheiro-direto-na-escola-pdde" target="_blank" rel="noopener noreferrer" className="underline hover:text-accent">
+                          Dados Abertos PDDE
                         </a>.
                       </p>
                     </div>
