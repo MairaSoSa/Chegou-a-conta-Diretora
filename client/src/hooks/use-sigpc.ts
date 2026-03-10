@@ -1,9 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 
-// ============================================================================
-// TIPOS
-// ============================================================================
-
 export interface SigpcPrestacaoListItem {
   pcId: number;
   processoNumero: string;
@@ -15,6 +11,23 @@ export interface SigpcPrestacaoListItem {
   anoConcessao: number;
   convenioNumero?: string;
   valorConcessao: number;
+  fonte?: string;
+  uf?: string;
+  regiao?: string;
+  esfera?: string;
+  localizacao?: string;
+  dirigente?: string;
+  efeitoSuspensivo?: string;
+  medidaExcecao?: string;
+  cnpjEex?: string;
+  razaoSocialEex?: string;
+  fasePcEex?: string;
+  situacaoPcEex?: string;
+  situacaoOpcEex?: string;
+  valorPagoEex?: string;
+  efeitoSuspensivoEex?: string;
+  medidaExcecaoEex?: string;
+  faseMedidaExcecaoEex?: string;
 }
 
 export interface SigpcPrestacaoDetalhada {
@@ -81,12 +94,16 @@ export interface SigpcHistoricoAnalise {
   documentosAnalisados: string[];
 }
 
-// ============================================================================
-// HOOK 1: Localizar prestações (busca inicial)
-// ============================================================================
+export interface SigpcLocalizarResponse {
+  ok: boolean;
+  prestacoes: SigpcPrestacaoListItem[];
+  error?: string;
+  fonte?: "olinda-sigpc" | "indisponivel";
+  anosConsultados?: number[];
+}
 
 export function useSigpcLocalizar(cnpj?: string, anoConcessao?: number) {
-  return useQuery<{ ok: boolean; prestacoes: SigpcPrestacaoListItem[]; error?: string; fonte?: string }>({
+  return useQuery<SigpcLocalizarResponse>({
     queryKey: ["sigpc-localizar", cnpj, anoConcessao],
     queryFn: async () => {
       if (!cnpj) throw new Error("CNPJ é obrigatório");
@@ -105,13 +122,34 @@ export function useSigpcLocalizar(cnpj?: string, anoConcessao?: number) {
     },
     enabled: !!cnpj,
     staleTime: 5 * 60 * 1000,
-    retry: 2,
+    retry: 1,
   });
 }
 
-// ============================================================================
-// HOOK 2: Detalhar prestação
-// ============================================================================
+export function useSigpcPorUf(uf?: string, ano?: number, programa?: string) {
+  return useQuery<SigpcLocalizarResponse>({
+    queryKey: ["sigpc-uf", uf, ano, programa],
+    queryFn: async () => {
+      if (!uf) throw new Error("UF é obrigatória");
+      
+      const params = new URLSearchParams();
+      if (ano) params.append("ano", String(ano));
+      if (programa) params.append("programa", programa);
+      
+      const url = `/api/sigpc/uf/${uf}?${params.toString()}`;
+      const res = await fetch(url);
+      
+      if (!res.ok) {
+        throw new Error("Erro ao buscar prestações por UF");
+      }
+      
+      return res.json();
+    },
+    enabled: !!uf,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+}
 
 export function useSigpcDetalhar(pcId?: number) {
   return useQuery<{ ok: boolean; prestacao: SigpcPrestacaoDetalhada }>({
@@ -129,13 +167,9 @@ export function useSigpcDetalhar(pcId?: number) {
     },
     enabled: !!pcId && pcId > 0,
     staleTime: 5 * 60 * 1000,
-    retry: 2,
+    retry: 1,
   });
 }
-
-// ============================================================================
-// HOOK 3: Histórico de análise
-// ============================================================================
 
 export function useSigpcHistorico(concessaoId?: number) {
   return useQuery<{ ok: boolean; historico: SigpcHistoricoAnalise[] }>({
@@ -153,6 +187,6 @@ export function useSigpcHistorico(concessaoId?: number) {
     },
     enabled: !!concessaoId && concessaoId > 0,
     staleTime: 5 * 60 * 1000,
-    retry: 2,
+    retry: 1,
   });
 }

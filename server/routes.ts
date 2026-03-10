@@ -24,6 +24,7 @@ import {
 import { importAllIndicators, getIndicatorImportRunning, getAvailableIndicators, importIdeb, importInse, generateSaebFromIdeb } from "./import-inep-indicators";
 import { 
   localizarPrestacoesPorCnpj,
+  localizarPrestacoesPorUf,
   detalharPrestacao,
   recuperarHistoricoAnalise
 } from "./scraper/sigpc";
@@ -354,7 +355,22 @@ export async function registerRoutes(
     }
   });
 
-  // Endpoint 2: Detalhar prestação por pcId
+  app.get("/api/sigpc/uf/:uf", async (req, res) => {
+    try {
+      const uf = req.params.uf.toUpperCase();
+      const ano = parseInt(req.query.ano as string) || 2024;
+      const programa = req.query.programa as string | undefined;
+      const top = Math.min(parseInt(req.query.top as string) || 100, 500);
+      const skip = parseInt(req.query.skip as string) || 0;
+
+      const result = await localizarPrestacoesPorUf(uf, ano, programa, top, skip);
+      res.json(result);
+    } catch (err: any) {
+      console.error("SIGPC UF error:", err.message);
+      res.status(500).json({ ok: false, error: "Erro ao buscar prestações por UF", prestacoes: [], fonte: "indisponivel" });
+    }
+  });
+
   app.get("/api/sigpc/detalhar/:pcId", async (req, res) => {
     try {
       const pcId = parseInt(req.params.pcId);
@@ -364,7 +380,7 @@ export async function registerRoutes(
 
       const detalhes = await detalharPrestacao(pcId);
       if (!detalhes) {
-        return res.status(404).json({ ok: false, error: "Prestação não encontrada" });
+        return res.json({ ok: false, error: "Detalhamento não disponível via API OLINDA (apenas dados agregados). Use a consulta por CNPJ para ver os dados da prestação de contas." });
       }
 
       res.json({ ok: true, prestacao: detalhes });
