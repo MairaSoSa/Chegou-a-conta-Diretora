@@ -39,6 +39,51 @@ export function usePddeSaldos(coEscola: string | null) {
   });
 }
 
+export interface PddeExecFinItem {
+  an_exercicio: number;
+  sg_uf: string;
+  no_municipio: string;
+  co_municipio_ibge: string;
+  co_escola: string;
+  no_escola: string;
+  qt_alunos: number;
+  no_esfera_adm: string;
+  no_regiao: string;
+  localizacao: string;
+  cnpj_uex: string;
+  no_uex: string;
+  no_cargo: string;
+  dt_ini_vinculacao: string;
+  ds_programa_fnde: string;
+  sg_destinacao: string;
+  vl_pago_custeio: number;
+  vl_pago_capital: number;
+  vl_pago_total: number;
+}
+
+export interface PddeExecFinResult {
+  ok: boolean;
+  repasses: PddeExecFinItem[];
+  anosDisponiveis: number[];
+  fonte: "olinda-pdde-exec-fin" | "indisponivel";
+  error?: string;
+}
+
+export function usePddeExecFin(coEscola: string | null) {
+  return useQuery<PddeExecFinResult>({
+    queryKey: ["pdde-execfin", coEscola],
+    queryFn: async () => {
+      if (!coEscola) return { ok: false, repasses: [], anosDisponiveis: [], fonte: "indisponivel" as const, error: "Sem código INEP" };
+      const res = await fetch(`/api/pdde/execfin/${coEscola}`);
+      if (!res.ok) throw new Error("Erro ao consultar execução financeira PDDE");
+      return res.json();
+    },
+    enabled: !!coEscola && /^\d{8}$/.test(coEscola),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+}
+
 export interface PddeContaBancaria {
   programa: string;
   banco: string;

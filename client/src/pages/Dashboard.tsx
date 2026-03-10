@@ -12,7 +12,7 @@ import {
   CheckCircle, CircleAlert
 } from "lucide-react";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais } from "@/hooks/use-schools";
-import { usePddeInfo, usePddeSaldos } from "@/hooks/use-pdde";
+import { usePddeInfo, usePddeSaldos, usePddeExecFin } from "@/hooks/use-pdde";
 import { useSigpcLocalizar } from "@/hooks/use-sigpc";
 import { DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +56,7 @@ export default function Dashboard() {
   const pddeCnpj = pddeData?.uex?.cnpj || null;
   const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined);
   const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
+  const { data: pddeExecFinData, isLoading: pddeExecFinLoading, isError: pddeExecFinError } = usePddeExecFin(selectedInep);
 
   const listFilters = useMemo(() => {
     const f: Record<string, string> = {};
@@ -1772,7 +1773,7 @@ export default function Dashboard() {
                   onToggle={() => toggleSection('financeiro')}
                 >
                   <div className="space-y-5">
-                    {(pddeLoading || pddeSaldosLoading) && (
+                    {(pddeLoading || pddeSaldosLoading || pddeExecFinLoading) && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground py-4 justify-center">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         Consultando dados financeiros do FNDE...
@@ -2011,6 +2012,133 @@ export default function Dashboard() {
                       </div>
                     )}
 
+                    {pddeExecFinData && !pddeExecFinLoading && (
+                      <>
+                        {pddeExecFinData.ok && pddeExecFinData.repasses.length > 0 ? (
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                                <Wallet className="w-3.5 h-3.5" />
+                                Repasses PDDE — Execução Financeira ({pddeExecFinData.anosDisponiveis.join(', ')})
+                              </p>
+                              {(() => {
+                                const byYear = pddeExecFinData.repasses.reduce((acc: Record<number, { custeio: number; capital: number; total: number }>, r) => {
+                                  if (!acc[r.an_exercicio]) acc[r.an_exercicio] = { custeio: 0, capital: 0, total: 0 };
+                                  acc[r.an_exercicio].custeio += r.vl_pago_custeio;
+                                  acc[r.an_exercicio].capital += r.vl_pago_capital;
+                                  acc[r.an_exercicio].total += r.vl_pago_total;
+                                  return acc;
+                                }, {});
+                                const sortedYears = Object.keys(byYear).map(Number).sort();
+
+                                const chartData = sortedYears.map(year => ({
+                                  ano: String(year),
+                                  Custeio: byYear[year].custeio,
+                                  Capital: byYear[year].capital,
+                                }));
+
+                                return (
+                                  <div className="space-y-4">
+                                    {chartData.length > 1 && (
+                                      <div className="h-48">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                          <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                            <XAxis dataKey="ano" tick={{ fontSize: 11 }} />
+                                            <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `R$ ${(v / 1000).toFixed(0)}k`} />
+                                            <Tooltip
+                                              formatter={(value: number, name: string) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, name]}
+                                              labelFormatter={(label: string) => `Exercício ${label}`}
+                                            />
+                                            <Legend wrapperStyle={{ fontSize: 11 }} />
+                                            <Bar dataKey="Custeio" fill="#2d6a4f" radius={[4, 4, 0, 0]} stackId="a" />
+                                            <Bar dataKey="Capital" fill="#95d5b2" radius={[4, 4, 0, 0]} stackId="a" />
+                                          </BarChart>
+                                        </ResponsiveContainer>
+                                      </div>
+                                    )}
+
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full text-sm">
+                                        <thead>
+                                          <tr className="border-b border-border/30">
+                                            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Ano</th>
+                                            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Destinação</th>
+                                            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Custeio</th>
+                                            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Capital</th>
+                                            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Total Pago</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {[...sortedYears].reverse().map(year =>
+                                            pddeExecFinData.repasses
+                                              .filter(r => r.an_exercicio === year)
+                                              .map((r, idx) => (
+                                                <tr key={`${year}-${idx}`} className="border-b border-border/10">
+                                                  <td className="py-2 px-2 text-xs font-medium">{r.an_exercicio}</td>
+                                                  <td className="py-2 px-2 text-xs">{r.sg_destinacao}</td>
+                                                  <td className="py-2 px-2 text-xs text-right font-mono">
+                                                    R$ {r.vl_pago_custeio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                  </td>
+                                                  <td className="py-2 px-2 text-xs text-right font-mono">
+                                                    R$ {r.vl_pago_capital.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                  </td>
+                                                  <td className={`py-2 px-2 text-xs text-right font-mono font-semibold ${r.vl_pago_total > 0 ? 'text-emerald-700' : ''}`}>
+                                                    R$ {r.vl_pago_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                  </td>
+                                                </tr>
+                                              ))
+                                          )}
+                                          <tr className="border-t-2 border-border/40 bg-muted/30">
+                                            <td className="py-2 px-2 text-xs font-bold" colSpan={2}>Total Geral</td>
+                                            <td className="py-2 px-2 text-xs text-right font-mono font-bold">
+                                              R$ {pddeExecFinData.repasses.reduce((s, r) => s + r.vl_pago_custeio, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="py-2 px-2 text-xs text-right font-mono font-bold">
+                                              R$ {pddeExecFinData.repasses.reduce((s, r) => s + r.vl_pago_capital, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="py-2 px-2 text-xs text-right font-mono font-bold text-emerald-700">
+                                              R$ {pddeExecFinData.repasses.reduce((s, r) => s + r.vl_pago_total, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </td>
+                                          </tr>
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        ) : pddeExecFinData.ok === false ? (
+                          <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50/50 border border-amber-200/50">
+                            <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-xs font-medium text-amber-800">Execução financeira indisponível</p>
+                              <p className="text-[10px] text-amber-600 mt-0.5">
+                                {pddeExecFinData.error || "A API de execução financeira do FNDE está temporariamente indisponível."}
+                              </p>
+                            </div>
+                          </div>
+                        ) : pddeExecFinData.ok && pddeExecFinData.repasses.length === 0 ? (
+                          <p className="text-xs text-muted-foreground py-2">
+                            Sem registros de repasses PDDE para esta escola nos anos consultados (2020-2025).
+                          </p>
+                        ) : null}
+                      </>
+                    )}
+
+                    {pddeExecFinError && (
+                      <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50/50 border border-amber-200/50">
+                        <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-medium text-amber-800">Erro ao consultar execução financeira</p>
+                          <p className="text-[10px] text-amber-600 mt-0.5">
+                            Não foi possível conectar à API de dados abertos do FNDE. Tente novamente mais tarde.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {sigpcData && !sigpcLoading && (
                       <>
                         {sigpcData.prestacoes && sigpcData.prestacoes.length > 0 ? (
@@ -2064,7 +2192,7 @@ export default function Dashboard() {
                       </>
                     )}
 
-                    {!pddeLoading && !pddeSaldosLoading && (!pddeData || (!pddeData.ok && !pddeData.error)) && (!pddeSaldosData || !pddeSaldosData.ok) && (
+                    {!pddeLoading && !pddeSaldosLoading && !pddeExecFinLoading && (!pddeData || (!pddeData.ok && !pddeData.error)) && (!pddeSaldosData || !pddeSaldosData.ok) && (!pddeExecFinData || !pddeExecFinData.ok) && (
                       <div className="text-center py-4">
                         <p className="text-sm text-muted-foreground">
                           Dados financeiros não disponíveis para esta escola no momento.

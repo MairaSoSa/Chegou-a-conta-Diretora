@@ -299,6 +299,7 @@ export async function recuperarHistoricoAnalise(concessaoId: number): Promise<Si
 }
 
 const PDDE_BASICO_BASE = "https://www.fnde.gov.br/olinda-ide/servico/DADOS_ABERTOS_PDDE_BASICO/versao/v1/odata";
+const PDDE_EXEC_FIN_BASE = "https://www.fnde.gov.br/olinda-ide/servico/DADOS_ABERTOS_PDDE_BASICO_3/versao/v1/odata";
 
 export interface PddeSaldoConta {
   an_exercicio: number;
@@ -407,5 +408,124 @@ export async function consultarSaldosPdde(coEscola: string): Promise<PddeSaldosR
     saldos: allSaldos,
     anosDisponiveis,
     fonte: "olinda-pdde-basico",
+  };
+}
+
+export interface PddeExecFinItem {
+  an_exercicio: number;
+  sg_uf: string;
+  no_municipio: string;
+  co_municipio_ibge: string;
+  co_escola: string;
+  no_escola: string;
+  qt_alunos: number;
+  no_esfera_adm: string;
+  no_regiao: string;
+  localizacao: string;
+  cnpj_uex: string;
+  no_uex: string;
+  no_cargo: string;
+  dt_ini_vinculacao: string;
+  ds_programa_fnde: string;
+  sg_destinacao: string;
+  vl_pago_custeio: number;
+  vl_pago_capital: number;
+  vl_pago_total: number;
+}
+
+export interface PddeExecFinResult {
+  ok: boolean;
+  repasses: PddeExecFinItem[];
+  anosDisponiveis: number[];
+  fonte: "olinda-pdde-exec-fin" | "indisponivel";
+  error?: string;
+}
+
+async function fetchPddeExecFin(ano: number, coEscola: string): Promise<PddeExecFinItem[] | null> {
+  try {
+    const url = `${PDDE_EXEC_FIN_BASE}/Execucao_Financeira_PDDE_Basico_Publico(Ano_consulta=@Ano_consulta)?$format=json&@Ano_consulta=${ano}&$top=100&$filter=CO_ESCOLA eq '${coEscola}'`;
+    console.log(`[PDDE-EXECFIN] Fetching: escola=${coEscola}, ano=${ano}`);
+
+    const response = await fetch(url, {
+      headers: HEADERS,
+      signal: AbortSignal.timeout(25000),
+    });
+
+    if (!response.ok) {
+      console.log(`[PDDE-EXECFIN] HTTP ${response.status}`);
+      return null;
+    }
+
+    const text = await response.text();
+    const data = parseOlindaResponse(text);
+    if (!data || data.codigo) return null;
+
+    const records = data.value || [];
+    return records.map((r: any) => ({
+      an_exercicio: r.AN_EXERCICIO,
+      sg_uf: r.SG_UF,
+      no_municipio: r.NO_MUNICIPIO,
+      co_municipio_ibge: r.CO_MUNICIPIO_IBGE,
+      co_escola: r.CO_ESCOLA,
+      no_escola: r.NO_ESCOLA,
+      qt_alunos: parseInt(r.QT_ALUNOS) || 0,
+      no_esfera_adm: r.NO_ESFERA_ADM,
+      no_regiao: r.NO_REGIAO,
+      localizacao: r.LOCALIZACAO,
+      cnpj_uex: r.CNPJ_UEX,
+      no_uex: r.NO_UEX,
+      no_cargo: r.NO_CARGO,
+      dt_ini_vinculacao: r.DT_INI_VINCULACAO,
+      ds_programa_fnde: r.DS_PROGRAMA_FNDE,
+      sg_destinacao: r.SG_DESTINACAO,
+      vl_pago_custeio: parseFloat(r.VL_PAGO_CUSTEIO) || 0,
+      vl_pago_capital: parseFloat(r.VL_PAGO_CAPITAL) || 0,
+      vl_pago_total: parseFloat(r.VL_PAGO_TOTAL) || 0,
+    }));
+  } catch (err: any) {
+    console.log(`[PDDE-EXECFIN] Error: ${err.message}`);
+    return null;
+  }
+}
+
+export async function consultarExecFinPdde(coEscola: string): Promise<PddeExecFinResult> {
+  const cleanCode = coEscola.replace(/[^\d]/g, "");
+  const anosToQuery = [2025, 2024, 2023, 2022, 2021, 2020];
+
+  const results = await Promise.all(
+    anosToQuery.map(ano => fetchPddeExecFin(ano, cleanCode).then(records => ({ ano, records })))
+  );
+
+  const allRepasses: PddeExecFinItem[] = [];
+  const anosDisponiveis: number[] = [];
+  let apiAvailable = false;
+
+  for (const { ano, records } of results) {
+    if (records !== null) {
+      apiAvailable = true;
+      if (records.length > 0) {
+        anosDisponiveis.push(ano);
+        allRepasses.push(...records);
+      }
+    }
+  }
+
+  anosDisponiveis.sort((a, b) => b - a);
+
+  if (!apiAvailable) {
+    return {
+      ok: false,
+      repasses: [],
+      anosDisponiveis: [],
+      fonte: "indisponivel",
+      error: "A API de Execução Financeira do FNDE está temporariamente indisponível.",
+    };
+  }
+
+  return {
+    ok: true,
+    repasses: allRepasses,
+    anosDisponiveis,
+    fonte: "olinda-pdde-exec-fin",
   };
 }
