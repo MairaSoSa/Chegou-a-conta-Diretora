@@ -6,6 +6,7 @@ import { seedDatabase } from "./seed";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { startMecNormasScheduler } from "./integrations/mecnormas";
+import { getCensoEstatisticas, getMediasNacionais, getLocalStats } from "./importador";
 
 const app = express();
 const httpServer = createServer(app);
@@ -54,7 +55,8 @@ app.use((req, res, next) => {
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        const jsonStr = JSON.stringify(capturedJsonResponse);
+        logLine += ` :: ${jsonStr.length > 200 ? jsonStr.substring(0, 200) + '...' : jsonStr}`;
       }
 
       log(logLine);
@@ -115,6 +117,24 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      const warmCache = async () => {
+        log("Pre-warming stats cache in background...");
+        try {
+          getLocalStats();
+          log("  local stats cached");
+          for (const ano of [2024, 2023, 2022, 2021, 2020]) {
+            await new Promise(r => setTimeout(r, 100));
+            getCensoEstatisticas(ano);
+            log(`  censo ${ano} cached`);
+          }
+          await new Promise(r => setTimeout(r, 100));
+          getMediasNacionais();
+          log("Stats cache warmed successfully");
+        } catch (e) {
+          log(`Cache warming error (non-fatal): ${e}`);
+        }
+      };
+      setTimeout(warmCache, 3000);
     },
   );
 })();

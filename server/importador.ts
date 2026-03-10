@@ -287,15 +287,13 @@ export function searchSchoolsLocal(query: string, limit = 20) {
   }
 
   const upperQuery = query.toUpperCase();
+  const latestAno = rawDb.prepare(`SELECT MAX(ano) as max_ano FROM censo_escolar`).get() as any;
+  const ano = latestAno?.max_ano || 2024;
   const results = rawDb.prepare(
-    `SELECT c.* FROM censo_escolar c
-     INNER JOIN (
-       SELECT inep, MAX(ano) as max_ano FROM censo_escolar
-       WHERE upper(nome) LIKE ?
-       GROUP BY inep
-     ) latest ON c.inep = latest.inep AND c.ano = latest.max_ano
+    `SELECT * FROM censo_escolar
+     WHERE ano = ? AND upper(nome) LIKE ?
      LIMIT ?`
-  ).all('%' + upperQuery + '%', limit);
+  ).all(ano, '%' + upperQuery + '%', limit);
   return results.map(mapCensoToSchool);
 }
 
@@ -558,6 +556,9 @@ export function getLocalSchoolCount() {
 }
 
 export function getLocalStats() {
+  const cached = getStatsCache('local_stats');
+  if (cached) return cached;
+
   const censoCount = db.select({ count: sql<number>`count(*)` }).from(censoEscolar).get()?.count || 0;
 
   const indicadorCounts: Record<string, number> = {};
@@ -571,12 +572,20 @@ export function getLocalStats() {
 
   const importHistory = db.select().from(importacaoStatus).all();
 
-  return {
+  const result = {
     censo_escolar: censoCount,
     indicadores: indicadorCounts,
     importHistory,
     disponivel: INDICATOR_CONFIG,
   };
+  setStatsCache('local_stats', result);
+  return result;
+}
+
+export function invalidateStatsCache() {
+  try {
+    sqlite.prepare(`DELETE FROM stats_cache`).run();
+  } catch {}
 }
 
 export async function importSingleSchoolFromApi(inep: string) {
@@ -733,7 +742,27 @@ export function getCensoEscolarDetail(ano: number, inep: string) {
   };
 }
 
+function getStatsCache(key: string): any | null {
+  try {
+    const row = sqlite.prepare(`SELECT data, updated_at FROM stats_cache WHERE cache_key = ?`).get(key) as any;
+    if (row && (Date.now() - row.updated_at) < 24 * 60 * 60 * 1000) {
+      return JSON.parse(row.data);
+    }
+  } catch {}
+  return null;
+}
+
+function setStatsCache(key: string, data: any): void {
+  try {
+    sqlite.prepare(`INSERT OR REPLACE INTO stats_cache (cache_key, data, updated_at) VALUES (?, ?, ?)`).run(key, JSON.stringify(data), Date.now());
+  } catch {}
+}
+
 export function getCensoEstatisticas(ano: number) {
+  const cacheKey = `censo_stats_${ano}`;
+  const cached = getStatsCache(cacheKey);
+  if (cached) return cached;
+
   const row = sqlite.prepare(`SELECT count(*) as total_escolas, coalesce(sum(matriculas),0) as total_matriculas, coalesce(sum(docentes),0) as total_docentes, coalesce(sum(turmas),0) as total_turmas FROM censo_escolar WHERE ano = ?`).get(ano) as any;
   const groupByRaw = (col: string) => {
     const rows = sqlite.prepare(`SELECT ${col} as key, count(*) as count FROM censo_escolar WHERE ano = ? AND ${col} IS NOT NULL GROUP BY ${col}`).all(ano) as any[];
@@ -741,7 +770,7 @@ export function getCensoEstatisticas(ano: number) {
     for (const r of rows) result[r.key] = r.count;
     return result;
   };
-  return {
+  const result = {
     ano,
     total_escolas: row?.total_escolas || 0,
     total_matriculas: row?.total_matriculas || 0,
@@ -752,6 +781,8 @@ export function getCensoEstatisticas(ano: number) {
     por_uf: groupByRaw('uf'),
     por_situacao: groupByRaw('situacao'),
   };
+  setStatsCache(cacheKey, result);
+  return result;
 }
 
 export function listIndicador(tipo: string, ano: number, filters: Record<string, string> = {}, page = 1, perPage = 20) {
@@ -974,14 +1005,10 @@ export function getApiInfo() {
   };
 }
 
-const mediasNacionaisCache: { key: string; data: any; ts: number } = { key: '', data: null, ts: 0 };
-const MEDIAS_CACHE_TTL = 60 * 60 * 1000;
-
 export function getMediasNacionais(ano?: number) {
-  const cacheKey = `medias_${ano || 'latest'}`;
-  if (mediasNacionaisCache.key === cacheKey && mediasNacionaisCache.data && (Date.now() - mediasNacionaisCache.ts) < MEDIAS_CACHE_TTL) {
-    return mediasNacionaisCache.data;
-  }
+  const cacheKey = `medias_nacionais_${ano || 'latest'}`;
+  const cached = getStatsCache(cacheKey);
+  if (cached) return cached;
 
   const tiposParaMedias = ['ideb', 'taxas_rendimento', 'tdi', 'atu', 'had', 'afd', 'dsu', 'ird', 'icg', 'inse'];
   const result: Record<string, any> = {};
@@ -1017,9 +1044,6 @@ export function getMediasNacionais(ano?: number) {
     result[tipo] = { ...averages, _total_escolas: totalParsed };
   }
 
-  mediasNacionaisCache.key = cacheKey;
-  mediasNacionaisCache.data = result;
-  mediasNacionaisCache.ts = Date.now();
-
+  setStatsCache(cacheKey, result);
   return result;
 }

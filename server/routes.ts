@@ -19,7 +19,7 @@ import {
   importFromExternalApi, getImportStatus, getLocalSchoolCount, getLocalStats,
   listCensoEscolar, getCensoEscolarDetail, getCensoEstatisticas,
   listIndicador, getIndicadorDetail, getEscolaCompleta, getApiInfo,
-  getMediasNacionais,
+  getMediasNacionais, invalidateStatsCache,
 } from "./importador";
 import { importAllIndicators, getIndicatorImportRunning, getAvailableIndicators, importIdeb, importInse, generateSaebFromIdeb } from "./import-inep-indicators";
 import { 
@@ -650,10 +650,16 @@ export async function registerRoutes(
   });
 
   // === ADMIN: DATA IMPORT (from external API) ===
+  app.post("/api/admin/cache/invalidar", adminAuth, (_req, res) => {
+    invalidateStatsCache();
+    res.json({ mensagem: "Cache de estatísticas limpo com sucesso" });
+  });
+
   app.post("/api/admin/importar", adminAuth, async (req, res) => {
     const tipos = req.body.tipos as string[] | undefined;
     const anos = req.body.anos as number[] | undefined;
     importFromExternalApi(tipos, anos).then(result => {
+      invalidateStatsCache();
       console.log("[Import] Finished:", JSON.stringify(result.errors?.length || 0), "errors");
     });
     res.json({ mensagem: "Importação iniciada em background", status: getImportStatus() });
@@ -674,6 +680,7 @@ export async function registerRoutes(
     const tipos = req.body.tipos as string[] | undefined;
     const anos = req.body.anos as number[] | undefined;
     importAllIndicators(tipos, anos).then(result => {
+      invalidateStatsCache();
       console.log("[INEP] Indicator import finished:", JSON.stringify(result.errors?.length || 0), "errors");
     });
     res.json({ mensagem: "Importação de indicadores INEP iniciada em background", disponíveis: getAvailableIndicators() });
@@ -685,6 +692,7 @@ export async function registerRoutes(
     }
     const anos = req.body.anos as number[] | undefined;
     importIdeb(anos).then(result => {
+      invalidateStatsCache();
       console.log("[INEP] IDEB import finished:", JSON.stringify(result.errors?.length || 0), "errors");
     });
     res.json({ mensagem: "Importação de IDEB iniciada em background" });
@@ -696,6 +704,7 @@ export async function registerRoutes(
     }
     const anos = req.body.anos as number[] | undefined;
     importInse(anos).then(result => {
+      invalidateStatsCache();
       console.log("[INEP] INSE import finished:", JSON.stringify(result.errors?.length || 0), "errors");
     });
     res.json({ mensagem: "Importação de INSE iniciada em background" });
@@ -719,22 +728,23 @@ export async function registerRoutes(
 
     if (dbTipo === "ideb") {
       if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
-      importIdeb([ano]).then(r => console.log("[INEP] IDEB import done:", r.errors?.length || 0, "errors"));
+      importIdeb([ano]).then(r => { invalidateStatsCache(); console.log("[INEP] IDEB import done:", r.errors?.length || 0, "errors"); });
       return res.json({ mensagem: `Importação de IDEB ${ano} iniciada` });
     }
     if (dbTipo === "inse") {
       if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
-      importInse([ano]).then(r => console.log("[INEP] INSE import done:", r.errors?.length || 0, "errors"));
+      importInse([ano]).then(r => { invalidateStatsCache(); console.log("[INEP] INSE import done:", r.errors?.length || 0, "errors"); });
       return res.json({ mensagem: `Importação de INSE ${ano} iniciada` });
     }
     if (dbTipo === "saeb") {
       if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
-      generateSaebFromIdeb().then(r => console.log("[INEP] SAEB generation done:", JSON.stringify(r)));
+      generateSaebFromIdeb().then(r => { invalidateStatsCache(); console.log("[INEP] SAEB generation done:", JSON.stringify(r)); });
       return res.json({ mensagem: "Geração de SAEB a partir de IDEB iniciada" });
     }
 
     if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
     importAllIndicators([dbTipo], [ano]).then(r => {
+      invalidateStatsCache();
       console.log(`[INEP] ${dbTipo} import done:`, r.errors?.length || 0, "errors");
     });
     res.json({ mensagem: `Importação de ${tipo} ${ano} iniciada` });

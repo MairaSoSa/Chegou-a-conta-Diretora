@@ -8,13 +8,28 @@ const resolvedPath = path.isAbsolute(dbPath) ? dbPath : path.join(process.cwd(),
 
 export const sqlite = new Database(resolvedPath);
 sqlite.pragma("journal_mode = WAL");
-sqlite.pragma("cache_size = -64000");
+sqlite.pragma("cache_size = -128000");
+sqlite.pragma("mmap_size = 268435456");
+sqlite.pragma("temp_store = MEMORY");
+sqlite.pragma("synchronous = NORMAL");
+
+try {
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS stats_cache (
+    cache_key TEXT PRIMARY KEY,
+    data TEXT NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`);
+} catch (e) {
+  console.error("Failed to create stats_cache table:", e);
+}
 
 try {
   sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_ano_dep ON censo_escolar(ano, dependencia)");
   sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_ano_loc ON censo_escolar(ano, localizacao)");
   sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_ano_sit ON censo_escolar(ano, situacao)");
   sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_ano_uf_mat ON censo_escolar(ano, uf)");
+  sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_inep ON censo_escolar(inep)");
+  sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_inep_ano ON censo_escolar(inep, ano)");
 } catch {}
 
 export const db = drizzle(sqlite, { schema });
