@@ -1,12 +1,12 @@
 {
   "name": "Chegou a Conta, Diretora!",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
-      "version": "20"
+      "version": "22"
     }
   },
-  "postCreateCommand": "npm install && npm run db:push",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y build-essential python3 && npm install && npm run db:push",
   "forwardPorts": [5000],
   "portsAttributes": {
     "5000": {
