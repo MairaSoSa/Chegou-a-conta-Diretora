@@ -52,7 +52,8 @@ export default function Dashboard() {
   const { data: searchResults, refetch: refetchSearch, isLoading: searchLoading } = useSchoolSearch(searchQuery);
   const { data: evolucaoData, isLoading: evolucaoLoading } = useEscolaEvolucao(selectedInep || "");
   const { data: mediasNacionais } = useMediasNacionais(selectedAno);
-  const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, selectedAno);
+  const pddeAno = new Date().getFullYear();
+  const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
   const pddeCnpj = pddeData?.uex?.cnpj || null;
   const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined);
   const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
@@ -2121,7 +2122,7 @@ export default function Dashboard() {
                           </div>
                         ) : pddeExecFinData.ok && pddeExecFinData.repasses.length === 0 ? (
                           <p className="text-xs text-muted-foreground py-2">
-                            Sem registros de repasses PDDE para esta escola nos anos consultados (2020-2025).
+                            Sem registros de repasses PDDE para esta escola nos anos consultados (2020-2026).
                           </p>
                         ) : null}
                       </>

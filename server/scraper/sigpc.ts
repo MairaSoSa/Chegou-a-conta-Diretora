@@ -6,6 +6,20 @@ const HEADERS: Record<string, string> = {
   "Accept-Language": "pt-BR,pt;q=0.9",
 };
 
+const apiCache = new Map<string, { data: any; ts: number }>();
+const CACHE_TTL = 15 * 60 * 1000;
+
+function getCached<T>(key: string): T | null {
+  const entry = apiCache.get(key);
+  if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.data as T;
+  if (entry) apiCache.delete(key);
+  return null;
+}
+
+function setCache(key: string, data: any): void {
+  apiCache.set(key, { data, ts: Date.now() });
+}
+
 export interface SigpcPrestacaoListItem {
   pcId: number;
   processoNumero: string;
@@ -371,6 +385,12 @@ async function fetchPddeSaldos(ano: number, coEscola: string): Promise<PddeSaldo
 
 export async function consultarSaldosPdde(coEscola: string): Promise<PddeSaldosResult> {
   const cleanCode = coEscola.replace(/[^\d]/g, "");
+  const cacheKey = `saldos:${cleanCode}`;
+  const cached = getCached<PddeSaldosResult>(cacheKey);
+  if (cached) {
+    console.log(`[PDDE-SALDOS] Cache hit: ${cleanCode}`);
+    return cached;
+  }
   const anosToQuery = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
 
   const results = await Promise.all(
@@ -403,12 +423,14 @@ export async function consultarSaldosPdde(coEscola: string): Promise<PddeSaldosR
     };
   }
 
-  return {
+  const result: PddeSaldosResult = {
     ok: true,
     saldos: allSaldos,
     anosDisponiveis,
     fonte: "olinda-pdde-basico",
   };
+  setCache(cacheKey, result);
+  return result;
 }
 
 export interface PddeExecFinItem {
@@ -490,7 +512,13 @@ async function fetchPddeExecFin(ano: number, coEscola: string): Promise<PddeExec
 
 export async function consultarExecFinPdde(coEscola: string): Promise<PddeExecFinResult> {
   const cleanCode = coEscola.replace(/[^\d]/g, "");
-  const anosToQuery = [2025, 2024, 2023, 2022, 2021, 2020];
+  const cacheKey = `execfin:${cleanCode}`;
+  const cached = getCached<PddeExecFinResult>(cacheKey);
+  if (cached) {
+    console.log(`[PDDE-EXECFIN] Cache hit: ${cleanCode}`);
+    return cached;
+  }
+  const anosToQuery = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
 
   const results = await Promise.all(
     anosToQuery.map(ano => fetchPddeExecFin(ano, cleanCode).then(records => ({ ano, records })))
@@ -522,10 +550,12 @@ export async function consultarExecFinPdde(coEscola: string): Promise<PddeExecFi
     };
   }
 
-  return {
+  const result: PddeExecFinResult = {
     ok: true,
     repasses: allRepasses,
     anosDisponiveis,
     fonte: "olinda-pdde-exec-fin",
   };
+  setCache(cacheKey, result);
+  return result;
 }

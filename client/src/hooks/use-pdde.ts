@@ -157,11 +157,21 @@ export function usePddeInfo(inep: string | null, ano?: number) {
       const res = await fetch(`/api/pdde/${inep}?ano=${queryYear}`);
       if (!res.ok) throw new Error("Erro ao consultar PDDE");
       const data = await res.json();
+      if (!data.ok && queryYear === currentYear && data.error && /nenhum dado|não encontrad/i.test(data.error)) {
+        const fallbackRes = await fetch(`/api/pdde/${inep}?ano=${currentYear - 1}`);
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json();
+          if (fallbackData.ok) {
+            console.log("PDDE Data Received (fallback):", fallbackData);
+            return fallbackData;
+          }
+        }
+      }
       console.log("PDDE Data Received:", data);
       return data;
     },
     enabled: !!inep && /^\d{8}$/.test(inep),
-    staleTime: 0,
+    staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 }
