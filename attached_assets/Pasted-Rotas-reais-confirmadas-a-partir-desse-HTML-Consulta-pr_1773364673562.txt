@@ -1,0 +1,132 @@
+Rotas reais confirmadas a partir desse HTML
+Consulta principal da situação cadastral
+https://www.fnde.gov.br/pddeinfo/situacaocadastroentidade/situacaocadastroentidade/situacaocadastroentidade
+Paginação
+
+Exemplo página 2:
+
+https://www.fnde.gov.br/pddeinfo/situacaocadastroentidade/situacaocadastroentidade/situacaocadastroentidade/ano/2025/sg_uf/PA/co_municipio_fnde/150140/cnpj//co_escola//tp_relatorio/1/st_cadstral//ds_localizacao//fimMandato//consultar/Consultar/page/2
+Municípios por UF
+https://www.fnde.gov.br/pddeinfo/pddeinfo/corp/get-municipio/sg_uf/PA
+Excel
+https://www.fnde.gov.br/pddeinfo/situacaocadastroentidade/situacaocadastroentidade/excel/param%5B%5D/2025/param%5B%5D//param%5B%5D//param%5B%5D//param%5B%5D//param%5B%5D//param%5B%5D//param%5B%5D//param%5B%5D/1/param%5B%5D/150140/param%5B%5D/situacaoCadastroEntidade
+O que eu ajustaria no backend
+
+Em vez de tentar um parser genérico demais, eu faria uma rota específica para esse relatório.
+
+Sua rota
+GET /api/pdde/relatorios/situacao-cadastral?ano=2025&sg_uf=PA&co_municipio_fnde=150140&page=1
+Ela consulta
+
+a URL HTML paginada
+
+ou, melhor ainda, a URL de Excel quando você quiser carga grande
+
+Exemplo de parser certo para essa página
+import cheerio from "cheerio";
+
+function normalizeText(value = "") {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function parseSituacaoCadastral(html) {
+  const $ = cheerio.load(html);
+
+  const rows = [];
+  $("#listagem tbody tr").each((_, tr) => {
+    const cols = $(tr).find("td").map((__, td) => normalizeText($(td).text())).get();
+
+    if (cols.length >= 17) {
+      rows.push({
+        ano: cols[0] || null,
+        regiao: cols[1] || null,
+        uf: cols[2] || null,
+        municipio: cols[3] || null,
+        cnpj_eex: cols[4] || null,
+        codigo_escola: cols[5] || null,
+        escola: cols[6] || null,
+        localizacao: cols[7] || null,
+        cnpj_uex: cols[8] || null,
+        razao_social: cols[9] || null,
+        ddd: cols[10] || null,
+        telefone: cols[11] || null,
+        rede_atendimento: cols[12] || null,
+        mandato_dirigente: cols[13] || null,
+        data_fim_mandato: cols[14] || null,
+        data_atualizacao: cols[15] || null,
+        hora_atualizacao: cols[16] || null
+      });
+    }
+  });
+
+  const paginacaoTexto = normalizeText($(".listagemPaginacao").text());
+  const match = paginacaoTexto.match(/Exibindo\s+(\d+)\s*-\s*(\d+)\s*de\s*(\d+)\s*Registro/);
+
+  return {
+    total_registros: match ? Number(match[3]) : null,
+    itens: rows
+  };
+}
+Exemplo da rota Express
+app.get("/api/pdde/relatorios/situacao-cadastral", async (req, res) => {
+  const {
+    ano,
+    sg_uf = "",
+    co_municipio_fnde = "",
+    cnpj = "",
+    co_escola = "",
+    tp_relatorio = "1",
+    st_cadstral = "",
+    ds_localizacao = "",
+    fimMandato = "",
+    page = "1"
+  } = req.query;
+
+  try {
+    const path =
+      `/pddeinfo/situacaocadastroentidade/situacaocadastroentidade/situacaocadastroentidade` +
+      `/ano/${ano}` +
+      `/sg_uf/${sg_uf}` +
+      `/co_municipio_fnde/${co_municipio_fnde}` +
+      `/cnpj/${cnpj}` +
+      `/co_escola/${co_escola}` +
+      `/tp_relatorio/${tp_relatorio}` +
+      `/st_cadstral/${st_cadstral}` +
+      `/ds_localizacao/${ds_localizacao}` +
+      `/fimMandato/${fimMandato}` +
+      `/consultar/Consultar` +
+      `/page/${page}`;
+
+    const response = await axios.get(`https://www.fnde.gov.br${path}`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "text/html,application/xhtml+xml"
+      },
+      timeout: 30000
+    });
+
+    const data = parseSituacaoCadastral(response.data);
+
+    res.json({
+      ok: true,
+      consulta: {
+        ano,
+        sg_uf,
+        co_municipio_fnde,
+        cnpj,
+        co_escola,
+        tp_relatorio,
+        st_cadstral,
+        ds_localizacao,
+        fimMandato,
+        page
+      },
+      ...data
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error.message
+    });
+  }
+});

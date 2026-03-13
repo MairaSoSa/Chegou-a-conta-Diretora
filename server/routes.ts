@@ -12,7 +12,7 @@ import { registerCadernoRoutes } from "./caderno-routes";
 import { registerObjectStorageRoutes } from "./integrations/object_storage";
 import { fetchMecNormasFilters, syncMecNormas } from "./integrations/mecnormas";
 import { backfillAiDocumentEmbeddings } from "./integrations/embeddings";
-import { getPddeInfo, getPddeUexSaldo } from "./scraper/pdde";
+import { getPddeInfo, getPddeUexSaldo, getSituacaoCadastral, getMunicipiosPorUf } from "./scraper/pdde";
 import { searchDOU, searchDOUForNorma } from "./scraper/dou";
 import {
   searchSchoolsLocal, getEscolaCompletaLocal, getEscolaEvolucaoLocal,
@@ -384,6 +384,39 @@ export async function registerRoutes(
     } catch (err: any) {
       console.error("PDDE UEX saldo error:", err.message);
       res.status(500).json({ ok: false, saldos: [], total_saldo: 0, error: "Erro ao consultar saldo da UEx" });
+    }
+  });
+
+  app.get("/api/pdde/relatorios/situacao-cadastral", async (req, res) => {
+    try {
+      const {
+        ano = String(new Date().getFullYear()),
+        sg_uf, co_municipio_fnde, cnpj, co_escola,
+        tp_relatorio, st_cadstral, ds_localizacao, fimMandato, page,
+      } = req.query as Record<string, string>;
+
+      if (!ano) return res.status(400).json({ ok: false, error: "Parâmetro 'ano' é obrigatório" });
+
+      const result = await getSituacaoCadastral({
+        ano, sg_uf, co_municipio_fnde, cnpj, co_escola,
+        tp_relatorio, st_cadstral, ds_localizacao, fimMandato, page,
+      });
+      res.json(result);
+    } catch (err: any) {
+      console.error("PDDE situação cadastral error:", err.message);
+      res.status(500).json({ ok: false, total_registros: null, pagina_atual: 1, itens: [], error: "Erro ao consultar situação cadastral" });
+    }
+  });
+
+  app.get("/api/pdde/municipios/:sg_uf", async (req, res) => {
+    try {
+      const sg_uf = req.params.sg_uf.toUpperCase().replace(/[^A-Z]/g, "");
+      if (sg_uf.length !== 2) return res.status(400).json({ ok: false, municipios: [], error: "UF inválida" });
+      const result = await getMunicipiosPorUf(sg_uf);
+      res.json(result);
+    } catch (err: any) {
+      console.error("PDDE municípios error:", err.message);
+      res.status(500).json({ ok: false, municipios: [], error: "Erro ao buscar municípios" });
     }
   });
 

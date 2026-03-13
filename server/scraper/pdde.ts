@@ -4,6 +4,7 @@ import iconv from "iconv-lite";
 const BASE = "https://www.fnde.gov.br/pddeinfo";
 const CONSULTA_URL = `${BASE}/pddeinfo/escola/consultar`;
 const SALDO_UEX_URL = `${BASE}/consultasaldoentidade/consultasaldoentidade/consultasaldoentidade`;
+const SITUACAO_CADASTRAL_URL = `${BASE}/situacaocadastroentidade/situacaocadastroentidade/situacaocadastroentidade`;
 
 const HEADERS: Record<string, string> = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -535,5 +536,167 @@ export async function getPddeUexSaldo(ano: number, cnpj: string): Promise<PddeUe
   } catch (err: any) {
     console.error(`[PDDE UEX Saldo] Error:`, err);
     return { ok: false, ano, cnpj, saldos: [], total_saldo: 0, error: `Erro: ${err.message}` };
+  }
+}
+
+// ── Situação Cadastral das Entidades ─────────────────────────────────────────
+
+export interface SituacaoCadastralItem {
+  ano: string | null;
+  regiao: string | null;
+  uf: string | null;
+  municipio: string | null;
+  cnpj_eex: string | null;
+  codigo_escola: string | null;
+  escola: string | null;
+  localizacao: string | null;
+  cnpj_uex: string | null;
+  razao_social: string | null;
+  ddd: string | null;
+  telefone: string | null;
+  rede_atendimento: string | null;
+  mandato_dirigente: string | null;
+  data_fim_mandato: string | null;
+  data_atualizacao: string | null;
+  hora_atualizacao: string | null;
+}
+
+export interface SituacaoCadastralResult {
+  ok: boolean;
+  total_registros: number | null;
+  pagina_atual: number;
+  itens: SituacaoCadastralItem[];
+  error?: string;
+}
+
+export interface SituacaoCadastralParams {
+  ano: string;
+  sg_uf?: string;
+  co_municipio_fnde?: string;
+  cnpj?: string;
+  co_escola?: string;
+  tp_relatorio?: string;
+  st_cadstral?: string;
+  ds_localizacao?: string;
+  fimMandato?: string;
+  page?: string | number;
+}
+
+function parseSituacaoCadastral(html: string): { total_registros: number | null; itens: SituacaoCadastralItem[] } {
+  const $ = cheerio.load(html);
+  const rows: SituacaoCadastralItem[] = [];
+
+  $("#listagem tbody tr").each((_, tr) => {
+    const cols = $(tr).find("td")
+      .map((__, td) => normalizeText($(td).text()))
+      .get();
+
+    if (cols.length >= 17) {
+      rows.push({
+        ano: cols[0] || null,
+        regiao: cols[1] || null,
+        uf: cols[2] || null,
+        municipio: cols[3] || null,
+        cnpj_eex: cols[4] || null,
+        codigo_escola: cols[5] || null,
+        escola: cols[6] || null,
+        localizacao: cols[7] || null,
+        cnpj_uex: cols[8] || null,
+        razao_social: cols[9] || null,
+        ddd: cols[10] || null,
+        telefone: cols[11] || null,
+        rede_atendimento: cols[12] || null,
+        mandato_dirigente: cols[13] || null,
+        data_fim_mandato: cols[14] || null,
+        data_atualizacao: cols[15] || null,
+        hora_atualizacao: cols[16] || null,
+      });
+    }
+  });
+
+  const paginacaoTexto = normalizeText($(".listagemPaginacao").text());
+  const match = paginacaoTexto.match(/Exibindo\s+(\d+)\s*-\s*(\d+)\s*de\s*(\d+)\s*Registro/i);
+
+  return {
+    total_registros: match ? Number(match[3]) : null,
+    itens: rows,
+  };
+}
+
+export async function getSituacaoCadastral(params: SituacaoCadastralParams): Promise<SituacaoCadastralResult> {
+  const {
+    ano,
+    sg_uf = "",
+    co_municipio_fnde = "",
+    cnpj = "",
+    co_escola = "",
+    tp_relatorio = "1",
+    st_cadstral = "",
+    ds_localizacao = "",
+    fimMandato = "",
+    page = "1",
+  } = params;
+
+  const pagina = Number(page) || 1;
+
+  const url =
+    `${SITUACAO_CADASTRAL_URL}` +
+    `/ano/${encodeURIComponent(ano)}` +
+    `/sg_uf/${encodeURIComponent(sg_uf)}` +
+    `/co_municipio_fnde/${encodeURIComponent(co_municipio_fnde)}` +
+    `/cnpj/${encodeURIComponent(cnpj)}` +
+    `/co_escola/${encodeURIComponent(co_escola)}` +
+    `/tp_relatorio/${encodeURIComponent(tp_relatorio)}` +
+    `/st_cadstral/${encodeURIComponent(st_cadstral)}` +
+    `/ds_localizacao/${encodeURIComponent(ds_localizacao)}` +
+    `/fimMandato/${encodeURIComponent(fimMandato)}` +
+    `/consultar/Consultar` +
+    `/page/${pagina}`;
+
+  console.log(`[PDDE Situação Cadastral] Fetching: ${url}`);
+
+  try {
+    const response = await fetch(url, {
+      headers: HEADERS,
+      signal: AbortSignal.timeout(30000),
+    });
+
+    if (!response.ok) {
+      return { ok: false, total_registros: null, pagina_atual: pagina, itens: [], error: `HTTP ${response.status}` };
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const html = iconv.decode(buffer, "latin1");
+    const parsed = parseSituacaoCadastral(html);
+
+    return { ok: true, pagina_atual: pagina, ...parsed };
+  } catch (err: any) {
+    console.error(`[PDDE Situação Cadastral] Error:`, err);
+    return { ok: false, total_registros: null, pagina_atual: pagina, itens: [], error: `Erro: ${err.message}` };
+  }
+}
+
+export async function getMunicipiosPorUf(sg_uf: string): Promise<{ ok: boolean; municipios: { codigo: string; nome: string }[]; error?: string }> {
+  const url = `${BASE}/pddeinfo/corp/get-municipio/sg_uf/${encodeURIComponent(sg_uf.toUpperCase())}`;
+  console.log(`[PDDE Municípios] Fetching: ${url}`);
+  try {
+    const response = await fetch(url, {
+      headers: { ...HEADERS, "Accept": "application/json, text/javascript, */*" },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) {
+      return { ok: false, municipios: [], error: `HTTP ${response.status}` };
+    }
+    const json = await response.json();
+    const municipios = Array.isArray(json)
+      ? json.map((m: any) => ({
+          codigo: String(m.CO_MUNICIPIO_FNDE || m.co_municipio_fnde || m.codigo || m.id || ""),
+          nome: String(m.NO_MUNICIPIO || m.no_municipio || m.nome || m.name || ""),
+        })).filter(m => m.codigo && m.nome)
+      : [];
+    return { ok: true, municipios };
+  } catch (err: any) {
+    console.error(`[PDDE Municípios] Error:`, err);
+    return { ok: false, municipios: [], error: `Erro: ${err.message}` };
   }
 }
