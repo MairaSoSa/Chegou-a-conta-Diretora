@@ -64,7 +64,6 @@ export default function Dashboard() {
   const { data: cadastralData, isLoading: cadastralLoading } = usePddeSituacaoCadastral(selectedInep, pddeAno);
   const { data: prestacaoContaData, isLoading: prestacaoContaLoading } = usePddePrestacaoConta(selectedInep, pddeAno);
   const { data: atendimentoData, isLoading: atendimentoLoading } = usePddeAtendimento(selectedInep, pddeAno);
-
   const listFilters = useMemo(() => {
     const f: Record<string, string> = {};
     if (filterUf) f.uf = filterUf;

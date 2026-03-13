@@ -471,6 +471,7 @@ export async function registerRoutes(
     }
   });
 
+
   app.get("/api/sigpc/localizar/:cnpj", async (req, res) => {
     try {
       const cnpj = decodeURIComponent(req.params.cnpj);
