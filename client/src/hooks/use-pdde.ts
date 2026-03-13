@@ -153,33 +153,43 @@ export interface PddeInfo {
 }
 
 export interface PddeUexSaldoItem {
-  programa: string | null;
+  uf: string | null;
+  municipio: string | null;
+  rede_atendimento: string | null;
+  cnpj: string | null;
+  razao_social: string | null;
   banco: string | null;
   agencia: string | null;
   conta: string | null;
-  saldo: number | null;
-  saldo_texto: string | null;
+  mes_ano: string | null;
+  saldo_conta: number | null;
+  saldo_fundos: number | null;
+  saldo_poupanca: number | null;
+  saldo_rdb_cdb: number | null;
+  programa: string | null;
+  saldo_total: number | null;
 }
 
 export interface PddeUexSaldoResult {
   ok: boolean;
-  ano: number;
+  mes: string;
   cnpj: string;
   saldos: PddeUexSaldoItem[];
-  total_saldo: number;
+  total_saldo_fundos: number;
+  total_saldo_geral: number;
   error?: string;
 }
 
-export function usePddeUexSaldo(cnpj: string | null, ano?: number) {
-  const currentYear = new Date().getFullYear();
-  const queryYear = ano || currentYear;
+export function usePddeUexSaldo(cnpj: string | null, opts?: { mes?: string }) {
   const cnpjClean = (cnpj || "").replace(/\D/g, "");
 
   return useQuery<PddeUexSaldoResult>({
-    queryKey: ["pdde-uex-saldo", cnpjClean, queryYear],
+    queryKey: ["pdde-uex-saldo", cnpjClean, opts?.mes],
     queryFn: async () => {
-      if (!cnpjClean) return { ok: false, ano: queryYear, cnpj: "", saldos: [], total_saldo: 0, error: "Sem CNPJ" };
-      const res = await fetch(`/api/pdde/uex/saldo?cnpj=${cnpjClean}&ano=${queryYear}`);
+      if (!cnpjClean) return { ok: false, mes: "", cnpj: "", saldos: [], total_saldo_fundos: 0, total_saldo_geral: 0, error: "Sem CNPJ" };
+      const params = new URLSearchParams({ cnpj: cnpjClean });
+      if (opts?.mes) params.set("mes", opts.mes);
+      const res = await fetch(`/api/pdde/uex/saldo?${params.toString()}`);
       if (!res.ok) throw new Error("Erro ao consultar saldo UEx");
       return res.json();
     },

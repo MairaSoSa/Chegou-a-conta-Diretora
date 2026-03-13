@@ -58,7 +58,7 @@ export default function Dashboard() {
   const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined);
   const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
   const { data: pddeExecFinData, isLoading: pddeExecFinLoading, isError: pddeExecFinError } = usePddeExecFin(selectedInep);
-  const { data: pddeUexSaldoData, isLoading: pddeUexSaldoLoading } = usePddeUexSaldo(pddeCnpj, pddeAno);
+  const { data: pddeUexSaldoData, isLoading: pddeUexSaldoLoading } = usePddeUexSaldo(pddeCnpj);
   const { data: cadastralData, isLoading: cadastralLoading } = usePddeSituacaoCadastral(selectedInep, pddeAno);
 
   const listFilters = useMemo(() => {
@@ -1919,7 +1919,7 @@ export default function Dashboard() {
                               <div>
                                 <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
                                   <BanknoteIcon className="w-3.5 h-3.5" />
-                                  Saldo UEx por Programa ({pddeUexSaldoData.ano})
+                                  Saldo UEx por Conta — {pddeUexSaldoData.mes}
                                 </p>
                                 <div className="overflow-x-auto">
                                   <table className="w-full text-sm">
@@ -1929,7 +1929,10 @@ export default function Dashboard() {
                                         <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Banco</th>
                                         <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Agência</th>
                                         <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Conta</th>
-                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Saldo</th>
+                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Saldo Conta</th>
+                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Saldo Fundos</th>
+                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Poupança</th>
+                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">RDB/CDB</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -1939,15 +1942,27 @@ export default function Dashboard() {
                                           <td className="py-2 px-2 text-xs">{s.banco || '-'}</td>
                                           <td className="py-2 px-2 text-xs font-mono">{s.agencia || '-'}</td>
                                           <td className="py-2 px-2 text-xs font-mono">{s.conta || '-'}</td>
+                                          <td className="py-2 px-2 text-xs text-right font-mono">
+                                            {s.saldo_conta != null ? `R$ ${s.saldo_conta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                                          </td>
                                           <td className="py-2 px-2 text-xs text-right font-mono font-semibold text-green-700">
-                                            {s.saldo != null ? `R$ ${s.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                                            {s.saldo_fundos != null ? `R$ ${s.saldo_fundos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                                          </td>
+                                          <td className="py-2 px-2 text-xs text-right font-mono">
+                                            {s.saldo_poupanca != null ? `R$ ${s.saldo_poupanca.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                                          </td>
+                                          <td className="py-2 px-2 text-xs text-right font-mono">
+                                            {s.saldo_rdb_cdb != null ? `R$ ${s.saldo_rdb_cdb.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
                                           </td>
                                         </tr>
                                       ))}
                                       <tr className="border-t border-border/30 font-semibold bg-muted/20">
-                                        <td colSpan={4} className="py-2 px-2 text-xs text-right">Total Geral</td>
+                                        <td colSpan={5} className="py-2 px-2 text-xs text-right">Total Fundos</td>
                                         <td className="py-2 px-2 text-xs text-right font-mono text-green-700">
-                                          R$ {pddeUexSaldoData.total_saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                          R$ {pddeUexSaldoData.total_saldo_fundos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        </td>
+                                        <td colSpan={2} className="py-2 px-2 text-xs text-right text-muted-foreground font-mono">
+                                          Total geral: R$ {pddeUexSaldoData.total_saldo_geral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                         </td>
                                       </tr>
                                     </tbody>

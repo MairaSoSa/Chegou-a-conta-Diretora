@@ -379,15 +379,20 @@ export async function registerRoutes(
   app.get("/api/pdde/uex/saldo", async (req, res) => {
     try {
       const cnpj = String(req.query.cnpj || "").replace(/\D/g, "");
-      const ano = parseInt(String(req.query.ano || new Date().getFullYear()), 10);
-      if (cnpj.length < 14) {
-        return res.status(400).json({ ok: false, saldos: [], total_saldo: 0, error: "CNPJ inválido (deve ter 14 dígitos)" });
+      const mes = req.query.mes ? String(req.query.mes) : undefined;
+      const sg_uf = req.query.sg_uf ? String(req.query.sg_uf) : undefined;
+      const co_municipio_fnde = req.query.co_municipio_fnde ? String(req.query.co_municipio_fnde) : undefined;
+      const co_programa_fnde = req.query.co_programa_fnde ? String(req.query.co_programa_fnde) : undefined;
+      const page = req.query.page ? Number(req.query.page) : 1;
+
+      if (!cnpj && !sg_uf) {
+        return res.status(400).json({ ok: false, saldos: [], total_saldo_fundos: 0, total_saldo_geral: 0, error: "Informe CNPJ ou UF para consulta" });
       }
-      const result = await getPddeUexSaldo(ano, cnpj);
+      const result = await getPddeUexSaldo(cnpj || "", { mes, sg_uf, co_municipio_fnde, co_programa_fnde, page });
       res.json(result);
     } catch (err: any) {
       console.error("PDDE UEX saldo error:", err.message);
-      res.status(500).json({ ok: false, saldos: [], total_saldo: 0, error: "Erro ao consultar saldo da UEx" });
+      res.status(500).json({ ok: false, saldos: [], total_saldo_fundos: 0, total_saldo_geral: 0, error: "Erro ao consultar saldo da UEx" });
     }
   });
 

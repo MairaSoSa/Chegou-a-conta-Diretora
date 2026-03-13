@@ -83,20 +83,30 @@ export interface PddeDestinacao {
 }
 
 export interface PddeUexSaldo {
-  programa: string | null;
+  uf: string | null;
+  municipio: string | null;
+  rede_atendimento: string | null;
+  cnpj: string | null;
+  razao_social: string | null;
   banco: string | null;
   agencia: string | null;
   conta: string | null;
-  saldo: number | null;
-  saldo_texto: string | null;
+  mes_ano: string | null;
+  saldo_conta: number | null;
+  saldo_fundos: number | null;
+  saldo_poupanca: number | null;
+  saldo_rdb_cdb: number | null;
+  programa: string | null;
+  saldo_total: number | null;
 }
 
 export interface PddeUexSaldoResult {
   ok: boolean;
-  ano: number;
+  mes: string;
   cnpj: string;
   saldos: PddeUexSaldo[];
-  total_saldo: number;
+  total_saldo_fundos: number;
+  total_saldo_geral: number;
   error?: string;
 }
 
@@ -191,36 +201,41 @@ function extractMatriculasFromText(text: string): Record<string, number> {
   return alunos;
 }
 
-// Parse the saldo page from consultasaldoentidade
+// Parse the saldo page from consultasaldoentidade (query-string format)
+// Columns: UF(0) Município(1) Rede(2) CNPJ(3) RazãoSocial(4) Banco(5) Agência(6)
+//          Conta(7) Mês/Ano(8) SaldoConta(9) SaldoFundos(10) SaldoPoupança(11)
+//          SaldoRDB/CDB(12) Programa(13)
 function parseSaldoPage($: cheerio.CheerioAPI): PddeUexSaldo[] {
   const saldos: PddeUexSaldo[] = [];
 
-  $("table").each((_, table) => {
-    const $t = $(table);
-    const headers = $t.find("tr").first().find("th, td")
+  $("#listagem tbody tr").each((_, tr) => {
+    const cols = $(tr).find("td")
       .map((_: number, el: any) => normalizeText($(el).text())).get();
 
-    const looksLikeSaldo =
-      headers.some((h: string) => /Programa/i.test(h)) &&
-      headers.some((h: string) => /Saldo/i.test(h));
-
-    if (!looksLikeSaldo) return;
-
-    $t.find("tr").slice(1).each((_: number, row: any) => {
-      const cols = $(row).find("td")
-        .map((_: number, el: any) => normalizeText($(el).text())).get();
-
-      if (cols.length >= 2) {
-        saldos.push({
-          programa: cols[0] || null,
-          banco: cols[1] || null,
-          agencia: cols[2] || null,
-          conta: cols[3] || null,
-          saldo_texto: cols[4] || null,
-          saldo: brToFloat(cols[4]),
-        });
-      }
-    });
+    if (cols.length >= 10) {
+      const sc = brToFloat(cols[9]);
+      const sf = brToFloat(cols[10]);
+      const sp = brToFloat(cols[11]);
+      const sr = brToFloat(cols[12]);
+      const total = (sc || 0) + (sf || 0) + (sp || 0) + (sr || 0);
+      saldos.push({
+        uf: cols[0] || null,
+        municipio: cols[1] || null,
+        rede_atendimento: cols[2] || null,
+        cnpj: cols[3] || null,
+        razao_social: cols[4] || null,
+        banco: cols[5] || null,
+        agencia: cols[6] || null,
+        conta: cols[7] || null,
+        mes_ano: cols[8] || null,
+        saldo_conta: sc,
+        saldo_fundos: sf,
+        saldo_poupanca: sp,
+        saldo_rdb_cdb: sr,
+        programa: cols[13] || null,
+        saldo_total: total,
+      });
+    }
   });
 
   return saldos;
@@ -496,47 +511,65 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
   }
 }
 
-export async function getPddeUexSaldo(ano: number, cnpj: string): Promise<PddeUexSaldoResult> {
-  const cnpjClean = cnpj.replace(/\D/g, "");
-  try {
-    const params = new URLSearchParams({
-      ano: String(ano),
-      cnpj: cnpjClean,
-      consultar: "Consultar",
-    });
+// Returns "MM-YYYY" for the month to try (current month, or offset months back)
+function mesParam(offsetMonths = 0): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() - offsetMonths);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${mm}-${yyyy}`;
+}
 
-    const url = `${SALDO_UEX_URL}?${params.toString()}`;
+export async function getPddeUexSaldo(
+  cnpj: string,
+  opts: { mes?: string; sg_uf?: string; co_municipio_fnde?: string; co_programa_fnde?: string; page?: number } = {}
+): Promise<PddeUexSaldoResult> {
+  const cnpjClean = cnpj.replace(/\D/g, "");
+  const { sg_uf = "", co_municipio_fnde = "", co_programa_fnde = "", page = 1 } = opts;
+
+  // Determine which month(s) to try: if caller specifies mes use it; otherwise try current month,
+  // then fall back up to 3 months back until data is found.
+  const candidateMeses = opts.mes
+    ? [opts.mes]
+    : [mesParam(0), mesParam(1), mesParam(2), mesParam(3)];
+
+  for (const mes of candidateMeses) {
+    const url = `${SALDO_UEX_URL}?mes=${encodeURIComponent(mes)}&cnpj=${cnpjClean}&co_programa_fnde=${encodeURIComponent(co_programa_fnde)}&sg_uf=${encodeURIComponent(sg_uf)}&co_municipio_fnde=${encodeURIComponent(co_municipio_fnde)}&consultar=Consultar${page > 1 ? `&page=${page}` : ""}`;
+
     console.log(`[PDDE UEX Saldo] Fetching: ${url}`);
 
-    const response = await fetch(url, {
-      headers: HEADERS,
-      signal: AbortSignal.timeout(20000),
-    });
+    try {
+      const response = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(20000) });
+      if (!response.ok) continue;
 
-    if (!response.ok) {
-      return { ok: false, ano, cnpj, saldos: [], total_saldo: 0, error: `HTTP ${response.status}` };
+      const buffer = Buffer.from(await response.arrayBuffer());
+      if (buffer.length < 500) continue;
+      const html = iconv.decode(buffer, "latin1");
+
+      const $ = cheerio.load(html);
+      const saldos = parseSaldoPage($);
+
+      if (saldos.length === 0) continue;
+
+      // Pagination
+      const paginacaoTexto = normalizeText($(".listagemPaginacao").text());
+      const matchPag = paginacaoTexto.match(/Exibindo\s+(\d+)\s*-\s*(\d+)\s*de\s*(\d+)\s*Registro/i);
+      const total_registros = matchPag ? Number(matchPag[3]) : saldos.length;
+
+      const total_saldo_fundos = saldos.reduce((sum, s) => sum + (s.saldo_fundos || 0), 0);
+      const total_saldo_geral = saldos.reduce((sum, s) => sum + (s.saldo_total || 0), 0);
+
+      return { ok: true, mes, cnpj: cnpjClean, saldos, total_saldo_fundos, total_saldo_geral };
+    } catch (err: any) {
+      console.warn(`[PDDE UEX Saldo] ${mes} error:`, err.message);
     }
-
-    const buffer = Buffer.from(await response.arrayBuffer());
-    const html = iconv.decode(buffer, "latin1");
-
-    if (html.includes("Nenhum registro") || html.includes("não encontrad") || html.length < 500) {
-      return { ok: false, ano, cnpj, saldos: [], total_saldo: 0, error: "Nenhum saldo encontrado para este CNPJ e ano." };
-    }
-
-    const $ = cheerio.load(html);
-    const saldos = parseSaldoPage($);
-
-    if (saldos.length === 0) {
-      return { ok: false, ano, cnpj, saldos: [], total_saldo: 0, error: "Dados de saldo não disponíveis via scraping (página renderizada via JavaScript)." };
-    }
-
-    const total_saldo = saldos.reduce((sum, s) => sum + (s.saldo || 0), 0);
-    return { ok: true, ano, cnpj, saldos, total_saldo };
-  } catch (err: any) {
-    console.error(`[PDDE UEX Saldo] Error:`, err);
-    return { ok: false, ano, cnpj, saldos: [], total_saldo: 0, error: `Erro: ${err.message}` };
   }
+
+  return {
+    ok: false, mes: candidateMeses[0], cnpj: cnpjClean,
+    saldos: [], total_saldo_fundos: 0, total_saldo_geral: 0,
+    error: "Nenhum saldo encontrado para os meses consultados.",
+  };
 }
 
 // ── Situação Cadastral das Entidades ─────────────────────────────────────────
