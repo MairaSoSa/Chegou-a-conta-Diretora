@@ -676,6 +676,323 @@ export async function getSituacaoCadastral(params: SituacaoCadastralParams): Pro
   }
 }
 
+// ── Situação Prestação de Contas ─────────────────────────────────────────────
+
+export interface SituacaoPrestacaoContaItem {
+  ano: string | null;
+  regiao: string | null;
+  uf: string | null;
+  municipio: string | null;
+  cnpj_eex: string | null;
+  razao_social_eex: string | null;
+  codigo_escola: string | null;
+  escola: string | null;
+  cnpj_uex: string | null;
+  razao_social_uex: string | null;
+  programa: string | null;
+  situacao_pc: string | null;
+  efeito_suspensivo: string | null;
+  valor_previsto: string | null;
+}
+
+export interface SituacaoPrestacaoContaResult {
+  ok: boolean;
+  total_registros: number | null;
+  pagina_atual: number;
+  itens: SituacaoPrestacaoContaItem[];
+  disponivel: boolean;
+  error?: string;
+}
+
+export interface SituacaoPrestacaoContaParams {
+  ano: string;
+  sg_uf?: string;
+  co_municipio_fnde?: string;
+  co_programa_fnde?: string;
+  cnpj?: string;
+  co_escola?: string;
+  tp_relatorio?: string;
+  page?: string | number;
+}
+
+function parseSituacaoPrestacaoConta(html: string): { total_registros: number | null; itens: SituacaoPrestacaoContaItem[] } {
+  const $ = cheerio.load(html);
+  const rows: SituacaoPrestacaoContaItem[] = [];
+
+  $("#listagem tbody tr").each((_, tr) => {
+    const cols = $(tr).find("td")
+      .map((__, td) => normalizeText($(td).text()))
+      .get();
+
+    if (cols.length >= 10) {
+      rows.push({
+        ano: cols[0] || null,
+        regiao: cols[1] || null,
+        uf: cols[2] || null,
+        municipio: cols[3] || null,
+        cnpj_eex: cols[4] || null,
+        razao_social_eex: cols[5] || null,
+        codigo_escola: cols[6] || null,
+        escola: cols[7] || null,
+        cnpj_uex: cols[8] || null,
+        razao_social_uex: cols[9] || null,
+        programa: cols[10] || null,
+        situacao_pc: cols[11] || null,
+        efeito_suspensivo: cols[12] || null,
+        valor_previsto: cols[13] || null,
+      });
+    }
+  });
+
+  const paginacaoTexto = normalizeText($(".listagemPaginacao").text());
+  const match = paginacaoTexto.match(/Exibindo\s+(\d+)\s*-\s*(\d+)\s*de\s*(\d+)\s*Registro/i);
+  return { total_registros: match ? Number(match[3]) : null, itens: rows };
+}
+
+export async function getSituacaoPrestacaoConta(params: SituacaoPrestacaoContaParams): Promise<SituacaoPrestacaoContaResult> {
+  const { ano, sg_uf = "", co_municipio_fnde = "", co_programa_fnde = "", cnpj = "", co_escola = "", tp_relatorio = "1", page = "1" } = params;
+  const pagina = Number(page) || 1;
+
+  const url =
+    `${BASE}/situacaoprestacaoconta/situacaoprestacaoconta/situacaoprestacaoconta` +
+    `/ano/${encodeURIComponent(ano)}` +
+    `/sg_uf/${encodeURIComponent(sg_uf)}` +
+    `/co_municipio_fnde/${encodeURIComponent(co_municipio_fnde)}` +
+    `/co_programa_fnde/${encodeURIComponent(co_programa_fnde)}` +
+    `/cnpj/${encodeURIComponent(cnpj)}` +
+    `/co_escola/${encodeURIComponent(co_escola)}` +
+    `/tp_relatorio/${encodeURIComponent(tp_relatorio)}` +
+    `/consultar/Consultar/page/${pagina}`;
+
+  console.log(`[PDDE Prestação de Contas] Fetching: ${url}`);
+
+  try {
+    const response = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(25000) });
+    if (!response.ok) {
+      return { ok: false, disponivel: false, total_registros: null, pagina_atual: pagina, itens: [], error: `HTTP ${response.status}` };
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.length === 0) {
+      return { ok: false, disponivel: false, total_registros: null, pagina_atual: pagina, itens: [], error: "O portal de prestação de contas do FNDE não está disponível via acesso direto (exige sessão autenticada ou POST). Use a consulta por escola (/api/pdde/:inep) para obter a situação resumida da PC, ou o SIGPC via /api/sigpc para dados detalhados." };
+    }
+    const html = iconv.decode(buffer, "latin1");
+    const parsed = parseSituacaoPrestacaoConta(html);
+    return { ok: true, disponivel: true, pagina_atual: pagina, ...parsed };
+  } catch (err: any) {
+    console.error(`[PDDE Prestação de Contas] Error:`, err);
+    return { ok: false, disponivel: false, total_registros: null, pagina_atual: pagina, itens: [], error: `Erro: ${err.message}` };
+  }
+}
+
+// ── Situação de Atendimento da Entidade ──────────────────────────────────────
+
+export interface SituacaoAtendimentoItem {
+  ano: string | null;
+  regiao: string | null;
+  uf: string | null;
+  municipio: string | null;
+  cnpj_eex: string | null;
+  codigo_escola: string | null;
+  escola: string | null;
+  cnpj_uex: string | null;
+  razao_social_uex: string | null;
+  situacao_atendimento: string | null;
+  motivo_bloqueio: string | null;
+  vinculo: string | null;
+}
+
+export interface SituacaoAtendimentoResult {
+  ok: boolean;
+  total_registros: number | null;
+  pagina_atual: number;
+  itens: SituacaoAtendimentoItem[];
+  disponivel: boolean;
+  error?: string;
+}
+
+export interface SituacaoAtendimentoParams {
+  ano: string;
+  sg_uf?: string;
+  co_municipio_fnde?: string;
+  cnpj?: string;
+  co_escola?: string;
+  tp_relatorio?: string;
+  page?: string | number;
+}
+
+function parseSituacaoAtendimento(html: string): { total_registros: number | null; itens: SituacaoAtendimentoItem[] } {
+  const $ = cheerio.load(html);
+  const rows: SituacaoAtendimentoItem[] = [];
+
+  $("#listagem tbody tr").each((_, tr) => {
+    const cols = $(tr).find("td")
+      .map((__, td) => normalizeText($(td).text()))
+      .get();
+
+    if (cols.length >= 8) {
+      rows.push({
+        ano: cols[0] || null,
+        regiao: cols[1] || null,
+        uf: cols[2] || null,
+        municipio: cols[3] || null,
+        cnpj_eex: cols[4] || null,
+        codigo_escola: cols[5] || null,
+        escola: cols[6] || null,
+        cnpj_uex: cols[7] || null,
+        razao_social_uex: cols[8] || null,
+        situacao_atendimento: cols[9] || null,
+        motivo_bloqueio: cols[10] || null,
+        vinculo: cols[11] || null,
+      });
+    }
+  });
+
+  const paginacaoTexto = normalizeText($(".listagemPaginacao").text());
+  const match = paginacaoTexto.match(/Exibindo\s+(\d+)\s*-\s*(\d+)\s*de\s*(\d+)\s*Registro/i);
+  return { total_registros: match ? Number(match[3]) : null, itens: rows };
+}
+
+export async function getSituacaoAtendimento(params: SituacaoAtendimentoParams): Promise<SituacaoAtendimentoResult> {
+  const { ano, sg_uf = "", co_municipio_fnde = "", cnpj = "", co_escola = "", tp_relatorio = "1", page = "1" } = params;
+  const pagina = Number(page) || 1;
+
+  const url =
+    `${BASE}/situacaoatendimentoentidade/situacaoatendimentoentidade/situacaoatendimentoentidade` +
+    `/ano/${encodeURIComponent(ano)}` +
+    `/sg_uf/${encodeURIComponent(sg_uf)}` +
+    `/co_municipio_fnde/${encodeURIComponent(co_municipio_fnde)}` +
+    `/cnpj/${encodeURIComponent(cnpj)}` +
+    `/co_escola/${encodeURIComponent(co_escola)}` +
+    `/tp_relatorio/${encodeURIComponent(tp_relatorio)}` +
+    `/consultar/Consultar/page/${pagina}`;
+
+  console.log(`[PDDE Atendimento] Fetching: ${url}`);
+
+  try {
+    const response = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(25000) });
+    if (!response.ok) {
+      return { ok: false, disponivel: false, total_registros: null, pagina_atual: pagina, itens: [], error: `HTTP ${response.status}` };
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.length === 0) {
+      return { ok: false, disponivel: false, total_registros: null, pagina_atual: pagina, itens: [], error: "O portal de atendimento do FNDE não está disponível via acesso direto (exige sessão autenticada ou POST)." };
+    }
+    const html = iconv.decode(buffer, "latin1");
+    const parsed = parseSituacaoAtendimento(html);
+    return { ok: true, disponivel: true, pagina_atual: pagina, ...parsed };
+  } catch (err: any) {
+    console.error(`[PDDE Atendimento] Error:`, err);
+    return { ok: false, disponivel: false, total_registros: null, pagina_atual: pagina, itens: [], error: `Erro: ${err.message}` };
+  }
+}
+
+// ── Relatório de Suspensão ───────────────────────────────────────────────────
+
+export interface SuspensaoItem {
+  ano: string | null;
+  regiao: string | null;
+  uf: string | null;
+  municipio: string | null;
+  cnpj_eex: string | null;
+  codigo_escola: string | null;
+  escola: string | null;
+  cnpj_uex: string | null;
+  razao_social_uex: string | null;
+  programa: string | null;
+  tipo_suspensao: string | null;
+  motivo: string | null;
+  situacao: string | null;
+}
+
+export interface SuspensaoResult {
+  ok: boolean;
+  total_registros: number | null;
+  pagina_atual: number;
+  itens: SuspensaoItem[];
+  disponivel: boolean;
+  error?: string;
+}
+
+export interface SuspensaoParams {
+  ano: string;
+  sg_uf?: string;
+  co_municipio_fnde?: string;
+  cnpj?: string;
+  co_escola?: string;
+  tp_relatorio?: string;
+  page?: string | number;
+}
+
+function parseSuspensao(html: string): { total_registros: number | null; itens: SuspensaoItem[] } {
+  const $ = cheerio.load(html);
+  const rows: SuspensaoItem[] = [];
+
+  $("#listagem tbody tr").each((_, tr) => {
+    const cols = $(tr).find("td")
+      .map((__, td) => normalizeText($(td).text()))
+      .get();
+
+    if (cols.length >= 10) {
+      rows.push({
+        ano: cols[0] || null,
+        regiao: cols[1] || null,
+        uf: cols[2] || null,
+        municipio: cols[3] || null,
+        cnpj_eex: cols[4] || null,
+        codigo_escola: cols[5] || null,
+        escola: cols[6] || null,
+        cnpj_uex: cols[7] || null,
+        razao_social_uex: cols[8] || null,
+        programa: cols[9] || null,
+        tipo_suspensao: cols[10] || null,
+        motivo: cols[11] || null,
+        situacao: cols[12] || null,
+      });
+    }
+  });
+
+  const paginacaoTexto = normalizeText($(".listagemPaginacao").text());
+  const match = paginacaoTexto.match(/Exibindo\s+(\d+)\s*-\s*(\d+)\s*de\s*(\d+)\s*Registro/i);
+  return { total_registros: match ? Number(match[3]) : null, itens: rows };
+}
+
+export async function getRelatorioSuspensao(params: SuspensaoParams): Promise<SuspensaoResult> {
+  const { ano, sg_uf = "", co_municipio_fnde = "", cnpj = "", co_escola = "", tp_relatorio = "1", page = "1" } = params;
+  const pagina = Number(page) || 1;
+
+  const url =
+    `${BASE}/relatoriosuspensao/relatoriosuspensao/relatoriosuspensao` +
+    `/ano/${encodeURIComponent(ano)}` +
+    `/sg_uf/${encodeURIComponent(sg_uf)}` +
+    `/co_municipio_fnde/${encodeURIComponent(co_municipio_fnde)}` +
+    `/cnpj/${encodeURIComponent(cnpj)}` +
+    `/co_escola/${encodeURIComponent(co_escola)}` +
+    `/tp_relatorio/${encodeURIComponent(tp_relatorio)}` +
+    `/consultar/Consultar/page/${pagina}`;
+
+  console.log(`[PDDE Suspensão] Fetching: ${url}`);
+
+  try {
+    const response = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(25000) });
+    if (!response.ok) {
+      return { ok: false, disponivel: false, total_registros: null, pagina_atual: pagina, itens: [], error: `HTTP ${response.status}` };
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.length === 0) {
+      return { ok: false, disponivel: false, total_registros: null, pagina_atual: pagina, itens: [], error: "Resposta vazia do FNDE." };
+    }
+    const html = iconv.decode(buffer, "latin1");
+    const parsed = parseSuspensao(html);
+    if (parsed.itens.length === 0) {
+      return { ok: false, disponivel: false, total_registros: null, pagina_atual: pagina, itens: [], error: "Dados de suspensão não disponíveis via scraping (página renderizada via JavaScript). Para verificar suspensões, utilize o SIGPC via /api/sigpc." };
+    }
+    return { ok: true, disponivel: true, pagina_atual: pagina, ...parsed };
+  } catch (err: any) {
+    console.error(`[PDDE Suspensão] Error:`, err);
+    return { ok: false, disponivel: false, total_registros: null, pagina_atual: pagina, itens: [], error: `Erro: ${err.message}` };
+  }
+}
+
 export async function getMunicipiosPorUf(sg_uf: string): Promise<{ ok: boolean; municipios: { codigo: string; nome: string }[]; error?: string }> {
   const url = `${BASE}/pddeinfo/corp/get-municipio/sg_uf/${encodeURIComponent(sg_uf.toUpperCase())}`;
   console.log(`[PDDE Municípios] Fetching: ${url}`);

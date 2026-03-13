@@ -12,7 +12,11 @@ import { registerCadernoRoutes } from "./caderno-routes";
 import { registerObjectStorageRoutes } from "./integrations/object_storage";
 import { fetchMecNormasFilters, syncMecNormas } from "./integrations/mecnormas";
 import { backfillAiDocumentEmbeddings } from "./integrations/embeddings";
-import { getPddeInfo, getPddeUexSaldo, getSituacaoCadastral, getMunicipiosPorUf } from "./scraper/pdde";
+import {
+  getPddeInfo, getPddeUexSaldo,
+  getSituacaoCadastral, getMunicipiosPorUf,
+  getSituacaoPrestacaoConta, getSituacaoAtendimento, getRelatorioSuspensao,
+} from "./scraper/pdde";
 import { searchDOU, searchDOUForNorma } from "./scraper/dou";
 import {
   searchSchoolsLocal, getEscolaCompletaLocal, getEscolaEvolucaoLocal,
@@ -417,6 +421,48 @@ export async function registerRoutes(
     } catch (err: any) {
       console.error("PDDE municípios error:", err.message);
       res.status(500).json({ ok: false, municipios: [], error: "Erro ao buscar municípios" });
+    }
+  });
+
+  app.get("/api/pdde/relatorios/prestacao-contas", async (req, res) => {
+    try {
+      const {
+        ano = String(new Date().getFullYear()),
+        sg_uf, co_municipio_fnde, co_programa_fnde, cnpj, co_escola, tp_relatorio, page,
+      } = req.query as Record<string, string>;
+      const result = await getSituacaoPrestacaoConta({ ano, sg_uf, co_municipio_fnde, co_programa_fnde, cnpj, co_escola, tp_relatorio, page });
+      res.json(result);
+    } catch (err: any) {
+      console.error("PDDE prestação de contas error:", err.message);
+      res.status(500).json({ ok: false, disponivel: false, total_registros: null, pagina_atual: 1, itens: [], error: "Erro ao consultar prestação de contas" });
+    }
+  });
+
+  app.get("/api/pdde/relatorios/atendimento", async (req, res) => {
+    try {
+      const {
+        ano = String(new Date().getFullYear()),
+        sg_uf, co_municipio_fnde, cnpj, co_escola, tp_relatorio, page,
+      } = req.query as Record<string, string>;
+      const result = await getSituacaoAtendimento({ ano, sg_uf, co_municipio_fnde, cnpj, co_escola, tp_relatorio, page });
+      res.json(result);
+    } catch (err: any) {
+      console.error("PDDE atendimento error:", err.message);
+      res.status(500).json({ ok: false, disponivel: false, total_registros: null, pagina_atual: 1, itens: [], error: "Erro ao consultar situação de atendimento" });
+    }
+  });
+
+  app.get("/api/pdde/relatorios/suspensao", async (req, res) => {
+    try {
+      const {
+        ano = String(new Date().getFullYear()),
+        sg_uf, co_municipio_fnde, cnpj, co_escola, tp_relatorio, page,
+      } = req.query as Record<string, string>;
+      const result = await getRelatorioSuspensao({ ano, sg_uf, co_municipio_fnde, cnpj, co_escola, tp_relatorio, page });
+      res.json(result);
+    } catch (err: any) {
+      console.error("PDDE suspensão error:", err.message);
+      res.status(500).json({ ok: false, disponivel: false, total_registros: null, pagina_atual: 1, itens: [], error: "Erro ao consultar relatório de suspensão" });
     }
   });
 
