@@ -189,6 +189,58 @@ export function usePddeUexSaldo(cnpj: string | null, ano?: number) {
   });
 }
 
+export interface SituacaoCadastralItem {
+  ano: string | null;
+  regiao: string | null;
+  uf: string | null;
+  municipio: string | null;
+  cnpj_eex: string | null;
+  codigo_escola: string | null;
+  escola: string | null;
+  localizacao: string | null;
+  cnpj_uex: string | null;
+  razao_social: string | null;
+  ddd: string | null;
+  telefone: string | null;
+  rede_atendimento: string | null;
+  mandato_dirigente: string | null;
+  data_fim_mandato: string | null;
+  data_atualizacao: string | null;
+  hora_atualizacao: string | null;
+}
+
+export interface SituacaoCadastralResult {
+  ok: boolean;
+  total_registros: number | null;
+  pagina_atual: number;
+  itens: SituacaoCadastralItem[];
+  error?: string;
+}
+
+export function usePddeSituacaoCadastral(inep: string | null, ano?: number) {
+  const queryYear = ano || new Date().getFullYear();
+  return useQuery<SituacaoCadastralResult>({
+    queryKey: ["pdde-situacao-cadastral", inep, queryYear],
+    queryFn: async () => {
+      const tryYear = async (year: number) => {
+        const res = await fetch(
+          `/api/pdde/relatorios/situacao-cadastral?ano=${year}&co_escola=${inep}`
+        );
+        if (!res.ok) throw new Error("Erro ao consultar situação cadastral");
+        return res.json() as Promise<SituacaoCadastralResult>;
+      };
+      const result = await tryYear(queryYear);
+      if (result.ok && result.itens.length === 0) {
+        return tryYear(queryYear - 1);
+      }
+      return result;
+    },
+    enabled: !!inep && /^\d{8}$/.test(inep),
+    staleTime: 15 * 60 * 1000,
+    retry: 1,
+  });
+}
+
 export function usePddeInfo(inep: string | null, ano?: number) {
   const currentYear = new Date().getFullYear();
   const queryYear = ano || currentYear;
