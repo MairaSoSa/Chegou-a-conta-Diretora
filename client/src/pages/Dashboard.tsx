@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais } from "@/hooks/use-schools";
 import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento } from "@/hooks/use-pdde";
-import { useSigpcLocalizar } from "@/hooks/use-sigpc";
 import { DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +58,6 @@ export default function Dashboard() {
   const pddeAno = new Date().getFullYear();
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
   const pddeCnpj = pddeData?.uex?.cnpj || null;
-  const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined);
   const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
   const { data: pddeExecFinData, isLoading: pddeExecFinLoading, isError: pddeExecFinError } = usePddeExecFin(selectedInep);
   const { data: pddeUexSaldoData, isLoading: pddeUexSaldoLoading } = usePddeUexSaldo(pddeCnpj, { mes: saldoMesSel });
@@ -2521,58 +2519,6 @@ export default function Dashboard() {
                       </div>
                     )}
 
-                    {sigpcData && !sigpcLoading && (
-                      <>
-                        {sigpcData.prestacoes && sigpcData.prestacoes.length > 0 ? (
-                          <div>
-                            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                              <FileText className="w-3.5 h-3.5" />
-                              Prestações de Contas (SIGPC)
-                            </p>
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-sm">
-                                <thead>
-                                  <tr className="border-b border-border/30">
-                                    <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Programa</th>
-                                    <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Ano</th>
-                                    <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Situação</th>
-                                    <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs hidden md:table-cell">Fase</th>
-                                    <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Valor</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {sigpcData.prestacoes.map((pc: any, idx: number) => (
-                                    <tr key={idx} className="border-b border-border/10">
-                                      <td className="py-2 px-2 text-xs font-medium">{pc.programaNome}</td>
-                                      <td className="py-2 px-2 text-xs">{pc.anoConcessao}</td>
-                                      <td className="py-2 px-2 text-xs">
-                                        <Badge variant={pc.situacaoNome === 'Aprovada' ? 'default' : pc.situacaoNome === 'Irregular' ? 'destructive' : 'outline'} className="text-xs">
-                                          {pc.situacaoNome}
-                                        </Badge>
-                                      </td>
-                                      <td className="py-2 px-2 text-xs hidden md:table-cell">{pc.faseNome}</td>
-                                      <td className="py-2 px-2 text-xs text-right font-mono">
-                                        R$ {pc.valorConcessao?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        ) : sigpcData.ok === false ? (
-                          <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50/50 border border-amber-200/50">
-                            <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <p className="text-xs font-medium text-amber-800">SIGPC indisponível</p>
-                              <p className="text-[10px] text-amber-600 mt-0.5">
-                                {sigpcData.error || "O sistema de prestação de contas do FNDE está temporariamente indisponível."}
-                              </p>
-                            </div>
-                          </div>
-                        ) : null}
-                      </>
-                    )}
 
                     {!pddeLoading && !pddeSaldosLoading && !pddeExecFinLoading && (!pddeData || (!pddeData.ok && !pddeData.error)) && (!pddeSaldosData || !pddeSaldosData.ok) && (!pddeExecFinData || !pddeExecFinData.ok) && (
                       <div className="text-center py-4">
