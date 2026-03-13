@@ -251,6 +251,105 @@ export function usePddeSituacaoCadastral(inep: string | null, ano?: number) {
   });
 }
 
+export interface SituacaoPrestacaoContaItem {
+  ano: string | null;
+  programa: string | null;
+  regiao: string | null;
+  uf: string | null;
+  municipio: string | null;
+  razao_social_eex: string | null;
+  cnpj_eex: string | null;
+  situacao_pc_eex: string | null;
+  suspensao_eex: string | null;
+  escola: string | null;
+  codigo_escola: string | null;
+  cnpj_uex: string | null;
+  situacao_pc_uex: string | null;
+  suspensao_uex: string | null;
+  valor_previsto: string | null;
+}
+
+export interface SituacaoPrestacaoContaResult {
+  ok: boolean;
+  total_registros: number | null;
+  pagina_atual: number;
+  itens: SituacaoPrestacaoContaItem[];
+  disponivel: boolean;
+  error?: string;
+}
+
+export function usePddePrestacaoConta(inep: string | null, ano?: number) {
+  const queryYear = ano || new Date().getFullYear();
+  return useQuery<SituacaoPrestacaoContaResult>({
+    queryKey: ["pdde-prestacao-conta", inep, queryYear],
+    queryFn: async () => {
+      if (!inep) return { ok: false, disponivel: false, total_registros: null, pagina_atual: 1, itens: [], error: "Sem código INEP" };
+      const tryYear = async (year: number) => {
+        const res = await fetch(`/api/pdde/relatorios/prestacao-contas?ano=${year}&co_escola=${inep}`);
+        if (!res.ok) throw new Error("Erro ao consultar prestação de contas");
+        return res.json() as Promise<SituacaoPrestacaoContaResult>;
+      };
+      const result = await tryYear(queryYear);
+      if (result.ok && result.itens.length === 0) return tryYear(queryYear - 1);
+      return result;
+    },
+    enabled: !!inep && /^\d{8}$/.test(inep),
+    staleTime: 15 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+export interface SituacaoAtendimentoItem {
+  ano: string | null;
+  regiao: string | null;
+  uf: string | null;
+  municipio: string | null;
+  codigo_municipio_ibge: string | null;
+  cnpj_eex: string | null;
+  escola: string | null;
+  codigo_escola: string | null;
+  rede_atendimento: string | null;
+  qtd_alunos: string | null;
+  cnpj_uex: string | null;
+  razao_social_uex: string | null;
+  programa: string | null;
+  destinacao: string | null;
+  valor_custeio: number | null;
+  valor_capital: number | null;
+  valor_total: number | null;
+  data_ordem_pgto: string | null;
+}
+
+export interface SituacaoAtendimentoResult {
+  ok: boolean;
+  total_registros: number | null;
+  pagina_atual: number;
+  itens: SituacaoAtendimentoItem[];
+  disponivel: boolean;
+  error?: string;
+}
+
+export function usePddeAtendimento(inep: string | null, ano?: number) {
+  const queryYear = ano || new Date().getFullYear();
+  return useQuery<SituacaoAtendimentoResult>({
+    queryKey: ["pdde-atendimento", inep, queryYear],
+    queryFn: async () => {
+      if (!inep) return { ok: false, disponivel: false, total_registros: null, pagina_atual: 1, itens: [], error: "Sem código INEP" };
+      const tryYear = async (year: number) => {
+        const res = await fetch(`/api/pdde/relatorios/atendimento?ano=${year}&co_escola=${inep}`);
+        if (!res.ok) throw new Error("Erro ao consultar situação de atendimento");
+        return res.json() as Promise<SituacaoAtendimentoResult>;
+      };
+      const result = await tryYear(queryYear);
+      if (result.ok && result.itens.length === 0) return tryYear(queryYear - 1);
+      return result;
+    },
+    enabled: !!inep && /^\d{8}$/.test(inep),
+    staleTime: 15 * 60 * 1000,
+    retry: 1,
+  });
+}
+
 export function usePddeInfo(inep: string | null, ano?: number) {
   const currentYear = new Date().getFullYear();
   const queryYear = ano || currentYear;

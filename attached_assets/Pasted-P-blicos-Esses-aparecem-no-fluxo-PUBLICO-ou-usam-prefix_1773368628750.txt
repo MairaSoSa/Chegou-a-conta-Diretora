@@ -1,0 +1,138 @@
+Públicos
+
+Esses aparecem no fluxo PUBLICO, ou usam prefixo publico/json, ou usam .pu, então a leitura mais segura é que são rotas públicas:
+
+sistema.pu?operation=localizar
+Tela pública de localização. A própria tela limpa o filtro para essa rota quando o perfil é PUBLICO. 
+
+QQQQQQ
+
+publico/json/util/anoExercicio
+Combo de anos. 
+
+QQQQQQ
+
+publico/json/util/localizarPc
+Busca principal e também exportação da pesquisa.
+
+publico/json/util/programaAno
+Combo de programa/projeto. 
+
+QQQQQQ
+
+publico/json/util/situacaoPc
+Combo de situação da PC. 
+
+QQQQQQ
+
+publico/json/util/quadrienio
+Combo de quadriênio. 
+
+QQQQQQ
+
+publico/json/util/tipoEntidade
+Combo de tipo de entidade. 
+
+QQQQQQ
+
+publico/json/util/estruturaOrganizacional
+Combo de estruturas organizacionais. 
+
+QQQQQQ
+
+publico/json/util/uf
+Combo de UF. 
+
+QQQQQQ
+
+publico/json/util/municipio
+Municípios por UF; a tela carrega com params: {"uf": cbUf.getValue()}.
+
+publico/json/util/tipoConcessao
+Combo de situação/tipo da OPC. 
+
+QQQQQQ
+
+publico/json/util/areaUsuarioSigpc
+Tipo de usuário logado. Apesar do nome, está no namespace publico/json. 
+
+QQQQQQ
+
+publico/json/fase/fasePCListar
+Lista de fases da PC. 
+
+QQQQQQ
+
+publico/json/mantercomplemento/manterComplemento
+Carrega situação/fase de medida de exceção. Está no namespace publico/json, embora o nome sugira manutenção. 
+
+QQQQQQ
+
+publico/json/parametrizarcicloedicao/ParametrizarCicloEdicao
+Lista de ciclos. 
+
+QQQQQQ
+
+publico/json/examepreliminar/examePreliminar
+Aparece como fonte de enum/resultados na tela de localizar, então há forte sinal de uso público. 
+
+QQQQQQ
+
+publico/json/util/detalharOPC
+Detalhamento da obrigação de prestar contas.
+
+publico/json/dirigente/atualizarDirigenteListarDirigentes
+Lista dirigentes no detalhamento público.
+
+publico/json/dirigente/recuperarRolDirigentes
+Rol de interessados/dirigentes.
+
+publico/json/dirigente/recuperarPrestacaoContaFinal
+Prestação de contas final no detalhamento.
+
+publico/json/objetoobjetivo/objetoObjetivo
+Objeto/objetivo no detalhamento.
+
+publico/json/manterdocumentosemitidos/manterDocumentosEmitidos
+Histórico de documentos emitidos no detalhamento. 
+
+DetalharOPCAAAAA
+
+relatorioParametrizado.pu?operation=emitirExtratoExcel
+Exportação pública de extrato Excel. 
+
+DetalharOPCAAAAA
+
+relatorioParametrizado.pu?operation=emitirExtratoBancarioPDF
+Exportação pública PDF.
+
+relatorioParametrizado.pu?operation=emitirExtratoBancarioExcel
+Exportação pública Excel bancária.
+
+Não públicos / autenticados
+
+Esses usam sistema.do ou json/... sem publico, e no código aparecem ligados a manutenção, exclusão ou operações internas. Então a leitura correta é não público:
+
+sistema.do?operation=localizar
+Mesma tela, mas no fluxo autenticado. Quando não é PUBLICO, o botão “Limpar Filtro” vai para essa rota.
+
+sistema.do?operation=manterInadimplencia
+Manutenção de inadimplência. 
+
+QQQQQQ
+
+json/mantercomplemento/manterComplementoExecute
+Exclusão de complemento/documento, claramente ação de alteração.
+
+Indefinidos / não dá para cravar 100%
+
+Esses apareceram em conversas anteriores ou por associação de nome, mas nos trechos atuais não ficou forte o bastante para eu carimbar “público” ou “privado” sem teste real de rede:
+
+json/examepreliminar/examePreliminarExecute
+O namespace sugere ação, mas eu não vi aqui o contexto final de acesso para cravar. Antes apareceu como ação complementar, então eu deixaria como indefinido até teste.
+
+json/localizar/solicitarProcesso
+Nome de ação. Sem teste, eu trataria como provavelmente não público, mas não vou cravar aqui.
+
+json/util/enviarEmail
+Também tem cara de ação interna; sem chamada validada, melhor classificar como indefinido/provavelmente não público.

@@ -12,7 +12,7 @@ import {
   CheckCircle, CircleAlert
 } from "lucide-react";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais } from "@/hooks/use-schools";
-import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral } from "@/hooks/use-pdde";
+import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento } from "@/hooks/use-pdde";
 import { useSigpcLocalizar } from "@/hooks/use-sigpc";
 import { DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,6 +64,8 @@ export default function Dashboard() {
   const { data: pddeExecFinData, isLoading: pddeExecFinLoading, isError: pddeExecFinError } = usePddeExecFin(selectedInep);
   const { data: pddeUexSaldoData, isLoading: pddeUexSaldoLoading } = usePddeUexSaldo(pddeCnpj, { mes: saldoMesSel });
   const { data: cadastralData, isLoading: cadastralLoading } = usePddeSituacaoCadastral(selectedInep, pddeAno);
+  const { data: prestacaoContaData, isLoading: prestacaoContaLoading } = usePddePrestacaoConta(selectedInep, pddeAno);
+  const { data: atendimentoData, isLoading: atendimentoLoading } = usePddeAtendimento(selectedInep, pddeAno);
 
   const listFilters = useMemo(() => {
     const f: Record<string, string> = {};
@@ -2129,6 +2131,163 @@ export default function Dashboard() {
                                 ? `${sc.data_atualizacao} às ${sc.hora_atualizacao}`
                                 : sc.data_atualizacao || null}
                             />
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* ── Prestação de Contas ──────────────────────────── */}
+                    {prestacaoContaLoading && selectedInep && (
+                      <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                        <div className="animate-spin rounded-full h-3 w-3 border-b border-primary" />
+                        Consultando situação de prestação de contas...
+                      </div>
+                    )}
+
+                    {prestacaoContaData && !prestacaoContaLoading && prestacaoContaData.ok && prestacaoContaData.itens.length > 0 && (() => {
+                      const brl = (v: string | null) => v || '-';
+                      const adimplentes = prestacaoContaData.itens.filter(i => i.situacao_pc_uex?.toLowerCase().includes("adimpl"));
+                      const inadimplentes = prestacaoContaData.itens.filter(i => i.situacao_pc_uex?.toLowerCase().includes("inadimpl"));
+                      const suspensos = prestacaoContaData.itens.filter(i => i.suspensao_uex?.toUpperCase() === "SIM");
+                      const ano = prestacaoContaData.itens[0]?.ano || String(pddeAno);
+                      return (
+                        <div className="space-y-3">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                            <FileText className="w-3.5 h-3.5" />
+                            Situação de Prestação de Contas ({ano})
+                          </p>
+
+                          {/* Status badges summary */}
+                          <div className="flex flex-wrap gap-2">
+                            {inadimplentes.length > 0 ? (
+                              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold border rounded-full px-3 py-1 text-red-700 bg-red-50 border-red-200">
+                                <AlertTriangle className="w-3 h-3" />
+                                {inadimplentes.length} programa{inadimplentes.length > 1 ? "s" : ""} Inadimplente{inadimplentes.length > 1 ? "s" : ""}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold border rounded-full px-3 py-1 text-green-700 bg-green-50 border-green-200">
+                                <CheckCircle className="w-3 h-3" />
+                                {adimplentes.length} programa{adimplentes.length > 1 ? "s" : ""} Adimplente{adimplentes.length > 1 ? "s" : ""}
+                              </span>
+                            )}
+                            {suspensos.length > 0 && (
+                              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold border rounded-full px-3 py-1 text-orange-700 bg-orange-50 border-orange-200">
+                                <AlertTriangle className="w-3 h-3" />
+                                {suspensos.length} com Suspensão de Pagamento
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="border-b border-border/30">
+                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium">Programa</th>
+                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium">Sit. PC UEx</th>
+                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden md:table-cell">Sit. PC EEx</th>
+                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium">Suspensão</th>
+                                  <th className="text-right py-2 px-2 text-muted-foreground font-medium hidden sm:table-cell">Valor Previsto</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {prestacaoContaData.itens.map((item, idx) => {
+                                  const inadimpl = item.situacao_pc_uex?.toLowerCase().includes("inadimpl");
+                                  const adimpl = item.situacao_pc_uex?.toLowerCase().includes("adimpl");
+                                  const susp = item.suspensao_uex?.toUpperCase() === "SIM";
+                                  return (
+                                    <tr key={idx} className="border-b border-border/10 hover:bg-muted/20">
+                                      <td className="py-2 px-2 font-medium">{item.programa || '-'}</td>
+                                      <td className="py-2 px-2">
+                                        <span className={`inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 border ${
+                                          inadimpl ? "bg-red-50 text-red-700 border-red-200" :
+                                          adimpl ? "bg-green-50 text-green-700 border-green-200" :
+                                          "bg-muted text-muted-foreground border-border/30"
+                                        }`}>
+                                          {inadimpl && <AlertTriangle className="w-2.5 h-2.5" />}
+                                          {adimpl && <CheckCircle className="w-2.5 h-2.5" />}
+                                          {item.situacao_pc_uex || '-'}
+                                        </span>
+                                      </td>
+                                      <td className="py-2 px-2 hidden md:table-cell text-muted-foreground">{item.situacao_pc_eex || '-'}</td>
+                                      <td className="py-2 px-2">
+                                        {susp ? (
+                                          <span className="text-[10px] font-semibold text-orange-700 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5">Sim</span>
+                                        ) : (
+                                          <span className="text-[10px] text-muted-foreground">Não</span>
+                                        )}
+                                      </td>
+                                      <td className="py-2 px-2 text-right hidden sm:table-cell text-muted-foreground font-mono">
+                                        {item.valor_previsto || '-'}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* ── Situação de Atendimento (Repasses) ───────────── */}
+                    {atendimentoLoading && selectedInep && (
+                      <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                        <div className="animate-spin rounded-full h-3 w-3 border-b border-primary" />
+                        Consultando repasses e valores de atendimento...
+                      </div>
+                    )}
+
+                    {atendimentoData && !atendimentoLoading && atendimentoData.ok && atendimentoData.itens.length > 0 && (() => {
+                      const ano = atendimentoData.itens[0]?.ano || String(pddeAno);
+                      const brl = (v: number | null) => v != null ? `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-';
+                      const totalGeral = atendimentoData.itens.reduce((s, i) => s + (i.valor_total || 0), 0);
+                      return (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                              <BanknoteIcon className="w-3.5 h-3.5" />
+                              Repasses por Programa ({ano})
+                            </p>
+                            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-0.5">
+                              Total: {brl(totalGeral)}
+                            </span>
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="border-b border-border/30">
+                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium">Programa</th>
+                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden sm:table-cell">Destinação</th>
+                                  <th className="text-right py-2 px-2 text-muted-foreground font-medium">Custeio</th>
+                                  <th className="text-right py-2 px-2 text-muted-foreground font-medium">Capital</th>
+                                  <th className="text-right py-2 px-2 text-muted-foreground font-medium font-semibold">Total</th>
+                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden md:table-cell">Data Pgto</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {atendimentoData.itens.map((item, idx) => (
+                                  <tr key={idx} className="border-b border-border/10 hover:bg-muted/20">
+                                    <td className="py-2 px-2 font-medium">{item.programa || '-'}</td>
+                                    <td className="py-2 px-2 hidden sm:table-cell text-muted-foreground">{item.destinacao || '-'}</td>
+                                    <td className="py-2 px-2 text-right font-mono">{brl(item.valor_custeio)}</td>
+                                    <td className="py-2 px-2 text-right font-mono">{brl(item.valor_capital)}</td>
+                                    <td className={`py-2 px-2 text-right font-mono font-semibold ${item.valor_total && item.valor_total > 0 ? 'text-emerald-700' : ''}`}>
+                                      {brl(item.valor_total)}
+                                    </td>
+                                    <td className="py-2 px-2 hidden md:table-cell text-muted-foreground">{item.data_ordem_pgto || '-'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot>
+                                <tr className="border-t border-border/40">
+                                  <td colSpan={4} className="py-2 px-2 text-xs font-semibold text-muted-foreground text-right hidden sm:table-cell">Total Geral:</td>
+                                  <td colSpan={4} className="py-2 px-2 text-xs font-semibold text-right sm:hidden">Total:</td>
+                                  <td className="py-2 px-2 text-right font-mono font-bold text-emerald-700">{brl(totalGeral)}</td>
+                                  <td className="hidden md:table-cell" />
+                                </tr>
+                              </tfoot>
+                            </table>
                           </div>
                         </div>
                       );

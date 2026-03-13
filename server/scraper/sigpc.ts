@@ -1,4 +1,7 @@
 const OLINDA_BASE = "https://www.fnde.gov.br/olinda-ide/servico/DADOS_ABERTOS_PDDE_SIGPC/versao/v1/odata";
+const SIGPCADM_BASE = "https://www.fnde.gov.br/sigpcadm";
+export const SIGPCADM_PUBLIC_URL = `${SIGPCADM_BASE}/sistema.pu?operation=localizar`;
+export const SIGPCADM_LOCALIZAR_PC = `${SIGPCADM_BASE}/publico/json/util/localizarPc`;
 
 const HEADERS: Record<string, string> = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -212,9 +215,10 @@ async function fetchOlindaSigpc(ano: number, filter?: string, top = 100, skip = 
 export interface SigpcLocalizarResult {
   ok: boolean;
   prestacoes: SigpcPrestacaoListItem[];
-  fonte: "olinda-sigpc" | "indisponivel";
+  fonte: "olinda-sigpc" | "sigpcadm" | "indisponivel";
   error?: string;
   anosConsultados?: number[];
+  sigpcUrl?: string;
 }
 
 export async function localizarPrestacoesPorCnpj(

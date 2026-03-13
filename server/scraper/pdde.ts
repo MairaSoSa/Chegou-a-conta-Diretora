@@ -619,7 +619,7 @@ function parseSituacaoCadastral(html: string): { total_registros: number | null;
   const $ = cheerio.load(html);
   const rows: SituacaoCadastralItem[] = [];
 
-  $("#listagem tbody tr").each((_, tr) => {
+  $("tbody tr").each((_, tr) => {
     const cols = $(tr).find("td")
       .map((__, td) => normalizeText($(td).text()))
       .get();
@@ -672,19 +672,19 @@ export async function getSituacaoCadastral(params: SituacaoCadastralParams): Pro
 
   const pagina = Number(page) || 1;
 
-  const url =
-    `${SITUACAO_CADASTRAL_URL}` +
-    `/ano/${encodeURIComponent(ano)}` +
-    `/sg_uf/${encodeURIComponent(sg_uf)}` +
-    `/co_municipio_fnde/${encodeURIComponent(co_municipio_fnde)}` +
-    `/cnpj/${encodeURIComponent(cnpj)}` +
-    `/co_escola/${encodeURIComponent(co_escola)}` +
-    `/tp_relatorio/${encodeURIComponent(tp_relatorio)}` +
-    `/st_cadstral/${encodeURIComponent(st_cadstral)}` +
-    `/ds_localizacao/${encodeURIComponent(ds_localizacao)}` +
-    `/fimMandato/${encodeURIComponent(fimMandato)}` +
-    `/consultar/Consultar` +
-    `/page/${pagina}`;
+  const qs = new URLSearchParams();
+  qs.set("ano", ano);
+  if (cnpj) qs.set("cnpj", cnpj.replace(/\D/g, ""));
+  if (co_escola) qs.set("co_escola", co_escola);
+  if (sg_uf) qs.set("sg_uf", sg_uf);
+  if (co_municipio_fnde) qs.set("co_municipio_fnde", co_municipio_fnde);
+  qs.set("tp_relatorio", tp_relatorio);
+  if (st_cadstral) qs.set("st_cadstral", st_cadstral);
+  if (ds_localizacao) qs.set("ds_localizacao", ds_localizacao);
+  if (fimMandato) qs.set("fimMandato", fimMandato);
+  if (pagina > 1) qs.set("page", String(pagina));
+  qs.set("consultar", "Consultar");
+  const url = `${SITUACAO_CADASTRAL_URL}?${qs.toString()}`;
 
   console.log(`[PDDE Situação Cadastral] Fetching: ${url}`);
 
@@ -713,18 +713,19 @@ export async function getSituacaoCadastral(params: SituacaoCadastralParams): Pro
 
 export interface SituacaoPrestacaoContaItem {
   ano: string | null;
+  programa: string | null;
   regiao: string | null;
   uf: string | null;
   municipio: string | null;
-  cnpj_eex: string | null;
   razao_social_eex: string | null;
-  codigo_escola: string | null;
+  cnpj_eex: string | null;
+  situacao_pc_eex: string | null;
+  suspensao_eex: string | null;
   escola: string | null;
+  codigo_escola: string | null;
   cnpj_uex: string | null;
-  razao_social_uex: string | null;
-  programa: string | null;
-  situacao_pc: string | null;
-  efeito_suspensivo: string | null;
+  situacao_pc_uex: string | null;
+  suspensao_uex: string | null;
   valor_previsto: string | null;
 }
 
@@ -752,27 +753,32 @@ function parseSituacaoPrestacaoConta(html: string): { total_registros: number | 
   const $ = cheerio.load(html);
   const rows: SituacaoPrestacaoContaItem[] = [];
 
-  $("#listagem tbody tr").each((_, tr) => {
+  // Columns (0-indexed):
+  // 0:Ano 1:Programa 2:Região 3:UF 4:Município 5:Razão Social EEx 6:CNPJ EEx
+  // 7:Situação PC EEx 8:Suspensão EEx 9:Nome Escola 10:Código Escola
+  // 11:CNPJ Executora 12:Situação PC UEx 13:Suspensão UEx 14:Valor Total Previsto
+  $("tbody tr").each((_, tr) => {
     const cols = $(tr).find("td")
       .map((__, td) => normalizeText($(td).text()))
       .get();
 
-    if (cols.length >= 10) {
+    if (cols.length >= 12) {
       rows.push({
         ano: cols[0] || null,
-        regiao: cols[1] || null,
-        uf: cols[2] || null,
-        municipio: cols[3] || null,
-        cnpj_eex: cols[4] || null,
+        programa: cols[1] || null,
+        regiao: cols[2] || null,
+        uf: cols[3] || null,
+        municipio: cols[4] || null,
         razao_social_eex: cols[5] || null,
-        codigo_escola: cols[6] || null,
-        escola: cols[7] || null,
-        cnpj_uex: cols[8] || null,
-        razao_social_uex: cols[9] || null,
-        programa: cols[10] || null,
-        situacao_pc: cols[11] || null,
-        efeito_suspensivo: cols[12] || null,
-        valor_previsto: cols[13] || null,
+        cnpj_eex: cols[6] || null,
+        situacao_pc_eex: cols[7] || null,
+        suspensao_eex: cols[8] || null,
+        escola: cols[9] || null,
+        codigo_escola: cols[10] || null,
+        cnpj_uex: cols[11] || null,
+        situacao_pc_uex: cols[12] || null,
+        suspensao_uex: cols[13] || null,
+        valor_previsto: cols[14] || null,
       });
     }
   });
@@ -786,16 +792,17 @@ export async function getSituacaoPrestacaoConta(params: SituacaoPrestacaoContaPa
   const { ano, sg_uf = "", co_municipio_fnde = "", co_programa_fnde = "", cnpj = "", co_escola = "", tp_relatorio = "1", page = "1" } = params;
   const pagina = Number(page) || 1;
 
-  const url =
-    `${BASE}/situacaoprestacaoconta/situacaoprestacaoconta/situacaoprestacaoconta` +
-    `/ano/${encodeURIComponent(ano)}` +
-    `/sg_uf/${encodeURIComponent(sg_uf)}` +
-    `/co_municipio_fnde/${encodeURIComponent(co_municipio_fnde)}` +
-    `/co_programa_fnde/${encodeURIComponent(co_programa_fnde)}` +
-    `/cnpj/${encodeURIComponent(cnpj)}` +
-    `/co_escola/${encodeURIComponent(co_escola)}` +
-    `/tp_relatorio/${encodeURIComponent(tp_relatorio)}` +
-    `/consultar/Consultar/page/${pagina}`;
+  const qs = new URLSearchParams();
+  qs.set("ano", ano);
+  if (cnpj) qs.set("cnpj", cnpj.replace(/\D/g, ""));
+  if (co_escola) qs.set("co_escola", co_escola);
+  if (sg_uf) qs.set("sg_uf", sg_uf);
+  if (co_municipio_fnde) qs.set("co_municipio_fnde", co_municipio_fnde);
+  if (co_programa_fnde) qs.set("co_programa_fnde", co_programa_fnde);
+  qs.set("tpRelatorio", tp_relatorio);
+  if (pagina > 1) qs.set("page", String(pagina));
+  qs.set("consultar", "Consultar");
+  const url = `${BASE}/situacaoprestacaoconta/situacaoprestacaoconta/situacaoprestacaoconta?${qs.toString()}`;
 
   console.log(`[PDDE Prestação de Contas] Fetching: ${url}`);
 
@@ -824,14 +831,20 @@ export interface SituacaoAtendimentoItem {
   regiao: string | null;
   uf: string | null;
   municipio: string | null;
+  codigo_municipio_ibge: string | null;
   cnpj_eex: string | null;
-  codigo_escola: string | null;
   escola: string | null;
+  codigo_escola: string | null;
+  rede_atendimento: string | null;
+  qtd_alunos: string | null;
   cnpj_uex: string | null;
   razao_social_uex: string | null;
-  situacao_atendimento: string | null;
-  motivo_bloqueio: string | null;
-  vinculo: string | null;
+  programa: string | null;
+  destinacao: string | null;
+  valor_custeio: number | null;
+  valor_capital: number | null;
+  valor_total: number | null;
+  data_ordem_pgto: string | null;
 }
 
 export interface SituacaoAtendimentoResult {
@@ -857,25 +870,36 @@ function parseSituacaoAtendimento(html: string): { total_registros: number | nul
   const $ = cheerio.load(html);
   const rows: SituacaoAtendimentoItem[] = [];
 
-  $("#listagem tbody tr").each((_, tr) => {
+  // Columns (0-indexed):
+  // 0:Ano 1:Região 2:UF 3:Município 4:Cód.Município IBGE 5:CNPJ EEx(SEDUC)
+  // 6:Nome Escola 7:Código Escola 8:Rede Atendimento 9:Qtd.Alunos
+  // 10:CNPJ Executora 11:Nome Executora 12:Programa 13:Destinação
+  // 14:Valor Custeio 15:Valor Capital 16:Valor Total 17:Data Ordem Pagamento
+  $("tbody tr").each((_, tr) => {
     const cols = $(tr).find("td")
       .map((__, td) => normalizeText($(td).text()))
       .get();
 
-    if (cols.length >= 8) {
+    if (cols.length >= 12) {
       rows.push({
         ano: cols[0] || null,
         regiao: cols[1] || null,
         uf: cols[2] || null,
         municipio: cols[3] || null,
-        cnpj_eex: cols[4] || null,
-        codigo_escola: cols[5] || null,
+        codigo_municipio_ibge: cols[4] || null,
+        cnpj_eex: cols[5] || null,
         escola: cols[6] || null,
-        cnpj_uex: cols[7] || null,
-        razao_social_uex: cols[8] || null,
-        situacao_atendimento: cols[9] || null,
-        motivo_bloqueio: cols[10] || null,
-        vinculo: cols[11] || null,
+        codigo_escola: cols[7] || null,
+        rede_atendimento: cols[8] || null,
+        qtd_alunos: cols[9] || null,
+        cnpj_uex: cols[10] || null,
+        razao_social_uex: cols[11] || null,
+        programa: cols[12] || null,
+        destinacao: cols[13] || null,
+        valor_custeio: brToFloat(cols[14]),
+        valor_capital: brToFloat(cols[15]),
+        valor_total: brToFloat(cols[16]),
+        data_ordem_pgto: cols[17] || null,
       });
     }
   });
@@ -889,15 +913,16 @@ export async function getSituacaoAtendimento(params: SituacaoAtendimentoParams):
   const { ano, sg_uf = "", co_municipio_fnde = "", cnpj = "", co_escola = "", tp_relatorio = "1", page = "1" } = params;
   const pagina = Number(page) || 1;
 
-  const url =
-    `${BASE}/situacaoatendimentoentidade/situacaoatendimentoentidade/situacaoatendimentoentidade` +
-    `/ano/${encodeURIComponent(ano)}` +
-    `/sg_uf/${encodeURIComponent(sg_uf)}` +
-    `/co_municipio_fnde/${encodeURIComponent(co_municipio_fnde)}` +
-    `/cnpj/${encodeURIComponent(cnpj)}` +
-    `/co_escola/${encodeURIComponent(co_escola)}` +
-    `/tp_relatorio/${encodeURIComponent(tp_relatorio)}` +
-    `/consultar/Consultar/page/${pagina}`;
+  const qs = new URLSearchParams();
+  qs.set("ano", ano);
+  if (cnpj) qs.set("cnpj", cnpj.replace(/\D/g, ""));
+  if (co_escola) qs.set("co_escola", co_escola);
+  if (sg_uf) qs.set("sg_uf", sg_uf);
+  if (co_municipio_fnde) qs.set("co_municipio_fnde", co_municipio_fnde);
+  qs.set("tpRelatorio", tp_relatorio);
+  if (pagina > 1) qs.set("page", String(pagina));
+  qs.set("consultar", "Consultar");
+  const url = `${BASE}/situacaoatendimentoentidade/situacaoatendimentoentidade/situacaoatendimentoentidade?${qs.toString()}`;
 
   console.log(`[PDDE Atendimento] Fetching: ${url}`);
 
@@ -960,7 +985,7 @@ function parseSuspensao(html: string): { total_registros: number | null; itens: 
   const $ = cheerio.load(html);
   const rows: SuspensaoItem[] = [];
 
-  $("#listagem tbody tr").each((_, tr) => {
+  $("tbody tr").each((_, tr) => {
     const cols = $(tr).find("td")
       .map((__, td) => normalizeText($(td).text()))
       .get();
@@ -993,15 +1018,15 @@ export async function getRelatorioSuspensao(params: SuspensaoParams): Promise<Su
   const { ano, sg_uf = "", co_municipio_fnde = "", cnpj = "", co_escola = "", tp_relatorio = "1", page = "1" } = params;
   const pagina = Number(page) || 1;
 
-  const url =
-    `${BASE}/relatoriosuspensao/relatoriosuspensao/relatoriosuspensao` +
-    `/ano/${encodeURIComponent(ano)}` +
-    `/sg_uf/${encodeURIComponent(sg_uf)}` +
-    `/co_municipio_fnde/${encodeURIComponent(co_municipio_fnde)}` +
-    `/cnpj/${encodeURIComponent(cnpj)}` +
-    `/co_escola/${encodeURIComponent(co_escola)}` +
-    `/tp_relatorio/${encodeURIComponent(tp_relatorio)}` +
-    `/consultar/Consultar/page/${pagina}`;
+  const qs = new URLSearchParams();
+  qs.set("ano", ano);
+  if (cnpj) qs.set("cnpj", cnpj.replace(/\D/g, ""));
+  if (co_escola) qs.set("co_escola", co_escola);
+  if (sg_uf) qs.set("sg_uf", sg_uf);
+  if (co_municipio_fnde) qs.set("co_municipio_fnde", co_municipio_fnde);
+  if (pagina > 1) qs.set("page", String(pagina));
+  qs.set("consultar", "Consultar");
+  const url = `${BASE}/relatoriosuspensao/relatoriosuspensao/relatoriosuspensao?${qs.toString()}`;
 
   console.log(`[PDDE Suspensão] Fetching: ${url}`);
 
