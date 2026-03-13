@@ -2,8 +2,8 @@ import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
 
 const BASE = "https://www.fnde.gov.br/pddeinfo";
-// Fix: The actual endpoint observed in DevTools has /pddeinfo/pddeinfo/
 const CONSULTA_URL = `${BASE}/pddeinfo/escola/consultar`;
+const SALDO_UEX_URL = `${BASE}/consultasaldoentidade/consultasaldoentidade/consultasaldoentidade`;
 
 const HEADERS: Record<string, string> = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -28,6 +28,10 @@ function parseIntSafe(s: string): number | null {
   return isNaN(val) ? null : val;
 }
 
+function normalizeText(value = ""): string {
+  return value.replace(/\s+/g, " ").replace(/\u00a0/g, " ").trim();
+}
+
 export interface PddeContaBancaria {
   programa: string;
   banco: string;
@@ -44,11 +48,17 @@ export interface PddeUex {
   municipio: string;
 }
 
+export interface PddeProgramaPendente {
+  ano_exercicio: number;
+  programa: string;
+}
+
 export interface PddeSituacaoUex {
   mandato_inicio: string | null;
   mandato_fim: string | null;
   dados_cadastrais: string | null;
   prestacao_contas: string | null;
+  programas_pendentes: PddeProgramaPendente[];
 }
 
 export interface PddeSituacaoEex {
@@ -69,6 +79,24 @@ export interface PddeDestinacao {
   pago_capital: number | null;
   pago_total: number | null;
   data_ordem_pgto: string | null;
+}
+
+export interface PddeUexSaldo {
+  programa: string | null;
+  banco: string | null;
+  agencia: string | null;
+  conta: string | null;
+  saldo: number | null;
+  saldo_texto: string | null;
+}
+
+export interface PddeUexSaldoResult {
+  ok: boolean;
+  ano: number;
+  cnpj: string;
+  saldos: PddeUexSaldo[];
+  total_saldo: number;
+  error?: string;
 }
 
 export interface PddeInfo {
@@ -92,12 +120,12 @@ export interface PddeInfo {
 function findTableByCaptionContains($: cheerio.CheerioAPI, text: string): cheerio.Cheerio<any> | null {
   const search = text.toLowerCase();
   let found: cheerio.Cheerio<any> | null = null;
-  
+
   $("table").each((_, table) => {
     const $t = $(table);
     const caption = $t.find("caption").text().trim().toLowerCase();
     const tableText = $t.text().toLowerCase();
-    
+
     if (caption.includes(search) || tableText.includes(search)) {
       if ($t.find("tr").length > 0) {
         found = $t;
@@ -105,8 +133,96 @@ function findTableByCaptionContains($: cheerio.CheerioAPI, text: string): cheeri
       }
     }
   });
-  
+
   return found;
+}
+
+// Extract pending prestação de contas programs from full page text using regex
+function extractProgramasPendentes(text: string): PddeProgramaPendente[] {
+  const results: PddeProgramaPendente[] = [];
+
+  // Look for a block after "Prestação de Contas" heading with year+program pairs
+  const blockMatch = text.match(/Presta[cç][aã]o\s*de\s*Contas[\s\S]*?Ano\s*Exerc[ií]cio\s*Programa\s*([\s\S]*?)(?:Situa[cç][aã]o\s*da\s*Entidade\s*Executora|Destina[cç][aã]o|$)/i);
+  if (!blockMatch) return results;
+
+  const block = normalizeText(blockMatch[1]);
+  const rowRegex = /(20[0-9]{2})\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][A-Za-záàâãéêíóôõúçÁÀÂÃÉÊÍÓÔÕÚÇ0-9 \-\/]+)/g;
+
+  let row;
+  while ((row = rowRegex.exec(block)) !== null) {
+    const programa = normalizeText(row[2]);
+    if (programa.length > 2) {
+      results.push({
+        ano_exercicio: Number(row[1]),
+        programa,
+      });
+    }
+  }
+
+  return results;
+}
+
+// Fallback text-based extraction for school basic data when table parsing fails
+function extractBasicDataFromText(text: string): Partial<PddeInfo> {
+  const result: Partial<PddeInfo> = {};
+
+  const nome = text.match(/Nome\s*Escola:\s*(.+?)\s+UF:/i);
+  const uf = text.match(/UF:\s*([A-Z]{2})/i);
+  const municipio = text.match(/Munic[ií]pio:\s*(.+?)\s+(?:Rede\s*de\s*Ensino|N[ií]vel)/i);
+  const rede = text.match(/Rede\s*de\s*Ensino:\s*(.+?)(?:\s+N[ií]vel|\s+Unidade|\s*$)/i);
+
+  if (nome) result.nome_escola = normalizeText(nome[1]);
+  if (uf) result.uf = uf[1];
+  if (municipio) result.municipio = normalizeText(municipio[1]);
+  if (rede) result.rede = normalizeText(rede[1]);
+
+  return result;
+}
+
+// Fallback text-based extraction for matriculas
+function extractMatriculasFromText(text: string): Record<string, number> {
+  const alunos: Record<string, number> = {};
+  const regex = /(ENSINO FUNDAMENTAL|PRÉ-ESCOLAR|CRECHE|ENSINO MÉDIO|EJA)\s+([0-9]+)/gi;
+  let m;
+  while ((m = regex.exec(text)) !== null) {
+    alunos[normalizeText(m[1])] = Number(m[2]);
+  }
+  return alunos;
+}
+
+// Parse the saldo page from consultasaldoentidade
+function parseSaldoPage($: cheerio.CheerioAPI): PddeUexSaldo[] {
+  const saldos: PddeUexSaldo[] = [];
+
+  $("table").each((_, table) => {
+    const $t = $(table);
+    const headers = $t.find("tr").first().find("th, td")
+      .map((_: number, el: any) => normalizeText($(el).text())).get();
+
+    const looksLikeSaldo =
+      headers.some((h: string) => /Programa/i.test(h)) &&
+      headers.some((h: string) => /Saldo/i.test(h));
+
+    if (!looksLikeSaldo) return;
+
+    $t.find("tr").slice(1).each((_: number, row: any) => {
+      const cols = $(row).find("td")
+        .map((_: number, el: any) => normalizeText($(el).text())).get();
+
+      if (cols.length >= 2) {
+        saldos.push({
+          programa: cols[0] || null,
+          banco: cols[1] || null,
+          agencia: cols[2] || null,
+          conta: cols[3] || null,
+          saldo_texto: cols[4] || null,
+          saldo: brToFloat(cols[4]),
+        });
+      }
+    });
+  });
+
+  return saldos;
 }
 
 export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeInfo> {
@@ -117,7 +233,6 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
       consultar: "Consultar",
     });
 
-    // The endpoint is https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar
     const url = `${CONSULTA_URL}?${params.toString()}`;
     console.log(`[PDDE Scraper] Fetching: ${url}`);
 
@@ -137,39 +252,33 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
       return { ok: false, error: `HTTP ${response.status}`, ano, co_escola: coEscola };
     }
 
-    // Use iconv-lite to decode latin1 (ISO-8859-1) properly as noted in instructions
     const buffer = Buffer.from(await response.arrayBuffer());
     const html = iconv.decode(buffer, "latin1");
-    
+
     console.log(`[PDDE Scraper] HTML Length: ${html.length}`);
-    
+
     if (html.includes("sistema indisponível") || html.includes("Erro inesperado")) {
-      console.error("[PDDE Scraper] FNDE system unavailable");
       return { ok: false, error: "Sistema do FNDE indisponível no momento.", ano, co_escola: coEscola };
     }
-
     if (html.includes("ORA-") || html.includes("OCIStmtExecute") || html.includes("SQLSTATE")) {
-      console.error("[PDDE Scraper] FNDE database error detected in HTML");
       return { ok: false, error: "O banco de dados do FNDE está com erro interno. Tente novamente mais tarde.", ano, co_escola: coEscola };
     }
-
     if (html.includes("msgAlerta") && html.includes("General error")) {
-      console.error("[PDDE Scraper] FNDE general error detected");
       return { ok: false, error: "O sistema do FNDE está com problemas técnicos. Tente novamente mais tarde.", ano, co_escola: coEscola };
     }
 
     const $ = cheerio.load(html);
-    const data: PddeInfo = { ok: true, ano, co_escola: coEscola };
+    const fullText = normalizeText($("body").text());
 
-    // Detect missing school in portal's own message
     if (html.includes("Nenhum registro encontrado") || html.includes("não cadastrada")) {
-       console.log("[PDDE Scraper] Portal returned 'No records found'");
-       return { ok: false, error: "Nenhum dado financeiro encontrado para este ano.", ano, co_escola: coEscola };
+      return { ok: false, error: "Nenhum dado financeiro encontrado para este ano.", ano, co_escola: coEscola };
     }
 
-    // 1. DADOS DA ESCOLA
-    const t1 = findTableByCaptionContains($, "Dados da Escola") || 
-               findTableByCaptionContains($, "Identifica") || 
+    const data: PddeInfo = { ok: true, ano, co_escola: coEscola };
+
+    // 1. DADOS DA ESCOLA (table-based, with text fallback)
+    const t1 = findTableByCaptionContains($, "Dados da Escola") ||
+               findTableByCaptionContains($, "Identifica") ||
                findTableByCaptionContains($, coEscola) ||
                $("table").first();
 
@@ -177,7 +286,7 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
       t1.find("tr").each((_, tr) => {
         const tds = $(tr).find("td, th").map((_, td) => $(td).text().trim()).get();
         const line = tds.join(" ").toLowerCase();
-        
+
         if (line.includes("escola") && tds.length >= 2 && !data.nome_escola) {
           data.nome_escola = tds[tds.length - 1];
         }
@@ -190,7 +299,7 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
         }
       });
 
-      // MATRICULAS
+      // Matriculas from table
       const alunos: Record<string, number> = {};
       let total: number | null = null;
       t1.find("tr").each((_, tr) => {
@@ -212,6 +321,19 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
       data.matriculas_total = total;
     }
 
+    // Fallback: text-based extraction if table parsing missed key fields
+    if (!data.nome_escola || !data.uf) {
+      const textData = extractBasicDataFromText(fullText);
+      if (!data.nome_escola && textData.nome_escola) data.nome_escola = textData.nome_escola;
+      if (!data.uf && textData.uf) data.uf = textData.uf;
+      if (!data.municipio && textData.municipio) data.municipio = textData.municipio;
+      if (!data.rede && textData.rede) data.rede = textData.rede;
+    }
+    if (!data.matriculas_por_nivel || Object.keys(data.matriculas_por_nivel).length === 0) {
+      const fallbackMatriculas = extractMatriculasFromText(fullText);
+      if (Object.keys(fallbackMatriculas).length > 0) data.matriculas_por_nivel = fallbackMatriculas;
+    }
+
     // 2. UNIDADE EXECUTORA
     const t2 = findTableByCaptionContains($, "Unidade Executora") || findTableByCaptionContains($, "UEX");
     if (t2) {
@@ -226,35 +348,66 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
       }
     }
 
-    // 3. DADOS BANCARIOS
-    const t3 = findTableByCaptionContains($, "Dados Bancários") || findTableByCaptionContains($, "Contas");
+    // 3. DADOS BANCARIOS — resilient: detect by headers
     const contas: PddeContaBancaria[] = [];
-    if (t3) {
-      t3.find("tr").each((_, tr) => {
-        const cols = $(tr).find("td").map((_, td) => $(td).text().trim()).get();
-        if (cols.length >= 5) {
-          const saldo = brToFloat(cols[4]);
-          if (cols[0] && cols[0].length > 3) {
+    $("table").each((_, table) => {
+      const $t = $(table);
+      const headers = $t.find("tr").first().find("th, td")
+        .map((_: number, el: any) => normalizeText($(el).text())).get();
+
+      const looksLikeBank =
+        headers.some((h: string) => /Programa|A[cç][aã]o/i.test(h)) &&
+        headers.some((h: string) => /Banco/i.test(h)) &&
+        headers.some((h: string) => /Ag[eê]ncia/i.test(h)) &&
+        headers.some((h: string) => /Conta/i.test(h));
+
+      if (!looksLikeBank) return;
+
+      $t.find("tr").slice(1).each((_: number, tr: any) => {
+        const cols = $(tr).find("td").map((_: number, td: any) => $(td).text().trim()).get();
+        if (cols.length >= 5 && cols[0] && cols[0].length > 3) {
+          contas.push({
+            programa: cols[0],
+            banco: cols[1],
+            agencia: cols[2],
+            conta: cols[3],
+            saldo: brToFloat(cols[4]),
+            ocorrencia: cols[5] || null,
+          });
+        }
+      });
+    });
+    if (contas.length === 0) {
+      // Fallback: findTableByCaptionContains
+      const t3 = findTableByCaptionContains($, "Dados Bancários") || findTableByCaptionContains($, "Contas");
+      if (t3) {
+        t3.find("tr").each((_, tr) => {
+          const cols = $(tr).find("td").map((_, td) => $(td).text().trim()).get();
+          if (cols.length >= 5 && cols[0] && cols[0].length > 3) {
             contas.push({
               programa: cols[0],
               banco: cols[1],
               agencia: cols[2],
               conta: cols[3],
-              saldo: saldo,
+              saldo: brToFloat(cols[4]),
               ocorrencia: cols[5] || null,
             });
           }
-        }
-      });
+        });
+      }
     }
     data.contas = contas;
 
-    // 4. SITUACAO UEX
+    // 4. SITUACAO UEX + PROGRAMAS PENDENTES
     const t4 = findTableByCaptionContains($, "Situação da Unidade Executora");
+    const situacaoUex: PddeSituacaoUex = {
+      mandato_inicio: null,
+      mandato_fim: null,
+      dados_cadastrais: null,
+      prestacao_contas: null,
+      programas_pendentes: [],
+    };
     if (t4) {
-      const situacaoUex: PddeSituacaoUex = {
-        mandato_inicio: null, mandato_fim: null, dados_cadastrais: null, prestacao_contas: null
-      };
       const text = t4.text();
       const m = text.match(/([0-9]{2}\/[0-9]{2}\/[0-9]{4})/g);
       if (m && m.length >= 2) {
@@ -267,41 +420,120 @@ export async function getPddeInfo(ano: number, coEscola: string): Promise<PddeIn
         if (th.includes("dados cadastrais")) situacaoUex.dados_cadastrais = td;
         if (th.includes("prestação de contas")) situacaoUex.prestacao_contas = td;
       });
-      data.situacao_uex = situacaoUex;
     }
+    // Always try to extract pending programs from full text
+    situacaoUex.programas_pendentes = extractProgramasPendentes(fullText);
+    data.situacao_uex = situacaoUex;
 
-    // 5. DESTINACOES
+    // 5. DESTINACOES — resilient: detect by headers
     const destinacoes: PddeDestinacao[] = [];
     $("table").each((_, table) => {
       const $t = $(table);
-      const text = $t.text();
-      if (text.includes("Destina") && text.includes("Pago")) {
-        $t.find("tr").each((_, tr) => {
-          const tds = $(tr).find("td").map((_, td) => $(td).text().trim()).get();
-          if (tds.length >= 11) {
-            destinacoes.push({
-              destinacao: tds[0],
-              devido_custeio: brToFloat(tds[1]),
-              devido_capital: brToFloat(tds[2]),
-              devido_total: brToFloat(tds[3]),
-              ajuste_custeio: brToFloat(tds[4]),
-              ajuste_capital: brToFloat(tds[5]),
-              ajuste_total: brToFloat(tds[6]),
-              final_devido_total: brToFloat(tds[7]),
-              pago_custeio: brToFloat(tds[8]),
-              pago_capital: brToFloat(tds[9]),
-              pago_total: brToFloat(tds[10]),
-              data_ordem_pgto: tds[11] || null,
-            });
-          }
-        });
-      }
+      const headers = $t.find("tr").first().find("th, td")
+        .map((_: number, el: any) => normalizeText($(el).text())).get();
+
+      const looksLikeRepasse =
+        headers.some((h: string) => /Destina[cç][aã]o/i.test(h)) &&
+        (headers.some((h: string) => /Vl\s*Devido/i.test(h)) || headers.some((h: string) => /Valor\s*Pago/i.test(h)));
+
+      if (!looksLikeRepasse) return;
+
+      $t.find("tr").slice(1).each((_: number, tr: any) => {
+        const tds = $(tr).find("td").map((_: number, td: any) => $(td).text().trim()).get();
+        if (tds.length >= 11) {
+          destinacoes.push({
+            destinacao: tds[0],
+            devido_custeio: brToFloat(tds[1]),
+            devido_capital: brToFloat(tds[2]),
+            devido_total: brToFloat(tds[3]),
+            ajuste_custeio: brToFloat(tds[4]),
+            ajuste_capital: brToFloat(tds[5]),
+            ajuste_total: brToFloat(tds[6]),
+            final_devido_total: brToFloat(tds[7]),
+            pago_custeio: brToFloat(tds[8]),
+            pago_capital: brToFloat(tds[9]),
+            pago_total: brToFloat(tds[10]),
+            data_ordem_pgto: tds[11] || null,
+          });
+        }
+      });
     });
+    // Fallback
+    if (destinacoes.length === 0) {
+      $("table").each((_, table) => {
+        const $t = $(table);
+        const text = $t.text();
+        if (text.includes("Destina") && text.includes("Pago")) {
+          $t.find("tr").each((_, tr) => {
+            const tds = $(tr).find("td").map((_, td) => $(td).text().trim()).get();
+            if (tds.length >= 11) {
+              destinacoes.push({
+                destinacao: tds[0],
+                devido_custeio: brToFloat(tds[1]),
+                devido_capital: brToFloat(tds[2]),
+                devido_total: brToFloat(tds[3]),
+                ajuste_custeio: brToFloat(tds[4]),
+                ajuste_capital: brToFloat(tds[5]),
+                ajuste_total: brToFloat(tds[6]),
+                final_devido_total: brToFloat(tds[7]),
+                pago_custeio: brToFloat(tds[8]),
+                pago_capital: brToFloat(tds[9]),
+                pago_total: brToFloat(tds[10]),
+                data_ordem_pgto: tds[11] || null,
+              });
+            }
+          });
+        }
+      });
+    }
     data.destinacoes = destinacoes;
 
     return data;
   } catch (err: any) {
     console.error(`[PDDE Scraper] Error:`, err);
     return { ok: false, error: `Erro no processamento: ${err.message}`, ano, co_escola: coEscola };
+  }
+}
+
+export async function getPddeUexSaldo(ano: number, cnpj: string): Promise<PddeUexSaldoResult> {
+  const cnpjClean = cnpj.replace(/\D/g, "");
+  try {
+    const params = new URLSearchParams({
+      ano: String(ano),
+      cnpj: cnpjClean,
+      consultar: "Consultar",
+    });
+
+    const url = `${SALDO_UEX_URL}?${params.toString()}`;
+    console.log(`[PDDE UEX Saldo] Fetching: ${url}`);
+
+    const response = await fetch(url, {
+      headers: HEADERS,
+      signal: AbortSignal.timeout(20000),
+    });
+
+    if (!response.ok) {
+      return { ok: false, ano, cnpj, saldos: [], total_saldo: 0, error: `HTTP ${response.status}` };
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const html = iconv.decode(buffer, "latin1");
+
+    if (html.includes("Nenhum registro") || html.includes("não encontrad") || html.length < 500) {
+      return { ok: false, ano, cnpj, saldos: [], total_saldo: 0, error: "Nenhum saldo encontrado para este CNPJ e ano." };
+    }
+
+    const $ = cheerio.load(html);
+    const saldos = parseSaldoPage($);
+
+    if (saldos.length === 0) {
+      return { ok: false, ano, cnpj, saldos: [], total_saldo: 0, error: "Dados de saldo não disponíveis via scraping (página renderizada via JavaScript)." };
+    }
+
+    const total_saldo = saldos.reduce((sum, s) => sum + (s.saldo || 0), 0);
+    return { ok: true, ano, cnpj, saldos, total_saldo };
+  } catch (err: any) {
+    console.error(`[PDDE UEX Saldo] Error:`, err);
+    return { ok: false, ano, cnpj, saldos: [], total_saldo: 0, error: `Erro: ${err.message}` };
   }
 }

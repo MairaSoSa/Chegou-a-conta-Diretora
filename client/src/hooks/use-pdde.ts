@@ -100,11 +100,17 @@ export interface PddeUex {
   municipio: string;
 }
 
+export interface PddeProgramaPendente {
+  ano_exercicio: number;
+  programa: string;
+}
+
 export interface PddeSituacaoUex {
   mandato_inicio: string | null;
   mandato_fim: string | null;
   dados_cadastrais: string | null;
   prestacao_contas: string | null;
+  programas_pendentes: PddeProgramaPendente[];
 }
 
 export interface PddeSituacaoEex {
@@ -144,6 +150,43 @@ export interface PddeInfo {
   situacao_uex?: PddeSituacaoUex;
   situacao_eex?: PddeSituacaoEex;
   destinacoes?: PddeDestinacao[];
+}
+
+export interface PddeUexSaldoItem {
+  programa: string | null;
+  banco: string | null;
+  agencia: string | null;
+  conta: string | null;
+  saldo: number | null;
+  saldo_texto: string | null;
+}
+
+export interface PddeUexSaldoResult {
+  ok: boolean;
+  ano: number;
+  cnpj: string;
+  saldos: PddeUexSaldoItem[];
+  total_saldo: number;
+  error?: string;
+}
+
+export function usePddeUexSaldo(cnpj: string | null, ano?: number) {
+  const currentYear = new Date().getFullYear();
+  const queryYear = ano || currentYear;
+  const cnpjClean = (cnpj || "").replace(/\D/g, "");
+
+  return useQuery<PddeUexSaldoResult>({
+    queryKey: ["pdde-uex-saldo", cnpjClean, queryYear],
+    queryFn: async () => {
+      if (!cnpjClean) return { ok: false, ano: queryYear, cnpj: "", saldos: [], total_saldo: 0, error: "Sem CNPJ" };
+      const res = await fetch(`/api/pdde/uex/saldo?cnpj=${cnpjClean}&ano=${queryYear}`);
+      if (!res.ok) throw new Error("Erro ao consultar saldo UEx");
+      return res.json();
+    },
+    enabled: !!cnpjClean && cnpjClean.length === 14,
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
+  });
 }
 
 export function usePddeInfo(inep: string | null, ano?: number) {

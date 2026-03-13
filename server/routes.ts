@@ -12,7 +12,7 @@ import { registerCadernoRoutes } from "./caderno-routes";
 import { registerObjectStorageRoutes } from "./integrations/object_storage";
 import { fetchMecNormasFilters, syncMecNormas } from "./integrations/mecnormas";
 import { backfillAiDocumentEmbeddings } from "./integrations/embeddings";
-import { getPddeInfo } from "./scraper/pdde";
+import { getPddeInfo, getPddeUexSaldo } from "./scraper/pdde";
 import { searchDOU, searchDOUForNorma } from "./scraper/dou";
 import {
   searchSchoolsLocal, getEscolaCompletaLocal, getEscolaEvolucaoLocal,
@@ -369,6 +369,21 @@ export async function registerRoutes(
     } catch (err: any) {
       console.error("PDDE saldos error:", err.message);
       res.status(500).json({ ok: false, saldos: [], anosDisponiveis: [], fonte: "indisponivel", error: "Erro ao consultar saldos PDDE" });
+    }
+  });
+
+  app.get("/api/pdde/uex/saldo", async (req, res) => {
+    try {
+      const cnpj = String(req.query.cnpj || "").replace(/\D/g, "");
+      const ano = parseInt(String(req.query.ano || new Date().getFullYear()), 10);
+      if (cnpj.length < 14) {
+        return res.status(400).json({ ok: false, saldos: [], total_saldo: 0, error: "CNPJ inválido (deve ter 14 dígitos)" });
+      }
+      const result = await getPddeUexSaldo(ano, cnpj);
+      res.json(result);
+    } catch (err: any) {
+      console.error("PDDE UEX saldo error:", err.message);
+      res.status(500).json({ ok: false, saldos: [], total_saldo: 0, error: "Erro ao consultar saldo da UEx" });
     }
   });
 

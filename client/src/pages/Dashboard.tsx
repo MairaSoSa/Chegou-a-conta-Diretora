@@ -12,7 +12,7 @@ import {
   CheckCircle, CircleAlert
 } from "lucide-react";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais } from "@/hooks/use-schools";
-import { usePddeInfo, usePddeSaldos, usePddeExecFin } from "@/hooks/use-pdde";
+import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo } from "@/hooks/use-pdde";
 import { useSigpcLocalizar } from "@/hooks/use-sigpc";
 import { DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +58,7 @@ export default function Dashboard() {
   const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined);
   const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
   const { data: pddeExecFinData, isLoading: pddeExecFinLoading, isError: pddeExecFinError } = usePddeExecFin(selectedInep);
+  const { data: pddeUexSaldoData, isLoading: pddeUexSaldoLoading } = usePddeUexSaldo(pddeCnpj, pddeAno);
 
   const listFilters = useMemo(() => {
     const f: Record<string, string> = {};
@@ -1885,7 +1886,7 @@ export default function Dashboard() {
                             )}
 
                             {pddeData.situacao_uex && (
-                              <div>
+                              <div className="space-y-3">
                                 <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
                                   Situação da UEx
                                 </p>
@@ -1894,6 +1895,62 @@ export default function Dashboard() {
                                   <InfoItem label="Mandato Fim" value={pddeData.situacao_uex.mandato_fim} />
                                   <InfoItem label="Dados Cadastrais" value={pddeData.situacao_uex.dados_cadastrais} />
                                   <InfoItem label="Prestação de Contas" value={pddeData.situacao_uex.prestacao_contas} />
+                                </div>
+                                {pddeData.situacao_uex.programas_pendentes && pddeData.situacao_uex.programas_pendentes.length > 0 && (
+                                  <div className="mt-2">
+                                    <p className="text-[10px] font-semibold text-red-600 uppercase tracking-wide flex items-center gap-1 mb-1">
+                                      <AlertTriangle className="w-3 h-3" />
+                                      Prestação de Contas Pendente
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {pddeData.situacao_uex.programas_pendentes.map((p, i) => (
+                                        <span key={i} className="text-[10px] bg-red-50 border border-red-200 text-red-700 rounded px-2 py-0.5 font-medium">
+                                          {p.ano_exercicio} — {p.programa}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {pddeUexSaldoData && !pddeUexSaldoLoading && pddeUexSaldoData.ok && pddeUexSaldoData.saldos.length > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                                  <BanknoteIcon className="w-3.5 h-3.5" />
+                                  Saldo UEx por Programa ({pddeUexSaldoData.ano})
+                                </p>
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-sm">
+                                    <thead>
+                                      <tr className="border-b border-border/30">
+                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Programa</th>
+                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Banco</th>
+                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Agência</th>
+                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Conta</th>
+                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Saldo</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {pddeUexSaldoData.saldos.map((s, i) => (
+                                        <tr key={i} className="border-b border-border/10">
+                                          <td className="py-2 px-2 text-xs font-medium">{s.programa || '-'}</td>
+                                          <td className="py-2 px-2 text-xs">{s.banco || '-'}</td>
+                                          <td className="py-2 px-2 text-xs font-mono">{s.agencia || '-'}</td>
+                                          <td className="py-2 px-2 text-xs font-mono">{s.conta || '-'}</td>
+                                          <td className="py-2 px-2 text-xs text-right font-mono font-semibold text-green-700">
+                                            {s.saldo != null ? `R$ ${s.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                      <tr className="border-t border-border/30 font-semibold bg-muted/20">
+                                        <td colSpan={4} className="py-2 px-2 text-xs text-right">Total Geral</td>
+                                        <td className="py-2 px-2 text-xs text-right font-mono text-green-700">
+                                          R$ {pddeUexSaldoData.total_saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
                                 </div>
                               </div>
                             )}
