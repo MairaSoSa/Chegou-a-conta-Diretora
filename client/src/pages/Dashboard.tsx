@@ -47,6 +47,10 @@ export default function Dashboard() {
   const [filterUf, setFilterUf] = useState("");
   const [filterDep, setFilterDep] = useState("");
   const [listPage, setListPage] = useState(1);
+  const [saldoMesSel, setSaldoMesSel] = useState<string>(() => {
+    const d = new Date();
+    return `${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
+  });
 
   const { data: stats, isLoading: statsLoading } = useEstatisticas(selectedAno);
   const { data: searchResults, refetch: refetchSearch, isLoading: searchLoading } = useSchoolSearch(searchQuery);
@@ -58,7 +62,7 @@ export default function Dashboard() {
   const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined);
   const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
   const { data: pddeExecFinData, isLoading: pddeExecFinLoading, isError: pddeExecFinError } = usePddeExecFin(selectedInep);
-  const { data: pddeUexSaldoData, isLoading: pddeUexSaldoLoading } = usePddeUexSaldo(pddeCnpj);
+  const { data: pddeUexSaldoData, isLoading: pddeUexSaldoLoading } = usePddeUexSaldo(pddeCnpj, { mes: saldoMesSel });
   const { data: cadastralData, isLoading: cadastralLoading } = usePddeSituacaoCadastral(selectedInep, pddeAno);
 
   const listFilters = useMemo(() => {
@@ -1915,59 +1919,156 @@ export default function Dashboard() {
                               </div>
                             )}
 
-                            {pddeUexSaldoData && !pddeUexSaldoLoading && pddeUexSaldoData.ok && pddeUexSaldoData.saldos.length > 0 && (
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                                  <BanknoteIcon className="w-3.5 h-3.5" />
-                                  Saldo UEx por Conta — {pddeUexSaldoData.mes}
-                                </p>
-                                <div className="overflow-x-auto">
-                                  <table className="w-full text-sm">
-                                    <thead>
-                                      <tr className="border-b border-border/30">
-                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Programa</th>
-                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Banco</th>
-                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Agência</th>
-                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Conta</th>
-                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Saldo Conta</th>
-                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Saldo Fundos</th>
-                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Poupança</th>
-                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">RDB/CDB</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {pddeUexSaldoData.saldos.map((s, i) => (
-                                        <tr key={i} className="border-b border-border/10">
-                                          <td className="py-2 px-2 text-xs font-medium">{s.programa || '-'}</td>
-                                          <td className="py-2 px-2 text-xs">{s.banco || '-'}</td>
-                                          <td className="py-2 px-2 text-xs font-mono">{s.agencia || '-'}</td>
-                                          <td className="py-2 px-2 text-xs font-mono">{s.conta || '-'}</td>
-                                          <td className="py-2 px-2 text-xs text-right font-mono">
-                                            {s.saldo_conta != null ? `R$ ${s.saldo_conta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
-                                          </td>
-                                          <td className="py-2 px-2 text-xs text-right font-mono font-semibold text-green-700">
-                                            {s.saldo_fundos != null ? `R$ ${s.saldo_fundos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
-                                          </td>
-                                          <td className="py-2 px-2 text-xs text-right font-mono">
-                                            {s.saldo_poupanca != null ? `R$ ${s.saldo_poupanca.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
-                                          </td>
-                                          <td className="py-2 px-2 text-xs text-right font-mono">
-                                            {s.saldo_rdb_cdb != null ? `R$ ${s.saldo_rdb_cdb.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
-                                          </td>
-                                        </tr>
-                                      ))}
-                                      <tr className="border-t border-border/30 font-semibold bg-muted/20">
-                                        <td colSpan={5} className="py-2 px-2 text-xs text-right">Total Fundos</td>
-                                        <td className="py-2 px-2 text-xs text-right font-mono text-green-700">
-                                          R$ {pddeUexSaldoData.total_saldo_fundos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                        </td>
-                                        <td colSpan={2} className="py-2 px-2 text-xs text-right text-muted-foreground font-mono">
-                                          Total geral: R$ {pddeUexSaldoData.total_saldo_geral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                        </td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
+                            {pddeCnpj && (
+                              <div className="space-y-3">
+                                {/* Header + Seletor Mês/Ano */}
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                                    <BanknoteIcon className="w-3.5 h-3.5" />
+                                    Saldo das Contas UEx (PDDEInfo)
+                                  </p>
+                                  <div className="flex items-center gap-1.5">
+                                    <select
+                                      value={saldoMesSel.split("-")[0]}
+                                      onChange={e => setSaldoMesSel(`${e.target.value}-${saldoMesSel.split("-")[1]}`)}
+                                      className="text-xs border border-border/50 rounded-md px-2 py-1 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                                    >
+                                      {[
+                                        ["01","Janeiro"],["02","Fevereiro"],["03","Março"],["04","Abril"],
+                                        ["05","Maio"],["06","Junho"],["07","Julho"],["08","Agosto"],
+                                        ["09","Setembro"],["10","Outubro"],["11","Novembro"],["12","Dezembro"]
+                                      ].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                                    </select>
+                                    <select
+                                      value={saldoMesSel.split("-")[1]}
+                                      onChange={e => setSaldoMesSel(`${saldoMesSel.split("-")[0]}-${e.target.value}`)}
+                                      className="text-xs border border-border/50 rounded-md px-2 py-1 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                                    >
+                                      {Array.from({ length: new Date().getFullYear() - 2020 + 1 }, (_, i) => String(2020 + i))
+                                        .reverse()
+                                        .map(y => <option key={y} value={y}>{y}</option>)}
+                                    </select>
+                                  </div>
                                 </div>
+
+                                {/* Loading */}
+                                {pddeUexSaldoLoading && (
+                                  <div className="flex items-center gap-2 py-3 text-xs text-muted-foreground">
+                                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-primary" />
+                                    Consultando saldos no PDDEInfo...
+                                  </div>
+                                )}
+
+                                {/* Sem dados */}
+                                {!pddeUexSaldoLoading && pddeUexSaldoData && !pddeUexSaldoData.ok && (
+                                  <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2 flex items-center gap-2">
+                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                                    {pddeUexSaldoData.error || "Nenhum saldo encontrado para o mês selecionado."}
+                                  </div>
+                                )}
+
+                                {/* Dados disponíveis */}
+                                {!pddeUexSaldoLoading && pddeUexSaldoData?.ok && pddeUexSaldoData.saldos.length > 0 && (() => {
+                                  const saldos = pddeUexSaldoData.saldos;
+                                  const totalConta = saldos.reduce((s, r) => s + (r.saldo_conta || 0), 0);
+                                  const totalFundos = pddeUexSaldoData.total_saldo_fundos;
+                                  const totalPoup = saldos.reduce((s, r) => s + (r.saldo_poupanca || 0), 0);
+                                  const totalRdb = saldos.reduce((s, r) => s + (r.saldo_rdb_cdb || 0), 0);
+                                  const totalGeral = pddeUexSaldoData.total_saldo_geral;
+                                  const brl = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+                                  return (
+                                    <div className="space-y-3">
+                                      {/* Badge mês consultado */}
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 rounded-full px-2.5 py-0.5 font-semibold uppercase tracking-wide">
+                                          Competência: {pddeUexSaldoData.mes.replace("-", "/")}
+                                        </span>
+                                        <span className="text-[10px] text-muted-foreground">{saldos.length} conta{saldos.length !== 1 ? "s" : ""} encontrada{saldos.length !== 1 ? "s" : ""}</span>
+                                      </div>
+
+                                      {/* Cards de resumo */}
+                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                        {[
+                                          { label: "Saldo em Conta", value: totalConta, color: "text-blue-700", bg: "bg-blue-50/60 border-blue-100" },
+                                          { label: "Saldo em Fundos", value: totalFundos, color: "text-green-700", bg: "bg-green-50/60 border-green-100" },
+                                          { label: "Poupança", value: totalPoup, color: "text-amber-700", bg: "bg-amber-50/60 border-amber-100" },
+                                          { label: "RDB/CDB", value: totalRdb, color: "text-purple-700", bg: "bg-purple-50/60 border-purple-100" },
+                                        ].map(card => (
+                                          <div key={card.label} className={`rounded-lg border px-3 py-2 ${card.bg}`}>
+                                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mb-0.5">{card.label}</p>
+                                            <p className={`text-sm font-bold font-mono ${card.color}`}>R$ {brl(card.value)}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+
+                                      {/* Tabela detalhada */}
+                                      <div className="overflow-x-auto rounded-lg border border-border/30">
+                                        <table className="w-full text-xs">
+                                          <thead>
+                                            <tr className="bg-muted/40 border-b border-border/30">
+                                              <th className="text-left py-2 px-3 font-semibold text-muted-foreground">Programa</th>
+                                              <th className="text-left py-2 px-3 font-semibold text-muted-foreground">Banco</th>
+                                              <th className="text-left py-2 px-3 font-semibold text-muted-foreground">Agência</th>
+                                              <th className="text-left py-2 px-3 font-semibold text-muted-foreground font-mono">Conta</th>
+                                              <th className="text-right py-2 px-3 font-semibold text-muted-foreground">Saldo Conta</th>
+                                              <th className="text-right py-2 px-3 font-semibold text-green-700">Saldo Fundos</th>
+                                              <th className="text-right py-2 px-3 font-semibold text-muted-foreground">Poupança</th>
+                                              <th className="text-right py-2 px-3 font-semibold text-muted-foreground">RDB/CDB</th>
+                                              <th className="text-right py-2 px-3 font-semibold text-muted-foreground">Total Linha</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {saldos.map((s, i) => (
+                                              <tr key={i} className={`border-b border-border/10 hover:bg-muted/20 transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}>
+                                                <td className="py-2 px-3 font-semibold">
+                                                  <span className="inline-flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 flex-shrink-0" />
+                                                    {s.programa || '-'}
+                                                  </span>
+                                                </td>
+                                                <td className="py-2 px-3 text-muted-foreground">{s.banco || '-'}</td>
+                                                <td className="py-2 px-3 font-mono text-muted-foreground">{s.agencia || '-'}</td>
+                                                <td className="py-2 px-3 font-mono">{s.conta || '-'}</td>
+                                                <td className="py-2 px-3 text-right font-mono text-blue-700">
+                                                  {(s.saldo_conta ?? 0) > 0 ? `R$ ${brl(s.saldo_conta!)}` : <span className="text-muted-foreground/50">—</span>}
+                                                </td>
+                                                <td className="py-2 px-3 text-right font-mono font-semibold text-green-700">
+                                                  {(s.saldo_fundos ?? 0) > 0 ? `R$ ${brl(s.saldo_fundos!)}` : <span className="text-muted-foreground/50">—</span>}
+                                                </td>
+                                                <td className="py-2 px-3 text-right font-mono text-amber-700">
+                                                  {(s.saldo_poupanca ?? 0) > 0 ? `R$ ${brl(s.saldo_poupanca!)}` : <span className="text-muted-foreground/50">—</span>}
+                                                </td>
+                                                <td className="py-2 px-3 text-right font-mono text-purple-700">
+                                                  {(s.saldo_rdb_cdb ?? 0) > 0 ? `R$ ${brl(s.saldo_rdb_cdb!)}` : <span className="text-muted-foreground/50">—</span>}
+                                                </td>
+                                                <td className="py-2 px-3 text-right font-mono font-semibold">
+                                                  {s.saldo_total != null && s.saldo_total > 0 ? `R$ ${brl(s.saldo_total)}` : <span className="text-muted-foreground/50">—</span>}
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                          <tfoot>
+                                            <tr className="bg-muted/30 border-t-2 border-border/40 font-bold">
+                                              <td colSpan={4} className="py-2.5 px-3 text-xs text-right text-muted-foreground uppercase tracking-wide">Totais</td>
+                                              <td className="py-2.5 px-3 text-right font-mono text-blue-700 text-xs">R$ {brl(totalConta)}</td>
+                                              <td className="py-2.5 px-3 text-right font-mono text-green-700 text-xs">R$ {brl(totalFundos)}</td>
+                                              <td className="py-2.5 px-3 text-right font-mono text-amber-700 text-xs">R$ {brl(totalPoup)}</td>
+                                              <td className="py-2.5 px-3 text-right font-mono text-purple-700 text-xs">R$ {brl(totalRdb)}</td>
+                                              <td className="py-2.5 px-3 text-right font-mono text-xs">R$ {brl(totalGeral)}</td>
+                                            </tr>
+                                          </tfoot>
+                                        </table>
+                                      </div>
+
+                                      {/* Rodapé informativo */}
+                                      <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
+                                        <ExternalLink className="w-3 h-3" />
+                                        Fonte: PDDEInfo/FNDE — Consulta Saldo de Entidade · {saldos[0]?.uf} · {saldos[0]?.municipio}
+                                      </p>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             )}
                           </div>
