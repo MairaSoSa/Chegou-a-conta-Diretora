@@ -6,11 +6,11 @@
       "version": "22"
     }
   },
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y build-essential python3 && npm install && npm run db:push",
+  "postCreateCommand": "sudo apt-get update -qq && sudo apt-get install -y -qq build-essential python3 && npm install && npm run db:push && node scripts/seed-demo.mjs",
   "forwardPorts": [5000],
   "portsAttributes": {
     "5000": {
-      "label": "Application",
+      "label": "Aplicativo",
       "onAutoForward": "openBrowser"
     }
   },
@@ -19,15 +19,21 @@
       "extensions": [
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-        "bradlc.vscode-tailwindcss"
+        "bradlc.vscode-tailwindcss",
+        "alexcvzz.vscode-sqlite"
       ],
       "settings": {
-        "terminal.integrated.defaultProfile.linux": "bash"
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.formatOnSave": true,
+        "typescript.preferences.importModuleSpecifier": "relative"
       }
     }
   },
   "remoteEnv": {
     "NODE_ENV": "development",
-    "PORT": "5000"
-  }
+    "PORT": "5000",
+    "SQLITE_DATABASE_URL": "file:dev.db",
+    "ADMIN_PASSWORD": "admin2024"
+  },
+  "postStartCommand": "echo '\\n✅ Chegou a Conta, Diretora! pronto.\\n📌 Escolas demo: 35000001 · 31000002 · 43000003\\n🌐 Acesse: http://localhost:5000\\n'"
 }

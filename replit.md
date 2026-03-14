@@ -26,6 +26,22 @@ Key Features:
 -   **AI Security**: The AI system prompt enforces strict adherence to the knowledge base, refusing out-of-scope queries and topics not present in the provided content. A low temperature setting (0.3) is used to minimize hallucination.
 -   **Data Management**: Emphasizes local data processing and includes mechanisms for tracking and resolving AI's unanswered questions.
 
+## Demo Data / Codespace Setup
+
+A script `scripts/seed-demo.mjs` inserts 3 realistic demo schools so the dashboard works without the full INEP dataset (~1 hour download):
+
+| INEP     | Escola                               | Cidade           | UF |
+|----------|--------------------------------------|------------------|----|
+| 35000001 | EMEF JARDIM DAS ACÁCIAS              | São Paulo        | SP |
+| 31000002 | EE PROF MARIA DA CONCEIÇÃO SILVA     | Belo Horizonte   | MG |
+| 43000003 | EMEF ASSIS BRASIL                    | Porto Alegre     | RS |
+
+Each demo school has 3 years of census data (2022–2024) and 35 educational indicators per school. The `.devcontainer/devcontainer.json` automatically runs this seed after `npm run db:push` when opening in GitHub Codespaces. The `setup.sh` script also runs it as step 4/5.
+
+NPM scripts:
+- `npm run seed:demo` — inserts/updates demo school data (idempotent, safe to re-run)
+- `npm run setup:data` — downloads and imports the full INEP census data (~1h, ~1.1M schools)
+
 ## External Dependencies
 -   **Database**: SQLite (`better-sqlite3`), Drizzle ORM
 -   **AI Services**: OpenAI API
