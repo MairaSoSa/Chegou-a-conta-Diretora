@@ -1,0 +1,29 @@
+/* CSS extraído do anexo chegou_conta_diretora_home_ux_ui_html (6).html para uso global no painel educacional. Cole aqui o conteúdo do <style> do HTML anexo. */
+
+:root {
+  --bg: #f6f7f4;
+  --paper: #fffdf7;
+  --card: #ffffff;
+  --card-soft: #fbfaf5;
+  --line: #e5e1d7;
+  --line-strong: #d5cfbf;
+  --text: #24313f;
+  --muted: #6b7785;
+  --blue: #2d5a88;
+  --blue-soft: #e9f1fb;
+  --green: #2f7a58;
+  --green-soft: #e9f7ef;
+  --amber: #9b6a16;
+  --amber-soft: #fff4db;
+  --red: #b74f42;
+  --red-soft: #fdecea;
+  --shadow-sm: 0 8px 24px rgba(38, 56, 76, 0.06);
+  --shadow-md: 0 18px 44px rgba(38, 56, 76, 0.10);
+  --radius-xl: 30px;
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+  --container: 1420px;
+}
+
+/* ...demais regras do anexo, cole aqui... */

@@ -1,4 +1,8 @@
+// ...existing code...
 import { useState, useMemo } from "react";
+import "../../public/painel-educacional.css";
+import { AlertPanel } from "@/components/AlertPanel";
+import { IndicatorPanel } from "@/components/IndicatorPanel";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Input } from "@/components/ui/input";
@@ -11,521 +15,63 @@ import {
   Globe, Building2, TreePine, Filter, X, Clock, Heart,
   CheckCircle, CircleAlert
 } from "lucide-react";
-import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais } from "@/hooks/use-schools";
-import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento } from "@/hooks/use-pdde";
-import { DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell, Legend,
-  LineChart, Line
-} from "recharts";
-
-const UF_NAMES: Record<string, string> = {
-  AC: "Acre", AL: "Alagoas", AM: "Amazonas", AP: "Amapá", BA: "Bahia",
-  CE: "Ceará", DF: "Distrito Federal", ES: "Espírito Santo", GO: "Goiás",
-  MA: "Maranhão", MG: "Minas Gerais", MS: "Mato Grosso do Sul", MT: "Mato Grosso",
-  PA: "Pará", PB: "Paraíba", PE: "Pernambuco", PI: "Piauí", PR: "Paraná",
-  RJ: "Rio de Janeiro", RN: "Rio Grande do Norte", RO: "Rondônia", RR: "Roraima",
-  RS: "Rio Grande do Sul", SC: "Santa Catarina", SE: "Sergipe", SP: "São Paulo", TO: "Tocantins",
-};
-
-const CHART_COLORS = ["#2d6a4f", "#40916c", "#52b788", "#74c69d", "#95d5b2", "#b7e4c7"];
-const PIE_COLORS = ["#2d6a4f", "#40916c", "#74c69d", "#b7e4c7"];
-const EXTRA_COLORS = ["#e76f51", "#264653", "#2a9d8f", "#e9c46a"];
-
-export default function Dashboard() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedInep, setSelectedInep] = useState<string | null>(null);
-  const [showSearchDropdown, setShowSearchDropdown] = useState(true);
-  const [selectedAno, setSelectedAno] = useState(2024);
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  const [selectedChart, setSelectedChart] = useState("matriculas");
-  const [activeTab, setActiveTab] = useState<"overview" | "search">("overview");
-  const [filterUf, setFilterUf] = useState("");
-  const [filterDep, setFilterDep] = useState("");
-  const [listPage, setListPage] = useState(1);
-  const [saldoMesSel, setSaldoMesSel] = useState<string>(() => {
-    const d = new Date();
-    return `${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
-  });
-
-  const { data: stats, isLoading: statsLoading } = useEstatisticas(selectedAno);
-  const { data: searchResults, refetch: refetchSearch, isLoading: searchLoading } = useSchoolSearch(searchQuery);
-  const { data: evolucaoData, isLoading: evolucaoLoading } = useEscolaEvolucao(selectedInep || "");
-  const { data: mediasNacionais } = useMediasNacionais(selectedAno);
-  const pddeAno = new Date().getFullYear();
-  const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
-  const pddeCnpj = pddeData?.uex?.cnpj || null;
-  const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
-  const { data: pddeExecFinData, isLoading: pddeExecFinLoading, isError: pddeExecFinError } = usePddeExecFin(selectedInep);
-  const { data: pddeUexSaldoData, isLoading: pddeUexSaldoLoading } = usePddeUexSaldo(pddeCnpj, { mes: saldoMesSel });
-  const { data: cadastralData, isLoading: cadastralLoading } = usePddeSituacaoCadastral(selectedInep, pddeAno);
-  const { data: prestacaoContaData, isLoading: prestacaoContaLoading } = usePddePrestacaoConta(selectedInep, pddeAno);
-  const { data: atendimentoData, isLoading: atendimentoLoading } = usePddeAtendimento(selectedInep, pddeAno);
-  const listFilters = useMemo(() => {
-    const f: Record<string, string> = {};
-    if (filterUf) f.uf = filterUf;
-    if (filterDep) f.tp_dependencia = filterDep;
-    return f;
-  }, [filterUf, filterDep]);
-
-  const { data: listaEscolas, isLoading: listaLoading } = useListaEscolas(selectedAno, listFilters, listPage, 15);
-
-  const toggleSection = (key: string) => {
-    setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const selectSchool = (inep: string) => {
-    setSelectedInep(inep);
-    setShowSearchDropdown(false);
-    if (activeTab !== "search") setActiveTab("search");
-  };
-
-  const latestAno = useMemo(() => {
-    if (!evolucaoData?.anos_disponiveis?.length) return null;
-    return Math.max(...evolucaoData.anos_disponiveis);
-  }, [evolucaoData]);
-
-  const censoLatest = useMemo(() => {
-    if (!evolucaoData || !latestAno) return null;
-    return evolucaoData.censo_por_ano?.[latestAno] || null;
-  }, [evolucaoData, latestAno]);
-
-  const censoPrev = useMemo(() => {
-    if (!latestAno || !evolucaoData?.anos_disponiveis?.length) return null;
-    const sortedAnos = [...evolucaoData.anos_disponiveis].sort((a: number, b: number) => b - a);
-    const prevAno = sortedAnos.find((a: number) => a < latestAno);
-    if (!prevAno || !evolucaoData?.censo_por_ano?.[prevAno]) return null;
-    return evolucaoData.censo_por_ano[prevAno];
-  }, [evolucaoData, latestAno]);
-
-  const indicadoresLatest = useMemo(() => {
-    if (!evolucaoData || !latestAno) return {};
-    const allIndicadores = evolucaoData.indicadores_por_ano || {};
-    const anos = evolucaoData.anos_disponiveis || [];
-    const merged: Record<string, any> = {};
-    const sortedAnos = [...anos].sort((a: number, b: number) => b - a);
-    for (const ano of sortedAnos) {
-      const yearData = allIndicadores[ano];
-      if (!yearData) continue;
-      for (const [tipo, dados] of Object.entries(yearData)) {
-        if (!merged[tipo]) merged[tipo] = { ...dados as any, _ano: ano };
-      }
-    }
-    return merged;
-  }, [evolucaoData, latestAno]);
-
-  const alertasPreocupantes = useMemo(() => {
-    const alertas: { tipo: 'critical' | 'warning'; titulo: string; descricao: string; indicador: string }[] = [];
-    const ind = indicadoresLatest;
-
-    if (ind.ideb) {
-      const vals = [
-        { v: ind.ideb.ideb_ai, name: 'Anos Iniciais' },
-        { v: ind.ideb.ideb_af, name: 'Anos Finais' },
-        { v: ind.ideb.ideb_em, name: 'Ensino Médio' },
-      ];
-      for (const { v, name } of vals) {
-        if (v != null && Number(v) > 0) {
-          if (Number(v) < 4.0) {
-            alertas.push({ tipo: 'critical', titulo: `IDEB ${name} muito baixo: ${Number(v).toFixed(1)}`, descricao: `O IDEB de ${name} está abaixo de 4,0, o que indica necessidade urgente de ações para melhoria da qualidade do ensino.`, indicador: 'ideb' });
-          } else if (Number(v) < 5.0) {
-            alertas.push({ tipo: 'warning', titulo: `IDEB ${name} requer atenção: ${Number(v).toFixed(1)}`, descricao: `O IDEB de ${name} está entre 4,0 e 5,0. Recomenda-se acompanhamento e planejamento de ações pedagógicas.`, indicador: 'ideb' });
-          }
-        }
-      }
-    }
-
-    if (ind.taxas_rendimento) {
-      const abandono = [
-        { v: ind.taxas_rendimento.abandono_fund, name: 'Fundamental' },
-        { v: ind.taxas_rendimento.abandono_med, name: 'Ensino Médio' },
-      ];
-      for (const { v, name } of abandono) {
-        if (v != null) {
-          if (Number(v) > 5) {
-            alertas.push({ tipo: 'critical', titulo: `Abandono escolar elevado no ${name}: ${Number(v).toFixed(1)}%`, descricao: `A taxa de abandono acima de 5% exige ações imediatas de busca ativa e acolhimento dos alunos.`, indicador: 'taxas_rendimento' });
-          } else if (Number(v) > 2) {
-            alertas.push({ tipo: 'warning', titulo: `Abandono escolar no ${name}: ${Number(v).toFixed(1)}%`, descricao: `A taxa de abandono entre 2% e 5% merece atenção. Identifique os alunos em risco e implemente estratégias de permanência.`, indicador: 'taxas_rendimento' });
-          }
-        }
-      }
-      const reprov = [
-        { v: ind.taxas_rendimento.reprovacao_fund, name: 'Fundamental' },
-        { v: ind.taxas_rendimento.reprovacao_med, name: 'Ensino Médio' },
-      ];
-      for (const { v, name } of reprov) {
-        if (v != null) {
-          if (Number(v) > 20) {
-            alertas.push({ tipo: 'critical', titulo: `Reprovação alta no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Taxa de reprovação acima de 20% indica necessidade urgente de revisão das práticas pedagógicas e avaliativas.`, indicador: 'taxas_rendimento' });
-          } else if (Number(v) > 10) {
-            alertas.push({ tipo: 'warning', titulo: `Reprovação no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Taxa de reprovação entre 10% e 20%. Avalie as causas e considere reforço escolar e acompanhamento individualizado.`, indicador: 'taxas_rendimento' });
-          }
-        }
-      }
-    }
-
-    if (ind.tdi) {
-      const tdiVals = [
-        { v: ind.tdi.fundamental_total, name: 'Fundamental' },
-        { v: ind.tdi.medio_total, name: 'Ensino Médio' },
-      ];
-      for (const { v, name } of tdiVals) {
-        if (v != null) {
-          if (Number(v) > 30) {
-            alertas.push({ tipo: 'critical', titulo: `Distorção idade-série alta no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Mais de 30% dos alunos estão com idade acima da esperada para a série. Considere programas de correção de fluxo.`, indicador: 'tdi' });
-          } else if (Number(v) > 20) {
-            alertas.push({ tipo: 'warning', titulo: `Distorção idade-série no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Entre 20% e 30% dos alunos estão com defasagem. Monitore e planeje intervenções pedagógicas.`, indicador: 'tdi' });
-          }
-        }
-      }
-    }
-
-    if (ind.dsu) {
-      const dsuVals = [
-        { v: ind.dsu.percentual_fund, name: 'Fundamental' },
-        { v: ind.dsu.percentual_med, name: 'Ensino Médio' },
-      ];
-      for (const { v, name } of dsuVals) {
-        if (v != null && Number(v) > 0) {
-          if (Number(v) < 60) {
-            alertas.push({ tipo: 'critical', titulo: `Poucos docentes com curso superior no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Menos de 60% dos docentes possuem formação superior. Isso impacta diretamente a qualidade do ensino.`, indicador: 'dsu' });
-          } else if (Number(v) < 80) {
-            alertas.push({ tipo: 'warning', titulo: `Formação docente no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Entre 60% e 80% dos docentes têm curso superior. Incentive a formação continuada.`, indicador: 'dsu' });
-          }
-        }
-      }
-    }
-
-    if (ind.had) {
-      const hadVals = [
-        { v: ind.had.media_fund, name: 'Fundamental' },
-        { v: ind.had.media_med, name: 'Ensino Médio' },
-      ];
-      for (const { v, name } of hadVals) {
-        if (v != null && Number(v) > 0 && Number(v) < 4) {
-          alertas.push({ tipo: 'warning', titulo: `Carga horária baixa no ${name}: ${Number(v).toFixed(1)}h/dia`, descricao: `A média de horas-aula diária está abaixo de 4 horas. Considere ampliar a jornada escolar.`, indicador: 'had' });
-        }
-      }
-    }
-
-    if (ind.atu) {
-      const atuVals = [
-        { v: ind.atu.media_fund, name: 'Fundamental' },
-        { v: ind.atu.media_med, name: 'Ensino Médio' },
-      ];
-      for (const { v, name } of atuVals) {
-        if (v != null && Number(v) > 35) {
-          alertas.push({ tipo: 'warning', titulo: `Turmas superlotadas no ${name}: ${Number(v).toFixed(1)} alunos/turma`, descricao: `A média de alunos por turma acima de 35 prejudica a qualidade do atendimento pedagógico.`, indicador: 'atu' });
-        }
-      }
-    }
-
-    if (ind.icg) {
-      const nivel = Number(ind.icg.nivel);
-      if (nivel === 5 || nivel === 6) {
-        alertas.push({ tipo: 'warning', titulo: `Alta complexidade de gestão: Nível ${nivel}`, descricao: `A escola possui nível elevado de complexidade de gestão, o que demanda maior suporte administrativo e pedagógico.`, indicador: 'icg' });
-      }
-    }
-
-    if (ind.ird) {
-      const media = Number(ind.ird.media_ird ?? ind.ird.media);
-      if (media > 0 && media < 2.0) {
-        alertas.push({ tipo: 'warning', titulo: `Baixa regularidade docente: ${media.toFixed(2)}`, descricao: `O índice de regularidade do corpo docente está abaixo de 2,0, indicando alta rotatividade de professores.`, indicador: 'ird' });
-      }
-    }
-
-    if (ind.afd) {
-      const funCat1 = Number(ind.afd.fun_cat_1);
-      if (funCat1 > 0 && funCat1 < 50) {
-        alertas.push({ tipo: 'warning', titulo: `Adequação da formação docente baixa: ${funCat1.toFixed(1)}%`, descricao: `Menos de 50% dos docentes do Fundamental possuem formação adequada (Grupo 1). Isso afeta a qualidade do ensino.`, indicador: 'afd' });
-      }
-    }
-
-    if (ind.ied) {
-      const n5 = Number(ind.ied.nivel_5 || 0);
-      const n6 = Number(ind.ied.nivel_6 || 0);
-      if ((n5 + n6) > 50) {
-        alertas.push({ tipo: 'warning', titulo: `Alto esforço docente: ${(n5 + n6).toFixed(1)}% nos níveis 5 e 6`, descricao: `Mais da metade dos docentes atuam com sobrecarga (múltiplas escolas e turnos). Isso pode impactar a qualidade do trabalho pedagógico.`, indicador: 'ied' });
-      }
-    }
-
-    return alertas;
-  }, [indicadoresLatest]);
-
-  const evolutionCharts = useMemo(() => {
-    if (!evolucaoData) return null;
-    const anos = evolucaoData.anos_disponiveis;
-    const censo = evolucaoData.censo_por_ano;
-    const indicadores = evolucaoData.indicadores_por_ano;
-
-    return {
-      matriculas: anos.map((a: number) => ({ ano: a, value: censo[a]?.qt_mat_bas || 0 })),
-      docentes: anos.map((a: number) => ({ ano: a, value: censo[a]?.qt_doc_bas || censo[a]?.qt_docentes || 0 })),
-      turmas: anos.map((a: number) => ({ ano: a, value: censo[a]?.qt_tur_bas || censo[a]?.qt_turmas || 0 })),
-      taxasRendimento: anos.map((a: number) => {
-        const tr = indicadores[a]?.taxas_rendimento;
-        if (!tr) return { ano: a };
-        return {
-          ano: a,
-          aprovacao: tr.aprovacao_fund ?? tr.aprovacao_total ?? null,
-          reprovacao: tr.reprovacao_fund ?? tr.reprovacao_total ?? null,
-          abandono: tr.abandono_fund ?? tr.abandono_total ?? null,
-        };
-      }),
-      tdi: anos.map((a: number) => {
-        const t = indicadores[a]?.tdi;
-        if (!t) return { ano: a };
-        return {
-          ano: a,
-          fund_total: t.fundamental_total ?? null,
-          fund_af: t.fundamental_af ?? null,
-          medio: t.medio_total ?? null,
-        };
-      }),
-      atu: anos.map((a: number) => {
-        const at = indicadores[a]?.atu;
-        if (!at) return { ano: a };
-        return {
-          ano: a,
-          fund: at.media_fund ?? null,
-          fund_ai: at.media_fund_ai ?? null,
-          fund_af: at.media_fund_af ?? null,
-          medio: at.media_med ?? null,
-        };
-      }),
-      had: anos.map((a: number) => {
-        const h = indicadores[a]?.had;
-        if (!h) return { ano: a };
-        return {
-          ano: a,
-          fund: h.media_fund ?? null,
-          fund_ai: h.media_fund_ai ?? null,
-          fund_af: h.media_fund_af ?? null,
-          medio: h.media_med ?? null,
-        };
-      }),
-      dsu: anos.map((a: number) => {
-        const d = indicadores[a]?.dsu;
-        if (!d) return { ano: a };
-        return {
-          ano: a,
-          fund: d.percentual_fund ?? null,
-          fund_ai: d.percentual_fund_ai ?? null,
-          fund_af: d.percentual_fund_af ?? null,
-          medio: d.percentual_med ?? null,
-        };
-      }),
-      icg: anos.map((a: number) => {
-        const ic = indicadores[a]?.icg;
-        if (!ic) return { ano: a };
-        return { ano: a, nivel: ic.nivel ?? null };
-      }),
-      ird: anos.map((a: number) => {
-        const ir = indicadores[a]?.ird;
-        if (!ir) return { ano: a };
-        return { ano: a, media: ir.media_ird ?? ir.media ?? null };
-      }),
-      ideb: anos.map((a: number) => {
-        const id = indicadores[a]?.ideb;
-        if (!id) return { ano: a };
-        return {
-          ano: a,
-          ideb_ai: id.ideb_ai ?? id.ideb ?? null,
-          ideb_af: id.ideb_af ?? null,
-          ideb_em: id.ideb_em ?? null,
-        };
-      }),
-      inse: anos.map((a: number) => {
-        const ins = indicadores[a]?.inse;
-        if (!ins) return { ano: a };
-        return { ano: a, media: ins.media_inse ?? ins.valor ?? null };
-      }),
-      saeb: anos.map((a: number) => {
-        const s = indicadores[a]?.saeb;
-        if (!s) return { ano: a };
-        return { ano: a, mt_ai: s.nota_mt_ai ?? null, lp_ai: s.nota_lp_ai ?? null, mt_af: s.nota_mt_af ?? null, lp_af: s.nota_lp_af ?? null, mt_em: s.nota_mt_em ?? null, lp_em: s.nota_lp_em ?? null };
-      }),
-      ied: anos.map((a: number) => {
-        const ie = indicadores[a]?.ied;
-        if (!ie) return { ano: a };
-        return { ano: a, nivel_1: ie.nivel_1 ?? null, nivel_2: ie.nivel_2 ?? null, nivel_3: ie.nivel_3 ?? null, nivel_4: ie.nivel_4 ?? null, nivel_5: ie.nivel_5 ?? null, nivel_6: ie.nivel_6 ?? null };
-      }),
-      tnr: anos.map((a: number) => {
-        const t = indicadores[a]?.taxa_nao_resposta;
-        if (!t) return { ano: a };
-        return { ano: a, fund: t.taxa_nao_resposta_fund ?? t.tnr_fund ?? null, med: t.taxa_nao_resposta_med ?? t.tnr_med ?? null };
-      }),
-    };
-  }, [evolucaoData]);
-
-  const ufChartData = useMemo(() => {
-    if (!stats?.por_uf) return [];
-    return Object.entries(stats.por_uf)
-      .map(([uf, count]) => ({ uf, name: UF_NAMES[uf] || uf, escolas: count as number }))
-      .sort((a, b) => b.escolas - a.escolas);
-  }, [stats]);
-
-  const depChartData = useMemo(() => {
-    if (!stats?.por_dependencia) return [];
-    return Object.entries(stats.por_dependencia)
-      .map(([name, value]) => ({ name, value: value as number }));
-  }, [stats]);
-
-  const locChartData = useMemo(() => {
-    if (!stats?.por_localizacao) return [];
-    return Object.entries(stats.por_localizacao)
-      .map(([name, value]) => ({ name, value: value as number }));
-  }, [stats]);
-
-  const sitChartData = useMemo(() => {
-    if (!stats?.por_situacao) return [];
-    return Object.entries(stats.por_situacao)
-      .map(([name, value]) => ({ name, value: value as number }));
-  }, [stats]);
-
-  const formatNumber = (n: number) => n?.toLocaleString("pt-BR") || "0";
-
-  const hasMultipleYears = (evolucaoData?.anos_disponiveis?.length || 0) > 1;
-
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navigation />
-
-      <main className="flex-1 container mx-auto px-4 py-6 space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Painel de Dados Educacionais</h1>
-            <p className="text-sm text-muted-foreground mt-1">Censo Escolar {selectedAno} - Fonte: INEP/MEC</p>
-          </div>
-          {activeTab === "overview" && (
-            <div className="flex items-center gap-2">
-              <select
-                value={selectedAno}
-                onChange={(e) => setSelectedAno(Number(e.target.value))}
-                className="text-sm bg-background border border-border/50 rounded-lg px-3 py-2"
-              >
-                {[2024, 2023, 2022, 2021, 2020].map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-2 border-b border-border/30 pb-1">
-          {[
-            { key: "overview" as const, label: "Visão Geral", icon: BarChart3 },
-            { key: "search" as const, label: "Buscar Escolas", icon: Search },
-          ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-all ${
-                activeTab === tab.key
-                  ? "bg-accent/10 text-accent border-b-2 border-accent"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-              }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === "overview" && (
-          <div className="space-y-6">
-            {statsLoading ? (
-              <div className="py-20 text-center">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto text-accent mb-3" />
-                <p className="text-muted-foreground">Carregando estatísticas...</p>
+            <div className="card-pad">
+              <h4 className="scribble">Por Estado</h4>
+              <div style={{height: 320}}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats?.ufChartData || []} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="uf" tick={{ fontSize: 11 }} interval={0} angle={-45} textAnchor="end" height={50} />
+                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+                    <Tooltip formatter={(value) => [value, "Escolas"]} labelFormatter={(label) => UF_NAMES[label] || label} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb" }} />
+                    <Bar dataKey="escolas" fill="#2d6a4f" radius={[4, 4, 0, 0]} cursor="pointer" />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            ) : stats ? (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <StatCard
-                    icon={<School className="w-6 h-6 text-accent" />}
-                    value={formatNumber(stats.total_escolas)}
-                    label="Escolas"
-                    color="bg-accent/10"
-                  />
-                  <StatCard
-                    icon={<Users className="w-6 h-6 text-accent" />}
-                    value={formatNumber(stats.total_matriculas)}
-                    label="Matrículas"
-                    color="bg-accent/10"
-                  />
-                  <StatCard
-                    icon={<GraduationCap className="w-6 h-6 text-purple-600" />}
-                    value={formatNumber(stats.total_docentes)}
-                    label="Docentes"
-                    color="bg-purple-600/10"
-                  />
-                  <StatCard
-                    icon={<BookOpen className="w-6 h-6 text-orange-600" />}
-                    value={Object.keys(stats.por_uf || {}).length.toString()}
-                    label="Estados"
-                    color="bg-orange-600/10"
-                  />
-                </div>
+            </div>
+          </div>
+          {/* Por Rede */}
+          <div className="card">
+            <div className="card-pad">
+              <h4 className="scribble">Por Rede</h4>
+              <div style={{height: 180}}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={stats?.depChartData || []} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} innerRadius={30} paddingAngle={2}>
+                      {(stats?.depChartData || []).map((_: any, i: number) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(v) => v} contentStyle={{ borderRadius: "12px" }} />
+                    <Legend iconSize={10} wrapperStyle={{ fontSize: "12px" }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+          {/* Por Localização */}
+          <div className="card">
+            <div className="card-pad">
+              <h4 className="scribble">Por Localização</h4>
+              <div className="mini-grid-3">
+                {(stats?.locChartData || []).map((item: any, i: number) => {
+                  const pct = stats?.total_escolas > 0 ? ((item.value / stats.total_escolas) * 100).toFixed(1) : "0";
+                  return (
+                    <div key={i} className="fact">
+                      <label>{item.name}</label>
+                      <strong>{item.value}</strong>
+                      <small>{pct}% do total</small>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <Card className="card-clay lg:col-span-2">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-accent" />
-                        Escolas por Estado
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={360}>
-                        <BarChart data={ufChartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                          <XAxis dataKey="uf" tick={{ fontSize: 11 }} interval={0} angle={-45} textAnchor="end" height={50} />
-                          <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-                          <Tooltip
-                            formatter={(value: number) => [formatNumber(value), "Escolas"]}
-                            labelFormatter={(label) => UF_NAMES[label] || label}
-                            contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb" }}
-                          />
-                          <Bar dataKey="escolas" fill="#2d6a4f" radius={[4, 4, 0, 0]} cursor="pointer"
-                            onClick={(data) => {
-                              setFilterUf(data.uf);
-                              setFilterDep("");
-                              setListPage(1);
-                              setActiveTab("search");
-                            }}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-
-                  <div className="space-y-4">
-                    <Card className="card-clay">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-accent" />
-                          Por Rede
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ResponsiveContainer width="100%" height={160}>
-                          <PieChart>
-                            <Pie data={depChartData} dataKey="value" nameKey="name" cx="50%" cy="50%"
-                              outerRadius={60} innerRadius={30} paddingAngle={2}>
-                              {depChartData.map((_, i) => (
-                                <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip formatter={(v: number) => formatNumber(v)} contentStyle={{ borderRadius: "12px" }} />
-                            <Legend iconSize={10} wrapperStyle={{ fontSize: "12px" }} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="card-clay">
+        </div> {/* Fim do último card ou grid */}
+      </section>
+    </div>
+  );
                       <CardHeader className="pb-2">
                         <CardTitle className="text-base flex items-center gap-2">
                           <TreePine className="w-4 h-4 text-accent" />
@@ -729,8 +275,8 @@ export default function Dashboard() {
                   <div className="p-5 flex flex-wrap gap-3 items-start">
                     <Button variant="ghost" size="icon" onClick={() => setSelectedInep(null)} className="shrink-0 text-muted-foreground -ml-1 -mt-1"><X className="w-4 h-4"/></Button>
                     <div className="flex-1 min-w-0">
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide mb-3" style={{background:'rgba(255,255,255,0.88)',border:'1px solid #e6d8c7',color:'#2d5a88'}}>
-                        📘 Censo Escolar {latestAno} · INEP/MEC
+                      <div className="text-xs font-semibold text-[#2d5a88] mb-3" style={{background:'rgba(255,255,255,0.88)',border:'1px solid #e6d8c7',borderRadius:'999px',padding:'7px 18px'}}>
+                        Dados consultados: Censo Escolar, indicadores educacionais, situação financeira PDDE, Fundeb, Banco do Brasil, INEP/MEC
                       </div>
                       <h2 className="text-xl font-bold leading-tight tracking-tight mb-3">{evolucaoData.escola.no_entidade}</h2>
                       <div className="flex flex-wrap gap-2">
@@ -757,47 +303,16 @@ export default function Dashboard() {
                 </div>
 
                 {/* ── Métricas resumo ── */}
-                {(() => {
-                  const THEMES = ['theme-blue','theme-yellow','theme-green','theme-purple','theme-pink','theme-teal'];
-                  const METRICS = [
-                    { label: `Matrículas ${latestAno}`, val: censoLatest.qt_mat_bas || 0, prev: censoPrev?.qt_mat_bas || 0, icon: '👩‍🎓' },
-                    { label: `Docentes ${latestAno}`, val: censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0, prev: censoPrev ? (censoPrev.qt_doc_bas || censoPrev.qt_docentes || 0) : 0, icon: '🧑‍🏫' },
-                    { label: `Turmas ${latestAno}`, val: censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0, prev: censoPrev ? (censoPrev.qt_tur_bas || censoPrev.qt_turmas || 0) : 0, icon: '🏫' },
-                    { label: `Salas utilizadas`, val: censoLatest.qt_salas_utilizadas || 0, prev: censoPrev?.qt_salas_utilizadas || 0, icon: '🚪' },
-                    { label: 'Pontos de atenção', val: alertasPreocupantes.length, prev: null, icon: alertasPreocupantes.filter(a=>a.tipo==='critical').length > 0 ? '⚠️' : alertasPreocupantes.length > 0 ? '◌' : '✅', extra: alertasPreocupantes.length === 0 ? 'Tudo certo' : `${alertasPreocupantes.filter(a=>a.tipo==='critical').length} crítico${alertasPreocupantes.filter(a=>a.tipo==='critical').length !== 1 ? 's' : ''}` },
-                    { label: 'PDDE', val: pddeData?.ok ? (prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? prestacaoContaData.itens.filter((i:any)=>i.situacao_pc_uex?.toLowerCase().includes('adimpl')).length === prestacaoContaData.itens.length ? 'OK' : 'Ver' : pddeData ? 'Ativo' : '—') : '—', prev: null, icon: '💸', extra: prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? `${prestacaoContaData.itens.length} programa${prestacaoContaData.itens.length > 1 ? 's' : ''}` : pddeData?.ok ? pddeData.uex?.executora?.slice(0,22) : 'Sem dados' },
-                  ];
-                  return (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-                      {METRICS.map((m, i) => {
-                        const delta = m.prev !== null && typeof m.val === 'number' ? (m.val as number) - (m.prev as number) : null;
-                        return (
-                          <div key={i} className={`metric ${THEMES[i]}`}>
-                            <div className="flex items-start justify-between gap-2 mb-3">
-                              <div>
-                                <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>{m.label}</label>
-                                <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{typeof m.val === 'number' ? m.val.toLocaleString('pt-BR') : m.val}</strong>
-                              </div>
-                              <div className="w-11 h-11 rounded-2xl grid place-items-center text-xl shrink-0" style={{background:'rgba(255,255,255,0.72)',border:'1px solid rgba(255,255,255,0.9)'}}>{m.icon}</div>
-                            </div>
-                            {(m as any).extra ? (
-                              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold bg-white/60 text-gray-600">{(m as any).extra}</span>
-                            ) : delta !== null && delta !== 0 ? (
-                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold ${delta > 0 ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>{delta > 0 ? '▲' : '▼'} {Math.abs(delta)} vs ano anterior</span>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
+                <MetricsSchoolPanel metrics={[
+                  { label: `Matrículas ${latestAno}`, val: censoLatest.qt_mat_bas || 0, prev: censoPrev?.qt_mat_bas || 0, icon: '👩‍🎓' },
+                  { label: `Docentes ${latestAno}`, val: censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0, prev: censoPrev ? (censoPrev.qt_doc_bas || censoPrev.qt_docentes || 0) : 0, icon: '🧑‍🏫' },
+                  { label: `Turmas ${latestAno}`, val: censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0, prev: censoPrev ? (censoPrev.qt_tur_bas || censoPrev.qt_turmas || 0) : 0, icon: '🏫' },
+                  { label: `Salas utilizadas`, val: censoLatest.qt_salas_utilizadas || 0, prev: censoPrev?.qt_salas_utilizadas || 0, icon: '🚪' },
+                  { label: 'Pontos de atenção', val: alertasPreocupantes.length, prev: null, icon: alertasPreocupantes.filter(a=>a.tipo==='critical').length > 0 ? '⚠️' : alertasPreocupantes.length > 0 ? '◌' : '✅', extra: alertasPreocupantes.length === 0 ? 'Tudo certo' : `${alertasPreocupantes.filter(a=>a.tipo==='critical').length} crítico${alertasPreocupantes.filter(a=>a.tipo==='critical').length !== 1 ? 's' : ''}` },
+                  { label: 'PDDE', val: pddeData?.ok ? (prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? prestacaoContaData.itens.filter((i:any)=>i.situacao_pc_uex?.toLowerCase().includes('adimpl')).length === prestacaoContaData.itens.length ? 'OK' : 'Ver' : pddeData ? 'Ativo' : '—') : '—', prev: null, icon: '💸', extra: prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? `${prestacaoContaData.itens.length} programa${prestacaoContaData.itens.length > 1 ? 's' : ''}` : pddeData?.ok ? pddeData.uex?.executora?.slice(0,22) : 'Sem dados' },
+                ]} />
 
                 {(() => {
-                  const criticals = alertasPreocupantes.filter(a => a.tipo === 'critical');
-                  const warnings = alertasPreocupantes.filter(a => a.tipo === 'warning');
-                  const total = alertasPreocupantes.length;
-                  const extractVal = (titulo: string) => { const m = titulo.match(/:\s*([\d,\.]+\s*%?)(\s*(?:alunos\/turma|h\/dia|h))?$/); return m ? m[1] + (m[2] || '') : null; };
-                  const cleanTitle = (titulo: string) => titulo.replace(/:\s*[\d,\.]+\s*(?:%|alunos\/turma|h\/dia|h)?\s*$/, '').replace(/:\s*Nível\s*\d+\s*$/, '');
                   return (
                     <div className="space-y-4">
                       <div className="section-title">
@@ -805,53 +320,25 @@ export default function Dashboard() {
                           <h2>Pontos de atenção</h2>
                           <p>Indicadores que merecem atenção especial desta escola</p>
                         </div>
-                        {total > 0 && <span className="attention-count">◌ {total} ponto{total !== 1 ? 's' : ''} para acompanhar</span>}
-                        {total === 0 && <span className="hint-chip">✅ Tudo dentro do esperado</span>}
                       </div>
-                      <div className="organic-divider"/>
-
-                      {total === 0 ? (
-                        <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50" style={{borderLeft:'6px solid #2f7a58', border:'1px solid #c7e8d6', borderLeftWidth:'6px'}}>
-                          <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
-                          <p className="text-sm" style={{color:'#2f7a58'}}>Diretora, os indicadores desta escola estão dentro das faixas esperadas. Continue o bom trabalho!</p>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {[...criticals.map(a => ({...a, tipo: 'critical' as const})), ...warnings.map(a => ({...a, tipo: 'warning' as const}))].map((alerta, i) => {
-                            const mv = extractVal(alerta.titulo);
-                            const ct = cleanTitle(alerta.titulo);
-                            return (
-                              <div key={i} className={`alert-sticker ${alerta.tipo === 'critical' ? 'critical' : ''}`}>
-                                <div className="flex items-start justify-between gap-2 mb-2">
-                                  <p className="text-sm font-bold leading-tight">{ct}</p>
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0 ${alerta.tipo === 'critical' ? 'bg-[#fdecea] text-[#b74f42]' : 'bg-[#fff4db] text-[#9b6a16]'}`}>
-                                    {alerta.tipo === 'critical' ? 'Olhar com cuidado' : 'Acompanhar'}
-                                  </span>
-                                </div>
-                                {mv && <strong className="block text-3xl font-bold leading-none mb-2" style={{letterSpacing:'-0.04em'}}>{mv}</strong>}
-                                <p className="text-xs leading-snug" style={{color:'#6b7785'}}>{alerta.descricao}</p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                      <AlertPanel alerts={alertasPreocupantes} />
                     </div>
                   );
                 })()}
 
-                <Card className="card-clay">
-                  <CardHeader className="pb-2">
-                    <div className="section-title">
-                      <div>
-                        <h2>Galeria de gráficos</h2>
-                        <p>Escolha um recorte e visualize a evolução histórica da escola</p>
+                <Card className="card-clay rounded-xl border border-indigo-100 bg-indigo-50/40 px-3 py-2 mt-2">
+                  <CardHeader className="pb-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-col">
+                        <span className="scribble text-indigo-800 font-bold text-base flex items-center gap-2"><BarChart3 className="w-4 h-4 text-indigo-600" /> Galeria de Gráficos</span>
+                        <span className="text-xs text-indigo-700 mt-0.5">Evolução histórica da escola</span>
                       </div>
-                      <span className="hint-chip">📊 {evolucaoData?.anos_disponiveis?.length || 1} ano{(evolucaoData?.anos_disponiveis?.length || 1) !== 1 ? 's' : ''} de dados</span>
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 scribble bg-indigo-100 text-indigo-800 border border-indigo-200">📊 {evolucaoData?.anos_disponiveis?.length || 1} ano{(evolucaoData?.anos_disponiveis?.length || 1) !== 1 ? 's' : ''} de dados</span>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-1 pb-2">
                     {!hasMultipleYears && (
-                      <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm mb-4">
+                      <div className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs mb-2">
                         Por enquanto temos dados só de {latestAno}. Com mais anos importados, você vai ver a evolução aqui.
                       </div>
                     )}
@@ -867,18 +354,19 @@ export default function Dashboard() {
                         { id: "dsu", label: "Docentes c/ Superior", icon: <GraduationCap className="w-4 h-4" />, color: "#10b981", description: "% de professores com diploma universitário. LDB exige formação superior.", data: evolutionCharts.dsu, lines: hasMultipleYears ? [{ key: "fund", color: "#10b981", name: "Fund. Total" }, { key: "fund_ai", color: "#0ea5e9", name: "Fund. AI" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }] : [{ key: "fund", color: "#10b981", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }], unit: "%" },
                         { id: "icg", label: "Complexidade de Gestão", icon: <BarChart3 className="w-4 h-4" />, color: "#f97316", description: "Nível 1–6 de complexidade administrativa. Leva em conta turnos, etapas e porte.", data: evolutionCharts.icg, lines: [{ key: "nivel", color: "#f97316", name: "Nível" }] },
                         { id: "ird", label: "Regularidade Docente", icon: <BarChart3 className="w-4 h-4" />, color: "#14b8a6", description: "Permanência dos professores na escola (0–5). Quanto maior, mais estabilidade pedagógica.", data: evolutionCharts.ird, lines: [{ key: "media", color: "#14b8a6", name: "Média IRD" }] },
-                        { id: "inse", label: "Nível Socioeconômico", icon: <TrendingUp className="w-4 h-4" />, color: "#a855f7", description: "Perfil socioeconômico médio dos alunos. Contexto importante para planejar ações.", data: evolutionCharts.inse, lines: [{ key: "media", color: "#a855f7", name: "Média INSE" }] },
+                        { id: "inse", label: "Nível Socioeconômico", icon: <TrendingUp className="w-4 h-4" />, color: "#a855f7", description: "Perfil socioeconômico médio dos alunos.", data: evolutionCharts.inse, lines: [{ key: "media", color: "#a855f7", name: "Média INSE" }] },
                         { id: "saeb", label: "SAEB - Proficiência", icon: <Award className="w-4 h-4" />, color: "#3b82f6", description: "Notas em Matemática e Português nas avaliações nacionais do SAEB.", data: evolutionCharts.saeb, lines: [{ key: "mt_ai", color: "#10b981", name: "Mat. AI" }, { key: "lp_ai", color: "#0ea5e9", name: "Port. AI" }, { key: "mt_af", color: "#f59e0b", name: "Mat. AF" }, { key: "lp_af", color: "#ef4444", name: "Port. AF" }, { key: "mt_em", color: "#8b5cf6", name: "Mat. EM" }, { key: "lp_em", color: "#ec4899", name: "Port. EM" }] },
                         { id: "ied", label: "Esforço Docente", icon: <GraduationCap className="w-4 h-4" />, color: "#ec4899", description: "% de professores por nível de esforço (1=menor, 6=maior — muitas turmas e escolas).", data: evolutionCharts.ied, lines: [{ key: "nivel_1", color: "#10b981", name: "Nível 1" }, { key: "nivel_2", color: "#0ea5e9", name: "Nível 2" }, { key: "nivel_3", color: "#f59e0b", name: "Nível 3" }, { key: "nivel_4", color: "#f97316", name: "Nível 4" }, { key: "nivel_5", color: "#ef4444", name: "Nível 5" }, { key: "nivel_6", color: "#7c3aed", name: "Nível 6" }], unit: "%" },
                         { id: "tnr", label: "Taxa de Não-Resposta", icon: <BarChart3 className="w-4 h-4" />, color: "#eab308", description: "% de itens em branco nas avaliações. Alta pode indicar desistências durante a prova.", data: evolutionCharts.tnr, lines: [{ key: "fund", color: "#0ea5e9", name: "Fundamental" }, { key: "med", color: "#ef4444", name: "Médio" }], unit: "%" },
                       ];
-                      const available = chartOptions.filter(c => c.data && c.data.some((d: any) => c.lines.some(l => d[l.key] != null && d[l.key] !== 0)));
+
+                      const available = chartOptions.filter(c => c.data && c.lines && c.data.some((d: any) => c.lines!.some(l => d[l.key] != null && d[l.key] !== 0)));
                       const current = available.find(c => c.id === selectedChart) || available[0];
                       if (!current) return null;
 
                       const latestData = current.data && current.data.length > 0 ? current.data[current.data.length - 1] : null;
                       const prevData = current.data && current.data.length > 1 ? current.data[current.data.length - 2] : null;
-                      const summaryItems = current.lines.map(l => {
+                      const summaryItems = (current.lines || []).map(l => {
                         const val = latestData ? latestData[l.key] : null;
                         const prev = prevData ? prevData[l.key] : null;
                         const delta = (val != null && prev != null && prev !== 0) ? ((val - prev) / Math.abs(prev) * 100) : null;
@@ -886,33 +374,28 @@ export default function Dashboard() {
                       }).filter(s => s.value != null && s.value !== 0);
 
                       return (
-                        <div className="flex gap-3 items-start">
-                          <div className="shrink-0 w-40 space-y-2 sticky top-4 overflow-y-auto" style={{maxHeight:'72vh'}}>
-                            <div className="px-2.5 py-2 rounded-[16px_20px_16px_18px] text-[11px] font-bold leading-tight scribble" style={{background:'linear-gradient(135deg,#fff7b7 0%,#fff8db 100%)', color:'#6a5a33', border:'1px solid #e4cb74', transform:'rotate(-0.8deg)', boxShadow:'0 10px 16px rgba(100,83,46,0.07)'}}>
-                              Escolha um recorte
-                            </div>
+                        <div className="flex gap-2 items-start">
+                          <div className="shrink-0 w-36 space-y-1 sticky top-4 overflow-y-auto" style={{maxHeight:'60vh'}}>
+                            <div className="px-2 py-1 rounded-lg text-[11px] font-bold scribble bg-indigo-100 text-indigo-800 border border-indigo-200 mb-1">Escolha um recorte</div>
                             {available.map((opt) => (
-                              <button key={opt.id} className={`chart-tab-btn ${current.id === opt.id ? 'active' : ''}`}
+                              <button key={opt.id} className={`chart-tab-btn ${current.id === opt.id ? 'active' : ''} rounded-md px-2 py-1 text-xs font-semibold border border-indigo-200 bg-white/80 hover:bg-indigo-50 transition-all w-full text-left mb-1 ${current.id === opt.id ? 'bg-indigo-100 text-indigo-900 border-indigo-400' : ''}`}
                                 onClick={() => setSelectedChart(opt.id)}>
                                 {opt.label}
                               </button>
                             ))}
                           </div>
-                          <div className="flex-1 min-w-0 relative overflow-visible" style={{background:'linear-gradient(180deg,#fffdf8 0%,#fcf8ee 100%)', border:'1px solid #eadfcb', borderRadius:'18px 24px 18px 22px', boxShadow:'0 12px 20px rgba(83,72,53,0.07)', transform:'rotate(0.3deg)'}}>
-                            <div className="absolute w-14 h-3.5 rounded pointer-events-none" style={{top:'-7px', left:'22px', background:'rgba(188,218,243,0.62)', transform:'rotate(-6deg)'}}/>
-                            <div className="p-4 pb-2">
-                              <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0 relative overflow-visible rounded-xl border border-indigo-100 bg-white/80 shadow-sm">
+                            <div className="p-3 pb-2">
+                              <div className="flex items-start justify-between gap-2">
                                 <div>
-                                  <h4 className="text-lg font-bold mb-0.5 scribble" style={{color:'#4f4126'}}>{current.label}</h4>
-                                  <p className="text-sm text-muted-foreground">{current.description}</p>
+                                  <h4 className="text-base font-bold mb-0.5 scribble text-indigo-900">{current.label}</h4>
                                 </div>
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 scribble" style={{background:'linear-gradient(135deg,#fff0bf 0%,#ffe39d 100%)', color:'#7c5710', border:'1px solid #e8cb7a', transform:'rotate(0.5deg)'}}>recorte do mural</span>
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 scribble bg-indigo-100 text-indigo-800 border border-indigo-200">recorte do mural</span>
                               </div>
                               {summaryItems.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mt-2.5">
                                   {summaryItems.map((s, i) => (
-                                    <div key={i} className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold border"
-                                      style={{background:'rgba(255,255,255,0.80)', borderColor:'rgba(0,0,0,0.07)', color:'#596777'}}>
+                                    <div key={i} className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold border bg-white border-indigo-100 text-indigo-900">
                                       <span className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor: s.color}}/>
                                       {s.name}: <span style={{color: s.color}}>{typeof s.value === 'number' ? (Number.isInteger(s.value) ? s.value.toLocaleString('pt-BR') : s.value.toLocaleString('pt-BR', {maximumFractionDigits:1})) : s.value}{current.unit||''}</span>
                                       {s.delta != null && <span className={s.delta >= 0 ? 'text-green-600' : 'text-red-500'}>{s.delta >= 0 ? '▲' : '▼'}{Math.abs(s.delta).toFixed(1)}%</span>}
@@ -921,10 +404,9 @@ export default function Dashboard() {
                                 </div>
                               )}
                             </div>
-                            <div className="px-3 pb-4">
-                              <div className="relative rounded-[18px_26px_18px_22px] overflow-hidden" style={{background:`repeating-linear-gradient(0deg, transparent 0 31px, rgba(115,148,180,.06) 31px 32px), linear-gradient(to right, rgba(229,225,215,.40) 1px, transparent 1px) 0 0/16.666% 100%, #fffef9`, border:'1px solid #eadfcb', boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.5), 0 12px 18px rgba(83,72,53,0.05)', padding:'16px 12px 8px'}}>
-                                <div className="absolute w-8 h-8 pointer-events-none" style={{right:'10px',top:'10px',background:'linear-gradient(135deg, transparent 0 49%, rgba(245,232,205,.85) 50% 100%)',borderRadius:'4px',boxShadow:'-1px 1px 0 rgba(211,197,170,.7)'}}/>
-                                <EvolutionChart data={current.data} lines={current.lines} unit={current.unit} large />
+                            <div className="px-2 pb-3">
+                              <div className="relative rounded-lg overflow-hidden border border-indigo-100 bg-indigo-50/60" style={{padding:'10px 8px 4px'}}>
+                                <EvolutionChart data={current.data} lines={current.lines || []} unit={current.unit} large />
                               </div>
                             </div>
                           </div>
@@ -1245,52 +727,19 @@ export default function Dashboard() {
 
                   if (rows.length === 0 && missingCount === 0) return null;
 
+                  // Use IndicatorPanel for the indicator grid
                   return (
-                    <Card className="card-clay">
-                      <CardHeader className="pb-2">
-                        <div className="section-title">
-                          <div>
-                            <h2>Raio-X educacional</h2>
-                            <p>Indicadores mais recentes desta escola com diagnóstico automático</p>
-                          </div>
-                          <span className="hint-chip">🔬 {rows.length} indicador{rows.length !== 1 ? 'es' : ''}</span>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {rows.map(row => {
-                            const cfg = statusConfig[row.diag.status];
-                            return (
-                              <div key={row.key} className="indicator-card">
-                                <div className="flex items-center justify-between gap-2 mb-2">
-                                  <span className="text-sm font-bold" style={{color:'#485564'}}>
-                                    {row.nome}
-                                    {row.ano && <span className="text-[10px] font-normal text-muted-foreground ml-1">({row.ano})</span>}
-                                  </span>
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0 ${cfg.bg}`}>{row.diag.label}</span>
-                                </div>
-                                <div className="text-2xl font-bold leading-none mb-2" style={{letterSpacing:'-0.03em'}}>{row.diag.valor}</div>
-                                <p className="text-xs text-muted-foreground leading-snug">{row.diag.explicacao}</p>
-                                {row.mediaNacional && (
-                                  <p className="text-[11px] mt-1" style={{color:'#4b7db5'}}>Média nacional: {row.mediaNacional}</p>
-                                )}
-                                {row.diag.secundarios && row.diag.secundarios.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-1.5">
-                                    {row.diag.secundarios.map((s, i) => <span key={i} className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold text-muted-foreground" style={{background:'rgba(0,0,0,0.04)', border:'1px solid rgba(0,0,0,0.06)'}}>{s}</span>)}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {missingCount > 0 && (
-                          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/10">
-                            <Info className="w-4 h-4 text-muted-foreground shrink-0" />
-                            <span className="text-xs text-muted-foreground">{missingCount} indicador{missingCount > 1 ? 'es' : ''} sem dados para esta escola</span>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                    <IndicatorPanel
+                      indicators={rows.map(row => ({
+                        tipo: row.nome,
+                        label: row.diag.label,
+                        status: row.diag.status,
+                        valor: row.diag.valor,
+                        explicacao: row.diag.explicacao + (row.mediaNacional ? ` Média nacional: ${row.mediaNacional}` : ''),
+                        secundarios: row.diag.secundarios,
+                        titulo: row.nome + (row.ano ? ` (${row.ano})` : ''),
+                      }))}
+                    />
                   );
                 })()}
 
@@ -1482,32 +931,20 @@ export default function Dashboard() {
                 </IndicatorSection>
 
                 <IndicatorSection
-                  title="Informações Gerais"
-                  icon={<Info className="w-5 h-5 text-accent" />}
+                  title={
+                    <span className="flex items-center gap-2">
+                      <span className="inline-block bg-gradient-to-r from-green-200 to-green-400 text-green-900 rounded px-2 py-0.5 text-xs font-bold uppercase tracking-wider">Informações Gerais</span>
+                      <span className="ml-2 text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5">Essencial</span>
+                    </span>
+                  }
+                  icon={<Info className="w-5 h-5 text-green-600" />}
                   expanded={expandedSections['info'] ?? true}
                   onToggle={() => toggleSection('info')}
                 >
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Dados Básicos</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        <InfoItem label="Situação" value={censoLatest.ds_situacao} />
-                        <InfoItem label="Dependência" value={censoLatest.ds_dependencia} />
-                        <InfoItem label="Localização" value={censoLatest.ds_localizacao} />
-                        <InfoItem label="Região" value={censoLatest.no_regiao} />
-                        <InfoItem label="Município" value={censoLatest.no_municipio} />
-                        <InfoItem label="UF" value={censoLatest.sg_uf} />
-                        <InfoItem label="Cód. Município" value={censoLatest.co_municipio} />
-                        <InfoItem label="Regulamentação" value={censoLatest.tp_regulamentacao === 1 ? "Sim" : censoLatest.tp_regulamentacao === 2 ? "Sim, em tramitação" : censoLatest.tp_regulamentacao === 3 ? "Não" : undefined} />
-                        <InfoItem label="Órgão Regulamentador" value={censoLatest.tp_responsavel_regulamentacao === 1 ? "Conselho Federal de Educação" : censoLatest.tp_responsavel_regulamentacao === 2 ? "Conselho Estadual de Educação" : censoLatest.tp_responsavel_regulamentacao === 3 ? "Conselho Municipal de Educação" : undefined} />
-                        <InfraItem label="Prédio Escolar" value={censoLatest.in_local_func_predio_escolar} />
-                        <InfraItem label="Prédio Compartilhado" value={censoLatest.in_predio_compartilhado} />
-                        <InfraItem label="Alimentação" value={censoLatest.in_alimentacao} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Etapas e Modalidades Oferecidas</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
+                  <div className="flex flex-col gap-2">
+                    <div className="soft-card theme-pink p-3 rounded-xl shadow-sm border border-pink-200">
+                      <div className="tag-label scribble mb-1 text-pink-800 font-bold text-xs uppercase tracking-wider">Etapas e Modalidades</div>
+                      <div className="grid grid-cols-2 gap-1">
                         <InfraItem label="Ed. Infantil" value={censoLatest.in_inf} />
                         <InfraItem label="Creche" value={censoLatest.in_inf_cre} />
                         <InfraItem label="Pré-escola" value={censoLatest.in_inf_pre} />
@@ -1522,9 +959,9 @@ export default function Dashboard() {
                         <InfraItem label="Ed. Especial" value={censoLatest.in_esp} />
                       </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Organização</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
+                    <div className="soft-card theme-yellow p-3 rounded-xl shadow-sm border border-yellow-200">
+                      <div className="tag-label scribble mb-1 text-yellow-800 font-bold text-xs uppercase tracking-wider">Organização</div>
+                      <div className="grid grid-cols-2 gap-1">
                         <InfraItem label="Conselho Escolar" value={censoLatest.in_orgao_conselho_escolar} />
                         <InfraItem label="APM / APP" value={censoLatest.in_orgao_ass_pais_mestres} />
                         <InfraItem label="Grêmio Estudantil" value={censoLatest.in_orgao_gremio_estudantil} />
@@ -1532,19 +969,97 @@ export default function Dashboard() {
                         <InfraItem label="Ed. Ambiental" value={censoLatest.in_educ_ambiental} />
                       </div>
                     </div>
+                    <div className="soft-card theme-green p-3 rounded-xl shadow-sm border border-green-200">
+                      <div className="tag-label scribble mb-1 text-green-800 font-bold text-xs uppercase tracking-wider">Infraestrutura e Dependências</div>
+                      <div className="grid grid-cols-2 gap-1">
+                        <InfoItem label="Salas Utilizadas" value={censoLatest.qt_salas_utilizadas} />
+                        <InfoItem label="Salas Dentro" value={censoLatest.qt_salas_utilizadas_dentro} />
+                        <InfoItem label="Salas Fora" value={censoLatest.qt_salas_utilizadas_fora} />
+                        <InfoItem label="Climatizadas" value={censoLatest.qt_salas_utiliza_climatizadas} />
+                        <InfoItem label="Acessíveis" value={censoLatest.qt_salas_utilizadas_acessiveis} />
+                        <InfraItem label="Biblioteca" value={censoLatest.in_biblioteca} />
+                        <InfraItem label="Lab. Informática" value={censoLatest.in_laboratorio_informatica} />
+                        <InfraItem label="Quadra Coberta" value={censoLatest.in_quadra_esportes_coberta} />
+                        <InfraItem label="Cozinha" value={censoLatest.in_cozinha} />
+                        <InfraItem label="Banheiro" value={censoLatest.in_banheiro} />
+                        <InfraItem label="Banheiro PNE" value={censoLatest.in_banheiro_pne} />
+                        <InfraItem label="Rampas" value={censoLatest.in_acessibilidade_rampas} />
+                        <InfraItem label="Elevador" value={censoLatest.in_acessibilidade_elevador} />
+                      </div>
+                    </div>
+                    <div className="soft-card theme-indigo p-3 rounded-xl shadow-sm border border-indigo-200">
+                      <div className="tag-label scribble mb-1 text-indigo-800 font-bold text-xs uppercase tracking-wider">Equipamentos e Tecnologia</div>
+                      <div className="grid grid-cols-2 gap-1">
+                        <InfraItem label="Computador" value={censoLatest.in_computador} />
+                        <InfoItem label="Desktops p/ Alunos" value={censoLatest.qt_desktop_aluno} />
+                        <InfoItem label="Notebooks p/ Alunos" value={censoLatest.qt_comp_portatil_aluno} />
+                        <InfoItem label="Tablets p/ Alunos" value={censoLatest.qt_tablet_aluno} />
+                        <InfoItem label="TVs" value={censoLatest.qt_equip_tv} />
+                        <InfoItem label="Projetores" value={censoLatest.qt_equip_multimidia} />
+                        <InfraItem label="Impressora" value={censoLatest.in_equip_impressora} />
+                        <InfraItem label="Copiadora" value={censoLatest.in_equip_copiadora} />
+                        <InfraItem label="Scanner" value={censoLatest.in_equip_scanner} />
+                        <InfraItem label="Internet" value={censoLatest.in_internet} />
+                        <InfraItem label="Banda Larga" value={censoLatest.in_banda_larga} />
+                      </div>
+                    </div>
+                    <div className="soft-card theme-rose p-3 rounded-xl shadow-sm border border-rose-200">
+                      <div className="tag-label scribble mb-1 text-rose-800 font-bold text-xs uppercase tracking-wider">Materiais Pedagógicos</div>
+                      <div className="grid grid-cols-2 gap-1">
+                        <InfraItem label="Multimídia" value={censoLatest.in_material_ped_multimidia} />
+                        <InfraItem label="Infantil" value={censoLatest.in_material_ped_infantil} />
+                        <InfraItem label="Científico" value={censoLatest.in_material_ped_cientifico} />
+                        <InfraItem label="Difusão" value={censoLatest.in_material_ped_difusao} />
+                        <InfraItem label="Musical" value={censoLatest.in_material_ped_musical} />
+                        <InfraItem label="Jogos" value={censoLatest.in_material_ped_jogos} />
+                        <InfraItem label="Artísticas" value={censoLatest.in_material_ped_artisticas} />
+                        <InfraItem label="Profissional" value={censoLatest.in_material_ped_profissional} />
+                        <InfraItem label="Desportiva" value={censoLatest.in_material_ped_desportiva} />
+                        <InfraItem label="Indígena" value={censoLatest.in_material_ped_indigena} />
+                        <InfraItem label="Étnico" value={censoLatest.in_material_ped_etnico} />
+                        <InfraItem label="Quilombola" value={censoLatest.in_material_ped_quilombola} />
+                        <InfraItem label="Ed. Especial" value={censoLatest.in_material_ped_edu_esp} />
+                      </div>
+                    </div>
+                    <div className="soft-card theme-amber p-3 rounded-xl shadow-sm border border-amber-200">
+                      <div className="tag-label scribble mb-1 text-amber-800 font-bold text-xs uppercase tracking-wider">Profissionais (não docentes)</div>
+                      <div className="grid grid-cols-2 gap-1">
+                        <InfoItem label="Administrativos" value={censoLatest.qt_prof_administrativos} />
+                        <InfoItem label="Serviços Gerais" value={censoLatest.qt_prof_servicos_gerais} />
+                        <InfoItem label="Bibliotecários" value={censoLatest.qt_prof_bibliotecario} />
+                        <InfoItem label="Saúde" value={censoLatest.qt_prof_saude} />
+                        <InfoItem label="Coordenadores" value={censoLatest.qt_prof_coordenador} />
+                        <InfoItem label="Fonoaudiólogos" value={censoLatest.qt_prof_fonaudiologo} />
+                        <InfoItem label="Nutricionistas" value={censoLatest.qt_prof_nutricionista} />
+                        <InfoItem label="Psicólogos" value={censoLatest.qt_prof_psicologo} />
+                        <InfoItem label="Alimentação" value={censoLatest.qt_prof_alimentacao} />
+                        <InfoItem label="Pedagogia" value={censoLatest.qt_prof_pedagogia} />
+                        <InfoItem label="Secretários" value={censoLatest.qt_prof_secretario} />
+                        <InfoItem label="Segurança" value={censoLatest.qt_prof_seguranca} />
+                        <InfoItem label="Monitores" value={censoLatest.qt_prof_monitores} />
+                        <InfoItem label="Gestão" value={censoLatest.qt_prof_gestao} />
+                        <InfoItem label="Assistentes Sociais" value={censoLatest.qt_prof_assist_social} />
+                        <InfoItem label="Trad. Libras" value={censoLatest.qt_prof_trad_libras} />
+                      </div>
+                    </div>
                   </div>
                 </IndicatorSection>
 
                 <IndicatorSection
-                  title="Água, Energia e Saneamento"
+                  title={
+                    <span className="flex items-center gap-2">
+                      <span className="inline-block bg-gradient-to-r from-cyan-200 to-cyan-400 text-cyan-900 rounded px-2 py-0.5 text-xs font-bold uppercase tracking-wider">Água, Energia e Saneamento</span>
+                      <span className="ml-2 text-xs bg-cyan-100 text-cyan-700 rounded-full px-2 py-0.5">Infraestrutura</span>
+                    </span>
+                  }
                   icon={<Info className="w-5 h-5 text-cyan-600" />}
                   expanded={expandedSections['saneamento'] ?? true}
                   onToggle={() => toggleSection('saneamento')}
                 >
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Água</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="soft-card theme-green p-4 rounded-xl shadow-sm border border-green-200">
+                      <div className="tag-label scribble mb-2 text-green-800 font-bold text-xs uppercase tracking-wider">Água</div>
+                      <div className="grid grid-cols-2 gap-1">
                         <InfraItem label="Água Potável" value={censoLatest.in_agua_potavel} />
                         <InfraItem label="Rede Pública" value={censoLatest.in_agua_rede_publica} />
                         <InfraItem label="Poço Artesiano" value={censoLatest.in_agua_poco_artesiano} />
@@ -1554,27 +1069,27 @@ export default function Dashboard() {
                         <InfraItem label="Inexistente" value={censoLatest.in_agua_inexistente} />
                       </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Energia</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
+                    <div className="soft-card theme-yellow p-4 rounded-xl shadow-sm border border-yellow-200">
+                      <div className="tag-label scribble mb-2 text-yellow-800 font-bold text-xs uppercase tracking-wider">Energia</div>
+                      <div className="grid grid-cols-2 gap-1">
                         <InfraItem label="Rede Pública" value={censoLatest.in_energia_rede_publica} />
                         <InfraItem label="Gerador Fóssil" value={censoLatest.in_energia_gerador_fossil} />
                         <InfraItem label="Renovável" value={censoLatest.in_energia_renovavel} />
                         <InfraItem label="Inexistente" value={censoLatest.in_energia_inexistente} />
                       </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Esgoto</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
+                    <div className="soft-card theme-blue p-4 rounded-xl shadow-sm border border-blue-200">
+                      <div className="tag-label scribble mb-2 text-blue-800 font-bold text-xs uppercase tracking-wider">Esgoto</div>
+                      <div className="grid grid-cols-2 gap-1">
                         <InfraItem label="Rede Pública" value={censoLatest.in_esgoto_rede_publica} />
                         <InfraItem label="Fossa Séptica" value={censoLatest.in_esgoto_fossa_septica} />
                         <InfraItem label="Fossa Comum" value={censoLatest.in_esgoto_fossa_comum} />
                         <InfraItem label="Inexistente" value={censoLatest.in_esgoto_inexistente} />
                       </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Lixo</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
+                    <div className="soft-card theme-pink p-4 rounded-xl shadow-sm border border-pink-200">
+                      <div className="tag-label scribble mb-2 text-pink-800 font-bold text-xs uppercase tracking-wider">Lixo</div>
+                      <div className="grid grid-cols-2 gap-1">
                         <InfraItem label="Coleta" value={censoLatest.in_lixo_servico_coleta} />
                         <InfraItem label="Queima" value={censoLatest.in_lixo_queima} />
                         <InfraItem label="Enterra" value={censoLatest.in_lixo_enterra} />
@@ -1747,14 +1262,14 @@ export default function Dashboard() {
                 </IndicatorSection>
 
                 <IndicatorSection
-                  title="Financeiro PDDE"
+                  title={<span className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-emerald-600" /> <span className="scribble text-emerald-800 font-bold">Financeiro PDDE</span></span>}
                   icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
                   expanded={expandedSections['financeiro'] ?? true}
                   onToggle={() => toggleSection('financeiro')}
                 >
-                  <div className="space-y-5">
+                  <div className="flex flex-col gap-3">
                     {(pddeLoading || pddeSaldosLoading || pddeExecFinLoading) && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground py-4 justify-center">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground py-2 justify-center">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         Consultando dados financeiros do FNDE...
                       </div>
@@ -1763,14 +1278,11 @@ export default function Dashboard() {
                     {pddeData && !pddeLoading && (
                       <>
                         {pddeData.ok ? (
-                          <div className="space-y-4">
+                          <div className="flex flex-col gap-2">
                             {pddeData.uex && (
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                                  <Landmark className="w-3.5 h-3.5" />
-                                  Unidade Executora (UEx)
-                                </p>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                              <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 px-3 py-2 mb-1 flex flex-col gap-1">
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 mb-1"><Landmark className="w-3 h-3" /> Unidade Executora (UEx)</span>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                   <InfoItem label="Executora" value={pddeData.uex.executora} />
                                   <InfoItem label="CNPJ" value={pddeData.uex.cnpj} />
                                   <InfoItem label="UF" value={pddeData.uex.uf} />
@@ -1780,11 +1292,9 @@ export default function Dashboard() {
                             )}
 
                             {pddeData.matriculas_total != null && (
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                                  Matrículas PDDE ({pddeData.ano})
-                                </p>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                              <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 px-3 py-2 mb-1 flex flex-col gap-1">
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 mb-1">Matrículas PDDE ({pddeData.ano})</span>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                   <InfoItem label="Total" value={pddeData.matriculas_total} highlight />
                                   {pddeData.matriculas_por_nivel && Object.entries(pddeData.matriculas_por_nivel).map(([nivel, qt]) => (
                                     <InfoItem key={nivel} label={nivel} value={qt} />
@@ -1794,30 +1304,27 @@ export default function Dashboard() {
                             )}
 
                             {pddeData.contas && pddeData.contas.length > 0 && (
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                                  <BanknoteIcon className="w-3.5 h-3.5" />
-                                  Contas Bancárias (PDDE Info)
-                                </p>
+                              <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 px-3 py-2 mb-1">
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 mb-1"><BanknoteIcon className="w-3 h-3" /> Contas Bancárias (PDDE Info)</span>
                                 <div className="overflow-x-auto">
-                                  <table className="w-full text-sm">
+                                  <table className="w-full text-xs rounded-lg overflow-hidden shadow-sm">
                                     <thead>
-                                      <tr className="border-b border-border/30">
-                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Programa</th>
-                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Banco</th>
-                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Agência</th>
-                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Conta</th>
-                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Saldo</th>
+                                      <tr className="bg-emerald-100 border-b border-emerald-200">
+                                        <th className="text-left py-1 px-2 font-semibold">Programa</th>
+                                        <th className="text-left py-1 px-2 font-semibold">Banco</th>
+                                        <th className="text-left py-1 px-2 font-semibold">Agência</th>
+                                        <th className="text-left py-1 px-2 font-semibold">Conta</th>
+                                        <th className="text-right py-1 px-2 font-semibold">Saldo</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       {pddeData.contas.map((conta, idx) => (
-                                        <tr key={idx} className="border-b border-border/10">
-                                          <td className="py-2 px-2 text-xs font-medium">{conta.programa}</td>
-                                          <td className="py-2 px-2 text-xs">{conta.banco}</td>
-                                          <td className="py-2 px-2 text-xs font-mono">{conta.agencia}</td>
-                                          <td className="py-2 px-2 text-xs font-mono">{conta.conta}</td>
-                                          <td className="py-2 px-2 text-xs text-right font-mono">
+                                        <tr key={idx} className="border-b border-emerald-50 hover:bg-emerald-100/30 transition-colors">
+                                          <td className="py-1 px-2 font-medium">{conta.programa}</td>
+                                          <td className="py-1 px-2">{conta.banco}</td>
+                                          <td className="py-1 px-2 font-mono">{conta.agencia}</td>
+                                          <td className="py-1 px-2 font-mono">{conta.conta}</td>
+                                          <td className="py-1 px-2 text-right font-mono">
                                             {conta.saldo != null ? `R$ ${conta.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
                                           </td>
                                         </tr>
@@ -2046,7 +1553,7 @@ export default function Dashboard() {
                             )}
                           </div>
                         ) : (
-                          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50/50 border border-amber-200/50">
+                          <div className="flex items-start gap-2 p-2 rounded-xl bg-amber-50/70 border border-amber-200/70">
                             <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                             <div>
                               <p className="text-sm font-medium text-amber-800">PDDE Info indisponível</p>
@@ -2232,7 +1739,7 @@ export default function Dashboard() {
                                   <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden sm:table-cell">Destinação</th>
                                   <th className="text-right py-2 px-2 text-muted-foreground font-medium">Custeio</th>
                                   <th className="text-right py-2 px-2 text-muted-foreground font-medium">Capital</th>
-                                  <th className="text-right py-2 px-2 text-muted-foreground font-medium font-semibold">Total</th>
+                                  <th className="text-right py-2 px-2 text-muted-foreground font-semibold">Total</th>
                                   <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden md:table-cell">Data Pgto</th>
                                 </tr>
                               </thead>
@@ -2501,7 +2008,7 @@ export default function Dashboard() {
                       </div>
                     )}
 
-                    <div className="pt-2 border-t border-border/20">
+                    <div className="pt-1 border-t border-emerald-100 mt-2">
                       <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
                         Dados obtidos do PDDE Info e Dados Abertos do FNDE (2020-2026). Podem apresentar atraso ou indisponibilidade temporária.
                         Para dados oficiais, acesse{' '}
@@ -2516,15 +2023,15 @@ export default function Dashboard() {
                   </div>
                 </IndicatorSection>
 
-                <Card className="card-clay">
-                  <CardHeader className="pb-2">
+                <Card className="card-clay rounded-xl border border-blue-100 bg-blue-50/40 px-3 py-2 mt-2">
+                  <CardHeader className="pb-1">
                     <CardTitle className="text-base flex items-center gap-2">
-                      <ExternalLink className="w-4 h-4 text-accent" />
-                      Links Úteis
+                      <ExternalLink className="w-4 h-4 text-blue-600" />
+                      <span className="scribble text-blue-800 font-bold">Links Úteis</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <CardContent className="pt-1 pb-2">
+                    <div className="flex flex-wrap gap-2">
                       {[
                         { nome: 'PDDE Interativo', url: 'https://pddeinterativo.mec.gov.br' },
                         { nome: 'Portal FNDE', url: 'https://www.fnde.gov.br' },
@@ -2535,9 +2042,9 @@ export default function Dashboard() {
                           href={link.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 p-3 rounded-lg bg-muted/20 hover:bg-accent/10 border border-transparent hover:border-accent/20 transition-all text-sm font-medium text-foreground"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-100/60 hover:bg-blue-200 border border-blue-200 text-xs font-semibold text-blue-900 transition-all shadow-sm"
                         >
-                          <ExternalLink className="w-3.5 h-3.5 text-accent" />
+                          <ExternalLink className="w-3 h-3 text-blue-600" />
                           {link.nome}
                         </a>
                       ))}
@@ -2587,9 +2094,9 @@ function EvolutionChart({ data, lines, unit, large }: { title?: string; data: an
   };
 
   const renderLabel = (props: any) => {
-    if (!large) return null;
+    if (!large) return <g />;
     const { x, y, width, value } = props;
-    if (value == null || value === 0) return null;
+    if (value == null || value === 0) return <g />;
     const display = typeof value === 'number' ? (Number.isInteger(value) ? value.toLocaleString('pt-BR') : value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })) : value;
     return (
       <text x={x + width / 2} y={y - 4} textAnchor="middle" fontSize={10} fontWeight={600} fill="#555">
@@ -2631,38 +2138,38 @@ function EvolutionChart({ data, lines, unit, large }: { title?: string; data: an
 
 function StatCard({ icon, value, label, color, delta }: { icon: React.ReactNode; value: string; label: string; color: string; delta?: number }) {
   return (
-    <div className={`px-3 py-2 rounded-xl ${color} border border-border/10`}>
+    <div className={`px-2 py-1 rounded-xl ${color} border border-yellow-100 bg-yellow-50/60 shadow-sm min-w-[70px] min-h-[48px] m-1`}>
       <div className="flex items-center gap-1.5">
-        {icon}
-        <span className="text-lg font-bold">{value}</span>
+        <span className="text-yellow-700">{icon}</span>
+        <span className="text-base font-bold text-yellow-900">{value}</span>
         {delta != null && delta !== 0 && (
-          <span className={`text-[10px] font-semibold ml-auto ${delta > 0 ? 'text-green-600' : 'text-red-500'}`}>
+          <span className={`text-[10px] font-semibold ml-auto ${delta > 0 ? 'text-green-600' : 'text-red-500'}`}> 
             {delta > 0 ? '▲' : '▼'} {Math.abs(delta).toLocaleString('pt-BR')}
           </span>
         )}
       </div>
-      <p className="text-[10px] font-medium text-muted-foreground leading-tight mt-0.5">{label}</p>
+      <p className="text-[10px] font-semibold text-yellow-900 leading-tight mt-0.5">{label}</p>
     </div>
   );
 }
 
 function IndicatorSection({ title, icon, expanded = true, onToggle, children }: {
-  title: string; icon: React.ReactNode; expanded?: boolean; onToggle: () => void; children: React.ReactNode;
+  title: string | React.ReactNode; icon: React.ReactNode; expanded?: boolean; onToggle: () => void; children: React.ReactNode;
 }) {
   return (
-    <Card className="card-clay">
-      <CardHeader className="pb-2 cursor-pointer select-none" onClick={onToggle}>
-        <div className="flex items-center justify-between gap-3">
+    <Card className="card-clay rounded-xl border border-yellow-100 bg-yellow-50/40 px-3 py-2 mt-2">
+      <CardHeader className="pb-1 cursor-pointer select-none" onClick={onToggle}>
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="shrink-0 text-muted-foreground">{icon}</span>
-            <span className="mural-section-h2">{title}</span>
+            <span className="shrink-0 text-yellow-600">{icon}</span>
+            <span className="scribble text-yellow-900 font-bold mural-section-h2">{title}</span>
           </div>
-          <span className="text-muted-foreground shrink-0">
+          <span className="text-yellow-700 shrink-0">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </span>
         </div>
       </CardHeader>
-      {expanded && <CardContent>{children}</CardContent>}
+      {expanded && <CardContent className="pt-1 pb-2">{children}</CardContent>}
     </Card>
   );
 }
@@ -2702,9 +2209,9 @@ function InfoItem({ label, value, highlight }: { label: string; value: string | 
   const displayValue = typeof value === 'number' ? (Number.isInteger(value) ? value.toLocaleString('pt-BR') : value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })) : String(value);
   const isZero = value === 0;
   return (
-    <div className={`flex items-baseline justify-between gap-2 px-3 py-2 rounded-lg border ${highlight ? 'bg-accent/5 border-accent/20' : 'bg-card border-border/40'}`}>
-      <span className="text-xs text-muted-foreground leading-tight">{label}</span>
-      <span className={`text-sm font-semibold tabular-nums ${isZero ? 'text-muted-foreground/40' : highlight ? 'text-accent' : 'text-emerald-700'}`}>{displayValue}</span>
+    <div className={`flex items-baseline justify-between gap-2 px-2 py-1 rounded-xl border border-yellow-100 bg-yellow-50/60 my-0.5 min-h-[28px] ${highlight ? 'ring-2 ring-yellow-400/40' : ''}`}>
+      <span className="text-[11px] text-yellow-900 font-medium leading-tight">{label}</span>
+      <span className={`text-sm font-bold tabular-nums ${isZero ? 'text-yellow-300' : highlight ? 'text-yellow-700' : 'text-yellow-900'}`}>{displayValue}</span>
     </div>
   );
 }
@@ -2713,9 +2220,9 @@ function InfraItem({ label, value }: { label: string; value: number | undefined 
   if (value === undefined || value === null) return null;
   const yes = value === 1;
   return (
-    <div className="flex items-center gap-2 py-1 px-2">
+    <div className="flex items-center gap-2 py-1 px-2 rounded-xl border border-yellow-100 bg-yellow-50/60 my-0.5 min-h-[28px]">
       <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${yes ? 'bg-green-500' : 'bg-red-300'}`} />
-      <span className={`text-xs ${yes ? 'text-foreground' : 'text-muted-foreground/60 line-through decoration-muted-foreground/30'}`}>{label}</span>
+      <span className={`text-xs ${yes ? 'text-yellow-900 font-semibold' : 'text-yellow-400/80 line-through decoration-yellow-200/60'}`}>{label}</span>
     </div>
   );
 }
