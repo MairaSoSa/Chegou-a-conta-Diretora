@@ -723,172 +723,154 @@ export default function Dashboard() {
               </Card>
             ) : evolucaoData && censoLatest ? (
               <>
-                <Card className="card-clay border-l-4 border-l-accent">
-                  <CardContent className="p-5">
-                    <div className="flex flex-wrap items-start gap-3">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSelectedInep(null)}
-                        className="shrink-0 text-muted-foreground hover:text-foreground -ml-1 -mt-1"
-                      >
-                        <X className="w-5 h-5" />
-                      </Button>
-                      <div className="flex-1 min-w-0">
-                        <h2 className="text-lg font-bold text-foreground">{evolucaoData.escola.no_entidade}</h2>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                          <MapPin className="w-3 h-3" />
-                          {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}
-                        </p>
-                        {censoLatest.ds_endereco && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {censoLatest.ds_endereco}{censoLatest.ds_numero ? `, ${censoLatest.ds_numero}` : ""}{censoLatest.ds_complemento ? `, ${censoLatest.ds_complemento}` : ""}{censoLatest.no_bairro ? `, ${censoLatest.no_bairro}` : ""}{censoLatest.co_cep ? `. ${censoLatest.co_cep.toString().replace(/(\d{5})(\d{3})/, "$1-$2")}` : ""} - {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}
-                          </p>
-                        )}
-                        {censoLatest.telefone && (
-                          <p className="text-xs text-muted-foreground mt-0.5">Tel: {censoLatest.telefone}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Anos disponíveis: {evolucaoData.anos_disponiveis.join(", ")}
-                        </p>
+                {/* ── Hero mural ── */}
+                <div className="relative rounded-[22px_30px_24px_28px] overflow-visible" style={{background:'linear-gradient(135deg,#fffef9 0%,#fff6cf 38%,#eef7ff 78%,#fdf1f6 100%)',border:'1px solid #eadfcb',boxShadow:'0 20px 42px rgba(82,71,50,0.10)',transform:'rotate(-0.4deg)'}}>
+                  <div className="absolute w-44 h-7 rounded-lg pointer-events-none" style={{top:'-10px',right:'32px',background:'rgba(255,213,120,0.70)',transform:'rotate(4deg)'}}/>
+                  <div className="p-5 flex flex-wrap gap-3 items-start">
+                    <Button variant="ghost" size="icon" onClick={() => setSelectedInep(null)} className="shrink-0 text-muted-foreground -ml-1 -mt-1"><X className="w-4 h-4"/></Button>
+                    <div className="flex-1 min-w-0">
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide mb-3" style={{background:'rgba(255,255,255,0.88)',border:'1px solid #e6d8c7',color:'#2d5a88'}}>
+                        📘 Censo Escolar {latestAno} · INEP/MEC
                       </div>
+                      <h2 className="text-xl font-bold leading-tight tracking-tight mb-3">{evolucaoData.escola.no_entidade}</h2>
                       <div className="flex flex-wrap gap-2">
-                        <Badge className="bg-accent/10 text-accent border-0 font-mono">{selectedInep}</Badge>
-                        <Badge variant="outline">{evolucaoData.escola.ds_dependencia}</Badge>
-                        <Badge variant="outline">{evolucaoData.escola.ds_localizacao}</Badge>
-                        <Badge variant="outline">{evolucaoData.escola.ds_situacao}</Badge>
+                        {[
+                          `📍 ${evolucaoData.escola.no_municipio}/${evolucaoData.escola.sg_uf}`,
+                          `🏷 ${selectedInep}`,
+                          `🏢 ${evolucaoData.escola.ds_dependencia}`,
+                          evolucaoData.escola.ds_localizacao,
+                          `✅ ${evolucaoData.escola.ds_situacao}`,
+                          `📅 ${evolucaoData.anos_disponiveis.join(', ')}`,
+                          ...(censoLatest.telefone ? [`📞 ${censoLatest.telefone}`] : []),
+                        ].map((chip, i) => (
+                          <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold" style={{background:'rgba(255,255,255,0.84)',border:'1px solid #e5e1d7',color:'#51606f'}}>{chip}</span>
+                        ))}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <StatCard
-                    icon={<Users className="w-3.5 h-3.5 text-accent" />}
-                    value={formatNumber(censoLatest.qt_mat_bas || 0)}
-                    label={`Matrículas ${latestAno}`}
-                    color="bg-accent/10"
-                    delta={censoPrev ? (censoLatest.qt_mat_bas || 0) - (censoPrev.qt_mat_bas || 0) : undefined}
-                  />
-                  <StatCard
-                    icon={<GraduationCap className="w-3.5 h-3.5 text-accent" />}
-                    value={formatNumber(censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0)}
-                    label={`Docentes ${latestAno}`}
-                    color="bg-accent/10"
-                    delta={censoPrev ? (censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0) - (censoPrev.qt_doc_bas || censoPrev.qt_docentes || 0) : undefined}
-                  />
-                  <StatCard
-                    icon={<BookOpen className="w-3.5 h-3.5 text-purple-600" />}
-                    value={formatNumber(censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0)}
-                    label={`Turmas ${latestAno}`}
-                    color="bg-purple-600/10"
-                    delta={censoPrev ? (censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0) - (censoPrev.qt_tur_bas || censoPrev.qt_turmas || 0) : undefined}
-                  />
-                  <StatCard
-                    icon={<School className="w-3.5 h-3.5 text-orange-600" />}
-                    value={formatNumber(censoLatest.qt_salas_utilizadas || 0)}
-                    label={`Salas ${latestAno}`}
-                    color="bg-orange-600/10"
-                    delta={censoPrev ? (censoLatest.qt_salas_utilizadas || 0) - (censoPrev.qt_salas_utilizadas || 0) : undefined}
-                  />
+                  </div>
                 </div>
+
+                {/* ── bilhete intro ── */}
+                <p className="text-sm text-muted-foreground leading-relaxed px-1">
+                  Diretora, você pode acompanhar abaixo os dados do Censo Escolar, indicadores educacionais e situação financeira do PDDE desta escola — tudo filtrado pelo código INEP.
+                </p>
+
+                {/* ── Métricas resumo ── */}
+                {(() => {
+                  const METRICS = [
+                    { label: `Matrículas ${latestAno}`, val: censoLatest.qt_mat_bas || 0, prev: censoPrev?.qt_mat_bas || 0, icon: '👩‍🎓', bg: 'linear-gradient(180deg,#dff1ff 0%,#f7fbff 100%)', border: '#bcdcf0', tape: 'rgba(255,223,133,0.72)', rot: '-1.3deg', tapeRot: '8deg' },
+                    { label: `Docentes ${latestAno}`, val: censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0, prev: censoPrev ? (censoPrev.qt_doc_bas || censoPrev.qt_docentes || 0) : 0, icon: '🧑‍🏫', bg: 'linear-gradient(180deg,#fff1ae 0%,#fff7db 100%)', border: '#e4cb74', tape: 'rgba(255,194,168,0.68)', rot: '1.1deg', tapeRot: '-6deg' },
+                    { label: `Turmas ${latestAno}`, val: censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0, prev: censoPrev ? (censoPrev.qt_tur_bas || censoPrev.qt_turmas || 0) : 0, icon: '🏫', bg: 'linear-gradient(180deg,#dff6e2 0%,#f4fbf5 100%)', border: '#c7e1cb', tape: 'rgba(194,221,247,0.72)', rot: '-1.3deg', tapeRot: '8deg' },
+                    { label: `Salas utilizadas`, val: censoLatest.qt_salas_utilizadas || 0, prev: censoPrev?.qt_salas_utilizadas || 0, icon: '🚪', bg: 'linear-gradient(180deg,#efe4ff 0%,#f8f4ff 100%)', border: '#d9cbef', tape: 'rgba(255,223,133,0.72)', rot: '1.1deg', tapeRot: '-6deg' },
+                    { label: 'Pontos de atenção', val: alertasPreocupantes.length, prev: null, icon: alertasPreocupantes.filter(a=>a.tipo==='critical').length > 0 ? '⚠️' : alertasPreocupantes.length > 0 ? '◌' : '✅', bg: alertasPreocupantes.filter(a=>a.tipo==='critical').length > 0 ? 'linear-gradient(180deg,#ffdeda 0%,#fff3f0 100%)' : alertasPreocupantes.length > 0 ? 'linear-gradient(180deg,#fff1ae 0%,#fff7db 100%)' : 'linear-gradient(180deg,#dff6e2 0%,#f4fbf5 100%)', border: alertasPreocupantes.filter(a=>a.tipo==='critical').length > 0 ? '#e8c2ba' : alertasPreocupantes.length > 0 ? '#e4cb74' : '#c7e1cb', tape: 'rgba(255,194,168,0.68)', rot: '-1.3deg', tapeRot: '8deg', extra: alertasPreocupantes.length === 0 ? 'Tudo certo' : `${alertasPreocupantes.filter(a=>a.tipo==='critical').length} crítico${alertasPreocupantes.filter(a=>a.tipo==='critical').length !== 1 ? 's' : ''}` },
+                    { label: 'PDDE', val: pddeData?.ok ? (prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? prestacaoContaData.itens.filter((i:any)=>i.situacao_pc_uex?.toLowerCase().includes('adimpl')).length === prestacaoContaData.itens.length ? 'OK' : 'Ver' : pddeData ? 'Ativo' : '—') : '—', prev: null, icon: '💸', bg: 'linear-gradient(180deg,#dff5f5 0%,#f2fbfb 100%)', border: '#bee0e0', tape: 'rgba(194,221,247,0.72)', rot: '1.1deg', tapeRot: '-6deg', extra: prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? `${prestacaoContaData.itens.length} programa${prestacaoContaData.itens.length > 1 ? 's' : ''}` : pddeData?.ok ? pddeData.uex?.executora?.slice(0,22) : 'Sem dados' },
+                  ];
+                  return (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+                      {METRICS.map((m, i) => {
+                        const delta = m.prev !== null && typeof m.val === 'number' ? (m.val as number) - (m.prev as number) : null;
+                        return (
+                          <div key={i} className="relative p-4 overflow-visible" style={{borderRadius:'16px 20px 16px 22px',background:m.bg,border:`1px solid ${m.border}`,transform:`rotate(${m.rot})`,boxShadow:'0 12px 18px rgba(100,83,46,0.08)'}}>
+                            <div className="absolute w-14 h-3.5 rounded pointer-events-none" style={{top:'-7px',right:'14px',background:m.tape,transform:`rotate(${m.tapeRot})`}}/>
+                            <div className="flex items-start justify-between gap-2 mb-3">
+                              <div>
+                                <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>{m.label}</label>
+                                <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{typeof m.val === 'number' ? m.val.toLocaleString('pt-BR') : m.val}</strong>
+                              </div>
+                              <div className="w-11 h-11 rounded-2xl grid place-items-center text-xl shrink-0" style={{background:'rgba(255,255,255,0.72)',border:'1px solid rgba(255,255,255,0.9)'}}>{m.icon}</div>
+                            </div>
+                            {m.extra ? (
+                              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold bg-white/60 text-gray-600">{m.extra}</span>
+                            ) : delta !== null && delta !== 0 ? (
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold ${delta > 0 ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>{delta > 0 ? '▲' : '▼'} {Math.abs(delta)} vs ano anterior</span>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
 
                 {(() => {
                   const criticals = alertasPreocupantes.filter(a => a.tipo === 'critical');
                   const warnings = alertasPreocupantes.filter(a => a.tipo === 'warning');
                   const total = alertasPreocupantes.length;
-                  const borderColor = criticals.length > 0 ? 'border-l-red-500' : warnings.length > 0 ? 'border-l-amber-400' : 'border-l-green-500';
-
                   return (
-                    <Card className={`card-clay border-l-4 ${borderColor}`}>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <AlertTriangle className={`w-5 h-5 ${criticals.length > 0 ? 'text-red-500' : warnings.length > 0 ? 'text-amber-500' : 'text-green-500'}`} />
-                          Análise dos Dados
-                        </CardTitle>
-                        <p className="text-xs text-muted-foreground">
-                          {total > 0 ? `${total} ponto${total > 1 ? 's' : ''} de atenção identificado${total > 1 ? 's' : ''}` : 'Nenhum ponto de atenção identificado'}
-                        </p>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {total === 0 ? (
-                          <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border border-green-200">
-                            <CheckCircle className="w-6 h-6 text-green-600 shrink-0" />
-                            <div>
-                              <p className="font-semibold text-green-800">Parabéns!</p>
-                              <p className="text-sm text-green-700">Os indicadores da escola estão dentro das faixas esperadas. Continue o bom trabalho!</p>
+                    <div className="space-y-3">
+                      {/* ── section header ── */}
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-base font-bold tracking-tight" style={{fontFamily:'Georgia, serif'}}>
+                          Pontos de atenção
+                          <span className="relative ml-1">
+                            <span className="relative z-10">{total > 0 ? `(${total})` : ''}</span>
+                            <span className="absolute inset-x-0 bottom-0.5 h-2.5 -z-0 rounded" style={{background:'rgba(251,219,88,0.55)'}}/>
+                          </span>
+                        </h3>
+                        {total === 0 && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">✅ Tudo dentro do esperado</span>}
+                      </div>
+
+                      {total === 0 ? (
+                        <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border-l-4 border-l-green-500 border border-green-200">
+                          <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+                          <p className="text-sm text-green-800">Diretora, os indicadores desta escola estão dentro das faixas esperadas. Continue o bom trabalho!</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {[...criticals.map(a => ({...a, tipo: 'critical' as const})), ...warnings.map(a => ({...a, tipo: 'warning' as const}))].map((alerta, i) => (
+                            <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl" style={{background: alerta.tipo === 'critical' ? '#fff5f5' : '#fffbeb', borderLeft: `5px solid ${alerta.tipo === 'critical' ? '#ef4444' : '#f59e0b'}`, border: `1px solid ${alerta.tipo === 'critical' ? '#fecaca' : '#fde68a'}`, borderLeftWidth: '5px'}}>
+                              <div className="shrink-0 mt-0.5">
+                                {alerta.tipo === 'critical'
+                                  ? <CircleAlert className="w-4 h-4 text-red-500" />
+                                  : <AlertTriangle className="w-4 h-4 text-amber-500" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                  <p className={`text-sm font-semibold ${alerta.tipo === 'critical' ? 'text-red-800' : 'text-amber-800'}`}>{alerta.titulo}</p>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${alerta.tipo === 'critical' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                                    {alerta.tipo === 'critical' ? 'Olhar com cuidado' : 'Acompanhar'}
+                                  </span>
+                                </div>
+                                <p className={`text-xs leading-snug ${alerta.tipo === 'critical' ? 'text-red-700' : 'text-amber-700'}`}>{alerta.descricao}</p>
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          <>
-                            {criticals.length > 0 && (
-                              <div>
-                                <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">Pontos Críticos</p>
-                                <div className="space-y-2">
-                                  {criticals.map((alerta, i) => (
-                                    <div key={i} className="flex items-start gap-2.5 p-3 rounded-lg bg-red-50 border border-red-100">
-                                      <CircleAlert className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
-                                      <div>
-                                        <p className="text-sm font-semibold text-red-800">{alerta.titulo}</p>
-                                        <p className="text-xs text-red-700 mt-0.5 leading-snug">{alerta.descricao}</p>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {warnings.length > 0 && (
-                              <div>
-                                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-2">Pontos de Atenção</p>
-                                <div className="space-y-2">
-                                  {warnings.map((alerta, i) => (
-                                    <div key={i} className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 border border-amber-100">
-                                      <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                                      <div>
-                                        <p className="text-sm font-semibold text-amber-800">{alerta.titulo}</p>
-                                        <p className="text-xs text-amber-700 mt-0.5 leading-snug">{alerta.descricao}</p>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   );
                 })()}
 
-                <Card className="card-clay border-l-4 border-l-green-500">
+                <Card className="card-clay">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5 text-green-600" />
-                      Evolução ao Longo dos Anos
+                    <CardTitle className="text-base font-bold tracking-tight" style={{fontFamily:'Georgia, serif'}}>
+                      <span className="relative">
+                        Galeria de gráficos
+                        <span className="absolute inset-x-0 bottom-0.5 h-2.5 rounded -z-0" style={{background:'rgba(251,219,88,0.55)'}}/>
+                      </span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {!hasMultipleYears && (
                       <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm mb-4">
-                        Dados disponíveis apenas para {latestAno}. Quando houver mais anos importados, os gráficos mostrarão a evolução.
+                        Por enquanto temos dados só de {latestAno}. Com mais anos importados, você vai ver a evolução aqui.
                       </div>
                     )}
                     {evolutionCharts && (() => {
                       const chartOptions = [
-                        { id: "matriculas", label: "Matrículas", icon: <Users className="w-4 h-4" />, color: "#0ea5e9", description: "Total de alunos matriculados na escola em cada ano. Acompanhe se a escola está crescendo ou perdendo alunos.", data: evolutionCharts.matriculas, lines: [{ key: "value", color: "#0ea5e9", name: "Matrículas" }], unit: " alunos" },
-                        { id: "docentes", label: "Docentes", icon: <GraduationCap className="w-4 h-4" />, color: "#8b5cf6", description: "Quantidade de professores atuando na escola. Mais docentes pode significar menor sobrecarga e turmas menores.", data: evolutionCharts.docentes, lines: [{ key: "value", color: "#8b5cf6", name: "Docentes" }] },
-                        { id: "taxas", label: "Taxas de Rendimento", icon: <TrendingUp className="w-4 h-4" />, color: "#10b981", description: "Mostra o percentual de alunos aprovados, reprovados e que abandonaram a escola. O ideal é aprovação alta e abandono zero.", data: evolutionCharts.taxasRendimento, lines: [{ key: "aprovacao", color: "#10b981", name: "Aprovação" }, { key: "reprovacao", color: "#ef4444", name: "Reprovação" }, { key: "abandono", color: "#f59e0b", name: "Abandono" }], unit: "%" },
-                        { id: "ideb", label: "IDEB", icon: <Award className="w-4 h-4" />, color: "#f59e0b", description: "Índice de Desenvolvimento da Educação Básica — a nota da escola no MEC. Combina desempenho nas provas e aprovação. Vai de 0 a 10.", data: evolutionCharts.ideb, lines: [{ key: "ideb_ai", color: "#10b981", name: "Anos Iniciais" }, { key: "ideb_af", color: "#f59e0b", name: "Anos Finais" }, { key: "ideb_em", color: "#8b5cf6", name: "Ensino Médio" }] },
-                        { id: "tdi", label: "Distorção Idade-Série", icon: <BarChart3 className="w-4 h-4" />, color: "#ef4444", description: "Percentual de alunos com 2 ou mais anos acima da idade esperada para sua série. Quanto menor, melhor — indica que os alunos estão na série certa.", data: evolutionCharts.tdi, lines: [{ key: "fund_total", color: "#ef4444", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#6366f1", name: "Médio" }], unit: "%" },
-                        { id: "atu", label: "Alunos por Turma", icon: <Users className="w-4 h-4" />, color: "#6366f1", description: "Média de alunos em cada turma. Turmas muito grandes (acima de 35) dificultam o trabalho do professor e a aprendizagem.", data: evolutionCharts.atu, lines: hasMultipleYears ? [{ key: "fund", color: "#0ea5e9", name: "Fund. Total" }, { key: "fund_ai", color: "#10b981", name: "Fund. AI" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }] : [{ key: "fund", color: "#0ea5e9", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }] },
-                        { id: "had", label: "Horas-Aula Diária", icon: <Clock className="w-4 h-4" />, color: "#06b6d4", description: "Quantas horas de aula os alunos têm por dia. O MEC recomenda no mínimo 4 horas para parcial e 7 horas para integral.", data: evolutionCharts.had, lines: hasMultipleYears ? [{ key: "fund", color: "#06b6d4", name: "Fund. Total" }, { key: "fund_ai", color: "#10b981", name: "Fund. AI" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#ec4899", name: "Médio" }] : [{ key: "fund", color: "#06b6d4", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#ec4899", name: "Médio" }], unit: "h" },
-                        { id: "dsu", label: "Docentes c/ Superior", icon: <GraduationCap className="w-4 h-4" />, color: "#10b981", description: "Percentual de professores com diploma universitário. A LDB exige formação superior para atuar na educação básica.", data: evolutionCharts.dsu, lines: hasMultipleYears ? [{ key: "fund", color: "#10b981", name: "Fund. Total" }, { key: "fund_ai", color: "#0ea5e9", name: "Fund. AI" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }] : [{ key: "fund", color: "#10b981", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }], unit: "%" },
-                        { id: "icg", label: "Complexidade de Gestão", icon: <BarChart3 className="w-4 h-4" />, color: "#f97316", description: "Nível de 1 a 6 que indica a complexidade da gestão escolar. Considera quantidade de turnos, etapas e tamanho da escola.", data: evolutionCharts.icg, lines: [{ key: "nivel", color: "#f97316", name: "Nível" }] },
-                        { id: "ird", label: "Regularidade Docente", icon: <BarChart3 className="w-4 h-4" />, color: "#14b8a6", description: "Mede a permanência dos professores na escola (0 a 5). Quanto maior, mais os professores ficam na mesma escola — isso é bom para a continuidade pedagógica.", data: evolutionCharts.ird, lines: [{ key: "media", color: "#14b8a6", name: "Média IRD" }] },
-                        { id: "inse", label: "Nível Socioeconômico", icon: <TrendingUp className="w-4 h-4" />, color: "#a855f7", description: "Indicador do nível socioeconômico médio dos alunos. Ajuda a entender o contexto social da escola e planejar ações.", data: evolutionCharts.inse, lines: [{ key: "media", color: "#a855f7", name: "Média INSE" }] },
-                        { id: "saeb", label: "SAEB - Proficiência", icon: <Award className="w-4 h-4" />, color: "#3b82f6", description: "Notas nas provas do SAEB em Matemática e Português. São as avaliações nacionais que compõem o IDEB.", data: evolutionCharts.saeb, lines: [{ key: "mt_ai", color: "#10b981", name: "Mat. AI" }, { key: "lp_ai", color: "#0ea5e9", name: "Port. AI" }, { key: "mt_af", color: "#f59e0b", name: "Mat. AF" }, { key: "lp_af", color: "#ef4444", name: "Port. AF" }, { key: "mt_em", color: "#8b5cf6", name: "Mat. EM" }, { key: "lp_em", color: "#ec4899", name: "Port. EM" }] },
-                        { id: "ied", label: "Esforço Docente", icon: <GraduationCap className="w-4 h-4" />, color: "#ec4899", description: "Distribuição dos professores por nível de esforço (1 a 6). Nível 1 = menor esforço, Nível 6 = maior esforço (muitas turmas, escolas e turnos).", data: evolutionCharts.ied, lines: [{ key: "nivel_1", color: "#10b981", name: "Nível 1" }, { key: "nivel_2", color: "#0ea5e9", name: "Nível 2" }, { key: "nivel_3", color: "#f59e0b", name: "Nível 3" }, { key: "nivel_4", color: "#f97316", name: "Nível 4" }, { key: "nivel_5", color: "#ef4444", name: "Nível 5" }, { key: "nivel_6", color: "#7c3aed", name: "Nível 6" }], unit: "%" },
-                        { id: "tnr", label: "Taxa de Não-Resposta", icon: <BarChart3 className="w-4 h-4" />, color: "#eab308", description: "Percentual de itens não respondidos nas avaliações. Taxa alta pode indicar que alunos não estão completando as provas.", data: evolutionCharts.tnr, lines: [{ key: "fund", color: "#0ea5e9", name: "Fundamental" }, { key: "med", color: "#ef4444", name: "Médio" }], unit: "%" },
+                        { id: "matriculas", label: "Matrículas", icon: <Users className="w-4 h-4" />, color: "#0ea5e9", description: "Total de alunos matriculados por ano.", data: evolutionCharts.matriculas, lines: [{ key: "value", color: "#0ea5e9", name: "Matrículas" }], unit: " alunos" },
+                        { id: "docentes", label: "Docentes", icon: <GraduationCap className="w-4 h-4" />, color: "#8b5cf6", description: "Quantidade de professores na escola.", data: evolutionCharts.docentes, lines: [{ key: "value", color: "#8b5cf6", name: "Docentes" }] },
+                        { id: "taxas", label: "Taxas de Rendimento", icon: <TrendingUp className="w-4 h-4" />, color: "#10b981", description: "Aprovação, reprovação e abandono escolar. Ideal: aprovação alta, abandono zero.", data: evolutionCharts.taxasRendimento, lines: [{ key: "aprovacao", color: "#10b981", name: "Aprovação" }, { key: "reprovacao", color: "#ef4444", name: "Reprovação" }, { key: "abandono", color: "#f59e0b", name: "Abandono" }], unit: "%" },
+                        { id: "ideb", label: "IDEB", icon: <Award className="w-4 h-4" />, color: "#f59e0b", description: "Nota da escola no MEC (0–10). Combina provas SAEB e taxas de aprovação.", data: evolutionCharts.ideb, lines: [{ key: "ideb_ai", color: "#10b981", name: "Anos Iniciais" }, { key: "ideb_af", color: "#f59e0b", name: "Anos Finais" }, { key: "ideb_em", color: "#8b5cf6", name: "Ensino Médio" }] },
+                        { id: "tdi", label: "Distorção Idade-Série", icon: <BarChart3 className="w-4 h-4" />, color: "#ef4444", description: "% de alunos com 2+ anos além da idade esperada para a série. Quanto menor, melhor.", data: evolutionCharts.tdi, lines: [{ key: "fund_total", color: "#ef4444", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#6366f1", name: "Médio" }], unit: "%" },
+                        { id: "atu", label: "Alunos por Turma", icon: <Users className="w-4 h-4" />, color: "#6366f1", description: "Média de alunos por turma. Acima de 35 dificulta o aprendizado.", data: evolutionCharts.atu, lines: hasMultipleYears ? [{ key: "fund", color: "#0ea5e9", name: "Fund. Total" }, { key: "fund_ai", color: "#10b981", name: "Fund. AI" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }] : [{ key: "fund", color: "#0ea5e9", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }] },
+                        { id: "had", label: "Horas-Aula Diária", icon: <Clock className="w-4 h-4" />, color: "#06b6d4", description: "Horas de aula por dia. MEC recomenda mín. 4h (parcial) ou 7h (integral).", data: evolutionCharts.had, lines: hasMultipleYears ? [{ key: "fund", color: "#06b6d4", name: "Fund. Total" }, { key: "fund_ai", color: "#10b981", name: "Fund. AI" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#ec4899", name: "Médio" }] : [{ key: "fund", color: "#06b6d4", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#ec4899", name: "Médio" }], unit: "h" },
+                        { id: "dsu", label: "Docentes c/ Superior", icon: <GraduationCap className="w-4 h-4" />, color: "#10b981", description: "% de professores com diploma universitário. LDB exige formação superior.", data: evolutionCharts.dsu, lines: hasMultipleYears ? [{ key: "fund", color: "#10b981", name: "Fund. Total" }, { key: "fund_ai", color: "#0ea5e9", name: "Fund. AI" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }] : [{ key: "fund", color: "#10b981", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }], unit: "%" },
+                        { id: "icg", label: "Complexidade de Gestão", icon: <BarChart3 className="w-4 h-4" />, color: "#f97316", description: "Nível 1–6 de complexidade administrativa. Leva em conta turnos, etapas e porte.", data: evolutionCharts.icg, lines: [{ key: "nivel", color: "#f97316", name: "Nível" }] },
+                        { id: "ird", label: "Regularidade Docente", icon: <BarChart3 className="w-4 h-4" />, color: "#14b8a6", description: "Permanência dos professores na escola (0–5). Quanto maior, mais estabilidade pedagógica.", data: evolutionCharts.ird, lines: [{ key: "media", color: "#14b8a6", name: "Média IRD" }] },
+                        { id: "inse", label: "Nível Socioeconômico", icon: <TrendingUp className="w-4 h-4" />, color: "#a855f7", description: "Perfil socioeconômico médio dos alunos. Contexto importante para planejar ações.", data: evolutionCharts.inse, lines: [{ key: "media", color: "#a855f7", name: "Média INSE" }] },
+                        { id: "saeb", label: "SAEB - Proficiência", icon: <Award className="w-4 h-4" />, color: "#3b82f6", description: "Notas em Matemática e Português nas avaliações nacionais do SAEB.", data: evolutionCharts.saeb, lines: [{ key: "mt_ai", color: "#10b981", name: "Mat. AI" }, { key: "lp_ai", color: "#0ea5e9", name: "Port. AI" }, { key: "mt_af", color: "#f59e0b", name: "Mat. AF" }, { key: "lp_af", color: "#ef4444", name: "Port. AF" }, { key: "mt_em", color: "#8b5cf6", name: "Mat. EM" }, { key: "lp_em", color: "#ec4899", name: "Port. EM" }] },
+                        { id: "ied", label: "Esforço Docente", icon: <GraduationCap className="w-4 h-4" />, color: "#ec4899", description: "% de professores por nível de esforço (1=menor, 6=maior — muitas turmas e escolas).", data: evolutionCharts.ied, lines: [{ key: "nivel_1", color: "#10b981", name: "Nível 1" }, { key: "nivel_2", color: "#0ea5e9", name: "Nível 2" }, { key: "nivel_3", color: "#f59e0b", name: "Nível 3" }, { key: "nivel_4", color: "#f97316", name: "Nível 4" }, { key: "nivel_5", color: "#ef4444", name: "Nível 5" }, { key: "nivel_6", color: "#7c3aed", name: "Nível 6" }], unit: "%" },
+                        { id: "tnr", label: "Taxa de Não-Resposta", icon: <BarChart3 className="w-4 h-4" />, color: "#eab308", description: "% de itens em branco nas avaliações. Alta pode indicar desistências durante a prova.", data: evolutionCharts.tnr, lines: [{ key: "fund", color: "#0ea5e9", name: "Fundamental" }, { key: "med", color: "#ef4444", name: "Médio" }], unit: "%" },
                       ];
                       const available = chartOptions.filter(c => c.data && c.data.some((d: any) => c.lines.some(l => d[l.key] != null && d[l.key] !== 0)));
                       const current = available.find(c => c.id === selectedChart) || available[0];
@@ -1269,13 +1251,15 @@ export default function Dashboard() {
                   if (rows.length === 0 && missingCount === 0) return null;
 
                   return (
-                    <Card className="card-clay border-l-4 border-l-accent">
+                    <Card className="card-clay">
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <BarChart3 className="w-5 h-5 text-accent" />
-                          Raio-X Educacional
+                        <CardTitle className="text-base font-bold tracking-tight" style={{fontFamily:'Georgia, serif'}}>
+                          <span className="relative">
+                            Raio-X educacional
+                            <span className="absolute inset-x-0 bottom-0.5 h-2.5 rounded -z-0" style={{background:'rgba(251,219,88,0.55)'}}/>
+                          </span>
                         </CardTitle>
-                        <p className="text-xs text-muted-foreground">Diagnóstico dos indicadores mais recentes</p>
+                        <p className="text-xs text-muted-foreground">Indicadores mais recentes desta escola</p>
                       </CardHeader>
                       <CardContent className="pt-0">
                         <div className="divide-y divide-border/10">
@@ -1773,7 +1757,7 @@ export default function Dashboard() {
                 </IndicatorSection>
 
                 <IndicatorSection
-                  title="Dados Financeiros (PDDE)"
+                  title="Post-it financeiro do PDDE"
                   icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
                   expanded={expandedSections['financeiro'] ?? true}
                   onToggle={() => toggleSection('financeiro')}
@@ -2677,11 +2661,14 @@ function IndicatorSection({ title, icon, expanded = true, onToggle, children }: 
 }) {
   return (
     <Card className="card-clay">
-      <CardHeader className="pb-2 cursor-pointer" onClick={onToggle}>
-        <CardTitle className="flex items-center gap-2 text-base">
+      <CardHeader className="pb-2 cursor-pointer select-none" onClick={onToggle}>
+        <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-tight" style={{fontFamily:'Georgia, serif'}}>
           {icon}
-          {title}
-          <span className="ml-auto">
+          <span className="relative">
+            {title}
+            <span className="absolute inset-x-0 bottom-0 h-2 rounded -z-0" style={{background:'rgba(251,219,88,0.45)'}}/>
+          </span>
+          <span className="ml-auto text-muted-foreground">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </span>
         </CardTitle>
