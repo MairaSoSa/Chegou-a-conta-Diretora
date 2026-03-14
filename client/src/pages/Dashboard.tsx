@@ -46,6 +46,7 @@ export default function Dashboard() {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [selectedChart, setSelectedChart] = useState("matriculas");
   const [activeTab, setActiveTab] = useState<"overview" | "search">("overview");
+  const [activeSchoolTab, setActiveSchoolTab] = useState<"alunos" | "etapas" | "docentes" | "infra">("alunos");
   const [filterUf, setFilterUf] = useState("");
   const [filterDep, setFilterDep] = useState("");
   const [listPage, setListPage] = useState(1);
@@ -621,7 +622,7 @@ export default function Dashboard() {
 
         {activeTab === "search" && (
           <div className="space-y-4">
-            <Card className="card-clay">
+            {!selectedInep && <Card className="card-clay">
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row gap-3">
                   <div className="relative flex-1">
@@ -713,7 +714,7 @@ export default function Dashboard() {
                   )}
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
             {selectedInep && (
               <>
@@ -725,1829 +726,940 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             ) : evolucaoData && censoLatest ? (
+              (() => {
+                const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                const criticals = alertasPreocupantes.filter(a => a.tipo === 'critical');
+                const warnings = alertasPreocupantes.filter(a => a.tipo === 'warning');
+                const total = alertasPreocupantes.length;
+                const extractVal = (titulo: string) => { const m = titulo.match(/:\s*([\d,\.]+\s*%?)(\s*(?:alunos\/turma|h\/dia|h))?$/); return m ? m[1] + (m[2] || '') : null; };
+                const cleanTitle = (titulo: string) => titulo.replace(/:\s*[\d,\.]+\s*(?:%|alunos\/turma|h\/dia|h)?\s*$/, '').replace(/:\s*Nível\s*\d+\s*$/, '');
+                const available = [
+                  { id: 'matriculas', label: 'Matrículas', icon: '👩‍🎓', data: evolucaoData.anos_disponiveis.slice().sort((a:number,b:number)=>a-b).map((a: number) => ({ ano: String(a), Matrículas: evolucaoData.censo_por_ano[a]?.qt_mat_bas || 0 })), lines: [{ key: 'Matrículas', color: '#2d5a88', name: 'Matrículas' }], desc: 'Total de alunos matriculados em todos os níveis de ensino.' },
+                  { id: 'docentes', label: 'Docentes', icon: '🧑‍🏫', data: evolucaoData.anos_disponiveis.slice().sort((a:number,b:number)=>a-b).map((a: number) => ({ ano: String(a), Docentes: evolucaoData.censo_por_ano[a]?.qt_doc_bas || evolucaoData.censo_por_ano[a]?.qt_docentes || 0 })), lines: [{ key: 'Docentes', color: '#9b6a16', name: 'Docentes' }], desc: 'Número de professores atuando na educação básica.' },
+                  { id: 'turmas', label: 'Turmas', icon: '🏫', data: evolucaoData.anos_disponiveis.slice().sort((a:number,b:number)=>a-b).map((a: number) => ({ ano: String(a), Turmas: evolucaoData.censo_por_ano[a]?.qt_tur_bas || evolucaoData.censo_por_ano[a]?.qt_turmas || 0 })), lines: [{ key: 'Turmas', color: '#2f7a58', name: 'Turmas' }], desc: 'Total de turmas da educação básica.' },
+                ].filter(c => c.data.some((d: Record<string, any>) => Object.values(d).slice(1).some((v: any) => Number(v) > 0)));
+                const currentChart = available.find(c => c.id === selectedChart) || available[0];
+                return (
               <>
-                {/* ── Hero mural ── */}
-                <div className="relative rounded-[22px_30px_24px_28px] overflow-visible" style={{background:'linear-gradient(135deg,#fffef9 0%,#fff6cf 38%,#eef7ff 78%,#fdf1f6 100%)',border:'1px solid #eadfcb',boxShadow:'0 20px 42px rgba(82,71,50,0.10)',transform:'rotate(-0.4deg)'}}>
-                  <div className="absolute w-44 h-7 rounded-lg pointer-events-none" style={{top:'-10px',right:'32px',background:'rgba(255,213,120,0.70)',transform:'rotate(4deg)'}}/>
-                  <div className="p-5 flex flex-wrap gap-3 items-start">
-                    <Button variant="ghost" size="icon" onClick={() => setSelectedInep(null)} className="shrink-0 text-muted-foreground -ml-1 -mt-1"><X className="w-4 h-4"/></Button>
-                    <div className="flex-1 min-w-0">
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide mb-3" style={{background:'rgba(255,255,255,0.88)',border:'1px solid #e6d8c7',color:'#2d5a88'}}>
-                        📘 Censo Escolar {latestAno} · INEP/MEC
+                {/* ── HERO ── */}
+                <section className="hero">
+                  <div className="hero-inner">
+                    <div>
+                      <div className="eyebrow">
+                        <span className="scribble">📘 Censo Escolar {latestAno} · INEP/MEC</span>
                       </div>
-                      <h2 className="text-xl font-bold leading-tight tracking-tight mb-3">{evolucaoData.escola.no_entidade}</h2>
-                      <div className="flex flex-wrap gap-2">
+                      <h1 style={{margin:'12px 0 8px',fontSize:'clamp(20px,3vw,34px)',lineHeight:'1.06',letterSpacing:'-0.04em'}}>
+                        {evolucaoData.escola.no_entidade}
+                      </h1>
+                      <p style={{margin:0,color:'var(--m-muted)',fontSize:'14px',lineHeight:'1.6'}}>
+                        Dados do Censo Escolar {latestAno} — código INEP <strong>{selectedInep}</strong>
+                      </p>
+                      <div style={{marginTop:'12px',display:'flex',gap:'8px',flexWrap:'wrap'}}>
+                        <div className="tag-label">dados INEP/MEC</div>
+                        <div className="tag-label scribble">raio-x educacional</div>
+                      </div>
+                      <div className="school-meta">
+                        <div className="meta-chip">📍 {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}</div>
+                        <div className="meta-chip">🏷 INEP {selectedInep}</div>
+                        <div className="meta-chip">🏢 {evolucaoData.escola.ds_dependencia}</div>
+                        <div className="meta-chip">{evolucaoData.escola.ds_localizacao}</div>
+                        <div className="meta-chip">✅ {evolucaoData.escola.ds_situacao}</div>
+                        {evolucaoData.anos_disponiveis.length > 0 && (
+                          <div className="meta-chip">📅 {Math.min(...evolucaoData.anos_disponiveis)}–{Math.max(...evolucaoData.anos_disponiveis)}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="hero-side">
+                      <div className="search-card">
+                        <label className="field-label">Buscar outra escola</label>
+                        <div className="search-row" style={{position:'relative'}}>
+                          <div style={{position:'relative',flex:1}}>
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" style={{zIndex:1}} />
+                            <Input
+                              placeholder="Nome ou código INEP..."
+                              className="pl-10 h-10 rounded-xl"
+                              value={searchQuery}
+                              onChange={e => { setSearchQuery(e.target.value); setShowSearchDropdown(true); }}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                  if (searchQuery.length === 8 && /^\d+$/.test(searchQuery)) selectSchool(searchQuery);
+                                  else refetchSearch();
+                                }
+                              }}
+                            />
+                            {showSearchDropdown && searchResults?.dados?.length > 0 && (
+                              <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/50 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto">
+                                {searchResults.dados.map((r: any) => (
+                                  <button key={r.co_entidade} className="w-full text-left px-3 py-2.5 hover:bg-accent/5 border-b border-border/20 last:border-0 text-sm" onClick={() => { selectSchool(String(r.co_entidade)); setSearchQuery(r.no_entidade); }}>
+                                    <p className="font-semibold">{r.no_entidade}</p>
+                                    <p className="text-xs text-muted-foreground">{r.co_entidade} · {r.no_municipio}/{r.sg_uf}</p>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <Button className="h-10 rounded-xl shrink-0" disabled={searchLoading} onClick={() => { if (searchQuery.length === 8 && /^\d+$/.test(searchQuery)) selectSchool(searchQuery); else refetchSearch(); }}>
+                            {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="filters-card">
+                        <label className="field-label">Filtros rápidos</label>
+                        <div className="filters-grid">
+                          <select className="text-sm bg-white/80 border border-blue-200 rounded-lg px-2 py-1.5" value={filterUf} onChange={e => { setFilterUf(e.target.value); setListPage(1); }}>
+                            <option value="">Todos os estados</option>
+                            {Object.entries(UF_NAMES).sort(([a],[b]) => a.localeCompare(b)).map(([uf, name]) => (
+                              <option key={uf} value={uf}>{uf} — {name}</option>
+                            ))}
+                          </select>
+                          <select className="text-sm bg-white/80 border border-blue-200 rounded-lg px-2 py-1.5" value={filterDep} onChange={e => { setFilterDep(e.target.value); setListPage(1); }}>
+                            <option value="">Todas as redes</option>
+                            <option value="1">Federal</option>
+                            <option value="2">Estadual</option>
+                            <option value="3">Municipal</option>
+                            <option value="4">Privada</option>
+                          </select>
+                        </div>
+                        <div style={{marginTop:'10px',display:'flex',gap:'8px',justifyContent:'flex-end',alignItems:'center'}}>
+                          {(filterUf || filterDep) && (
+                            <button className="text-xs font-medium text-muted-foreground hover:text-foreground" onClick={() => { setFilterUf(''); setFilterDep(''); setListPage(1); }}>
+                              <X className="w-3 h-3 inline mr-1" />Limpar
+                            </button>
+                          )}
+                          <button style={{background:'linear-gradient(135deg,#dce6f5 0%,#c8d9ec 100%)',color:'#2d5a88',border:'1px solid #b9d0e8',borderRadius:'999px',padding:'7px 14px',fontSize:'12px',fontWeight:700,cursor:'pointer'}} onClick={() => setSelectedInep(null)}>
+                            ← Fechar painel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* ── RESUMO EXECUTIVO ── */}
+                <section className="section">
+                  <div className="section-title">
+                    <div><h2>Resumo executivo</h2><p>Os números que ajudam a entender a escola imediatamente</p></div>
+                    <div className="hint-chip">Leitura rápida para gestão</div>
+                  </div>
+                  <div className="organic-divider" />
+                  {(() => {
+                    const THEMES = ['theme-blue','theme-yellow','theme-green','theme-purple','theme-pink','theme-teal'];
+                    const METRICS = [
+                      { label: `Matrículas ${latestAno}`, val: censoLatest.qt_mat_bas || 0, prev: censoPrev?.qt_mat_bas || 0, icon: '👩‍🎓' },
+                      { label: `Docentes ${latestAno}`, val: censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0, prev: censoPrev ? (censoPrev.qt_doc_bas || censoPrev.qt_docentes || 0) : 0, icon: '🧑‍🏫' },
+                      { label: `Turmas ${latestAno}`, val: censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0, prev: censoPrev ? (censoPrev.qt_tur_bas || censoPrev.qt_turmas || 0) : 0, icon: '🏫' },
+                      { label: 'Salas utilizadas', val: censoLatest.qt_salas_utilizadas || 0, prev: censoPrev?.qt_salas_utilizadas || 0, icon: '🚪' },
+                      { label: 'Pontos de atenção', val: total, prev: null, icon: criticals.length > 0 ? '⚠️' : total > 0 ? '◌' : '✅', extra: total === 0 ? 'Tudo certo' : `${criticals.length} crítico(s)` },
+                      { label: 'Status PDDE', val: pddeData?.ok ? (prestacaoContaData?.ok && prestacaoContaData.itens.every((it:any)=>it.situacao_pc_uex?.toLowerCase().includes('adimpl')) ? '✅' : 'Ver') : '—', prev: null, icon: '💸', extra: prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? `${prestacaoContaData.itens.length} programa(s)` : pddeData?.ok ? 'Ativo' : 'Sem dados' },
+                    ];
+                    return (
+                      <div className="summary-grid">
+                        {METRICS.map((m, i) => {
+                          const delta = m.prev !== null && typeof m.val === 'number' ? (m.val as number) - (m.prev as number) : null;
+                          return (
+                            <div key={i} className={`metric ${THEMES[i]}`}>
+                              <div className="flex items-start justify-between gap-2 mb-3">
+                                <div>
+                                  <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>{m.label}</label>
+                                  <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{typeof m.val === 'number' ? m.val.toLocaleString('pt-BR') : m.val}</strong>
+                                </div>
+                                <div className="w-11 h-11 rounded-2xl grid place-items-center text-xl shrink-0" style={{background:'rgba(255,255,255,0.72)',border:'1px solid rgba(255,255,255,0.9)'}}>{m.icon}</div>
+                              </div>
+                              {(m as any).extra ? (
+                                <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold bg-white/60 text-gray-600">{(m as any).extra}</span>
+                              ) : delta !== null && delta !== 0 ? (
+                                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold ${delta > 0 ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>{delta > 0 ? '▲' : '▼'} {Math.abs(delta)} vs ano anterior</span>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </section>
+
+                {/* ── FICHA GERAL ── */}
+                <section className="section">
+                  <div className="section-title">
+                    <div><h2>Ficha geral da escola</h2><p>Identidade e vida organizacional</p></div>
+                  </div>
+                  <div className="organic-divider" />
+                  <div className="two-col">
+                    <div className="soft-card theme-blue">
+                      <div className="attention-head"><span>🏫</span><strong>Identidade</strong></div>
+                      <div className="row-list" style={{marginTop:'10px'}}>
                         {[
-                          `📍 ${evolucaoData.escola.no_municipio}/${evolucaoData.escola.sg_uf}`,
-                          `🏷 ${selectedInep}`,
-                          `🏢 ${evolucaoData.escola.ds_dependencia}`,
-                          evolucaoData.escola.ds_localizacao,
-                          `✅ ${evolucaoData.escola.ds_situacao}`,
-                          `📅 ${evolucaoData.anos_disponiveis.join(', ')}`,
-                          ...(censoLatest.telefone ? [`📞 ${censoLatest.telefone}`] : []),
-                        ].map((chip, i) => (
-                          <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold" style={{background:'rgba(255,255,255,0.84)',border:'1px solid #e5e1d7',color:'#51606f'}}>{chip}</span>
+                          ['Situação', censoLatest.ds_situacao],
+                          ['Dependência', censoLatest.ds_dependencia],
+                          ['Localização', censoLatest.ds_localizacao],
+                          ['Região', censoLatest.no_regiao],
+                          ['Município', censoLatest.no_municipio],
+                          ['UF', censoLatest.sg_uf],
+                          ['Código IBGE', censoLatest.co_municipio],
+                          ['Regulamentação', censoLatest.tp_regulamentacao === 1 ? 'Sim' : censoLatest.tp_regulamentacao === 2 ? 'Em tramitação' : censoLatest.tp_regulamentacao === 3 ? 'Não' : null],
+                          ['Alimentação', censoLatest.in_alimentacao === 1 ? 'Sim' : censoLatest.in_alimentacao === 0 ? 'Não' : null],
+                          ['Prédio escolar', censoLatest.in_local_func_predio_escolar === 1 ? 'Sim' : censoLatest.in_local_func_predio_escolar === 0 ? 'Não' : null],
+                        ].filter(([,v]) => v != null).map(([k, v], i) => (
+                          <div key={i} className="row-item">
+                            <span style={{color:'var(--m-muted)',fontSize:'13px'}}>{k}</span>
+                            <strong style={{fontSize:'13px'}}>{String(v)}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="soft-card theme-yellow">
+                      <div className="attention-head"><span>⚙️</span><strong>Vida organizacional</strong></div>
+                      <div className="row-list" style={{marginTop:'10px'}}>
+                        {[
+                          ['Conselho Escolar', censoLatest.in_orgao_conselho_escolar === 1 ? 'Sim' : censoLatest.in_orgao_conselho_escolar === 0 ? 'Não' : null],
+                          ['APM / APP', censoLatest.in_orgao_ass_pais_mestres === 1 ? 'Sim' : censoLatest.in_orgao_ass_pais_mestres === 0 ? 'Não' : null],
+                          ['Grêmio Estudantil', censoLatest.in_orgao_gremio_estudantil === 1 ? 'Sim' : censoLatest.in_orgao_gremio_estudantil === 0 ? 'Não' : null],
+                          ['Redes Sociais', censoLatest.in_redes_sociais === 1 ? 'Sim' : censoLatest.in_redes_sociais === 0 ? 'Não' : null],
+                          ['Ed. Ambiental', censoLatest.in_educ_ambiental === 1 ? 'Sim' : censoLatest.in_educ_ambiental === 0 ? 'Não' : null],
+                          ['AEE', censoLatest.tp_aee === 1 ? 'Na própria escola' : censoLatest.tp_aee === 2 ? 'Em outra escola' : censoLatest.tp_aee === 3 ? 'Em inst. especializada' : censoLatest.tp_aee === 0 ? 'Não oferece' : null],
+                          ['Sala Atend. Especial', censoLatest.in_sala_atendimento_especial === 1 ? 'Sim' : censoLatest.in_sala_atendimento_especial === 0 ? 'Não' : null],
+                          ['Internet', censoLatest.in_internet === 1 ? 'Sim' : censoLatest.in_internet === 0 ? 'Não' : null],
+                          ['Banda Larga', censoLatest.in_banda_larga === 1 ? 'Sim' : censoLatest.in_banda_larga === 0 ? 'Não' : null],
+                          ['Biblioteca', censoLatest.in_biblioteca === 1 ? 'Sim' : censoLatest.in_biblioteca === 0 ? 'Não' : null],
+                        ].filter(([,v]) => v != null).map(([k, v], i) => (
+                          <div key={i} className="row-item">
+                            <span style={{color:'var(--m-muted)',fontSize:'13px'}}>{k}</span>
+                            <strong style={{fontSize:'13px'}}>{String(v)}</strong>
+                          </div>
                         ))}
                       </div>
                     </div>
                   </div>
-                </div>
+                </section>
 
-                {/* ── bilhete intro ── */}
-                <div className="auto-text-card" style={{fontSize:'14px',color:'#3d4d5a',lineHeight:1.6}}>
-                  <strong className="scribble" style={{fontSize:'16px',color:'#4f4126'}}>Diretora, aqui está o raio-x completo desta escola!</strong>
-                  <p className="mt-1">Dados do Censo Escolar {latestAno}, indicadores educacionais e situação financeira do PDDE — tudo filtrado pelo código INEP <strong>{selectedInep}</strong>.</p>
-                </div>
-
-                {/* ── Métricas resumo ── */}
-                {(() => {
-                  const THEMES = ['theme-blue','theme-yellow','theme-green','theme-purple','theme-pink','theme-teal'];
-                  const METRICS = [
-                    { label: `Matrículas ${latestAno}`, val: censoLatest.qt_mat_bas || 0, prev: censoPrev?.qt_mat_bas || 0, icon: '👩‍🎓' },
-                    { label: `Docentes ${latestAno}`, val: censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0, prev: censoPrev ? (censoPrev.qt_doc_bas || censoPrev.qt_docentes || 0) : 0, icon: '🧑‍🏫' },
-                    { label: `Turmas ${latestAno}`, val: censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0, prev: censoPrev ? (censoPrev.qt_tur_bas || censoPrev.qt_turmas || 0) : 0, icon: '🏫' },
-                    { label: `Salas utilizadas`, val: censoLatest.qt_salas_utilizadas || 0, prev: censoPrev?.qt_salas_utilizadas || 0, icon: '🚪' },
-                    { label: 'Pontos de atenção', val: alertasPreocupantes.length, prev: null, icon: alertasPreocupantes.filter(a=>a.tipo==='critical').length > 0 ? '⚠️' : alertasPreocupantes.length > 0 ? '◌' : '✅', extra: alertasPreocupantes.length === 0 ? 'Tudo certo' : `${alertasPreocupantes.filter(a=>a.tipo==='critical').length} crítico${alertasPreocupantes.filter(a=>a.tipo==='critical').length !== 1 ? 's' : ''}` },
-                    { label: 'PDDE', val: pddeData?.ok ? (prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? prestacaoContaData.itens.filter((i:any)=>i.situacao_pc_uex?.toLowerCase().includes('adimpl')).length === prestacaoContaData.itens.length ? 'OK' : 'Ver' : pddeData ? 'Ativo' : '—') : '—', prev: null, icon: '💸', extra: prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? `${prestacaoContaData.itens.length} programa${prestacaoContaData.itens.length > 1 ? 's' : ''}` : pddeData?.ok ? pddeData.uex?.executora?.slice(0,22) : 'Sem dados' },
-                  ];
-                  return (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-                      {METRICS.map((m, i) => {
-                        const delta = m.prev !== null && typeof m.val === 'number' ? (m.val as number) - (m.prev as number) : null;
-                        return (
-                          <div key={i} className={`metric ${THEMES[i]}`}>
-                            <div className="flex items-start justify-between gap-2 mb-3">
-                              <div>
-                                <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>{m.label}</label>
-                                <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{typeof m.val === 'number' ? m.val.toLocaleString('pt-BR') : m.val}</strong>
-                              </div>
-                              <div className="w-11 h-11 rounded-2xl grid place-items-center text-xl shrink-0" style={{background:'rgba(255,255,255,0.72)',border:'1px solid rgba(255,255,255,0.9)'}}>{m.icon}</div>
-                            </div>
-                            {(m as any).extra ? (
-                              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold bg-white/60 text-gray-600">{(m as any).extra}</span>
-                            ) : delta !== null && delta !== 0 ? (
-                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold ${delta > 0 ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>{delta > 0 ? '▲' : '▼'} {Math.abs(delta)} vs ano anterior</span>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-
-                {(() => {
-                  const criticals = alertasPreocupantes.filter(a => a.tipo === 'critical');
-                  const warnings = alertasPreocupantes.filter(a => a.tipo === 'warning');
-                  const total = alertasPreocupantes.length;
-                  const extractVal = (titulo: string) => { const m = titulo.match(/:\s*([\d,\.]+\s*%?)(\s*(?:alunos\/turma|h\/dia|h))?$/); return m ? m[1] + (m[2] || '') : null; };
-                  const cleanTitle = (titulo: string) => titulo.replace(/:\s*[\d,\.]+\s*(?:%|alunos\/turma|h\/dia|h)?\s*$/, '').replace(/:\s*Nível\s*\d+\s*$/, '');
-                  return (
-                    <div className="space-y-4">
-                      <div className="section-title">
-                        <div>
-                          <h2>Pontos de atenção</h2>
-                          <p>Indicadores que merecem atenção especial desta escola</p>
-                        </div>
-                        {total > 0 && <span className="attention-count">◌ {total} ponto{total !== 1 ? 's' : ''} para acompanhar</span>}
-                        {total === 0 && <span className="hint-chip">✅ Tudo dentro do esperado</span>}
+                {/* ── PONTOS DE ATENÇÃO ── */}
+                <section className="section">
+                  <div className="priority-layout">
+                    <div className="soft-card">
+                      <div className="panel-head">
+                        <h3 style={{margin:'0 0 4px',fontSize:'20px',letterSpacing:'-0.03em'}}>Pontos de atenção</h3>
+                        <p style={{margin:0,color:'var(--m-muted)',fontSize:'13px'}}>Indicadores que merecem acompanhamento especial</p>
                       </div>
-                      <div className="organic-divider"/>
-
                       {total === 0 ? (
-                        <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50" style={{borderLeft:'6px solid #2f7a58', border:'1px solid #c7e8d6', borderLeftWidth:'6px'}}>
+                        <div className="flex items-center gap-3 p-4 rounded-xl mt-4" style={{background:'#eef7f1',border:'1px solid #c7e8d6'}}>
                           <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
-                          <p className="text-sm" style={{color:'#2f7a58'}}>Diretora, os indicadores desta escola estão dentro das faixas esperadas. Continue o bom trabalho!</p>
+                          <p style={{fontSize:'13px',color:'#2f7a58',margin:0}}>Diretora, os indicadores desta escola estão dentro das faixas esperadas!</p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {[...criticals.map(a => ({...a, tipo: 'critical' as const})), ...warnings.map(a => ({...a, tipo: 'warning' as const}))].map((alerta, i) => {
+                        <div className="alert-grid" style={{marginTop:'14px'}}>
+                          {[...criticals, ...warnings].map((alerta, i) => {
                             const mv = extractVal(alerta.titulo);
                             const ct = cleanTitle(alerta.titulo);
                             return (
                               <div key={i} className={`alert-sticker ${alerta.tipo === 'critical' ? 'critical' : ''}`}>
                                 <div className="flex items-start justify-between gap-2 mb-2">
-                                  <p className="text-sm font-bold leading-tight">{ct}</p>
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0 ${alerta.tipo === 'critical' ? 'bg-[#fdecea] text-[#b74f42]' : 'bg-[#fff4db] text-[#9b6a16]'}`}>
-                                    {alerta.tipo === 'critical' ? 'Olhar com cuidado' : 'Acompanhar'}
+                                  <p style={{fontSize:'13px',fontWeight:700,lineHeight:'1.3',margin:0}}>{ct}</p>
+                                  <span className={`severity ${alerta.tipo === 'critical' ? 'critical' : 'attn'}`}>
+                                    {alerta.tipo === 'critical' ? 'Crítico' : 'Atenção'}
                                   </span>
                                 </div>
-                                {mv && <strong className="block text-3xl font-bold leading-none mb-2" style={{letterSpacing:'-0.04em'}}>{mv}</strong>}
-                                <p className="text-xs leading-snug" style={{color:'#6b7785'}}>{alerta.descricao}</p>
+                                {mv && <strong style={{display:'block',fontSize:'26px',lineHeight:1,letterSpacing:'-0.04em',marginBottom:'6px'}}>{mv}</strong>}
+                                <p style={{fontSize:'12px',color:'#6b7785',lineHeight:'1.5',margin:0}}>{alerta.descricao}</p>
                               </div>
                             );
                           })}
                         </div>
                       )}
                     </div>
-                  );
-                })()}
-
-                <Card className="card-clay">
-                  <CardHeader className="pb-2">
-                    <div className="section-title">
-                      <div>
-                        <h2>Galeria de gráficos</h2>
-                        <p>Escolha um recorte e visualize a evolução histórica da escola</p>
+                    <div className="soft-card">
+                      <div className="panel-head">
+                        <h3 style={{margin:'0 0 4px',fontSize:'20px',letterSpacing:'-0.03em'}}>Bilhete da Diretora</h3>
+                        <p style={{margin:0,color:'var(--m-muted)',fontSize:'13px'}}>Resumo personalizado para orientar a gestão</p>
                       </div>
-                      <span className="hint-chip">📊 {evolucaoData?.anos_disponiveis?.length || 1} ano{(evolucaoData?.anos_disponiveis?.length || 1) !== 1 ? 's' : ''} de dados</span>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {!hasMultipleYears && (
-                      <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm mb-4">
-                        Por enquanto temos dados só de {latestAno}. Com mais anos importados, você vai ver a evolução aqui.
-                      </div>
-                    )}
-                    {evolutionCharts && (() => {
-                      const chartOptions = [
-                        { id: "matriculas", label: "Matrículas", icon: <Users className="w-4 h-4" />, color: "#0ea5e9", description: "Total de alunos matriculados por ano.", data: evolutionCharts.matriculas, lines: [{ key: "value", color: "#0ea5e9", name: "Matrículas" }], unit: " alunos" },
-                        { id: "docentes", label: "Docentes", icon: <GraduationCap className="w-4 h-4" />, color: "#8b5cf6", description: "Quantidade de professores na escola.", data: evolutionCharts.docentes, lines: [{ key: "value", color: "#8b5cf6", name: "Docentes" }] },
-                        { id: "taxas", label: "Taxas de Rendimento", icon: <TrendingUp className="w-4 h-4" />, color: "#10b981", description: "Aprovação, reprovação e abandono escolar. Ideal: aprovação alta, abandono zero.", data: evolutionCharts.taxasRendimento, lines: [{ key: "aprovacao", color: "#10b981", name: "Aprovação" }, { key: "reprovacao", color: "#ef4444", name: "Reprovação" }, { key: "abandono", color: "#f59e0b", name: "Abandono" }], unit: "%" },
-                        { id: "ideb", label: "IDEB", icon: <Award className="w-4 h-4" />, color: "#f59e0b", description: "Nota da escola no MEC (0–10). Combina provas SAEB e taxas de aprovação.", data: evolutionCharts.ideb, lines: [{ key: "ideb_ai", color: "#10b981", name: "Anos Iniciais" }, { key: "ideb_af", color: "#f59e0b", name: "Anos Finais" }, { key: "ideb_em", color: "#8b5cf6", name: "Ensino Médio" }] },
-                        { id: "tdi", label: "Distorção Idade-Série", icon: <BarChart3 className="w-4 h-4" />, color: "#ef4444", description: "% de alunos com 2+ anos além da idade esperada para a série. Quanto menor, melhor.", data: evolutionCharts.tdi, lines: [{ key: "fund_total", color: "#ef4444", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#6366f1", name: "Médio" }], unit: "%" },
-                        { id: "atu", label: "Alunos por Turma", icon: <Users className="w-4 h-4" />, color: "#6366f1", description: "Média de alunos por turma. Acima de 35 dificulta o aprendizado.", data: evolutionCharts.atu, lines: hasMultipleYears ? [{ key: "fund", color: "#0ea5e9", name: "Fund. Total" }, { key: "fund_ai", color: "#10b981", name: "Fund. AI" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }] : [{ key: "fund", color: "#0ea5e9", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }] },
-                        { id: "had", label: "Horas-Aula Diária", icon: <Clock className="w-4 h-4" />, color: "#06b6d4", description: "Horas de aula por dia. MEC recomenda mín. 4h (parcial) ou 7h (integral).", data: evolutionCharts.had, lines: hasMultipleYears ? [{ key: "fund", color: "#06b6d4", name: "Fund. Total" }, { key: "fund_ai", color: "#10b981", name: "Fund. AI" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#ec4899", name: "Médio" }] : [{ key: "fund", color: "#06b6d4", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#ec4899", name: "Médio" }], unit: "h" },
-                        { id: "dsu", label: "Docentes c/ Superior", icon: <GraduationCap className="w-4 h-4" />, color: "#10b981", description: "% de professores com diploma universitário. LDB exige formação superior.", data: evolutionCharts.dsu, lines: hasMultipleYears ? [{ key: "fund", color: "#10b981", name: "Fund. Total" }, { key: "fund_ai", color: "#0ea5e9", name: "Fund. AI" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }] : [{ key: "fund", color: "#10b981", name: "Fund. Total" }, { key: "fund_af", color: "#f59e0b", name: "Fund. AF" }, { key: "medio", color: "#8b5cf6", name: "Médio" }], unit: "%" },
-                        { id: "icg", label: "Complexidade de Gestão", icon: <BarChart3 className="w-4 h-4" />, color: "#f97316", description: "Nível 1–6 de complexidade administrativa. Leva em conta turnos, etapas e porte.", data: evolutionCharts.icg, lines: [{ key: "nivel", color: "#f97316", name: "Nível" }] },
-                        { id: "ird", label: "Regularidade Docente", icon: <BarChart3 className="w-4 h-4" />, color: "#14b8a6", description: "Permanência dos professores na escola (0–5). Quanto maior, mais estabilidade pedagógica.", data: evolutionCharts.ird, lines: [{ key: "media", color: "#14b8a6", name: "Média IRD" }] },
-                        { id: "inse", label: "Nível Socioeconômico", icon: <TrendingUp className="w-4 h-4" />, color: "#a855f7", description: "Perfil socioeconômico médio dos alunos. Contexto importante para planejar ações.", data: evolutionCharts.inse, lines: [{ key: "media", color: "#a855f7", name: "Média INSE" }] },
-                        { id: "saeb", label: "SAEB - Proficiência", icon: <Award className="w-4 h-4" />, color: "#3b82f6", description: "Notas em Matemática e Português nas avaliações nacionais do SAEB.", data: evolutionCharts.saeb, lines: [{ key: "mt_ai", color: "#10b981", name: "Mat. AI" }, { key: "lp_ai", color: "#0ea5e9", name: "Port. AI" }, { key: "mt_af", color: "#f59e0b", name: "Mat. AF" }, { key: "lp_af", color: "#ef4444", name: "Port. AF" }, { key: "mt_em", color: "#8b5cf6", name: "Mat. EM" }, { key: "lp_em", color: "#ec4899", name: "Port. EM" }] },
-                        { id: "ied", label: "Esforço Docente", icon: <GraduationCap className="w-4 h-4" />, color: "#ec4899", description: "% de professores por nível de esforço (1=menor, 6=maior — muitas turmas e escolas).", data: evolutionCharts.ied, lines: [{ key: "nivel_1", color: "#10b981", name: "Nível 1" }, { key: "nivel_2", color: "#0ea5e9", name: "Nível 2" }, { key: "nivel_3", color: "#f59e0b", name: "Nível 3" }, { key: "nivel_4", color: "#f97316", name: "Nível 4" }, { key: "nivel_5", color: "#ef4444", name: "Nível 5" }, { key: "nivel_6", color: "#7c3aed", name: "Nível 6" }], unit: "%" },
-                        { id: "tnr", label: "Taxa de Não-Resposta", icon: <BarChart3 className="w-4 h-4" />, color: "#eab308", description: "% de itens em branco nas avaliações. Alta pode indicar desistências durante a prova.", data: evolutionCharts.tnr, lines: [{ key: "fund", color: "#0ea5e9", name: "Fundamental" }, { key: "med", color: "#ef4444", name: "Médio" }], unit: "%" },
-                      ];
-                      const available = chartOptions.filter(c => c.data && c.data.some((d: any) => c.lines.some(l => d[l.key] != null && d[l.key] !== 0)));
-                      const current = available.find(c => c.id === selectedChart) || available[0];
-                      if (!current) return null;
-
-                      const latestData = current.data && current.data.length > 0 ? current.data[current.data.length - 1] : null;
-                      const prevData = current.data && current.data.length > 1 ? current.data[current.data.length - 2] : null;
-                      const summaryItems = current.lines.map(l => {
-                        const val = latestData ? latestData[l.key] : null;
-                        const prev = prevData ? prevData[l.key] : null;
-                        const delta = (val != null && prev != null && prev !== 0) ? ((val - prev) / Math.abs(prev) * 100) : null;
-                        return { name: l.name, color: l.color, value: val, delta };
-                      }).filter(s => s.value != null && s.value !== 0);
-
-                      return (
-                        <div className="flex gap-3 items-start">
-                          <div className="shrink-0 w-40 space-y-2 sticky top-4 overflow-y-auto" style={{maxHeight:'72vh'}}>
-                            <div className="px-2.5 py-2 rounded-[16px_20px_16px_18px] text-[11px] font-bold leading-tight scribble" style={{background:'linear-gradient(135deg,#fff7b7 0%,#fff8db 100%)', color:'#6a5a33', border:'1px solid #e4cb74', transform:'rotate(-0.8deg)', boxShadow:'0 10px 16px rgba(100,83,46,0.07)'}}>
-                              Escolha um recorte
-                            </div>
-                            {available.map((opt) => (
-                              <button key={opt.id} className={`chart-tab-btn ${current.id === opt.id ? 'active' : ''}`}
-                                onClick={() => setSelectedChart(opt.id)}>
-                                {opt.label}
-                              </button>
-                            ))}
-                          </div>
-                          <div className="flex-1 min-w-0 relative overflow-visible" style={{background:'linear-gradient(180deg,#fffdf8 0%,#fcf8ee 100%)', border:'1px solid #eadfcb', borderRadius:'18px 24px 18px 22px', boxShadow:'0 12px 20px rgba(83,72,53,0.07)', transform:'rotate(0.3deg)'}}>
-                            <div className="absolute w-14 h-3.5 rounded pointer-events-none" style={{top:'-7px', left:'22px', background:'rgba(188,218,243,0.62)', transform:'rotate(-6deg)'}}/>
-                            <div className="p-4 pb-2">
-                              <div className="flex items-start justify-between gap-3">
-                                <div>
-                                  <h4 className="text-lg font-bold mb-0.5 scribble" style={{color:'#4f4126'}}>{current.label}</h4>
-                                  <p className="text-sm text-muted-foreground">{current.description}</p>
-                                </div>
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 scribble" style={{background:'linear-gradient(135deg,#fff0bf 0%,#ffe39d 100%)', color:'#7c5710', border:'1px solid #e8cb7a', transform:'rotate(0.5deg)'}}>recorte do mural</span>
-                              </div>
-                              {summaryItems.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-2.5">
-                                  {summaryItems.map((s, i) => (
-                                    <div key={i} className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold border"
-                                      style={{background:'rgba(255,255,255,0.80)', borderColor:'rgba(0,0,0,0.07)', color:'#596777'}}>
-                                      <span className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor: s.color}}/>
-                                      {s.name}: <span style={{color: s.color}}>{typeof s.value === 'number' ? (Number.isInteger(s.value) ? s.value.toLocaleString('pt-BR') : s.value.toLocaleString('pt-BR', {maximumFractionDigits:1})) : s.value}{current.unit||''}</span>
-                                      {s.delta != null && <span className={s.delta >= 0 ? 'text-green-600' : 'text-red-500'}>{s.delta >= 0 ? '▲' : '▼'}{Math.abs(s.delta).toFixed(1)}%</span>}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            <div className="px-3 pb-4">
-                              <div className="relative rounded-[18px_26px_18px_22px] overflow-hidden" style={{background:`repeating-linear-gradient(0deg, transparent 0 31px, rgba(115,148,180,.06) 31px 32px), linear-gradient(to right, rgba(229,225,215,.40) 1px, transparent 1px) 0 0/16.666% 100%, #fffef9`, border:'1px solid #eadfcb', boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.5), 0 12px 18px rgba(83,72,53,0.05)', padding:'16px 12px 8px'}}>
-                                <div className="absolute w-8 h-8 pointer-events-none" style={{right:'10px',top:'10px',background:'linear-gradient(135deg, transparent 0 49%, rgba(245,232,205,.85) 50% 100%)',borderRadius:'4px',boxShadow:'-1px 1px 0 rgba(211,197,170,.7)'}}/>
-                                <EvolutionChart data={current.data} lines={current.lines} unit={current.unit} large />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-
-                {(() => {
-                  type DiagStatus = 'bom' | 'adequado' | 'atencao' | 'critico' | 'sem_dados' | 'info';
-                  type Diagnosis = { status: DiagStatus; valor: string; label: string; explicacao: string; secundarios?: string[] };
-
-                  const statusConfig: Record<DiagStatus, { dot: string; bg: string; label: string }> = {
-                    bom: { dot: 'bg-green-500', bg: 'bg-green-100 text-green-700', label: 'Bom' },
-                    adequado: { dot: 'bg-blue-500', bg: 'bg-blue-100 text-blue-700', label: 'Adequado' },
-                    atencao: { dot: 'bg-amber-500', bg: 'bg-amber-100 text-amber-700', label: 'Atenção' },
-                    critico: { dot: 'bg-red-500', bg: 'bg-red-100 text-red-700', label: 'Crítico' },
-                    sem_dados: { dot: 'bg-gray-400', bg: 'bg-gray-100 text-gray-600', label: 'Sem dados' },
-                    info: { dot: 'bg-blue-500', bg: 'bg-blue-100 text-blue-700', label: 'Info' },
-                  };
-
-                  const fmtNum = (v: any, decimals = 1) => v != null ? Number(v).toFixed(decimals) : null;
-
-                  const worstStatus = (...statuses: DiagStatus[]): DiagStatus => {
-                    const order: DiagStatus[] = ['critico', 'atencao', 'adequado', 'bom', 'info', 'sem_dados'];
-                    for (const s of order) { if (statuses.includes(s)) return s; }
-                    return 'sem_dados';
-                  };
-
-                  const getDiagnosis = (tipo: string, data: any): Diagnosis | null => {
-                    if (!data) return null;
-
-                    switch (tipo) {
-                      case 'ideb': {
-                        const vals = [
-                          { v: data.ideb_ai, n: 'AI' },
-                          { v: data.ideb_af, n: 'AF' },
-                          { v: data.ideb_em, n: 'EM' },
-                        ].filter(x => x.v != null && Number(x.v) > 0);
-                        if (vals.length === 0) return null;
-                        const worst = Math.min(...vals.map(x => Number(x.v)));
-                        const status: DiagStatus = worst >= 6 ? 'bom' : worst >= 5 ? 'adequado' : worst >= 4 ? 'atencao' : 'critico';
-                        const mainVal = vals.map(x => `${x.n}: ${Number(x.v).toFixed(1)}`).join(' | ');
-                        const secs: string[] = [];
-                        if (data.nota_mt_af != null) secs.push(`Mat. AF: ${fmtNum(data.nota_mt_af)}`);
-                        if (data.nota_lp_af != null) secs.push(`Port. AF: ${fmtNum(data.nota_lp_af)}`);
-                        if (data.rendimento_af != null) secs.push(`Rend. AF: ${(Number(data.rendimento_af) * 100).toFixed(1)}%`);
-                        if (data.projecao_af != null) secs.push(`Projeção AF: ${fmtNum(data.projecao_af)}`);
-                        if (data.nota_mt_em != null) secs.push(`Mat. EM: ${fmtNum(data.nota_mt_em)}`);
-                        if (data.nota_lp_em != null) secs.push(`Port. EM: ${fmtNum(data.nota_lp_em)}`);
-                        if (data.rendimento_em != null) secs.push(`Rend. EM: ${(Number(data.rendimento_em) * 100).toFixed(1)}%`);
-                        if (data.projecao_em != null) secs.push(`Projeção EM: ${fmtNum(data.projecao_em)}`);
-                        if (data.ideb_ai != null) secs.push(`IDEB AI: ${fmtNum(data.ideb_ai)}`);
-                        return { status, valor: mainVal, label: statusConfig[status].label, explicacao: 'Mede a qualidade do ensino combinando notas do SAEB e taxas de aprovação', secundarios: secs.length > 0 ? secs : undefined };
-                      }
-                      case 'taxas_rendimento': {
-                        const abandVals = [data.abandono_fund, data.abandono_fund_ai, data.abandono_fund_af, data.abandono_med].filter(v => v != null).map(Number);
-                        const repVals = [data.reprovacao_fund, data.reprovacao_fund_ai, data.reprovacao_fund_af, data.reprovacao_med].filter(v => v != null).map(Number);
-                        const worstAband = abandVals.length > 0 ? Math.max(...abandVals) : null;
-                        const worstRep = repVals.length > 0 ? Math.max(...repVals) : null;
-                        let abandStatus: DiagStatus = 'sem_dados';
-                        if (worstAband != null) abandStatus = worstAband <= 1 ? 'bom' : worstAband <= 2 ? 'adequado' : worstAband <= 5 ? 'atencao' : 'critico';
-                        let repStatus: DiagStatus = 'sem_dados';
-                        if (worstRep != null) repStatus = worstRep <= 5 ? 'bom' : worstRep <= 10 ? 'adequado' : worstRep <= 20 ? 'atencao' : 'critico';
-                        const finalStatus = worstStatus(abandStatus, repStatus);
-                        const parts: string[] = [];
-                        const aprov = data.aprovacao_fund ?? data.aprovacao_med;
-                        if (aprov != null) parts.push(`Aprov: ${fmtNum(aprov)}%`);
-                        if (worstRep != null) parts.push(`Reprov: ${fmtNum(data.reprovacao_fund ?? data.reprovacao_med)}%`);
-                        if (worstAband != null) parts.push(`Aband: ${fmtNum(data.abandono_fund ?? data.abandono_med)}%`);
-                        const secs: string[] = [];
-                        if (data.aprovacao_fund != null) secs.push(`Aprov. Fund: ${fmtNum(data.aprovacao_fund)}%`);
-                        if (data.aprovacao_fund_ai != null) secs.push(`Aprov. AI: ${fmtNum(data.aprovacao_fund_ai)}%`);
-                        if (data.aprovacao_fund_af != null) secs.push(`Aprov. AF: ${fmtNum(data.aprovacao_fund_af)}%`);
-                        if (data.aprovacao_med != null) secs.push(`Aprov. Médio: ${fmtNum(data.aprovacao_med)}%`);
-                        if (data.reprovacao_fund != null) secs.push(`Reprov. Fund: ${fmtNum(data.reprovacao_fund)}%`);
-                        if (data.reprovacao_fund_ai != null) secs.push(`Reprov. AI: ${fmtNum(data.reprovacao_fund_ai)}%`);
-                        if (data.reprovacao_fund_af != null) secs.push(`Reprov. AF: ${fmtNum(data.reprovacao_fund_af)}%`);
-                        if (data.reprovacao_med != null) secs.push(`Reprov. Médio: ${fmtNum(data.reprovacao_med)}%`);
-                        if (data.abandono_fund != null) secs.push(`Aband. Fund: ${fmtNum(data.abandono_fund)}%`);
-                        if (data.abandono_fund_ai != null) secs.push(`Aband. AI: ${fmtNum(data.abandono_fund_ai)}%`);
-                        if (data.abandono_fund_af != null) secs.push(`Aband. AF: ${fmtNum(data.abandono_fund_af)}%`);
-                        if (data.abandono_med != null) secs.push(`Aband. Médio: ${fmtNum(data.abandono_med)}%`);
-                        const expl = worstAband != null && worstRep != null
-                          ? `Reprovação máx: ${fmtNum(worstRep)}% | Abandono máx: ${fmtNum(worstAband)}%`
-                          : 'Taxas de aprovação, reprovação e abandono escolar';
-                        return { status: finalStatus, valor: parts.join(' | ') || '—', label: statusConfig[finalStatus].label, explicacao: expl, secundarios: secs };
-                      }
-                      case 'tdi': {
-                        const vals = [data.fundamental_total, data.medio_total].filter(v => v != null).map(Number);
-                        if (vals.length === 0) return null;
-                        const worst = Math.max(...vals);
-                        const status: DiagStatus = worst < 10 ? 'bom' : worst < 20 ? 'adequado' : worst < 30 ? 'atencao' : 'critico';
-                        const mainParts: string[] = [];
-                        if (data.fundamental_total != null) mainParts.push(`Fund: ${fmtNum(data.fundamental_total)}%`);
-                        if (data.medio_total != null) mainParts.push(`Médio: ${fmtNum(data.medio_total)}%`);
-                        const secs: string[] = [];
-                        if (data.fundamental_ai != null) secs.push(`Fund. AI: ${fmtNum(data.fundamental_ai)}%`);
-                        if (data.fundamental_af != null) secs.push(`Fund. AF: ${fmtNum(data.fundamental_af)}%`);
-                        if (data.fund_6ano != null) secs.push(`6º ano: ${fmtNum(data.fund_6ano)}%`);
-                        if (data.fund_7ano != null) secs.push(`7º ano: ${fmtNum(data.fund_7ano)}%`);
-                        if (data.fund_8ano != null) secs.push(`8º ano: ${fmtNum(data.fund_8ano)}%`);
-                        if (data.fund_9ano != null) secs.push(`9º ano: ${fmtNum(data.fund_9ano)}%`);
-                        if (data.medio_1serie != null) secs.push(`Médio 1ª: ${fmtNum(data.medio_1serie)}%`);
-                        if (data.medio_2serie != null) secs.push(`Médio 2ª: ${fmtNum(data.medio_2serie)}%`);
-                        if (data.medio_3serie != null) secs.push(`Médio 3ª: ${fmtNum(data.medio_3serie)}%`);
-                        if (data.medio_4serie != null) secs.push(`Médio 4ª: ${fmtNum(data.medio_4serie)}%`);
-                        return { status, valor: mainParts.join(' | '), label: statusConfig[status].label, explicacao: 'Percentual de alunos com idade acima da esperada para a série', secundarios: secs.length > 0 ? secs : undefined };
-                      }
-                      case 'icg': {
-                        const nivel = Number(data.nivel);
-                        if (isNaN(nivel)) return null;
-                        const status: DiagStatus = nivel <= 2 ? 'bom' : nivel === 3 ? 'adequado' : nivel === 4 ? 'atencao' : 'critico';
-                        return { status, valor: data.nivel_texto || `Nível ${nivel}`, label: statusConfig[status].label, explicacao: 'Nível de complexidade administrativa da escola (1=simples, 6=muito complexa)' };
-                      }
-                      case 'inse': {
-                        const classif = data.inse_classificacao || data.nivel_inse || '';
-                        const media = data.media_inse != null ? fmtNum(data.media_inse) : null;
-                        const valor = classif || (media ? `Média: ${media}` : '—');
-                        const secs: string[] = [];
-                        if (media) secs.push(`Média INSE: ${media}`);
-                        if (data.qtd_alunos_inse != null) secs.push(`Alunos avaliados: ${data.qtd_alunos_inse}`);
-                        return { status: 'info' as DiagStatus, valor, label: 'Info', explicacao: 'Perfil socioeconômico médio dos alunos', secundarios: secs.length > 0 ? secs : undefined };
-                      }
-                      case 'ird': {
-                        const media = Number(data.media_ird ?? data.media);
-                        if (isNaN(media) || media === 0) return null;
-                        const status: DiagStatus = media >= 3.0 ? 'bom' : media >= 2.5 ? 'adequado' : media >= 2.0 ? 'atencao' : 'critico';
-                        return { status, valor: media.toFixed(2), label: statusConfig[status].label, explicacao: 'Indica se os professores permanecem na escola ao longo dos anos' };
-                      }
-                      case 'dsu': {
-                        const vals = [data.percentual_fund, data.percentual_med].filter(v => v != null).map(Number);
-                        if (vals.length === 0) return null;
-                        const worst = Math.min(...vals);
-                        const status: DiagStatus = worst >= 90 ? 'bom' : worst >= 80 ? 'adequado' : worst >= 60 ? 'atencao' : 'critico';
-                        const mainParts: string[] = [];
-                        if (data.percentual_fund != null) mainParts.push(`Fund: ${fmtNum(data.percentual_fund)}%`);
-                        if (data.percentual_med != null) mainParts.push(`Médio: ${fmtNum(data.percentual_med)}%`);
-                        const secs: string[] = [];
-                        if (data.percentual_fund_ai != null) secs.push(`Fund. AI: ${fmtNum(data.percentual_fund_ai)}%`);
-                        if (data.percentual_fund_af != null) secs.push(`Fund. AF: ${fmtNum(data.percentual_fund_af)}%`);
-                        return { status, valor: mainParts.join(' | '), label: statusConfig[status].label, explicacao: 'Percentual de professores com diploma de curso superior', secundarios: secs.length > 0 ? secs : undefined };
-                      }
-                      case 'atu': {
-                        const vals = [data.media_fund, data.media_med].filter(v => v != null).map(Number);
-                        if (vals.length === 0) return null;
-                        const worst = Math.max(...vals);
-                        const status: DiagStatus = worst <= 25 ? 'bom' : worst <= 30 ? 'adequado' : worst <= 35 ? 'atencao' : 'critico';
-                        const mainParts: string[] = [];
-                        if (data.media_fund != null) mainParts.push(`Fund: ${fmtNum(data.media_fund)}`);
-                        if (data.media_med != null) mainParts.push(`Médio: ${fmtNum(data.media_med)}`);
-                        const secs: string[] = [];
-                        if (data.media_fund_ai != null) secs.push(`Fund. AI: ${fmtNum(data.media_fund_ai)}`);
-                        if (data.media_fund_af != null) secs.push(`Fund. AF: ${fmtNum(data.media_fund_af)}`);
-                        return { status, valor: mainParts.join(' | '), label: statusConfig[status].label, explicacao: 'Média de alunos em cada sala de aula', secundarios: secs.length > 0 ? secs : undefined };
-                      }
-                      case 'had': {
-                        const vals = [data.media_fund, data.media_med].filter(v => v != null).map(Number);
-                        if (vals.length === 0) return null;
-                        const worst = Math.min(...vals);
-                        const status: DiagStatus = worst >= 5 ? 'bom' : worst >= 4 ? 'adequado' : worst >= 3.5 ? 'atencao' : 'critico';
-                        const mainParts: string[] = [];
-                        if (data.media_fund != null) mainParts.push(`Fund: ${fmtNum(data.media_fund)}h`);
-                        if (data.media_med != null) mainParts.push(`Médio: ${fmtNum(data.media_med)}h`);
-                        const secs: string[] = [];
-                        if (data.media_fund_ai != null) secs.push(`Fund. AI: ${fmtNum(data.media_fund_ai)}h`);
-                        if (data.media_fund_af != null) secs.push(`Fund. AF: ${fmtNum(data.media_fund_af)}h`);
-                        return { status, valor: mainParts.join(' | '), label: statusConfig[status].label, explicacao: 'Tempo médio de aulas por dia', secundarios: secs.length > 0 ? secs : undefined };
-                      }
-                      case 'afd': {
-                        const funCat1 = data.fun_cat_1 != null ? Number(data.fun_cat_1) : null;
-                        const medCat1 = data.med_cat_1 != null ? Number(data.med_cat_1) : null;
-                        const mainVal = funCat1 ?? medCat1;
-                        if (mainVal == null) return null;
-                        const status: DiagStatus = mainVal >= 80 ? 'bom' : mainVal >= 60 ? 'adequado' : mainVal >= 40 ? 'atencao' : 'critico';
-                        const secs: string[] = [];
-                        if (data.fun_cat_1 != null) secs.push(`Fund. G1: ${fmtNum(data.fun_cat_1)}%`);
-                        if (data.fun_cat_2 != null) secs.push(`Fund. G2: ${fmtNum(data.fun_cat_2)}%`);
-                        if (data.fun_cat_3 != null) secs.push(`Fund. G3: ${fmtNum(data.fun_cat_3)}%`);
-                        if (data.fun_cat_4 != null) secs.push(`Fund. G4: ${fmtNum(data.fun_cat_4)}%`);
-                        if (data.fun_cat_5 != null) secs.push(`Fund. G5: ${fmtNum(data.fun_cat_5)}%`);
-                        if (data.med_cat_1 != null) secs.push(`Médio G1: ${fmtNum(data.med_cat_1)}%`);
-                        if (data.med_cat_2 != null) secs.push(`Médio G2: ${fmtNum(data.med_cat_2)}%`);
-                        if (data.med_cat_3 != null) secs.push(`Médio G3: ${fmtNum(data.med_cat_3)}%`);
-                        if (data.med_cat_4 != null) secs.push(`Médio G4: ${fmtNum(data.med_cat_4)}%`);
-                        if (data.med_cat_5 != null) secs.push(`Médio G5: ${fmtNum(data.med_cat_5)}%`);
-                        return { status, valor: `${fmtNum(mainVal)}% (Grupo 1)`, label: statusConfig[status].label, explicacao: 'Percentual de professores com formação adequada à disciplina que lecionam', secundarios: secs };
-                      }
-                      case 'ied': {
-                        const n1 = Number(data.nivel_1 || 0);
-                        const n2 = Number(data.nivel_2 || 0);
-                        const baixo = n1 + n2;
-                        const status: DiagStatus = baixo >= 60 ? 'bom' : baixo >= 40 ? 'adequado' : baixo >= 20 ? 'atencao' : 'critico';
-                        const secs: string[] = [];
-                        if (data.nivel_1 != null) secs.push(`N1: ${fmtNum(data.nivel_1)}%`);
-                        if (data.nivel_2 != null) secs.push(`N2: ${fmtNum(data.nivel_2)}%`);
-                        if (data.nivel_3 != null) secs.push(`N3: ${fmtNum(data.nivel_3)}%`);
-                        if (data.nivel_4 != null) secs.push(`N4: ${fmtNum(data.nivel_4)}%`);
-                        if (data.nivel_5 != null) secs.push(`N5: ${fmtNum(data.nivel_5)}%`);
-                        if (data.nivel_6 != null) secs.push(`N6: ${fmtNum(data.nivel_6)}%`);
-                        if (data.percentual_fund != null) secs.push(`Fund: ${fmtNum(data.percentual_fund)}%`);
-                        if (data.percentual_med != null) secs.push(`Médio: ${fmtNum(data.percentual_med)}%`);
-                        return { status, valor: `${fmtNum(baixo)}% baixo esforço`, label: statusConfig[status].label, explicacao: 'Distribuição dos professores por nível de esforço (quantidade de escolas e turnos)', secundarios: secs };
-                      }
-                      case 'saeb': {
-                        const scores: string[] = [];
-                        if (data.nota_mt_ai != null) scores.push(`Mat. AI: ${fmtNum(data.nota_mt_ai)}`);
-                        if (data.nota_lp_ai != null) scores.push(`Port. AI: ${fmtNum(data.nota_lp_ai)}`);
-                        if (data.nota_mt_af != null) scores.push(`Mat. AF: ${fmtNum(data.nota_mt_af)}`);
-                        if (data.nota_lp_af != null) scores.push(`Port. AF: ${fmtNum(data.nota_lp_af)}`);
-                        if (data.nota_mt_em != null) scores.push(`Mat. EM: ${fmtNum(data.nota_mt_em)}`);
-                        if (data.nota_lp_em != null) scores.push(`Port. EM: ${fmtNum(data.nota_lp_em)}`);
-                        if (scores.length === 0) return null;
-                        return { status: 'info' as DiagStatus, valor: scores.slice(0, 3).join(' | '), label: 'Info', explicacao: 'Notas de proficiência em Matemática e Português', secundarios: scores.length > 3 ? scores : undefined };
-                      }
-                      case 'taxa_nao_resposta': {
-                        const vals = [
-                          data.taxa_nao_resposta_fund ?? data.tnr_fund,
-                          data.taxa_nao_resposta_med ?? data.tnr_med,
-                        ].filter(v => v != null).map(Number);
-                        if (vals.length === 0) return null;
-                        const worst = Math.max(...vals);
-                        const status: DiagStatus = worst < 5 ? 'bom' : worst < 10 ? 'adequado' : worst < 20 ? 'atencao' : 'critico';
-                        const mainParts: string[] = [];
-                        const fundVal = data.taxa_nao_resposta_fund ?? data.tnr_fund;
-                        const medVal = data.taxa_nao_resposta_med ?? data.tnr_med;
-                        if (fundVal != null) mainParts.push(`Fund: ${fmtNum(fundVal)}%`);
-                        if (medVal != null) mainParts.push(`Médio: ${fmtNum(medVal)}%`);
-                        const secs: string[] = [];
-                        const fundAi = data.taxa_nao_resposta_fund_ai ?? data.tnr_fund_ai;
-                        const fundAf = data.taxa_nao_resposta_fund_af ?? data.tnr_fund_af;
-                        if (fundAi != null) secs.push(`Fund. AI: ${fmtNum(fundAi)}%`);
-                        if (fundAf != null) secs.push(`Fund. AF: ${fmtNum(fundAf)}%`);
-                        return { status, valor: mainParts.join(' | '), label: statusConfig[status].label, explicacao: 'Percentual de itens não respondidos nas avaliações', secundarios: secs.length > 0 ? secs : undefined };
-                      }
-                      default:
-                        return null;
-                    }
-                  };
-
-                  const indicatorOrder: { tipo: string; nome: string; key: string }[] = [
-                    { tipo: 'ideb', nome: 'IDEB', key: 'ideb' },
-                    { tipo: 'taxas_rendimento', nome: 'Taxas de Rendimento', key: 'taxas_rendimento' },
-                    { tipo: 'tdi', nome: 'TDI', key: 'tdi' },
-                    { tipo: 'icg', nome: 'ICG', key: 'icg' },
-                    { tipo: 'inse', nome: 'INSE', key: 'inse' },
-                    { tipo: 'ird', nome: 'IRD', key: 'ird' },
-                    { tipo: 'dsu', nome: 'DSU', key: 'dsu' },
-                    { tipo: 'atu', nome: 'ATU', key: 'atu' },
-                    { tipo: 'had', nome: 'HAD', key: 'had' },
-                    { tipo: 'afd', nome: 'AFD', key: 'afd' },
-                    { tipo: 'ied', nome: 'IED', key: 'ied' },
-                    { tipo: 'saeb', nome: 'SAEB', key: 'saeb' },
-                    { tipo: 'taxa_nao_resposta', nome: 'TNR', key: 'taxa_nao_resposta' },
-                  ];
-
-                  const getNacionalLabel = (tipo: string): string | null => {
-                    const mn = mediasNacionais as Record<string, any> | undefined;
-                    if (!mn?.[tipo]) return null;
-                    const d = mn[tipo];
-                    switch (tipo) {
-                      case 'ideb': {
-                        const parts: string[] = [];
-                        if (d.ideb_ai != null) parts.push(`AI: ${Number(d.ideb_ai).toFixed(1)}`);
-                        if (d.ideb_af != null) parts.push(`AF: ${Number(d.ideb_af).toFixed(1)}`);
-                        return parts.length > 0 ? parts.join(' | ') : null;
-                      }
-                      case 'taxas_rendimento': {
-                        const parts: string[] = [];
-                        if (d.aprovacao_fund != null) parts.push(`Aprov: ${Number(d.aprovacao_fund).toFixed(1)}%`);
-                        if (d.abandono_fund != null) parts.push(`Aband: ${Number(d.abandono_fund).toFixed(1)}%`);
-                        return parts.length > 0 ? parts.join(' | ') : null;
-                      }
-                      case 'tdi': {
-                        const parts: string[] = [];
-                        if (d.fundamental_total != null) parts.push(`Fund: ${Number(d.fundamental_total).toFixed(1)}%`);
-                        if (d.medio_total != null) parts.push(`Médio: ${Number(d.medio_total).toFixed(1)}%`);
-                        return parts.length > 0 ? parts.join(' | ') : null;
-                      }
-                      case 'atu': {
-                        const v = d.atu_fund ?? d.fundamental_total;
-                        return v != null ? `Fund: ${Number(v).toFixed(1)} alunos` : null;
-                      }
-                      case 'had': {
-                        const v = d.had_fund ?? d.fundamental_total;
-                        return v != null ? `Fund: ${Number(v).toFixed(1)}h` : null;
-                      }
-                      case 'dsu': {
-                        const v = d.dsu_fund ?? d.fundamental_total;
-                        return v != null ? `Fund: ${Number(v).toFixed(1)}%` : null;
-                      }
-                      case 'afd': {
-                        const v = d.grupo_1 ?? d.afd_grupo_1;
-                        return v != null ? `Grupo 1: ${Number(v).toFixed(1)}%` : null;
-                      }
-                      case 'ird': {
-                        const v = d.ird_fund ?? d.media;
-                        return v != null ? `${Number(v).toFixed(2)}` : null;
-                      }
-                      default: return null;
-                    }
-                  };
-
-                  const rows = indicatorOrder
-                    .map(ind => {
-                      const data = indicadoresLatest[ind.key];
-                      if (!data) return null;
-                      const diag = getDiagnosis(ind.tipo, data);
-                      if (!diag) return null;
-                      const mediaNacional = getNacionalLabel(ind.tipo);
-                      return { ...ind, data, diag, ano: data._ano, mediaNacional };
-                    })
-                    .filter(Boolean) as { tipo: string; nome: string; key: string; data: any; diag: Diagnosis; ano?: number; mediaNacional?: string | null }[];
-
-                  const allIndicatorKeys = indicatorOrder.map(i => i.key);
-                  const missingCount = allIndicatorKeys.filter(k => !indicadoresLatest[k]).length;
-
-                  if (rows.length === 0 && missingCount === 0) return null;
-
-                  return (
-                    <Card className="card-clay">
-                      <CardHeader className="pb-2">
-                        <div className="section-title">
-                          <div>
-                            <h2>Raio-X educacional</h2>
-                            <p>Indicadores mais recentes desta escola com diagnóstico automático</p>
-                          </div>
-                          <span className="hint-chip">🔬 {rows.length} indicador{rows.length !== 1 ? 'es' : ''}</span>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {rows.map(row => {
-                            const cfg = statusConfig[row.diag.status];
-                            return (
-                              <div key={row.key} className="indicator-card">
-                                <div className="flex items-center justify-between gap-2 mb-2">
-                                  <span className="text-sm font-bold" style={{color:'#485564'}}>
-                                    {row.nome}
-                                    {row.ano && <span className="text-[10px] font-normal text-muted-foreground ml-1">({row.ano})</span>}
-                                  </span>
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0 ${cfg.bg}`}>{row.diag.label}</span>
-                                </div>
-                                <div className="text-2xl font-bold leading-none mb-2" style={{letterSpacing:'-0.03em'}}>{row.diag.valor}</div>
-                                <p className="text-xs text-muted-foreground leading-snug">{row.diag.explicacao}</p>
-                                {row.mediaNacional && (
-                                  <p className="text-[11px] mt-1" style={{color:'#4b7db5'}}>Média nacional: {row.mediaNacional}</p>
-                                )}
-                                {row.diag.secundarios && row.diag.secundarios.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-1.5">
-                                    {row.diag.secundarios.map((s, i) => <span key={i} className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold text-muted-foreground" style={{background:'rgba(0,0,0,0.04)', border:'1px solid rgba(0,0,0,0.06)'}}>{s}</span>)}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {missingCount > 0 && (
-                          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/10">
-                            <Info className="w-4 h-4 text-muted-foreground shrink-0" />
-                            <span className="text-xs text-muted-foreground">{missingCount} indicador{missingCount > 1 ? 'es' : ''} sem dados para esta escola</span>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })()}
-
-                <IndicatorSection
-                  title="Matrículas por Etapa"
-                  icon={<BookOpen className="w-5 h-5 text-accent" />}
-                  expanded={expandedSections['matriculas'] ?? true}
-                  onToggle={() => toggleSection('matriculas')}
-                >
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    <InfoItem label="Ed. Infantil - Creche" value={censoLatest.qt_mat_inf_cre} />
-                    <InfoItem label="Ed. Infantil - Pré-escola" value={censoLatest.qt_mat_inf_pre} />
-                    <InfoItem label="Fund. Anos Iniciais" value={censoLatest.qt_mat_fund_ai} />
-                    <InfoItem label="Fund. 1º ano" value={censoLatest.qt_mat_fund_ai_1} />
-                    <InfoItem label="Fund. 2º ano" value={censoLatest.qt_mat_fund_ai_2} />
-                    <InfoItem label="Fund. 3º ano" value={censoLatest.qt_mat_fund_ai_3} />
-                    <InfoItem label="Fund. 4º ano" value={censoLatest.qt_mat_fund_ai_4} />
-                    <InfoItem label="Fund. 5º ano" value={censoLatest.qt_mat_fund_ai_5} />
-                    <InfoItem label="Fund. Anos Finais" value={censoLatest.qt_mat_fund_af} />
-                    <InfoItem label="Fund. 6º ano" value={censoLatest.qt_mat_fund_af_6} />
-                    <InfoItem label="Fund. 7º ano" value={censoLatest.qt_mat_fund_af_7} />
-                    <InfoItem label="Fund. 8º ano" value={censoLatest.qt_mat_fund_af_8} />
-                    <InfoItem label="Fund. 9º ano" value={censoLatest.qt_mat_fund_af_9} />
-                    <InfoItem label="Ensino Médio" value={censoLatest.qt_mat_med} />
-                    <InfoItem label="Médio 1ª série" value={censoLatest.qt_mat_med_prop_1} />
-                    <InfoItem label="Médio 2ª série" value={censoLatest.qt_mat_med_prop_2} />
-                    <InfoItem label="Médio 3ª série" value={censoLatest.qt_mat_med_prop_3} />
-                    <InfoItem label="Médio 4ª série" value={censoLatest.qt_mat_med_prop_4} />
-                    <InfoItem label="Ed. Profissional" value={censoLatest.qt_mat_prof} />
-                    <InfoItem label="EJA Fund." value={censoLatest.qt_mat_eja_fund} />
-                    <InfoItem label="EJA Médio" value={censoLatest.qt_mat_eja_med} />
-                  </div>
-                </IndicatorSection>
-
-                <IndicatorSection
-                  title="Educação Especial"
-                  icon={<Heart className="w-5 h-5 text-accent" />}
-                  expanded={expandedSections['educacao_especial'] ?? true}
-                  onToggle={() => toggleSection('educacao_especial')}
-                >
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">AEE - Atendimento Educacional Especializado</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="AEE" value={censoLatest.tp_aee === 1 ? "Na própria escola" : censoLatest.tp_aee === 2 ? "Em outra escola" : censoLatest.tp_aee === 3 ? "Em instituição especializada" : censoLatest.tp_aee === 0 ? "Não oferece" : undefined} />
-                        <InfoItem label="Sala Atend. Especial" value={censoLatest.in_sala_atendimento_especial === 1 ? "Sim" : censoLatest.in_sala_atendimento_especial === 0 ? "Não" : undefined} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Matrículas</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Total Mat. Especial" value={censoLatest.qt_mat_esp} highlight />
-                        <InfoItem label="Classes Comuns (Inclusão)" value={censoLatest.qt_mat_esp_cc} />
-                        <InfoItem label="Classes Exclusivas" value={censoLatest.qt_mat_esp_ce} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Docentes</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Total Docentes Ed. Especial" value={censoLatest.qt_doc_esp} />
-                        <InfoItem label="Classes Comuns" value={censoLatest.qt_doc_esp_cc} />
-                        <InfoItem label="Classes Exclusivas" value={censoLatest.qt_doc_esp_ce} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Turmas</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Total Turmas Ed. Especial" value={censoLatest.qt_tur_esp} />
-                        <InfoItem label="Classes Comuns" value={censoLatest.qt_tur_esp_cc} />
-                        <InfoItem label="Classes Exclusivas" value={censoLatest.qt_tur_esp_ce} />
-                      </div>
-                    </div>
-                  </div>
-                </IndicatorSection>
-
-                <IndicatorSection
-                  title="Perfil dos Alunos"
-                  icon={<Users className="w-5 h-5 text-accent" />}
-                  expanded={expandedSections['perfil'] ?? true}
-                  onToggle={() => toggleSection('perfil')}
-                >
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Turno</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Diurno" value={censoLatest.qt_mat_bas_d} />
-                        <InfoItem label="Noturno" value={censoLatest.qt_mat_bas_n} />
-                        <InfoItem label="EAD" value={censoLatest.qt_mat_bas_ead} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Sexo</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Feminino" value={censoLatest.qt_mat_bas_fem} />
-                        <InfoItem label="Masculino" value={censoLatest.qt_mat_bas_masc} />
-                        <InfoItem label="Não declarado" value={censoLatest.qt_mat_bas_nd} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Cor/Raça</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Branca" value={censoLatest.qt_mat_bas_branca} />
-                        <InfoItem label="Preta" value={censoLatest.qt_mat_bas_preta} />
-                        <InfoItem label="Parda" value={censoLatest.qt_mat_bas_parda} />
-                        <InfoItem label="Amarela" value={censoLatest.qt_mat_bas_amarela} />
-                        <InfoItem label="Indígena" value={censoLatest.qt_mat_bas_indigena} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Faixa Etária</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="0 a 3 anos" value={censoLatest.qt_mat_bas_0_3} />
-                        <InfoItem label="4 a 5 anos" value={censoLatest.qt_mat_bas_4_5} />
-                        <InfoItem label="6 a 10 anos" value={censoLatest.qt_mat_bas_6_10} />
-                        <InfoItem label="11 a 14 anos" value={censoLatest.qt_mat_bas_11_14} />
-                        <InfoItem label="15 a 17 anos" value={censoLatest.qt_mat_bas_15_17} />
-                        <InfoItem label="18+ anos" value={censoLatest.qt_mat_bas_18_mais} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Por Zona de Residência</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Urbana" value={censoLatest.qt_mat_zr_urb} />
-                        <InfoItem label="Rural" value={censoLatest.qt_mat_zr_rur} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Integral</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Infantil Integral" value={censoLatest.qt_mat_inf_int} />
-                        <InfoItem label="Fund. AI Integral" value={censoLatest.qt_mat_fund_ai_int} />
-                        <InfoItem label="Fund. AF Integral" value={censoLatest.qt_mat_fund_af_int} />
-                        <InfoItem label="Médio Integral" value={censoLatest.qt_mat_med_int} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Transporte Escolar</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <InfoItem label="Transporte Público" value={censoLatest.qt_transp_publico} />
-                        <InfoItem label="Resp. Estadual" value={censoLatest.qt_transp_resp_est} />
-                        <InfoItem label="Resp. Municipal" value={censoLatest.qt_transp_resp_mun} />
-                      </div>
-                    </div>
-                  </div>
-                </IndicatorSection>
-
-                <IndicatorSection
-                  title="Docentes"
-                  icon={<GraduationCap className="w-5 h-5 text-purple-600" />}
-                  expanded={expandedSections['docentes'] ?? true}
-                  onToggle={() => toggleSection('docentes')}
-                >
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    <InfoItem label="Total" value={censoLatest.qt_doc_bas} highlight />
-                    <InfoItem label="Ed. Infantil" value={censoLatest.qt_doc_inf} />
-                    <InfoItem label="Infantil Creche" value={censoLatest.qt_doc_inf_cre} />
-                    <InfoItem label="Infantil Pré" value={censoLatest.qt_doc_inf_pre} />
-                    <InfoItem label="Fundamental" value={censoLatest.qt_doc_fund} />
-                    <InfoItem label="Fund. Anos Iniciais" value={censoLatest.qt_doc_fund_ai} />
-                    <InfoItem label="Fund. Anos Finais" value={censoLatest.qt_doc_fund_af} />
-                    <InfoItem label="Ensino Médio" value={censoLatest.qt_doc_med} />
-                    <InfoItem label="Ed. Profissional" value={censoLatest.qt_doc_prof} />
-                    <InfoItem label="EJA" value={censoLatest.qt_doc_eja} />
-                    <InfoItem label="Ed. Especial" value={censoLatest.qt_doc_esp} />
-                  </div>
-                </IndicatorSection>
-
-                <IndicatorSection
-                  title="Turmas"
-                  icon={<BookOpen className="w-5 h-5 text-teal-600" />}
-                  expanded={expandedSections['turmas'] ?? true}
-                  onToggle={() => toggleSection('turmas')}
-                >
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    <InfoItem label="Total" value={censoLatest.qt_tur_bas} highlight />
-                    <InfoItem label="Ed. Infantil" value={censoLatest.qt_tur_inf} />
-                    <InfoItem label="Infantil Creche" value={censoLatest.qt_tur_inf_cre} />
-                    <InfoItem label="Infantil Pré" value={censoLatest.qt_tur_inf_pre} />
-                    <InfoItem label="Fundamental" value={censoLatest.qt_tur_fund} />
-                    <InfoItem label="Fund. Anos Iniciais" value={censoLatest.qt_tur_fund_ai} />
-                    <InfoItem label="Fund. Anos Finais" value={censoLatest.qt_tur_fund_af} />
-                    <InfoItem label="Ensino Médio" value={censoLatest.qt_tur_med} />
-                    <InfoItem label="Ed. Profissional" value={censoLatest.qt_tur_prof} />
-                    <InfoItem label="EJA" value={censoLatest.qt_tur_eja} />
-                    <InfoItem label="Ed. Especial" value={censoLatest.qt_tur_esp} />
-                    <InfoItem label="Diurnas" value={censoLatest.qt_tur_bas_d} />
-                    <InfoItem label="Noturnas" value={censoLatest.qt_tur_bas_n} />
-                  </div>
-                </IndicatorSection>
-
-                <IndicatorSection
-                  title="Informações Gerais"
-                  icon={<Info className="w-5 h-5 text-accent" />}
-                  expanded={expandedSections['info'] ?? true}
-                  onToggle={() => toggleSection('info')}
-                >
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Dados Básicos</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        <InfoItem label="Situação" value={censoLatest.ds_situacao} />
-                        <InfoItem label="Dependência" value={censoLatest.ds_dependencia} />
-                        <InfoItem label="Localização" value={censoLatest.ds_localizacao} />
-                        <InfoItem label="Região" value={censoLatest.no_regiao} />
-                        <InfoItem label="Município" value={censoLatest.no_municipio} />
-                        <InfoItem label="UF" value={censoLatest.sg_uf} />
-                        <InfoItem label="Cód. Município" value={censoLatest.co_municipio} />
-                        <InfoItem label="Regulamentação" value={censoLatest.tp_regulamentacao === 1 ? "Sim" : censoLatest.tp_regulamentacao === 2 ? "Sim, em tramitação" : censoLatest.tp_regulamentacao === 3 ? "Não" : undefined} />
-                        <InfoItem label="Órgão Regulamentador" value={censoLatest.tp_responsavel_regulamentacao === 1 ? "Conselho Federal de Educação" : censoLatest.tp_responsavel_regulamentacao === 2 ? "Conselho Estadual de Educação" : censoLatest.tp_responsavel_regulamentacao === 3 ? "Conselho Municipal de Educação" : undefined} />
-                        <InfraItem label="Prédio Escolar" value={censoLatest.in_local_func_predio_escolar} />
-                        <InfraItem label="Prédio Compartilhado" value={censoLatest.in_predio_compartilhado} />
-                        <InfraItem label="Alimentação" value={censoLatest.in_alimentacao} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Etapas e Modalidades Oferecidas</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
-                        <InfraItem label="Ed. Infantil" value={censoLatest.in_inf} />
-                        <InfraItem label="Creche" value={censoLatest.in_inf_cre} />
-                        <InfraItem label="Pré-escola" value={censoLatest.in_inf_pre} />
-                        <InfraItem label="Ensino Fund." value={censoLatest.in_fund} />
-                        <InfraItem label="Fund. Anos Iniciais" value={censoLatest.in_fund_ai} />
-                        <InfraItem label="Fund. Anos Finais" value={censoLatest.in_fund_af} />
-                        <InfraItem label="Ensino Médio" value={censoLatest.in_med} />
-                        <InfraItem label="Ed. Profissional" value={censoLatest.in_prof} />
-                        <InfraItem label="EJA" value={censoLatest.in_eja} />
-                        <InfraItem label="EJA Fund." value={censoLatest.in_eja_fund} />
-                        <InfraItem label="EJA Médio" value={censoLatest.in_eja_med} />
-                        <InfraItem label="Ed. Especial" value={censoLatest.in_esp} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Organização</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
-                        <InfraItem label="Conselho Escolar" value={censoLatest.in_orgao_conselho_escolar} />
-                        <InfraItem label="APM / APP" value={censoLatest.in_orgao_ass_pais_mestres} />
-                        <InfraItem label="Grêmio Estudantil" value={censoLatest.in_orgao_gremio_estudantil} />
-                        <InfraItem label="Redes Sociais" value={censoLatest.in_redes_sociais} />
-                        <InfraItem label="Ed. Ambiental" value={censoLatest.in_educ_ambiental} />
-                      </div>
-                    </div>
-                  </div>
-                </IndicatorSection>
-
-                <IndicatorSection
-                  title="Água, Energia e Saneamento"
-                  icon={<Info className="w-5 h-5 text-cyan-600" />}
-                  expanded={expandedSections['saneamento'] ?? true}
-                  onToggle={() => toggleSection('saneamento')}
-                >
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Água</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
-                        <InfraItem label="Água Potável" value={censoLatest.in_agua_potavel} />
-                        <InfraItem label="Rede Pública" value={censoLatest.in_agua_rede_publica} />
-                        <InfraItem label="Poço Artesiano" value={censoLatest.in_agua_poco_artesiano} />
-                        <InfraItem label="Cacimba" value={censoLatest.in_agua_cacimba} />
-                        <InfraItem label="Fonte/Rio" value={censoLatest.in_agua_fonte_rio} />
-                        <InfraItem label="Carro-pipa" value={censoLatest.in_agua_carro_pipa} />
-                        <InfraItem label="Inexistente" value={censoLatest.in_agua_inexistente} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Energia</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
-                        <InfraItem label="Rede Pública" value={censoLatest.in_energia_rede_publica} />
-                        <InfraItem label="Gerador Fóssil" value={censoLatest.in_energia_gerador_fossil} />
-                        <InfraItem label="Renovável" value={censoLatest.in_energia_renovavel} />
-                        <InfraItem label="Inexistente" value={censoLatest.in_energia_inexistente} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Esgoto</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
-                        <InfraItem label="Rede Pública" value={censoLatest.in_esgoto_rede_publica} />
-                        <InfraItem label="Fossa Séptica" value={censoLatest.in_esgoto_fossa_septica} />
-                        <InfraItem label="Fossa Comum" value={censoLatest.in_esgoto_fossa_comum} />
-                        <InfraItem label="Inexistente" value={censoLatest.in_esgoto_inexistente} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Lixo</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
-                        <InfraItem label="Coleta" value={censoLatest.in_lixo_servico_coleta} />
-                        <InfraItem label="Queima" value={censoLatest.in_lixo_queima} />
-                        <InfraItem label="Enterra" value={censoLatest.in_lixo_enterra} />
-                        <InfraItem label="Separação" value={censoLatest.in_tratamento_lixo_separacao} />
-                        <InfraItem label="Reciclagem" value={censoLatest.in_tratamento_lixo_reciclagem} />
-                      </div>
-                    </div>
-                  </div>
-                </IndicatorSection>
-
-                <IndicatorSection
-                  title="Infraestrutura e Dependências"
-                  icon={<Building2 className="w-5 h-5 text-green-600" />}
-                  expanded={expandedSections['infra'] ?? true}
-                  onToggle={() => toggleSection('infra')}
-                >
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Salas</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        <InfoItem label="Salas Utilizadas" value={censoLatest.qt_salas_utilizadas} />
-                        <InfoItem label="Salas Dentro" value={censoLatest.qt_salas_utilizadas_dentro} />
-                        <InfoItem label="Salas Fora" value={censoLatest.qt_salas_utilizadas_fora} />
-                        <InfoItem label="Climatizadas" value={censoLatest.qt_salas_utiliza_climatizadas} />
-                        <InfoItem label="Acessíveis" value={censoLatest.qt_salas_utilizadas_acessiveis} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Espaços</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
-                        <InfraItem label="Biblioteca" value={censoLatest.in_biblioteca} />
-                        <InfraItem label="Sala de Leitura" value={censoLatest.in_biblioteca_sala_leitura} />
-                        <InfraItem label="Lab. Informática" value={censoLatest.in_laboratorio_informatica} />
-                        <InfraItem label="Lab. Ciências" value={censoLatest.in_laboratorio_ciencias} />
-                        <InfraItem label="Lab. Ed. Profissional" value={censoLatest.in_laboratorio_educ_prof} />
-                        <InfraItem label="Quadra Coberta" value={censoLatest.in_quadra_esportes_coberta} />
-                        <InfraItem label="Quadra Descoberta" value={censoLatest.in_quadra_esportes_descoberta} />
-                        <InfraItem label="Cozinha" value={censoLatest.in_cozinha} />
-                        <InfraItem label="Despensa" value={censoLatest.in_despensa} />
-                        <InfraItem label="Refeitório" value={censoLatest.in_refeitorio} />
-                        <InfraItem label="Almoxarifado" value={censoLatest.in_almoxarifado} />
-                        <InfraItem label="Pátio Coberto" value={censoLatest.in_patio_coberto} />
-                        <InfraItem label="Pátio Descoberto" value={censoLatest.in_patio_descoberto} />
-                        <InfraItem label="Parque Infantil" value={censoLatest.in_parque_infantil} />
-                        <InfraItem label="Auditório" value={censoLatest.in_auditorio} />
-                        <InfraItem label="Piscina" value={censoLatest.in_piscina} />
-                        <InfraItem label="Área Verde" value={censoLatest.in_area_verde} />
-                        <InfraItem label="Sala Multiuso" value={censoLatest.in_sala_multiuso} />
-                        <InfraItem label="Sala Diretoria" value={censoLatest.in_sala_diretoria} />
-                        <InfraItem label="Sala Professores" value={censoLatest.in_sala_professor} />
-                        <InfraItem label="Secretaria" value={censoLatest.in_secretaria} />
-                        <InfraItem label="Sala Atend. Especial" value={censoLatest.in_sala_atendimento_especial} />
-                        <InfraItem label="Sala Artes" value={censoLatest.in_sala_atelie_artes} />
-                        <InfraItem label="Sala Música" value={censoLatest.in_sala_musica_coral} />
-                        <InfraItem label="Viveiro" value={censoLatest.in_viveiro} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Banheiros</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
-                        <InfraItem label="Banheiro" value={censoLatest.in_banheiro} />
-                        <InfraItem label="Banheiro Ed. Infantil" value={censoLatest.in_banheiro_ei} />
-                        <InfraItem label="Banheiro PNE" value={censoLatest.in_banheiro_pne} />
-                        <InfraItem label="Banheiro Funcionários" value={censoLatest.in_banheiro_funcionarios} />
-                        <InfraItem label="Chuveiro" value={censoLatest.in_banheiro_chuveiro} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Acessibilidade</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
-                        <InfraItem label="Rampas" value={censoLatest.in_acessibilidade_rampas} />
-                        <InfraItem label="Corrimão" value={censoLatest.in_acessibilidade_corrimao} />
-                        <InfraItem label="Elevador" value={censoLatest.in_acessibilidade_elevador} />
-                        <InfraItem label="Pisos Táteis" value={censoLatest.in_acessibilidade_pisos_tateis} />
-                        <InfraItem label="Vão Livre" value={censoLatest.in_acessibilidade_vao_livre} />
-                        <InfraItem label="Sinal Sonoro" value={censoLatest.in_acessibilidade_sinal_sonoro} />
-                        <InfraItem label="Sinal Tátil" value={censoLatest.in_acessibilidade_sinal_tatil} />
-                        <InfraItem label="Sinal Visual" value={censoLatest.in_acessibilidade_sinal_visual} />
-                      </div>
-                    </div>
-                  </div>
-                </IndicatorSection>
-
-                <IndicatorSection
-                  title="Equipamentos e Tecnologia"
-                  icon={<Info className="w-5 h-5 text-indigo-600" />}
-                  expanded={expandedSections['equipamentos'] ?? true}
-                  onToggle={() => toggleSection('equipamentos')}
-                >
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Equipamentos</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        <InfraItem label="Computador" value={censoLatest.in_computador} />
-                        <InfoItem label="Desktops p/ Alunos" value={censoLatest.qt_desktop_aluno} />
-                        <InfoItem label="Notebooks p/ Alunos" value={censoLatest.qt_comp_portatil_aluno} />
-                        <InfoItem label="Tablets p/ Alunos" value={censoLatest.qt_tablet_aluno} />
-                        <InfoItem label="TVs" value={censoLatest.qt_equip_tv} />
-                        <InfoItem label="Projetores" value={censoLatest.qt_equip_multimidia} />
-                        <InfoItem label="Lousas Digitais" value={censoLatest.qt_equip_lousa_digital} />
-                        <InfoItem label="Equipamentos de Som" value={censoLatest.qt_equip_som} />
-                        <InfraItem label="Impressora" value={censoLatest.in_equip_impressora} />
-                        <InfraItem label="Copiadora" value={censoLatest.in_equip_copiadora} />
-                        <InfraItem label="Scanner" value={censoLatest.in_equip_scanner} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Internet e Conectividade</p>
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
-                        <InfraItem label="Internet" value={censoLatest.in_internet} />
-                        <InfraItem label="Banda Larga" value={censoLatest.in_banda_larga} />
-                        <InfraItem label="Internet p/ Alunos" value={censoLatest.in_internet_alunos} />
-                        <InfraItem label="Internet Administrativo" value={censoLatest.in_internet_administrativo} />
-                        <InfraItem label="Internet Aprendizagem" value={censoLatest.in_internet_aprendizagem} />
-                        <InfraItem label="Internet Comunidade" value={censoLatest.in_internet_comunidade} />
-                        <InfraItem label="Acesso por Computador" value={censoLatest.in_acesso_internet_computador} />
-                        <InfraItem label="Acesso por Dispositivos" value={censoLatest.in_aces_internet_disp_pessoais} />
-                      </div>
-                    </div>
-                  </div>
-                </IndicatorSection>
-
-                <IndicatorSection
-                  title="Profissionais (não docentes)"
-                  icon={<Users className="w-5 h-5 text-amber-600" />}
-                  expanded={expandedSections['profissionais'] ?? true}
-                  onToggle={() => toggleSection('profissionais')}
-                >
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    <InfoItem label="Administrativos" value={censoLatest.qt_prof_administrativos} />
-                    <InfoItem label="Serviços Gerais" value={censoLatest.qt_prof_servicos_gerais} />
-                    <InfoItem label="Bibliotecários" value={censoLatest.qt_prof_bibliotecario} />
-                    <InfoItem label="Saúde" value={censoLatest.qt_prof_saude} />
-                    <InfoItem label="Coordenadores" value={censoLatest.qt_prof_coordenador} />
-                    <InfoItem label="Fonoaudiólogos" value={censoLatest.qt_prof_fonaudiologo} />
-                    <InfoItem label="Nutricionistas" value={censoLatest.qt_prof_nutricionista} />
-                    <InfoItem label="Psicólogos" value={censoLatest.qt_prof_psicologo} />
-                    <InfoItem label="Alimentação" value={censoLatest.qt_prof_alimentacao} />
-                    <InfoItem label="Pedagogia" value={censoLatest.qt_prof_pedagogia} />
-                    <InfoItem label="Secretários" value={censoLatest.qt_prof_secretario} />
-                    <InfoItem label="Segurança" value={censoLatest.qt_prof_seguranca} />
-                    <InfoItem label="Monitores" value={censoLatest.qt_prof_monitores} />
-                    <InfoItem label="Gestão" value={censoLatest.qt_prof_gestao} />
-                    <InfoItem label="Assistentes Sociais" value={censoLatest.qt_prof_assist_social} />
-                    <InfoItem label="Trad. Libras" value={censoLatest.qt_prof_trad_libras} />
-                  </div>
-                </IndicatorSection>
-
-                <IndicatorSection
-                  title="Materiais Pedagógicos"
-                  icon={<BookOpen className="w-5 h-5 text-rose-600" />}
-                  expanded={expandedSections['materiais'] ?? true}
-                  onToggle={() => toggleSection('materiais')}
-                >
-                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
-                    <InfraItem label="Multimídia" value={censoLatest.in_material_ped_multimidia} />
-                    <InfraItem label="Infantil" value={censoLatest.in_material_ped_infantil} />
-                    <InfraItem label="Científico" value={censoLatest.in_material_ped_cientifico} />
-                    <InfraItem label="Difusão" value={censoLatest.in_material_ped_difusao} />
-                    <InfraItem label="Musical" value={censoLatest.in_material_ped_musical} />
-                    <InfraItem label="Jogos" value={censoLatest.in_material_ped_jogos} />
-                    <InfraItem label="Artísticas" value={censoLatest.in_material_ped_artisticas} />
-                    <InfraItem label="Profissional" value={censoLatest.in_material_ped_profissional} />
-                    <InfraItem label="Desportiva" value={censoLatest.in_material_ped_desportiva} />
-                    <InfraItem label="Indígena" value={censoLatest.in_material_ped_indigena} />
-                    <InfraItem label="Étnico" value={censoLatest.in_material_ped_etnico} />
-                    <InfraItem label="Quilombola" value={censoLatest.in_material_ped_quilombola} />
-                    <InfraItem label="Ed. Especial" value={censoLatest.in_material_ped_edu_esp} />
-                  </div>
-                </IndicatorSection>
-
-                <IndicatorSection
-                  title="Financeiro PDDE"
-                  icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
-                  expanded={expandedSections['financeiro'] ?? true}
-                  onToggle={() => toggleSection('financeiro')}
-                >
-                  <div className="space-y-5">
-                    {(pddeLoading || pddeSaldosLoading || pddeExecFinLoading) && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground py-4 justify-center">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Consultando dados financeiros do FNDE...
-                      </div>
-                    )}
-
-                    {pddeData && !pddeLoading && (
-                      <>
-                        {pddeData.ok ? (
-                          <div className="space-y-4">
-                            {pddeData.uex && (
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                                  <Landmark className="w-3.5 h-3.5" />
-                                  Unidade Executora (UEx)
-                                </p>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                  <InfoItem label="Executora" value={pddeData.uex.executora} />
-                                  <InfoItem label="CNPJ" value={pddeData.uex.cnpj} />
-                                  <InfoItem label="UF" value={pddeData.uex.uf} />
-                                  <InfoItem label="Município" value={pddeData.uex.municipio} />
-                                </div>
-                              </div>
-                            )}
-
-                            {pddeData.matriculas_total != null && (
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                                  Matrículas PDDE ({pddeData.ano})
-                                </p>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                  <InfoItem label="Total" value={pddeData.matriculas_total} highlight />
-                                  {pddeData.matriculas_por_nivel && Object.entries(pddeData.matriculas_por_nivel).map(([nivel, qt]) => (
-                                    <InfoItem key={nivel} label={nivel} value={qt} />
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {pddeData.contas && pddeData.contas.length > 0 && (
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                                  <BanknoteIcon className="w-3.5 h-3.5" />
-                                  Contas Bancárias (PDDE Info)
-                                </p>
-                                <div className="overflow-x-auto">
-                                  <table className="w-full text-sm">
-                                    <thead>
-                                      <tr className="border-b border-border/30">
-                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Programa</th>
-                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Banco</th>
-                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Agência</th>
-                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Conta</th>
-                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Saldo</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {pddeData.contas.map((conta, idx) => (
-                                        <tr key={idx} className="border-b border-border/10">
-                                          <td className="py-2 px-2 text-xs font-medium">{conta.programa}</td>
-                                          <td className="py-2 px-2 text-xs">{conta.banco}</td>
-                                          <td className="py-2 px-2 text-xs font-mono">{conta.agencia}</td>
-                                          <td className="py-2 px-2 text-xs font-mono">{conta.conta}</td>
-                                          <td className="py-2 px-2 text-xs text-right font-mono">
-                                            {conta.saldo != null ? `R$ ${conta.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            )}
-
-                            {pddeData.destinacoes && pddeData.destinacoes.length > 0 && (
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                                  <Wallet className="w-3.5 h-3.5" />
-                                  Repasses e Destinações ({pddeData.ano})
-                                </p>
-                                <div className="overflow-x-auto">
-                                  <table className="w-full text-sm">
-                                    <thead>
-                                      <tr className="border-b border-border/30">
-                                        <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Destinação</th>
-                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Devido</th>
-                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Pago</th>
-                                        <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs hidden md:table-cell">Data Pgto</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {pddeData.destinacoes.map((dest, idx) => (
-                                        <tr key={idx} className="border-b border-border/10">
-                                          <td className="py-2 px-2 text-xs font-medium">{dest.destinacao}</td>
-                                          <td className="py-2 px-2 text-xs text-right font-mono">
-                                            {dest.devido_total != null ? `R$ ${dest.devido_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
-                                          </td>
-                                          <td className="py-2 px-2 text-xs text-right font-mono">
-                                            {dest.pago_total != null ? `R$ ${dest.pago_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
-                                          </td>
-                                          <td className="py-2 px-2 text-xs text-right hidden md:table-cell">{dest.data_ordem_pgto || '-'}</td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            )}
-
-                            {pddeData.situacao_uex && (
-                              <div className="space-y-3">
-                                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                                  Situação da UEx
-                                </p>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                  <InfoItem label="Mandato Início" value={pddeData.situacao_uex.mandato_inicio} />
-                                  <InfoItem label="Mandato Fim" value={pddeData.situacao_uex.mandato_fim} />
-                                  <InfoItem label="Dados Cadastrais" value={pddeData.situacao_uex.dados_cadastrais} />
-                                  <InfoItem label="Prestação de Contas" value={pddeData.situacao_uex.prestacao_contas} />
-                                </div>
-                                {pddeData.situacao_uex.programas_pendentes && pddeData.situacao_uex.programas_pendentes.length > 0 && (
-                                  <div className="mt-2">
-                                    <p className="text-[10px] font-semibold text-red-600 uppercase tracking-wide flex items-center gap-1 mb-1">
-                                      <AlertTriangle className="w-3 h-3" />
-                                      Prestação de Contas Pendente
-                                    </p>
-                                    <div className="flex flex-wrap gap-1.5">
-                                      {pddeData.situacao_uex.programas_pendentes.map((p, i) => (
-                                        <span key={i} className="text-[10px] bg-red-50 border border-red-200 text-red-700 rounded px-2 py-0.5 font-medium">
-                                          {p.ano_exercicio} — {p.programa}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {pddeCnpj && (
-                              <div className="space-y-3">
-                                {/* Header + Seletor Mês/Ano */}
-                                <div className="flex flex-wrap items-center justify-between gap-3">
-                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                                    <BanknoteIcon className="w-3.5 h-3.5" />
-                                    Saldo das Contas UEx (PDDEInfo)
-                                  </p>
-                                  <div className="flex items-center gap-1.5">
-                                    <select
-                                      value={saldoMesSel.split("-")[0]}
-                                      onChange={e => setSaldoMesSel(`${e.target.value}-${saldoMesSel.split("-")[1]}`)}
-                                      className="text-xs border border-border/50 rounded-md px-2 py-1 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-                                    >
-                                      {[
-                                        ["01","Janeiro"],["02","Fevereiro"],["03","Março"],["04","Abril"],
-                                        ["05","Maio"],["06","Junho"],["07","Julho"],["08","Agosto"],
-                                        ["09","Setembro"],["10","Outubro"],["11","Novembro"],["12","Dezembro"]
-                                      ].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                                    </select>
-                                    <select
-                                      value={saldoMesSel.split("-")[1]}
-                                      onChange={e => setSaldoMesSel(`${saldoMesSel.split("-")[0]}-${e.target.value}`)}
-                                      className="text-xs border border-border/50 rounded-md px-2 py-1 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-                                    >
-                                      {Array.from({ length: new Date().getFullYear() - 2020 + 1 }, (_, i) => String(2020 + i))
-                                        .reverse()
-                                        .map(y => <option key={y} value={y}>{y}</option>)}
-                                    </select>
-                                  </div>
-                                </div>
-
-                                {/* Loading */}
-                                {pddeUexSaldoLoading && (
-                                  <div className="flex items-center gap-2 py-3 text-xs text-muted-foreground">
-                                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-primary" />
-                                    Consultando saldos no PDDEInfo...
-                                  </div>
-                                )}
-
-                                {/* Sem dados */}
-                                {!pddeUexSaldoLoading && pddeUexSaldoData && !pddeUexSaldoData.ok && (
-                                  <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2 flex items-center gap-2">
-                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                                    {pddeUexSaldoData.error || "Nenhum saldo encontrado para o mês selecionado."}
-                                  </div>
-                                )}
-
-                                {/* Dados disponíveis */}
-                                {!pddeUexSaldoLoading && pddeUexSaldoData?.ok && pddeUexSaldoData.saldos.length > 0 && (() => {
-                                  const saldos = pddeUexSaldoData.saldos;
-                                  const totalConta = saldos.reduce((s, r) => s + (r.saldo_conta || 0), 0);
-                                  const totalFundos = pddeUexSaldoData.total_saldo_fundos;
-                                  const totalPoup = saldos.reduce((s, r) => s + (r.saldo_poupanca || 0), 0);
-                                  const totalRdb = saldos.reduce((s, r) => s + (r.saldo_rdb_cdb || 0), 0);
-                                  const totalGeral = pddeUexSaldoData.total_saldo_geral;
-                                  const brl = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-
-                                  return (
-                                    <div className="space-y-3">
-                                      {/* Badge mês consultado */}
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 rounded-full px-2.5 py-0.5 font-semibold uppercase tracking-wide">
-                                          Competência: {pddeUexSaldoData.mes.replace("-", "/")}
-                                        </span>
-                                        <span className="text-[10px] text-muted-foreground">{saldos.length} conta{saldos.length !== 1 ? "s" : ""} encontrada{saldos.length !== 1 ? "s" : ""}</span>
-                                      </div>
-
-                                      {/* Cards de resumo */}
-                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                        {[
-                                          { label: "Saldo em Conta", value: totalConta, color: "text-blue-700", bg: "bg-blue-50/60 border-blue-100" },
-                                          { label: "Saldo em Fundos", value: totalFundos, color: "text-green-700", bg: "bg-green-50/60 border-green-100" },
-                                          { label: "Poupança", value: totalPoup, color: "text-amber-700", bg: "bg-amber-50/60 border-amber-100" },
-                                          { label: "RDB/CDB", value: totalRdb, color: "text-purple-700", bg: "bg-purple-50/60 border-purple-100" },
-                                        ].map(card => (
-                                          <div key={card.label} className={`rounded-lg border px-3 py-2 ${card.bg}`}>
-                                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mb-0.5">{card.label}</p>
-                                            <p className={`text-sm font-bold font-mono ${card.color}`}>R$ {brl(card.value)}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-
-                                      {/* Tabela detalhada */}
-                                      <div className="overflow-x-auto rounded-lg border border-border/30">
-                                        <table className="w-full text-xs">
-                                          <thead>
-                                            <tr className="bg-muted/40 border-b border-border/30">
-                                              <th className="text-left py-2 px-3 font-semibold text-muted-foreground">Programa</th>
-                                              <th className="text-left py-2 px-3 font-semibold text-muted-foreground">Banco</th>
-                                              <th className="text-left py-2 px-3 font-semibold text-muted-foreground">Agência</th>
-                                              <th className="text-left py-2 px-3 font-semibold text-muted-foreground font-mono">Conta</th>
-                                              <th className="text-right py-2 px-3 font-semibold text-muted-foreground">Saldo Conta</th>
-                                              <th className="text-right py-2 px-3 font-semibold text-green-700">Saldo Fundos</th>
-                                              <th className="text-right py-2 px-3 font-semibold text-muted-foreground">Poupança</th>
-                                              <th className="text-right py-2 px-3 font-semibold text-muted-foreground">RDB/CDB</th>
-                                              <th className="text-right py-2 px-3 font-semibold text-muted-foreground">Total Linha</th>
-                                            </tr>
-                                          </thead>
-                                          <tbody>
-                                            {saldos.map((s, i) => (
-                                              <tr key={i} className={`border-b border-border/10 hover:bg-muted/20 transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}>
-                                                <td className="py-2 px-3 font-semibold">
-                                                  <span className="inline-flex items-center gap-1">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 flex-shrink-0" />
-                                                    {s.programa || '-'}
-                                                  </span>
-                                                </td>
-                                                <td className="py-2 px-3 text-muted-foreground">{s.banco || '-'}</td>
-                                                <td className="py-2 px-3 font-mono text-muted-foreground">{s.agencia || '-'}</td>
-                                                <td className="py-2 px-3 font-mono">{s.conta || '-'}</td>
-                                                <td className="py-2 px-3 text-right font-mono text-blue-700">
-                                                  {(s.saldo_conta ?? 0) > 0 ? `R$ ${brl(s.saldo_conta!)}` : <span className="text-muted-foreground/50">—</span>}
-                                                </td>
-                                                <td className="py-2 px-3 text-right font-mono font-semibold text-green-700">
-                                                  {(s.saldo_fundos ?? 0) > 0 ? `R$ ${brl(s.saldo_fundos!)}` : <span className="text-muted-foreground/50">—</span>}
-                                                </td>
-                                                <td className="py-2 px-3 text-right font-mono text-amber-700">
-                                                  {(s.saldo_poupanca ?? 0) > 0 ? `R$ ${brl(s.saldo_poupanca!)}` : <span className="text-muted-foreground/50">—</span>}
-                                                </td>
-                                                <td className="py-2 px-3 text-right font-mono text-purple-700">
-                                                  {(s.saldo_rdb_cdb ?? 0) > 0 ? `R$ ${brl(s.saldo_rdb_cdb!)}` : <span className="text-muted-foreground/50">—</span>}
-                                                </td>
-                                                <td className="py-2 px-3 text-right font-mono font-semibold">
-                                                  {s.saldo_total != null && s.saldo_total > 0 ? `R$ ${brl(s.saldo_total)}` : <span className="text-muted-foreground/50">—</span>}
-                                                </td>
-                                              </tr>
-                                            ))}
-                                          </tbody>
-                                          <tfoot>
-                                            <tr className="bg-muted/30 border-t-2 border-border/40 font-bold">
-                                              <td colSpan={4} className="py-2.5 px-3 text-xs text-right text-muted-foreground uppercase tracking-wide">Totais</td>
-                                              <td className="py-2.5 px-3 text-right font-mono text-blue-700 text-xs">R$ {brl(totalConta)}</td>
-                                              <td className="py-2.5 px-3 text-right font-mono text-green-700 text-xs">R$ {brl(totalFundos)}</td>
-                                              <td className="py-2.5 px-3 text-right font-mono text-amber-700 text-xs">R$ {brl(totalPoup)}</td>
-                                              <td className="py-2.5 px-3 text-right font-mono text-purple-700 text-xs">R$ {brl(totalRdb)}</td>
-                                              <td className="py-2.5 px-3 text-right font-mono text-xs">R$ {brl(totalGeral)}</td>
-                                            </tr>
-                                          </tfoot>
-                                        </table>
-                                      </div>
-
-                                      {/* Rodapé informativo */}
-                                      <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
-                                        <ExternalLink className="w-3 h-3" />
-                                        Fonte: PDDEInfo/FNDE — Consulta Saldo de Entidade · {saldos[0]?.uf} · {saldos[0]?.municipio}
-                                      </p>
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50/50 border border-amber-200/50">
-                            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium text-amber-800">PDDE Info indisponível</p>
-                              <p className="text-xs text-amber-600 mt-1">
-                                {pddeData.error || "O portal do FNDE pode estar temporariamente indisponível. Tente novamente mais tarde."}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    )}
-
-                    {cadastralLoading && selectedInep && (
-                      <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
-                        <div className="animate-spin rounded-full h-3 w-3 border-b border-primary" />
-                        Consultando situação cadastral...
-                      </div>
-                    )}
-
-                    {cadastralData && !cadastralLoading && cadastralData.ok && cadastralData.itens.length > 0 && (() => {
-                      const sc = cadastralData.itens[0];
-                      const mandatoVencendo = sc.mandato_dirigente?.toLowerCase().includes("vencer") || sc.mandato_dirigente?.toLowerCase().includes("vencido");
-                      const mandatoCor = sc.mandato_dirigente?.toLowerCase().includes("vencido")
-                        ? "text-red-700 bg-red-50 border-red-200"
-                        : mandatoVencendo
-                        ? "text-amber-700 bg-amber-50 border-amber-200"
-                        : "text-green-700 bg-green-50 border-green-200";
-                      const telefone = sc.ddd && sc.telefone ? `(${sc.ddd}) ${sc.telefone}` : sc.telefone || null;
-                      return (
-                        <div className="space-y-3">
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                            <Building2 className="w-3.5 h-3.5" />
-                            Situação Cadastral no FNDE ({sc.ano})
-                          </p>
-
-                          {sc.mandato_dirigente && (
-                            <div className={`inline-flex items-center gap-1.5 text-[11px] font-semibold border rounded-full px-3 py-1 ${mandatoCor}`}>
-                              <Clock className="w-3 h-3" />
-                              Mandato do Dirigente: {sc.mandato_dirigente}
-                              {sc.data_fim_mandato && ` — vence em ${sc.data_fim_mandato}`}
-                            </div>
-                          )}
-
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <InfoItem label="Razão Social UEx" value={sc.razao_social} />
-                            <InfoItem label="CNPJ UEx" value={sc.cnpj_uex} />
-                            <InfoItem label="Rede de Atendimento" value={sc.rede_atendimento} />
-                            <InfoItem label="Localização" value={sc.localizacao} />
-                            <InfoItem label="Telefone" value={telefone} />
-                            <InfoItem
-                              label="Última Atualização Cadastral"
-                              value={sc.data_atualizacao && sc.hora_atualizacao
-                                ? `${sc.data_atualizacao} às ${sc.hora_atualizacao}`
-                                : sc.data_atualizacao || null}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* ── Prestação de Contas ──────────────────────────── */}
-                    {prestacaoContaLoading && selectedInep && (
-                      <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
-                        <div className="animate-spin rounded-full h-3 w-3 border-b border-primary" />
-                        Consultando situação de prestação de contas...
-                      </div>
-                    )}
-
-                    {prestacaoContaData && !prestacaoContaLoading && prestacaoContaData.ok && prestacaoContaData.itens.length > 0 && (() => {
-                      const brl = (v: string | null) => v || '-';
-                      const adimplentes = prestacaoContaData.itens.filter(i => i.situacao_pc_uex?.toLowerCase().includes("adimpl"));
-                      const inadimplentes = prestacaoContaData.itens.filter(i => i.situacao_pc_uex?.toLowerCase().includes("inadimpl"));
-                      const suspensos = prestacaoContaData.itens.filter(i => i.suspensao_uex?.toUpperCase() === "SIM");
-                      const ano = prestacaoContaData.itens[0]?.ano || String(pddeAno);
-                      return (
-                        <div className="space-y-3">
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                            <FileText className="w-3.5 h-3.5" />
-                            Situação de Prestação de Contas ({ano})
-                          </p>
-
-                          {/* Status badges summary */}
-                          <div className="flex flex-wrap gap-2">
-                            {inadimplentes.length > 0 ? (
-                              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold border rounded-full px-3 py-1 text-red-700 bg-red-50 border-red-200">
-                                <AlertTriangle className="w-3 h-3" />
-                                {inadimplentes.length} programa{inadimplentes.length > 1 ? "s" : ""} Inadimplente{inadimplentes.length > 1 ? "s" : ""}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold border rounded-full px-3 py-1 text-green-700 bg-green-50 border-green-200">
-                                <CheckCircle className="w-3 h-3" />
-                                {adimplentes.length} programa{adimplentes.length > 1 ? "s" : ""} Adimplente{adimplentes.length > 1 ? "s" : ""}
-                              </span>
-                            )}
-                            {suspensos.length > 0 && (
-                              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold border rounded-full px-3 py-1 text-orange-700 bg-orange-50 border-orange-200">
-                                <AlertTriangle className="w-3 h-3" />
-                                {suspensos.length} com Suspensão de Pagamento
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-xs">
-                              <thead>
-                                <tr className="border-b border-border/30">
-                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium">Programa</th>
-                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium">Sit. PC UEx</th>
-                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden md:table-cell">Sit. PC EEx</th>
-                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium">Suspensão</th>
-                                  <th className="text-right py-2 px-2 text-muted-foreground font-medium hidden sm:table-cell">Valor Previsto</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {prestacaoContaData.itens.map((item, idx) => {
-                                  const inadimpl = item.situacao_pc_uex?.toLowerCase().includes("inadimpl");
-                                  const adimpl = item.situacao_pc_uex?.toLowerCase().includes("adimpl");
-                                  const susp = item.suspensao_uex?.toUpperCase() === "SIM";
-                                  return (
-                                    <tr key={idx} className="border-b border-border/10 hover:bg-muted/20">
-                                      <td className="py-2 px-2 font-medium">{item.programa || '-'}</td>
-                                      <td className="py-2 px-2">
-                                        <span className={`inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 border ${
-                                          inadimpl ? "bg-red-50 text-red-700 border-red-200" :
-                                          adimpl ? "bg-green-50 text-green-700 border-green-200" :
-                                          "bg-muted text-muted-foreground border-border/30"
-                                        }`}>
-                                          {inadimpl && <AlertTriangle className="w-2.5 h-2.5" />}
-                                          {adimpl && <CheckCircle className="w-2.5 h-2.5" />}
-                                          {item.situacao_pc_uex || '-'}
-                                        </span>
-                                      </td>
-                                      <td className="py-2 px-2 hidden md:table-cell text-muted-foreground">{item.situacao_pc_eex || '-'}</td>
-                                      <td className="py-2 px-2">
-                                        {susp ? (
-                                          <span className="text-[10px] font-semibold text-orange-700 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5">Sim</span>
-                                        ) : (
-                                          <span className="text-[10px] text-muted-foreground">Não</span>
-                                        )}
-                                      </td>
-                                      <td className="py-2 px-2 text-right hidden sm:table-cell text-muted-foreground font-mono">
-                                        {item.valor_previsto || '-'}
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* ── Situação de Atendimento (Repasses) ───────────── */}
-                    {atendimentoLoading && selectedInep && (
-                      <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
-                        <div className="animate-spin rounded-full h-3 w-3 border-b border-primary" />
-                        Consultando repasses e valores de atendimento...
-                      </div>
-                    )}
-
-                    {atendimentoData && !atendimentoLoading && atendimentoData.ok && atendimentoData.itens.length > 0 && (() => {
-                      const ano = atendimentoData.itens[0]?.ano || String(pddeAno);
-                      const brl = (v: number | null) => v != null ? `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-';
-                      const totalGeral = atendimentoData.itens.reduce((s, i) => s + (i.valor_total || 0), 0);
-                      return (
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                              <BanknoteIcon className="w-3.5 h-3.5" />
-                              Repasses por Programa ({ano})
-                            </p>
-                            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-0.5">
-                              Total: {brl(totalGeral)}
-                            </span>
-                          </div>
-
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-xs">
-                              <thead>
-                                <tr className="border-b border-border/30">
-                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium">Programa</th>
-                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden sm:table-cell">Destinação</th>
-                                  <th className="text-right py-2 px-2 text-muted-foreground font-medium">Custeio</th>
-                                  <th className="text-right py-2 px-2 text-muted-foreground font-medium">Capital</th>
-                                  <th className="text-right py-2 px-2 text-muted-foreground font-medium font-semibold">Total</th>
-                                  <th className="text-left py-2 px-2 text-muted-foreground font-medium hidden md:table-cell">Data Pgto</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {atendimentoData.itens.map((item, idx) => (
-                                  <tr key={idx} className="border-b border-border/10 hover:bg-muted/20">
-                                    <td className="py-2 px-2 font-medium">{item.programa || '-'}</td>
-                                    <td className="py-2 px-2 hidden sm:table-cell text-muted-foreground">{item.destinacao || '-'}</td>
-                                    <td className="py-2 px-2 text-right font-mono">{brl(item.valor_custeio)}</td>
-                                    <td className="py-2 px-2 text-right font-mono">{brl(item.valor_capital)}</td>
-                                    <td className={`py-2 px-2 text-right font-mono font-semibold ${item.valor_total && item.valor_total > 0 ? 'text-emerald-700' : ''}`}>
-                                      {brl(item.valor_total)}
-                                    </td>
-                                    <td className="py-2 px-2 hidden md:table-cell text-muted-foreground">{item.data_ordem_pgto || '-'}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                              <tfoot>
-                                <tr className="border-t border-border/40">
-                                  <td colSpan={4} className="py-2 px-2 text-xs font-semibold text-muted-foreground text-right hidden sm:table-cell">Total Geral:</td>
-                                  <td colSpan={4} className="py-2 px-2 text-xs font-semibold text-right sm:hidden">Total:</td>
-                                  <td className="py-2 px-2 text-right font-mono font-bold text-emerald-700">{brl(totalGeral)}</td>
-                                  <td className="hidden md:table-cell" />
-                                </tr>
-                              </tfoot>
-                            </table>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {pddeSaldosData && !pddeSaldosLoading && (
-                      <>
-                        {pddeSaldosData.ok && pddeSaldosData.saldos.length > 0 ? (
-                          <div className="space-y-4">
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                                <BanknoteIcon className="w-3.5 h-3.5" />
-                                Saldos PDDE Básico — Dados Abertos FNDE ({pddeSaldosData.anosDisponiveis.join(', ')})
-                              </p>
-                              {(() => {
-                                const saldosByYear = pddeSaldosData.saldos.reduce((acc: Record<number, typeof pddeSaldosData.saldos>, s) => {
-                                  if (!acc[s.an_exercicio]) acc[s.an_exercicio] = [];
-                                  acc[s.an_exercicio].push(s);
-                                  return acc;
-                                }, {});
-                                const sortedYears = Object.keys(saldosByYear).map(Number).sort((a, b) => b - a);
-
-                                const chartData = sortedYears.map(year => {
-                                  const yearSaldos = saldosByYear[year];
-                                  const total = yearSaldos.reduce((sum, s) => sum + s.saldo_acumulado, 0);
-                                  return { ano: String(year), saldo: total };
-                                }).reverse();
-
-                                return (
-                                  <div className="space-y-4">
-                                    {chartData.length > 1 && (
-                                      <div className="h-48">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                          <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                            <XAxis dataKey="ano" tick={{ fontSize: 11 }} />
-                                            <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `R$ ${(v / 1000).toFixed(0)}k`} />
-                                            <Tooltip
-                                              formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Saldo']}
-                                              labelFormatter={(label: string) => `Exercício ${label}`}
-                                            />
-                                            <Bar dataKey="saldo" fill="#2d6a4f" radius={[4, 4, 0, 0]} />
-                                          </BarChart>
-                                        </ResponsiveContainer>
-                                      </div>
-                                    )}
-
-                                    <div className="overflow-x-auto">
-                                      <table className="w-full text-sm">
-                                        <thead>
-                                          <tr className="border-b border-border/30">
-                                            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Exercício</th>
-                                            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Banco</th>
-                                            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Agência</th>
-                                            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Conta</th>
-                                            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Saldo Acumulado</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {sortedYears.map(year =>
-                                            saldosByYear[year].map((s, idx) => (
-                                              <tr key={`${year}-${idx}`} className="border-b border-border/10">
-                                                <td className="py-2 px-2 text-xs font-medium">{s.an_exercicio}</td>
-                                                <td className="py-2 px-2 text-xs">{s.banco || '-'}</td>
-                                                <td className="py-2 px-2 text-xs font-mono">{s.agencia || '-'}</td>
-                                                <td className="py-2 px-2 text-xs font-mono">{s.conta || '-'}</td>
-                                                <td className={`py-2 px-2 text-xs text-right font-mono ${s.saldo_acumulado > 0 ? 'text-emerald-700 font-semibold' : s.saldo_acumulado < 0 ? 'text-red-600 font-semibold' : ''}`}>
-                                                  R$ {s.saldo_acumulado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                </td>
-                                              </tr>
-                                            ))
-                                          )}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                          </div>
-                        ) : pddeSaldosData.ok === false ? (
-                          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50/50 border border-amber-200/50">
-                            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium text-amber-800">Saldos PDDE indisponíveis</p>
-                              <p className="text-xs text-amber-600 mt-1">
-                                {pddeSaldosData.error || "A API de dados abertos do FNDE está temporariamente indisponível."}
-                              </p>
-                            </div>
-                          </div>
-                        ) : null}
-                      </>
-                    )}
-
-                    {pddeSaldosError && (
-                      <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50/50 border border-amber-200/50">
-                        <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium text-amber-800">Erro ao consultar saldos PDDE</p>
-                          <p className="text-xs text-amber-600 mt-1">
-                            Não foi possível conectar à API de dados abertos do FNDE. Tente novamente mais tarde.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {pddeExecFinData && !pddeExecFinLoading && (
-                      <>
-                        {pddeExecFinData.ok && pddeExecFinData.repasses.length > 0 ? (
-                          <div className="space-y-4">
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                                <Wallet className="w-3.5 h-3.5" />
-                                Repasses PDDE — Execução Financeira ({pddeExecFinData.anosDisponiveis.join(', ')})
-                              </p>
-                              {(() => {
-                                const byYear = pddeExecFinData.repasses.reduce((acc: Record<number, { custeio: number; capital: number; total: number }>, r) => {
-                                  if (!acc[r.an_exercicio]) acc[r.an_exercicio] = { custeio: 0, capital: 0, total: 0 };
-                                  acc[r.an_exercicio].custeio += r.vl_pago_custeio;
-                                  acc[r.an_exercicio].capital += r.vl_pago_capital;
-                                  acc[r.an_exercicio].total += r.vl_pago_total;
-                                  return acc;
-                                }, {});
-                                const sortedYears = Object.keys(byYear).map(Number).sort();
-
-                                const chartData = sortedYears.map(year => ({
-                                  ano: String(year),
-                                  Custeio: byYear[year].custeio,
-                                  Capital: byYear[year].capital,
-                                }));
-
-                                return (
-                                  <div className="space-y-4">
-                                    {chartData.length > 1 && (
-                                      <div className="h-48">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                          <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                            <XAxis dataKey="ano" tick={{ fontSize: 11 }} />
-                                            <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `R$ ${(v / 1000).toFixed(0)}k`} />
-                                            <Tooltip
-                                              formatter={(value: number, name: string) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, name]}
-                                              labelFormatter={(label: string) => `Exercício ${label}`}
-                                            />
-                                            <Legend wrapperStyle={{ fontSize: 11 }} />
-                                            <Bar dataKey="Custeio" fill="#2d6a4f" radius={[4, 4, 0, 0]} stackId="a" />
-                                            <Bar dataKey="Capital" fill="#95d5b2" radius={[4, 4, 0, 0]} stackId="a" />
-                                          </BarChart>
-                                        </ResponsiveContainer>
-                                      </div>
-                                    )}
-
-                                    <div className="overflow-x-auto">
-                                      <table className="w-full text-sm">
-                                        <thead>
-                                          <tr className="border-b border-border/30">
-                                            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Ano</th>
-                                            <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Destinação</th>
-                                            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Custeio</th>
-                                            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Capital</th>
-                                            <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Total Pago</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {[...sortedYears].reverse().map(year =>
-                                            pddeExecFinData.repasses
-                                              .filter(r => r.an_exercicio === year)
-                                              .map((r, idx) => (
-                                                <tr key={`${year}-${idx}`} className="border-b border-border/10">
-                                                  <td className="py-2 px-2 text-xs font-medium">{r.an_exercicio}</td>
-                                                  <td className="py-2 px-2 text-xs">{r.sg_destinacao}</td>
-                                                  <td className="py-2 px-2 text-xs text-right font-mono">
-                                                    R$ {r.vl_pago_custeio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                  </td>
-                                                  <td className="py-2 px-2 text-xs text-right font-mono">
-                                                    R$ {r.vl_pago_capital.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                  </td>
-                                                  <td className={`py-2 px-2 text-xs text-right font-mono font-semibold ${r.vl_pago_total > 0 ? 'text-emerald-700' : ''}`}>
-                                                    R$ {r.vl_pago_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                  </td>
-                                                </tr>
-                                              ))
-                                          )}
-                                          <tr className="border-t-2 border-border/40 bg-muted/30">
-                                            <td className="py-2 px-2 text-xs font-bold" colSpan={2}>Total Geral</td>
-                                            <td className="py-2 px-2 text-xs text-right font-mono font-bold">
-                                              R$ {pddeExecFinData.repasses.reduce((s, r) => s + r.vl_pago_custeio, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                            </td>
-                                            <td className="py-2 px-2 text-xs text-right font-mono font-bold">
-                                              R$ {pddeExecFinData.repasses.reduce((s, r) => s + r.vl_pago_capital, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                            </td>
-                                            <td className="py-2 px-2 text-xs text-right font-mono font-bold text-emerald-700">
-                                              R$ {pddeExecFinData.repasses.reduce((s, r) => s + r.vl_pago_total, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                            </td>
-                                          </tr>
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                          </div>
-                        ) : pddeExecFinData.ok === false ? (
-                          <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50/50 border border-amber-200/50">
-                            <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <p className="text-xs font-medium text-amber-800">Execução financeira indisponível</p>
-                              <p className="text-[10px] text-amber-600 mt-0.5">
-                                {pddeExecFinData.error || "A API de execução financeira do FNDE está temporariamente indisponível."}
-                              </p>
-                            </div>
-                          </div>
-                        ) : pddeExecFinData.ok && pddeExecFinData.repasses.length === 0 ? (
-                          <p className="text-xs text-muted-foreground py-2">
-                            Sem registros de repasses PDDE para esta escola nos anos consultados (2020-2026).
-                          </p>
-                        ) : null}
-                      </>
-                    )}
-
-                    {pddeExecFinError && (
-                      <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50/50 border border-amber-200/50">
-                        <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-xs font-medium text-amber-800">Erro ao consultar execução financeira</p>
-                          <p className="text-[10px] text-amber-600 mt-0.5">
-                            Não foi possível conectar à API de dados abertos do FNDE. Tente novamente mais tarde.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-
-                    {!pddeLoading && !pddeSaldosLoading && !pddeExecFinLoading && (!pddeData || (!pddeData.ok && !pddeData.error)) && (!pddeSaldosData || !pddeSaldosData.ok) && (!pddeExecFinData || !pddeExecFinData.ok) && (
-                      <div className="text-center py-4">
-                        <p className="text-sm text-muted-foreground">
-                          Dados financeiros não disponíveis para esta escola no momento.
+                      <div className="auto-text-card" style={{marginTop:'14px',fontSize:'14px',color:'#3d4d5a',lineHeight:1.6}}>
+                        <strong className="scribble" style={{fontSize:'16px',color:'#4f4126'}}>Diretora, aqui está o raio-x completo desta escola!</strong>
+                        <p style={{margin:'6px 0 0'}}>
+                          Dados do Censo Escolar <strong>{latestAno}</strong> — {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}.
+                          Com <strong>{censoLatest.qt_mat_bas?.toLocaleString('pt-BR') || '—'}</strong> matrículas e <strong>{(censoLatest.qt_doc_bas || censoLatest.qt_docentes)?.toLocaleString('pt-BR') || '—'}</strong> docentes.
                         </p>
+                        {total > 0 && (
+                          <p style={{margin:'6px 0 0',color:'#9b6a16'}}>Há <strong>{total} ponto{total !== 1 ? 's' : ''} de atenção</strong>, sendo {criticals.length} crític{criticals.length !== 1 ? 'os' : 'o'}.</p>
+                        )}
                       </div>
-                    )}
-
-                    <div className="pt-2 border-t border-border/20">
-                      <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
-                        Dados obtidos do PDDE Info e Dados Abertos do FNDE (2020-2026). Podem apresentar atraso ou indisponibilidade temporária.
-                        Para dados oficiais, acesse{' '}
-                        <a href="https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar" target="_blank" rel="noopener noreferrer" className="underline hover:text-accent">
-                          PDDE Info
-                        </a>{' '}ou{' '}
-                        <a href="https://dados.gov.br/dados/conjuntos-dados/programa-dinheiro-direto-na-escola-pdde" target="_blank" rel="noopener noreferrer" className="underline hover:text-accent">
-                          Dados Abertos PDDE
-                        </a>.
-                      </p>
+                      <div className="snapshot-grid" style={{marginTop:'14px'}}>
+                        {[
+                          { label: 'Matrículas', val: censoLatest.qt_mat_bas, icon: '👩‍🎓' },
+                          { label: 'Docentes', val: censoLatest.qt_doc_bas || censoLatest.qt_docentes, icon: '🧑‍🏫' },
+                          { label: 'Turmas', val: censoLatest.qt_tur_bas || censoLatest.qt_turmas, icon: '🏫' },
+                          { label: 'Salas', val: censoLatest.qt_salas_utilizadas, icon: '🚪' },
+                        ].map((s, i) => (
+                          <div key={i} className="mini-card">
+                            <span style={{fontSize:'18px'}}>{s.icon}</span>
+                            <strong style={{fontSize:'22px',lineHeight:1,display:'block',marginTop:'4px'}}>{s.val != null ? s.val.toLocaleString('pt-BR') : '—'}</strong>
+                            <label style={{fontSize:'11px',color:'var(--m-muted)',display:'block',marginTop:'4px'}}>{s.label}</label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </IndicatorSection>
+                </section>
 
-                <Card className="card-clay">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <ExternalLink className="w-4 h-4 text-accent" />
-                      Links Úteis
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {[
-                        { nome: 'PDDE Interativo', url: 'https://pddeinterativo.mec.gov.br' },
-                        { nome: 'Portal FNDE', url: 'https://www.fnde.gov.br' },
-                        { nome: 'Dados INEP', url: 'https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos' },
-                      ].map((link, i) => (
-                        <a
-                          key={i}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 p-3 rounded-lg bg-muted/20 hover:bg-accent/10 border border-transparent hover:border-accent/20 transition-all text-sm font-medium text-foreground"
+                {/* ── RAIO-X EDUCACIONAL ── */}
+                {Object.keys(indicadoresLatest).length > 0 && (
+                  <section className="section">
+                    <div className="section-title">
+                      <div><h2>Raio-X educacional</h2><p>Indicadores calculados com base no Censo Escolar e SAEB</p></div>
+                      <div className="hint-chip">Comparação com médias nacionais</div>
+                    </div>
+                    <div className="organic-divider" />
+                    <IndicatorPanel indicadores={indicadoresLatest} mediasNacionais={mediasNacionais} />
+                  </section>
+                )}
+
+                {/* ── GALERIA DE GRÁFICOS ── */}
+                {currentChart && available.length > 0 && (
+                  <section className="section">
+                    <div className="section-title">
+                      <div><h2>Galeria de gráficos</h2><p>Evolução dos indicadores ao longo dos anos</p></div>
+                      <div className="hint-chip">Clique na ficha para trocar</div>
+                    </div>
+                    <div className="organic-divider" />
+                    <div className="chart-wall">
+                      <div className="chart-menu">
+                        {available.map(c => (
+                          <button
+                            key={c.id}
+                            className={`chart-tab ${selectedChart === c.id ? 'active' : ''}`}
+                            onClick={() => setSelectedChart(c.id)}
+                          >
+                            <span className="chart-tab-icon">{c.icon}</span>
+                            <span className="chart-tab-label">{c.label}</span>
+                          </button>
+                        ))}
+                        <div className="chart-menu-note">
+                          💡 Selecione uma aba para ver a evolução anual do indicador.
+                        </div>
+                      </div>
+                      <div className="chart-stage">
+                        <div className="chart-board active soft-card" style={{padding:'20px'}}>
+                          <div className="chart-header">
+                            <div>
+                              <h4>{currentChart.icon} {currentChart.label}</h4>
+                              <p>{currentChart.desc}</p>
+                              <div className="chip-row">
+                                {evolucaoData.anos_disponiveis.slice().sort((a:number,b:number)=>a-b).map((a: number) => (
+                                  <span key={a} className="mini-chip">{a}</span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="big-stat">
+                              <strong>{currentChart.data[currentChart.data.length - 1]?.[currentChart.lines[0].key]?.toLocaleString('pt-BR') || '—'}</strong>
+                              <span>{latestAno}</span>
+                            </div>
+                          </div>
+                          <div style={{height:'260px'}}>
+                            <EvolutionChart data={currentChart.data} lines={currentChart.lines} large />
+                          </div>
+                          <div className="chart-note">
+                            📝 Dados do Censo Escolar INEP/MEC · código {selectedInep}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {/* ── RETRATO DA ESCOLA — TABS ── */}
+                <section className="section">
+                  <div className="section-title">
+                    <div><h2>Retrato da escola</h2><p>Dados detalhados do Censo Escolar {latestAno} por tema</p></div>
+                  </div>
+                  <div className="organic-divider" />
+                  <div className="soft-card" style={{padding:0,overflow:'hidden'}}>
+                    <div className="tab-head">
+                      <h3 style={{margin:'0 0 4px',fontSize:'18px',letterSpacing:'-0.03em'}}>Dados do Censo Escolar {latestAno}</h3>
+                      <p style={{margin:0,color:'var(--m-muted)',fontSize:'13px'}}>Navegue pelas abas para explorar diferentes dimensões</p>
+                    </div>
+                    <div className="tab-buttons-v6">
+                      {(['alunos', 'etapas', 'docentes', 'infra'] as const).map(tab => (
+                        <button
+                          key={tab}
+                          className={`tab-button ${activeSchoolTab === tab ? 'active' : ''}`}
+                          onClick={() => setActiveSchoolTab(tab)}
                         >
-                          <ExternalLink className="w-3.5 h-3.5 text-accent" />
-                          {link.nome}
-                        </a>
+                          {tab === 'alunos' ? '👩‍🎓 Alunos' : tab === 'etapas' ? '📚 Etapas' : tab === 'docentes' ? '🧑‍🏫 Docentes' : '🏫 Infraestrutura'}
+                        </button>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
+                    {activeSchoolTab === 'alunos' && (
+                      <div className="tab-panel-v6 active">
+                        <div className="two-col">
+                          <div className="space-y-3">
+                            <div className="list-card">
+                              <h4>Por Turno</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                <div className="row-item"><span>Diurno</span><strong>{censoLatest.qt_mat_bas_d ?? '—'}</strong></div>
+                                <div className="row-item"><span>Noturno</span><strong>{censoLatest.qt_mat_bas_n ?? '—'}</strong></div>
+                                <div className="row-item"><span>EAD</span><strong>{censoLatest.qt_mat_bas_ead ?? '—'}</strong></div>
+                              </div>
+                            </div>
+                            <div className="list-card">
+                              <h4>Por Sexo</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                <div className="row-item"><span>Feminino</span><strong>{censoLatest.qt_mat_bas_fem ?? '—'}</strong></div>
+                                <div className="row-item"><span>Masculino</span><strong>{censoLatest.qt_mat_bas_masc ?? '—'}</strong></div>
+                                <div className="row-item"><span>Não declarado</span><strong>{censoLatest.qt_mat_bas_nd ?? '—'}</strong></div>
+                              </div>
+                            </div>
+                            <div className="list-card">
+                              <h4>Por Cor/Raça</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                <div className="row-item"><span>Branca</span><strong>{censoLatest.qt_mat_bas_branca ?? '—'}</strong></div>
+                                <div className="row-item"><span>Preta</span><strong>{censoLatest.qt_mat_bas_preta ?? '—'}</strong></div>
+                                <div className="row-item"><span>Parda</span><strong>{censoLatest.qt_mat_bas_parda ?? '—'}</strong></div>
+                                <div className="row-item"><span>Amarela</span><strong>{censoLatest.qt_mat_bas_amarela ?? '—'}</strong></div>
+                                <div className="row-item"><span>Indígena</span><strong>{censoLatest.qt_mat_bas_indigena ?? '—'}</strong></div>
+                              </div>
+                            </div>
+                            <div className="list-card">
+                              <h4>Transporte &amp; Zona</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                <div className="row-item"><span>Zona Urbana</span><strong>{censoLatest.qt_mat_zr_urb ?? '—'}</strong></div>
+                                <div className="row-item"><span>Zona Rural</span><strong>{censoLatest.qt_mat_zr_rur ?? '—'}</strong></div>
+                                <div className="row-item"><span>Transporte Público</span><strong>{censoLatest.qt_transp_publico ?? '—'}</strong></div>
+                                <div className="row-item"><span>Resp. Estadual</span><strong>{censoLatest.qt_transp_resp_est ?? '—'}</strong></div>
+                                <div className="row-item"><span>Resp. Municipal</span><strong>{censoLatest.qt_transp_resp_mun ?? '—'}</strong></div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="mini-grid-3">
+                              {[
+                                { label: '0 a 3 anos', val: censoLatest.qt_mat_bas_0_3, icon: '🍼' },
+                                { label: '4 a 5 anos', val: censoLatest.qt_mat_bas_4_5, icon: '🧸' },
+                                { label: '6 a 10 anos', val: censoLatest.qt_mat_bas_6_10, icon: '📏' },
+                                { label: '11 a 14 anos', val: censoLatest.qt_mat_bas_11_14, icon: '📐' },
+                                { label: '15 a 17 anos', val: censoLatest.qt_mat_bas_15_17, icon: '📘' },
+                                { label: '18+ anos', val: censoLatest.qt_mat_bas_18_mais, icon: '🎓' },
+                              ].map((f, i) => (
+                                <div key={i} className="fact">
+                                  <label>{f.icon} {f.label}</label>
+                                  <strong>{f.val != null ? f.val.toLocaleString('pt-BR') : '—'}</strong>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="list-card">
+                              <h4>Educação Especial</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                <div className="row-item"><span>Total Matrículas</span><strong>{censoLatest.qt_mat_esp ?? '—'}</strong></div>
+                                <div className="row-item"><span>Classes Comuns</span><strong>{censoLatest.qt_mat_esp_cc ?? '—'}</strong></div>
+                                <div className="row-item"><span>Classes Exclusivas</span><strong>{censoLatest.qt_mat_esp_ce ?? '—'}</strong></div>
+                              </div>
+                            </div>
+                            <div className="list-card">
+                              <h4>Tempo integral</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                <div className="row-item"><span>Infantil Integral</span><strong>{censoLatest.qt_mat_inf_int ?? '—'}</strong></div>
+                                <div className="row-item"><span>Fund. AI Integral</span><strong>{censoLatest.qt_mat_fund_ai_int ?? '—'}</strong></div>
+                                <div className="row-item"><span>Fund. AF Integral</span><strong>{censoLatest.qt_mat_fund_af_int ?? '—'}</strong></div>
+                                <div className="row-item"><span>Médio Integral</span><strong>{censoLatest.qt_mat_med_int ?? '—'}</strong></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {activeSchoolTab === 'etapas' && (
+                      <div className="tab-panel-v6 active">
+                        <div className="two-col">
+                          <div className="space-y-3">
+                            <div className="list-card">
+                              <h4>Educação Infantil</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                <div className="row-item"><span>Creche</span><strong>{censoLatest.qt_mat_inf_cre ?? '—'}</strong></div>
+                                <div className="row-item"><span>Pré-escola</span><strong>{censoLatest.qt_mat_inf_pre ?? '—'}</strong></div>
+                                <div className="row-item"><span>Integral</span><strong>{censoLatest.qt_mat_inf_int ?? '—'}</strong></div>
+                              </div>
+                            </div>
+                            <div className="list-card">
+                              <h4>Ensino Fundamental</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                <div className="row-item"><span>Anos Iniciais</span><strong>{censoLatest.qt_mat_fund_ai ?? '—'}</strong></div>
+                                <div className="row-item"><span>1º ano</span><strong>{censoLatest.qt_mat_fund_ai_1 ?? '—'}</strong></div>
+                                <div className="row-item"><span>2º ano</span><strong>{censoLatest.qt_mat_fund_ai_2 ?? '—'}</strong></div>
+                                <div className="row-item"><span>3º ano</span><strong>{censoLatest.qt_mat_fund_ai_3 ?? '—'}</strong></div>
+                                <div className="row-item"><span>4º ano</span><strong>{censoLatest.qt_mat_fund_ai_4 ?? '—'}</strong></div>
+                                <div className="row-item"><span>5º ano</span><strong>{censoLatest.qt_mat_fund_ai_5 ?? '—'}</strong></div>
+                                <div className="row-item"><span>Anos Finais</span><strong>{censoLatest.qt_mat_fund_af ?? '—'}</strong></div>
+                                <div className="row-item"><span>6º ano</span><strong>{censoLatest.qt_mat_fund_af_6 ?? '—'}</strong></div>
+                                <div className="row-item"><span>7º ano</span><strong>{censoLatest.qt_mat_fund_af_7 ?? '—'}</strong></div>
+                                <div className="row-item"><span>8º ano</span><strong>{censoLatest.qt_mat_fund_af_8 ?? '—'}</strong></div>
+                                <div className="row-item"><span>9º ano</span><strong>{censoLatest.qt_mat_fund_af_9 ?? '—'}</strong></div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="list-card">
+                              <h4>Ensino Médio, EJA e Profissional</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                <div className="row-item"><span>Ensino Médio</span><strong>{censoLatest.qt_mat_med ?? '—'}</strong></div>
+                                <div className="row-item"><span>1ª série</span><strong>{censoLatest.qt_mat_med_prop_1 ?? '—'}</strong></div>
+                                <div className="row-item"><span>2ª série</span><strong>{censoLatest.qt_mat_med_prop_2 ?? '—'}</strong></div>
+                                <div className="row-item"><span>3ª série</span><strong>{censoLatest.qt_mat_med_prop_3 ?? '—'}</strong></div>
+                                <div className="row-item"><span>Médio Integral</span><strong>{censoLatest.qt_mat_med_int ?? '—'}</strong></div>
+                                <div className="row-item"><span>Ed. Profissional</span><strong>{censoLatest.qt_mat_prof ?? '—'}</strong></div>
+                                <div className="row-item"><span>EJA Fund.</span><strong>{censoLatest.qt_mat_eja_fund ?? '—'}</strong></div>
+                                <div className="row-item"><span>EJA Médio</span><strong>{censoLatest.qt_mat_eja_med ?? '—'}</strong></div>
+                              </div>
+                            </div>
+                            <div className="list-card">
+                              <h4>Etapas oferecidas</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                {[
+                                  ['Ed. Infantil', censoLatest.in_inf],
+                                  ['Creche', censoLatest.in_inf_cre],
+                                  ['Pré-escola', censoLatest.in_inf_pre],
+                                  ['Ensino Fund.', censoLatest.in_fund],
+                                  ['Fund. AI', censoLatest.in_fund_ai],
+                                  ['Fund. AF', censoLatest.in_fund_af],
+                                  ['Ensino Médio', censoLatest.in_med],
+                                  ['Ed. Profissional', censoLatest.in_prof],
+                                  ['EJA', censoLatest.in_eja],
+                                  ['Ed. Especial', censoLatest.in_esp],
+                                ].filter(([,v]) => v != null).map(([k, v], i) => (
+                                  <div key={i} className="row-item">
+                                    <span>{String(k)}</span>
+                                    <strong style={{color: v === 1 ? '#2f7a58' : '#b74f42'}}>{v === 1 ? '✅ Sim' : '✗ Não'}</strong>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {activeSchoolTab === 'docentes' && (
+                      <div className="tab-panel-v6 active">
+                        <div className="two-col">
+                          <div className="space-y-3">
+                            <div className="list-card">
+                              <h4>Docentes por nível</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                <div className="row-item"><span>Total</span><strong>{censoLatest.qt_doc_bas ?? '—'}</strong></div>
+                                <div className="row-item"><span>Ed. Infantil</span><strong>{censoLatest.qt_doc_inf ?? '—'}</strong></div>
+                                <div className="row-item"><span>Inf. Creche</span><strong>{censoLatest.qt_doc_inf_cre ?? '—'}</strong></div>
+                                <div className="row-item"><span>Inf. Pré</span><strong>{censoLatest.qt_doc_inf_pre ?? '—'}</strong></div>
+                                <div className="row-item"><span>Fundamental</span><strong>{censoLatest.qt_doc_fund ?? '—'}</strong></div>
+                                <div className="row-item"><span>Fund. AI</span><strong>{censoLatest.qt_doc_fund_ai ?? '—'}</strong></div>
+                                <div className="row-item"><span>Fund. AF</span><strong>{censoLatest.qt_doc_fund_af ?? '—'}</strong></div>
+                                <div className="row-item"><span>Ensino Médio</span><strong>{censoLatest.qt_doc_med ?? '—'}</strong></div>
+                                <div className="row-item"><span>Ed. Profissional</span><strong>{censoLatest.qt_doc_prof ?? '—'}</strong></div>
+                                <div className="row-item"><span>EJA</span><strong>{censoLatest.qt_doc_eja ?? '—'}</strong></div>
+                                <div className="row-item"><span>Ed. Especial</span><strong>{censoLatest.qt_doc_esp ?? '—'}</strong></div>
+                              </div>
+                            </div>
+                            <div className="list-card">
+                              <h4>Turmas por nível</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                <div className="row-item"><span>Total</span><strong>{censoLatest.qt_tur_bas ?? '—'}</strong></div>
+                                <div className="row-item"><span>Ed. Infantil</span><strong>{censoLatest.qt_tur_inf ?? '—'}</strong></div>
+                                <div className="row-item"><span>Fundamental</span><strong>{censoLatest.qt_tur_fund ?? '—'}</strong></div>
+                                <div className="row-item"><span>Fund. AI</span><strong>{censoLatest.qt_tur_fund_ai ?? '—'}</strong></div>
+                                <div className="row-item"><span>Fund. AF</span><strong>{censoLatest.qt_tur_fund_af ?? '—'}</strong></div>
+                                <div className="row-item"><span>Ensino Médio</span><strong>{censoLatest.qt_tur_med ?? '—'}</strong></div>
+                                <div className="row-item"><span>EJA</span><strong>{censoLatest.qt_tur_eja ?? '—'}</strong></div>
+                                <div className="row-item"><span>Diurnas</span><strong>{censoLatest.qt_tur_bas_d ?? '—'}</strong></div>
+                                <div className="row-item"><span>Noturnas</span><strong>{censoLatest.qt_tur_bas_n ?? '—'}</strong></div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="list-card">
+                              <h4>Profissionais não docentes</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                {[
+                                  ['Administrativos', censoLatest.qt_prof_administrativos],
+                                  ['Serviços Gerais', censoLatest.qt_prof_servicos_gerais],
+                                  ['Bibliotecários', censoLatest.qt_prof_bibliotecario],
+                                  ['Saúde', censoLatest.qt_prof_saude],
+                                  ['Coordenadores', censoLatest.qt_prof_coordenador],
+                                  ['Nutricionistas', censoLatest.qt_prof_nutricionista],
+                                  ['Psicólogos', censoLatest.qt_prof_psicologo],
+                                  ['Fonoaudiólogos', censoLatest.qt_prof_fonaudiologo],
+                                  ['Secretários', censoLatest.qt_prof_secretario],
+                                  ['Segurança', censoLatest.qt_prof_seguranca],
+                                  ['Monitores', censoLatest.qt_prof_monitores],
+                                  ['Gestão', censoLatest.qt_prof_gestao],
+                                  ['Assistentes Sociais', censoLatest.qt_prof_assist_social],
+                                  ['Trad. Libras', censoLatest.qt_prof_trad_libras],
+                                ].filter(([,v]) => v != null).map(([k, v], i) => (
+                                  <div key={i} className="row-item">
+                                    <span>{String(k)}</span>
+                                    <strong>{String(v)}</strong>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="list-card">
+                              <h4>Materiais pedagógicos</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                {[
+                                  ['Multimídia', censoLatest.in_material_ped_multimidia],
+                                  ['Infantil', censoLatest.in_material_ped_infantil],
+                                  ['Científico', censoLatest.in_material_ped_cientifico],
+                                  ['Musical', censoLatest.in_material_ped_musical],
+                                  ['Jogos', censoLatest.in_material_ped_jogos],
+                                  ['Artísticas', censoLatest.in_material_ped_artisticas],
+                                  ['Desportiva', censoLatest.in_material_ped_desportiva],
+                                  ['Ed. Especial', censoLatest.in_material_ped_edu_esp],
+                                ].filter(([,v]) => v != null).map(([k, v], i) => (
+                                  <div key={i} className="row-item">
+                                    <span>{String(k)}</span>
+                                    <strong style={{color:v===1?'#2f7a58':'#b74f42'}}>{v===1?'✅':'✗'}</strong>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {activeSchoolTab === 'infra' && (
+                      <div className="tab-panel-v6 active">
+                        <div className="two-col">
+                          <div className="space-y-3">
+                            <div className="list-card">
+                              <h4>Salas e Tecnologia</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                <div className="row-item"><span>Salas utilizadas</span><strong>{censoLatest.qt_salas_utilizadas ?? '—'}</strong></div>
+                                <div className="row-item"><span>Dentro</span><strong>{censoLatest.qt_salas_utilizadas_dentro ?? '—'}</strong></div>
+                                <div className="row-item"><span>Fora</span><strong>{censoLatest.qt_salas_utilizadas_fora ?? '—'}</strong></div>
+                                <div className="row-item"><span>Climatizadas</span><strong>{censoLatest.qt_salas_utiliza_climatizadas ?? '—'}</strong></div>
+                                <div className="row-item"><span>Acessíveis</span><strong>{censoLatest.qt_salas_utilizadas_acessiveis ?? '—'}</strong></div>
+                                <div className="row-item"><span>Desktops alunos</span><strong>{censoLatest.qt_desktop_aluno ?? '—'}</strong></div>
+                                <div className="row-item"><span>Notebooks alunos</span><strong>{censoLatest.qt_comp_portatil_aluno ?? '—'}</strong></div>
+                                <div className="row-item"><span>Tablets alunos</span><strong>{censoLatest.qt_tablet_aluno ?? '—'}</strong></div>
+                                <div className="row-item"><span>TVs</span><strong>{censoLatest.qt_equip_tv ?? '—'}</strong></div>
+                                <div className="row-item"><span>Projetores</span><strong>{censoLatest.qt_equip_multimidia ?? '—'}</strong></div>
+                                <div className="row-item"><span>Lousas digitais</span><strong>{censoLatest.qt_equip_lousa_digital ?? '—'}</strong></div>
+                              </div>
+                            </div>
+                            <div className="list-card">
+                              <h4>Água, Energia e Saneamento</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                {[
+                                  ['Água Potável', censoLatest.in_agua_potavel],
+                                  ['Rede Pública Água', censoLatest.in_agua_rede_publica],
+                                  ['Poço Artesiano', censoLatest.in_agua_poco_artesiano],
+                                  ['Esgoto Rede Pública', censoLatest.in_esgoto_rede_publica],
+                                  ['Fossa Séptica', censoLatest.in_esgoto_fossa_septica],
+                                  ['Energia Rede Pública', censoLatest.in_energia_rede_publica],
+                                  ['Energia Renovável', censoLatest.in_energia_renovavel],
+                                  ['Coleta de Lixo', censoLatest.in_lixo_servico_coleta],
+                                  ['Reciclagem', censoLatest.in_tratamento_lixo_reciclagem],
+                                ].filter(([,v]) => v != null).map(([k, v], i) => (
+                                  <div key={i} className="row-item">
+                                    <span>{String(k)}</span>
+                                    <strong style={{color:v===1?'#2f7a58':'#b74f42'}}>{v===1?'✅':'✗'}</strong>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="list-card">
+                              <h4>Dependências</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                {[
+                                  ['Biblioteca', censoLatest.in_biblioteca],
+                                  ['Sala de Leitura', censoLatest.in_biblioteca_sala_leitura],
+                                  ['Lab. Informática', censoLatest.in_laboratorio_informatica],
+                                  ['Lab. Ciências', censoLatest.in_laboratorio_ciencias],
+                                  ['Quadra Coberta', censoLatest.in_quadra_esportes_coberta],
+                                  ['Quadra Descoberta', censoLatest.in_quadra_esportes_descoberta],
+                                  ['Cozinha', censoLatest.in_cozinha],
+                                  ['Refeitório', censoLatest.in_refeitorio],
+                                  ['Pátio Coberto', censoLatest.in_patio_coberto],
+                                  ['Pátio Descoberto', censoLatest.in_patio_descoberto],
+                                  ['Parque Infantil', censoLatest.in_parque_infantil],
+                                  ['Auditório', censoLatest.in_auditorio],
+                                  ['Área Verde', censoLatest.in_area_verde],
+                                  ['Sala Diretoria', censoLatest.in_sala_diretoria],
+                                  ['Sala Professores', censoLatest.in_sala_professor],
+                                  ['Secretaria', censoLatest.in_secretaria],
+                                ].filter(([,v]) => v != null).map(([k, v], i) => (
+                                  <div key={i} className="row-item">
+                                    <span>{String(k)}</span>
+                                    <strong style={{color:v===1?'#2f7a58':'#b74f42'}}>{v===1?'✅':'✗'}</strong>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="list-card">
+                              <h4>Acessibilidade</h4>
+                              <div className="row-list" style={{padding:'10px 14px'}}>
+                                {[
+                                  ['Rampas', censoLatest.in_acessibilidade_rampas],
+                                  ['Corrimão', censoLatest.in_acessibilidade_corrimao],
+                                  ['Elevador', censoLatest.in_acessibilidade_elevador],
+                                  ['Pisos Táteis', censoLatest.in_acessibilidade_pisos_tateis],
+                                  ['Vão Livre', censoLatest.in_acessibilidade_vao_livre],
+                                  ['Sinal Sonoro', censoLatest.in_acessibilidade_sinal_sonoro],
+                                  ['Sinal Tátil', censoLatest.in_acessibilidade_sinal_tatil],
+                                  ['Sinal Visual', censoLatest.in_acessibilidade_sinal_visual],
+                                  ['Banheiro PNE', censoLatest.in_banheiro_pne],
+                                  ['Banheiro Ed. Infantil', censoLatest.in_banheiro_ei],
+                                ].filter(([,v]) => v != null).map(([k, v], i) => (
+                                  <div key={i} className="row-item">
+                                    <span>{String(k)}</span>
+                                    <strong style={{color:v===1?'#2f7a58':'#b74f42'}}>{v===1?'✅':'✗'}</strong>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                {/* ── DADOS FINANCEIROS PDDE ── */}
+                <section className="section">
+                  <div className="section-title">
+                    <div><h2>Dados financeiros PDDE</h2><p>Situação financeira e repasses do Programa Dinheiro Direto na Escola</p></div>
+                    <div className="hint-chip">Fonte: FNDE / PDDE Info</div>
+                  </div>
+                  <div className="organic-divider" />
+                  <div className="finance-layout">
+                    <div className="soft-card" style={{padding:0,overflow:'hidden'}}>
+                      <div className="financial-head">
+                        <h3 style={{margin:'0 0 4px',fontSize:'18px',letterSpacing:'-0.03em'}}>Situação PDDE</h3>
+                        <p style={{margin:'0 0 14px',color:'var(--m-muted)',fontSize:'13px'}}>Dados obtidos do PDDE Info — ano {pddeAno}</p>
+                      </div>
+                      <div style={{padding:'0 20px 20px'}}>
+                        {(pddeLoading || cadastralLoading || prestacaoContaLoading || atendimentoLoading) && (
+                          <div className="flex items-center gap-2 py-4">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span className="text-sm text-muted-foreground">Carregando dados do FNDE...</span>
+                          </div>
+                        )}
+                        {cadastralData?.ok && cadastralData.itens.length > 0 && (
+                          <div className="status-banner ok" style={{marginBottom:'14px'}}>
+                            <Landmark className="w-4 h-4 shrink-0" />
+                            <div>
+                              <strong>{cadastralData.itens[0].razao_social || 'UEx Cadastrada'}</strong>
+                              {cadastralData.itens[0].mandato_dirigente && <p className="text-xs mt-0.5 opacity-80">Mandato: {cadastralData.itens[0].mandato_dirigente}</p>}
+                              {cadastralData.itens[0].data_fim_mandato && <p className="text-xs opacity-70">Fim: {cadastralData.itens[0].data_fim_mandato}</p>}
+                            </div>
+                          </div>
+                        )}
+                        {prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 && (
+                          <div style={{marginBottom:'14px'}}>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                              <FileText className="w-3.5 h-3.5" /> Prestação de Contas
+                            </p>
+                            <div className="table-card">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
+                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
+                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Situação</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {prestacaoContaData.itens.map((item: any, i: number) => {
+                                    const isOk = item.situacao_pc_uex?.toLowerCase().includes('adimpl');
+                                    return (
+                                      <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                        <td className="py-2 px-3 text-xs font-medium">{item.ds_programa || 'PDDE'}</td>
+                                        <td className="py-2 px-3 text-xs">{item.ano || pddeAno}</td>
+                                        <td className="py-2 px-3">
+                                          <span className={`badge ${isOk ? 'badge-good' : 'badge-attn'}`}>
+                                            {item.situacao_pc_uex || 'Sem info'}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                        {atendimentoData?.ok && atendimentoData.itens.length > 0 && (
+                          <div style={{marginBottom:'14px'}}>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                              <Wallet className="w-3.5 h-3.5" /> Repasses por Programa
+                            </p>
+                            <div className="table-card">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
+                                    <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Custeio</th>
+                                    <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Capital</th>
+                                    <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {atendimentoData.itens.map((item: any, i: number) => {
+                                    const t = (item.vl_repasse_custeio || 0) + (item.vl_repasse_capital || 0);
+                                    return (
+                                      <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                        <td className="py-2 px-3 text-xs font-medium">{item.ds_programa}</td>
+                                        <td className="py-2 px-3 text-xs text-right font-mono">{brl(item.vl_repasse_custeio || 0)}</td>
+                                        <td className="py-2 px-3 text-xs text-right font-mono">{brl(item.vl_repasse_capital || 0)}</td>
+                                        <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{brl(t)}</td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                        {pddeData?.ok && (
+                          <div style={{marginBottom:'14px'}}>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                              <Landmark className="w-3.5 h-3.5" /> Unidade Executora (UEx)
+                            </p>
+                            <div className="row-list">
+                              {[
+                                ['Executora', pddeData.uex?.executora],
+                                ['CNPJ', pddeData.uex?.cnpj],
+                                ['Município', pddeData.uex?.municipio],
+                              ].filter(([,v]) => v).map(([k, v], i) => (
+                                <div key={i} className="row-item">
+                                  <span className="text-xs text-muted-foreground">{k}</span>
+                                  <span className="text-xs font-semibold">{String(v)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {pddeUexSaldoData?.ok && (
+                          <div style={{marginBottom:'14px'}}>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                              <BanknoteIcon className="w-3.5 h-3.5" /> Saldo Conta UEx
+                            </p>
+                            <div className="flex gap-2 mb-2">
+                              <select className="text-xs bg-background border border-border/50 rounded px-1.5 py-1" value={saldoMesSel.split("-")[0]} onChange={e => setSaldoMesSel(`${e.target.value}-${saldoMesSel.split("-")[1]}`)}>
+                                {Array.from({length:12},(_,i)=>i+1).map(m => <option key={m} value={String(m).padStart(2,"0")}>{String(m).padStart(2,"0")}</option>)}
+                              </select>
+                              <select className="text-xs bg-background border border-border/50 rounded px-1.5 py-1" value={saldoMesSel.split("-")[1]} onChange={e => setSaldoMesSel(`${saldoMesSel.split("-")[0]}-${e.target.value}`)}>
+                                {Array.from({length:10},(_,i)=>new Date().getFullYear()-i).map(y => <option key={y} value={String(y)}>{y}</option>)}
+                              </select>
+                            </div>
+                            <div className="row-list">
+                              {[
+                                ['Saldo Fundos', pddeUexSaldoData.total_saldo_fundos != null ? brl(pddeUexSaldoData.total_saldo_fundos) : null],
+                                ['Saldo Geral', pddeUexSaldoData.total_saldo_geral != null ? brl(pddeUexSaldoData.total_saldo_geral) : null],
+                              ].filter(([,v]) => v != null).map(([k, v], i) => (
+                                <div key={i} className="row-item">
+                                  <span className="text-xs text-muted-foreground">{k}</span>
+                                  <span className="text-xs font-bold text-emerald-700">{String(v)}</span>
+                                </div>
+                              ))}
+                              {pddeUexSaldoData.saldos.length > 0 && pddeUexSaldoData.saldos.slice(0, 3).map((s: any, i: number) => (
+                                <div key={`s-${i}`} className="row-item">
+                                  <span className="text-xs text-muted-foreground">{s.programa || 'Programa'}</span>
+                                  <span className="text-xs font-bold text-emerald-700">{s.saldo_total != null ? brl(s.saldo_total) : '—'}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {pddeSaldosData?.ok && pddeSaldosData.saldos.length > 0 && (
+                          <div style={{marginBottom:'14px'}}>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                              <BanknoteIcon className="w-3.5 h-3.5" /> Saldos PDDE Básico ({pddeSaldosData.anosDisponiveis.join(', ')})
+                            </p>
+                            <div className="table-card">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Exercício</th>
+                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Banco</th>
+                                    <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Saldo Acumulado</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {pddeSaldosData.saldos.slice().sort((a: any, b: any) => b.an_exercicio - a.an_exercicio).map((s: any, i: number) => (
+                                    <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                      <td className="py-2 px-3 text-xs font-medium">{s.an_exercicio}</td>
+                                      <td className="py-2 px-3 text-xs">{s.banco || '-'}</td>
+                                      <td className={`py-2 px-3 text-xs text-right font-mono ${s.saldo_acumulado > 0 ? 'font-bold text-emerald-700' : ''}`}>{brl(s.saldo_acumulado)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                        {pddeExecFinData?.ok && pddeExecFinData.repasses.length > 0 && (
+                          <div style={{marginBottom:'14px'}}>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                              <Wallet className="w-3.5 h-3.5" /> Execução Financeira ({pddeExecFinData.anosDisponiveis.join(', ')})
+                            </p>
+                            <div className="table-card">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
+                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Destinação</th>
+                                    <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total Pago</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {[...pddeExecFinData.repasses].sort((a: any, b: any) => b.an_exercicio - a.an_exercicio).map((r: any, i: number) => (
+                                    <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                      <td className="py-2 px-3 text-xs font-medium">{r.an_exercicio}</td>
+                                      <td className="py-2 px-3 text-xs">{r.sg_destinacao}</td>
+                                      <td className={`py-2 px-3 text-xs text-right font-mono ${r.vl_pago_total > 0 ? 'font-bold text-emerald-700' : ''}`}>{brl(r.vl_pago_total)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                        {!pddeLoading && !pddeSaldosLoading && !pddeExecFinLoading && !cadastralLoading && !prestacaoContaLoading && !atendimentoLoading && !pddeData?.ok && !pddeSaldosData?.ok && !pddeExecFinData?.ok && !cadastralData?.ok && !prestacaoContaData?.ok && (
+                          <div className="text-center py-6">
+                            <p className="text-sm text-muted-foreground">Dados financeiros não disponíveis para esta escola no momento.</p>
+                          </div>
+                        )}
+                        <div style={{paddingTop:'12px',borderTop:'1px solid #f0ece4'}}>
+                          <p style={{fontSize:'11px',color:'var(--m-muted)',lineHeight:'1.6'}}>
+                            Dados obtidos do PDDE Info e Dados Abertos do FNDE (2020–2026). Para dados oficiais, acesse{' '}
+                            <a href="https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar" target="_blank" rel="noopener noreferrer" style={{color:'var(--m-blue)',textDecoration:'underline'}}>PDDE Info</a>.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="info-stack">
+                      <div className="soft-card theme-blue">
+                        <div className="attention-head"><span>🔗</span><strong>Links Úteis</strong></div>
+                        <div className="link-list">
+                          {[
+                            { nome: 'PDDE Interativo', url: 'https://pddeinterativo.mec.gov.br' },
+                            { nome: 'Portal FNDE', url: 'https://www.fnde.gov.br' },
+                            { nome: 'Dados INEP', url: 'https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos' },
+                            { nome: 'PDDE Info', url: 'https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar' },
+                          ].map((link, i) => (
+                            <a key={i} href={link.url} target="_blank" rel="noopener noreferrer">
+                              {link.nome} <ExternalLink className="w-3 h-3" style={{display:'inline',marginLeft:'4px'}} />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="footer-note">
+                        <strong className="scribble">📌 Nota sobre os dados</strong>
+                        <p style={{margin:'8px 0 0',fontSize:'13px'}}>Os dados financeiros são obtidos em tempo real do PDDE Info e dos Dados Abertos do FNDE. Podem apresentar atraso ou indisponibilidade. Os dados censais são do Censo Escolar INEP/MEC.</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
               </>
+                );
+              })()
+
             ) : (
               <Card className="card-clay">
                 <CardContent className="py-12 text-center">
