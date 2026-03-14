@@ -751,27 +751,28 @@ export default function Dashboard() {
                 </div>
 
                 {/* ── bilhete intro ── */}
-                <p className="text-sm text-muted-foreground leading-relaxed px-1">
-                  Diretora, você pode acompanhar abaixo os dados do Censo Escolar, indicadores educacionais e situação financeira do PDDE desta escola — tudo filtrado pelo código INEP.
-                </p>
+                <div className="auto-text-card" style={{fontSize:'14px',color:'#3d4d5a',lineHeight:1.6}}>
+                  <strong className="scribble" style={{fontSize:'16px',color:'#4f4126'}}>Diretora, aqui está o raio-x completo desta escola!</strong>
+                  <p className="mt-1">Dados do Censo Escolar {latestAno}, indicadores educacionais e situação financeira do PDDE — tudo filtrado pelo código INEP <strong>{selectedInep}</strong>.</p>
+                </div>
 
                 {/* ── Métricas resumo ── */}
                 {(() => {
+                  const THEMES = ['theme-blue','theme-yellow','theme-green','theme-purple','theme-pink','theme-teal'];
                   const METRICS = [
-                    { label: `Matrículas ${latestAno}`, val: censoLatest.qt_mat_bas || 0, prev: censoPrev?.qt_mat_bas || 0, icon: '👩‍🎓', bg: 'linear-gradient(180deg,#dff1ff 0%,#f7fbff 100%)', border: '#bcdcf0', tape: 'rgba(255,223,133,0.72)', rot: '-1.3deg', tapeRot: '8deg' },
-                    { label: `Docentes ${latestAno}`, val: censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0, prev: censoPrev ? (censoPrev.qt_doc_bas || censoPrev.qt_docentes || 0) : 0, icon: '🧑‍🏫', bg: 'linear-gradient(180deg,#fff1ae 0%,#fff7db 100%)', border: '#e4cb74', tape: 'rgba(255,194,168,0.68)', rot: '1.1deg', tapeRot: '-6deg' },
-                    { label: `Turmas ${latestAno}`, val: censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0, prev: censoPrev ? (censoPrev.qt_tur_bas || censoPrev.qt_turmas || 0) : 0, icon: '🏫', bg: 'linear-gradient(180deg,#dff6e2 0%,#f4fbf5 100%)', border: '#c7e1cb', tape: 'rgba(194,221,247,0.72)', rot: '-1.3deg', tapeRot: '8deg' },
-                    { label: `Salas utilizadas`, val: censoLatest.qt_salas_utilizadas || 0, prev: censoPrev?.qt_salas_utilizadas || 0, icon: '🚪', bg: 'linear-gradient(180deg,#efe4ff 0%,#f8f4ff 100%)', border: '#d9cbef', tape: 'rgba(255,223,133,0.72)', rot: '1.1deg', tapeRot: '-6deg' },
-                    { label: 'Pontos de atenção', val: alertasPreocupantes.length, prev: null, icon: alertasPreocupantes.filter(a=>a.tipo==='critical').length > 0 ? '⚠️' : alertasPreocupantes.length > 0 ? '◌' : '✅', bg: alertasPreocupantes.filter(a=>a.tipo==='critical').length > 0 ? 'linear-gradient(180deg,#ffdeda 0%,#fff3f0 100%)' : alertasPreocupantes.length > 0 ? 'linear-gradient(180deg,#fff1ae 0%,#fff7db 100%)' : 'linear-gradient(180deg,#dff6e2 0%,#f4fbf5 100%)', border: alertasPreocupantes.filter(a=>a.tipo==='critical').length > 0 ? '#e8c2ba' : alertasPreocupantes.length > 0 ? '#e4cb74' : '#c7e1cb', tape: 'rgba(255,194,168,0.68)', rot: '-1.3deg', tapeRot: '8deg', extra: alertasPreocupantes.length === 0 ? 'Tudo certo' : `${alertasPreocupantes.filter(a=>a.tipo==='critical').length} crítico${alertasPreocupantes.filter(a=>a.tipo==='critical').length !== 1 ? 's' : ''}` },
-                    { label: 'PDDE', val: pddeData?.ok ? (prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? prestacaoContaData.itens.filter((i:any)=>i.situacao_pc_uex?.toLowerCase().includes('adimpl')).length === prestacaoContaData.itens.length ? 'OK' : 'Ver' : pddeData ? 'Ativo' : '—') : '—', prev: null, icon: '💸', bg: 'linear-gradient(180deg,#dff5f5 0%,#f2fbfb 100%)', border: '#bee0e0', tape: 'rgba(194,221,247,0.72)', rot: '1.1deg', tapeRot: '-6deg', extra: prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? `${prestacaoContaData.itens.length} programa${prestacaoContaData.itens.length > 1 ? 's' : ''}` : pddeData?.ok ? pddeData.uex?.executora?.slice(0,22) : 'Sem dados' },
+                    { label: `Matrículas ${latestAno}`, val: censoLatest.qt_mat_bas || 0, prev: censoPrev?.qt_mat_bas || 0, icon: '👩‍🎓' },
+                    { label: `Docentes ${latestAno}`, val: censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0, prev: censoPrev ? (censoPrev.qt_doc_bas || censoPrev.qt_docentes || 0) : 0, icon: '🧑‍🏫' },
+                    { label: `Turmas ${latestAno}`, val: censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0, prev: censoPrev ? (censoPrev.qt_tur_bas || censoPrev.qt_turmas || 0) : 0, icon: '🏫' },
+                    { label: `Salas utilizadas`, val: censoLatest.qt_salas_utilizadas || 0, prev: censoPrev?.qt_salas_utilizadas || 0, icon: '🚪' },
+                    { label: 'Pontos de atenção', val: alertasPreocupantes.length, prev: null, icon: alertasPreocupantes.filter(a=>a.tipo==='critical').length > 0 ? '⚠️' : alertasPreocupantes.length > 0 ? '◌' : '✅', extra: alertasPreocupantes.length === 0 ? 'Tudo certo' : `${alertasPreocupantes.filter(a=>a.tipo==='critical').length} crítico${alertasPreocupantes.filter(a=>a.tipo==='critical').length !== 1 ? 's' : ''}` },
+                    { label: 'PDDE', val: pddeData?.ok ? (prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? prestacaoContaData.itens.filter((i:any)=>i.situacao_pc_uex?.toLowerCase().includes('adimpl')).length === prestacaoContaData.itens.length ? 'OK' : 'Ver' : pddeData ? 'Ativo' : '—') : '—', prev: null, icon: '💸', extra: prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? `${prestacaoContaData.itens.length} programa${prestacaoContaData.itens.length > 1 ? 's' : ''}` : pddeData?.ok ? pddeData.uex?.executora?.slice(0,22) : 'Sem dados' },
                   ];
                   return (
                     <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
                       {METRICS.map((m, i) => {
                         const delta = m.prev !== null && typeof m.val === 'number' ? (m.val as number) - (m.prev as number) : null;
                         return (
-                          <div key={i} className="relative p-4 overflow-visible" style={{borderRadius:'16px 20px 16px 22px',background:m.bg,border:`1px solid ${m.border}`,transform:`rotate(${m.rot})`,boxShadow:'0 12px 18px rgba(100,83,46,0.08)'}}>
-                            <div className="absolute w-14 h-3.5 rounded pointer-events-none" style={{top:'-7px',right:'14px',background:m.tape,transform:`rotate(${m.tapeRot})`}}/>
+                          <div key={i} className={`metric ${THEMES[i]}`}>
                             <div className="flex items-start justify-between gap-2 mb-3">
                               <div>
                                 <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>{m.label}</label>
@@ -779,8 +780,8 @@ export default function Dashboard() {
                               </div>
                               <div className="w-11 h-11 rounded-2xl grid place-items-center text-xl shrink-0" style={{background:'rgba(255,255,255,0.72)',border:'1px solid rgba(255,255,255,0.9)'}}>{m.icon}</div>
                             </div>
-                            {m.extra ? (
-                              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold bg-white/60 text-gray-600">{m.extra}</span>
+                            {(m as any).extra ? (
+                              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold bg-white/60 text-gray-600">{(m as any).extra}</span>
                             ) : delta !== null && delta !== 0 ? (
                               <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold ${delta > 0 ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>{delta > 0 ? '▲' : '▼'} {Math.abs(delta)} vs ano anterior</span>
                             ) : null}
@@ -799,10 +800,13 @@ export default function Dashboard() {
                   const cleanTitle = (titulo: string) => titulo.replace(/:\s*[\d,\.]+\s*(?:%|alunos\/turma|h\/dia|h)?\s*$/, '').replace(/:\s*Nível\s*\d+\s*$/, '');
                   return (
                     <div className="space-y-4">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="mural-section-h2">Pontos de atenção</h3>
-                        {total > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold" style={{background:'#fff4db', color:'#9b6a16', border:'1px solid #eed39a'}}>◌ {total} ponto{total !== 1 ? 's' : ''} para acompanhar</span>}
-                        {total === 0 && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">✅ Tudo dentro do esperado</span>}
+                      <div className="section-title">
+                        <div>
+                          <h2>Pontos de atenção</h2>
+                          <p>Indicadores que merecem atenção especial desta escola</p>
+                        </div>
+                        {total > 0 && <span className="attention-count">◌ {total} ponto{total !== 1 ? 's' : ''} para acompanhar</span>}
+                        {total === 0 && <span className="hint-chip">✅ Tudo dentro do esperado</span>}
                       </div>
                       <div className="organic-divider"/>
 
@@ -837,10 +841,13 @@ export default function Dashboard() {
 
                 <Card className="card-clay">
                   <CardHeader className="pb-2">
-                    <CardTitle>
-                      <span className="mural-section-h2">Galeria de gráficos</span>
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground -mt-1">Escolha um recorte e visualize a evolução histórica da escola</p>
+                    <div className="section-title">
+                      <div>
+                        <h2>Galeria de gráficos</h2>
+                        <p>Escolha um recorte e visualize a evolução histórica da escola</p>
+                      </div>
+                      <span className="hint-chip">📊 {evolucaoData?.anos_disponiveis?.length || 1} ano{(evolucaoData?.anos_disponiveis?.length || 1) !== 1 ? 's' : ''} de dados</span>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {!hasMultipleYears && (
@@ -1241,17 +1248,20 @@ export default function Dashboard() {
                   return (
                     <Card className="card-clay">
                       <CardHeader className="pb-2">
-                        <CardTitle>
-                          <span className="mural-section-h2">Raio-X educacional</span>
-                        </CardTitle>
-                        <p className="text-xs text-muted-foreground -mt-1">Indicadores mais recentes desta escola</p>
+                        <div className="section-title">
+                          <div>
+                            <h2>Raio-X educacional</h2>
+                            <p>Indicadores mais recentes desta escola com diagnóstico automático</p>
+                          </div>
+                          <span className="hint-chip">🔬 {rows.length} indicador{rows.length !== 1 ? 'es' : ''}</span>
+                        </div>
                       </CardHeader>
                       <CardContent className="pt-0">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {rows.map(row => {
                             const cfg = statusConfig[row.diag.status];
                             return (
-                              <div key={row.key} className="indicator-tile">
+                              <div key={row.key} className="indicator-card">
                                 <div className="flex items-center justify-between gap-2 mb-2">
                                   <span className="text-sm font-bold" style={{color:'#485564'}}>
                                     {row.nome}
@@ -1737,7 +1747,7 @@ export default function Dashboard() {
                 </IndicatorSection>
 
                 <IndicatorSection
-                  title="Post-it financeiro do PDDE"
+                  title="Financeiro PDDE"
                   icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
                   expanded={expandedSections['financeiro'] ?? true}
                   onToggle={() => toggleSection('financeiro')}
@@ -2642,13 +2652,15 @@ function IndicatorSection({ title, icon, expanded = true, onToggle, children }: 
   return (
     <Card className="card-clay">
       <CardHeader className="pb-2 cursor-pointer select-none" onClick={onToggle}>
-        <CardTitle className="flex items-center gap-2">
-          <span className="shrink-0 text-muted-foreground">{icon}</span>
-          <span className="mural-section-h2 text-base">{title}</span>
-          <span className="ml-auto text-muted-foreground shrink-0">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="shrink-0 text-muted-foreground">{icon}</span>
+            <span className="mural-section-h2">{title}</span>
+          </div>
+          <span className="text-muted-foreground shrink-0">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </span>
-        </CardTitle>
+        </div>
       </CardHeader>
       {expanded && <CardContent>{children}</CardContent>}
     </Card>
