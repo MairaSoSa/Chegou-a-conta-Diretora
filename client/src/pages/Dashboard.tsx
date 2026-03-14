@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { BrazilMap } from "@/components/BrazilMap";
 import "../../public/painel-educacional.css";
 import { AlertPanel } from "@/components/AlertPanel";
 import { IndicatorPanel } from "@/components/IndicatorPanel";
@@ -474,36 +475,32 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <Card className="card-clay lg:col-span-2">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-accent" />
-                        Escolas por Estado
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={360}>
-                        <BarChart data={ufChartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                          <XAxis dataKey="uf" tick={{ fontSize: 11 }} interval={0} angle={-45} textAnchor="end" height={50} />
-                          <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-                          <Tooltip
-                            formatter={(value: number) => [formatNumber(value), "Escolas"]}
-                            labelFormatter={(label) => UF_NAMES[label] || label}
-                            contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb" }}
-                          />
-                          <Bar dataKey="escolas" fill="#2d6a4f" radius={[4, 4, 0, 0]} cursor="pointer"
-                            onClick={(data) => {
-                              setFilterUf(data.uf);
-                              setFilterDep("");
-                              setListPage(1);
-                              setActiveTab("search");
-                            }}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
+
+                  <div className="lg:col-span-2 space-y-4">
+                    <Card className="card-clay">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Globe className="w-4 h-4 text-accent" />
+                          Mapa Interativo do Brasil
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <BrazilMap
+                          ufStats={ufChartData.reduce((acc, item) => {
+                            acc[item.uf] = { name: item.name, escolas: item.escolas };
+                            return acc;
+                          }, {} as Record<string, { name: string; escolas: number }>)}
+                          onStateClick={(uf) => {
+                            setFilterUf(uf);
+                            setFilterDep("");
+                            setListPage(1);
+                            setActiveTab("search");
+                          }}
+                        />
+                      </CardContent>
+                    </Card>
+
+                  </div>
 
                   <div className="space-y-4">
                     <Card className="card-clay">
@@ -585,36 +582,7 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
 
-                <Card className="card-clay">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-accent" />
-                      Ranking por Estado
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                      {ufChartData.map((item, i) => (
-                        <button
-                          key={item.uf}
-                          onClick={() => {
-                            setFilterUf(item.uf);
-                            setFilterDep("");
-                            setListPage(1);
-                            setActiveTab("search");
-                          }}
-                          className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/20 hover:bg-accent/10 border border-transparent hover:border-accent/30 transition-all text-left group"
-                        >
-                          <span className="text-xs font-mono text-muted-foreground w-5">{i + 1}.</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold group-hover:text-accent transition-colors">{item.uf}</p>
-                            <p className="text-xs text-muted-foreground truncate">{formatNumber(item.escolas)}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+
               </>
             ) : null}
           </div>
@@ -1702,9 +1670,8 @@ function EvolutionChart({ data, lines, unit, large }: { title?: string; data: an
   };
 
   const renderLabel = (props: any) => {
-    if (!large) return null;
     const { x, y, width, value } = props;
-    if (value == null || value === 0) return null;
+    if (value == null || value === 0) return <g />;
     const display = typeof value === 'number' ? (Number.isInteger(value) ? value.toLocaleString('pt-BR') : value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })) : value;
     return (
       <text x={x + width / 2} y={y - 4} textAnchor="middle" fontSize={10} fontWeight={600} fill="#555">
@@ -1736,7 +1703,15 @@ function EvolutionChart({ data, lines, unit, large }: { title?: string; data: an
           />
           {multiSeries && <Legend iconType="circle" iconSize={large ? 10 : 8} wrapperStyle={{ fontSize: large ? "12px" : "10px", paddingTop: 8 }} />}
           {lines.map((line) => (
-            <Bar key={line.key} dataKey={line.key} fill={`url(#bg-${line.key})`} name={line.name} radius={[6, 6, 0, 0]} maxBarSize={large ? 44 : 32} label={large && lines.length <= 2 ? renderLabel : undefined} />
+            <Bar
+              key={line.key}
+              dataKey={line.key}
+              fill={`url(#bg-${line.key})`}
+              name={line.name}
+              radius={[6, 6, 0, 0]}
+              maxBarSize={large ? 44 : 32}
+              {...(large && lines.length <= 2 ? { label: renderLabel } : {})}
+            />
           ))}
         </BarChart>
       </ResponsiveContainer>
