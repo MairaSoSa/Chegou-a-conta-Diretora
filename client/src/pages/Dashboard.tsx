@@ -35,9 +35,40 @@ const UF_NAMES: Record<string, string> = {
   RS: "Rio Grande do Sul", SC: "Santa Catarina", SE: "Sergipe", SP: "São Paulo", TO: "Tocantins",
 };
 
-const CHART_COLORS = ["#2d6a4f", "#40916c", "#52b788", "#74c69d", "#95d5b2", "#b7e4c7"];
+
+// Cores pastel para os estados do mapa
+const PASTEL_COLORS = [
+  '#ffb3ba', // rosa vivo
+  '#ffdfba', // laranja claro
+  '#ffffba', // amarelo claro
+  '#baffc9', // verde claro
+  '#bae1ff', // azul claro
+  '#b5ead7', // verde água
+  '#c7ceea', // azul lavanda
+  '#e2f0cb', // verde limão
+  '#f3c6e8', // lilás
+  '#f7b6d2', // rosa chiclete
+  '#f9e2ae', // amarelo pastel
+  '#e0c3fc', // roxo claro
+  '#c2f0fc', // azul piscina
+  '#f6dfeb', // rosa bebê
+  '#f7f7b6', // amarelo vivo
+  '#d4f1f4', // azul gelo
+  '#f9c6c9', // rosa coral
+  '#f6eac2', // amarelo manteiga
+  '#e0eafc', // azul céu
+  '#c9e4de', // verde menta
+  '#f7d9c4', // pêssego
+  '#e2eafc', // azul lavanda
+  '#f6eac2', // amarelo manteiga
+  '#e0c3fc', // roxo claro
+  '#f3c6e8', // lilás
+  '#b5ead7', // verde água
+  '#ffd6e0'  // rosa claro
+];
+
+// Paleta para gráficos de pizza
 const PIE_COLORS = ["#2d6a4f", "#40916c", "#74c69d", "#b7e4c7"];
-const EXTRA_COLORS = ["#e76f51", "#264653", "#2a9d8f", "#e9c46a"];
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -440,6 +471,99 @@ export default function Dashboard() {
 
         {activeTab === "overview" && (
           <div className="space-y-6">
+            {/* RESUMO EXECUTIVO */}
+            {stats && (
+              <section className="section">
+                <div className="summary-grid">
+                  <div className="metric theme-blue">
+                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Escolas</label>
+                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(stats.total_escolas)}</strong>
+                  </div>
+                  <div className="metric theme-yellow">
+                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Matrículas</label>
+                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(stats.total_matriculas)}</strong>
+                  </div>
+                  <div className="metric theme-green">
+                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Docentes</label>
+                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(stats.total_docentes)}</strong>
+                  </div>
+                  <div className="metric theme-purple">
+                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Estados</label>
+                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{Object.keys(stats.por_uf || {}).length}</strong>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* BILHETE DA DIRETORA */}
+            {stats && (
+              <section className="section" style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
+                alignItems: 'flex-start',
+                gap: '32px',
+                margin: '48px 0 24px 0',
+                maxWidth: '740px',
+                width: '100%',
+              }}>
+                {/* Post-it Bilhete da Diretora */}
+                <div
+                  className="postit-card"
+                  style={{
+                    background: 'linear-gradient(135deg, #fffbe7 80%, #ffe066 100%)',
+                    border: '2.5px solid #ffe066',
+                    borderRadius: '22px',
+                    boxShadow: '0 4px 18px 0 #ffe06655, 0 1.5px 0 #ffe066 inset',
+                    minWidth: 260,
+                    maxWidth: 340,
+                    padding: '22px 22px 18px 22px',
+                    position: 'relative',
+                    fontFamily: 'inherit',
+                    margin: '0 auto',
+                  }}
+                >
+                  <div style={{marginBottom:'10px',textAlign:'center'}}>
+                    <span className="scribble" style={{fontSize:'15px',color:'#b59f3b',background:'#fffbe7',padding:'2px 10px',borderRadius:'10px'}}>Bilhete da Diretora</span>
+                  </div>
+                  <div style={{fontSize:'15px',color:'#4f4126',lineHeight:1.6,textAlign:'center'}}>
+                    <strong style={{fontSize:'17px',color:'#4f4126'}}>Diretora, aqui está o raio-x nacional da educação!</strong>
+                    <p style={{margin:'8px 0 0',fontSize:'14px',color:'#3d4d5a'}}>
+                      Dados do Censo Escolar <strong>{selectedAno}</strong> — abrangendo {Object.keys(stats.por_uf || {}).length} estados, <strong>{formatNumber(stats.total_escolas)}</strong> escolas, <strong>{formatNumber(stats.total_matriculas)}</strong> matrículas e <strong>{formatNumber(stats.total_docentes)}</strong> docentes.
+                    </p>
+                  </div>
+                  {/* desenho removido */}
+                </div>
+                {/* Post-it Situação das Escolas */}
+                <div
+                  className="postit-card"
+                  style={{
+                    background: 'linear-gradient(135deg, #e0f7fa 80%, #b2ebf2 100%)',
+                    border: '2.5px solid #4dd0e1',
+                    borderRadius: '22px',
+                    boxShadow: '0 4px 18px 0 #4dd0e155, 0 1.5px 0 #b2ebf2 inset',
+                    minWidth: 260,
+                    maxWidth: 340,
+                    padding: '22px 22px 18px 22px',
+                    position: 'relative',
+                    fontFamily: 'inherit',
+                    margin: '0 auto',
+                  }}
+                >
+                  <div style={{marginBottom:'10px',textAlign:'center'}}>
+                    <span className="scribble" style={{fontSize:'15px',color:'#00838f',background:'#e0f7fa',padding:'2px 10px',borderRadius:'10px'}}>Situação das Escolas</span>
+                  </div>
+                  <div style={{fontSize:'15px',color:'#006064',lineHeight:1.6,textAlign:'center'}}>
+                    <strong style={{fontSize:'17px',color:'#006064'}}>Total de escolas: {formatNumber(stats.total_escolas)}</strong>
+                    <p style={{margin:'8px 0 0',fontSize:'14px',color:'#006064'}}>
+                      Matrículas: <strong>{formatNumber(stats.total_matriculas)}</strong><br/>
+                      Docentes: <strong>{formatNumber(stats.total_docentes)}</strong>
+                    </p>
+                  </div>
+                  {/* desenho removido */}
+                </div>
+              </section>
+            )}
             {statsLoading ? (
               <div className="py-20 text-center">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto text-accent mb-3" />
@@ -447,32 +571,7 @@ export default function Dashboard() {
               </div>
             ) : stats ? (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <StatCard
-                    icon={<School className="w-6 h-6 text-accent" />}
-                    value={formatNumber(stats.total_escolas)}
-                    label="Escolas"
-                    color="bg-accent/10"
-                  />
-                  <StatCard
-                    icon={<Users className="w-6 h-6 text-accent" />}
-                    value={formatNumber(stats.total_matriculas)}
-                    label="Matrículas"
-                    color="bg-accent/10"
-                  />
-                  <StatCard
-                    icon={<GraduationCap className="w-6 h-6 text-purple-600" />}
-                    value={formatNumber(stats.total_docentes)}
-                    label="Docentes"
-                    color="bg-purple-600/10"
-                  />
-                  <StatCard
-                    icon={<BookOpen className="w-6 h-6 text-orange-600" />}
-                    value={Object.keys(stats.por_uf || {}).length.toString()}
-                    label="Estados"
-                    color="bg-orange-600/10"
-                  />
-                </div>
+                {/* ...existing code... */}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
@@ -486,10 +585,14 @@ export default function Dashboard() {
                       </CardHeader>
                       <CardContent>
                         <BrazilMap
-                          ufStats={ufChartData.reduce((acc, item) => {
-                            acc[item.uf] = { name: item.name, escolas: item.escolas };
+                          ufStats={ufChartData.reduce((acc, item, idx) => {
+                            acc[item.uf] = {
+                              name: item.name,
+                              escolas: item.escolas,
+                              color: PASTEL_COLORS[idx % PASTEL_COLORS.length]
+                            };
                             return acc;
-                          }, {} as Record<string, { name: string; escolas: number }>)}
+                          }, {} as Record<string, { name: string; escolas: number; color: string }>)}
                           onStateClick={(uf) => {
                             setFilterUf(uf);
                             setFilterDep("");
