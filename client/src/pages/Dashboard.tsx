@@ -78,6 +78,7 @@ export default function Dashboard() {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [selectedChart, setSelectedChart] = useState("matriculas");
   const [activeTab, setActiveTab] = useState<"overview" | "search">("overview");
+  const [overviewSearch, setOverviewSearch] = useState("");
   const [activeSchoolTab, setActiveSchoolTab] = useState<"alunos" | "etapas" | "docentes" | "infra">("alunos");
   const [filterUf, setFilterUf] = useState("");
   const [filterDep, setFilterDep] = useState("");
@@ -117,6 +118,18 @@ export default function Dashboard() {
     setSelectedInep(inep);
     setShowSearchDropdown(false);
     if (activeTab !== "search") setActiveTab("search");
+  };
+
+  const handleOverviewSearch = () => {
+    const q = overviewSearch.trim();
+    if (!q) return;
+    if (/^\d{8}$/.test(q)) {
+      selectSchool(q);
+    } else {
+      setSearchQuery(q);
+      setShowSearchDropdown(true);
+      setActiveTab("search");
+    }
   };
 
   const latestAno = useMemo(() => {
@@ -494,6 +507,51 @@ export default function Dashboard() {
                 </div>
               </section>
             )}
+
+            {/* BUSCA DE ESCOLA */}
+            <Card className="card-clay" style={{background:'linear-gradient(135deg,#f0f7ff 0%,#e8f5e9 100%)',border:'1.5px solid #c8dff7'}}>
+              <CardContent className="p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold mb-1" style={{color:'#2d5a88'}}>🏫 Buscar minha escola</p>
+                    <p className="text-xs text-muted-foreground mb-3">Digite o nome ou o código INEP (8 dígitos) para ver o painel completo</p>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <input
+                          className="w-full pl-9 pr-3 h-10 rounded-xl text-sm border border-border/50 bg-white outline-none focus:ring-2 focus:ring-blue-200"
+                          placeholder="Ex: EMEF Jardim das Acácias ou 35000001"
+                          value={overviewSearch}
+                          onChange={e => setOverviewSearch(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') handleOverviewSearch(); }}
+                        />
+                      </div>
+                      <button
+                        onClick={handleOverviewSearch}
+                        className="flex items-center gap-1.5 px-4 h-10 rounded-xl text-sm font-semibold text-white shrink-0"
+                        style={{background:'#2d5a88'}}
+                      >
+                        Buscar <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="hidden sm:flex flex-col gap-1.5 text-xs text-muted-foreground shrink-0">
+                    <span className="font-medium text-foreground/70">Escolas de exemplo:</span>
+                    {[
+                      { nome: 'EMEF Jardim das Acácias', inep: '35000001' },
+                      { nome: 'EE Prof Maria da Conceição', inep: '31000002' },
+                      { nome: 'EMEF Assis Brasil', inep: '43000003' },
+                    ].map(e => (
+                      <button key={e.inep} onClick={() => selectSchool(e.inep)}
+                        className="text-left hover:text-blue-600 hover:underline transition-colors"
+                      >
+                        {e.nome}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* BILHETE DA DIRETORA */}
             {stats && (
