@@ -795,45 +795,40 @@ export default function Dashboard() {
                   const criticals = alertasPreocupantes.filter(a => a.tipo === 'critical');
                   const warnings = alertasPreocupantes.filter(a => a.tipo === 'warning');
                   const total = alertasPreocupantes.length;
+                  const extractVal = (titulo: string) => { const m = titulo.match(/:\s*([\d,\.]+\s*%?)(\s*(?:alunos\/turma|h\/dia|h))?$/); return m ? m[1] + (m[2] || '') : null; };
+                  const cleanTitle = (titulo: string) => titulo.replace(/:\s*[\d,\.]+\s*(?:%|alunos\/turma|h\/dia|h)?\s*$/, '').replace(/:\s*Nível\s*\d+\s*$/, '');
                   return (
-                    <div className="space-y-3">
-                      {/* ── section header ── */}
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-base font-bold tracking-tight" style={{fontFamily:'Georgia, serif'}}>
-                          Pontos de atenção
-                          <span className="relative ml-1">
-                            <span className="relative z-10">{total > 0 ? `(${total})` : ''}</span>
-                            <span className="absolute inset-x-0 bottom-0.5 h-2.5 -z-0 rounded" style={{background:'rgba(251,219,88,0.55)'}}/>
-                          </span>
-                        </h3>
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h3 className="mural-section-h2">Pontos de atenção</h3>
+                        {total > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold" style={{background:'#fff4db', color:'#9b6a16', border:'1px solid #eed39a'}}>◌ {total} ponto{total !== 1 ? 's' : ''} para acompanhar</span>}
                         {total === 0 && <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">✅ Tudo dentro do esperado</span>}
                       </div>
+                      <div className="organic-divider"/>
 
                       {total === 0 ? (
-                        <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border-l-4 border-l-green-500 border border-green-200">
+                        <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50" style={{borderLeft:'6px solid #2f7a58', border:'1px solid #c7e8d6', borderLeftWidth:'6px'}}>
                           <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
-                          <p className="text-sm text-green-800">Diretora, os indicadores desta escola estão dentro das faixas esperadas. Continue o bom trabalho!</p>
+                          <p className="text-sm" style={{color:'#2f7a58'}}>Diretora, os indicadores desta escola estão dentro das faixas esperadas. Continue o bom trabalho!</p>
                         </div>
                       ) : (
-                        <div className="space-y-2">
-                          {[...criticals.map(a => ({...a, tipo: 'critical' as const})), ...warnings.map(a => ({...a, tipo: 'warning' as const}))].map((alerta, i) => (
-                            <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl" style={{background: alerta.tipo === 'critical' ? '#fff5f5' : '#fffbeb', borderLeft: `5px solid ${alerta.tipo === 'critical' ? '#ef4444' : '#f59e0b'}`, border: `1px solid ${alerta.tipo === 'critical' ? '#fecaca' : '#fde68a'}`, borderLeftWidth: '5px'}}>
-                              <div className="shrink-0 mt-0.5">
-                                {alerta.tipo === 'critical'
-                                  ? <CircleAlert className="w-4 h-4 text-red-500" />
-                                  : <AlertTriangle className="w-4 h-4 text-amber-500" />}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                                  <p className={`text-sm font-semibold ${alerta.tipo === 'critical' ? 'text-red-800' : 'text-amber-800'}`}>{alerta.titulo}</p>
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${alerta.tipo === 'critical' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {[...criticals.map(a => ({...a, tipo: 'critical' as const})), ...warnings.map(a => ({...a, tipo: 'warning' as const}))].map((alerta, i) => {
+                            const mv = extractVal(alerta.titulo);
+                            const ct = cleanTitle(alerta.titulo);
+                            return (
+                              <div key={i} className={`alert-sticker ${alerta.tipo === 'critical' ? 'critical' : ''}`}>
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <p className="text-sm font-bold leading-tight">{ct}</p>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0 ${alerta.tipo === 'critical' ? 'bg-[#fdecea] text-[#b74f42]' : 'bg-[#fff4db] text-[#9b6a16]'}`}>
                                     {alerta.tipo === 'critical' ? 'Olhar com cuidado' : 'Acompanhar'}
                                   </span>
                                 </div>
-                                <p className={`text-xs leading-snug ${alerta.tipo === 'critical' ? 'text-red-700' : 'text-amber-700'}`}>{alerta.descricao}</p>
+                                {mv && <strong className="block text-3xl font-bold leading-none mb-2" style={{letterSpacing:'-0.04em'}}>{mv}</strong>}
+                                <p className="text-xs leading-snug" style={{color:'#6b7785'}}>{alerta.descricao}</p>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -842,12 +837,10 @@ export default function Dashboard() {
 
                 <Card className="card-clay">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-bold tracking-tight" style={{fontFamily:'Georgia, serif'}}>
-                      <span className="relative">
-                        Galeria de gráficos
-                        <span className="absolute inset-x-0 bottom-0.5 h-2.5 rounded -z-0" style={{background:'rgba(251,219,88,0.55)'}}/>
-                      </span>
+                    <CardTitle>
+                      <span className="mural-section-h2">Galeria de gráficos</span>
                     </CardTitle>
+                    <p className="text-xs text-muted-foreground -mt-1">Escolha um recorte e visualize a evolução histórica da escola</p>
                   </CardHeader>
                   <CardContent>
                     {!hasMultipleYears && (
@@ -886,51 +879,43 @@ export default function Dashboard() {
                       }).filter(s => s.value != null && s.value !== 0);
 
                       return (
-                        <div className="space-y-3">
-                          <select
-                            value={current.id}
-                            onChange={(e) => setSelectedChart(e.target.value)}
-                            className="w-full rounded-xl border-2 border-border/60 bg-card px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40 transition-colors"
-                          >
-                            {available.map(opt => (
-                              <option key={opt.id} value={opt.id}>{opt.label}</option>
-                            ))}
-                          </select>
-                          <div className="rounded-2xl border border-border/40 bg-gradient-to-br from-card to-muted/30 overflow-hidden">
-                            <div className="px-5 pt-4 pb-2">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="p-1.5 rounded-lg" style={{ backgroundColor: current.color + '20', color: current.color }}>{current.icon}</span>
-                                <h4 className="text-base font-bold text-foreground">{current.label}</h4>
-                              </div>
-                              <p className="text-sm text-muted-foreground leading-relaxed">{current.description}</p>
+                        <div className="flex gap-3 items-start">
+                          <div className="shrink-0 w-40 space-y-2 sticky top-4 overflow-y-auto" style={{maxHeight:'72vh'}}>
+                            <div className="px-2.5 py-2 rounded-[16px_20px_16px_18px] text-[11px] font-bold leading-tight scribble" style={{background:'linear-gradient(135deg,#fff7b7 0%,#fff8db 100%)', color:'#6a5a33', border:'1px solid #e4cb74', transform:'rotate(-0.8deg)', boxShadow:'0 10px 16px rgba(100,83,46,0.07)'}}>
+                              Escolha um recorte
                             </div>
-                            {summaryItems.length > 0 && (
-                              <div className="px-5 pb-2">
-                                <div className="flex flex-wrap gap-3">
+                            {available.map((opt) => (
+                              <button key={opt.id} className={`chart-tab-btn ${current.id === opt.id ? 'active' : ''}`}
+                                onClick={() => setSelectedChart(opt.id)}>
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex-1 min-w-0 relative overflow-visible" style={{background:'linear-gradient(180deg,#fffdf8 0%,#fcf8ee 100%)', border:'1px solid #eadfcb', borderRadius:'18px 24px 18px 22px', boxShadow:'0 12px 20px rgba(83,72,53,0.07)', transform:'rotate(0.3deg)'}}>
+                            <div className="absolute w-14 h-3.5 rounded pointer-events-none" style={{top:'-7px', left:'22px', background:'rgba(188,218,243,0.62)', transform:'rotate(-6deg)'}}/>
+                            <div className="p-4 pb-2">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <h4 className="text-lg font-bold mb-0.5 scribble" style={{color:'#4f4126'}}>{current.label}</h4>
+                                  <p className="text-sm text-muted-foreground">{current.description}</p>
+                                </div>
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 scribble" style={{background:'linear-gradient(135deg,#fff0bf 0%,#ffe39d 100%)', color:'#7c5710', border:'1px solid #e8cb7a', transform:'rotate(0.5deg)'}}>recorte do mural</span>
+                              </div>
+                              {summaryItems.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-2.5">
                                   {summaryItems.map((s, i) => (
-                                    <div key={i} className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-1.5 border border-border/20">
-                                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-                                      <span className="text-xs text-muted-foreground">{s.name}:</span>
-                                      <span className="text-sm font-bold" style={{ color: s.color }}>
-                                        {typeof s.value === 'number' ? (Number.isInteger(s.value) ? s.value.toLocaleString('pt-BR') : s.value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })) : s.value}{current.unit || ''}
-                                      </span>
-                                      {s.delta != null && (
-                                        <span className={`text-[10px] font-semibold ${s.delta >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                          {s.delta >= 0 ? '▲' : '▼'}{Math.abs(s.delta).toFixed(1)}%
-                                        </span>
-                                      )}
+                                    <div key={i} className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold border"
+                                      style={{background:'rgba(255,255,255,0.80)', borderColor:'rgba(0,0,0,0.07)', color:'#596777'}}>
+                                      <span className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor: s.color}}/>
+                                      {s.name}: <span style={{color: s.color}}>{typeof s.value === 'number' ? (Number.isInteger(s.value) ? s.value.toLocaleString('pt-BR') : s.value.toLocaleString('pt-BR', {maximumFractionDigits:1})) : s.value}{current.unit||''}</span>
+                                      {s.delta != null && <span className={s.delta >= 0 ? 'text-green-600' : 'text-red-500'}>{s.delta >= 0 ? '▲' : '▼'}{Math.abs(s.delta).toFixed(1)}%</span>}
                                     </div>
                                   ))}
                                 </div>
-                              </div>
-                            )}
+                              )}
+                            </div>
                             <div className="px-3 pb-4">
-                              <EvolutionChart
-                                data={current.data}
-                                lines={current.lines}
-                                unit={current.unit}
-                                large
-                              />
+                              <EvolutionChart data={current.data} lines={current.lines} unit={current.unit} large />
                             </div>
                           </div>
                         </div>
@@ -1253,42 +1238,34 @@ export default function Dashboard() {
                   return (
                     <Card className="card-clay">
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-base font-bold tracking-tight" style={{fontFamily:'Georgia, serif'}}>
-                          <span className="relative">
-                            Raio-X educacional
-                            <span className="absolute inset-x-0 bottom-0.5 h-2.5 rounded -z-0" style={{background:'rgba(251,219,88,0.55)'}}/>
-                          </span>
+                        <CardTitle>
+                          <span className="mural-section-h2">Raio-X educacional</span>
                         </CardTitle>
-                        <p className="text-xs text-muted-foreground">Indicadores mais recentes desta escola</p>
+                        <p className="text-xs text-muted-foreground -mt-1">Indicadores mais recentes desta escola</p>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <div className="divide-y divide-border/10">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {rows.map(row => {
                             const cfg = statusConfig[row.diag.status];
                             return (
-                              <div key={row.key} className="flex items-start gap-3 py-3">
-                                <div className={`w-3 h-3 rounded-full mt-1 shrink-0 ${cfg.dot}`} />
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                                    <span className="text-sm font-semibold text-foreground">
-                                      {row.nome}
-                                      {row.ano && <span className="text-[10px] font-normal text-muted-foreground ml-1">({row.ano})</span>}
-                                    </span>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm font-bold">{row.diag.valor}</span>
-                                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${cfg.bg}`}>{row.diag.label}</span>
-                                    </div>
-                                  </div>
-                                  <p className="text-xs text-muted-foreground mt-0.5">{row.diag.explicacao}</p>
-                                  {row.mediaNacional && (
-                                    <p className="text-[11px] text-blue-600/70 mt-0.5">Média nacional: {row.mediaNacional}</p>
-                                  )}
-                                  {row.diag.secundarios && row.diag.secundarios.length > 0 && (
-                                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[11px] text-muted-foreground">
-                                      {row.diag.secundarios.map((s, i) => <span key={i}>{s}</span>)}
-                                    </div>
-                                  )}
+                              <div key={row.key} className="indicator-tile">
+                                <div className="flex items-center justify-between gap-2 mb-2">
+                                  <span className="text-sm font-bold" style={{color:'#485564'}}>
+                                    {row.nome}
+                                    {row.ano && <span className="text-[10px] font-normal text-muted-foreground ml-1">({row.ano})</span>}
+                                  </span>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0 ${cfg.bg}`}>{row.diag.label}</span>
                                 </div>
+                                <div className="text-2xl font-bold leading-none mb-2" style={{letterSpacing:'-0.03em'}}>{row.diag.valor}</div>
+                                <p className="text-xs text-muted-foreground leading-snug">{row.diag.explicacao}</p>
+                                {row.mediaNacional && (
+                                  <p className="text-[11px] mt-1" style={{color:'#4b7db5'}}>Média nacional: {row.mediaNacional}</p>
+                                )}
+                                {row.diag.secundarios && row.diag.secundarios.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1.5">
+                                    {row.diag.secundarios.map((s, i) => <span key={i} className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold text-muted-foreground" style={{background:'rgba(0,0,0,0.04)', border:'1px solid rgba(0,0,0,0.06)'}}>{s}</span>)}
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
