@@ -915,7 +915,10 @@ export default function Dashboard() {
                               )}
                             </div>
                             <div className="px-3 pb-4">
-                              <EvolutionChart data={current.data} lines={current.lines} unit={current.unit} large />
+                              <div className="relative rounded-[18px_26px_18px_22px] overflow-hidden" style={{background:`repeating-linear-gradient(0deg, transparent 0 31px, rgba(115,148,180,.06) 31px 32px), linear-gradient(to right, rgba(229,225,215,.40) 1px, transparent 1px) 0 0/16.666% 100%, #fffef9`, border:'1px solid #eadfcb', boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.5), 0 12px 18px rgba(83,72,53,0.05)', padding:'16px 12px 8px'}}>
+                                <div className="absolute w-8 h-8 pointer-events-none" style={{right:'10px',top:'10px',background:'linear-gradient(135deg, transparent 0 49%, rgba(245,232,205,.85) 50% 100%)',borderRadius:'4px',boxShadow:'-1px 1px 0 rgba(211,197,170,.7)'}}/>
+                                <EvolutionChart data={current.data} lines={current.lines} unit={current.unit} large />
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -2639,13 +2642,10 @@ function IndicatorSection({ title, icon, expanded = true, onToggle, children }: 
   return (
     <Card className="card-clay">
       <CardHeader className="pb-2 cursor-pointer select-none" onClick={onToggle}>
-        <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-tight" style={{fontFamily:'Georgia, serif'}}>
-          {icon}
-          <span className="relative">
-            {title}
-            <span className="absolute inset-x-0 bottom-0 h-2 rounded -z-0" style={{background:'rgba(251,219,88,0.45)'}}/>
-          </span>
-          <span className="ml-auto text-muted-foreground">
+        <CardTitle className="flex items-center gap-2">
+          <span className="shrink-0 text-muted-foreground">{icon}</span>
+          <span className="mural-section-h2 text-base">{title}</span>
+          <span className="ml-auto text-muted-foreground shrink-0">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </span>
         </CardTitle>

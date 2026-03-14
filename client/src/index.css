@@ -160,14 +160,36 @@
   }
 
   .card-clay {
-    @apply bg-card border border-border/50 shadow-sm;
-    border-radius: 2rem;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: linear-gradient(180deg, rgba(255,253,247,.98) 0%, rgba(252,249,241,.98) 100%);
+    border: 1px solid #eadfcb;
+    border-radius: 20px 28px 20px 26px;
+    box-shadow: 0 16px 28px rgba(83, 72, 53, 0.08);
+    overflow: visible;
+    position: relative;
+    transform: rotate(-0.45deg);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
-
+  .card-clay:nth-of-type(even) { transform: rotate(0.45deg); }
+  .card-clay::before {
+    content: "";
+    position: absolute;
+    width: 74px;
+    height: 18px;
+    top: -10px;
+    left: 26px;
+    background: rgba(188, 218, 243, 0.62);
+    border-radius: 6px;
+    transform: rotate(-6deg);
+    box-shadow: 0 6px 14px rgba(82, 126, 152, 0.08);
+    pointer-events: none;
+    z-index: 1;
+  }
   .card-clay:hover {
-    @apply shadow-lg border-accent/30;
-    transform: translateY(-6px);
+    transform: translateY(-3px) rotate(-0.45deg);
+    box-shadow: 0 22px 38px rgba(83, 72, 53, 0.12);
+  }
+  .card-clay:nth-of-type(even):hover {
+    transform: translateY(-3px) rotate(0.45deg);
   }
 
   .glass-card {
