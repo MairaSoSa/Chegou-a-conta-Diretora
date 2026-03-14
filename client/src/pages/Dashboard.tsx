@@ -751,99 +751,137 @@ export default function Dashboard() {
 
         {activeTab === "search" && (
           <div className="space-y-4">
-            {!selectedInep && <Card className="card-clay">
-              <CardContent className="p-4">
-                <div className="flex flex-col md:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Busque por nome ou código INEP..."
-                      className="pl-10 bg-background border-border/50 h-11 rounded-xl"
-                      value={searchQuery}
-                      onChange={(e) => { setSearchQuery(e.target.value); setShowSearchDropdown(true); }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
+            {!selectedInep && (
+              <>
+                <Card className="card-clay">
+                  <CardContent className="p-4">
+                    {/* Barra de busca */}
+                    <div className="flex flex-col md:flex-row gap-3 mb-3">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Busque por nome ou código INEP (8 dígitos)..."
+                          className="pl-10 bg-background border-border/50 h-11 rounded-xl"
+                          value={searchQuery}
+                          autoFocus
+                          onChange={(e) => { setSearchQuery(e.target.value); }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              if (searchQuery.length === 8 && /^\d+$/.test(searchQuery)) {
+                                selectSchool(searchQuery);
+                              } else {
+                                refetchSearch();
+                              }
+                            }
+                          }}
+                        />
+                      </div>
+                      <Button
+                        className="h-11 rounded-xl"
+                        disabled={searchLoading}
+                        onClick={() => {
                           if (searchQuery.length === 8 && /^\d+$/.test(searchQuery)) {
                             selectSchool(searchQuery);
                           } else {
                             refetchSearch();
                           }
-                        }
-                      }}
-                    />
-                    {showSearchDropdown && searchResults && searchResults.dados && searchResults.dados.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/50 rounded-xl shadow-xl z-50 max-h-72 overflow-y-auto">
+                        }}
+                      >
+                        {searchLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Search className="w-4 h-4 mr-2" />}
+                        Buscar
+                      </Button>
+                    </div>
+
+                    {/* Filtros */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Filter className="w-4 h-4 text-muted-foreground" />
+                      <select
+                        value={filterUf}
+                        onChange={(e) => { setFilterUf(e.target.value); setListPage(1); }}
+                        className="text-sm bg-background border border-border/50 rounded-lg px-2 py-1.5"
+                      >
+                        <option value="">Todos os estados</option>
+                        {Object.entries(UF_NAMES).sort(([a], [b]) => a.localeCompare(b)).map(([uf, name]) => (
+                          <option key={uf} value={uf}>{uf} - {name}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={filterDep}
+                        onChange={(e) => { setFilterDep(e.target.value); setListPage(1); }}
+                        className="text-sm bg-background border border-border/50 rounded-lg px-2 py-1.5"
+                      >
+                        <option value="">Todas as redes</option>
+                        <option value="1">Federal</option>
+                        <option value="2">Estadual</option>
+                        <option value="3">Municipal</option>
+                        <option value="4">Privada</option>
+                      </select>
+                      {(filterUf || filterDep) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setFilterUf(""); setFilterDep(""); setListPage(1); }}
+                          className="text-xs text-muted-foreground"
+                        >
+                          <X className="w-3 h-3 mr-1" /> Limpar filtros
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Resultados da busca — lista fixa abaixo da barra */}
+                {searchLoading && (
+                  <div className="flex items-center gap-2 px-1 py-2 text-sm text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Buscando escolas...
+                  </div>
+                )}
+                {!searchLoading && searchResults && searchResults.dados && searchResults.dados.length > 0 && (
+                  <Card className="card-clay">
+                    <CardContent className="p-0">
+                      <div className="px-4 py-2.5 border-b border-border/20 flex items-center justify-between">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          {searchResults.dados.length} escola(s) encontrada(s)
+                        </span>
+                        <button
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => setSearchQuery("")}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="divide-y divide-border/20 max-h-96 overflow-y-auto">
                         {searchResults.dados.map((result: any) => (
                           <button
                             key={result.co_entidade}
-                            className="w-full text-left px-4 py-3 hover:bg-accent/5 border-b border-border/20 last:border-0 transition-colors flex justify-between items-center group"
+                            className="w-full text-left px-4 py-3.5 hover:bg-accent/5 transition-colors flex justify-between items-center group"
                             onClick={() => {
                               selectSchool(String(result.co_entidade));
                               setSearchQuery(result.no_entidade);
                             }}
                           >
                             <div>
-                              <p className="font-semibold text-sm group-hover:text-accent">{result.no_entidade}</p>
-                              <p className="text-xs text-muted-foreground">{result.co_entidade} - {result.no_municipio}/{result.sg_uf} - {result.ds_dependencia}</p>
+                              <p className="font-semibold text-sm group-hover:text-accent transition-colors">{result.no_entidade}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                INEP {result.co_entidade} · {result.no_municipio}/{result.sg_uf} · {result.ds_dependencia}
+                                {result.qt_matriculas > 0 && ` · ${result.qt_matriculas.toLocaleString('pt-BR')} alunos`}
+                              </p>
                             </div>
-                            <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100" />
+                            <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 ml-2 group-hover:text-accent transition-colors" />
                           </button>
                         ))}
                       </div>
-                    )}
+                    </CardContent>
+                  </Card>
+                )}
+                {!searchLoading && searchQuery.length >= 2 && searchResults && searchResults.dados && searchResults.dados.length === 0 && (
+                  <div className="text-center py-6 text-sm text-muted-foreground">
+                    <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                    Nenhuma escola encontrada para "<strong>{searchQuery}</strong>"
                   </div>
-                  <Button
-                    className="h-11 rounded-xl"
-                    disabled={searchLoading}
-                    onClick={() => {
-                      if (searchQuery.length === 8 && /^\d+$/.test(searchQuery)) {
-                        selectSchool(searchQuery);
-                      } else {
-                        refetchSearch();
-                      }
-                    }}
-                  >
-                    {searchLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Search className="w-4 h-4 mr-2" />}
-                    Buscar
-                  </Button>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 mt-3">
-                  <Filter className="w-4 h-4 text-muted-foreground" />
-                  <select
-                    value={filterUf}
-                    onChange={(e) => { setFilterUf(e.target.value); setListPage(1); }}
-                    className="text-sm bg-background border border-border/50 rounded-lg px-2 py-1.5"
-                  >
-                    <option value="">Todos os estados</option>
-                    {Object.entries(UF_NAMES).sort(([a], [b]) => a.localeCompare(b)).map(([uf, name]) => (
-                      <option key={uf} value={uf}>{uf} - {name}</option>
-                    ))}
-                  </select>
-                  <select
-                    value={filterDep}
-                    onChange={(e) => { setFilterDep(e.target.value); setListPage(1); }}
-                    className="text-sm bg-background border border-border/50 rounded-lg px-2 py-1.5"
-                  >
-                    <option value="">Todas as redes</option>
-                    <option value="1">Federal</option>
-                    <option value="2">Estadual</option>
-                    <option value="3">Municipal</option>
-                    <option value="4">Privada</option>
-                  </select>
-                  {(filterUf || filterDep) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => { setFilterUf(""); setFilterDep(""); setListPage(1); }}
-                      className="text-xs text-muted-foreground"
-                    >
-                      <X className="w-3 h-3 mr-1" /> Limpar filtros
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>}
+                )}
+              </>
+            )}
 
             {selectedInep && (
               <>
