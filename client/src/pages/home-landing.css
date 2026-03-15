@@ -430,15 +430,15 @@
   position: relative;
   font-size: 1.05rem;
   padding: 11px 36px 13px;
-  background: linear-gradient(150deg, #4a7a65 0%, #34604f 100%);
+  background: linear-gradient(150deg, #e8a882 0%, #d98b62 100%);
   border: none;
   border-radius: 6px 14px 8px 10px / 14px 6px 10px 8px;
-  color: #d6f5e7;
+  color: #5c2e08;
   font-family: "Patrick Hand", cursive;
   font-weight: 700;
   letter-spacing: .03em;
   box-shadow:
-    0 6px 22px rgba(52,96,79,.25),
+    0 6px 22px rgba(168,85,46,.18),
     0 1px 0 rgba(255,255,255,.18) inset,
     0 -2px 0 rgba(0,0,0,.15) inset;
   transform: rotate(-1.5deg);
@@ -452,9 +452,9 @@
   top: -10px; left: 50%;
   transform: translateX(-50%) rotate(1deg);
   width: 38px; height: 12px;
-  background: linear-gradient(135deg, #a8d8c0 60%, #c5ead5 100%);
+  background: linear-gradient(135deg, #e8a882 60%, #f5c4a2 100%);
   border-radius: 4px 6px 5px 4px;
-  box-shadow: 0 1px 4px rgba(31,89,64,.18);
+  box-shadow: 0 1px 4px rgba(168,85,46,.18);
   opacity: 0.9;
 }
 .hl-remendo-jornada-wrap:hover .hl-remendo-jornada {
