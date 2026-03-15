@@ -167,7 +167,7 @@ export default function Home() {
             <div className="hl-right-col">
               {/* Dica do dia */}
               <div className="hl-tip-box">
-                <strong>💡 Dica do dia</strong>
+                <strong>Dica do dia</strong>
                 <p>
                   Comece pelo Painel da Escola — digite o código INEP e veja os dados em segundos.
                 </p>
@@ -176,7 +176,7 @@ export default function Home() {
               {/* Trilha */}
               <div className="hl-caderno-box">
                 <div className="hl-trilha-header">
-                  <h3>🧭 Trilha da Diretora</h3>
+                  <h3>Trilha da Diretora</h3>
                   <span className="hl-trilha-badge">
                     {done}/{TRILHA_ITEMS.length}
                   </span>

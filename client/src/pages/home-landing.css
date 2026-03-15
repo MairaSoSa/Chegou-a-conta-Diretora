@@ -503,21 +503,37 @@
 }
 .hl-tip-box p { margin: 0; color: #5c2e08; font-size: .79rem; line-height: 1.45; }
 
-/* ── Caderno / Trilha ── */
+/* ── Caderno / Trilha ── papel sem pauta ── */
 .hl-caderno-box {
   position: relative; flex: 1; min-height: 0;
-  border-radius: 22px 28px 22px 26px;
-  padding: 14px 16px 14px;
-  background: linear-gradient(180deg,#fffefb 0%, #fff9f2 100%);
+  border-radius: 3px 14px 3px 3px;
+  padding: 16px 18px 14px;
+  background:
+    /* grão de papel: pontos muito sutis */
+    radial-gradient(circle, rgba(180,140,90,.06) 1px, transparent 1px),
+    radial-gradient(circle, rgba(160,120,70,.04) 1px, transparent 1px),
+    /* cor base papel artesanal */
+    linear-gradient(160deg, #fdf8f0 0%, #faf4e8 55%, #f7efe0 100%);
+  background-size: 18px 18px, 11px 11px, 100% 100%;
+  background-position: 0 0, 9px 9px, 0 0;
   overflow: hidden;
-  border: 1px solid #ecdcc8;
-  box-shadow: 0 8px 20px rgba(93,71,46,.07);
+  border: 1px solid #dbc9a8;
+  border-right: 1px solid #cdb99a;
+  border-bottom: 2px solid #cdb99a;
+  box-shadow:
+    0 4px 18px rgba(93,71,46,.09),
+    2px 4px 0 #e8d9be,
+    4px 8px 0 #ddd0b8;
   display: flex; flex-direction: column;
 }
+/* fita de papel colada no topo */
 .hl-caderno-box::before {
-  content: ""; position: absolute; top: -7px; left: 16px;
-  width: 50px; height: 13px; background: rgba(246,173,192,.45);
-  border-radius: 4px; transform: rotate(-7deg);
+  content: ""; position: absolute; top: -6px; left: 20px;
+  width: 44px; height: 13px;
+  background: linear-gradient(135deg, rgba(246,173,192,.6) 60%, rgba(255,210,220,.5) 100%);
+  border-radius: 3px 5px 4px 3px;
+  transform: rotate(-4deg);
+  box-shadow: 0 1px 3px rgba(180,100,120,.10);
 }
 
 .hl-trilha-header {
