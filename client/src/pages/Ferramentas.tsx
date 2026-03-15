@@ -222,6 +222,15 @@ const DECO_SHAPES = [
 
 const DECO_CORES = ["#c0392b", "#2980b9", "#27ae60", "#e67e22", "#8e44ad", "#16a085", "#d35400", "#2c3e50"];
 
+// Paleta rica para o corpo do estandarte (fundo escuro + franja)
+const ESTANDARTE_CORES: Record<string, { fundo: string; franja: string; borda: string }> = {
+  planejar:  { fundo: "linear-gradient(175deg, #5b21b6 0%, #2e1065 100%)", franja: "#a78bfa", borda: "rgba(167,139,250,0.45)" },
+  pesquisar: { fundo: "linear-gradient(175deg, #075985 0%, #0c2a4a 100%)", franja: "#38bdf8", borda: "rgba(56,189,248,0.45)" },
+  comprar:   { fundo: "linear-gradient(175deg, #065f46 0%, #022c22 100%)", franja: "#34d399", borda: "rgba(52,211,153,0.45)" },
+  receber:   { fundo: "linear-gradient(175deg, #b45309 0%, #5c2a00 100%)", franja: "#fbbf24", borda: "rgba(251,191,36,0.45)" },
+  prestar:   { fundo: "linear-gradient(175deg, #9f1239 0%, #4c0519 100%)", franja: "#fb7185", borda: "rgba(251,113,133,0.45)" },
+};
+
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
@@ -430,38 +439,90 @@ function SecaoCategoria({
           </div>
 
           {/* — estandarte — */}
-          <div
-            className="banner-sway relative mt-2 w-[88%] max-w-[400px] rounded-b-[26px] rounded-t-[12px] border-2 border-white/70 px-5 pb-7 pt-5 text-center shadow-[0_18px_34px_rgba(70,52,36,0.14)] backdrop-blur-sm sm:px-6 md:px-8 md:pb-8 md:pt-6 md:rounded-b-[30px]"
-            style={{ transformOrigin: "top center" }}
-          >
-            {/* fundo colorido */}
-            <div className={`absolute inset-0 rounded-b-[30px] rounded-t-[12px] border-2 ${secao.borda} bg-gradient-to-b ${secao.cor} opacity-95`} />
+          {(() => {
+            const ec = ESTANDARTE_CORES[secao.id] ?? ESTANDARTE_CORES.planejar;
+            const CLIP = "polygon(0 0, 100% 0, 100% 84%, 50% 100%, 0 84%)";
+            const CLIP_INNER = "polygon(0 0, 100% 0, 100% 82%, 50% 98%, 0 82%)";
+            return (
+              <div className="banner-sway relative text-center" style={{ transformOrigin: "top center", width: "min(300px, 86vw)", marginTop: 0 }}>
 
-            {/* suporte horizontal no topo */}
-            <div className="absolute left-1/2 top-0 h-5 w-16 -translate-x-1/2 -translate-y-[70%] rounded-md bg-[#b78555] shadow-[0_3px_8px_rgba(90,60,30,0.18)]" />
-            <div className="absolute left-6 top-0 h-3 w-3 -translate-y-[145%] rounded-full bg-[#82552d]" />
-            <div className="absolute right-6 top-0 h-3 w-3 -translate-y-[145%] rounded-full bg-[#82552d]" />
+                {/* travessa horizontal (crossbar) */}
+                <div className="relative flex items-center" style={{ height: 26, zIndex: 20, marginLeft: -18, marginRight: -18 }}>
+                  {/* knobs dourados nas extremidades */}
+                  <div className="h-[22px] w-[22px] flex-none rounded-full shadow-[0_3px_8px_rgba(0,0,0,0.4)]"
+                    style={{ background: "radial-gradient(circle at 35% 30%, #f0d060, #8b5e1a)" }} />
+                  {/* barra dourada */}
+                  <div className="flex-1 rounded-full shadow-[0_3px_10px_rgba(0,0,0,0.35)]"
+                    style={{ height: 10, background: "linear-gradient(to bottom, #e8c050, #9a6520, #e8c050)" }}>
+                    {/* argolas de fixação */}
+                    <div className="flex h-full items-center justify-around px-4">
+                      {[0, 1].map((k) => (
+                        <div key={k} className="h-[8px] w-[8px] rounded-full border-[2px] border-[#5a3a0a]"
+                          style={{ background: "radial-gradient(circle at 35% 30%, #c8a030, #6b4010)" }} />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="h-[22px] w-[22px] flex-none rounded-full shadow-[0_3px_8px_rgba(0,0,0,0.4)]"
+                    style={{ background: "radial-gradient(circle at 35% 30%, #f0d060, #8b5e1a)" }} />
+                </div>
 
-            {/* ponteiras triangulares na base */}
-            <div className="absolute bottom-0 left-0 right-0 flex justify-between px-10 translate-y-[92%]">
-              <span className="h-0 w-0 border-l-[18px] border-r-[18px] border-t-[26px] border-l-transparent border-r-transparent border-t-white/65" />
-              <span className="h-0 w-0 border-l-[18px] border-r-[18px] border-t-[26px] border-l-transparent border-r-transparent border-t-white/65" />
-            </div>
+                {/* painel principal com V na base */}
+                <div className="relative" style={{ clipPath: CLIP, paddingBottom: "26%" }}>
+                  {/* fundo rico escuro */}
+                  <div className="absolute inset-0" style={{ background: ec.fundo }} />
+                  {/* reflexo de luz (veludo) */}
+                  <div className="absolute inset-0 opacity-20"
+                    style={{ background: "radial-gradient(ellipse at 35% 15%, rgba(255,255,255,0.5) 0%, transparent 55%)" }} />
+                  {/* borda interna dourada */}
+                  <div className="absolute inset-[7px]"
+                    style={{ clipPath: CLIP_INNER, border: `1.5px solid ${ec.borda}`, borderRadius: 2 }} />
+                  {/* segunda borda interna (dupla moldura) */}
+                  <div className="absolute inset-[11px]"
+                    style={{ clipPath: CLIP_INNER, border: `1px solid ${ec.borda.replace("0.45", "0.22")}`, borderRadius: 2 }} />
 
-            {/* conteúdo */}
-            <div className="relative z-10">
-              <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full ${secao.selo} shadow-inner`}>
-                {ICONES_SVG[secao.id]}
+                  {/* faixa do topo — rótulo "ETAPA" */}
+                  <div className="relative z-10 py-2" style={{ background: "rgba(0,0,0,0.28)", borderBottom: `1px solid ${ec.borda}` }}>
+                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/60">etapa</span>
+                  </div>
+
+                  {/* conteúdo central */}
+                  <div className="relative z-10 px-5 pb-12 pt-4">
+                    {/* ícone em círculo de vidro */}
+                    <div className="mx-auto mb-3 flex h-[60px] w-[60px] items-center justify-center rounded-full"
+                      style={{
+                        background: "rgba(255,255,255,0.12)",
+                        boxShadow: `0 0 0 1.5px ${ec.borda}, 0 8px 24px rgba(0,0,0,0.35)`,
+                        color: "white",
+                      }}>
+                      <div style={{ transform: "scale(1.5)" }}>{ICONES_SVG[secao.id]}</div>
+                    </div>
+
+                    {/* título em branco */}
+                    <h2 className="text-2xl font-black tracking-tight text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)] sm:text-3xl">
+                      {secao.titulo}
+                    </h2>
+
+                    {/* divisor dourado */}
+                    <div className="mx-auto my-2.5 h-[1px] w-14"
+                      style={{ background: `linear-gradient(to right, transparent, ${ec.franja}, transparent)` }} />
+
+                    {/* contador */}
+                    <p className="text-xs font-semibold text-white/55">
+                      {cartoes.length} modelos disponíveis
+                    </p>
+                  </div>
+                </div>
+
+                {/* franja pendente na ponta do V */}
+                <div className="flex justify-center gap-[3px]" style={{ marginTop: -1 }}>
+                  {[14, 20, 24, 28, 24, 20, 14].map((h, i) => (
+                    <div key={i} className="w-[3px] rounded-b-full"
+                      style={{ height: h, background: `linear-gradient(to bottom, ${ec.franja}, transparent)`, opacity: 0.75 }} />
+                  ))}
+                </div>
               </div>
-              <div className="relative inline-block">
-                <span className="absolute inset-x-0 bottom-1 h-3 rounded-sm bg-yellow-200/70" />
-                <h2 className={`relative text-2xl font-black sm:text-3xl ${secao.texto}`}>{secao.titulo}</h2>
-              </div>
-              <p className="mt-2 text-sm font-medium tracking-wide text-slate-600">
-                {cartoes.length} {cartoes.length === 1 ? "modelo disponível" : "modelos disponíveis"}
-              </p>
-            </div>
-          </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -674,9 +735,7 @@ export default function Ferramentas() {
           })}
         </div>
 
-        <div className="mt-20 pb-6 text-center text-sm text-slate-500">
-          Os checklists funcionam melhor impressos e colados no mural da secretaria! 📌
-        </div>
+        <div className="mt-20 pb-6" />
       </div>
 
       <Footer />

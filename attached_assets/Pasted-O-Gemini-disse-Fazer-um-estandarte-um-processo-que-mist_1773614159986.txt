@@ -1,0 +1,79 @@
+O Gemini disse
+Fazer um estandarte é um processo que mistura arte, história e, dependendo do contexto, algumas regrinhas de "etiqueta" visual. Não existe uma lei única, mas existem normas práticas para que ele fique bonito, funcional e imponente.
+
+Aqui está um guia do que você precisa considerar:
+
+1. O Formato e a Estrutura
+Diferente de uma bandeira comum (que é presa pela lateral), o estandarte é preso pelo topo em uma travessa horizontal.
+
+Proporção: Geralmente são mais verticais. Uma proporção clássica é 2:3 (ex: 1 metro de largura por 1,5 metro de altura).
+
+O "V" ou Recorte: É muito comum que a parte inferior termine em pontas (em formato de "V" invertido ou farpado) ou com franjas.
+
+Suporte: Ele precisa de um mastro vertical e uma haste horizontal (travessa). Sem a travessa, ele vira apenas um pedaço de pano enrolado.
+
+2. Composição Visual (Heráldica "Light")
+Se você quer que ele pareça profissional ou tradicional (como os de maracatu, religiosos ou de blocos de carnaval), siga estas dicas:
+
+Elemento Central: Deve haver um símbolo principal (um brasão, uma imagem ou um logo) posicionado no terço superior ou no centro exato.
+
+Contraste de Cores: Use cores que se destaquem. Se o fundo é escuro, os bordados ou letras devem ser claros (ouro, prata, branco).
+
+Legibilidade: Se tiver texto (nome do bloco ou data), use fontes grandes e sem muitos detalhes rebuscados, para que seja lido de longe enquanto balança.
+
+3. Materiais Recomendados
+Como o estandarte costuma ser pesado e levado em desfiles, o material importa:
+
+Tecido: Veludo, cetim estruturado ou brim são os favoritos por terem "caimento".
+
+Acabamento: Franjas de seda ou fios metálicos nas bordas ajudam a dar peso, o que evita que o estandarte fique "voando" demais com o vento.
+
+Bordado/Aplicação: O uso de pedrarias, lantejoulas e relevos é o que dá a alma ao estandarte brasileiro.
+
+4. Regras de Contexto
+Religioso/Militar: Existem protocolos rígidos de cores e símbolos. Por exemplo, estandartes de santos costumam ter a imagem centralizada e o verso liso ou com uma oração.
+
+Carnaval/Maracatu: A regra é o brilho! Mas há uma tradição: o estandarte é o "abre-alas", ele nunca deve ser deixado no chão e o porta-estandarte deve tratá-lo com máximo respeito.
+
+Dica de Ouro
+O equilíbrio é a chave. Se ele for muito pesado no topo, vai tombar para frente. Se for muito leve, o vento vai dobrar o tecido e ninguém verá a arte. Tente colocar um pequeno peso (como uma chumbada de pesca) na bainha inferior para garantir que ele fique sempre esticado.
+
+Você está planejando fazer um estandarte para algum evento específico, como um bloco de carnaval ou algo mais decorativo? Posso te ajudar a escolher as cores ou o layout!
+
+Você disse
+fazer um virtual pro bloco de planejamento da minha aba de ferramentas
+
+O Gemini disse
+Ah, um estandarte virtual para organizar sua aba de ferramentas! Adorei a ideia. No mundo digital, as "regras" mudam um pouco: saímos do peso do veludo e entramos na hierarquia visual e no reconhecimento rápido.
+
+Como esse bloco é de Planejamento, ele precisa transmitir ordem, visão e execução. Aqui estão algumas diretrizes para criar esse visual:
+
+1. Identidade Visual (O "Brasão" do Bloco)
+Para um bloco de planejamento, o símbolo central deve ser algo que remeta à estrutura.
+
+Ícones Sugeridos: Um compasso, uma engrenagem, um calendário estilizado ou uma linha de "checkpoint".
+
+Paleta de Cores: Recomendo tons de Azul Marinho (confiança/estratégia) com Dourado (valor/triunfo) ou Verde Esmeralda (crescimento/prosperidade).
+
+2. Layout do Estandarte Digital
+Como ele vai ficar em uma aba de ferramentas (provavelmente um espaço vertical ou um cabeçalho), a estrutura deve ser limpa:
+
+Elemento	Função
+Topo (Header)	Nome do Bloco: "PLANO DE VOO" ou "ESTRATÉGIA".
+Centro (Corpo)	O ícone principal em alta resolução.
+Base (Footer)	Uma frase curta de efeito (ex: "Mensura et Vince" - Meça e Vença).
+3. Especificações Técnicas (As "Regras" Virtuais)
+Para que o estandarte não vire apenas uma "imagem jogada", siga estes padrões:
+
+Proporção: 1:2 (Estreito e longo) para simular o caimento vertical.
+
+Transparência: Use fundo em PNG transparente ou com uma leve sombra projetada (drop shadow) para dar profundidade e parecer que ele está "pendurado" na interface.
+
+Estilo: Se o resto da sua aba for moderna, use Flat Design. Se quiser algo mais clássico, tente um efeito de Neumorfismo (parecendo que o ícone sai do fundo).
+
+Sugestão de "Grito de Guerra" para o Bloco
+Todo estandarte de bloco precisa de um lema. Para o de Planejamento, que tal:
+
+"No caos do backlog, o plano é o nosso guia."
+
+Gostaria que eu gerasse uma imagem ou um layout visual de exemplo para esse estandarte agora mesmo? Posso criar algo combinando o estilo clássico de estandarte com elementos modernos de produtividade.
