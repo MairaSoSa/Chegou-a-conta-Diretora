@@ -346,20 +346,6 @@ function SecaoCategoria({
             {/* corda do varal */}
             <div className="pointer-events-none absolute left-2 right-2 top-3 h-[5px] rounded-full bg-[repeating-linear-gradient(45deg,#9a6a3a,#9a6a3a_6px,#b07b45_6px,#b07b45_12px)] shadow-sm md:left-6 md:right-6 line-wind" />
 
-            {/* bandeirinhas do varal */}
-            <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center gap-5 opacity-90 md:gap-8">
-              {[0, 1, 2, 3, 4, 5, 6].map((item) => (
-                <div
-                  key={item}
-                  className="flag-sway h-0 w-0 border-l-[9px] border-r-[9px] border-t-[15px] border-l-transparent border-r-transparent drop-shadow-sm"
-                  style={{
-                    borderTopColor: BANDEIRINHAS[(secaoIdx + linhaIdx + item) % BANDEIRINHAS.length],
-                    animationDelay: `${(item + linhaIdx) * 0.11}s`,
-                  }}
-                />
-              ))}
-            </div>
-
             {/* grade de cartões */}
             <div className="grid gap-x-6 gap-y-14 pt-10 sm:grid-cols-2 xl:grid-cols-3">
               {linha.map((cartao, i) => (
