@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chegou a Conta, Diretora! — Caderno da Diretora</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f7efe3;
+      --paper:#fffdf8;
+      --line:#dbe9fb;
+      --margin:#ff8b8b;
+      --text:#23404b;
+      --muted:#677b86;
+      --green:#2f7a5f;
+      --green-soft:#dff3e8;
+      --yellow:#ffe28a;
+      --yellow-soft:#fff2bf;
+      --pink:#f6adc0;
+      --pink-soft:#ffe2ea;
+      --blue:#73aee8;
+      --blue-soft:#e5f1ff;
+      --orange:#f4a56a;
+      --orange-soft:#ffe7d6;
+      --purple:#a590df;
+      --purple-soft:#eee8ff;
+      --shadow:0 18px 48px rgba(93,71,46,.14);
+      --shadow-soft:0 10px 22px rgba(93,71,46,.10);
+      --w:1280px;
+      --h:760px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;height:100%}
+    body{
+      font-family:Nunito,system-ui,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 12% 14%, rgba(255,226,138,.38), transparent 14%),
+        radial-gradient(circle at 86% 12%, rgba(246,173,192,.26), transparent 12%),
+        radial-gradient(circle at 80% 82%, rgba(115,174,232,.22), transparent 14%),
+        linear-gradient(180deg,#fdf8f1 0%,#f7efe3 100%);
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+      padding:10px;
+    }
+    .desk-doodle,.desk-doodle-2,.desk-doodle-3{position:fixed;pointer-events:none;opacity:.22;z-index:0}
+    .desk-doodle{left:14px;top:24px;width:140px;height:140px;border:5px dashed #f6adc0;border-radius:30px;transform:rotate(-14deg)}
+    .desk-doodle-2{right:24px;top:42px;width:120px;height:120px;background:linear-gradient(135deg,rgba(165,144,223,.35),rgba(115,174,232,.25));border-radius:24px;transform:rotate(12deg)}
+    .desk-doodle-3{right:48px;bottom:30px;width:150px;height:90px;background:rgba(255,226,138,.35);border-radius:18px;transform:rotate(-8deg);box-shadow:-34px -14px 0 rgba(244,165,106,.18)}
+
+    .notebook{
+      position:relative;
+      z-index:1;
+      width:min(var(--w), calc(100vw - 20px));
+      height:min(var(--h), calc(100vh - 20px));
+      background:var(--paper);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      border:1px solid #eadfce;
+      display:grid;
+      grid-template-columns:74px 1fr;
+    }
+
+    .spiral{
+      position:relative;
+      width:74px;
+      background:transparent;
+      overflow:visible;
+      border-right:none;
+    }
+
+    /* irregular torn spiral holes like ripped notebook paper */
+    .spiral::before{
+      content:"";
+      position:absolute;
+      top:0;
+      bottom:0;
+      right:-22px;
+      width:46px;
+      background:
+        radial-gradient(circle at 30px 20px, transparent 0 8px, #fffdf8 8.5px),
+        radial-gradient(circle at 28px 64px, transparent 0 9px, #fffdf8 9.5px),
+        radial-gradient(circle at 31px 108px, transparent 0 7px, #fffdf8 7.6px),
+        radial-gradient(circle at 27px 152px, transparent 0 9px, #fffdf8 9.6px),
+        radial-gradient(circle at 30px 196px, transparent 0 8px, #fffdf8 8.4px),
+        radial-gradient(circle at 29px 240px, transparent 0 9px, #fffdf8 9.5px),
+        radial-gradient(circle at 31px 284px, transparent 0 7px, #fffdf8 7.6px),
+        radial-gradient(circle at 27px 328px, transparent 0 9px, #fffdf8 9.6px),
+        linear-gradient(#fffdf8,#fffdf8);
+      background-repeat:no-repeat;
+      z-index:3;
+    }
+
+    /* thin paper edge next to the tear-out holes */
+    .spiral::after{
+      content:"";
+      position:absolute;
+      top:0;
+      bottom:0;
+      right:-2px;
+      width:4px;
+      background:linear-gradient(180deg,#efe7db,#f6efe4);
+      z-index:4;
+    }
+
+    .page{
+      position:relative;
+      height:100%;
+      padding:18px 18px 14px 28px;
+      background:
+        linear-gradient(to right, transparent 0, transparent 62px, rgba(255,139,139,.7) 62px, rgba(255,139,139,.7) 64px, transparent 64px),
+        repeating-linear-gradient(to bottom, var(--paper) 0 34px, var(--line) 34px 35px);
+    }
+
+    .topbar{
+      display:grid;
+      grid-template-columns:1fr auto;
+      align-items:start;
+      gap:18px;
+      margin-bottom:8px;
+    }
+    .brand{
+      display:flex;align-items:center;gap:12px;padding-left:12px;
+    }
+    .brand-badge{
+      width:44px;height:44px;border-radius:14px 18px 14px 18px;background:linear-gradient(135deg,var(--green),var(--blue));
+      box-shadow:var(--shadow-soft);transform:rotate(-7deg);position:relative;
+    }
+    .brand-badge::before,.brand-badge::after{content:"";position:absolute;left:10px;height:5px;border-radius:999px;background:white}
+    .brand-badge::before{top:12px;width:22px}
+    .brand-badge::after{top:22px;width:14px}
+    .brand h1{margin:0;font-size:1.28rem;letter-spacing:-.03em;font-weight:800}
+    .brand p{margin:2px 0 0;color:var(--muted);font-size:.86rem}
+
+    .mini-menu{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start;padding-top:3px}
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#fffefb;
+      border:1px dashed #e7d9c7;
+      color:var(--muted);
+      font-size:.76rem;
+      font-weight:800;
+      box-shadow:var(--shadow-soft);
+      transform:rotate(var(--r,0deg));
+      text-decoration:none;
+      transition:.2s ease;
+    }
+    .pill:hover{color:var(--green);border-color:#cfdccf;background:#fbfff9}
+    .pill:nth-child(1){--r:-2deg}.pill:nth-child(2){--r:1deg}.pill:nth-child(3){--r:-1deg}.pill:nth-child(4){--r:2deg}
+
+    .layout{
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:16px;
+      height:calc(100% - 64px);
+      padding:8px 6px 0 0;
+    }
+
+    .hero-note{
+      position:relative;
+      min-height:246px;
+      border-radius:26px 34px 26px 30px;
+      background:linear-gradient(180deg,rgba(255,253,248,.96),rgba(255,248,240,.96));
+      border:1px solid #ecdcc6;
+      box-shadow:var(--shadow-soft);
+      padding:22px 24px 18px;
+      overflow:visible;
+      transform-origin:left center;
+      transition:transform .45s ease, box-shadow .45s ease;
+    }
+    .hero-note:hover{
+      transform:perspective(1200px) rotateY(-2.5deg) rotateX(.8deg);
+      box-shadow:0 24px 42px rgba(93,71,46,.16);
+    }
+    .hero-note::before{
+      content:"";position:absolute;top:-9px;left:26px;width:72px;height:18px;background:rgba(255,226,138,.7);border-radius:6px;transform:rotate(-7deg)
+    }
+    .hero-note::after{
+      content:"";position:absolute;top:-8px;right:38px;width:60px;height:16px;background:rgba(246,173,192,.55);border-radius:6px;transform:rotate(8deg)
+    }
+    .eyebrow{
+      display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#fffefb;border:1px dashed #e6d8c6;
+      color:var(--muted);font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em
+    }
+    .dots{width:9px;height:9px;border-radius:50%;background:var(--pink);box-shadow:15px 0 0 var(--yellow);margin-right:15px}
+    .hero-note h2{margin:12px 0 0;font-size:3rem;line-height:.9;letter-spacing:-.05em;font-weight:800;max-width:520px}
+    .accent{color:#cc7047;position:relative;display:inline-block}
+    .accent::after{content:"";position:absolute;left:4px;right:4px;bottom:2px;height:12px;background:rgba(255,226,138,.72);border-radius:8px;z-index:-1;transform:rotate(-1deg)}
+    .hero-note p{margin:12px 0 0;max-width:520px;color:var(--muted);line-height:1.75;font-size:.96rem}
+    .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+    .btn{min-height:46px;padding:0 18px;border-radius:16px 20px 16px 18px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow-soft)}
+    .btn.primary{background:linear-gradient(135deg,var(--green),#25644c);color:#fff;transform:rotate(-1deg)}
+    .btn.secondary{background:#fffefb;border:1px dashed #e8d9c6;transform:rotate(1deg)}
+    .hero-tags{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .tag{padding:8px 12px;border-radius:999px;background:#fffefb;border:1px dashed #e6d8c6;color:var(--muted);font-size:.8rem;font-weight:700;transform:rotate(var(--r,0deg))}
+    .tag:nth-child(1){--r:-2deg}.tag:nth-child(2){--r:1deg}.tag:nth-child(3){--r:-1deg}.tag:nth-child(4){--r:2deg}
+
+    .mural-label{margin:8px 0 10px 10px;font-family:"Patrick Hand",cursive;font-size:1.2rem;color:#587082}
+    .cards-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+    }
+    .note-card{
+      position:relative;
+      display:block;
+      color:inherit;
+      text-decoration:none;
+      border-radius:18px 22px 18px 20px;
+      padding:14px 14px 12px;
+      box-shadow:var(--shadow-soft);
+      border:1px solid rgba(0,0,0,.04);
+      transform:rotate(var(--rot,0deg)) translateY(0);
+      min-height:106px;
+      transition:transform .28s ease, box-shadow .28s ease, filter .28s ease;
+      animation:postitFloat 5.5s ease-in-out infinite;
+      animation-delay:var(--delay, 0s);
+      transform-origin:center top;
+      will-change:transform;
+    }
+    .note-card:hover{
+      transform:translateY(-6px) rotate(calc(var(--rot,0deg) * 1.15)) scale(1.02);
+      box-shadow:0 18px 34px rgba(93,71,46,.18);
+      filter:saturate(1.03);
+      z-index:3;
+    }
+    .note-card::before{content:"";position:absolute;top:-6px;left:16px;width:42px;height:12px;background:rgba(255,255,255,.7);border-radius:4px;transform:rotate(-8deg)}
+    .note-card h3{margin:0;font-size:1rem;line-height:1.08;letter-spacing:-.03em}
+    .note-card p{margin:8px 0 0;font-size:.8rem;line-height:1.45;color:#516976}
+    .note-card small{display:block;margin-top:8px;font-size:.72rem;font-weight:800;color:#355566}
+    .yellow{background:var(--yellow-soft)} .pink{background:var(--pink-soft)} .blue{background:var(--blue-soft)} .green{background:var(--green-soft)} .orange{background:var(--orange-soft)} .purple{background:var(--purple-soft)}
+    .note-card:nth-child(1){--rot:-1.6deg;--delay:0s}
+    .note-card:nth-child(2){--rot:1.1deg;--delay:.4s}
+    .note-card:nth-child(3){--rot:-.8deg;--delay:.8s}
+    .note-card:nth-child(4){--rot:1.2deg;--delay:1.2s}
+    .note-card:nth-child(5){--rot:-1deg;--delay:1.6s}
+    .note-card:nth-child(6){--rot:.8deg;--delay:2s}
+
+    @keyframes postitFloat{
+      0%,100%{transform:rotate(var(--rot,0deg)) translateY(0)}
+      50%{transform:rotate(calc(var(--rot,0deg) + .7deg)) translateY(-2px)}
+    }
+
+    .right-col{display:grid;grid-template-rows:88px 1fr;gap:10px;align-content:center;padding-top:8px}
+
+    .tape-box,.tip-box,.caderno-box{
+      position:relative;
+      border-radius:24px 30px 24px 28px;
+      padding:18px 18px 16px;
+      background:linear-gradient(180deg,#fffefb 0%, #fff9f2 100%);
+      overflow:hidden;
+      border-color:#ecdcc8;
+      transition:transform .45s ease, box-shadow .45s ease;
+      transform-origin:left center;
+      box-shadow:0 10px 24px rgba(93,71,46,.08);
+    }
+    .caderno-box:hover{
+      transform:perspective(1200px) rotateY(-3deg) rotateX(1deg);
+      box-shadow:0 22px 38px rgba(93,71,46,.16);
+    }
+    .caderno-box::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(90deg, rgba(255,255,255,.0) 0%, rgba(255,255,255,.34) 32%, rgba(255,255,255,0) 62%);
+      transform:translateX(-115%) skewX(-10deg);
+      opacity:0;
+      pointer-events:none;
+    }
+    .caderno-box:hover::after{
+      opacity:1;
+      animation:pageShine .85s ease forwards;
+    }
+
+    @keyframes pageShine{
+      from{transform:translateX(-115%) skewX(-10deg)}
+      to{transform:translateX(135%) skewX(-10deg)}
+    }
+    .caderno-box::before{content:"";position:absolute;top:-8px;left:18px;width:54px;height:14px;background:rgba(246,173,192,.45);border-radius:4px;transform:rotate(-7deg)}
+    .caderno-box h3{margin:0 0 6px 0;font-family:"Patrick Hand",cursive;font-size:1.35rem;color:#577182}
+    .checklist{display:grid;gap:10px;margin-top:12px;padding-left:4px}
+    .check-item{
+      display:flex;align-items:center;gap:10px;min-height:30px;color:#40606d;font-size:.84rem;font-weight:700;
+      background:rgba(255,255,255,.72);
+      border:1px dashed #e7ddd1;
+      border-radius:12px;
+      padding:7px 10px;
+    }
+    .check-item input{
+      appearance:none;
+      width:18px;height:18px;border-radius:6px;border:2px solid #8fb0cb;background:#fff;display:grid;place-items:center;cursor:pointer;
+      margin:0;flex:0 0 auto;position:relative;
+    }
+    .check-item input:checked{background:#fff;border-color:#79b26a}
+    .check-item input:checked::after{
+      content:"✓";
+      color:#4ea95d;
+      font-size:1rem;
+      line-height:1;
+      font-weight:900;
+      font-family:"Patrick Hand", cursive;
+      position:relative;
+      top:-2px;
+      left:-1px;
+      transform:rotate(-10deg);
+    }
+    .check-item.done label{text-decoration:line-through;color:#7a8a92}
+    .check-item label{cursor:pointer;padding:0;border-radius:0;background:transparent;line-height:1.35}
+
+    .tip-box{
+      border-radius:18px 22px 18px 20px;
+      padding:12px 14px;
+      background:var(--yellow-soft);
+      transform:rotate(-2deg);
+      width:86%;
+      margin:0 auto -6px;
+      z-index:2;
+      box-shadow:0 12px 22px rgba(159,126,44,.14);
+      animation:postitFloat 6.2s ease-in-out infinite;
+      animation-delay:.6s;
+      transition:transform .28s ease, box-shadow .28s ease;
+    }
+    .tip-box:hover{
+      transform:translateY(-4px) rotate(-1deg) scale(1.01);
+      box-shadow:0 16px 28px rgba(159,126,44,.18);
+    }
+    .tip-box::before{content:"";position:absolute;top:-6px;left:18px;width:46px;height:12px;background:rgba(255,255,255,.62);border-radius:4px;transform:rotate(-7deg)}
+    .tip-box strong{display:block;font-family:"Patrick Hand",cursive;font-size:1.2rem;color:#856619}
+    .tip-box p{margin:4px 0 0;color:#6d5a2b;font-size:.82rem;line-height:1.45}
+
+    .footer-strip{
+      position:absolute;left:94px;right:18px;bottom:10px;display:flex;justify-content:space-between;gap:10px;color:#758692;font-size:.76rem;font-weight:800
+    }
+
+    @media (max-width: 1280px){
+      .notebook{height:min(var(--h), calc(100vh - 16px));}
+      .hero-note h2{font-size:2.6rem}
+    }
+    @media (max-width: 980px){
+      body{overflow:auto;padding:10px}
+      .notebook{height:auto;min-height:760px;grid-template-columns:58px 1fr}
+      .layout{grid-template-columns:1fr;height:auto}
+      .right-col{grid-template-rows:auto auto auto}
+      .cards-grid{grid-template-columns:repeat(2,1fr)}
+      .footer-strip{position:static;margin-top:8px;padding-left:10px}
+    }
+    @media (max-width: 700px){
+      .cards-grid{grid-template-columns:1fr}
+      .topbar{grid-template-columns:1fr}
+      .mini-menu{justify-content:flex-start}
+      .hero-note h2{font-size:2.1rem}
+      .hero-note,.tape-box,.caderno-box,.tip-box{transform:none}
+      .note-card{transform:none}
+    }
+  </style>
+</head>
+<body>
+  <div class="desk-doodle"></div>
+  <div class="desk-doodle-2"></div>
+  <div class="desk-doodle-3"></div>
+
+  <div class="notebook">
+    <aside class="spiral"></aside>
+    <section class="page">
+      <div class="topbar">
+        <div class="brand">
+          <span class="brand-badge"></span>
+          <div>
+            <h1>Chegou a Conta, Diretora!</h1>
+            <p>um caderno bonito para organizar a gestão da escola</p>
+          </div>
+        </div>
+        <div class="mini-menu">
+          <a class="pill" href="#dados">dados</a>
+          <a class="pill" href="#legislacao">legislação</a>
+          <a class="pill" href="#calendario">calendário</a>
+          <a class="pill" href="#programas">programas</a>
+          <a class="pill" href="#ferramentas">ferramentas</a>
+          <a class="pill" href="#trilha-box">trilha</a>
+        </div>
+      </div>
+
+      <div class="layout">
+        <div>
+          <div class="hero-note">
+            <span class="eyebrow"><span class="dots"></span> um cantinho mais bonito para cuidar da escola</span>
+            <h2>Chegou a Conta, <span class="accent">Diretora.</span></h2>
+            <p>
+              Como anda a gestão da sua escola? Aqui você acompanha dados, programas, prazos e ferramentas em um só lugar.
+              Um lugar com cara de caderno de verdade: colorido, acolhedor, leve e mais útil logo na primeira olhada.
+            </p>
+            <div class="hero-actions">
+              <span class="btn primary">Começar a jornada</span>
+              <span class="btn secondary">Ver minha escola</span>
+            </div>
+            <div class="hero-tags">
+              <span class="tag">dados educacionais</span>
+              <span class="tag">programas</span>
+              <span class="tag">legislação</span>
+              <span class="tag">ferramentas práticas</span>
+            </div>
+          </div>
+
+          <div class="mural-label">Mural da diretora</div>
+          <div class="cards-grid">
+            <a class="note-card yellow" id="dados" href="#dados">
+              <h3>📊 Dados<br>da escola</h3>
+              <p>IDEB, matrículas, docentes e indicadores.</p>
+              <small>indicadores e análises</small>
+            </a>
+            <a class="note-card pink" id="legislacao" href="#legislacao">
+              <h3>⚖️ Regras<br>e leis</h3>
+              <p>Normas e orientações para apoiar decisões.</p>
+              <small>legislação</small>
+            </a>
+            <a class="note-card blue" href="#calendario">
+              <h3>📅 Calendário<br>de prazos</h3>
+              <p>O que precisa entrar no radar da direção.</p>
+              <small>agenda e prazos</small>
+            </a>
+            <a class="note-card green" href="#trilha-box">
+              <h3>🧭 Trilha<br>da gestão</h3>
+              <p>Passo a passo para navegar pela plataforma.</p>
+              <small>jornada guiada</small>
+            </a>
+            <a class="note-card purple" id="programas" href="#programas">
+              <h3>💰 Programas<br>e recursos</h3>
+              <p>Informações organizadas sobre repasses.</p>
+              <small>repasses e ações</small>
+            </a>
+            <a class="note-card orange" id="ferramentas" href="#ferramentas">
+              <h3>🧰 Ferramentas<br>úteis</h3>
+              <p>Modelos, materiais e apoio para o dia a dia.</p>
+              <small>materiais úteis</small>
+            </a>
+          </div>
+        </div>
+
+        <div class="right-col">
+
+          <div class="tip-box">
+            <strong>💡 Dica do dia</strong>
+            <p>Comece pelos prazos e pelos dados da escola. Depois, avance para programas, ferramentas e legislação.</p>
+          </div>
+
+          <div class="caderno-box" id="trilha-box">
+            <h3>🧭 Trilha da Diretora</h3>
+            <div class="checklist">
+              <div class="check-item done"><input id="t1" type="checkbox" checked><label for="t1">ver os dados principais da escola</label></div>
+              <div class="check-item"><input id="t2" type="checkbox"><label for="t2">acompanhar regras e calendários</label></div>
+              <div class="check-item"><input id="t3" type="checkbox"><label for="t3">entender programas e recursos</label></div>
+              <div class="check-item"><input id="t4" type="checkbox"><label for="t4">usar ferramentas de apoio</label></div>
+              <div class="check-item"><input id="t5" type="checkbox"><label for="t5">marcar o que já foi concluído</label></div>
+              <div class="check-item"><input id="t6" type="checkbox"><label for="t6">seguir a jornada com mais clareza</label></div>
+            </div>
+          </div>
+          <script>
+            (function(){
+              const STORAGE_KEY = 'chegou-conta-trilha-progresso';
+              const checks = Array.from(document.querySelectorAll('.check-item input'));
+              const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+              checks.forEach((input) => {
+                if (saved[input.id] !== undefined) input.checked = !!saved[input.id];
+                const row = input.closest('.check-item');
+                if (row) row.classList.toggle('done', input.checked);
+                input.addEventListener('change', () => {
+                  const current = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+                  current[input.id] = input.checked;
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+                  if (row) row.classList.toggle('done', input.checked);
+                });
+              });
+            })();
+          </script>
+        </div>
+      </div>
+
+      <div class="footer-strip">
+        <span>gratuito para diretores de escolas públicas</span>
+        <span>chegou a conta, diretora • um espaço mais bonito para a gestão escolar</span>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

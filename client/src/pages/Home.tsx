@@ -1,83 +1,171 @@
-import { Navigation } from "@/components/Navigation";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, MessagesSquare, GraduationCap, BookOpen, Wrench, BarChart3, Scale, Calendar } from "lucide-react";
-import { Link } from "wouter";
-import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import "./home-landing.css";
+
+const STORAGE_KEY = "chegou-conta-trilha-progresso";
+
+const TRILHA_ITEMS = [
+  { id: "t1", label: "ver os dados principais da escola" },
+  { id: "t2", label: "acompanhar regras e calendários" },
+  { id: "t3", label: "entender programas e recursos" },
+  { id: "t4", label: "usar ferramentas de apoio" },
+  { id: "t5", label: "marcar o que já foi concluído" },
+  { id: "t6", label: "seguir a jornada com mais clareza" },
+];
+
+const NOTE_CARDS = [
+  { color: "hl-yellow", emoji: "📊", title: ["Dados", "da escola"],   desc: "IDEB, matrículas, docentes e indicadores.",         small: "indicadores e análises", href: "/dashboard" },
+  { color: "hl-pink",   emoji: "⚖️", title: ["Regras", "e leis"],     desc: "Normas e orientações para apoiar decisões.",        small: "legislação",             href: "/legislacao" },
+  { color: "hl-blue",   emoji: "📅", title: ["Calendário", "de prazos"], desc: "O que precisa entrar no radar da direção.",       small: "agenda e prazos",        href: "/calendario" },
+  { color: "hl-green",  emoji: "🧭", title: ["Trilha", "da gestão"],  desc: "Passo a passo para navegar pela plataforma.",       small: "jornada guiada",         href: "/trilha" },
+  { color: "hl-purple", emoji: "💰", title: ["Programas", "e recursos"], desc: "Informações organizadas sobre repasses.",        small: "repasses e ações",       href: "/programas" },
+  { color: "hl-orange", emoji: "🧰", title: ["Ferramentas", "úteis"], desc: "Modelos, materiais e apoio para o dia a dia.",      small: "materiais úteis",        href: "/ferramentas" },
+];
+
+const MENU_PILLS = [
+  { label: "dados",        href: "/dashboard" },
+  { label: "legislação",   href: "/legislacao" },
+  { label: "calendário",   href: "/calendario" },
+  { label: "programas",    href: "/programas" },
+  { label: "ferramentas",  href: "/ferramentas" },
+  { label: "trilha",       href: "/trilha" },
+];
+
 export default function Home() {
-  const { data: settings } = useQuery<Record<string, string>>({
-    queryKey: ["/api/settings"],
+  const [, navigate] = useLocation();
+  const [checks, setChecks] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      return { t1: true, ...saved };
+    } catch {
+      return { t1: true };
+    }
   });
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navigation />
-      
-      <main className="flex-1 flex flex-col items-center justify-center">
-        <section className="w-full max-w-3xl mx-auto px-6 py-12 md:py-16">
-          <div className="text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                Chegou a Conta,{" "}
-                <span className="text-accent">Diretora!</span>
-              </h1>
-              
-              <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
-                {settings?.hero_subtitle || "O caminho do dinheiro público na escola, explicado de forma simples. Trilhas, modelos e apoio para quem cuida da educação."}
-              </p>
-              
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-                <Link href="/trilha">
-                  <Button size="lg" className="h-12 px-8 text-base rounded-xl" data-testid="button-comecar-jornada">
-                    Começar a Jornada
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-                <Link href="/dashboard">
-                  <Button size="lg" variant="outline" className="h-12 px-8 text-base rounded-xl" data-testid="button-ver-escola">
-                    Ver minha escola
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
+  const toggleCheck = (id: string) => {
+    setChecks(prev => {
+      const next = { ...prev, [id]: !prev[id] };
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-w-3xl mx-auto"
-            >
-              <NavCard href="/dashboard" icon={BarChart3} label="Dados Educacionais" />
-              <NavCard href="/legislacao" icon={Scale} label="Legislação" />
-              <NavCard href="/calendario" icon={Calendar} label="Calendário" />
-              <NavCard href="/trilha" icon={GraduationCap} label="Trilha" />
-              <NavCard href="/programas" icon={BookOpen} label="Programas" />
-              <NavCard href="/ferramentas" icon={Wrench} label="Ferramentas" />
-              <NavCard href="/chat" icon={MessagesSquare} label="Caderno da Diretora" />
-            </motion.div>
+  return (
+    <div className="hl-root">
+      {/* Background doodles */}
+      <div className="hl-doodle-1" />
+      <div className="hl-doodle-2" />
+      <div className="hl-doodle-3" />
+
+      {/* Notebook */}
+      <div className="hl-notebook">
+        <aside className="hl-spiral" />
+
+        <section className="hl-page">
+          {/* Top bar */}
+          <div className="hl-topbar">
+            <div className="hl-brand">
+              <span className="hl-brand-badge" />
+              <div>
+                <h1>Chegou a Conta, Diretora!</h1>
+                <p>um caderno bonito para organizar a gestão da escola</p>
+              </div>
+            </div>
+            <nav className="hl-mini-menu">
+              {MENU_PILLS.map(p => (
+                <Link key={p.href} href={p.href}>
+                  <span className="hl-pill">{p.label}</span>
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          {/* Main layout */}
+          <div className="hl-layout">
+            {/* Left column */}
+            <div>
+              {/* Hero note */}
+              <div className="hl-hero-note">
+                <span className="hl-eyebrow">
+                  <span className="hl-dots" />
+                  um cantinho mais bonito para cuidar da escola
+                </span>
+                <h2>
+                  Chegou a Conta, <span className="hl-accent">Diretora.</span>
+                </h2>
+                <p>
+                  Como anda a gestão da sua escola? Aqui você acompanha dados, programas, prazos e ferramentas em um só lugar.
+                  Um lugar com cara de caderno de verdade: colorido, acolhedor, leve e mais útil logo na primeira olhada.
+                </p>
+                <div className="hl-hero-actions">
+                  <Link href="/trilha">
+                    <span className="hl-btn hl-btn-primary">Começar a jornada</span>
+                  </Link>
+                  <Link href="/dashboard">
+                    <span className="hl-btn hl-btn-secondary">Ver minha escola</span>
+                  </Link>
+                </div>
+                <div className="hl-hero-tags">
+                  <span className="hl-tag">dados educacionais</span>
+                  <span className="hl-tag">programas</span>
+                  <span className="hl-tag">legislação</span>
+                  <span className="hl-tag">ferramentas práticas</span>
+                </div>
+              </div>
+
+              {/* Mural */}
+              <p className="hl-mural-label">Mural da diretora</p>
+              <div className="hl-cards-grid">
+                {NOTE_CARDS.map((card, i) => (
+                  <Link key={i} href={card.href}>
+                    <div className={`hl-note-card ${card.color}`}>
+                      <h3>{card.emoji} {card.title[0]}<br />{card.title[1]}</h3>
+                      <p>{card.desc}</p>
+                      <small>{card.small}</small>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Right column */}
+            <div className="hl-right-col">
+              {/* Tip box */}
+              <div className="hl-tip-box">
+                <strong>💡 Dica do dia</strong>
+                <p>Comece pelos prazos e pelos dados da escola. Depois, avance para programas, ferramentas e legislação.</p>
+              </div>
+
+              {/* Trilha checklist */}
+              <div className="hl-caderno-box">
+                <h3>🧭 Trilha da Diretora</h3>
+                <div className="hl-checklist">
+                  {TRILHA_ITEMS.map(item => (
+                    <div
+                      key={item.id}
+                      className={`hl-check-item${checks[item.id] ? " done" : ""}`}
+                    >
+                      <input
+                        id={item.id}
+                        type="checkbox"
+                        checked={!!checks[item.id]}
+                        onChange={() => toggleCheck(item.id)}
+                      />
+                      <label htmlFor={item.id}>{item.label}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="hl-footer-strip">
+            <span>gratuito para diretores de escolas públicas</span>
+            <span>chegou a conta, diretora • um espaço mais bonito para a gestão escolar</span>
           </div>
         </section>
-
-        <footer className="w-full py-6 border-t text-center text-sm text-muted-foreground mt-auto">
-          <p>{settings?.home_footer_text || "Gratuito para diretores de escolas públicas"}</p>
-        </footer>
-      </main>
-      
-    </div>
-  );
-}
-
-function NavCard({ href, icon: Icon, label, className }: { href: string; icon: any; label: string; className?: string }) {
-  return (
-    <Link href={href}>
-      <div className={`p-4 rounded-xl border bg-card hover:bg-accent/5 hover:border-accent/30 transition-all cursor-pointer group ${className || ''}`}>
-        <Icon className="w-5 h-5 mx-auto mb-2 text-muted-foreground group-hover:text-accent transition-colors" />
-        <p className="text-sm font-medium">{label}</p>
       </div>
-    </Link>
+    </div>
   );
 }
