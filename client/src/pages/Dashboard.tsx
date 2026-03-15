@@ -1057,69 +1057,6 @@ export default function Dashboard() {
                         )}
                       </div>
                     </div>
-                    <div className="hero-side">
-                      <div className="search-card">
-                        <label className="field-label">Buscar outra escola</label>
-                        <div className="search-row" style={{position:'relative'}}>
-                          <div style={{position:'relative',flex:1}}>
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" style={{zIndex:1}} />
-                            <Input
-                              placeholder="Nome ou código INEP..."
-                              className="pl-10 h-10 rounded-xl"
-                              value={searchQuery}
-                              onChange={e => { setSearchQuery(e.target.value); }}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') {
-                                  if (searchQuery.length === 8 && /^\d+$/.test(searchQuery)) selectSchool(searchQuery);
-                                  else refetchSearch();
-                                }
-                              }}
-                            />
-                            {searchResults?.dados?.length > 0 && (
-                              <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/50 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto">
-                                {searchResults.dados.map((r: any) => (
-                                  <button key={r.co_entidade} className="w-full text-left px-3 py-2.5 hover:bg-accent/5 border-b border-border/20 last:border-0 text-sm" onClick={() => { selectSchool(String(r.co_entidade)); setSearchQuery(r.no_entidade); }}>
-                                    <p className="font-semibold">{r.no_entidade}</p>
-                                    <p className="text-xs text-muted-foreground">{r.co_entidade} · {r.no_municipio}/{r.sg_uf}</p>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <Button className="h-10 rounded-xl shrink-0" disabled={searchLoading} onClick={() => { if (searchQuery.length === 8 && /^\d+$/.test(searchQuery)) selectSchool(searchQuery); else refetchSearch(); }}>
-                            {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="filters-card">
-                        <label className="field-label">Filtros rápidos</label>
-                        <div className="filters-grid">
-                          <select className="text-sm bg-white/80 border border-blue-200 rounded-lg px-2 py-1.5" value={filterUf} onChange={e => { setFilterUf(e.target.value); setListPage(1); }}>
-                            <option value="">Todos os estados</option>
-                            {Object.entries(UF_NAMES).sort(([a],[b]) => a.localeCompare(b)).map(([uf, name]) => (
-                              <option key={uf} value={uf}>{uf} — {name}</option>
-                            ))}
-                          </select>
-                          <select className="text-sm bg-white/80 border border-blue-200 rounded-lg px-2 py-1.5" value={filterDep} onChange={e => { setFilterDep(e.target.value); setListPage(1); }}>
-                            <option value="">Todas as redes</option>
-                            <option value="1">Federal</option>
-                            <option value="2">Estadual</option>
-                            <option value="3">Municipal</option>
-                            <option value="4">Privada</option>
-                          </select>
-                        </div>
-                        <div style={{marginTop:'10px',display:'flex',gap:'8px',justifyContent:'flex-end',alignItems:'center'}}>
-                          {(filterUf || filterDep) && (
-                            <button className="text-xs font-medium text-muted-foreground hover:text-foreground" onClick={() => { setFilterUf(''); setFilterDep(''); setListPage(1); }}>
-                              <X className="w-3 h-3 inline mr-1" />Limpar
-                            </button>
-                          )}
-                          <button style={{background:'linear-gradient(135deg,#dce6f5 0%,#c8d9ec 100%)',color:'#2d5a88',border:'1px solid #b9d0e8',borderRadius:'999px',padding:'7px 14px',fontSize:'12px',fontWeight:700,cursor:'pointer'}} onClick={() => { if (activeTabId !== "overview") closeTab(activeTabId); }}>
-                            ← Fechar painel
-                          </button>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </section>
 
