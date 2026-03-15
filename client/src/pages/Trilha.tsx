@@ -219,98 +219,254 @@ export default function Trilha() {
         </section>
 
         {/* Trilha sections */}
-        <section className="space-y-12">
+        <section className="space-y-14">
           {groups.map((group, groupIdx) => {
-            const tone = toneMap[group.personalidade];
+            const pinColors = ["#e74c3c","#3498db","#2ecc71","#f39c12","#9b59b6","#e67e22","#1abc9c"];
+            const rotations = [-3.2, 1.8, -1.5, 2.6, -2.8, 1.2, -0.8, 3.1, -2.2, 1.6];
+            const paperVariants = [
+              // plain cream
+              { bg: "#fffef9", lines: false, borderColor: "#e8ddc8", fold: false },
+              // lined
+              { bg: "#ffffff", lines: true, borderColor: "#dce3ed", fold: false },
+              // warm white with fold
+              { bg: "#fdf9f0", lines: false, borderColor: "#e0d5c0", fold: true },
+              // faint blue lined
+              { bg: "#f8fbff", lines: true, borderColor: "#ccd9ea", fold: false },
+              // sticky yellow
+              { bg: "#fefce8", lines: false, borderColor: "#e9e083", fold: false },
+              // plain white
+              { bg: "#ffffff", lines: false, borderColor: "#e2e8f0", fold: true },
+              // aged cream
+              { bg: "#fdf6e3", lines: true, borderColor: "#d6c89e", fold: false },
+            ];
+
+            const tapeColors = ["rgba(255,255,180,0.82)","rgba(200,230,255,0.82)","rgba(255,200,200,0.76)","rgba(200,255,210,0.82)"];
+
             return (
               <section
                 key={group.id}
                 id={`trilha-${group.id}`}
-                className={`relative overflow-hidden rounded-[34px] border p-6 shadow-[0_18px_44px_rgba(123,84,45,0.12)] md:p-8 ${tone.section}`}
+                className="relative overflow-hidden rounded-[34px]"
               >
+                {/* Cork board background */}
                 <div
-                  className={`absolute right-6 top-6 rounded-xl border px-3 py-2 text-sm shadow-sm ${tone.chip}`}
-                >
-                  etapa {groupIdx + 1}
-                </div>
-                <div
-                  className={`absolute left-10 top-6 h-16 w-16 rotate-6 rounded-[18px] opacity-55 ${tone.accent}`}
+                  className="absolute inset-0 rounded-[34px]"
+                  style={{
+                    background: "radial-gradient(ellipse at 30% 40%, #c9a97a 0%, #b8905e 40%, #a67c52 100%)",
+                    backgroundImage: `
+                      radial-gradient(ellipse at 30% 40%, #c9a97a 0%, #b8905e 40%, #a67c52 100%),
+                      url("data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='0.8' fill='%23000' opacity='0.04'/%3E%3Ccircle cx='3' cy='3' r='0.8' fill='%23000' opacity='0.04'/%3E%3C/svg%3E")
+                    `,
+                  }}
                 />
+                {/* Inner shadow edges for depth */}
+                <div className="absolute inset-0 rounded-[34px] shadow-[inset_0_2px_12px_rgba(0,0,0,0.18),inset_0_-2px_8px_rgba(0,0,0,0.10)]" />
 
-                <div className="relative mb-8 max-w-3xl pt-8">
-                  <p className="mb-3 inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium uppercase tracking-[0.22em] text-[#8093aa]">
-                    mapa da jornada
-                  </p>
-                  <div className="inline-flex max-w-full rotate-[-1deg] rounded-[18px] border border-white/80 bg-white/92 px-4 py-3 shadow-sm">
-                    <h2 className={`text-3xl font-extrabold md:text-4xl ${tone.title}`}>
-                      {group.titulo}
-                    </h2>
-                  </div>
-                  <p className="mt-4 text-lg leading-8 text-[#68788d]">{group.descricao}</p>
-                </div>
-
-                <div className="relative grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                  {group.items.map((unit, itemIdx) => {
-                    const isPinned = pinned === unit.unitId;
-                    const headerLabels = ["anotação da diretora", "guia rápido", "comunicado oficial"];
-                    const header = headerLabels[itemIdx % 3];
-                    const paperStyle =
-                      itemIdx % 3 === 2
-                        ? "bg-[repeating-linear-gradient(to_bottom,#ffffff,#ffffff_24px,#e5e7eb_25px)] border-[#e3c9c3]"
-                        : "bg-[#fffdf7] border-slate-200";
-
-                    return (
-                      <motion.article
-                        key={unit.unitId}
-                        whileHover={{ y: -2, rotate: itemIdx % 2 === 0 ? -0.35 : 0.35 }}
-                        onClick={() =>
-                          setPinned((cur) => (cur === unit.unitId ? null : unit.unitId))
-                        }
-                        className={`cursor-pointer rounded-[26px] border p-5 shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-200 ${paperStyle} ${isPinned ? "ring-2 ring-offset-2 ring-slate-300" : ""}`}
+                <div className="relative p-6 md:p-10">
+                  {/* Section label */}
+                  <div className="mb-8 flex items-start gap-4">
+                    {/* Title paper */}
+                    <div
+                      className="relative max-w-xl"
+                      style={{ transform: "rotate(-1.2deg)" }}
+                    >
+                      {/* tape strip on title */}
+                      <div
+                        className="absolute -top-3 left-1/2 -translate-x-1/2 h-5 w-20 rounded-sm"
+                        style={{ background: tapeColors[groupIdx % tapeColors.length], boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
+                      />
+                      <div
+                        className="rounded-xl border border-[#e0d5c0] bg-[#fdf9f0] px-6 py-4"
+                        style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.12)" }}
                       >
-                        <div className="mb-3 flex items-center justify-between">
-                          <span className="rounded-[12px] border border-slate-200 bg-white/80 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500 shadow-sm">
-                            {header}
-                          </span>
-                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${tone.chip}`}>
-                            {unit.unitId}
-                          </span>
-                        </div>
+                        <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#a09070]">
+                          etapa {groupIdx + 1} · mapa da jornada
+                        </p>
+                        <h2 className="text-2xl font-extrabold text-slate-800 md:text-3xl">
+                          {group.titulo}
+                        </h2>
+                        <p className="mt-2 text-sm leading-6 text-[#6b7280]">{group.descricao}</p>
+                      </div>
+                    </div>
+                  </div>
 
-                        <div className="mb-4 mt-1 flex items-center gap-3">
-                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border border-slate-200 bg-white text-xl shadow-sm">
-                            {emojiFor(group.personalidade)}
-                          </div>
-                          <div>
-                            <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-400">
-                              unidade {unitNum(unit).toString().padStart(2, "0")}
-                            </p>
-                          </div>
-                        </div>
+                  {/* Cards grid — paper sheets on the board */}
+                  <div className="grid gap-x-5 gap-y-10 md:grid-cols-2 xl:grid-cols-3">
+                    {group.items.map((unit, itemIdx) => {
+                      const isPinned = pinned === unit.unitId;
+                      const rot = rotations[itemIdx % rotations.length];
+                      const paper = paperVariants[itemIdx % paperVariants.length];
+                      const pinColor = pinColors[itemIdx % pinColors.length];
+                      const tape = tapeColors[itemIdx % tapeColors.length];
+                      const useTape = itemIdx % 2 === 0;
 
-                        <h3 className="text-lg font-extrabold leading-snug text-slate-700">
-                          {unit.title}
-                        </h3>
-                        <p className="mt-2 text-sm leading-6 text-slate-500">{unit.subtitle}</p>
+                      return (
+                        <motion.div
+                          key={unit.unitId}
+                          style={{ rotate: rot, transformOrigin: "top center" }}
+                          whileHover={{
+                            y: -10,
+                            rotate: 0,
+                            scale: 1.03,
+                            zIndex: 20,
+                            boxShadow: "0 20px 40px rgba(0,0,0,0.28)",
+                          }}
+                          animate={isPinned ? { rotate: 0, y: -6, scale: 1.04, zIndex: 20 } : {}}
+                          transition={{ type: "spring", stiffness: 280, damping: 22 }}
+                          className="relative cursor-pointer"
+                          onClick={() =>
+                            setPinned((cur) => (cur === unit.unitId ? null : unit.unitId))
+                          }
+                        >
+                          {/* Push pin or tape */}
+                          {useTape ? (
+                            <div
+                              className="absolute -top-3 left-1/2 z-10 h-5 w-16 -translate-x-1/2 rotate-[-1deg] rounded-sm"
+                              style={{
+                                background: tape,
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                              }}
+                            />
+                          ) : (
+                            <div className="absolute -top-3 left-1/2 z-10 -translate-x-1/2">
+                              <div
+                                className="h-6 w-6 rounded-full border-2 border-white/60"
+                                style={{
+                                  background: pinColor,
+                                  boxShadow: `0 2px 6px ${pinColor}88, 0 1px 2px rgba(0,0,0,0.3)`,
+                                }}
+                              />
+                            </div>
+                          )}
 
-                        <div className="mt-4 flex items-center justify-between">
-                          <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${tone.chip}`}>
-                            {unit.duration}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/trilha/${unit.unitId}`);
+                          {/* Paper card */}
+                          <article
+                            className="relative overflow-hidden rounded-sm"
+                            style={{
+                              background: paper.lines
+                                ? `repeating-linear-gradient(to bottom, ${paper.bg} 0px, ${paper.bg} 23px, #d1d9e6 24px)`
+                                : paper.bg,
+                              borderColor: paper.borderColor,
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              boxShadow: isPinned
+                                ? "0 16px 36px rgba(0,0,0,0.28), 0 2px 6px rgba(0,0,0,0.16)"
+                                : "0 6px 20px rgba(0,0,0,0.22), 0 2px 4px rgba(0,0,0,0.14)",
+                              padding: "20px 18px 18px",
                             }}
-                            className={`rounded-full border px-4 py-1.5 text-sm font-semibold shadow-sm transition ${tone.button}`}
                           >
-                            abrir →
-                          </button>
-                        </div>
-                      </motion.article>
-                    );
-                  })}
+                            {/* Fold corner */}
+                            {paper.fold && (
+                              <div
+                                className="absolute right-0 top-0"
+                                style={{
+                                  width: 0,
+                                  height: 0,
+                                  borderStyle: "solid",
+                                  borderWidth: "0 28px 28px 0",
+                                  borderColor: `transparent ${paper.borderColor} transparent transparent`,
+                                }}
+                              >
+                                <div
+                                  className="absolute"
+                                  style={{
+                                    width: 0, height: 0,
+                                    borderStyle: "solid",
+                                    borderWidth: "0 26px 26px 0",
+                                    borderColor: `transparent #f0ebe0 transparent transparent`,
+                                    right: -26, top: 0,
+                                  }}
+                                />
+                              </div>
+                            )}
+
+                            {/* Red left margin line */}
+                            {paper.lines && (
+                              <div
+                                className="absolute bottom-0 left-9 top-0 w-px"
+                                style={{ background: "rgba(220,80,80,0.25)" }}
+                              />
+                            )}
+
+                            {/* Header row */}
+                            <div className="mb-3 flex items-center justify-between">
+                              <span
+                                className="rounded px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.16em]"
+                                style={{
+                                  background: "rgba(0,0,0,0.06)",
+                                  color: "#7a6f60",
+                                }}
+                              >
+                                {group.personalidade === "origem"
+                                  ? "fonte"
+                                  : group.personalidade === "estrutura"
+                                  ? "estrutura"
+                                  : group.personalidade === "planejamento"
+                                  ? "planejamento"
+                                  : "prestação"}
+                              </span>
+                              <span
+                                className="font-mono text-[11px] font-bold text-slate-400"
+                                style={{ letterSpacing: "0.1em" }}
+                              >
+                                {unit.unitId}
+                              </span>
+                            </div>
+
+                            {/* Emoji + number */}
+                            <div className="mb-3 flex items-center gap-2">
+                              <span className="text-2xl">{emojiFor(group.personalidade)}</span>
+                              <span
+                                className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+                                style={{
+                                  background: `${paper.borderColor}88`,
+                                  color: "#6b7280",
+                                }}
+                              >
+                                {unitNum(unit).toString().padStart(2, "0")}
+                              </span>
+                            </div>
+
+                            {/* Title */}
+                            <h3
+                              className="font-extrabold leading-snug text-slate-800"
+                              style={{ fontSize: "1.05rem", fontFamily: "'Nunito', sans-serif" }}
+                            >
+                              {unit.title}
+                            </h3>
+                            <p className="mt-1.5 text-[13px] leading-5 text-slate-500">
+                              {unit.subtitle}
+                            </p>
+
+                            {/* Footer */}
+                            <div className="mt-4 flex items-center justify-between border-t border-dashed border-slate-200 pt-3">
+                              <span
+                                className="text-[11px] font-semibold text-slate-400"
+                                style={{ fontFamily: "monospace" }}
+                              >
+                                ⏱ {unit.duration}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/trilha/${unit.unitId}`);
+                                }}
+                                className="rounded-full border px-3.5 py-1 text-[12px] font-bold shadow-sm transition hover:shadow-md"
+                                style={{
+                                  borderColor: paper.borderColor,
+                                  background: "rgba(255,255,255,0.8)",
+                                  color: "#374151",
+                                }}
+                              >
+                                abrir →
+                              </button>
+                            </div>
+                          </article>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
                 </div>
               </section>
             );
