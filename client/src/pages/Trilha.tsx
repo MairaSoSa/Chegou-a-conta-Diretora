@@ -7,67 +7,86 @@ import { Footer } from "@/components/Footer";
 import { Loader2 } from "lucide-react";
 import type { TrilhaUnit } from "@shared/schema";
 
-// Realistic push-pin SVG component
-function Taxinha({ color, dark, size = 28 }: { color: string; dark: string; size?: number }) {
-  const id = color.replace("#", "pin");
+// Magnetic pin disc — round, flat, like a fridge magnet / whiteboard pin
+function Pin({ color, dark, size = 32 }: { color: string; dark: string; size?: number }) {
+  const id = color.replace("#", "mg");
   return (
     <svg
       width={size}
-      height={Math.round(size * 1.55)}
-      viewBox="0 0 22 34"
+      height={size}
+      viewBox="0 0 32 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      style={{ filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.38)) drop-shadow(0 1px 2px rgba(0,0,0,0.25))" }}
+      style={{
+        filter:
+          "drop-shadow(0 4px 7px rgba(0,0,0,0.40)) drop-shadow(0 1px 2px rgba(0,0,0,0.28))",
+        overflow: "visible",
+      }}
     >
       <defs>
-        {/* Head radial gradient — bright highlight top-left, deep shadow bottom-right */}
-        <radialGradient id={`hg-${id}`} cx="34%" cy="28%" r="70%">
-          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.55" />
-          <stop offset="30%" stopColor={color}   stopOpacity="1" />
-          <stop offset="78%" stopColor={color}   stopOpacity="1" />
-          <stop offset="100%" stopColor={dark}   stopOpacity="1" />
+        {/* Chrome outer ring gradient */}
+        <radialGradient id={`cr-${id}`} cx="38%" cy="30%" r="72%">
+          <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.9" />
+          <stop offset="30%"  stopColor="#e0e0e0" />
+          <stop offset="65%"  stopColor="#b0b0b0" />
+          <stop offset="100%" stopColor="#707070" />
         </radialGradient>
-        {/* Metal shank gradient — left-to-right highlight */}
-        <linearGradient id={`mg-${id}`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%"  stopColor="#7a7a7a" />
-          <stop offset="38%" stopColor="#e8e8e8" />
-          <stop offset="65%" stopColor="#c0c0c0" />
-          <stop offset="100%" stopColor="#888" />
-        </linearGradient>
-        {/* Tip gradient */}
-        <linearGradient id={`tg-${id}`} x1="0.5" y1="0" x2="0.5" y2="1">
-          <stop offset="0%"  stopColor="#c8c8c8" />
-          <stop offset="100%" stopColor="#888" />
-        </linearGradient>
+        {/* Colored inner face gradient */}
+        <radialGradient id={`fc-${id}`} cx="36%" cy="30%" r="68%">
+          <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.5" />
+          <stop offset="25%"  stopColor={color} />
+          <stop offset="80%"  stopColor={color} />
+          <stop offset="100%" stopColor={dark} />
+        </radialGradient>
+        {/* Chrome ring inner-shadow (bevel under inner disc) */}
+        <radialGradient id={`bv-${id}`} cx="50%" cy="50%" r="50%">
+          <stop offset="82%"  stopColor="transparent" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0.22)" />
+        </radialGradient>
       </defs>
 
-      {/* Drop shadow of the disc on the cork */}
-      <ellipse cx="11" cy="21.5" rx="7.5" ry="1.8" fill="rgba(0,0,0,0.22)" />
+      {/* Soft elliptical shadow cast on the cork */}
+      <ellipse cx="17" cy="30.5" rx="12" ry="2.8" fill="rgba(0,0,0,0.22)" />
 
-      {/* Main disc head */}
-      <circle cx="11" cy="11" r="10" fill={`url(#hg-${id})`} />
+      {/* Chrome outer disc */}
+      <circle cx="16" cy="15" r="14" fill={`url(#cr-${id})`} />
 
-      {/* Outer rim — subtle dark border */}
-      <circle cx="11" cy="11" r="10" stroke={dark} strokeWidth="0.7" strokeOpacity="0.45" fill="none" />
+      {/* Colored inner face */}
+      <circle cx="16" cy="15" r="10.5" fill={`url(#fc-${id})`} />
 
-      {/* Inner ring crease (plastic moulding line) */}
-      <circle cx="11" cy="11" r="7" stroke="rgba(0,0,0,0.10)" strokeWidth="0.6" fill="none" />
+      {/* Bevel shadow between chrome ring and inner face */}
+      <circle cx="16" cy="15" r="10.5" fill={`url(#bv-${id})`} />
 
-      {/* Specular highlight — main blob */}
+      {/* Thin groove line separating chrome from color */}
+      <circle cx="16" cy="15" r="10.5" stroke="rgba(0,0,0,0.18)" strokeWidth="0.7" fill="none" />
+
+      {/* Outer chrome rim edge */}
+      <circle cx="16" cy="15" r="14" stroke="rgba(0,0,0,0.12)" strokeWidth="0.5" fill="none" />
+
+      {/* Main specular highlight on chrome (top-left arc) */}
       <ellipse
-        cx="6.8" cy="6.2" rx="3.8" ry="2.4"
-        fill="rgba(255,255,255,0.52)"
-        transform="rotate(-28 6.8 6.2)"
-        style={{ filter: "blur(0.6px)" }}
+        cx="9"
+        cy="7.5"
+        rx="5"
+        ry="3"
+        fill="rgba(255,255,255,0.70)"
+        transform="rotate(-30 9 7.5)"
+        style={{ filter: "blur(0.8px)" }}
       />
-      {/* Specular — tiny second glint */}
-      <ellipse cx="14.5" cy="14.8" rx="1.2" ry="0.7" fill="rgba(255,255,255,0.18)" />
 
-      {/* Shank / neck */}
-      <rect x="9" y="19.5" width="4" height="9" rx="2" fill={`url(#mg-${id})`} />
+      {/* Secondary glint on inner colored face */}
+      <ellipse
+        cx="11.5"
+        cy="10"
+        rx="3"
+        ry="1.8"
+        fill="rgba(255,255,255,0.42)"
+        transform="rotate(-25 11.5 10)"
+        style={{ filter: "blur(0.4px)" }}
+      />
 
-      {/* Tip */}
-      <path d="M9 28.5 L13 28.5 L11 33.5 Z" fill={`url(#tg-${id})`} />
+      {/* Tiny chrome bottom glint (light reflected from below) */}
+      <ellipse cx="22" cy="22.5" rx="1.8" ry="0.9" fill="rgba(255,255,255,0.20)" />
     </svg>
   );
 }
@@ -402,12 +421,12 @@ export default function Trilha() {
                           className="relative cursor-pointer"
                           onClick={() => navigate(`/trilha/${unit.unitId}`)}
                         >
-                          {/* Taxinha SVG realista */}
+                          {/* Pin ímã */}
                           <div
                             className="absolute z-10"
-                            style={{ top: "-20px", left: pinOffset, transform: "translateX(-50%)" }}
+                            style={{ top: "-18px", left: pinOffset, transform: "translateX(-50%)" }}
                           >
-                            <Taxinha color={pin.color} dark={pin.dark} size={30} />
+                            <Pin color={pin.color} dark={pin.dark} size={34} />
                           </div>
 
                           {/* Bilhete de recado */}
