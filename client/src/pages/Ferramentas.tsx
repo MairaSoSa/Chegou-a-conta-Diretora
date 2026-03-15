@@ -293,7 +293,7 @@ function CartaoFerramenta({
       />
 
       <article
-        className={`flyer-float group relative min-h-[260px] sm:min-h-[280px] overflow-visible rounded-[14px] border border-[#f1eadf] ${papel} px-4 pb-4 pt-7 sm:px-5 sm:pb-5 sm:pt-8 shadow-[0_18px_34px_rgba(84,61,39,0.12)] transition duration-300 hover:-translate-y-2 hover:shadow-[0_26px_44px_rgba(84,61,39,0.18)] cursor-pointer`}
+        className={`flyer-float group relative min-h-[220px] sm:min-h-[240px] overflow-visible rounded-[14px] border border-[#f1eadf] ${papel} px-4 pb-3 pt-6 sm:px-5 sm:pb-4 sm:pt-7 shadow-[0_18px_34px_rgba(84,61,39,0.12)] transition duration-300 hover:-translate-y-2 hover:shadow-[0_26px_44px_rgba(84,61,39,0.18)] cursor-pointer`}
         style={{
           transform: `rotate(${rotacao}deg)`,
           animationDelay: `${(index + linhaIdx) * 0.25}s`,
@@ -390,8 +390,8 @@ function SecaoCategoria({
     <section className="relative">
 
       {/* ===== MASTRO COM ESTANDARTE ===== */}
-      <div className="flex justify-center mb-16 sm:mb-20">
-        <div className="relative flex flex-col items-center" style={{ width: 420 }}>
+      <div className="flex justify-center mb-10 sm:mb-12">
+        <div className="relative flex flex-col items-center" style={{ width: 360 }}>
 
           {/* — cordão de bandeirinhas esquerdo — */}
           <div className="absolute top-0 left-0 right-1/2 flex items-start justify-end gap-0 overflow-visible" style={{ height: 38, paddingRight: 12 }}>
@@ -429,9 +429,9 @@ function SecaoCategoria({
             <div className="h-5 w-5 rounded-full bg-[linear-gradient(135deg,#d4a057,#8b5e2a)] shadow-[0_3px_8px_rgba(90,55,20,0.35)]" />
             {/* pau */}
             <div
-              className="w-[10px] rounded-b-sm"
+              className="w-[9px] rounded-b-sm"
               style={{
-                height: 56,
+                height: 40,
                 background: "linear-gradient(to right, #c8894a, #e8a95c, #c0803e)",
                 boxShadow: "inset -2px 0 4px rgba(0,0,0,0.18), 2px 0 6px rgba(0,0,0,0.10)",
               }}
@@ -442,7 +442,7 @@ function SecaoCategoria({
           {(() => {
             const ec = ESTANDARTE_CORES[secao.id] ?? ESTANDARTE_CORES.planejar;
             return (
-              <div className="banner-sway relative text-center" style={{ transformOrigin: "top center", width: "min(260px, 82vw)" }}>
+              <div className="banner-sway relative text-center" style={{ transformOrigin: "top center", width: "min(228px, 78vw)" }}>
 
                 {/* === travessa de madeira === */}
                 <div className="relative z-20 flex items-center" style={{ height: 20, marginLeft: -20, marginRight: -20 }}>
@@ -481,28 +481,28 @@ function SecaoCategoria({
                     <p className="mb-3 text-[9px] font-black uppercase tracking-[0.45em] text-slate-400">etapa</p>
 
                     {/* ícone */}
-                    <div className={`mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full ${secao.selo} shadow-[inset_0_2px_4px_rgba(0,0,0,0.08),0_6px_18px_rgba(0,0,0,0.12)]`}>
-                      <div style={{ transform: "scale(1.45)" }}>{ICONES_SVG[secao.id]}</div>
+                    <div className={`mx-auto mb-2.5 flex h-11 w-11 items-center justify-center rounded-full ${secao.selo} shadow-[inset_0_2px_4px_rgba(0,0,0,0.08),0_5px_14px_rgba(0,0,0,0.12)]`}>
+                      <div style={{ transform: "scale(1.3)" }}>{ICONES_SVG[secao.id]}</div>
                     </div>
 
                     {/* título com grifado */}
                     <div className="relative inline-block">
-                      <span className="absolute inset-x-0 bottom-0.5 h-[11px] rounded-sm bg-yellow-200/75" />
-                      <h2 className={`relative text-2xl font-black sm:text-[1.7rem] ${secao.texto}`}>{secao.titulo}</h2>
+                      <span className="absolute inset-x-0 bottom-0.5 h-[10px] rounded-sm bg-yellow-200/75" />
+                      <h2 className={`relative text-xl font-black sm:text-2xl ${secao.texto}`}>{secao.titulo}</h2>
                     </div>
 
                     {/* divisor */}
-                    <div className={`mx-auto mt-2.5 mb-2 h-[2px] w-10 rounded-full ${secao.borda.replace("border-", "bg-")} opacity-50`} />
+                    <div className={`mx-auto mt-2 mb-1.5 h-[2px] w-8 rounded-full ${secao.borda.replace("border-", "bg-")} opacity-50`} />
 
                     {/* contador */}
-                    <p className="text-xs font-semibold text-slate-500">
+                    <p className="text-[11px] font-semibold text-slate-500">
                       {cartoes.length} modelos
                     </p>
                   </div>
                 </div>
 
                 {/* === franja em V na base === */}
-                <div className="relative overflow-hidden" style={{ height: 44 }}>
+                <div className="relative overflow-hidden" style={{ height: 34 }}>
                   {/* tecido que forma o V */}
                   <div className={`absolute inset-x-0 top-0 bg-gradient-to-b ${secao.cor}`}
                     style={{ height: "100%", clipPath: "polygon(0 0, 100% 0, 50% 100%)" }} />
@@ -534,7 +534,7 @@ function SecaoCategoria({
         <div className="pointer-events-none absolute left-2 right-2 top-3 h-[5px] rounded-full bg-[repeating-linear-gradient(45deg,#9a6a3a,#9a6a3a_6px,#b07b45_6px,#b07b45_12px)] shadow-sm md:left-6 md:right-6 line-wind" />
 
         {/* grade responsiva: 1 col → 2 col → 3 col */}
-        <div className="grid gap-x-6 gap-y-14 pt-10 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-x-5 gap-y-10 pt-8 sm:grid-cols-2 xl:grid-cols-3">
           {cartoes.map((cartao, i) => (
             <CartaoFerramenta
               key={`${cartao.nome}-${i}`}
@@ -657,10 +657,10 @@ export default function Ferramentas() {
 
       <Navigation />
 
-      <div className="mx-auto max-w-[1500px] px-4 py-8 sm:px-5 md:px-8 md:py-10 xl:px-10">
+      <div className="mx-auto max-w-[1500px] px-4 py-5 sm:px-5 md:px-8 md:py-7 xl:px-10">
 
         {/* ===== HEADER ===== */}
-        <header className="relative mb-16 overflow-hidden rounded-[28px] border border-[#ddd1bf] bg-[#f8f2e8] px-4 pb-7 pt-6 shadow-[0_16px_40px_rgba(86,65,40,0.10)] sm:px-6 md:mb-20 md:rounded-[34px] md:px-8 md:pb-8 md:pt-7">
+        <header className="relative mb-10 overflow-hidden rounded-[28px] border border-[#ddd1bf] bg-[#f8f2e8] px-4 pb-5 pt-4 shadow-[0_16px_40px_rgba(86,65,40,0.10)] sm:px-6 md:mb-12 md:rounded-[34px] md:px-8 md:pb-6 md:pt-5">
 
           {/* corda + decorações conceituais do cabeçalho */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-28">
@@ -679,7 +679,7 @@ export default function Ferramentas() {
             </div>
           </div>
 
-          <div className="relative pt-12 md:pt-14">
+          <div className="relative pt-9 md:pt-10">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
 
               {/* título */}
@@ -722,7 +722,7 @@ export default function Ferramentas() {
         </header>
 
         {/* ===== SEÇÕES ===== */}
-        <div className="space-y-28 md:space-y-32">
+        <div className="space-y-20 md:space-y-24">
           {SECOES_DESIGN.map((secao, secaoIdx) => {
             const merged = mergeCartoes(secao.id, secao.cartoes);
             const cartoesFiltrados = filtrarCartoes(merged);
