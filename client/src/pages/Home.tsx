@@ -70,9 +70,10 @@ const MENU_PILLS = [
   { label: "dados",       href: "/dashboard" },
   { label: "legislação",  href: "/legislacao" },
   { label: "calendário",  href: "/calendario" },
+  { label: "trilha",      href: "/trilha" },
   { label: "programas",   href: "/programas" },
   { label: "ferramentas", href: "/ferramentas" },
-  { label: "trilha",      href: "/trilha" },
+  { label: "caderno",     href: "/chat" },
 ];
 
 export default function Home() {
