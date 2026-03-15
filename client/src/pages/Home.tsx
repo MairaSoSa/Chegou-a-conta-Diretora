@@ -3,7 +3,9 @@ import { Link } from "wouter";
 import {
   GraduationCap, Scale, CalendarDays,
   Landmark, Wrench, BookOpen, type LucideIcon,
+  SlidersHorizontal,
 } from "lucide-react";
+import { useAccessibility } from "../App";
 import "./home-landing.css";
 
 const STORAGE_KEY = "chegou-conta-trilha-progresso";
@@ -103,6 +105,7 @@ export default function Home() {
   };
 
   const done = Object.values(checks).filter(Boolean).length;
+  const { toggle: toggleA11y } = useAccessibility();
 
   return (
     <div className="hl-root">
@@ -209,6 +212,16 @@ export default function Home() {
             <span>gratuito para diretores de escolas públicas</span>
           </div>
         </section>
+
+        {/* ── Botão de acessibilidade flutuante ── */}
+        <button
+          className="hl-a11y-btn"
+          onClick={toggleA11y}
+          aria-label="Abrir menu de acessibilidade"
+          title="Acessibilidade"
+        >
+          <SlidersHorizontal size={18} strokeWidth={1.8} />
+        </button>
       </div>
     </div>
   );
