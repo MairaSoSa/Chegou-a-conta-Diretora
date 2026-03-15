@@ -132,9 +132,6 @@ export default function Home() {
                   Aqui você acompanha dados, programas federais, prazos e ferramentas — tudo num só lugar.
                 </p>
                 <div className="hl-hero-actions">
-                  <Link href="/trilha">
-                    <span className="hl-btn hl-btn-primary">Começar a jornada</span>
-                  </Link>
                   <Link href="/dashboard">
                     <span className="hl-btn hl-btn-secondary">Ver minha escola</span>
                   </Link>
@@ -186,6 +183,9 @@ export default function Home() {
                 <p className="hl-trilha-desc">
                   Marque cada etapa conforme for explorando a plataforma. Sua jornada fica salva automaticamente.
                 </p>
+                <Link href="/trilha">
+                  <span className="hl-btn hl-btn-primary hl-trilha-btn">Começar a jornada</span>
+                </Link>
                 <div className="hl-checklist">
                   {TRILHA_ITEMS.map(item => (
                     <div
