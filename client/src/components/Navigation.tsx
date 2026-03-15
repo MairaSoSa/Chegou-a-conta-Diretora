@@ -18,51 +18,6 @@ const NAV_ITEMS = [
   { href: "/chat",        label: "Caderno da Diretora", icon: MessagesSquare },
 ];
 
-/* ── Ruler strip ── renders tick marks like a physical ruler */
-function RulerStrip() {
-  return (
-    <div
-      className="absolute inset-x-0 top-0 h-[18px] overflow-hidden select-none"
-      style={{ background: "linear-gradient(180deg,rgba(200,175,145,0.18) 0%,transparent 100%)" }}
-      aria-hidden="true"
-    >
-      {/* 1 mm ticks — every 8px, 3px tall */}
-      <div className="absolute top-0 inset-x-0 h-[3px]" style={{
-        backgroundImage: "repeating-linear-gradient(90deg, transparent 0px, transparent 7px, rgba(148,108,68,0.45) 7px, rgba(148,108,68,0.45) 8px)"
-      }} />
-      {/* 5 mm ticks — every 40px, 7px tall */}
-      <div className="absolute top-0 inset-x-0 h-[7px]" style={{
-        backgroundImage: "repeating-linear-gradient(90deg, transparent 0px, transparent 39px, rgba(128,88,50,0.60) 39px, rgba(128,88,50,0.60) 40px)"
-      }} />
-      {/* 1 cm ticks — every 80px, 13px tall */}
-      <div className="absolute top-0 inset-x-0 h-[13px]" style={{
-        backgroundImage: "repeating-linear-gradient(90deg, transparent 0px, transparent 79px, rgba(108,68,35,0.75) 79px, rgba(108,68,35,0.75) 80px)"
-      }} />
-      {/* centimeter numbers — every 80px, rendered via inline SVG */}
-      <svg
-        className="absolute top-0 left-0 w-full h-full pointer-events-none"
-        style={{ overflow: "visible" }}
-      >
-        {Array.from({ length: 22 }).map((_, i) => (
-          <text
-            key={i}
-            x={i * 80 + 2}
-            y={17}
-            fontSize="7"
-            fontFamily="'Courier New', monospace"
-            fill="rgba(110,78,44,0.55)"
-            letterSpacing="0"
-          >
-            {i}
-          </text>
-        ))}
-      </svg>
-      {/* bottom divider line */}
-      <div className="absolute bottom-0 inset-x-0 h-px" style={{ background: "rgba(140,100,60,0.25)" }} />
-    </div>
-  );
-}
-
 export function Navigation() {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
@@ -70,50 +25,100 @@ export function Navigation() {
 
   return (
     <header
-      className="sticky top-0 z-50 w-full border-b border-[#e0cfc0] shadow-[0_6px_20px_rgba(130,100,70,0.13)]"
-      style={{ background: "linear-gradient(180deg,#f9f3ea 0%,#f5ece0 55%,#efe4d6 100%)" }}
+      className="sticky top-0 z-50 w-full"
+      style={{
+        /* camadas de madeira talhada: base escura, veio claro no centro, sombra interna pra baixo */
+        background: `
+          linear-gradient(180deg,
+            #2e1a0e 0%,
+            #4a2c18 18%,
+            #6b4028 38%,
+            #7a4c30 52%,
+            #5e3520 72%,
+            #3a2010 100%
+          )`,
+        /* relevo pra baixo: highlight fino no topo + sombra funda embaixo */
+        boxShadow: `
+          inset 0 2px 0 rgba(255,220,160,0.18),
+          inset 0 1px 0 rgba(255,255,255,0.10),
+          inset 0 -10px 28px rgba(0,0,0,0.45),
+          0 10px 32px rgba(20,8,0,0.50)
+        `,
+      }}
     >
-      {/* ruler strip at the very top */}
-      <RulerStrip />
-
-      {/* top-left corner zero mark */}
+      {/* veio de madeira — textura diagonal sutil */}
       <div
-        className="absolute left-0 top-0 h-[18px] w-[2px] z-10"
-        style={{ background: "rgba(108,68,35,0.75)" }}
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(
+              108deg,
+              rgba(255,200,120,0.025) 0px,
+              rgba(255,200,120,0.025) 1px,
+              transparent 1px,
+              transparent 14px
+            ),
+            repeating-linear-gradient(
+              108deg,
+              rgba(0,0,0,0.06) 0px,
+              rgba(0,0,0,0.06) 2px,
+              transparent 2px,
+              transparent 28px
+            )
+          `,
+        }}
         aria-hidden="true"
       />
 
-      {/* warm bevel at bottom edge */}
-      <div className="absolute inset-x-0 bottom-0 h-[6px] pointer-events-none"
-        style={{ background: "linear-gradient(0deg,rgba(120,82,54,0.16),rgba(120,82,54,0))" }} />
+      {/* borda superior brilhante — como luz rasando a madeira */}
+      <div
+        className="absolute inset-x-0 top-0 h-[3px] pointer-events-none"
+        style={{ background: "linear-gradient(90deg, rgba(255,210,130,0.30) 0%, rgba(255,240,200,0.55) 40%, rgba(255,210,130,0.30) 100%)" }}
+        aria-hidden="true"
+      />
+
+      {/* borda inferior gravada — linha escura que separa do conteúdo */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-[3px] pointer-events-none"
+        style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.20) 100%)" }}
+        aria-hidden="true"
+      />
 
       <div className="mx-auto max-w-7xl px-4 lg:px-10">
-        {/* logo + nav row — sits below the ruler strip */}
-        <div className="flex h-12 items-center justify-between" style={{ marginTop: "18px" }}>
+        <div className="flex h-[60px] items-center justify-between">
 
           {/* Logo */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center">
               <span
-                className="font-bold text-lg md:text-xl tracking-[0.02em]"
+                className="font-bold text-lg md:text-xl tracking-[0.03em]"
                 style={{
-                  color: "#8a6e5b",
-                  textShadow: "0 1px 0 rgba(255,255,255,0.35), 0 -1px 0 rgba(121,84,58,0.25)",
+                  color: "#f0dfc0",
+                  textShadow: "0 1px 3px rgba(0,0,0,0.60), 0 -1px 0 rgba(255,220,140,0.20)",
                 }}
               >
                 Chegou a Conta,{" "}
-                <span style={{ color: "#b23a2e", textShadow: "0 1px 0 rgba(255,255,255,0.35), 0 -1px 0 rgba(90,40,30,0.25)" }}>
+                <span style={{
+                  color: "#f5a96e",
+                  textShadow: "0 1px 3px rgba(0,0,0,0.55), 0 0 12px rgba(245,150,80,0.25)",
+                }}>
                   Diretora!
                 </span>
               </span>
             </Link>
+
             <button
               onClick={toggleAccessibility}
               aria-label="Ajustes de visualização e leitura"
               data-testid="button-accessibility-menu"
-              className="ml-1 flex h-7 w-7 items-center justify-center rounded-full border border-[#e0d0c0] bg-white/70 text-[#a0907e] transition hover:bg-white hover:text-[#5a4438]"
+              className="flex h-6 w-6 items-center justify-center rounded-full transition"
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,220,150,0.22)",
+                color: "rgba(240,210,160,0.70)",
+              }}
             >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
+              <SlidersHorizontal className="h-3 w-3" />
             </button>
           </div>
 
@@ -126,18 +131,33 @@ export function Navigation() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={cn(
-                      "relative flex items-center gap-1.5 rounded-full px-3 py-2 transition-all duration-200 tracking-[0.01em]",
+                    className="relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all duration-200"
+                    style={
                       active
-                        ? "text-[#b86e3f]"
-                        : "text-[#8a6e5b] hover:text-[#24344a] hover:bg-[rgba(255,248,240,0.40)]"
-                    )}
-                    style={active ? { background: "rgba(255,246,236,0.45)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.28), 0 1px 3px rgba(110,72,45,0.10)" } : undefined}
+                        ? {
+                            color: "#fde8c0",
+                            background: "rgba(255,200,100,0.14)",
+                            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -2px 6px rgba(0,0,0,0.28)",
+                            textShadow: "0 1px 2px rgba(0,0,0,0.50)",
+                          }
+                        : {
+                            color: "rgba(230,200,155,0.80)",
+                            textShadow: "0 1px 2px rgba(0,0,0,0.45)",
+                          }
+                    }
                   >
-                    <item.icon className="h-3.5 w-3.5 shrink-0" />
+                    <item.icon
+                      className="h-3.5 w-3.5 shrink-0"
+                      style={{ opacity: active ? 0.95 : 0.65 }}
+                    />
                     {item.label}
+
+                    {/* ranhura activa: sulco entalhado embaixo do item */}
                     {active && (
-                      <span className="absolute inset-x-3 -bottom-[2px] h-[2px] rounded-full" style={{ background: "#b86e3f", opacity: 0.65 }} />
+                      <span
+                        className="absolute inset-x-2 -bottom-[2px] h-[2px] rounded-full"
+                        style={{ background: "rgba(245,169,110,0.75)", boxShadow: "0 1px 4px rgba(245,150,80,0.50)" }}
+                      />
                     )}
                   </Link>
                 );
@@ -151,8 +171,13 @@ export function Navigation() {
               <Sheet open={isOpen} onOpenChange={setIsOpen}>
                 <SheetTrigger asChild>
                   <button
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e4c7b3] bg-white/90 text-[#8a6e5b]"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg transition"
                     aria-label="Menu"
+                    style={{
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,200,120,0.22)",
+                      color: "rgba(240,210,160,0.85)",
+                    }}
                   >
                     <Menu className="h-4 w-4" />
                   </button>
