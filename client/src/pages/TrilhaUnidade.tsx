@@ -219,8 +219,8 @@ function FluxoQuadro({
   );
 }
 
-// ── Baralho de fichas empilhadas com animação de subida ──
-function FichaStack({
+// ── Grade de fichas colapsáveis: compactadas por padrão, expandem no hover ──
+function FichaGrid({
   fichas,
   tone,
   onOpen,
@@ -229,85 +229,50 @@ function FichaStack({
   tone: (typeof toneMap)[ToneKey];
   onOpen: (data: ModalData) => void;
 }) {
-  const [topIdx, setTopIdx] = useState(0);
-
-  // Front card first in the ordered array (index 0 = front)
-  const ordered = [...fichas.slice(topIdx), ...fichas.slice(0, topIdx)];
-
-  // Tab row height ≈ 40px; front card body adds ~100px
-  const TAB_H = 40;
-  const BODY_H = 100;
-  const containerH = BODY_H + fichas.length * TAB_H;
-
   return (
-    // Use a real height (not minHeight) so the container is tall enough for all peeking tabs
-    <div className="relative select-none" style={{ height: `${containerH}px` }}>
-      {ordered.map((ficha, stackPos) => {
-        const isFront = stackPos === 0;
-        // Front at top=0, back cards peek below the front card's body
-        const topPx = isFront ? 0 : BODY_H + (stackPos - 1) * TAB_H;
-
-        return (
-          <motion.div
-            key={ficha.id}
-            // Animate ONLY top — never combine layout with animate:top
-            animate={{ top: topPx }}
-            initial={false}
-            transition={{ type: "spring", stiffness: 420, damping: 34 }}
-            className="absolute left-0 right-0 overflow-hidden rounded-[16px]"
-            style={{
-              zIndex: ordered.length - stackPos,
-              boxShadow: isFront
-                ? "0 8px 24px rgba(0,0,0,0.16), 0 2px 6px rgba(0,0,0,0.08)"
-                : "0 2px 8px rgba(0,0,0,0.09)",
-              border: `1px solid ${tone.border}`,
-            }}
+    <div className="grid gap-2 md:grid-cols-2">
+      {fichas.map((ficha) => (
+        <button
+          key={ficha.id}
+          type="button"
+          onClick={() =>
+            onOpen({ emoji: ficha.emoji, label: ficha.label, title: ficha.title, paragraphs: ficha.paragraphs })
+          }
+          className="group w-full overflow-hidden rounded-[14px] text-left shadow-sm transition-shadow duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.13)]"
+          style={{ border: `1px solid ${tone.border}` }}
+        >
+          {/* Colored tab — sempre visível */}
+          <div
+            className="flex items-center justify-between px-4 py-2.5 transition-opacity"
+            style={{ background: tone.tab }}
           >
-            {/* Tab header — always visible, clicking brings to front or opens modal */}
-            <button
-              type="button"
-              className="flex w-full items-center justify-between px-4 py-2.5 text-left"
-              style={{ background: isFront ? tone.tab : `${tone.tab}bb` }}
-              onClick={() => {
-                if (!isFront) {
-                  setTopIdx(fichas.indexOf(ficha));
-                } else {
-                  onOpen({ emoji: ficha.emoji, label: ficha.label, title: ficha.title, paragraphs: ficha.paragraphs });
-                }
-              }}
+            <span
+              className="flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-[0.22em]"
+              style={{ color: tone.tabText }}
             >
-              <span className="flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.tabText }}>
-                <span className="text-sm leading-none">{ficha.emoji}</span>
-                {ficha.label}
-              </span>
-              <span className="text-[9px] font-bold opacity-70" style={{ color: tone.tabText }}>
-                {isFront ? "abrir →" : "subir ↑"}
-              </span>
-            </button>
+              <span className="text-base leading-none">{ficha.emoji}</span>
+              {ficha.label}
+            </span>
+            <span
+              className="text-[9px] font-bold opacity-0 transition-opacity duration-200 group-hover:opacity-60"
+              style={{ color: tone.tabText }}
+            >
+              abrir →
+            </span>
+          </div>
 
-            {/* Body — only front card shows it */}
-            {isFront && (
-              <motion.div
-                key={ficha.id + "-body"}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.18, delay: 0.08 }}
-                className="bg-white px-4 py-3"
-              >
-                <p className="text-sm font-bold text-slate-700">{ficha.title}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{ficha.preview}</p>
-                <div className="mt-3 flex items-center gap-2">
-                  <div className="h-px flex-1" style={{ background: tone.border }} />
-                  <span className="text-[10px] font-semibold" style={{ color: tone.spineLight }}>
-                    {ficha.paragraphs.length} parágrafos · clique para ler
-                  </span>
-                  <div className="h-px flex-1" style={{ background: tone.border }} />
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
-        );
-      })}
+          {/* Corpo: altura 0 por padrão, expande no hover via max-h transition */}
+          <div className="max-h-0 overflow-hidden bg-white transition-[max-height] duration-300 ease-out group-hover:max-h-32">
+            <div className="px-4 py-3">
+              <p className="text-sm font-semibold text-slate-700">{ficha.title}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">{ficha.preview}</p>
+              <p className="mt-2 text-[10px] font-semibold" style={{ color: tone.spineLight }}>
+                {ficha.paragraphs.length} parágrafos · clique para ler
+              </p>
+            </div>
+          </div>
+        </button>
+      ))}
     </div>
   );
 }
@@ -779,7 +744,7 @@ export default function TrilhaUnidade() {
                 </span>
                 <div className="h-px flex-1" style={{ background: `linear-gradient(to left, ${tone.border}, transparent)` }} />
               </div>
-              <FichaStack fichas={FICHAS_APROFUNDAMENTO} tone={tone} onOpen={setOpenModal} />
+              <FichaGrid fichas={FICHAS_APROFUNDAMENTO} tone={tone} onOpen={setOpenModal} />
             </div>
 
           </div>
