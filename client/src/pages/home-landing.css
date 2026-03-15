@@ -380,6 +380,32 @@
   border-radius: 3px;
 }
 
+/* Variante colada na Trilha */
+.hl-remendo-jornada-wrap {
+  display: flex; justify-content: center;
+  margin-bottom: 10px; text-decoration: none;
+}
+.hl-remendo-jornada {
+  position: static;
+  transform: rotate(-1.5deg);
+  font-size: .88rem;
+  padding: 6px 20px;
+  background: #f0faf3;
+  border-color: #4da876;
+  color: #1e6b42;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.hl-remendo-jornada::before {
+  background: rgba(180,230,195,.75);
+  width: 28px; height: 10px;
+}
+.hl-remendo-jornada-wrap:hover .hl-remendo-jornada {
+  transform: rotate(0deg) scale(1.03);
+  box-shadow: 2px 4px 10px rgba(0,0,0,.13);
+}
+
 /* ── Coluna direita ── */
 .hl-right-col {
   display: flex; flex-direction: column;

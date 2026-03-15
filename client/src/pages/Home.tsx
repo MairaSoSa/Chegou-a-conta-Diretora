@@ -152,7 +152,7 @@ export default function Home() {
                       <p>{card.desc}</p>
                       <small>{card.small}</small>
                       {card.href === "/dashboard" && (
-                        <div className="hl-remendo">ver minha escola →</div>
+                        <div className="hl-remendo">ver minha escola</div>
                       )}
                     </div>
                   </Link>
@@ -181,8 +181,8 @@ export default function Home() {
                 <p className="hl-trilha-desc">
                   Marque cada etapa conforme for explorando a plataforma. Sua jornada fica salva automaticamente.
                 </p>
-                <Link href="/trilha">
-                  <span className="hl-btn hl-btn-primary hl-trilha-btn">Começar a jornada</span>
+                <Link href="/trilha" className="hl-remendo-jornada-wrap">
+                  <div className="hl-remendo hl-remendo-jornada">começar a jornada</div>
                 </Link>
                 <div className="hl-checklist">
                   {TRILHA_ITEMS.map(item => (
