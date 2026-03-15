@@ -121,6 +121,15 @@
 .hl-brand h1 { margin: 0; font-size: 1.18rem; letter-spacing: -.03em; font-weight: 800; line-height: 1.1; }
 .hl-brand p  { margin: 2px 0 0; color: #677b86; font-size: .78rem; }
 
+.hl-a11y-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 10px; border: 1px dashed #d6c9b8;
+  background: #fffefb; color: #8a9da8; cursor: pointer;
+  transition: background .18s, color .18s, border-color .18s;
+  flex-shrink: 0; margin-left: 2px;
+}
+.hl-a11y-btn:hover { background: #f0f7f4; color: #2f7a5f; border-color: #b4d4c4; }
+
 .hl-mini-menu { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; align-items: flex-start; padding-top: 2px; }
 .hl-pill {
   display: inline-flex; align-items: center; justify-content: center;

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { SlidersHorizontal } from "lucide-react";
+import { useAccessibility } from "@/App";
 import "./home-landing.css";
 
 const STORAGE_KEY = "chegou-conta-trilha-progresso";
@@ -74,6 +76,7 @@ const MENU_PILLS = [
 ];
 
 export default function Home() {
+  const { toggle: toggleAccessibility } = useAccessibility();
   const [checks, setChecks] = useState<Record<string, boolean>>(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
@@ -111,6 +114,14 @@ export default function Home() {
                 <h1>Chegou a Conta, Diretora!</h1>
                 <p>gestão escolar mais bonita e mais simples</p>
               </div>
+              <button
+                onClick={toggleAccessibility}
+                className="hl-a11y-btn"
+                aria-label="Ajustes de acessibilidade"
+                title="Acessibilidade"
+              >
+                <SlidersHorizontal size={15} />
+              </button>
             </div>
             <nav className="hl-mini-menu">
               {MENU_PILLS.map(p => (
