@@ -107,31 +107,7 @@ export default function Home() {
         <aside className="hl-spiral" />
 
         <section className="hl-page">
-          {/* ── Topo ── */}
-          <div className="hl-topbar">
-            <div className="hl-brand">
-              <span className="hl-brand-badge" />
-              <div>
-                <h1>Chegou a Conta, Diretora!</h1>
-                <p>gestão escolar mais bonita e mais simples</p>
-              </div>
-              <button
-                onClick={toggleAccessibility}
-                className="hl-a11y-btn"
-                aria-label="Ajustes de acessibilidade"
-                title="Acessibilidade"
-              >
-                <SlidersHorizontal size={15} />
-              </button>
-            </div>
-            <nav className="hl-mini-menu">
-              {MENU_PILLS.map(p => (
-                <Link key={p.href} href={p.href}>
-                  <span className="hl-pill">{p.label}</span>
-                </Link>
-              ))}
-            </nav>
-          </div>
+          {/* Topo removido conforme solicitado */}
 
           {/* ── Layout principal ── */}
           <div className="hl-layout">
@@ -231,6 +207,22 @@ export default function Home() {
           </div>
         </section>
       </div>
+      {/* Botão de acessibilidade fixo no canto inferior direito */}
+      <button
+        onClick={toggleAccessibility}
+        className="hl-a11y-btn"
+        aria-label="Ajustes de acessibilidade"
+        title="Acessibilidade"
+        style={{
+          position: 'fixed',
+          right: 24,
+          bottom: 24,
+          zIndex: 1000,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
+        }}
+      >
+        <SlidersHorizontal size={22} />
+      </button>
     </div>
   );
 }
