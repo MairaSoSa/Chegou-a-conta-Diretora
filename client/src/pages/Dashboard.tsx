@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { BrazilMap } from "@/components/BrazilMap";
 import "../../public/painel-educacional.css";
 import { AlertPanel } from "@/components/AlertPanel";
@@ -72,6 +72,8 @@ const PIE_COLORS = ["#2d6a4f", "#40916c", "#74c69d", "#b7e4c7"];
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const [schoolTabs, setSchoolTabs] = useState<Array<{id: string, label: string, inep: string}>>([]);
   const [activeTabId, setActiveTabId] = useState<string>("overview");
   const [selectedAno, setSelectedAno] = useState(2024);
@@ -112,6 +114,16 @@ export default function Dashboard() {
   const toggleSection = (key: string) => {
     setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
   };
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const selectSchool = (inep: string, name?: string) => {
     const tabId = `school-${inep}`;
@@ -549,24 +561,103 @@ export default function Dashboard() {
                   <div className="flex-1">
                     <p className="text-sm font-semibold mb-1" style={{color:'#2d5a88'}}>🏫 Buscar minha escola</p>
                     <p className="text-xs text-muted-foreground mb-3">Digite o nome ou o código INEP (8 dígitos) para ver o painel completo</p>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <input
-                          className="w-full pl-9 pr-3 h-10 rounded-xl text-sm border border-border/50 bg-white outline-none focus:ring-2 focus:ring-blue-200"
-                          placeholder="Ex: EMEF Jardim das Acácias ou 35000001"
-                          value={searchQuery}
-                          onChange={e => setSearchQuery(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
-                        />
+                    {/* Wrapper com ref para fechar dropdown ao clicar fora */}
+                    <div ref={searchContainerRef} className="relative">
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                          <input
+                            className="w-full pl-9 pr-3 h-10 rounded-xl text-sm border border-border/50 bg-white outline-none focus:ring-2 focus:ring-blue-200"
+                            placeholder="Ex: EMEF Jardim das Acácias ou 35000001"
+                            value={searchQuery}
+                            autoComplete="off"
+                            onChange={e => { setSearchQuery(e.target.value); setShowDropdown(true); }}
+                            onFocus={() => { if (searchQuery.length >= 2) setShowDropdown(true); }}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') { handleSearch(); setShowDropdown(false); }
+                              if (e.key === 'Escape') { setShowDropdown(false); setSearchQuery(""); }
+                            }}
+                          />
+                        </div>
+                        <button
+                          onClick={() => { handleSearch(); setShowDropdown(false); }}
+                          className="flex items-center gap-1.5 px-4 h-10 rounded-xl text-sm font-semibold text-white shrink-0"
+                          style={{background:'#2d5a88'}}
+                        >
+                          Buscar <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                      <button
-                        onClick={handleSearch}
-                        className="flex items-center gap-1.5 px-4 h-10 rounded-xl text-sm font-semibold text-white shrink-0"
-                        style={{background:'#2d5a88'}}
-                      >
-                        Buscar <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
+
+                      {/* DROPDOWN AUTOCOMPLETE */}
+                      {showDropdown && searchQuery.length >= 2 && (
+                        <div
+                          className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-2xl overflow-hidden"
+                          style={{
+                            background: '#fff',
+                            border: '1.5px solid #c8dff7',
+                            boxShadow: '0 8px 32px 0 rgba(45,90,136,0.13), 0 2px 8px 0 rgba(0,0,0,0.07)',
+                          }}
+                        >
+                          {/* Loading */}
+                          {searchLoading && (
+                            <div className="flex items-center gap-2.5 px-4 py-3.5 text-sm text-muted-foreground">
+                              <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
+                              <span>Buscando escolas...</span>
+                            </div>
+                          )}
+
+                          {/* Resultados */}
+                          {!searchLoading && searchResults?.dados && searchResults.dados.length > 0 && (
+                            <>
+                              <div className="px-4 pt-2.5 pb-1 flex items-center justify-between">
+                                <span className="text-[10px] font-semibold uppercase tracking-widest" style={{color:'#2d5a88',opacity:0.7}}>
+                                  {searchResults.dados.length} escola(s) encontrada(s)
+                                </span>
+                                <button
+                                  onMouseDown={e => e.preventDefault()}
+                                  onClick={() => { setSearchQuery(""); setShowDropdown(false); }}
+                                  className="p-1 rounded-full hover:bg-blue-50 text-muted-foreground"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                              <div className="max-h-72 overflow-y-auto divide-y divide-blue-50">
+                                {searchResults.dados.map((result: any, idx: number) => (
+                                  <button
+                                    key={result.co_entidade}
+                                    onMouseDown={e => e.preventDefault()}
+                                    onClick={() => { selectSchool(String(result.co_entidade), result.no_entidade); setShowDropdown(false); }}
+                                    className="w-full text-left px-4 py-3 flex items-center gap-3 transition-colors group"
+                                    style={{background: idx % 2 === 0 ? '#fff' : '#f7faff'}}
+                                    onMouseEnter={e => (e.currentTarget.style.background = '#eef4ff')}
+                                    onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : '#f7faff')}
+                                  >
+                                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{background:'#e8f0fb'}}>
+                                      <School className="w-3.5 h-3.5" style={{color:'#2d5a88'}} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-semibold text-sm text-foreground truncate">{result.no_entidade}</p>
+                                      <p className="text-[11px] text-muted-foreground truncate">
+                                        {result.no_municipio}/{result.sg_uf} · {result.ds_dependencia}
+                                        {result.qt_matriculas > 0 && ` · ${result.qt_matriculas.toLocaleString('pt-BR')} alunos`}
+                                      </p>
+                                    </div>
+                                    <ArrowRight className="w-3.5 h-3.5 text-blue-300 shrink-0 group-hover:text-blue-500 transition-colors" />
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+
+                          {/* Sem resultados */}
+                          {!searchLoading && searchResults?.dados && searchResults.dados.length === 0 && (
+                            <div className="px-4 py-5 text-center text-sm text-muted-foreground">
+                              <Search className="w-6 h-6 mx-auto mb-1.5 opacity-30" />
+                              Nenhuma escola encontrada para "<strong>{searchQuery}</strong>"
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="hidden sm:flex flex-col gap-1.5 text-xs text-muted-foreground shrink-0">
@@ -586,51 +677,6 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>}
-
-            {/* RESULTADOS DA BUSCA */}
-            {!selectedInep && searchLoading && searchQuery.length >= 2 && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground px-1 py-2">
-                <Loader2 className="w-4 h-4 animate-spin" /> Buscando escolas...
-              </div>
-            )}
-            {!selectedInep && !searchLoading && searchResults && searchResults.dados && searchResults.dados.length > 0 && (
-              <Card className="card-clay">
-                <CardContent className="p-0">
-                  <div className="px-4 py-2.5 border-b border-border/20 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      {searchResults.dados.length} escola(s) encontrada(s)
-                    </span>
-                    <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setSearchQuery("")}>
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <div className="divide-y divide-border/20 max-h-96 overflow-y-auto">
-                    {searchResults.dados.map((result: any) => (
-                      <button
-                        key={result.co_entidade}
-                        className="w-full text-left px-4 py-3.5 hover:bg-accent/5 transition-colors flex justify-between items-center group"
-                        onClick={() => selectSchool(String(result.co_entidade), result.no_entidade)}
-                      >
-                        <div>
-                          <p className="font-semibold text-sm group-hover:text-accent transition-colors">{result.no_entidade}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            INEP {result.co_entidade} · {result.no_municipio}/{result.sg_uf} · {result.ds_dependencia}
-                            {result.qt_matriculas > 0 && ` · ${result.qt_matriculas.toLocaleString('pt-BR')} alunos`}
-                          </p>
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 ml-2 group-hover:text-accent transition-colors" />
-                      </button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            {!selectedInep && !searchLoading && searchQuery.length >= 2 && searchResults && searchResults.dados && searchResults.dados.length === 0 && (
-              <div className="text-center py-6 text-sm text-muted-foreground">
-                <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                Nenhuma escola encontrada para "<strong>{searchQuery}</strong>"
-              </div>
-            )}
 
             {/* BILHETE DA DIRETORA */}
             {!selectedInep && stats && (

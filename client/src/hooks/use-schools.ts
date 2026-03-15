@@ -11,6 +11,8 @@ export function useSchoolSearch(query: string) {
       return res.json();
     },
     enabled: query.length >= 2,
+    staleTime: 1000 * 60 * 5,
+    placeholderData: (prev) => prev,
   });
 }
 
