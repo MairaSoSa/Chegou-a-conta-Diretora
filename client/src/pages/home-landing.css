@@ -355,6 +355,31 @@
 .hl-teal    { background: #e1f5f3; }
 
 
+/* ── Remendo colado no card ── */
+.hl-remendo {
+  position: absolute;
+  bottom: 10px; right: 8px;
+  background: #fffef5;
+  border: 1.5px dashed #c9a84c;
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-family: "Patrick Hand", cursive;
+  font-size: .72rem;
+  color: #7a5a18;
+  transform: rotate(-4deg);
+  box-shadow: 1px 2px 5px rgba(0,0,0,.10);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.hl-remendo::before {
+  content: "";
+  position: absolute;
+  top: -5px; left: 50%; transform: translateX(-50%);
+  width: 22px; height: 9px;
+  background: rgba(255,235,150,.7);
+  border-radius: 3px;
+}
+
 /* ── Coluna direita ── */
 .hl-right-col {
   display: flex; flex-direction: column;

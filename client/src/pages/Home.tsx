@@ -131,11 +131,6 @@ export default function Home() {
                 <p className="hl-hero-desc">
                   Aqui você acompanha dados, programas federais, prazos e ferramentas — tudo num só lugar.
                 </p>
-                <div className="hl-hero-actions">
-                  <Link href="/dashboard">
-                    <span className="hl-btn hl-btn-secondary">Ver minha escola</span>
-                  </Link>
-                </div>
                 <div className="hl-hero-tags">
                   <span className="hl-tag">dados educacionais</span>
                   <span className="hl-tag">PDDE · PNAE</span>
@@ -156,6 +151,9 @@ export default function Home() {
                       <h3>{card.title}</h3>
                       <p>{card.desc}</p>
                       <small>{card.small}</small>
+                      {card.href === "/dashboard" && (
+                        <div className="hl-remendo">ver minha escola →</div>
+                      )}
                     </div>
                   </Link>
                 ))}
