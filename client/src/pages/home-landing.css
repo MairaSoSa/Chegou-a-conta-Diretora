@@ -222,10 +222,13 @@
 
 /* ── Mural ── */
 .hl-mural-label {
-  margin: 0; padding: 4px 0 2px 8px;
+  margin: 0; padding: 0 0 0 8px;
   font-family: "Patrick Hand", cursive; font-size: 1.08rem; color: #587082;
   flex-shrink: 0;
   font-weight: bold;
+  line-height: 33px;
+  border-bottom: 1.5px solid #dbe9fb;
+  width: fit-content;
 }
 .hl-cards-grid {
   display: grid; grid-template-columns: repeat(3, 1fr);
@@ -595,9 +598,13 @@
 
 /* ── Rodapé ── */
 .hl-footer-strip {
-  position: absolute; left: 50px; right: 16px; bottom: 8px;
+  position: absolute; left: 50px; right: 16px; bottom: 0;
   display: flex; justify-content: space-between; gap: 10px;
-  color: #758692; font-size: .7rem; font-weight: 800;
+  color: #758692; font-size: .72rem; font-weight: 800;
+  font-family: "Patrick Hand", cursive;
+  line-height: 33px;
+  border-top: 1.5px solid #dbe9fb;
+  padding: 0 4px;
 }
 
 /* ── Botão de acessibilidade flutuante ── */
