@@ -230,7 +230,10 @@ export const insertProgramSchema = createInsertSchema(programs).omit({ id: true 
 export const insertProgramDetailSchema = createInsertSchema(programDetails).omit({ id: true });
 export const insertToolSchema = createInsertSchema(tools).omit({ id: true });
 export const insertGlossarySchema = createInsertSchema(glossary).omit({ id: true });
-export const insertTrilhaUnitSchema = createInsertSchema(trilhaUnits).omit({ id: true });
+export const insertTrilhaUnitSchema = createInsertSchema(trilhaUnits).omit({ id: true }).extend({
+  sections: z.array(z.any()).optional().nullable(),
+  materials: z.array(z.any()).optional().nullable(),
+});
 export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({ id: true });
 export const insertDashboardDatasetSchema = createInsertSchema(dashboardDatasets).omit({ id: true, lastUpdated: true });
 export const insertAiDocumentSchema = createInsertSchema(aiDocuments).omit({ id: true, createdAt: true });
