@@ -114,17 +114,16 @@ export default function CalendarioPage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f4ede3" }}>
       <Navigation />
       <div style={{
-        background: "#f0f5ed",
-        color: "#3d4f34", padding: "28px 24px 22px",
-        borderBottom: "2px solid #c5d4b8",
+        padding: "28px 24px 22px",
+        borderBottom: "1px solid #ddd4c8",
       }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <h1 style={{ fontSize: "22px", fontWeight: 800, letterSpacing: "-0.5px", marginBottom: "4px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <h1 style={{ fontSize: "22px", fontWeight: 800, letterSpacing: "-0.5px", marginBottom: "4px", display: "flex", alignItems: "center", gap: "10px", color: "#3d4f34" }}>
               <Calendar style={{ width: "24px", height: "24px" }} />
               Calendário e Prazos da Diretora
             </h1>
-            <p style={{ fontSize: "13px", opacity: 0.85 }}>
+            <p style={{ fontSize: "13px", color: "#7a8f6e" }}>
               Prazos importantes, datas-chave e notícias recentes do MEC, FNDE e INEP
             </p>
           </div>
