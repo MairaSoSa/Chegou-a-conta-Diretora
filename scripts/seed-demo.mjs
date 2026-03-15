@@ -554,9 +554,55 @@ for (const escola of ESCOLAS) {
   }
 }
 
+// ── Trilha da Diretora ────────────────────────────────────────────────────────
+const TRILHA_UNITS = [
+  { unitId: "U01", part: 5, title: "De onde vêm os recursos da escola", subtitle: "As principais fontes de financiamento da escola pública.", duration: "20 min", intro: "Apresenta as diferentes fontes de recursos da escola pública, incluindo programas federais, repasses estaduais e municipais e outras formas de financiamento da educação.", previousUnit: "", nextUnit: "U02", sortOrder: 1 },
+  { unitId: "U02", part: 5, title: "Quais programas financiam a escola", subtitle: "Conhecendo os programas que apoiam o funcionamento da escola.", duration: "20 min", intro: "Explica os principais programas educacionais que chegam às escolas, como PDDE, PNAE e PNATE, seus objetivos e como eles contribuem para o funcionamento da escola.", previousUnit: "U01", nextUnit: "U03", sortOrder: 2 },
+  { unitId: "U03", part: 5, title: "Como funciona o PDDE", subtitle: "O principal programa de repasse direto para escolas públicas.", duration: "20 min", intro: "Apresenta o funcionamento do Programa Dinheiro Direto na Escola, suas modalidades, regras gerais e responsabilidades da escola na gestão dos recursos.", previousUnit: "U02", nextUnit: "U04", sortOrder: 3 },
+  { unitId: "U04", part: 5, title: "Como a escola se organiza para receber recursos", subtitle: "Estruturas administrativas necessárias para participar dos programas.", duration: "20 min", intro: "Explica as estruturas administrativas que permitem que a escola participe dos programas educacionais e receba recursos financeiros.", previousUnit: "U03", nextUnit: "U05", sortOrder: 4 },
+  { unitId: "U05", part: 5, title: "O que é a unidade executora", subtitle: "A entidade responsável por administrar os recursos da escola.", duration: "20 min", intro: "Apresenta o conceito de unidade executora, suas funções e sua importância para a gestão financeira da escola.", previousUnit: "U04", nextUnit: "U06", sortOrder: 5 },
+  { unitId: "U06", part: 5, title: "Quem administra os recursos da escola", subtitle: "Diretoria, conselho e responsabilidades na gestão.", duration: "20 min", intro: "Explica quem são os responsáveis pela administração dos recursos da unidade executora e como ocorre a participação da comunidade escolar.", previousUnit: "U05", nextUnit: "U07", sortOrder: 6 },
+  { unitId: "U07", part: 5, title: "O estatuto da unidade executora", subtitle: "O documento que define regras e funcionamento da entidade.", duration: "20 min", intro: "Apresenta o estatuto da unidade executora, seus objetivos e sua importância para o funcionamento institucional da entidade.", previousUnit: "U06", nextUnit: "U08", sortOrder: 7 },
+  { unitId: "U08", part: 5, title: "Documentos da escola no cartório", subtitle: "Registros que formalizam a unidade executora.", duration: "20 min", intro: "Explica quais documentos precisam ser registrados em cartório, como estatuto e atas, e por que esses registros são importantes.", previousUnit: "U07", nextUnit: "U09", sortOrder: 8 },
+  { unitId: "U09", part: 5, title: "A conta bancária da escola", subtitle: "Onde ficam os recursos dos programas educacionais.", duration: "20 min", intro: "Apresenta o funcionamento das contas bancárias vinculadas aos programas educacionais e sua importância na gestão financeira.", previousUnit: "U08", nextUnit: "U10", sortOrder: 9 },
+  { unitId: "U10", part: 5, title: "Quem pode movimentar a conta", subtitle: "Responsáveis e autorizações para movimentação financeira.", duration: "20 min", intro: "Explica quem pode movimentar as contas da unidade executora e como essas autorizações são registradas no banco.", previousUnit: "U09", nextUnit: "U11", sortOrder: 10 },
+  { unitId: "U11", part: 5, title: "Quando os recursos chegam", subtitle: "Entendendo os repasses dos programas educacionais.", duration: "20 min", intro: "Apresenta como funcionam os calendários de repasse dos programas e como a escola pode acompanhar a chegada dos recursos.", previousUnit: "U10", nextUnit: "U12", sortOrder: 11 },
+  { unitId: "U12", part: 5, title: "Como planejar o uso dos recursos", subtitle: "Definindo prioridades para melhorar a escola.", duration: "20 min", intro: "Explica como planejar o uso dos recursos da escola considerando necessidades pedagógicas e administrativas.", previousUnit: "U11", nextUnit: "U13", sortOrder: 12 },
+  { unitId: "U13", part: 5, title: "O que pode ser pago com os recursos", subtitle: "Regras para utilização dos recursos dos programas.", duration: "20 min", intro: "Apresenta as despesas permitidas pelos programas educacionais e as principais restrições relacionadas ao uso dos recursos.", previousUnit: "U12", nextUnit: "U14", sortOrder: 13 },
+  { unitId: "U14", part: 5, title: "Notas fiscais e comprovantes", subtitle: "Documentos necessários para registrar despesas.", duration: "20 min", intro: "Explica os documentos fiscais utilizados para comprovar despesas e garantir a regularidade da gestão financeira.", previousUnit: "U13", nextUnit: "U15", sortOrder: 14 },
+  { unitId: "U15", part: 5, title: "Como organizar os documentos da escola", subtitle: "Gestão e arquivamento de documentos administrativos.", duration: "20 min", intro: "Apresenta formas de organizar e arquivar documentos relacionados aos programas e à administração da escola.", previousUnit: "U14", nextUnit: "U16", sortOrder: 15 },
+  { unitId: "U16", part: 5, title: "Como funciona a prestação de contas", subtitle: "Demonstrando como os recursos foram utilizados.", duration: "20 min", intro: "Explica o processo de prestação de contas dos programas educacionais e sua importância para a continuidade dos repasses.", previousUnit: "U15", nextUnit: "U17", sortOrder: 16 },
+  { unitId: "U17", part: 5, title: "Processos administrativos da escola", subtitle: "Registros formais de decisões e procedimentos institucionais.", duration: "20 min", intro: "Apresenta o conceito de processos administrativos e sua importância para registrar decisões e procedimentos da escola.", previousUnit: "U16", nextUnit: "U18", sortOrder: 17 },
+  { unitId: "U18", part: 5, title: "Documentos oficiais da escola", subtitle: "Atas, ofícios e registros institucionais.", duration: "20 min", intro: "Apresenta os principais documentos oficiais utilizados na administração escolar e suas funções.", previousUnit: "U17", nextUnit: "U19", sortOrder: 18 },
+  { unitId: "U19", part: 5, title: "Transparência e participação da comunidade", subtitle: "Controle social e acompanhamento da gestão escolar.", duration: "20 min", intro: "Explica o papel do conselho escolar e da comunidade no acompanhamento dos recursos e decisões administrativas.", previousUnit: "U18", nextUnit: "U20", sortOrder: 19 },
+  { unitId: "U20", part: 5, title: "Transição entre diretores", subtitle: "Organizando a passagem de gestão da escola.", duration: "20 min", intro: "Apresenta os cuidados necessários na transição administrativa entre diretoras e diretores para garantir continuidade na gestão.", previousUnit: "U19", nextUnit: "", sortOrder: 20 },
+];
+
+const checkTrilha = db.prepare(`SELECT id FROM trilha_units WHERE unit_id = ? LIMIT 1`);
+const insertTrilha = db.prepare(`
+  INSERT INTO trilha_units (unit_id, part, title, subtitle, duration, intro, sections, materials, previous_unit, next_unit, sort_order)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+const updateTrilha = db.prepare(`
+  UPDATE trilha_units SET part=?, title=?, subtitle=?, duration=?, intro=?, previous_unit=?, next_unit=?, sort_order=?
+  WHERE unit_id=?
+`);
+
+let trilhaInserted = 0;
+for (const u of TRILHA_UNITS) {
+  const existing = checkTrilha.get(u.unitId);
+  if (existing) {
+    updateTrilha.run(u.part, u.title, u.subtitle, u.duration, u.intro, u.previousUnit, u.nextUnit, u.sortOrder, u.unitId);
+  } else {
+    insertTrilha.run(u.unitId, u.part, u.title, u.subtitle, u.duration, u.intro, JSON.stringify([]), JSON.stringify([]), u.previousUnit, u.nextUnit, u.sortOrder);
+    trilhaInserted++;
+  }
+}
+
 console.log(`✅ Seed concluído:`);
 console.log(`   Censo: ${censoInserted} registros inseridos (${ESCOLAS.length} escolas × ${ANOS.length} anos)`);
 console.log(`   Indicadores: ${indicadoresInserted} registros inseridos`);
+console.log(`   Trilha: ${trilhaInserted} unidades inseridas (${TRILHA_UNITS.length} total)`);
 console.log(``);
 console.log(`📌 Códigos INEP das escolas demo:`);
 ESCOLAS.forEach((e) => console.log(`   ${e.inep} — ${e.nome} (${e.municipio}/${e.uf})`));
