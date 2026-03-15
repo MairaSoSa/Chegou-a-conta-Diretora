@@ -239,7 +239,7 @@ function CartaoFerramenta({
 }
 
 // ---------------------------------------------------------------------------
-// Seção com estandarte + varal + cartões
+// Seção com estandarte no mastro + cartões no varal
 // ---------------------------------------------------------------------------
 function SecaoCategoria({
   secao, cartoes, secaoIdx,
@@ -251,78 +251,138 @@ function SecaoCategoria({
   if (cartoes.length === 0) return null;
   const fileiras = chunk(cartoes, 3);
 
+  // Cores das bandeirinhas específicas deste mastro (rotacionadas pelo índice da seção)
+  const bandeirinhasMastro = [...BANDEIRINHAS.slice(secaoIdx % BANDEIRINHAS.length), ...BANDEIRINHAS.slice(0, secaoIdx % BANDEIRINHAS.length)];
+
   return (
     <section className="relative">
-      {/* ---- estandarte oscilante ---- */}
-      <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center" style={{ zIndex: 2 }}>
-        <div className="banner-sway relative mt-2 w-[88%] max-w-[400px] rounded-b-[26px] rounded-t-[12px] border-2 border-white/70 px-5 pb-8 pt-5 text-center shadow-[0_18px_34px_rgba(70,52,36,0.14)] backdrop-blur-sm sm:px-6 md:max-w-[440px] md:px-8 md:pb-9 md:pt-6 md:rounded-b-[30px]">
-          {/* fundo colorido */}
-          <div className={`absolute inset-0 rounded-b-[30px] rounded-t-[12px] border-2 ${secao.borda} bg-gradient-to-b ${secao.cor} opacity-95`} />
 
-          {/* haste do estandarte */}
-          <div className="absolute left-1/2 top-0 h-5 w-16 -translate-x-1/2 -translate-y-[70%] rounded-md bg-[#b78555] shadow-[0_3px_8px_rgba(90,60,30,0.18)]" />
-          <div className="absolute left-6 top-0 h-3 w-3 -translate-y-[145%] rounded-full bg-[#82552d]" />
-          <div className="absolute right-6 top-0 h-3 w-3 -translate-y-[145%] rounded-full bg-[#82552d]" />
+      {/* ===== MASTRO COM ESTANDARTE ===== */}
+      <div className="flex justify-center mb-16 sm:mb-20">
+        <div className="relative flex flex-col items-center" style={{ width: 420 }}>
 
-          {/* ponteiras triangulares na base */}
-          <div className="absolute bottom-0 left-0 right-0 flex justify-between px-10 translate-y-[92%]">
-            <span className="h-0 w-0 border-l-[18px] border-r-[18px] border-t-[26px] border-l-transparent border-r-transparent border-t-white/60" />
-            <span className="h-0 w-0 border-l-[18px] border-r-[18px] border-t-[26px] border-l-transparent border-r-transparent border-t-white/60" />
+          {/* — cordão de bandeirinhas esquerdo — */}
+          <div className="absolute top-0 left-0 right-1/2 flex items-start justify-end gap-0 overflow-visible" style={{ height: 38, paddingRight: 12 }}>
+            {/* fio */}
+            <div className="absolute top-[8px] left-0 right-[12px] h-[2px] rounded-full bg-[#8b6840] opacity-70 line-wind" style={{ transformOrigin: 'right center' }} />
+            {/* bandeirinhas */}
+            <div className="absolute top-0 left-0 right-[12px] flex justify-around items-start pt-0">
+              {bandeirinhasMastro.slice(0, 5).map((cor, i) => (
+                <div
+                  key={i}
+                  className="flag-sway h-0 w-0 border-l-[10px] border-r-[10px] border-t-[18px] border-l-transparent border-r-transparent drop-shadow-sm"
+                  style={{ borderTopColor: cor, animationDelay: `${i * 0.18}s`, marginTop: 2 }}
+                />
+              ))}
+            </div>
           </div>
 
-          <div className="relative z-10">
-            <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full ${secao.selo} text-2xl shadow-inner`}>
-              {secao.icone}
+          {/* — cordão de bandeirinhas direito — */}
+          <div className="absolute top-0 left-1/2 right-0 flex items-start justify-start gap-0 overflow-visible" style={{ height: 38, paddingLeft: 12 }}>
+            <div className="absolute top-[8px] left-[12px] right-0 h-[2px] rounded-full bg-[#8b6840] opacity-70 line-wind" style={{ transformOrigin: 'left center' }} />
+            <div className="absolute top-0 left-[12px] right-0 flex justify-around items-start pt-0">
+              {bandeirinhasMastro.slice(3, 8).map((cor, i) => (
+                <div
+                  key={i}
+                  className="flag-sway h-0 w-0 border-l-[10px] border-r-[10px] border-t-[18px] border-l-transparent border-r-transparent drop-shadow-sm"
+                  style={{ borderTopColor: cor, animationDelay: `${(i + 5) * 0.16}s`, marginTop: 2 }}
+                />
+              ))}
             </div>
-            <div className="relative inline-block">
-              <span className="absolute inset-x-0 bottom-1 h-3 rounded-sm bg-yellow-200/70" />
-              <h2 className={`relative text-2xl font-black sm:text-3xl ${secao.texto}`}>{secao.titulo}</h2>
+          </div>
+
+          {/* — mastro vertical — */}
+          <div className="relative z-10 flex flex-col items-center" style={{ marginTop: 4 }}>
+            {/* bola do topo */}
+            <div className="h-5 w-5 rounded-full bg-[linear-gradient(135deg,#d4a057,#8b5e2a)] shadow-[0_3px_8px_rgba(90,55,20,0.35)]" />
+            {/* pau */}
+            <div
+              className="w-[10px] rounded-b-sm"
+              style={{
+                height: 56,
+                background: "linear-gradient(to right, #c8894a, #e8a95c, #c0803e)",
+                boxShadow: "inset -2px 0 4px rgba(0,0,0,0.18), 2px 0 6px rgba(0,0,0,0.10)",
+              }}
+            />
+          </div>
+
+          {/* — estandarte — */}
+          <div
+            className="banner-sway relative w-[88%] max-w-[380px] rounded-b-[24px] rounded-t-[10px] border-2 border-white/70 px-5 pb-8 pt-5 text-center shadow-[0_20px_36px_rgba(70,52,36,0.16)]"
+            style={{ transformOrigin: "top center", marginTop: -2 }}
+          >
+            {/* fundo colorido */}
+            <div className={`absolute inset-0 rounded-b-[24px] rounded-t-[10px] border-2 ${secao.borda} bg-gradient-to-b ${secao.cor} opacity-96`} />
+
+            {/* suporte horizontal no topo (fixação no mastro) */}
+            <div className="absolute left-1/2 top-0 h-[6px] w-20 -translate-x-1/2 -translate-y-[50%] rounded-full bg-[#b78555] shadow-[0_2px_6px_rgba(90,60,30,0.22)]" />
+            {/* argolas laterais */}
+            <div className="absolute left-5 top-0 h-3 w-3 -translate-y-[120%] rounded-full bg-[#7a4e23] shadow-sm" />
+            <div className="absolute right-5 top-0 h-3 w-3 -translate-y-[120%] rounded-full bg-[#7a4e23] shadow-sm" />
+
+            {/* ponteiras triangulares na base */}
+            <div className="absolute bottom-0 left-0 right-0 flex justify-around px-8 translate-y-[90%]">
+              {[0,1,2].map((i) => (
+                <span
+                  key={i}
+                  className="h-0 w-0 border-l-[16px] border-r-[16px] border-t-[22px] border-l-transparent border-r-transparent border-t-white/55"
+                />
+              ))}
             </div>
-            <p className="mt-2 text-sm font-medium tracking-wide text-slate-600">
-              {cartoes.length} {cartoes.length === 1 ? "modelo disponível" : "modelos disponíveis"}
-            </p>
+
+            {/* conteúdo do estandarte */}
+            <div className="relative z-10">
+              <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full ${secao.selo} text-2xl shadow-inner`}>
+                {secao.icone}
+              </div>
+              <div className="relative inline-block">
+                <span className="absolute inset-x-0 bottom-0.5 h-3 rounded-sm bg-yellow-200/65" />
+                <h2 className={`relative text-2xl font-black sm:text-3xl ${secao.texto}`}>{secao.titulo}</h2>
+              </div>
+              <p className="mt-2 text-sm font-medium tracking-wide text-slate-600">
+                {cartoes.length} {cartoes.length === 1 ? "modelo disponível" : "modelos disponíveis"}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ---- fileiras com varal ---- */}
-      <div className="pt-36 sm:pt-40">
-        <div className="space-y-14 sm:space-y-16">
-          {fileiras.map((linha, linhaIdx) => (
-            <div key={linhaIdx} className="relative px-1 md:px-4">
-              {/* corda do varal */}
-              <div className="pointer-events-none absolute left-2 right-2 top-3 h-[5px] rounded-full bg-[repeating-linear-gradient(45deg,#9a6a3a,#9a6a3a_6px,#b07b45_6px,#b07b45_12px)] shadow-sm md:left-6 md:right-6 line-wind" />
+      {/* ===== FILEIRAS COM VARAL ===== */}
+      <div className="space-y-14 sm:space-y-16">
+        {fileiras.map((linha, linhaIdx) => (
+          <div key={linhaIdx} className="relative px-1 md:px-4">
+            {/* corda do varal */}
+            <div className="pointer-events-none absolute left-2 right-2 top-3 h-[5px] rounded-full bg-[repeating-linear-gradient(45deg,#9a6a3a,#9a6a3a_6px,#b07b45_6px,#b07b45_12px)] shadow-sm md:left-6 md:right-6 line-wind" />
 
-              {/* bandeirinhas do varal */}
-              <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center gap-5 opacity-90 md:gap-7">
-                {[0, 1, 2, 3, 4].map((item) => (
-                  <div
-                    key={item}
-                    className="flag-sway h-0 w-0 border-l-[10px] border-r-[10px] border-t-[17px] border-l-transparent border-r-transparent drop-shadow-sm"
-                    style={{
-                      borderTopColor: BANDEIRINHAS[(secaoIdx + linhaIdx + item) % BANDEIRINHAS.length],
-                      animationDelay: `${(item + linhaIdx) * 0.12}s`,
-                    }}
-                  />
-                ))}
-              </div>
-
-              {/* grade de cartões */}
-              <div className="grid gap-x-6 gap-y-14 pt-10 sm:grid-cols-2 xl:grid-cols-3">
-                {linha.map((cartao, i) => (
-                  <CartaoFerramenta
-                    key={`${cartao.nome}-${i}-${linhaIdx}`}
-                    cartao={cartao}
-                    index={i}
-                    linhaIdx={linhaIdx}
-                    secaoIdx={secaoIdx}
-                    secao={secao}
-                  />
-                ))}
-              </div>
+            {/* bandeirinhas do varal */}
+            <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center gap-5 opacity-90 md:gap-8">
+              {[0, 1, 2, 3, 4, 5, 6].map((item) => (
+                <div
+                  key={item}
+                  className="flag-sway h-0 w-0 border-l-[9px] border-r-[9px] border-t-[15px] border-l-transparent border-r-transparent drop-shadow-sm"
+                  style={{
+                    borderTopColor: BANDEIRINHAS[(secaoIdx + linhaIdx + item) % BANDEIRINHAS.length],
+                    animationDelay: `${(item + linhaIdx) * 0.11}s`,
+                  }}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+
+            {/* grade de cartões */}
+            <div className="grid gap-x-6 gap-y-14 pt-10 sm:grid-cols-2 xl:grid-cols-3">
+              {linha.map((cartao, i) => (
+                <CartaoFerramenta
+                  key={`${cartao.nome}-${i}-${linhaIdx}`}
+                  cartao={cartao}
+                  index={i}
+                  linhaIdx={linhaIdx}
+                  secaoIdx={secaoIdx}
+                  secao={secao}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
