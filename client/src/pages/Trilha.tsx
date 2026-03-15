@@ -24,12 +24,12 @@ function Pin({ color, dark, size = 32 }: { color: string; dark: string; size?: n
       }}
     >
       <defs>
-        {/* Chrome outer ring gradient */}
-        <radialGradient id={`cr-${id}`} cx="38%" cy="30%" r="72%">
-          <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.9" />
-          <stop offset="30%"  stopColor="#e0e0e0" />
-          <stop offset="65%"  stopColor="#b0b0b0" />
-          <stop offset="100%" stopColor="#707070" />
+        {/* Outer ring in the pin's own color (no chrome/gray) */}
+        <radialGradient id={`cr-${id}`} cx="35%" cy="28%" r="72%">
+          <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.7" />
+          <stop offset="28%"  stopColor={color} />
+          <stop offset="75%"  stopColor={color} />
+          <stop offset="100%" stopColor={dark} />
         </radialGradient>
         {/* Colored inner face gradient */}
         <radialGradient id={`fc-${id}`} cx="36%" cy="30%" r="68%">

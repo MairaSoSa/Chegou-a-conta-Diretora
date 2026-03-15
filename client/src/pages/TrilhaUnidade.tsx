@@ -82,26 +82,7 @@ function groupName(p: ToneKey) {
     : "Prestação de contas e continuidade";
 }
 
-// Hole punch marks for the binder margin
-function HolePunches({ color }: { color: string }) {
-  return (
-    <div className="absolute left-0 top-0 bottom-0 flex w-9 flex-col items-center justify-around py-5">
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className="h-4 w-4 rounded-full border-2"
-          style={{
-            borderColor: color,
-            background: "rgba(255,255,255,0.7)",
-            boxShadow: `inset 0 1px 3px rgba(0,0,0,0.12)`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-// Binder ring clip SVG
+// Binder ring clip SVG — used only on the spine
 function RingClip({ color }: { color: string }) {
   return (
     <div className="relative flex h-10 w-10 items-center justify-center">
@@ -115,45 +96,141 @@ function RingClip({ color }: { color: string }) {
   );
 }
 
-// A single "ficha" card in the binder
+// Paper / sticker card — sem furinhos, parece uma folha colada na página
 function Ficha({
   tone,
-  tabLabel,
-  tabColor,
+  label,
+  accent,
+  rotate = 0,
   children,
   className = "",
 }: {
   tone: (typeof toneMap)[ToneKey];
-  tabLabel?: string;
-  tabColor?: string;
+  label?: string;
+  accent?: string;
+  rotate?: number;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-[18px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.09),0_1px_2px_rgba(0,0,0,0.06)] ${className}`}
-      style={{ border: `1px solid ${tone.border}` }}
+      className={`relative overflow-hidden rounded-[14px] bg-white ${className}`}
+      style={{
+        border: `1px solid ${tone.border}`,
+        boxShadow: "0 3px 10px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05)",
+        transform: rotate ? `rotate(${rotate}deg)` : undefined,
+      }}
     >
-      {/* Left margin strip with hole punches */}
-      <div
-        className="absolute bottom-0 left-0 top-0 w-9 border-r"
-        style={{ background: tone.strip, borderColor: tone.punch }}
-      >
-        <HolePunches color={tone.punch} />
-      </div>
-
-      {/* Tab label protrudes at top-right */}
-      {tabLabel && (
+      {/* Colored label strip at top — like a sticker header */}
+      {label && (
         <div
-          className="absolute -top-px right-8 rounded-b-[10px] px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-widest shadow-sm"
-          style={{ background: tabColor || tone.tab, color: tone.tabText }}
+          className="px-4 py-1.5"
+          style={{ background: accent || tone.tab }}
         >
-          {tabLabel}
+          <span
+            className="text-[9px] font-extrabold uppercase tracking-[0.22em]"
+            style={{ color: tone.tabText }}
+          >
+            {label}
+          </span>
         </div>
       )}
+      <div className="px-4 py-3">{children}</div>
+    </div>
+  );
+}
 
-      {/* Content — shifted right to clear margin */}
-      <div className="pl-11 pr-4 py-4">{children}</div>
+// ── Baralho de fichas empilhadas ──
+// Fichas de aprofundamento aparecem uma em cima da outra
+// como uma fila/deck de cartões de índice
+function FichaStack({
+  fichas,
+  tone,
+  onOpen,
+}: {
+  fichas: Array<{ id: string; label: string; title: string; preview: string; paragraphs: string[] }>;
+  tone: (typeof toneMap)[ToneKey];
+  onOpen: (id: string) => void;
+}) {
+  const [topIdx, setTopIdx] = useState(0);
+
+  // Rotate stack so topIdx card is front
+  const ordered = [
+    ...fichas.slice(topIdx),
+    ...fichas.slice(0, topIdx),
+  ];
+
+  return (
+    <div className="relative select-none" style={{ minHeight: "270px", paddingBottom: "76px" }}>
+      {/* Render back-to-front so front card is on top */}
+      {[...ordered].reverse().map((ficha, reversedIdx) => {
+        const stackPos = ordered.length - 1 - reversedIdx; // 0 = front card
+        const isFront = stackPos === 0;
+        const offset = stackPos * 38; // px each card peeks below the previous
+
+        return (
+          <div
+            key={ficha.id}
+            className="absolute left-0 right-0 overflow-hidden rounded-[16px] transition-all duration-300"
+            style={{
+              top: `${offset}px`,
+              zIndex: ordered.length - stackPos,
+              boxShadow: isFront
+                ? "0 6px 20px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08)"
+                : "0 3px 10px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06)",
+              border: `1px solid ${tone.border}`,
+            }}
+          >
+            {/* Colored tab header — always visible, clicking brings to front or opens */}
+            <button
+              type="button"
+              className="flex w-full items-center justify-between px-4 py-2.5 text-left"
+              style={{ background: tone.tab }}
+              onClick={() => {
+                if (!isFront) {
+                  setTopIdx(fichas.indexOf(ficha));
+                } else {
+                  onOpen(ficha.id);
+                }
+              }}
+            >
+              <span
+                className="text-[9px] font-extrabold uppercase tracking-[0.22em]"
+                style={{ color: tone.tabText }}
+              >
+                {ficha.label}
+              </span>
+              <span
+                className="text-[9px] font-bold opacity-70"
+                style={{ color: tone.tabText }}
+              >
+                {isFront ? "abrir →" : "↓"}
+              </span>
+            </button>
+
+            {/* Body — only visible on front card */}
+            {isFront && (
+              <div className="bg-white px-4 py-3">
+                <p className="text-sm font-bold text-slate-700">{ficha.title}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{ficha.preview}</p>
+                <div className="mt-3 flex items-center gap-2">
+                  <div
+                    className="h-px flex-1"
+                    style={{ background: tone.border }}
+                  />
+                  <span className="text-[10px] font-semibold" style={{ color: tone.spineLight }}>
+                    4–5 páginas · leitura completa
+                  </span>
+                  <div
+                    className="h-px flex-1"
+                    style={{ background: tone.border }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -338,9 +415,8 @@ export default function TrilhaUnidade() {
           >
 
             {/* ── CAPA: Title ficha ── */}
-            <Ficha tone={tone} tabLabel={unitId} className="">
+            <Ficha tone={tone} label={unitId}>
               <div className="flex items-start gap-4">
-                {/* Unit number badge */}
                 <div
                   className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[14px] text-3xl font-black shadow-sm"
                   style={{ background: tone.tab, color: tone.tabText }}
@@ -348,10 +424,7 @@ export default function TrilhaUnidade() {
                   {unitNum.toString().padStart(2, "0")}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p
-                    className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.22em]"
-                    style={{ color: tone.spineLight }}
-                  >
+                  <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
                     {groupName(personalidade)} · {emojiFor(personalidade)} · ⏱ {unidade.duration}
                   </p>
                   <h1 className="text-2xl font-extrabold leading-tight text-slate-800 md:text-3xl">
@@ -364,8 +437,7 @@ export default function TrilhaUnidade() {
 
             {/* ── INTRO + EMENTA ── */}
             <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
-
-              <Ficha tone={tone} tabLabel="leitura principal">
+              <Ficha tone={tone} label="leitura principal">
                 <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
                   introdução
                 </p>
@@ -385,10 +457,8 @@ export default function TrilhaUnidade() {
               </Ficha>
 
               <div className="flex flex-col gap-4">
-                <Ficha tone={tone} tabLabel="ementa">
-                  <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
-                    ementa
-                  </p>
+                <Ficha tone={tone} label="ementa">
+                  <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>ementa</p>
                   <p className="text-sm leading-6 text-slate-600">
                     {sections[0]
                       ? typeof sections[0].conteudo === "string"
@@ -399,16 +469,11 @@ export default function TrilhaUnidade() {
                       : unidade.subtitle}
                   </p>
                 </Ficha>
-
-                <Ficha tone={tone} tabLabel="vídeo" tabColor={tone.accent}>
-                  <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
-                    vídeo sugerido
-                  </p>
+                <Ficha tone={tone} label="vídeo" accent={tone.accent}>
+                  <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>vídeo sugerido</p>
                   <div className="flex items-center gap-3 rounded-[12px] border p-2.5" style={{ borderColor: tone.border, background: tone.header }}>
                     <span className="text-2xl">🎬</span>
-                    <p className="text-xs leading-5 text-slate-500">
-                      Vídeo sobre {unidade.title.toLowerCase()}
-                    </p>
+                    <p className="text-xs leading-5 text-slate-500">Vídeo sobre {unidade.title.toLowerCase()}</p>
                   </div>
                 </Ficha>
               </div>
@@ -418,7 +483,7 @@ export default function TrilhaUnidade() {
             {sections.length > 0 && (
               <div className="grid gap-4 md:grid-cols-2">
                 {sections.slice(0, 4).map((sec, idx) => (
-                  <Ficha key={idx} tone={tone} tabLabel={sec.titulo || `seção ${idx + 1}`}>
+                  <Ficha key={idx} tone={tone} label={sec.titulo || `seção ${idx + 1}`} rotate={idx % 2 === 0 ? -0.4 : 0.5}>
                     <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
                       {sec.titulo || `seção ${idx + 1}`}
                     </p>
@@ -436,16 +501,9 @@ export default function TrilhaUnidade() {
 
             {/* ── OBSERVAR + PASSOS ── */}
             <div className="grid gap-4 md:grid-cols-2">
-              <Ficha tone={tone} tabLabel="o que observar">
-                <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
-                  o que observar
-                </p>
+              <Ficha tone={tone} label="o que observar" rotate={-0.5}>
                 <ul className="space-y-2 text-sm leading-6 text-slate-600">
-                  {[
-                    "Se a equipe compreende a lógica geral da unidade.",
-                    "Se existem registros claros para consulta futura.",
-                    "Se o conteúdo já conversa com a rotina da escola.",
-                  ].map((item, i) => (
+                  {["Se a equipe compreende a lógica geral da unidade.", "Se existem registros claros para consulta futura.", "Se o conteúdo já conversa com a rotina da escola."].map((item, i) => (
                     <li key={i} className="flex gap-2">
                       <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: tone.accent }} />
                       <span>{item}</span>
@@ -453,17 +511,9 @@ export default function TrilhaUnidade() {
                   ))}
                 </ul>
               </Ficha>
-
-              <Ficha tone={tone} tabLabel="próximos passos">
-                <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
-                  próximos passos
-                </p>
+              <Ficha tone={tone} label="próximos passos" rotate={0.5}>
                 <ul className="space-y-2 text-sm leading-6 text-slate-600">
-                  {[
-                    "Relacionar esta unidade à próxima da trilha.",
-                    "Usar a ficha longa em reunião interna.",
-                    "Criar um apoio visual próprio para a equipe.",
-                  ].map((item, i) => (
+                  {["Relacionar esta unidade à próxima da trilha.", "Usar a ficha longa em reunião interna.", "Criar um apoio visual próprio para a equipe."].map((item, i) => (
                     <li key={i} className="flex gap-2">
                       <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: tone.accent }} />
                       <span>{item}</span>
@@ -473,47 +523,16 @@ export default function TrilhaUnidade() {
               </Ficha>
             </div>
 
-            {/* ── FICHAS DE APROFUNDAMENTO ── */}
+            {/* ── FICHAS DE APROFUNDAMENTO — deck empilhado ── */}
             <div>
-              <div className="mb-3 flex items-center gap-3 pl-1">
-                <div
-                  className="h-px flex-1"
-                  style={{ background: `linear-gradient(to right, ${tone.border}, transparent)` }}
-                />
+              <div className="mb-4 flex items-center gap-3">
+                <div className="h-px flex-1" style={{ background: `linear-gradient(to right, ${tone.border}, transparent)` }} />
                 <span className="text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
                   fichas de aprofundamento
                 </span>
-                <div
-                  className="h-px flex-1"
-                  style={{ background: `linear-gradient(to left, ${tone.border}, transparent)` }}
-                />
+                <div className="h-px flex-1" style={{ background: `linear-gradient(to left, ${tone.border}, transparent)` }} />
               </div>
-              <div className="grid gap-4 md:grid-cols-3">
-                {FICHAS_APROFUNDAMENTO.map((ficha) => (
-                  <motion.button
-                    key={ficha.id}
-                    type="button"
-                    onClick={() => setOpenFicha(ficha.id)}
-                    whileHover={{ y: -3 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    className="relative overflow-hidden rounded-[18px] bg-white p-0 text-left shadow-[0_2px_8px_rgba(0,0,0,0.09)] transition"
-                    style={{ border: `1px solid ${tone.border}` }}
-                  >
-                    {/* Left strip */}
-                    <div className="absolute bottom-0 left-0 top-0 w-2 rounded-l-[17px]" style={{ background: tone.accent }} />
-                    <div className="pl-5 pr-4 py-4">
-                      <p className="text-[9px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.tabText }}>
-                        {ficha.label}
-                      </p>
-                      <p className="mt-1.5 text-sm font-bold text-slate-700">{ficha.title}</p>
-                      <p className="mt-1 text-xs leading-5 text-slate-500">{ficha.preview}</p>
-                      <p className="mt-3 text-[10px] font-semibold" style={{ color: tone.spineLight }}>
-                        abrir ficha →
-                      </p>
-                    </div>
-                  </motion.button>
-                ))}
-              </div>
+              <FichaStack fichas={FICHAS_APROFUNDAMENTO} tone={tone} onOpen={setOpenFicha} />
             </div>
 
           </div>
