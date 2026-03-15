@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { SlidersHorizontal } from "lucide-react";
+import {
+  SlidersHorizontal, GraduationCap, Scale, CalendarDays,
+  Landmark, Wrench, BookOpen, type LucideIcon,
+} from "lucide-react";
 import { useAccessibility } from "@/App";
 import "./home-landing.css";
 
@@ -15,10 +18,21 @@ const TRILHA_ITEMS = [
   { id: "t6", label: "usar o Caderno da Diretora com IA" },
 ];
 
-const NOTE_CARDS = [
+interface NoteCard {
+  color: string;
+  iconColor: string;
+  Icon: LucideIcon;
+  title: string;
+  desc: string;
+  small: string;
+  href: string;
+}
+
+const NOTE_CARDS: NoteCard[] = [
   {
     color: "hl-yellow",
-    emoji: "📊",
+    iconColor: "#b5860a",
+    Icon: GraduationCap,
     title: "Painel da Escola",
     desc: "Censo, IDEB, matrículas e repasses por código INEP.",
     small: "dados do INEP · FNDE",
@@ -26,7 +40,8 @@ const NOTE_CARDS = [
   },
   {
     color: "hl-pink",
-    emoji: "⚖️",
+    iconColor: "#a0425a",
+    Icon: Scale,
     title: "Legislação",
     desc: "Normas MEC/FNDE, resoluções e Diário Oficial.",
     small: "base legal",
@@ -34,7 +49,8 @@ const NOTE_CARDS = [
   },
   {
     color: "hl-blue",
-    emoji: "📅",
+    iconColor: "#2b6cb0",
+    Icon: CalendarDays,
     title: "Calendário",
     desc: "Prazos de prestação de contas e repasses FNDE.",
     small: "não perca o prazo",
@@ -42,7 +58,8 @@ const NOTE_CARDS = [
   },
   {
     color: "hl-purple",
-    emoji: "💰",
+    iconColor: "#6b46a0",
+    Icon: Landmark,
     title: "Programas",
     desc: "PDDE, PNAE, PNATE — saldos e situação cadastral.",
     small: "recurso público",
@@ -50,7 +67,8 @@ const NOTE_CARDS = [
   },
   {
     color: "hl-orange",
-    emoji: "🧰",
+    iconColor: "#a05a1a",
+    Icon: Wrench,
     title: "Ferramentas",
     desc: "Modelos de ofício, planilhas e materiais prontos.",
     small: "apoio prático",
@@ -58,7 +76,8 @@ const NOTE_CARDS = [
   },
   {
     color: "hl-teal",
-    emoji: "📓",
+    iconColor: "#1a7a6a",
+    Icon: BookOpen,
     title: "Caderno da Diretora",
     desc: "IA especializada em gestão escolar para tirar dúvidas.",
     small: "inteligência artificial",
@@ -107,7 +126,31 @@ export default function Home() {
         <aside className="hl-spiral" />
 
         <section className="hl-page">
-          {/* Topo removido conforme solicitado */}
+          {/* ── Topo ── */}
+          <div className="hl-topbar">
+            <div className="hl-brand">
+              <span className="hl-brand-badge" />
+              <div>
+                <h1>Chegou a Conta, Diretora!</h1>
+                <p>gestão escolar mais bonita e mais simples</p>
+              </div>
+              <button
+                onClick={toggleAccessibility}
+                className="hl-a11y-btn"
+                aria-label="Ajustes de acessibilidade"
+                title="Acessibilidade"
+              >
+                <SlidersHorizontal size={15} />
+              </button>
+            </div>
+            <nav className="hl-mini-menu">
+              {MENU_PILLS.map(p => (
+                <Link key={p.href} href={p.href}>
+                  <span className="hl-pill">{p.label}</span>
+                </Link>
+              ))}
+            </nav>
+          </div>
 
           {/* ── Layout principal ── */}
           <div className="hl-layout">
@@ -124,11 +167,15 @@ export default function Home() {
                   <span className="hl-accent">Diretora.</span>
                 </h2>
                 <p className="hl-hero-desc">
-                  Aqui você acompanha dados da escola, programas federais, prazos e ferramentas —
-                  tudo num só lugar, com cara de caderno de verdade.
+                  Aqui você acompanha dados, programas federais, prazos e ferramentas — tudo num só lugar.
                 </p>
                 <div className="hl-hero-actions">
-                  {/* Botão removido daqui para ser colado no card do Painel da Escola */}
+                  <Link href="/trilha">
+                    <span className="hl-btn hl-btn-primary">Começar a jornada</span>
+                  </Link>
+                  <Link href="/dashboard">
+                    <span className="hl-btn hl-btn-secondary">Ver minha escola</span>
+                  </Link>
                 </div>
                 <div className="hl-hero-tags">
                   <span className="hl-tag">dados educacionais</span>
@@ -143,31 +190,13 @@ export default function Home() {
               <div className="hl-cards-grid">
                 {NOTE_CARDS.map((card, i) => (
                   <Link key={i} href={card.href}>
-                    <div className={`hl-note-card ${card.color}`} style={{ position: 'relative' }}>
-                      <div className="hl-card-emoji">{card.emoji}</div>
+                    <div className={`hl-note-card ${card.color}`}>
+                      <div className="hl-card-icon">
+                        <card.Icon size={22} color={card.iconColor} strokeWidth={1.75} />
+                      </div>
                       <h3>{card.title}</h3>
                       <p>{card.desc}</p>
                       <small>{card.small}</small>
-                      {/* Se for o Painel da Escola, mostra o botão remendo */}
-                      {card.title === 'Painel da Escola' && (
-                        <Link href="/dashboard" style={{ position: 'absolute', top: 8, right: 8, textDecoration: 'none', zIndex: 2 }}>
-                          <span style={{
-                            background: '#fffbe6',
-                            color: '#1e293b',
-                            border: '2px dashed #facc15',
-                            borderRadius: 8,
-                            fontSize: 13,
-                            fontWeight: 700,
-                            padding: '4px 10px',
-                            boxShadow: '2px 2px 8px rgba(0,0,0,0.08)',
-                            transform: 'rotate(-6deg)',
-                            display: 'inline-block',
-                            cursor: 'pointer',
-                          }}>
-                            Ver minha escola
-                          </span>
-                        </Link>
-                      )}
                     </div>
                   </Link>
                 ))}
@@ -195,12 +224,6 @@ export default function Home() {
                 <p className="hl-trilha-desc">
                   Marque cada etapa conforme for explorando a plataforma. Sua jornada fica salva automaticamente.
                 </p>
-                {/* Botão 'Começar a jornada' imediatamente após o título e descrição */}
-                <div style={{ margin: '12px 0 18px 0', textAlign: 'center' }}>
-                  <Link href="/trilha">
-                    <span className="hl-btn hl-btn-primary">Começar a jornada</span>
-                  </Link>
-                </div>
                 <div className="hl-checklist">
                   {TRILHA_ITEMS.map(item => (
                     <div
@@ -224,25 +247,10 @@ export default function Home() {
           {/* ── Rodapé ── */}
           <div className="hl-footer-strip">
             <span>gratuito para diretores de escolas públicas</span>
+            <span>chegou a conta, diretora • gestão escolar simplificada</span>
           </div>
         </section>
       </div>
-      {/* Botão de acessibilidade fixo no canto inferior direito */}
-      <button
-        onClick={toggleAccessibility}
-        className="hl-a11y-btn"
-        aria-label="Ajustes de acessibilidade"
-        title="Acessibilidade"
-        style={{
-          position: 'fixed',
-          right: 24,
-          bottom: 24,
-          zIndex: 1000,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
-        }}
-      >
-        <SlidersHorizontal size={22} />
-      </button>
     </div>
   );
 }

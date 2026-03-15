@@ -102,7 +102,7 @@
 /* ── Topo ── */
 .hl-topbar {
   display: grid; grid-template-columns: 1fr auto;
-  align-items: start; gap: 12px; margin-bottom: 8px; flex-shrink: 0;
+  align-items: start; gap: 12px; margin-bottom: 4px; flex-shrink: 0;
 }
 .hl-brand { display: flex; align-items: center; gap: 10px; padding-left: 10px; }
 .hl-brand-badge {
@@ -160,7 +160,7 @@
   background: linear-gradient(180deg,rgba(255,253,248,.97),rgba(255,248,240,.97));
   border: 1px solid #ecdcc6;
   box-shadow: 0 8px 20px rgba(93,71,46,.09);
-  padding: 16px 20px 14px;
+  padding: 12px 18px 10px;
   overflow: visible; flex-shrink: 0;
   transform-origin: left center;
   transition: transform .45s ease, box-shadow .45s ease;
@@ -192,7 +192,7 @@
   margin-right: 14px; flex-shrink: 0;
 }
 .hl-hero-note h2 {
-  margin: 8px 0 0; font-size: 2.5rem; line-height: .88;
+  margin: 6px 0 0; font-size: 2.3rem; line-height: .9;
   letter-spacing: -.05em; font-weight: 800;
 }
 .hl-accent {
@@ -204,10 +204,10 @@
   border-radius: 7px; z-index: -1; transform: rotate(-1deg);
 }
 .hl-hero-desc {
-  margin: 7px 0 0; max-width: 480px;
-  color: #677b86; line-height: 1.6; font-size: .88rem;
+  margin: 5px 0 0; max-width: 480px;
+  color: #677b86; line-height: 1.5; font-size: .85rem;
 }
-.hl-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.hl-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 9px; }
 .hl-btn {
   min-height: 40px; padding: 0 16px;
   border-radius: 14px 18px 14px 16px;
@@ -218,7 +218,7 @@
 }
 .hl-btn-primary  { background: linear-gradient(135deg,#2f7a5f,#25644c); color: #fff; transform: rotate(-1deg); }
 .hl-btn-secondary{ background: #fffefb; border: 1px dashed #e8d9c6; color: #23404b; transform: rotate(1deg); }
-.hl-hero-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.hl-hero-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 7px; }
 .hl-tag {
   padding: 5px 11px; border-radius: 999px;
   background: #fffefb; border: 1px dashed #e6d8c6;
@@ -241,48 +241,118 @@
 /* ── Post-it cards ── */
 @keyframes hlPostitFloat {
   0%,100% { transform: rotate(var(--rot,0deg)) translateY(0); }
-  50%      { transform: rotate(calc(var(--rot,0deg) + .6deg)) translateY(-2px); }
+  50%      { transform: rotate(calc(var(--rot,0deg) + .5deg)) translateY(-3px); }
 }
+
 .hl-note-card {
-  position: relative; display: block; color: inherit; text-decoration: none;
-  border-radius: 16px 20px 16px 18px;
-  padding: 12px 12px 10px;
-  box-shadow: 0 8px 18px rgba(93,71,46,.09);
-  border: 1px solid rgba(0,0,0,.04);
+  position: relative;
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 2px 2px 2px 2px;
+  padding: 10px 12px 14px 12px;
+  /* Glue strip shadow at top + paper lift shadow */
+  box-shadow:
+    inset 0 5px 0 rgba(0,0,0,.10),
+    3px 3px 0 rgba(0,0,0,.07),
+    6px 10px 18px rgba(0,0,0,.13),
+    0 22px 30px rgba(0,0,0,.07);
+  border: none;
   transform: rotate(var(--rot,0deg));
-  transition: transform .28s ease, box-shadow .28s ease, filter .28s ease;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease;
   animation: hlPostitFloat 5.5s ease-in-out infinite;
   animation-delay: var(--delay, 0s);
   transform-origin: center top;
   will-change: transform;
   cursor: pointer;
+  overflow: hidden;
 }
-.hl-note-card:hover {
-  transform: translateY(-5px) rotate(calc(var(--rot,0deg) * 1.1)) scale(1.02);
-  box-shadow: 0 16px 30px rgba(93,71,46,.17);
-  filter: saturate(1.04); z-index: 3;
-}
+
+/* Glue strip at top */
 .hl-note-card::before {
-  content: ""; position: absolute; top: -5px; left: 14px;
-  width: 38px; height: 11px; background: rgba(255,255,255,.72);
-  border-radius: 4px; transform: rotate(-8deg);
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 6px;
+  background: rgba(0,0,0,.10);
 }
-.hl-note-card:nth-child(1){ --rot:-1.6deg; --delay:0s   }
-.hl-note-card:nth-child(2){ --rot: 1.1deg; --delay:.4s  }
-.hl-note-card:nth-child(3){ --rot:-.8deg;  --delay:.8s  }
-.hl-note-card:nth-child(4){ --rot: 1.2deg; --delay:1.2s }
-.hl-note-card:nth-child(5){ --rot:-1deg;   --delay:1.6s }
-.hl-note-card:nth-child(6){ --rot: .8deg;  --delay:2s   }
 
-.hl-card-emoji { font-size: 1.4rem; line-height: 1; margin-bottom: 4px; }
-.hl-note-card h3 { margin: 0; font-size: .9rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
-.hl-note-card p  { margin: 5px 0 0; font-size: .74rem; line-height: 1.4; color: #516976; }
-.hl-note-card small { display: block; margin-top: 6px; font-size: .67rem; font-weight: 800; color: #355566; text-transform: uppercase; letter-spacing: .04em; }
+/* Folded corner bottom-right */
+.hl-note-card::after {
+  content: "";
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 0 0 20px 20px;
+  border-color: transparent transparent rgba(0,0,0,.18) transparent;
+  transition: border-width .3s ease;
+}
 
-.hl-yellow  { background: #fff2bf; } .hl-pink   { background: #ffe2ea; }
-.hl-blue    { background: #e5f1ff; } .hl-green  { background: #dff3e8; }
-.hl-orange  { background: #ffe7d6; } .hl-purple { background: #eee8ff; }
-.hl-teal    { background: #d6f5f0; }
+.hl-note-card:hover {
+  transform: translateY(-7px) rotate(calc(var(--rot,0deg) * .6)) scale(1.04);
+  box-shadow:
+    inset 0 5px 0 rgba(0,0,0,.10),
+    6px 6px 0 rgba(0,0,0,.07),
+    10px 20px 32px rgba(0,0,0,.20),
+    0 30px 40px rgba(0,0,0,.10);
+  z-index: 3;
+}
+.hl-note-card:hover::after { border-width: 0 0 28px 28px; }
+
+.hl-note-card:nth-child(1){ --rot:-2.2deg; --delay:0s   }
+.hl-note-card:nth-child(2){ --rot: 1.4deg; --delay:.5s  }
+.hl-note-card:nth-child(3){ --rot:-1deg;   --delay:1s   }
+.hl-note-card:nth-child(4){ --rot: 1.8deg; --delay:1.5s }
+.hl-note-card:nth-child(5){ --rot:-1.3deg; --delay:2s   }
+.hl-note-card:nth-child(6){ --rot: .9deg;  --delay:2.5s }
+
+/* ── Card typography ── */
+.hl-card-icon {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  opacity: .85;
+}
+
+.hl-note-card h3 {
+  margin: 0;
+  font-family: "Patrick Hand", cursive;
+  font-size: 1.05rem;
+  font-weight: 400;
+  letter-spacing: .01em;
+  line-height: 1.2;
+  color: rgba(0,0,0,.72);
+}
+
+.hl-note-card p {
+  margin: 5px 0 0;
+  font-family: Nunito, sans-serif;
+  font-size: .71rem;
+  line-height: 1.45;
+  color: rgba(0,0,0,.48);
+  font-weight: 600;
+}
+
+.hl-note-card small {
+  display: block;
+  margin-top: 7px;
+  font-family: "Patrick Hand", cursive;
+  font-size: .74rem;
+  font-weight: 400;
+  color: rgba(0,0,0,.32);
+  letter-spacing: .03em;
+  font-style: italic;
+}
+
+/* Post-it pastéis suaves */
+.hl-yellow  { background: #fef9db; }
+.hl-pink    { background: #fde8ef; }
+.hl-blue    { background: #e4f0fc; }
+.hl-green   { background: #e5f6ea; }
+.hl-orange  { background: #fef0e2; }
+.hl-purple  { background: #eee8fa; }
+.hl-teal    { background: #e1f5f3; }
 
 
 /* ── Coluna direita ── */
