@@ -152,12 +152,31 @@ export function Navigation() {
                     />
                     {item.label}
 
-                    {/* sulco ativo */}
+                    {/* risco de lápis ativo */}
                     {active && (
-                      <span
-                        className="absolute inset-x-2 -bottom-[2px] h-[2px] rounded-full"
-                        style={{ background: "rgba(178,58,46,0.65)", boxShadow: "0 1px 3px rgba(178,58,46,0.30)" }}
-                      />
+                      <>
+                        {/* camada base — grafite escuro */}
+                        <span
+                          className="absolute -bottom-[3px] h-[3px] pointer-events-none"
+                          style={{
+                            left: "6px", right: "8px",
+                            background: "linear-gradient(90deg, transparent 0%, rgba(38,30,18,0.72) 8%, rgba(52,42,24,0.88) 28%, rgba(44,36,20,0.82) 55%, rgba(50,40,22,0.78) 80%, transparent 100%)",
+                            transform: "rotate(-0.6deg) skewX(-1deg)",
+                            filter: "blur(0.3px)",
+                            borderRadius: "1px",
+                          }}
+                        />
+                        {/* camada clara — reflexo do lápis */}
+                        <span
+                          className="absolute -bottom-[2px] h-[1px] pointer-events-none"
+                          style={{
+                            left: "10px", right: "14px",
+                            background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 30%, rgba(255,255,255,0.20) 70%, transparent 100%)",
+                            transform: "rotate(-0.4deg)",
+                            filter: "blur(0.2px)",
+                          }}
+                        />
+                      </>
                     )}
                   </Link>
                 );
