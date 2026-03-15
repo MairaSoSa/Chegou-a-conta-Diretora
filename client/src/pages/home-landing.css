@@ -402,7 +402,9 @@
 /* Variante colada na Trilha */
 .hl-remendo-jornada-wrap {
   display: flex; justify-content: center;
-  margin-bottom: 12px; text-decoration: none;
+  margin-top: 18px;
+  margin-bottom: 12px;
+  text-decoration: none;
 }
 .hl-remendo-jornada {
   position: relative;
