@@ -35,8 +35,8 @@ const NOTE_CARDS: NoteCard[] = [
     iconColor: "#b5860a",
     Icon: GraduationCap,
     title: "Painel da Escola",
-    desc: "Censo, IDEB, matrículas e repasses por código INEP.",
-    small: "dados do INEP · FNDE",
+    desc: "Censo, IDEB, matrículas e repasses.",
+    small: "",
     href: "/dashboard",
   },
   {
@@ -44,8 +44,8 @@ const NOTE_CARDS: NoteCard[] = [
     iconColor: "#a0425a",
     Icon: Scale,
     title: "Legislação",
-    desc: "Normas MEC/FNDE, resoluções e Diário Oficial.",
-    small: "base legal",
+    desc: "Leis, resoluções, portarias, instruções normativas e decretos.",
+    small: "",
     href: "/legislacao",
   },
   {
@@ -62,8 +62,8 @@ const NOTE_CARDS: NoteCard[] = [
     iconColor: "#6b46a0",
     Icon: Landmark,
     title: "Programas",
-    desc: "PDDE, PNAE, PNATE — saldos e situação cadastral.",
-    small: "recurso público",
+    desc: "PDDE e Ações Integradas",
+    small: "",
     href: "/programas",
   },
   {
@@ -80,8 +80,8 @@ const NOTE_CARDS: NoteCard[] = [
     iconColor: "#1a7a6a",
     Icon: BookOpen,
     title: "Caderno da Diretora",
-    desc: "IA especializada em gestão escolar para tirar dúvidas.",
-    small: "inteligência artificial",
+    desc: "Pesquise, pergunte, anote e redija documentos escolares com ajuda da IA.",
+    small: "",
     href: "/chat",
   },
 ];
@@ -135,15 +135,14 @@ export default function Home() {
                   Um lugar para entender como funcionam os recursos e programas da educação.
                 </p>
                 <div className="hl-hero-tags">
-                  <span className="hl-tag">dados educacionais</span>
-                  <span className="hl-tag">PDDE · PNAE</span>
-                  <span className="hl-tag">legislação</span>
-                  <span className="hl-tag">ferramentas práticas</span>
+                  <span className="hl-tag">PDDE</span>
+                  <span className="hl-tag">financiamento</span>
+                  <span className="hl-tag">ferramentas</span>
+                  <span className="hl-tag">políticas públicas</span>
                 </div>
               </div>
 
-              {/* Mural */}
-              <p className="hl-mural-label">Mural da diretora</p>
+              <p className="hl-mural-label">Por onde começar</p>
               <div className="hl-cards-grid">
                 {NOTE_CARDS.map((card, i) => (
                   <Link key={i} href={card.href}>
@@ -209,7 +208,7 @@ export default function Home() {
 
           {/* ── Rodapé ── */}
           <div className="hl-footer-strip">
-            <span>gratuito para diretores de escolas públicas</span>
+            <span>Acesso livre para quem trabalha e acredita na escola pública.</span>
           </div>
         </section>
 

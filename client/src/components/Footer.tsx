@@ -18,7 +18,7 @@ export function Footer() {
               </span>
               <span className="hidden md:inline">|</span>
               <span data-testid="text-footer-slogan">
-                {settings?.footer_slogan || "Gratuito para escolas públicas"}
+                {settings?.footer_slogan || "Acesso livre para quem trabalha e acredita na escola pública."}
               </span>
             </div>
             {settings?.footer_text && (
