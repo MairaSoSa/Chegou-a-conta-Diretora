@@ -477,9 +477,9 @@
   position: relative;
   border-radius: 5px 18px 5px 5px;
   padding: 14px 18px 14px 20px;
-  background: linear-gradient(150deg, #fdf0e8 0%, #f5d9c4 100%);
-  border: 1.5px solid #c97a50;
-  border-left: 5px solid #c97a50;
+  background: linear-gradient(150deg, #f7ede3 0%, #efd5bf 100%);
+  border: 1.5px solid #c2906a;
+  border-left: 5px solid #c2906a;
   transform: rotate(-1.5deg);
   width: 90%; margin: 0 auto;
   box-shadow:
@@ -498,10 +498,10 @@
 .hl-tip-box strong {
   display: flex; align-items: center; gap: 6px;
   font-family: "Patrick Hand", cursive;
-  font-size: 1.08rem; color: #7a3a10;
+  font-size: 1.08rem; color: #9a6040;
   margin-bottom: 4px;
 }
-.hl-tip-box p { margin: 0; color: #5c2e08; font-size: .79rem; line-height: 1.45; }
+.hl-tip-box p { margin: 0; color: #7a5030; font-size: .79rem; line-height: 1.45; }
 
 /* ── Caderno / Trilha ── papel sem pauta ── */
 .hl-caderno-box {
@@ -509,11 +509,9 @@
   border-radius: 3px 14px 3px 3px;
   padding: 16px 18px 14px;
   background:
-    /* grão de papel: pontos muito sutis */
-    radial-gradient(circle, rgba(180,140,90,.06) 1px, transparent 1px),
-    radial-gradient(circle, rgba(160,120,70,.04) 1px, transparent 1px),
-    /* cor base papel artesanal */
-    linear-gradient(160deg, #fdf8f0 0%, #faf4e8 55%, #f7efe0 100%);
+    radial-gradient(circle, rgba(180,140,90,.045) 1px, transparent 1px),
+    radial-gradient(circle, rgba(160,120,70,.03) 1px, transparent 1px),
+    linear-gradient(160deg, #f6f0e6 0%, #f0e8d8 55%, #ece2d0 100%);
   background-size: 18px 18px, 11px 11px, 100% 100%;
   background-position: 0 0, 9px 9px, 0 0;
   overflow: hidden;
@@ -562,14 +560,15 @@
 .hl-check-item {
   display: flex; align-items: center; gap: 9px; min-height: 28px;
   color: #40606d; font-size: .8rem; font-weight: 700;
-  background: rgba(255,255,255,.72); border: 1px dashed #e7ddd1;
-  border-radius: 10px; padding: 6px 9px;
+  background: transparent; border: none;
+  border-bottom: 1px solid rgba(180,150,110,.25);
+  padding: 5px 4px;
   flex-shrink: 0;
 }
 .hl-check-item input[type="checkbox"] {
   appearance: none; -webkit-appearance: none;
   width: 17px; height: 17px; border-radius: 5px;
-  border: 2px solid #8fb0cb; background: #fff;
+  border: 1.5px solid #b8a888; background: rgba(255,252,245,.7);
   display: grid; place-items: center; cursor: pointer;
   margin: 0; flex: 0 0 auto; position: relative; transition: border-color .2s;
 }
