@@ -284,89 +284,168 @@ function PesquisaPanel() {
 
   const temMensagens = conversationData?.messages && conversationData.messages.length > 0;
 
+  // Spiral ring count that adapts to height – fixed at 14
+  const RINGS = 14;
+
   return (
-    <div className="flex flex-col h-full max-w-3xl mx-auto w-full px-4 md:px-6 py-5">
+    <div className="flex h-full overflow-hidden">
 
-      {/* Notas salvas */}
-      {apiNotes.length > 0 && (
-        <div className="mb-5 flex gap-3 overflow-x-auto pb-1">
-          {apiNotes.slice(0, 4).map((note: any, i) => (
-            <div key={note.id || i}
-              className="shrink-0 w-52 rounded-2xl border border-[#e0cfc6] bg-[#fffaf6] px-4 py-3 shadow-sm"
-              style={{ rotate: `${(i % 2 === 0 ? -1 : 1) * (i * 0.4 + 0.5)}deg` }}
-            >
-              <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-[#b07a6a]">
-                <BookMarked className="w-3 h-3" /> Nota
-              </div>
-              <p className="text-[13px] leading-5 text-[#5a3328] line-clamp-3">{note.title || note.content}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* ── Capa vermelha com espiral ── */}
+      <div
+        className="w-[52px] shrink-0 relative flex flex-col items-center py-5"
+        style={{
+          background: "linear-gradient(165deg,#c0392b 0%,#96281b 55%,#b03a2e 100%)",
+          boxShadow: "inset -5px 0 10px rgba(0,0,0,0.22), 2px 0 4px rgba(0,0,0,0.12)",
+        }}
+      >
+        {/* Título vertical na capa */}
+        <span
+          className="text-white/50 font-black text-[7px] uppercase tracking-[0.45em] mb-5 select-none"
+          style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+        >
+          Pesquisa
+        </span>
 
-      {/* Input de pesquisa */}
-      <div className="rounded-2xl border border-[#d9bfb5] bg-white shadow-sm overflow-hidden mb-4">
-        <div className="flex items-end gap-2 px-4 py-3">
-          <textarea
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder="Pesquise sobre programas, normas, gestão escolar..."
-            className="flex-1 resize-none text-[15px] text-[#3d2318] placeholder:text-[#c5a898] outline-none bg-transparent min-h-[40px] max-h-28"
-            rows={1}
-            disabled={isSending}
-          />
-          <button
-            onClick={() => handleSend()}
-            disabled={!input.trim() || isSending}
-            className="shrink-0 flex h-9 w-9 items-center justify-center rounded-xl bg-[#8e2f2f] text-white transition hover:bg-[#6e2020] disabled:opacity-40"
-          >
-            {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </button>
-        </div>
+        {/* Argolas da espiral */}
+        {Array.from({ length: RINGS }).map((_, i) => (
+          <div key={i} className="relative my-[7px] shrink-0">
+            {/* sombra/base da argola */}
+            <div
+              className="w-8 h-[17px] rounded-full"
+              style={{
+                background: "radial-gradient(ellipse at 38% 32%, #c8bfb8, #706460)",
+                boxShadow: "0 2px 5px rgba(0,0,0,0.45)",
+              }}
+            />
+            {/* reflexo interno */}
+            <div
+              className="absolute inset-[3px] rounded-full"
+              style={{
+                background: "radial-gradient(ellipse at 40% 30%, rgba(255,255,255,0.18), transparent 70%)",
+                border: "1.5px solid rgba(255,255,255,0.12)",
+              }}
+            />
+          </div>
+        ))}
+
+        {/* Reflexo de luz na capa */}
+        <div
+          className="absolute top-0 left-0 w-5 h-full pointer-events-none"
+          style={{ background: "linear-gradient(to right, rgba(255,255,255,0.07), transparent)" }}
+        />
       </div>
 
-      {/* Sugestões ou conversa */}
-      <AnimatePresence mode="wait">
-        <motion.div key={pageKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="flex-1 overflow-y-auto space-y-3 min-h-0" ref={scrollRef}
-        >
-          {!temMensagens ? (
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-[#b07a6a] mb-3">Toque numa pergunta para começar</p>
-              <div className="flex flex-wrap gap-2">
-                {SUGESTOES.map((s, i) => (
-                  <motion.button key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                    onClick={() => handleSend(s)}
-                    className="rounded-full border border-[#d9bfb5] bg-white px-4 py-2 text-[13px] text-[#5a3328] shadow-sm hover:border-[#8e2f2f] hover:bg-[#fff0eb] transition-colors text-left"
-                  >
-                    {s}
-                  </motion.button>
-                ))}
+      {/* ── Folha pautada ── */}
+      <div
+        className="flex-1 flex flex-col overflow-hidden"
+        style={{
+          background: "#fcfaf7",
+          backgroundImage: [
+            // margem vermelha
+            "linear-gradient(to right, transparent 63px, #f4a0a0 63px, #f4a0a0 65px, transparent 65px)",
+            // pautas horizontais azul-claro
+            "repeating-linear-gradient(transparent, transparent 31px, #cce0f5 31px, #cce0f5 32.5px)",
+          ].join(", "),
+          backgroundSize: "100% 100%, 100% 32px",
+          backgroundPosition: "0 0, 0 20px",
+        }}
+      >
+        {/* Notas salvas — coladas no topo da folha */}
+        {apiNotes.length > 0 && (
+          <div className="flex gap-3 overflow-x-auto pl-[82px] pr-5 pt-4 pb-2 shrink-0">
+            {apiNotes.slice(0, 4).map((note: any, i) => (
+              <div
+                key={note.id || i}
+                className="shrink-0 w-44 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2.5 shadow-sm"
+                style={{
+                  transform: `rotate(${(i % 2 === 0 ? -1.2 : 1.0) * (i * 0.3 + 0.4)}deg)`,
+                  boxShadow: "2px 3px 6px rgba(0,0,0,0.12)",
+                }}
+              >
+                <div className="mb-1 flex items-center gap-1 text-[9px] uppercase tracking-[0.16em] text-yellow-700/70">
+                  <BookMarked className="w-2.5 h-2.5" /> Nota
+                </div>
+                <p className="text-[12px] leading-[18px] text-yellow-900 line-clamp-3">{note.title || note.content}</p>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-4 pb-4">
-              {conversationData?.messages.map(msg =>
-                msg.role === "user"
-                  ? <MensagemUsuario key={msg.id} conteudo={msg.content} />
-                  : <MensagemAssistente key={msg.id} conteudo={msg.content} onSaveNote={handleSaveNote} />
-              )}
-              {isSending && <IndicadorDigitando />}
+            ))}
+          </div>
+        )}
+
+        {/* Área de conversa / sugestões */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={pageKey}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 overflow-y-auto pl-[82px] pr-5 pt-3 pb-2 space-y-4 min-h-0"
+            ref={scrollRef}
+          >
+            {!temMensagens ? (
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-[#b07a6a] mb-3 font-semibold">
+                  Toque numa pergunta para começar
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {SUGESTOES.map((s, i) => (
+                    <motion.button
+                      key={i}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.06 }}
+                      onClick={() => handleSend(s)}
+                      className="rounded-full border border-[#d9bfb5] bg-white/90 px-4 py-1.5 text-[13px] text-[#5a3328] shadow-sm hover:border-[#8e2f2f] hover:bg-[#fff0eb] transition-colors text-left"
+                    >
+                      {s}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 pb-4">
+                {conversationData?.messages.map(msg =>
+                  msg.role === "user"
+                    ? <MensagemUsuario key={msg.id} conteudo={msg.content} />
+                    : <MensagemAssistente key={msg.id} conteudo={msg.content} onSaveNote={handleSaveNote} />
+                )}
+                {isSending && <IndicadorDigitando />}
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Campo de escrita — na pauta, com margem */}
+        <div className="shrink-0 pl-[82px] pr-5 pb-4 pt-2">
+          {temMensagens && (
+            <div className="mb-2 flex justify-end">
+              <button
+                onClick={handleNewChat}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#d9bfb5] bg-white/80 px-3 py-1 text-[11px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors"
+              >
+                <RefreshCw className="w-3 h-3" /> Nova conversa
+              </button>
             </div>
           )}
-        </motion.div>
-      </AnimatePresence>
-
-      {temMensagens && (
-        <div className="mt-3 text-center">
-          <button onClick={handleNewChat}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#d9bfb5] bg-white px-4 py-1.5 text-[12px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors shadow-sm"
-          >
-            <RefreshCw className="w-3 h-3" /> Nova conversa
-          </button>
+          <div className="flex items-end gap-2 rounded-xl border border-[#d9bfb5] bg-white/70 px-3 py-2.5 shadow-sm backdrop-blur-sm">
+            <textarea
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+              placeholder="Escreva sua pergunta aqui..."
+              className="flex-1 resize-none text-[15px] text-[#3d2318] placeholder:text-[#c5a898] outline-none bg-transparent min-h-[36px] max-h-24"
+              rows={1}
+              disabled={isSending}
+            />
+            <button
+              onClick={() => handleSend()}
+              disabled={!input.trim() || isSending}
+              className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg bg-[#8e2f2f] text-white transition hover:bg-[#6e2020] disabled:opacity-40"
+            >
+              {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            </button>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
