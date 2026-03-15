@@ -229,6 +229,17 @@ function chunk<T>(arr: T[], size: number): T[][] {
 }
 
 // ---------------------------------------------------------------------------
+// Badge de tipo do documento
+// ---------------------------------------------------------------------------
+function TipoBadge({ tipo }: { tipo: string }) {
+  if (tipo === "EXCEL") return <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-emerald-700">📊 Excel</span>;
+  if (tipo === "WORD") return <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-blue-700">📝 Word</span>;
+  if (tipo === "CHECKLIST") return <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700">✅ Checklist</span>;
+  if (tipo === "PDF") return <span className="inline-flex items-center gap-1 rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-rose-700">📄 PDF</span>;
+  return <span className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-600">{tipo}</span>;
+}
+
+// ---------------------------------------------------------------------------
 // Cartão individual
 // ---------------------------------------------------------------------------
 interface Cartao {
@@ -299,23 +310,25 @@ function CartaoFerramenta({
         <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(#000 0.4px, transparent 0.4px)", backgroundSize: "6px 6px" }} />
         <div className="pointer-events-none absolute left-0 right-0 top-0 h-3 bg-gradient-to-b from-black/5 to-transparent" />
 
-        {/* conteúdo */}
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-            {cartao.tipo}
-          </span>
-          {cartao.featured && (
+        {/* badge essencial (canto) */}
+        {cartao.featured && (
+          <div className="mb-2 flex justify-end">
             <span className="rounded-full bg-[#fff5e8] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#b56a22] shadow-sm">
               essencial
             </span>
-          )}
-        </div>
+          </div>
+        )}
 
+        {/* nome com marcação + tipo colado */}
         <div className="relative inline-block max-w-full">
           <span className={`absolute inset-x-0 bottom-0.5 h-3 rounded-sm ${marcador}`} />
           <h3 className="relative text-[1.1rem] sm:text-[1.22rem] font-black leading-[1.2] text-slate-800">
             {cartao.nome}
           </h3>
+        </div>
+        {/* tipo badge colado abaixo do nome */}
+        <div className="mt-1.5">
+          <TipoBadge tipo={cartao.tipo} />
         </div>
 
         <p className="mt-3 min-h-[72px] text-[0.88rem] sm:text-[0.93rem] leading-6 text-slate-600">
@@ -361,7 +374,6 @@ function SecaoCategoria({
   secaoIdx: number;
 }) {
   if (cartoes.length === 0) return null;
-  const fileiras = chunk(cartoes, 3);
 
   // Cores das bandeirinhas específicas deste mastro (rotacionadas pelo índice da seção)
   const bandeirinhasMastro = [...BANDEIRINHAS.slice(secaoIdx % BANDEIRINHAS.length), ...BANDEIRINHAS.slice(0, secaoIdx % BANDEIRINHAS.length)];
@@ -454,28 +466,24 @@ function SecaoCategoria({
         </div>
       </div>
 
-      {/* ===== FILEIRAS COM VARAL ===== */}
-      <div className="space-y-14 sm:space-y-16">
-        {fileiras.map((linha, linhaIdx) => (
-          <div key={linhaIdx} className="relative px-1 md:px-4">
-            {/* corda do varal */}
-            <div className="pointer-events-none absolute left-2 right-2 top-3 h-[5px] rounded-full bg-[repeating-linear-gradient(45deg,#9a6a3a,#9a6a3a_6px,#b07b45_6px,#b07b45_12px)] shadow-sm md:left-6 md:right-6 line-wind" />
+      {/* ===== VARAL ÚNICO + GRID RESPONSIVO ===== */}
+      <div className="relative px-1 md:px-4">
+        {/* corda do varal */}
+        <div className="pointer-events-none absolute left-2 right-2 top-3 h-[5px] rounded-full bg-[repeating-linear-gradient(45deg,#9a6a3a,#9a6a3a_6px,#b07b45_6px,#b07b45_12px)] shadow-sm md:left-6 md:right-6 line-wind" />
 
-            {/* grade de cartões */}
-            <div className="grid gap-x-6 gap-y-14 pt-10 sm:grid-cols-2 xl:grid-cols-3">
-              {linha.map((cartao, i) => (
-                <CartaoFerramenta
-                  key={`${cartao.nome}-${i}-${linhaIdx}`}
-                  cartao={cartao}
-                  index={i}
-                  linhaIdx={linhaIdx}
-                  secaoIdx={secaoIdx}
-                  secao={secao}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
+        {/* grade responsiva: 1 col → 2 col → 3 col */}
+        <div className="grid gap-x-6 gap-y-14 pt-10 sm:grid-cols-2 xl:grid-cols-3">
+          {cartoes.map((cartao, i) => (
+            <CartaoFerramenta
+              key={`${cartao.nome}-${i}`}
+              cartao={cartao}
+              index={i}
+              linhaIdx={0}
+              secaoIdx={secaoIdx}
+              secao={secao}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -504,6 +512,7 @@ export default function Ferramentas() {
         desc: c.desc,
         downloadUrl: match?.downloadUrl || undefined,
         featured: match?.featured || false,
+        popular: (c as any).popular || false,
       };
     });
     // Adiciona ferramentas do banco que não existem no design
