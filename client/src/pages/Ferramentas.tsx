@@ -114,6 +114,114 @@ const SECOES_DESIGN = [
 const BANDEIRINHAS = ["#f59e0b", "#ef4444", "#22c55e", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const FITAS_HEADER = ["bg-[#efe1bc]", "bg-[#e8d7b7]", "bg-[#f1e5c9]"];
 
+// ---------------------------------------------------------------------------
+// Ícones feitos à mão (SVG) para cada seção
+// ---------------------------------------------------------------------------
+const ICONES_SVG: Record<string, React.ReactNode> = {
+  planejar: (
+    <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+      <rect x="5" y="9" width="30" height="26" rx="2.5" />
+      <line x1="5" y1="17" x2="35" y2="17" />
+      <line x1="14" y1="4" x2="14" y2="13" />
+      <line x1="26" y1="4" x2="26" y2="13" />
+      <rect x="11" y="22" width="4" height="4" rx="0.8" />
+      <rect x="18" y="22" width="4" height="4" rx="0.8" />
+      <rect x="11" y="29" width="4" height="4" rx="0.8" />
+      <rect x="25" y="22" width="4" height="4" rx="0.8" />
+    </svg>
+  ),
+  pesquisar: (
+    <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" className="w-6 h-6">
+      <circle cx="17" cy="17" r="10" />
+      <path d="M24.5 24.5 L35 35" strokeWidth="3" />
+      <line x1="13" y1="17" x2="21" y2="17" strokeOpacity="0.45" />
+      <line x1="17" y1="13" x2="17" y2="21" strokeOpacity="0.45" />
+    </svg>
+  ),
+  comprar: (
+    <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+      <path d="M6 9 L11 9 L16 29 L34 29" />
+      <path d="M12 15 L36 15 L33 27 L14 27" />
+      <circle cx="18" cy="35" r="2.5" />
+      <circle cx="30" cy="35" r="2.5" />
+    </svg>
+  ),
+  receber: (
+    <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+      <rect x="6" y="5" width="28" height="30" rx="2.5" />
+      <path d="M13 19.5 L18 25.5 L27 13.5" strokeWidth="2.6" />
+      <line x1="13" y1="31" x2="22" y2="31" strokeOpacity="0.45" />
+    </svg>
+  ),
+  prestar: (
+    <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+      <path d="M11 3 L29 3 L29 37 L11 37 Z" />
+      <line x1="16" y1="11" x2="24" y2="11" />
+      <line x1="16" y1="17" x2="24" y2="17" />
+      <line x1="16" y1="23" x2="21" y2="23" />
+      <line x1="16" y1="29" x2="23" y2="29" />
+    </svg>
+  ),
+};
+
+// ---------------------------------------------------------------------------
+// Decorações conceituais do cabeçalho (substituem bandeirinhas simples)
+// ---------------------------------------------------------------------------
+const DECO_SHAPES = [
+  // Lápis
+  (cor: string) => (
+    <svg key="lapis" viewBox="0 0 18 36" width="14" height="28" style={{ color: cor }}>
+      <rect x="3" y="6" width="12" height="22" rx="1.5" fill={cor} opacity="0.9" />
+      <polygon points="3,28 15,28 9,36" fill={cor} opacity="0.7" />
+      <rect x="3" y="4" width="12" height="4" rx="1" fill="#f8c97a" opacity="0.9" />
+      <rect x="5" y="6" width="2" height="18" rx="1" fill="rgba(255,255,255,0.25)" />
+    </svg>
+  ),
+  // Estrela
+  (cor: string) => (
+    <svg key="star" viewBox="0 0 32 32" width="22" height="22" style={{ color: cor }}>
+      <polygon points="16,2 20,12 31,12 22,19 25,30 16,23 7,30 10,19 1,12 12,12" fill={cor} opacity="0.88" />
+    </svg>
+  ),
+  // Livro aberto
+  (cor: string) => (
+    <svg key="livro" viewBox="0 0 36 28" width="26" height="20" fill="none" stroke={cor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 6 C18 6, 12 4, 4 5 L4 24 C12 23, 18 25, 18 25" fill={cor} fillOpacity="0.2" />
+      <path d="M18 6 C18 6, 24 4, 32 5 L32 24 C24 23, 18 25, 18 25" fill={cor} fillOpacity="0.2" />
+      <line x1="18" y1="6" x2="18" y2="25" />
+    </svg>
+  ),
+  // Régua
+  (cor: string) => (
+    <svg key="regua" viewBox="0 0 12 36" width="10" height="30">
+      <rect x="1" y="1" width="10" height="34" rx="1.5" fill={cor} opacity="0.85" />
+      {[5,9,13,17,21,25,29].map((y, i) => (
+        <line key={i} x1="1" y1={y} x2={i % 2 === 0 ? "6" : "4"} y2={y} stroke="rgba(255,255,255,0.7)" strokeWidth="1" />
+      ))}
+    </svg>
+  ),
+  // Moeda
+  (cor: string) => (
+    <svg key="moeda" viewBox="0 0 28 28" width="22" height="22">
+      <circle cx="14" cy="14" r="12" fill={cor} opacity="0.88" />
+      <circle cx="14" cy="14" r="9" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+      <text x="14" y="18" textAnchor="middle" fontSize="10" fontWeight="bold" fill="rgba(255,255,255,0.8)">R$</text>
+    </svg>
+  ),
+  // Clipe / pasta
+  (cor: string) => (
+    <svg key="pasta" viewBox="0 0 28 34" width="20" height="26" fill="none" stroke={cor} strokeWidth="2" strokeLinecap="round">
+      <rect x="3" y="6" width="22" height="26" rx="2" fill={cor} fillOpacity="0.25" />
+      <path d="M9 6 C9 3, 11 1, 14 1 C17 1, 19 3, 19 6" />
+      <line x1="9" y1="15" x2="19" y2="15" />
+      <line x1="9" y1="20" x2="19" y2="20" />
+      <line x1="9" y1="25" x2="15" y2="25" />
+    </svg>
+  ),
+];
+
+const DECO_CORES = ["#c0392b", "#2980b9", "#27ae60", "#e67e22", "#8e44ad", "#16a085", "#d35400", "#2c3e50"];
+
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
@@ -312,79 +420,35 @@ function SecaoCategoria({
 
           {/* — estandarte — */}
           <div
-            className="banner-sway relative w-[92%] max-w-[400px] text-center"
-            style={{ transformOrigin: "top center", marginTop: -2 }}
+            className="banner-sway relative mt-2 w-[88%] max-w-[400px] rounded-b-[26px] rounded-t-[12px] border-2 border-white/70 px-5 pb-7 pt-5 text-center shadow-[0_18px_34px_rgba(70,52,36,0.14)] backdrop-blur-sm sm:px-6 md:px-8 md:pb-8 md:pt-6 md:rounded-b-[30px]"
+            style={{ transformOrigin: "top center" }}
           >
-            {/* moldura externa */}
-            <div className={`absolute inset-0 rounded-t-[14px] rounded-b-none border-[3px] ${secao.borda} opacity-60`}
-              style={{ bottom: 32, clipPath: "polygon(0 0, 100% 0, 100% 100%, 94% 100%, 50% calc(100% + 28px), 6% 100%, 0 100%)" }} />
+            {/* fundo colorido */}
+            <div className={`absolute inset-0 rounded-b-[30px] rounded-t-[12px] border-2 ${secao.borda} bg-gradient-to-b ${secao.cor} opacity-95`} />
 
-            {/* painel principal */}
-            <div
-              className={`relative overflow-hidden rounded-t-[12px] border-2 border-white/80 shadow-[0_24px_48px_rgba(60,40,20,0.22),inset_0_1px_0_rgba(255,255,255,0.9)]`}
-              style={{
-                clipPath: "polygon(0 0, 100% 0, 100% 100%, 94% 100%, 50% calc(100% + 32px), 6% 100%, 0 100%)",
-                paddingBottom: 48,
-              }}
-            >
-              {/* fundo gradiente rico */}
-              <div className={`absolute inset-0 bg-gradient-to-b ${secao.cor} opacity-98`} />
-              {/* textura sutil */}
-              <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #000 1px, transparent 0)", backgroundSize: "8px 8px" }} />
-              {/* brilho no topo */}
-              <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white/40 to-transparent" />
+            {/* suporte horizontal no topo */}
+            <div className="absolute left-1/2 top-0 h-5 w-16 -translate-x-1/2 -translate-y-[70%] rounded-md bg-[#b78555] shadow-[0_3px_8px_rgba(90,60,30,0.18)]" />
+            <div className="absolute left-6 top-0 h-3 w-3 -translate-y-[145%] rounded-full bg-[#82552d]" />
+            <div className="absolute right-6 top-0 h-3 w-3 -translate-y-[145%] rounded-full bg-[#82552d]" />
 
-              {/* borda interna decorativa */}
-              <div className={`absolute inset-[6px] rounded-[8px] border ${secao.borda} opacity-40`}
-                style={{ bottom: 20, clipPath: "polygon(0 0, 100% 0, 100% 100%, 93% 100%, 50% calc(100% + 22px), 7% 100%, 0 100%)" }} />
-
-              {/* suporte horizontal no topo (fixação no mastro) */}
-              <div className="absolute left-1/2 top-0 h-[7px] w-24 -translate-x-1/2 -translate-y-[50%] rounded-full bg-[linear-gradient(to_right,#9a6530,#d4a05a,#9a6530)] shadow-[0_3px_8px_rgba(90,60,30,0.30)]" />
-              {/* parafusos / argolas */}
-              <div className="absolute left-6 top-0 h-[14px] w-[14px] -translate-y-[90%] rounded-full bg-[linear-gradient(135deg,#c8894a,#7a4e23)] shadow-[0_2px_5px_rgba(0,0,0,0.25)]" />
-              <div className="absolute right-6 top-0 h-[14px] w-[14px] -translate-y-[90%] rounded-full bg-[linear-gradient(135deg,#c8894a,#7a4e23)] shadow-[0_2px_5px_rgba(0,0,0,0.25)]" />
-
-              {/* conteúdo */}
-              <div className="relative z-10 px-6 pt-6 pb-2">
-                {/* ícone em medalha */}
-                <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${secao.selo} text-3xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.10),0_6px_16px_rgba(0,0,0,0.12)]`}>
-                  {secao.icone}
-                </div>
-
-                {/* separador ornamental */}
-                <div className="flex items-center gap-2 mb-3 px-4">
-                  <div className={`flex-1 h-[1.5px] bg-gradient-to-r from-transparent ${secao.borda.replace('border-', 'to-')} opacity-50`} />
-                  <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">etapa</span>
-                  <div className={`flex-1 h-[1.5px] bg-gradient-to-l from-transparent ${secao.borda.replace('border-', 'to-')} opacity-50`} />
-                </div>
-
-                {/* título */}
-                <h2 className={`text-3xl font-black tracking-tight sm:text-4xl ${secao.texto} drop-shadow-sm`}>
-                  {secao.titulo}
-                </h2>
-
-                {/* contador de modelos */}
-                <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/60 px-3 py-1 text-xs font-bold text-slate-600 shadow-sm backdrop-blur-sm">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  {cartoes.length} modelos disponíveis
-                </div>
-              </div>
+            {/* ponteiras triangulares na base */}
+            <div className="absolute bottom-0 left-0 right-0 flex justify-between px-10 translate-y-[92%]">
+              <span className="h-0 w-0 border-l-[18px] border-r-[18px] border-t-[26px] border-l-transparent border-r-transparent border-t-white/65" />
+              <span className="h-0 w-0 border-l-[18px] border-r-[18px] border-t-[26px] border-l-transparent border-r-transparent border-t-white/65" />
             </div>
 
-            {/* franja inferior — triângulos decorativos */}
-            <div className="absolute bottom-0 left-0 right-0 flex translate-y-0 overflow-hidden" style={{ height: 32 }}>
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex-1 h-0 w-0"
-                  style={{
-                    borderLeft: "none",
-                    borderRight: "none",
-                    borderTop: `32px solid`,
-                    borderTopColor: i % 2 === 0 ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.25)",
-                  }}
-                />
-              ))}
+            {/* conteúdo */}
+            <div className="relative z-10">
+              <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full ${secao.selo} shadow-inner`}>
+                {ICONES_SVG[secao.id]}
+              </div>
+              <div className="relative inline-block">
+                <span className="absolute inset-x-0 bottom-1 h-3 rounded-sm bg-yellow-200/70" />
+                <h2 className={`relative text-2xl font-black sm:text-3xl ${secao.texto}`}>{secao.titulo}</h2>
+              </div>
+              <p className="mt-2 text-sm font-medium tracking-wide text-slate-600">
+                {cartoes.length} {cartoes.length === 1 ? "modelo disponível" : "modelos disponíveis"}
+              </p>
             </div>
           </div>
         </div>
@@ -527,16 +591,19 @@ export default function Ferramentas() {
         {/* ===== HEADER ===== */}
         <header className="relative mb-16 overflow-hidden rounded-[28px] border border-[#ddd1bf] bg-[#f8f2e8] px-4 pb-7 pt-6 shadow-[0_16px_40px_rgba(86,65,40,0.10)] sm:px-6 md:mb-20 md:rounded-[34px] md:px-8 md:pb-8 md:pt-7">
 
-          {/* corda + bandeirinhas do cabeçalho */}
+          {/* corda + decorações conceituais do cabeçalho */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-28">
-            <div className="absolute left-5 right-5 top-6 h-[4px] rounded-full bg-[repeating-linear-gradient(45deg,#9a6a3a,#9a6a3a_7px,#b07b45_7px,#b07b45_14px)] opacity-90" />
-            <div className="flex justify-between px-8 pt-8 md:px-12">
-              {BANDEIRINHAS.map((cor, i) => (
+            <div className="absolute left-5 right-5 top-8 h-[3px] rounded-full opacity-70"
+              style={{ background: "repeating-linear-gradient(90deg,#9a6a3a 0px,#9a6a3a 8px,#c9955e 8px,#c9955e 16px)" }} />
+            <div className="absolute left-5 right-5 top-8 flex items-end justify-between px-4">
+              {DECO_CORES.map((cor, i) => (
                 <div
                   key={i}
-                  className="flag-sway h-0 w-0 border-l-[15px] border-r-[15px] border-t-[26px] border-l-transparent border-r-transparent drop-shadow-sm md:border-l-[18px] md:border-r-[18px] md:border-t-[32px]"
-                  style={{ borderTopColor: cor, animationDelay: `${i * 0.15}s` }}
-                />
+                  className="flag-sway -translate-y-1 drop-shadow-sm"
+                  style={{ animationDelay: `${i * 0.22}s`, animationDuration: `${4.8 + (i % 3) * 0.9}s` }}
+                >
+                  {DECO_SHAPES[i % DECO_SHAPES.length](cor)}
+                </div>
               ))}
             </div>
           </div>
