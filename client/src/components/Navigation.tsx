@@ -27,60 +27,60 @@ export function Navigation() {
     <header
       className="sticky top-0 z-50 w-full"
       style={{
-        /* verde floresta profundo: escuro no topo/baixo, leve claridade no centro */
+        /* sage suave: neutro quente, quase bege com toque verde */
         background: `
           linear-gradient(180deg,
-            #142318 0%,
-            #1e3826 18%,
-            #2a5038 38%,
-            #305840 52%,
-            #1e3828 72%,
-            #121e16 100%
+            #b0bfa4 0%,
+            #c2d0b5 22%,
+            #cddac0 42%,
+            #c8d6ba 58%,
+            #b8c8aa 78%,
+            #a8b89a 100%
           )`,
-        /* relevo pra baixo: highlight fino no topo + sombra funda embaixo */
+        /* relevo leve: highlight no topo, sombra suave embaixo */
         boxShadow: `
-          inset 0 2px 0 rgba(180,240,180,0.12),
-          inset 0 1px 0 rgba(255,255,255,0.07),
-          inset 0 -10px 28px rgba(0,0,0,0.40),
-          0 10px 32px rgba(5,18,8,0.45)
+          inset 0 2px 0 rgba(255,255,255,0.38),
+          inset 0 1px 0 rgba(255,255,255,0.22),
+          inset 0 -8px 22px rgba(80,100,70,0.18),
+          0 6px 20px rgba(80,100,70,0.20)
         `,
       }}
     >
-      {/* veio de floresta — textura diagonal sutil em verde */}
+      {/* textura sutil — fibras diagonais suaves */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage: `
             repeating-linear-gradient(
-              108deg,
-              rgba(100,200,120,0.025) 0px,
-              rgba(100,200,120,0.025) 1px,
+              112deg,
+              rgba(255,255,255,0.12) 0px,
+              rgba(255,255,255,0.12) 1px,
               transparent 1px,
-              transparent 14px
+              transparent 18px
             ),
             repeating-linear-gradient(
-              108deg,
-              rgba(0,0,0,0.06) 0px,
-              rgba(0,0,0,0.06) 2px,
+              112deg,
+              rgba(80,100,60,0.06) 0px,
+              rgba(80,100,60,0.06) 2px,
               transparent 2px,
-              transparent 28px
+              transparent 36px
             )
           `,
         }}
         aria-hidden="true"
       />
 
-      {/* borda superior brilhante — luz rasando a superfície */}
+      {/* borda superior brilhante */}
       <div
         className="absolute inset-x-0 top-0 h-[3px] pointer-events-none"
-        style={{ background: "linear-gradient(90deg, rgba(150,240,160,0.18) 0%, rgba(200,255,210,0.38) 40%, rgba(150,240,160,0.18) 100%)" }}
+        style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.40) 0%, rgba(255,255,255,0.70) 40%, rgba(255,255,255,0.40) 100%)" }}
         aria-hidden="true"
       />
 
-      {/* borda inferior gravada — linha escura que separa do conteúdo */}
+      {/* borda inferior — separa do conteúdo com sombra suave */}
       <div
         className="absolute inset-x-0 bottom-0 h-[3px] pointer-events-none"
-        style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.20) 100%)" }}
+        style={{ background: "linear-gradient(180deg, rgba(60,80,50,0.30) 0%, rgba(60,80,50,0.08) 100%)" }}
         aria-hidden="true"
       />
 
@@ -93,14 +93,14 @@ export function Navigation() {
               <span
                 className="font-bold text-lg md:text-xl tracking-[0.03em]"
                 style={{
-                  color: "#f0dfc0",
-                  textShadow: "0 1px 3px rgba(0,0,0,0.60), 0 -1px 0 rgba(255,220,140,0.20)",
+                  color: "#2e4030",
+                  textShadow: "0 1px 0 rgba(255,255,255,0.50)",
                 }}
               >
                 Chegou a Conta,{" "}
                 <span style={{
-                  color: "#f5a96e",
-                  textShadow: "0 1px 3px rgba(0,0,0,0.55), 0 0 12px rgba(245,150,80,0.25)",
+                  color: "#b23a2e",
+                  textShadow: "0 1px 0 rgba(255,255,255,0.40)",
                 }}>
                   Diretora!
                 </span>
@@ -113,9 +113,9 @@ export function Navigation() {
               data-testid="button-accessibility-menu"
               className="flex h-6 w-6 items-center justify-center rounded-full transition"
               style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,220,150,0.22)",
-                color: "rgba(240,210,160,0.70)",
+                background: "rgba(255,255,255,0.35)",
+                border: "1px solid rgba(80,110,60,0.25)",
+                color: "#3d5035",
               }}
             >
               <SlidersHorizontal className="h-3 w-3" />
@@ -135,28 +135,28 @@ export function Navigation() {
                     style={
                       active
                         ? {
-                            color: "#fde8c0",
-                            background: "rgba(255,200,100,0.14)",
-                            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -2px 6px rgba(0,0,0,0.28)",
-                            textShadow: "0 1px 2px rgba(0,0,0,0.50)",
+                            color: "#1e3020",
+                            background: "rgba(255,255,255,0.38)",
+                            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.60), inset 0 -3px 8px rgba(60,90,50,0.14)",
+                            textShadow: "0 1px 0 rgba(255,255,255,0.50)",
                           }
                         : {
-                            color: "rgba(230,200,155,0.80)",
-                            textShadow: "0 1px 2px rgba(0,0,0,0.45)",
+                            color: "#354830",
+                            textShadow: "0 1px 0 rgba(255,255,255,0.40)",
                           }
                     }
                   >
                     <item.icon
                       className="h-3.5 w-3.5 shrink-0"
-                      style={{ opacity: active ? 0.95 : 0.65 }}
+                      style={{ opacity: active ? 1 : 0.70 }}
                     />
                     {item.label}
 
-                    {/* ranhura activa: sulco entalhado embaixo do item */}
+                    {/* sulco ativo */}
                     {active && (
                       <span
                         className="absolute inset-x-2 -bottom-[2px] h-[2px] rounded-full"
-                        style={{ background: "rgba(245,169,110,0.75)", boxShadow: "0 1px 4px rgba(245,150,80,0.50)" }}
+                        style={{ background: "rgba(178,58,46,0.65)", boxShadow: "0 1px 3px rgba(178,58,46,0.30)" }}
                       />
                     )}
                   </Link>
