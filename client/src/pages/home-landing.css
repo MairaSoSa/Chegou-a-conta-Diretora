@@ -260,62 +260,44 @@
   border-radius: 8px 18px 10px 14px;
   padding: 20px 14px 16px 14px;
   min-height: 170px;
-  /* sombra suave, só embaixo */
   box-shadow:
-    0 3px 10px 0 rgba(60,40,20,0.07),
-    0 1px 3px 0 rgba(0,0,0,.05);
-  transition: box-shadow 0.25s cubic-bezier(.4,2,.6,1);
-}
-.hl-note-card::before {
-  content: "";
-  display: block;
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 7px;
-  border-radius: 4px 4px 0 0;
-  background: currentColor;
-  opacity: 0.18;
-  z-index: 2;
-  border: none;
-  transform: rotate(var(--rot,0deg));
-  transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease;
-  animation: hlPostitFloat 5.5s ease-in-out infinite;
-  animation-delay: var(--delay, 0s);
-  transform-origin: center top;
-  will-change: transform;
-  cursor: pointer;
-  overflow: hidden;
+    0 1px 2px rgba(0,0,0,.06),
+    0 3px 8px rgba(60,40,20,.07),
+    0 8px 20px rgba(60,40,20,.05);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 
-/* Glue strip at top */
+/* Fita colada no topo — muito sutil */
 .hl-note-card::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 6px;
-  background: rgba(0,0,0,.10);
+  top: 0; left: 20%; right: 20%;
+  height: 5px;
+  background: rgba(0,0,0,.06);
+  border-radius: 0 0 3px 3px;
 }
 
-/* Folded corner bottom-right */
+/* Canto dobrado — discreto */
 .hl-note-card::after {
   content: "";
   position: absolute;
   bottom: 0; right: 0;
   width: 0; height: 0;
   border-style: solid;
-  border-width: 0 0 20px 20px;
-  border-color: transparent transparent rgba(0,0,0,.18) transparent;
-  transition: border-width .3s ease;
+  border-width: 0 0 16px 16px;
+  border-color: transparent transparent rgba(0,0,0,.09) transparent;
+  transition: border-width .25s ease;
 }
 
 .hl-note-card:hover {
-  transform: translateY(-7px) rotate(calc(var(--rot,0deg) * .6)) scale(1.04);
+  transform: translateY(-5px) rotate(calc(var(--rot,0deg) * .5)) scale(1.03);
   box-shadow:
-    0 6px 18px 0 rgba(60,40,20,0.11),
-    0 2px 6px 0 rgba(0,0,0,.07);
+    0 2px 4px rgba(0,0,0,.06),
+    0 6px 16px rgba(60,40,20,.10),
+    0 14px 32px rgba(60,40,20,.07);
   z-index: 3;
 }
-.hl-note-card:hover::after { border-width: 0 0 28px 28px; }
+.hl-note-card:hover::after { border-width: 0 0 22px 22px; }
 
 .hl-note-card:nth-child(1){ --rot:-2.2deg; --delay:0s   }
 .hl-note-card:nth-child(2){ --rot: 1.4deg; --delay:.5s  }
