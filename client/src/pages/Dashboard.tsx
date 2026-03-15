@@ -555,8 +555,8 @@ export default function Dashboard() {
             )}
 
             {/* BUSCA DE ESCOLA */}
-            {!selectedInep && <Card className="card-clay" style={{background:'linear-gradient(135deg,#f0f7ff 0%,#e8f5e9 100%)',border:'1.5px solid #c8dff7'}}>
-              <CardContent className="p-5">
+            {!selectedInep && <Card className="card-clay" style={{background:'linear-gradient(135deg,#f0f7ff 0%,#e8f5e9 100%)',border:'1.5px solid #c8dff7',position:'relative',zIndex:20,overflow:'visible',transform:'none'}}>
+              <CardContent className="p-5" style={{overflow:'visible'}}>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="flex-1">
                     <p className="text-sm font-semibold mb-1" style={{color:'#2d5a88'}}>🏫 Buscar minha escola</p>
