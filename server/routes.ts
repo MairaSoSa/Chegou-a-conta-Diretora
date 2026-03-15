@@ -17,6 +17,10 @@ import {
   getSituacaoCadastral, getMunicipiosPorUf,
   getSituacaoPrestacaoConta, getSituacaoAtendimento, getRelatorioSuspensao,
 } from "./scraper/pdde";
+import {
+  DEMO_INEPS, getDemoPddeInfo, getDemoPddeSaldos, getDemoPddeExecFin,
+  getDemoCadastral, getDemoPrestacaoConta, getDemoAtendimento,
+} from "./scraper/demo-data";
 import { searchDOU, searchDOUForNorma } from "./scraper/dou";
 import {
   searchSchoolsLocal, getEscolaCompletaLocal, getEscolaEvolucaoLocal,
@@ -339,6 +343,10 @@ export async function registerRoutes(
         return res.status(400).json({ ok: false, error: "Código INEP deve ter 8 dígitos" });
       }
       const result = await getPddeInfo(ano, inep);
+      if (!result.ok && DEMO_INEPS.has(inep)) {
+        const demo = getDemoPddeInfo(inep, ano);
+        if (demo) return res.json(demo);
+      }
       res.json(result);
     } catch (err: any) {
       console.error("PDDE scraper error:", err.message);
@@ -355,6 +363,10 @@ export async function registerRoutes(
         return res.status(400).json({ ok: false, repasses: [], anosDisponiveis: [], fonte: "indisponivel", error: "Código INEP inválido (deve ter 8 dígitos)" });
       }
       const result = await consultarExecFinPdde(coEscola);
+      if (!result.ok && DEMO_INEPS.has(coEscola)) {
+        const demo = getDemoPddeExecFin(coEscola);
+        if (demo) return res.json(demo);
+      }
       res.json(result);
     } catch (err: any) {
       console.error("PDDE exec fin error:", err.message);
@@ -369,6 +381,10 @@ export async function registerRoutes(
         return res.status(400).json({ ok: false, saldos: [], anosDisponiveis: [], fonte: "indisponivel", error: "Código INEP inválido (deve ter 8 dígitos)" });
       }
       const result = await consultarSaldosPdde(coEscola);
+      if (!result.ok && DEMO_INEPS.has(coEscola)) {
+        const demo = getDemoPddeSaldos(coEscola);
+        if (demo) return res.json(demo);
+      }
       res.json(result);
     } catch (err: any) {
       console.error("PDDE saldos error:", err.message);
@@ -410,6 +426,10 @@ export async function registerRoutes(
         ano, sg_uf, co_municipio_fnde, cnpj, co_escola,
         tp_relatorio, st_cadstral, ds_localizacao, fimMandato, page,
       });
+      if (!result.ok && co_escola && DEMO_INEPS.has(co_escola)) {
+        const demo = getDemoCadastral(co_escola, ano);
+        if (demo) return res.json(demo);
+      }
       res.json(result);
     } catch (err: any) {
       console.error("PDDE situação cadastral error:", err.message);
@@ -436,6 +456,10 @@ export async function registerRoutes(
         sg_uf, co_municipio_fnde, co_programa_fnde, cnpj, co_escola, tp_relatorio, page,
       } = req.query as Record<string, string>;
       const result = await getSituacaoPrestacaoConta({ ano, sg_uf, co_municipio_fnde, co_programa_fnde, cnpj, co_escola, tp_relatorio, page });
+      if (!result.ok && co_escola && DEMO_INEPS.has(co_escola)) {
+        const demo = getDemoPrestacaoConta(co_escola, ano);
+        if (demo) return res.json(demo);
+      }
       res.json(result);
     } catch (err: any) {
       console.error("PDDE prestação de contas error:", err.message);
@@ -450,6 +474,10 @@ export async function registerRoutes(
         sg_uf, co_municipio_fnde, cnpj, co_escola, tp_relatorio, page,
       } = req.query as Record<string, string>;
       const result = await getSituacaoAtendimento({ ano, sg_uf, co_municipio_fnde, cnpj, co_escola, tp_relatorio, page });
+      if (!result.ok && co_escola && DEMO_INEPS.has(co_escola)) {
+        const demo = getDemoAtendimento(co_escola, ano);
+        if (demo) return res.json(demo);
+      }
       res.json(result);
     } catch (err: any) {
       console.error("PDDE atendimento error:", err.message);
