@@ -2,12 +2,8 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  ArrowRight, BookOpen, GraduationCap, Utensils, Bus, 
+import {
+  ArrowRight, BookOpen, GraduationCap, Utensils, Bus,
   Coins, ChevronDown, ChevronUp, FileText, Calculator,
   CheckCircle2, AlertCircle, HelpCircle, Landmark, Users,
   Accessibility, Sparkles, BookMarked, Laptop, Palette,
@@ -19,8 +15,7 @@ import {
   Loader2, type LucideIcon
 } from "lucide-react";
 import { Link } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
 import type { GlossaryItem } from "@shared/schema";
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -34,691 +29,357 @@ const ICON_MAP: Record<string, LucideIcon> = {
   AlertCircle, CheckCircle2, HelpCircle, Landmark,
 };
 
-function renderIcon(iconName: string, className: string = "w-5 h-5") {
-  const IconComponent = ICON_MAP[iconName];
-  if (IconComponent) {
-    return <IconComponent className={className} />;
-  }
-  return <BookText className={className} />;
+function renderIcon(iconName: string, className = "w-5 h-5") {
+  const I = ICON_MAP[iconName];
+  return I ? <I className={className} /> : <BookText className={className} />;
 }
 
-interface Programa {
-  id: string;
-  nome: string;
-  sigla: string;
-  descricao: string;
-  icone: React.ReactNode;
-  cor: string;
-  corFundo: string;
-  corBorda: string;
-  destaque?: string;
-  subprogramas?: Array<{
-    id: string;
-    nome: string;
-    descricao: string;
-    icone: React.ReactNode;
-  }>;
-}
-
-const PROGRAMAS: Programa[] = [
+const PROGRAMAS = [
   {
-    id: 'pdde-basico',
-    nome: 'PDDE Básico',
-    sigla: 'PDDE',
-    descricao: 'Dinheiro que vai direto pra conta da escola pra você usar em material, manutenção e melhorias. É o "arroz com feijão" dos recursos - toda escola pública recebe.',
-    icone: <Coins className="w-6 h-6" />,
-    cor: 'text-emerald-700',
-    corFundo: 'bg-emerald-50',
-    corBorda: 'border-emerald-200',
-    destaque: 'Mais usado',
-    subprogramas: undefined
+    id: "pdde-basico",
+    sigla: "PDDE Básico",
+    destaque: "Mais usado",
+    descricao: "Dinheiro que vai direto pra conta da escola pra você usar em material, manutenção e melhorias. É o arroz com feijão dos recursos — toda escola pública recebe.",
+    subprogramas: undefined as undefined | { id: string; nome: string; descricao: string }[],
   },
   {
-    id: 'acoes-integradas',
-    nome: 'Ações Integradas do PDDE',
-    sigla: 'PDDE Qualidade',
-    descricao: 'São verbas extras do PDDE pra projetos específicos. Cada ação tem regras próprias sobre o que pode comprar. A escola precisa aderir a cada uma.',
-    icone: <Sparkles className="w-6 h-6" />,
-    cor: 'text-violet-700',
-    corFundo: 'bg-violet-50',
-    corBorda: 'border-violet-200',
+    id: "acoes-integradas",
+    sigla: "Ações Integradas do PDDE",
+    destaque: undefined,
+    descricao: "São verbas extras do PDDE pra projetos específicos. Cada ação tem regras próprias sobre o que pode comprar. A escola precisa aderir a cada uma.",
     subprogramas: [
-      {
-        id: 'educacao-integral',
-        nome: 'Educação Integral',
-        descricao: 'Pra escolas com jornada ampliada - comprar materiais e equipamentos pro contraturno',
-        icone: <GraduationCap className="w-5 h-5" />
-      },
-      {
-        id: 'escola-acessivel',
-        nome: 'Escola Acessível',
-        descricao: 'Adaptar a escola pra alunos com deficiência - rampas, banheiros, sinalização',
-        icone: <Accessibility className="w-5 h-5" />
-      },
-      {
-        id: 'mais-alfabetizacao',
-        nome: 'Mais Alfabetização',
-        descricao: 'Materiais e recursos pra turmas de 1º e 2º ano do fundamental',
-        icone: <BookMarked className="w-5 h-5" />
-      },
-      {
-        id: 'escola-conectada',
-        nome: 'Escola Conectada',
-        descricao: 'Equipamentos de informática e infraestrutura de internet',
-        icone: <Laptop className="w-5 h-5" />
-      },
-      {
-        id: 'educacao-campo',
-        nome: 'Educação do Campo',
-        descricao: 'Recursos específicos pra escolas rurais, quilombolas e indígenas',
-        icone: <TreePine className="w-5 h-5" />
-      },
-      {
-        id: 'novo-ensino-medio',
-        nome: 'Novo Ensino Médio',
-        descricao: 'Implementação dos itinerários formativos e laboratórios',
-        icone: <Palette className="w-5 h-5" />
-      }
-    ]
+      { id: "educacao-integral", nome: "Educação Integral", descricao: "Pra escolas com jornada ampliada — comprar materiais e equipamentos pro contraturno" },
+      { id: "escola-acessivel", nome: "Escola Acessível", descricao: "Adaptar a escola pra alunos com deficiência — rampas, banheiros, sinalização" },
+      { id: "mais-alfabetizacao", nome: "Mais Alfabetização", descricao: "Materiais e recursos pra turmas de 1º e 2º ano do fundamental" },
+      { id: "escola-conectada", nome: "Escola Conectada", descricao: "Equipamentos de informática e infraestrutura de internet" },
+      { id: "educacao-campo", nome: "Educação do Campo", descricao: "Recursos específicos pra escolas rurais, quilombolas e indígenas" },
+      { id: "novo-ensino-medio", nome: "Novo Ensino Médio", descricao: "Implementação dos itinerários formativos e laboratórios" },
+    ],
   },
-  {
-    id: 'pnae',
-    nome: 'Alimentação Escolar',
-    sigla: 'PNAE',
-    descricao: 'Verba pra merenda! Mas atenção: quem gerencia geralmente é a prefeitura ou estado. A escola participa do cardápio e da fiscalização.',
-    icone: <Utensils className="w-6 h-6" />,
-    cor: 'text-orange-700',
-    corFundo: 'bg-orange-50',
-    corBorda: 'border-orange-200',
-    destaque: 'Gestão compartilhada'
-  },
-  {
-    id: 'pnate',
-    nome: 'Transporte Escolar',
-    sigla: 'PNATE',
-    descricao: 'Dinheiro pro transporte dos alunos da zona rural até a escola. Geralmente fica com o município, mas a escola pode ajudar na fiscalização.',
-    icone: <Bus className="w-6 h-6" />,
-    cor: 'text-sky-700',
-    corFundo: 'bg-sky-50',
-    corBorda: 'border-sky-200',
-    destaque: 'Zona rural'
-  }
 ];
+
+const VERBAS_COMPARTILHADAS = [
+  {
+    id: "pnae",
+    sigla: "PNAE",
+    subtitulo: "Alimentação Escolar",
+    descricao: "Verba da merenda. Em geral é gerida pela prefeitura ou pelo estado, mas a escola participa do cardápio e da fiscalização.",
+  },
+  {
+    id: "pnate",
+    sigla: "PNATE",
+    subtitulo: "Zona rural",
+    descricao: "Dinheiro pro transporte dos alunos da zona rural até a escola. Normalmente fica com o município, mas a escola pode ajudar na fiscalização.",
+  },
+];
+
+const PASSOS = [
+  { num: 1, titulo: "O dinheiro chega", desc: "O FNDE libera a verba e ela cai direto na conta da UEx, geralmente APM ou Conselho Escolar." },
+  { num: 2, titulo: "O Conselho decide", desc: "Vocês se reúnem para decidir o que comprar. Tudo precisa estar no plano de aplicação." },
+  { num: 3, titulo: "Você compra", desc: "Faz a pesquisa de preços, escolhe o fornecedor e realiza a compra seguindo as regras." },
+  { num: 4, titulo: "Guarda os documentos", desc: "Nota fiscal, comprovante de pagamento e ata: tudo organizado por programa e ano." },
+  { num: 5, titulo: "Presta contas", desc: "No prazo, você envia os documentos para mostrar como usou cada centavo." },
+];
+
+const DICAS = [
+  { titulo: "Sempre em grupo", texto: "Nunca decida sozinha. O Conselho Escolar precisa aprovar todas as compras." },
+  { titulo: "Nada de dinheiro vivo", texto: "Todo pagamento deve sair da conta do programa direto para o fornecedor." },
+  { titulo: "De olho no prazo", texto: "A prestação de contas tem data certa. Anote no calendário." },
+  { titulo: "Pesquise preços", texto: "Pelo menos 3 orçamentos antes de comprar qualquer coisa." },
+];
+
+const SEC = "rounded-[30px] border border-[#e8ddd2] bg-[linear-gradient(180deg,rgba(255,252,248,0.97)_0%,rgba(251,246,239,0.97)_100%)] p-6 shadow-[0_18px_40px_rgba(134,112,92,0.08)] relative overflow-hidden";
+const SEC_LINES = "before:absolute before:left-[22px] before:top-0 before:bottom-0 before:w-px before:bg-[#e8b7b7]/60 after:absolute after:left-0 after:right-0 after:top-[62px] after:h-px after:bg-[#f1e8df]";
+const PAPER = "relative rounded-[4px] border border-[#e7dccf] bg-[#fffdf8] p-4 shadow-[0_10px_20px_rgba(120,100,80,0.14)] overflow-hidden";
+const TAPE_TOP = "before:absolute before:-top-3 before:left-6 before:h-6 before:w-14 before:rotate-[-8deg] before:bg-[#efe4d5]/95 before:shadow-sm after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[8px] after:bg-[repeating-linear-gradient(90deg,#efe3d6_0px,#efe3d6_8px,transparent_8px,transparent_14px)]";
+
+function Highlight({ children }: { children: React.ReactNode }) {
+  return <span className="bg-yellow-200/70 px-0.5 rounded-sm">{children}</span>;
+}
 
 function GlossarioSection() {
   const [expanded, setExpanded] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [activeLetra, setActiveLetra] = useState<string | null>(null);
 
-  const { data: glossaryItems = [], isLoading } = useQuery<GlossaryItem[]>({
-    queryKey: ["/api/glossary"],
-  });
+  const { data: glossaryItems = [], isLoading } = useQuery<GlossaryItem[]>({ queryKey: ["/api/glossary"] });
 
-  const glossario = useMemo(() => {
-    return glossaryItems.map(item => ({
-      termo: item.term,
-      explicacao: item.explanation,
-      icone: item.iconName || 'BookText',
-      letra: item.letter,
-    }));
-  }, [glossaryItems]);
+  const glossario = useMemo(() =>
+    glossaryItems.map(item => ({ termo: item.term, explicacao: item.explanation, letra: item.letter, iconName: item.iconName || "BookText" })),
+    [glossaryItems]
+  );
 
-  const letrasDisponiveis = useMemo(() => {
-    const letraSet = new Set(glossario.map(g => g.letra));
-    const letras = Array.from(letraSet);
-    return letras.sort();
-  }, [glossario]);
+  const letras = useMemo(() => [...new Set(glossario.map(g => g.letra))].sort(), [glossario]);
 
-  const termosFiltrados = useMemo(() => {
-    let filtered = glossario;
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(g =>
-        g.termo.toLowerCase().includes(term) ||
-        g.explicacao.toLowerCase().includes(term)
-      );
-    }
-    if (activeLetra) {
-      filtered = filtered.filter(g => g.letra === activeLetra);
-    }
-    return filtered;
+  const filtrados = useMemo(() => {
+    let f = glossario;
+    if (searchTerm.trim()) { const t = searchTerm.toLowerCase(); f = f.filter(g => g.termo.toLowerCase().includes(t) || g.explicacao.toLowerCase().includes(t)); }
+    if (activeLetra) f = f.filter(g => g.letra === activeLetra);
+    return f;
   }, [glossario, searchTerm, activeLetra]);
 
-  const termosAgrupados = useMemo(() => {
-    const grupos: Record<string, typeof glossario> = {};
-    termosFiltrados.forEach(g => {
-      if (!grupos[g.letra]) grupos[g.letra] = [];
-      grupos[g.letra].push(g);
-    });
-    return grupos;
-  }, [termosFiltrados]);
+  const isFiltering = searchTerm.trim() !== "" || activeLetra !== null;
+  const visiveis = isFiltering ? filtrados : (expanded ? glossario : glossario.slice(0, 5));
 
-  const isFiltering = searchTerm.trim() !== '' || activeLetra !== null;
-  const termosVisiveis = isFiltering ? termosFiltrados : (expanded ? glossario : glossario.slice(0, 6));
-
-  if (isLoading) {
-    return (
-      <div className="bg-gradient-to-br from-emerald-50/80 to-green-50/50 rounded-2xl border border-emerald-200/50 p-12 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-      </div>
-    );
-  }
+  if (isLoading) return (
+    <div className={`${SEC} ${SEC_LINES} flex items-center justify-center py-16`}>
+      <Loader2 className="w-6 h-6 animate-spin text-[#9f968d]" />
+    </div>
+  );
 
   return (
-    <div className="bg-gradient-to-br from-emerald-50/80 to-green-50/50 rounded-2xl border border-emerald-200/50 overflow-hidden">
-      <div className="p-6 pb-4">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-            <BookText className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div>
-            <h2 className="font-bold text-xl text-emerald-900">Glossário: Palavras que você vai encontrar</h2>
-            <p className="text-sm text-emerald-700">
-              {glossario.length} termos explicados em linguagem simples
-            </p>
-          </div>
-        </div>
+    <div className={`${SEC} ${SEC_LINES}`}>
+      <h3 className="text-xl font-bold tracking-tight text-[#1f2a37] pl-6" style={{ fontFamily: "Georgia, serif" }}>Glossário</h3>
+      <p className="mt-1 text-sm text-[#738194] pl-6">Palavras que você vai encontrar — explicadas em linguagem simples.</p>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
-          <Input
-            placeholder="Buscar termo... (ex: prestação de contas)"
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              if (e.target.value.trim()) setActiveLetra(null);
-            }}
-            className="pl-10 bg-white border-emerald-200 focus:border-emerald-400 rounded-xl"
-            data-testid="input-glossario-search"
-          />
-        </div>
-
-        <div className="flex flex-wrap gap-1 mt-3">
-          {letrasDisponiveis.map(letra => (
-            <button
-              key={letra}
-              onClick={() => {
-                setActiveLetra(activeLetra === letra ? null : letra);
-                setSearchTerm('');
-              }}
-              className={cn(
-                "w-8 h-8 rounded-lg text-sm font-bold transition-all flex items-center justify-center",
-                activeLetra === letra
-                  ? "bg-emerald-600 text-white"
-                  : "bg-white text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
-              )}
-              data-testid={`btn-letra-${letra}`}
-            >
-              {letra}
-            </button>
-          ))}
-          {(activeLetra || searchTerm) && (
-            <button
-              onClick={() => { setActiveLetra(null); setSearchTerm(''); }}
-              className="h-8 px-3 rounded-lg text-xs font-medium bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all flex items-center gap-1"
-              data-testid="btn-limpar-filtro"
-            >
-              Limpar filtro
-            </button>
-          )}
-        </div>
+      <div className="mt-4 rounded-[10px] border border-[#e3d8cd] bg-[#fffdfa] px-4 py-2.5 text-sm text-[#8b8075] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] flex items-center gap-2">
+        <Search className="w-4 h-4 shrink-0 text-[#b8a898]" />
+        <input
+          placeholder={`Buscar termo... (ex: prestação de contas)`}
+          value={searchTerm}
+          onChange={e => { setSearchTerm(e.target.value); if (e.target.value.trim()) setActiveLetra(null); }}
+          className="w-full bg-transparent outline-none text-[#5a5048] placeholder:text-[#b8a898]"
+        />
       </div>
 
-      <div className="px-6 pb-2">
-        {isFiltering && termosFiltrados.length === 0 && (
-          <div className="text-center py-8 text-emerald-600">
-            <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="font-medium">Nenhum termo encontrado</p>
-            <p className="text-sm text-emerald-500">Tente buscar por outra palavra</p>
-          </div>
-        )}
-
-        {isFiltering ? (
-          Object.entries(termosAgrupados).sort(([a], [b]) => a.localeCompare(b)).map(([letra, termos]) => (
-            <div key={letra} className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-8 h-8 rounded-lg bg-emerald-600 text-white font-bold flex items-center justify-center text-sm">
-                  {letra}
-                </span>
-                <div className="flex-1 h-px bg-emerald-200" />
-              </div>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {termos.map((item) => (
-                  <div
-                    key={item.termo}
-                    className="bg-white/80 rounded-xl p-4 border border-emerald-100 transition-all"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 text-emerald-600">
-                        {renderIcon(item.icone)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-emerald-900 mb-1">{item.termo}</h4>
-                        <p className="text-sm text-emerald-700/80 leading-relaxed">{item.explicacao}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="grid sm:grid-cols-2 gap-3">
-            {termosVisiveis.map((item, idx) => (
-              <motion.div
-                key={item.termo}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.03 }}
-                className="bg-white/80 rounded-xl p-4 border border-emerald-100 transition-all"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 text-emerald-600">
-                    {renderIcon(item.icone)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-emerald-900 mb-1">{item.termo}</h4>
-                    <p className="text-sm text-emerald-700/80 leading-relaxed">{item.explicacao}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+      <div className="mt-4 flex flex-wrap gap-1.5 pl-6">
+        {letras.map(l => (
+          <button
+            key={l}
+            onClick={() => { setActiveLetra(activeLetra === l ? null : l); setSearchTerm(""); }}
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all border ${
+              activeLetra === l
+                ? "bg-[#8a6e5b] text-white border-[#8a6e5b]"
+                : "border-[#ebdfd4] bg-[#fffaf6] text-[#8a6e5b] hover:bg-[#f5ede4]"
+            }`}
+          >{l}</button>
+        ))}
+        {(activeLetra || searchTerm) && (
+          <button onClick={() => { setActiveLetra(null); setSearchTerm(""); }} className="h-8 px-3 rounded-full text-xs font-medium bg-[#f5ede4] text-[#8a6e5b] border border-[#ebdfd4]">
+            Limpar
+          </button>
         )}
       </div>
 
-      {!isFiltering && (
-        <div className="p-4 pt-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setExpanded(!expanded)}
-            className="text-emerald-700 hover:text-emerald-900 hover:bg-emerald-100/50 w-full"
-            data-testid="toggle-glossario"
-          >
-            {expanded ? (
-              <>
-                <ChevronUp className="w-4 h-4 mr-2" />
-                Mostrar menos
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-4 h-4 mr-2" />
-                Ver todos os {glossario.length} termos
-              </>
-            )}
-          </Button>
-        </div>
+      <div className="mt-4 space-y-3 pl-6">
+        {isFiltering && filtrados.length === 0 && (
+          <p className="text-sm text-[#9f968d] py-4 text-center">Nenhum termo encontrado</p>
+        )}
+        {visiveis.map(g => (
+          <div key={g.termo} className={`${PAPER} ${TAPE_TOP} rotate-[0.3deg]`}>
+            <div className="text-sm font-semibold text-[#24344a]">{g.termo}</div>
+            <p className="mt-1.5 text-sm leading-6 text-[#738194]">{g.explicacao}</p>
+          </div>
+        ))}
+      </div>
+
+      {!isFiltering && glossario.length > 5 && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="mt-4 pl-6 text-sm font-medium text-[#b86e3f] hover:text-[#8f542d] transition flex items-center gap-1"
+        >
+          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {expanded ? "Ver menos" : `Ver todos os ${glossario.length} termos`}
+        </button>
       )}
     </div>
   );
 }
 
-function ComoFuncionaSection() {
-  const etapas = [
-    {
-      numero: 1,
-      titulo: 'O dinheiro chega',
-      descricao: 'O FNDE libera a verba e ela cai direto na conta da UEx (geralmente APM ou Conselho Escolar).',
-      icone: <Banknote className="w-5 h-5" />,
-      cor: 'bg-emerald-100 text-emerald-700'
-    },
-    {
-      numero: 2,
-      titulo: 'O Conselho decide',
-      descricao: 'Vocês se reúnem pra decidir o que comprar. Tudo precisa estar no plano de aplicação.',
-      icone: <Users className="w-5 h-5" />,
-      cor: 'bg-sky-100 text-sky-700'
-    },
-    {
-      numero: 3,
-      titulo: 'Você compra',
-      descricao: 'Faz a pesquisa de preços, escolhe o fornecedor e realiza a compra seguindo as regras.',
-      icone: <FileText className="w-5 h-5" />,
-      cor: 'bg-violet-100 text-violet-700'
-    },
-    {
-      numero: 4,
-      titulo: 'Guarda os documentos',
-      descricao: 'Nota fiscal, comprovante de pagamento, ata - tudo organizado por programa e ano.',
-      icone: <Folder className="w-5 h-5" />,
-      cor: 'bg-orange-100 text-orange-700'
-    },
-    {
-      numero: 5,
-      titulo: 'Presta contas',
-      descricao: 'No prazo, você envia os documentos pro FNDE mostrando como usou cada centavo.',
-      icone: <FileCheck className="w-5 h-5" />,
-      cor: 'bg-rose-100 text-rose-700'
-    }
-  ];
+function ProgramaSubCard({ nome, descricao, id, parentId }: { nome: string; descricao: string; id: string; parentId: string }) {
+  return (
+    <Link href={`/programas/${parentId}/${id}`}>
+      <div className="rounded-[6px] border border-[#e7dccf] bg-[#fffdf8] p-4 shadow-[0_6px_12px_rgba(120,100,80,0.10)] hover:shadow-[0_8px_16px_rgba(120,100,80,0.16)] transition-all cursor-pointer group">
+        <div className="text-sm font-semibold text-[#24344a] group-hover:text-[#b86e3f] transition-colors">{nome}</div>
+        <p className="mt-1.5 text-sm leading-5 text-[#738194]">{descricao}</p>
+      </div>
+    </Link>
+  );
+}
+
+function VerbasSection() {
+  const [acoesExpanded, setAcoesExpanded] = useState(false);
 
   return (
-    <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-2xl border border-slate-200/50 p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-slate-200 flex items-center justify-center">
-          <MessageCircleQuestion className="w-5 h-5 text-slate-600" />
-        </div>
+    <section className={`${SEC} ${SEC_LINES}`}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between pl-6 mb-6">
         <div>
-          <h2 className="font-bold text-xl text-slate-800">Como funciona na prática?</h2>
-          <p className="text-sm text-slate-600">O caminho do dinheiro em 5 passos simples</p>
+          <h3 className="text-2xl font-extrabold text-[#1f2a37]" style={{ fontFamily: "Georgia, serif" }}>Verbas que a Escola Gerencia</h3>
+          <p className="mt-1 text-sm leading-6 text-[#738194]">Programas organizados entre verbas diretas da escola e verbas compartilhadas com a Secretaria.</p>
         </div>
       </div>
-      
-      <div className="relative">
-        <div className="absolute left-[22px] top-8 bottom-8 w-0.5 bg-slate-200 hidden sm:block" />
-        
-        <div className="space-y-4">
-          {etapas.map((etapa, idx) => (
-            <motion.div
-              key={etapa.numero}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className="flex items-start gap-4"
-            >
-              <div className={cn(
-                "w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 relative z-10",
-                etapa.cor
-              )}>
-                {etapa.icone}
-              </div>
-              <div className="flex-1 bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-slate-400">Passo {etapa.numero}</span>
-                </div>
-                <h4 className="font-semibold text-slate-800 mb-1">{etapa.titulo}</h4>
-                <p className="text-sm text-slate-600">{etapa.descricao}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
-function ProgramaCard({ programa }: { programa: Programa }) {
-  const [expanded, setExpanded] = useState(false);
-  const hasSubprogramas = programa.subprogramas && programa.subprogramas.length > 0;
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative"
-    >
-      <Card className={cn(
-        "overflow-hidden transition-all duration-300 border-2",
-        programa.corBorda,
-        "hover:shadow-lg"
-      )}>
-        <div className={cn("absolute top-0 left-0 right-0 h-1.5", programa.corFundo.replace('50', '400'))} />
-        
-        <CardContent className="p-0">
-          <div className="p-6">
-            <div className="flex items-start gap-4 mb-4">
-              <div className={cn(
-                "w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0",
-                programa.corFundo,
-                programa.cor
-              )}>
-                {programa.icone}
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <Badge variant="outline" className={cn("font-mono text-xs", programa.corBorda, programa.cor)}>
-                    {programa.sigla}
-                  </Badge>
-                  {programa.destaque && (
-                    <Badge className={cn("text-xs", programa.corFundo, programa.cor, "border-0")}>
-                      {programa.destaque}
-                    </Badge>
-                  )}
+      <div className="grid gap-6 lg:grid-cols-2 pl-6">
+        {/* PDDE */}
+        <div className="rounded-[8px] border border-[#e7dccf] bg-[#fffdf8] p-5 shadow-[0_10px_20px_rgba(120,100,80,0.14)] rotate-[0.4deg] relative overflow-hidden before:absolute before:left-[18px] before:top-0 before:bottom-0 before:w-px before:bg-[#e8b7b7]/55">
+          <span className="absolute -top-3 right-4 rotate-[8deg] border-2 border-[#b23a2e] bg-white px-2 py-[2px] text-[10px] font-bold tracking-[0.12em] text-[#b23a2e]">IMPORTANTE</span>
+          <div className="mb-4">
+            <div className="text-sm font-semibold text-[#24344a]">PDDE</div>
+            <div className="mt-0.5 text-xs text-[#8f8275]">Mais usado · Direto para a escola</div>
+          </div>
+          <div className="space-y-3">
+            <Link href="/programas/pdde-basico">
+              <div className="rounded-[6px] border border-[#e7dccf] bg-[#fffdf8] p-4 shadow-[0_8px_16px_rgba(120,100,80,0.12)] hover:shadow-[0_10px_20px_rgba(120,100,80,0.18)] transition-all cursor-pointer group">
+                <div className="text-sm font-semibold text-[#24344a]">
+                  <Highlight>PDDE Básico</Highlight>
                 </div>
-                <h3 className="font-bold text-xl text-foreground">{programa.nome}</h3>
+                <p className="mt-1.5 text-sm leading-5 text-[#738194]">
+                  Dinheiro que vai direto para a conta da escola para usar em material, manutenção e melhorias. É o arroz com feijão dos recursos.
+                </p>
+                <span className="mt-2 inline-block text-sm font-medium text-[#b86e3f] group-hover:text-[#8f542d] transition-colors">Ver Regras →</span>
               </div>
-            </div>
-            
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              {programa.descricao}
-            </p>
-            
-            <div className="flex items-center gap-3 flex-wrap">
-              <Link href={`/programas/${programa.id}`}>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className={cn("group", programa.corBorda)}
-                  data-testid={`ver-regras-${programa.id}`}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Ver Regras
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              
-              {hasSubprogramas && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setExpanded(!expanded)}
-                  className={programa.cor}
-                  data-testid={`expandir-${programa.id}`}
-                >
-                  {expanded ? (
-                    <>
-                      <ChevronUp className="w-4 h-4 mr-2" />
-                      Fechar ações
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="w-4 h-4 mr-2" />
-                      Ver {programa.subprogramas?.length} ações
-                    </>
-                  )}
-                </Button>
-              )}
+            </Link>
+
+            <div className="rounded-[6px] border border-[#e7dccf] bg-[#fffdf8] p-4 shadow-[0_8px_16px_rgba(120,100,80,0.12)]">
+              <div className="text-sm font-semibold text-[#24344a]">Ações Integradas do PDDE</div>
+              <p className="mt-1.5 text-sm leading-5 text-[#738194]">
+                Verbas extras do PDDE para projetos específicos. Cada ação tem regras próprias e a escola precisa aderir a cada uma.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-3 text-sm font-medium text-[#b86e3f]">
+                <Link href="/programas/acoes-integradas"><span className="hover:text-[#8f542d] transition-colors cursor-pointer">Ver Regras →</span></Link>
+                <button onClick={() => setAcoesExpanded(!acoesExpanded)} className="hover:text-[#8f542d] transition-colors">
+                  {acoesExpanded ? "Fechar ações ↑" : `Ver ${PROGRAMAS[1].subprogramas!.length} ações ↓`}
+                </button>
+              </div>
+
+              <AnimatePresence>
+                {acoesExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-3 grid gap-2">
+                      {PROGRAMAS[1].subprogramas!.map(sub => (
+                        <ProgramaSubCard key={sub.id} nome={sub.nome} descricao={sub.descricao} id={sub.id} parentId="acoes-integradas" />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
-          
-          <AnimatePresence>
-            {expanded && hasSubprogramas && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden"
-              >
-                <div className={cn("border-t p-4", programa.corBorda, programa.corFundo)}>
-                  <div className="grid gap-3">
-                    {programa.subprogramas?.map((sub) => (
-                      <Link key={sub.id} href={`/programas/${programa.id}/${sub.id}`}>
-                        <div 
-                          className="bg-white/80 rounded-lg p-4 flex items-start gap-3 hover:bg-white hover:shadow-sm transition-all cursor-pointer group"
-                          data-testid={`subprograma-${sub.id}`}
-                        >
-                          <div className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
-                            programa.corFundo,
-                            programa.cor
-                          )}>
-                            {sub.icone}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                              {sub.nome}
-                            </h4>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {sub.descricao}
-                            </p>
-                          </div>
-                          <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0 mt-1" />
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
+        </div>
 
-function DicasRapidasSection() {
-  const dicas = [
-    {
-      icone: <CheckCircle2 className="w-5 h-5" />,
-      titulo: 'Sempre em grupo',
-      descricao: 'Nunca decida sozinha. O Conselho Escolar precisa aprovar todas as compras.',
-      cor: 'bg-emerald-50 border-emerald-200 text-emerald-900'
-    },
-    {
-      icone: <AlertCircle className="w-5 h-5" />,
-      titulo: 'Nada de dinheiro vivo',
-      descricao: 'Todo pagamento deve sair da conta do programa direto pro fornecedor.',
-      cor: 'bg-red-50 border-red-200 text-red-900'
-    },
-    {
-      icone: <Clock className="w-5 h-5" />,
-      titulo: 'De olho no prazo',
-      descricao: 'A prestação de contas tem data certa. Anote no calendário!',
-      cor: 'bg-amber-50 border-amber-200 text-amber-900'
-    },
-    {
-      icone: <Calculator className="w-5 h-5" />,
-      titulo: 'Pesquise preços',
-      descricao: 'Pelo menos 3 orçamentos antes de comprar qualquer coisa.',
-      cor: 'bg-sky-50 border-sky-200 text-sky-900'
-    }
-  ];
-
-  return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {dicas.map((dica, idx) => (
-        <motion.div
-          key={dica.titulo}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: idx * 0.1 }}
-          className={cn("rounded-xl p-5 border", dica.cor)}
-        >
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 mt-0.5 opacity-80">
-              {dica.icone}
-            </div>
+        {/* Verbas compartilhadas */}
+        <div className="rounded-[8px] border border-[#e7dccf] bg-[#fffdf8] p-5 shadow-[0_10px_20px_rgba(120,100,80,0.14)] rotate-[0.4deg] relative overflow-hidden before:absolute before:left-[18px] before:top-0 before:bottom-0 before:w-px before:bg-[#e8b7b7]/55">
+          <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h4 className="font-semibold mb-1">{dica.titulo}</h4>
-              <p className="text-sm opacity-80">{dica.descricao}</p>
+              <div className="text-sm font-semibold text-[#24344a]">Verbas Compartilhadas</div>
+              <div className="mt-0.5 text-xs text-[#8f8275]">Geridas pela Secretaria</div>
             </div>
+            <span className="rounded-full bg-[#eef3f7] px-3 py-1 text-xs font-medium text-[#66768a] shrink-0">Gestão compartilhada</span>
           </div>
-        </motion.div>
-      ))}
-    </div>
+          <div className="space-y-3">
+            {VERBAS_COMPARTILHADAS.map(v => (
+              <div key={v.id} className="rounded-[6px] border border-[#e7dccf] bg-[#fffdf8] p-4 shadow-[0_8px_16px_rgba(120,100,80,0.12)] hover:shadow-[0_10px_20px_rgba(120,100,80,0.18)] transition-all group">
+                <div className="text-sm font-semibold text-[#24344a]">{v.sigla}</div>
+                <div className="mt-0.5 text-xs text-[#8f8275]">{v.subtitulo}</div>
+                <p className="mt-2 text-sm leading-5 text-[#738194]">{v.descricao}</p>
+                <Link href={`/programas/${v.id}`}>
+                  <span className="mt-2 inline-block text-sm font-medium text-[#b86e3f] group-hover:text-[#8f542d] transition-colors cursor-pointer">Ver Regras →</span>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
 export default function Programas() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans">
+    <div className="min-h-screen text-slate-700" style={{ background: "#f6f0e8" }}>
       <Navigation />
-      
-      <main className="flex-1">
-        <div className="bg-gradient-to-br from-emerald-100/30 via-green-50/20 to-transparent py-12 border-b">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Landmark className="w-6 h-6 text-primary" />
-                </div>
-                <Badge variant="outline" className="border-primary/30 text-primary">
-                  Verbas Federais
-                </Badge>
-              </div>
-              
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-foreground">
+
+      <main className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 lg:px-10">
+
+        {/* ── HERO ── */}
+        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
+          <div className={`${SEC} ${SEC_LINES} p-7`}>
+            <div className="pl-6">
+              <div className="inline-flex items-center rounded-full border border-[#efe3d8] bg-[#fffaf6] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-[#9f968d]">
                 Programas e Políticas
-              </h1>
-              
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Entenda de onde vem o dinheiro da escola, como usar cada verba, 
-                e o que fazer pra prestar contas direitinho. Tudo explicado em linguagem simples!
+              </div>
+              <h2 className="mt-4 max-w-3xl text-3xl font-extrabold leading-tight tracking-tight text-[#1f2a37] md:text-4xl" style={{ fontFamily: "Georgia, serif" }}>
+                Entenda de onde vem o dinheiro da escola e como cuidar de cada <Highlight>verba</Highlight> com segurança.
+              </h2>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-[#66768a]">
+                Tudo explicado em linguagem simples: como o recurso chega, quem decide, o que pode comprar e o que precisa guardar para <Highlight>prestar contas</Highlight> direitinho.
               </p>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                {[
+                  ["Linguagem simples", "Explicações diretas para a rotina da diretora."],
+                  ["Passo a passo", "Do recebimento do recurso até a prestação de contas."],
+                  ["Consulta rápida", "Glossário, dicas e programas organizados em um só lugar."],
+                ].map(([title, text]) => (
+                  <div key={title} className={`${PAPER} rotate-[-0.8deg] ${TAPE_TOP}`}>
+                    <div className="text-sm font-semibold text-[#24344a]">{title}</div>
+                    <p className="mt-2 text-sm leading-6 text-[#738194]">{text}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="container mx-auto px-4 py-10">
+          <aside className={`${SEC} ${SEC_LINES} p-6`}>
+            <div className="pl-4">
+              <div className="text-sm font-semibold text-[#24344a]">Por onde começar?</div>
+              <p className="mt-3 text-sm leading-6 text-[#6f7d8f]">
+                O <strong><Highlight>PDDE Básico</Highlight></strong> é o programa mais importante para a diretora no dia a dia. É ele que ajuda na compra de materiais, pequenos reparos e melhorias que mantêm a escola funcionando.
+              </p>
+              <Link href="/programas/pdde-basico">
+                <button className="mt-5 rounded-full bg-[#b86e3f] px-4 py-2.5 text-sm font-medium text-white shadow-[0_8px_20px_rgba(184,110,63,0.22)] transition hover:-translate-y-[1px] active:translate-y-0">
+                  Conhecer o <Highlight>PDDE Básico</Highlight>
+                </button>
+              </Link>
+            </div>
+          </aside>
+        </section>
+
+        {/* ── GLOSSÁRIO + DICAS ── */}
+        <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <GlossarioSection />
-        </div>
 
-        <div className="container mx-auto px-4 pb-10">
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-            <HelpCircle className="w-6 h-6 text-primary" />
-            Dicas de Ouro
-          </h2>
-          <DicasRapidasSection />
-        </div>
-
-        <div className="container mx-auto px-4 pb-10">
-          <ComoFuncionaSection />
-        </div>
-
-        <div className="container mx-auto px-4 pb-16">
-          <div className="flex items-center gap-3 mb-8">
-            <School className="w-6 h-6 text-primary" />
-            <h2 className="text-2xl font-bold">Verbas que a Escola Gerencia</h2>
-          </div>
-          
-          <div className="grid lg:grid-cols-2 gap-6 mb-12">
-            {PROGRAMAS.slice(0, 2).map((programa) => (
-              <ProgramaCard key={programa.id} programa={programa} />
-            ))}
-          </div>
-
-          <div className="flex items-center gap-3 mb-8">
-            <Users className="w-6 h-6 text-primary" />
-            <h2 className="text-2xl font-bold">Verbas Compartilhadas</h2>
-            <Badge variant="outline" className="text-muted-foreground">
-              Geridas pela Secretaria
-            </Badge>
-          </div>
-          
-          <div className="grid lg:grid-cols-2 gap-6 mb-12">
-            {PROGRAMAS.slice(2).map((programa) => (
-              <ProgramaCard key={programa.id} programa={programa} />
-            ))}
-          </div>
-
-          <div className="bg-gradient-to-br from-emerald-50 to-green-50/50 rounded-2xl p-8 border border-emerald-200">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-6 h-6 text-emerald-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-xl text-emerald-900 mb-2">Por onde começar?</h3>
-                <p className="text-emerald-700 mb-4">
-                  O PDDE Básico é o programa mais importante pra diretora. É ele que você vai usar no dia a dia 
-                  pra comprar material de consumo, fazer pequenos reparos e manter a escola funcionando. 
-                  Comece por ele e depois explore os outros!
-                </p>
-                <Link href="/programas/pdde-basico">
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" data-testid="comecar-pdde">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    Conhecer o PDDE Básico
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
+          <div className={`${SEC} ${SEC_LINES}`}>
+            <span className="absolute right-6 top-5 rotate-[8deg] border-2 border-[#b23a2e] bg-white px-3 py-[2px] text-[10px] font-bold tracking-[0.12em] text-[#b23a2e]">ATENÇÃO</span>
+            <h3 className="text-xl font-bold text-[#1f2a37] pl-6" style={{ fontFamily: "Georgia, serif" }}>Dicas de Ouro</h3>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 pl-6">
+              {DICAS.map((d, i) => (
+                <div key={d.titulo} className={`${PAPER} rotate-[${i % 2 === 0 ? "0.6" : "-0.5"}deg] ${TAPE_TOP.replace("left-6", "right-6").replace("-8deg", "8deg")}`}>
+                  <div className="text-sm font-semibold text-[#24344a]">{d.titulo}</div>
+                  <p className="mt-2 text-sm leading-6 text-[#738194]">{d.texto}</p>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        </section>
+
+        {/* ── COMO FUNCIONA ── */}
+        <section className={`${SEC} ${SEC_LINES}`}>
+          <div className="pl-6 max-w-2xl mb-6">
+            <h3 className="text-2xl font-extrabold text-[#1f2a37]" style={{ fontFamily: "Georgia, serif" }}>Como funciona na prática?</h3>
+            <p className="mt-2 text-sm leading-6 text-[#738194]">O caminho do dinheiro em 5 passos simples.</p>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-5 pl-6">
+            {PASSOS.map((p, i) => (
+              <div key={p.num} className={`${PAPER} rotate-[-0.8deg] ${TAPE_TOP}`}>
+                <div className="mb-3 inline-flex h-8 min-w-[2rem] items-center justify-center rounded-full bg-[#f4e5d8] px-3 text-xs font-semibold text-[#a2663f]">{i + 1}</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#9f968d]">Passo {p.num}</div>
+                <div className="mt-2 text-sm font-semibold text-[#24344a]">{p.titulo}</div>
+                <p className="mt-2 text-sm leading-6 text-[#738194]">{p.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── VERBAS ── */}
+        <VerbasSection />
+
       </main>
 
       <Footer />
