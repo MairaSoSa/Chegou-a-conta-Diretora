@@ -51,47 +51,18 @@
   overflow: hidden;
   border: 1px solid #eadfce;
   display: grid;
-  grid-template-columns: 74px 1fr;
+  grid-template-columns: 1fr;
 }
 
-/* ── Espiral ── */
-.hl-spiral { position: relative; width: 74px; background: transparent; overflow: visible; }
-.hl-spiral::before {
-  content: "";
-  position: absolute; top: 0; bottom: 0; right: -22px; width: 46px;
-  background:
-    radial-gradient(circle at 30px 20px, transparent 0 8px, #fffdf8 8.5px),
-    radial-gradient(circle at 28px 64px, transparent 0 9px, #fffdf8 9.5px),
-    radial-gradient(circle at 31px 108px, transparent 0 7px, #fffdf8 7.6px),
-    radial-gradient(circle at 27px 152px, transparent 0 9px, #fffdf8 9.6px),
-    radial-gradient(circle at 30px 196px, transparent 0 8px, #fffdf8 8.4px),
-    radial-gradient(circle at 29px 240px, transparent 0 9px, #fffdf8 9.5px),
-    radial-gradient(circle at 31px 284px, transparent 0 7px, #fffdf8 7.6px),
-    radial-gradient(circle at 27px 328px, transparent 0 9px, #fffdf8 9.6px),
-    radial-gradient(circle at 30px 372px, transparent 0 8px, #fffdf8 8.4px),
-    radial-gradient(circle at 29px 416px, transparent 0 9px, #fffdf8 9.5px),
-    radial-gradient(circle at 31px 460px, transparent 0 7px, #fffdf8 7.6px),
-    radial-gradient(circle at 27px 504px, transparent 0 9px, #fffdf8 9.6px),
-    radial-gradient(circle at 30px 548px, transparent 0 8px, #fffdf8 8.4px),
-    radial-gradient(circle at 29px 592px, transparent 0 9px, #fffdf8 9.5px),
-    radial-gradient(circle at 31px 636px, transparent 0 7px, #fffdf8 7.6px),
-    radial-gradient(circle at 27px 680px, transparent 0 9px, #fffdf8 9.6px),
-    radial-gradient(circle at 30px 724px, transparent 0 8px, #fffdf8 8.4px),
-    linear-gradient(#fffdf8,#fffdf8);
-  background-repeat: no-repeat; z-index: 3;
-}
-.hl-spiral::after {
-  content: "";
-  position: absolute; top: 0; bottom: 0; right: -2px; width: 4px;
-  background: linear-gradient(180deg,#efe7db,#f6efe4); z-index: 4;
-}
+/* ── Espiral (oculta) ── */
+.hl-spiral { display: none; }
 
 /* ── Página ── */
 .hl-page {
   position: relative; height: 100%;
-  padding: 16px 16px 12px 26px;
+  padding: 16px 16px 12px 50px;
   background:
-    linear-gradient(to right, transparent 0, transparent 23px, rgba(255,139,139,.7) 23px, rgba(255,139,139,.7) 25px, transparent 25px),
+    linear-gradient(to right, transparent 0, transparent 34px, rgba(255,139,139,.75) 34px, rgba(255,139,139,.75) 36px, transparent 36px),
     repeating-linear-gradient(to bottom, #fffdf8 0 32px, #dbe9fb 32px 33px);
   overflow: hidden;
   box-sizing: border-box;
@@ -537,7 +508,7 @@
 
 /* ── Rodapé ── */
 .hl-footer-strip {
-  position: absolute; left: 90px; right: 16px; bottom: 8px;
+  position: absolute; left: 50px; right: 16px; bottom: 8px;
   display: flex; justify-content: space-between; gap: 10px;
   color: #758692; font-size: .7rem; font-weight: 800;
 }
@@ -565,8 +536,8 @@
 /* ── Responsivo ── */
 @media (max-width: 980px) {
   .hl-root { overflow: auto; }
-  .hl-notebook { height: auto; min-height: 760px; grid-template-columns: 58px 1fr; }
-  .hl-page { overflow-y: auto; }
+  .hl-notebook { height: auto; min-height: 760px; grid-template-columns: 1fr; }
+  .hl-page { overflow-y: auto; padding-left: 38px; }
   .hl-layout { grid-template-columns: 1fr; flex: none; }
   .hl-right-col { flex-direction: row; flex-wrap: wrap; }
   .hl-caderno-box { flex: 1 1 280px; }
