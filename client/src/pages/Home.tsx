@@ -207,7 +207,6 @@ export default function Home() {
           {/* ── Rodapé ── */}
           <div className="hl-footer-strip">
             <span>gratuito para diretores de escolas públicas</span>
-            <span>chegou a conta, diretora • gestão escolar simplificada</span>
           </div>
         </section>
       </div>
