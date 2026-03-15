@@ -186,17 +186,9 @@ function CartaoFerramenta({
         </div>
         <div className="absolute left-1/2 top-0 z-0 h-2.5 w-2.5 -translate-x-1/2 -translate-y-[135%] rounded-full bg-[#6f4926]" />
 
-        {/* texturas decorativas */}
-        <div className="pointer-events-none absolute inset-0 opacity-[0.10]" style={{ backgroundImage: "radial-gradient(#000 0.4px, transparent 0.4px)", backgroundSize: "6px 6px" }} />
+        {/* textura sutil de papel */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(#000 0.4px, transparent 0.4px)", backgroundSize: "6px 6px" }} />
         <div className="pointer-events-none absolute left-0 right-0 top-0 h-3 bg-gradient-to-b from-black/5 to-transparent" />
-        <div className="pointer-events-none absolute left-4 top-14 rotate-[-6deg] text-[9px] font-bold text-red-400 opacity-35">PROTOCOLO</div>
-        <div className="pointer-events-none absolute right-6 bottom-14 rotate-[8deg] text-[9px] font-bold text-blue-400 opacity-35">ARQUIVO</div>
-        <div className="pointer-events-none absolute right-4 top-14 hidden sm:flex h-[60px] w-[60px] items-center justify-center rounded-full border-[2px] border-red-500/20 text-center text-[7px] font-black uppercase leading-[1.1] tracking-[0.14em] text-red-500/25 rotate-[14deg]">
-          <div className="flex h-[44px] w-[44px] items-center justify-center rounded-full border border-red-500/18 px-1">escola municipal</div>
-        </div>
-        <div className="absolute right-3 top-4 rotate-[10deg] text-[9px] font-black uppercase tracking-[0.14em] text-[#b24e4e] opacity-45">
-          pronto para uso
-        </div>
 
         {/* conteúdo */}
         <div className="mb-3 flex items-start justify-between gap-3">
@@ -505,19 +497,13 @@ export default function Ferramentas() {
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
 
               {/* título */}
-              <div className="flex items-start gap-3 sm:gap-4">
-                <div className="relative mt-1 flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-[22px] bg-emerald-500 text-3xl shadow-[0_12px_20px_rgba(16,120,80,0.28)]">
-                  🔧
-                  <div className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-white/70 blur-[1px]" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl md:text-5xl xl:text-6xl">
-                    Mural de Ferramentas
-                  </h1>
-                  <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7 md:text-lg">
-                    {totalModelos} modelos prontos para baixar e usar — organizados em estandartes por etapa do trabalho da diretora.
-                  </p>
-                </div>
+              <div>
+                <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl md:text-5xl xl:text-6xl">
+                  Mural de Ferramentas
+                </h1>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7 md:text-lg">
+                  {totalModelos} modelos prontos para baixar e usar — organizados em estandartes por etapa do trabalho da diretora.
+                </p>
               </div>
 
               {/* filtros */}
