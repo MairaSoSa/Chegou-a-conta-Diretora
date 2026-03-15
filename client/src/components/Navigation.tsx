@@ -27,34 +27,34 @@ export function Navigation() {
     <header
       className="sticky top-0 z-50 w-full"
       style={{
-        /* camadas de madeira talhada: base escura, veio claro no centro, sombra interna pra baixo */
+        /* verde floresta profundo: escuro no topo/baixo, leve claridade no centro */
         background: `
           linear-gradient(180deg,
-            #2e1a0e 0%,
-            #4a2c18 18%,
-            #6b4028 38%,
-            #7a4c30 52%,
-            #5e3520 72%,
-            #3a2010 100%
+            #142318 0%,
+            #1e3826 18%,
+            #2a5038 38%,
+            #305840 52%,
+            #1e3828 72%,
+            #121e16 100%
           )`,
         /* relevo pra baixo: highlight fino no topo + sombra funda embaixo */
         boxShadow: `
-          inset 0 2px 0 rgba(255,220,160,0.18),
-          inset 0 1px 0 rgba(255,255,255,0.10),
-          inset 0 -10px 28px rgba(0,0,0,0.45),
-          0 10px 32px rgba(20,8,0,0.50)
+          inset 0 2px 0 rgba(180,240,180,0.12),
+          inset 0 1px 0 rgba(255,255,255,0.07),
+          inset 0 -10px 28px rgba(0,0,0,0.40),
+          0 10px 32px rgba(5,18,8,0.45)
         `,
       }}
     >
-      {/* veio de madeira — textura diagonal sutil */}
+      {/* veio de floresta — textura diagonal sutil em verde */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage: `
             repeating-linear-gradient(
               108deg,
-              rgba(255,200,120,0.025) 0px,
-              rgba(255,200,120,0.025) 1px,
+              rgba(100,200,120,0.025) 0px,
+              rgba(100,200,120,0.025) 1px,
               transparent 1px,
               transparent 14px
             ),
@@ -70,10 +70,10 @@ export function Navigation() {
         aria-hidden="true"
       />
 
-      {/* borda superior brilhante — como luz rasando a madeira */}
+      {/* borda superior brilhante — luz rasando a superfície */}
       <div
         className="absolute inset-x-0 top-0 h-[3px] pointer-events-none"
-        style={{ background: "linear-gradient(90deg, rgba(255,210,130,0.30) 0%, rgba(255,240,200,0.55) 40%, rgba(255,210,130,0.30) 100%)" }}
+        style={{ background: "linear-gradient(90deg, rgba(150,240,160,0.18) 0%, rgba(200,255,210,0.38) 40%, rgba(150,240,160,0.18) 100%)" }}
         aria-hidden="true"
       />
 
