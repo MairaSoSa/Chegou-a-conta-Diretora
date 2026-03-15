@@ -60,7 +60,7 @@
 /* ── Página ── */
 .hl-page {
   position: relative; height: 100%;
-  padding: 16px 16px 12px 50px;
+  padding: 24px 32px 18px 60px;
   background:
     linear-gradient(to right, transparent 0, transparent 34px, rgba(255,139,139,.75) 34px, rgba(255,139,139,.75) 36px, transparent 36px),
     repeating-linear-gradient(to bottom, #fffdf8 0 32px, #dbe9fb 32px 33px);
@@ -71,17 +71,18 @@
 }
 
 /* ── Topo ── */
-.hl-topbar {
-  display: grid; grid-template-columns: 1fr auto;
-  align-items: start; gap: 12px; margin-bottom: 4px; flex-shrink: 0;
-}
-.hl-brand { display: flex; align-items: center; gap: 10px; padding-left: 10px; }
-.hl-brand-badge {
-  width: 40px; height: 40px;
-  border-radius: 12px 16px 12px 16px;
-  background: linear-gradient(135deg,#2f7a5f,#73aee8);
-  box-shadow: 0 8px 18px rgba(93,71,46,.12);
-  transform: rotate(-7deg); position: relative; flex-shrink: 0;
+.hl-tip-box {
+  position: relative;
+  border-radius: 16px 20px 16px 18px;
+  padding: 13px 18px;
+  background: linear-gradient(135deg, #e7bba0 60%, #e6a07a 100%);
+  border: 1.5px solid #b97a56;
+  transform: rotate(-2deg);
+  width: 88%; margin: 0 auto;
+  box-shadow: 0 10px 24px rgba(185,122,86,.13);
+  animation: hlPostitFloat 6.2s ease-in-out infinite;
+  animation-delay: .6s;
+  transition: transform .28s ease, box-shadow .28s ease;
 }
 .hl-brand-badge::before,
 .hl-brand-badge::after {
@@ -118,11 +119,11 @@
 /* ── Layout principal ── */
 .hl-layout {
   display: grid; grid-template-columns: 1.08fr .92fr;
-  gap: 14px; flex: 1; min-height: 0; padding: 0 4px 0 0;
+  gap: 28px; flex: 1; min-height: 0; padding: 0 4px 0 0;
 }
 
 /* ── Coluna esquerda ── */
-.hl-left-col { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: hidden; }
+.hl-left-col { display: flex; flex-direction: column; gap: 28px; min-height: 0; overflow: hidden; }
 
 /* ── Hero note ── */
 .hl-hero-note {
@@ -131,7 +132,7 @@
   background: linear-gradient(180deg,rgba(255,253,248,.97),rgba(255,248,240,.97));
   border: 1px solid #ecdcc6;
   box-shadow: 0 8px 20px rgba(93,71,46,.09);
-  padding: 12px 18px 10px;
+  padding: 24px 28px 18px;
   overflow: visible; flex-shrink: 0;
   transform-origin: left center;
   transition: transform .45s ease, box-shadow .45s ease;
@@ -206,7 +207,18 @@
 }
 .hl-cards-grid {
   display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 9px; flex: 1; min-height: 0;
+  gap: 16px; flex: 1; min-height: 0;
+}
+
+@media (max-width: 1100px) {
+  .hl-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 700px) {
+  .hl-cards-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Post-it cards ── */
@@ -392,22 +404,23 @@
 /* ── Coluna direita ── */
 .hl-right-col {
   display: flex; flex-direction: column;
-  gap: 10px; padding-top: 6px; min-height: 0;
+  gap: 28px; padding-top: 6px; min-height: 0;
 }
 
 /* ── Dica do dia ── */
 .hl-tip-box {
   position: relative;
   border-radius: 16px 20px 16px 18px;
-  padding: 11px 13px;
-  background: #fff2bf;
+    padding: 13px 18px;
+    background: linear-gradient(135deg, #e3f0ff 60%, #cbe6ff 100%);
+    border: 1.5px solid #8fb0cb;
   transform: rotate(-2deg);
   width: 88%; margin: 0 auto;
-  box-shadow: 0 10px 20px rgba(159,126,44,.13);
+  box-shadow: 0 10px 24px rgba(185,122,86,.13);
   animation: hlPostitFloat 6.2s ease-in-out infinite;
   animation-delay: .6s;
   transition: transform .28s ease, box-shadow .28s ease;
-  border: 1px solid rgba(0,0,0,.04);
+  border: 1.5px solid #b97a56;
   flex-shrink: 0;
 }
 .hl-tip-box:hover {

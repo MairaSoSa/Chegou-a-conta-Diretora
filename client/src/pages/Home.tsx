@@ -49,8 +49,8 @@ const NOTE_CARDS: NoteCard[] = [
     href: "/legislacao",
   },
   {
-    color: "hl-blue",
-    iconColor: "#2b6cb0",
+    color: "hl-green",
+    iconColor: "#1a7a6a",
     Icon: CalendarDays,
     title: "Calendário",
     desc: "Prazos de prestação de contas e repasses FNDE.",
