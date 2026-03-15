@@ -485,11 +485,8 @@ function SecaoCategoria({
                       <div style={{ transform: "scale(1.3)" }}>{ICONES_SVG[secao.id]}</div>
                     </div>
 
-                    {/* título com grifado */}
-                    <div className="relative inline-block">
-                      <span className="absolute inset-x-0 bottom-0.5 h-[10px] rounded-sm bg-yellow-200/75" />
-                      <h2 className={`relative text-xl font-black sm:text-2xl ${secao.texto}`}>{secao.titulo}</h2>
-                    </div>
+                    {/* título */}
+                    <h2 className={`text-xl font-black sm:text-2xl ${secao.texto}`}>{secao.titulo}</h2>
 
                     {/* divisor */}
                     <div className={`mx-auto mt-2 mb-1.5 h-[2px] w-8 rounded-full ${secao.borda.replace("border-", "bg-")} opacity-50`} />
@@ -679,7 +676,7 @@ export default function Ferramentas() {
             </div>
           </div>
 
-          <div className="relative pt-9 md:pt-10">
+          <div className="relative pt-14 md:pt-16">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
 
               {/* título */}
