@@ -243,19 +243,45 @@ export default function Trilha() {
                 id={`trilha-${group.id}`}
                 className="relative overflow-hidden rounded-[34px]"
               >
-                {/* Cork board background */}
+                {/* Cork board base color */}
                 <div
                   className="absolute inset-0 rounded-[34px]"
                   style={{
-                    background: "radial-gradient(ellipse at 30% 40%, #c9a97a 0%, #b8905e 40%, #a67c52 100%)",
-                    backgroundImage: `
-                      radial-gradient(ellipse at 30% 40%, #c9a97a 0%, #b8905e 40%, #a67c52 100%),
-                      url("data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='0.8' fill='%23000' opacity='0.04'/%3E%3Ccircle cx='3' cy='3' r='0.8' fill='%23000' opacity='0.04'/%3E%3C/svg%3E")
-                    `,
+                    background: "radial-gradient(ellipse at 28% 38%, #d4a96a 0%, #b8865a 45%, #9e7045 100%)",
                   }}
                 />
+                {/* Grain texture overlay via SVG feTurbulence */}
+                <svg
+                  className="absolute inset-0 w-full h-full rounded-[34px] pointer-events-none"
+                  style={{ opacity: 0.22, mixBlendMode: "multiply" }}
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <filter id={`cork-grain-${groupIdx}`} x="0%" y="0%" width="100%" height="100%">
+                    <feTurbulence
+                      type="fractalNoise"
+                      baseFrequency="0.72 0.52"
+                      numOctaves="4"
+                      seed={groupIdx * 7 + 3}
+                      stitchTiles="stitch"
+                    />
+                    <feColorMatrix type="saturate" values="0.4" />
+                  </filter>
+                  <rect width="100%" height="100%" filter={`url(#cork-grain-${groupIdx})`} />
+                </svg>
+                {/* Cork fiber lines (horizontal streaks) */}
+                <svg
+                  className="absolute inset-0 w-full h-full rounded-[34px] pointer-events-none"
+                  style={{ opacity: 0.09 }}
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <filter id={`cork-fiber-${groupIdx}`}>
+                    <feTurbulence type="turbulence" baseFrequency="0.01 0.8" numOctaves="2" seed={groupIdx + 12} stitchTiles="stitch"/>
+                    <feColorMatrix type="matrix" values="0 0 0 0 0.3  0 0 0 0 0.18  0 0 0 0 0.06  0 0 0 1 0" />
+                  </filter>
+                  <rect width="100%" height="100%" filter={`url(#cork-fiber-${groupIdx})`} />
+                </svg>
                 {/* Inner shadow edges for depth */}
-                <div className="absolute inset-0 rounded-[34px] shadow-[inset_0_2px_12px_rgba(0,0,0,0.18),inset_0_-2px_8px_rgba(0,0,0,0.10)]" />
+                <div className="absolute inset-0 rounded-[34px] shadow-[inset_0_3px_16px_rgba(0,0,0,0.22),inset_0_-3px_10px_rgba(0,0,0,0.14)]" />
 
                 <div className="relative p-6 md:p-10">
                   {/* Section label */}
@@ -292,47 +318,63 @@ export default function Trilha() {
                       const rot = rotations[itemIdx % rotations.length];
                       const memo = memoVariants[itemIdx % memoVariants.length];
                       const pinColor = pinColors[itemIdx % pinColors.length];
-                      const tape = tapeColors[itemIdx % tapeColors.length];
-                      const useTape = itemIdx % 2 === 0;
+
+                      // Realistic taxinha positions — slightly off-center for authenticity
+                      const pinOffset = itemIdx % 3 === 0 ? "45%" : itemIdx % 3 === 1 ? "50%" : "55%";
 
                       return (
                         <motion.div
                           key={unit.unitId}
                           style={{ rotate: rot, transformOrigin: "top center" }}
-                          whileHover={{ y: -10, rotate: 0, scale: 1.03, zIndex: 20 }}
-                          animate={isPinned ? { rotate: 0, y: -8, scale: 1.04, zIndex: 20 } : {}}
+                          whileHover={{ y: -12, rotate: 0, scale: 1.03, zIndex: 20 }}
+                          animate={isPinned ? { rotate: 0, y: -10, scale: 1.05, zIndex: 20 } : {}}
                           transition={{ type: "spring", stiffness: 280, damping: 22 }}
                           className="relative cursor-pointer"
                           onClick={() => setPinned((cur) => (cur === unit.unitId ? null : unit.unitId))}
                         >
-                          {/* Tape or push pin fixador */}
-                          {useTape ? (
+                          {/* Taxinha (push pin) — sempre, diferenciando dos papéis de etapa que usam fita */}
+                          <div
+                            className="absolute z-10"
+                            style={{ top: "-14px", left: pinOffset, transform: "translateX(-50%)" }}
+                          >
+                            {/* Cabeça da taxinha */}
                             <div
-                              className="absolute -top-3 left-1/2 z-10 h-[18px] w-16 -translate-x-1/2 rotate-[-1.5deg] rounded-[3px]"
-                              style={{ background: tape, boxShadow: "0 1px 3px rgba(0,0,0,0.18)" }}
-                            />
-                          ) : isPinned ? (
-                            <>
+                              className="relative h-6 w-6 rounded-full"
+                              style={{
+                                background: isPinned
+                                  ? `radial-gradient(circle at 32% 28%, #fff5, ${pinColor} 52%, color-mix(in srgb, ${pinColor} 60%, #000))`
+                                  : `radial-gradient(circle at 32% 28%, #ffffffaa, ${pinColor} 50%, color-mix(in srgb, ${pinColor} 55%, #111))`,
+                                boxShadow: isPinned
+                                  ? `0 5px 12px ${pinColor}bb, 0 2px 4px rgba(0,0,0,0.45), inset 0 1px 2px rgba(255,255,255,0.35)`
+                                  : `0 3px 8px ${pinColor}88, 0 1px 3px rgba(0,0,0,0.35), inset 0 1px 2px rgba(255,255,255,0.25)`,
+                                border: "1.5px solid rgba(0,0,0,0.15)",
+                              }}
+                            >
+                              {/* Reflexo especular da taxinha */}
                               <div
-                                className="absolute -top-4 left-1/2 z-10 h-7 w-7 -translate-x-1/2 rounded-full border-2 border-white/60"
+                                className="absolute rounded-full"
                                 style={{
-                                  background: `radial-gradient(circle at 35% 35%, #f87e8a, ${pinColor} 55%, #7a1020)`,
-                                  boxShadow: `0 4px 10px ${pinColor}aa, 0 1px 3px rgba(0,0,0,0.4)`,
-                                }}
-                              />
-                              <div className="absolute left-1/2 top-[14px] z-10 h-2 w-2 -translate-x-1/2 rounded-full bg-black/10" />
-                            </>
-                          ) : (
-                            <div className="absolute -top-3 left-1/2 z-10 -translate-x-1/2">
-                              <div
-                                className="h-6 w-6 rounded-full border-2 border-white/50"
-                                style={{
-                                  background: `radial-gradient(circle at 35% 35%, #fff6, ${pinColor} 60%, ${pinColor}cc)`,
-                                  boxShadow: `0 3px 7px ${pinColor}88, 0 1px 2px rgba(0,0,0,0.3)`,
+                                  top: "3px", left: "4px", width: "7px", height: "5px",
+                                  background: "rgba(255,255,255,0.55)",
+                                  transform: "rotate(-30deg)",
+                                  borderRadius: "50%",
+                                  filter: "blur(0.5px)",
                                 }}
                               />
                             </div>
-                          )}
+                            {/* Ponta da taxinha (agulha) */}
+                            <div
+                              className="absolute left-1/2 -translate-x-1/2"
+                              style={{
+                                top: "20px",
+                                width: "2px",
+                                height: "6px",
+                                background: "linear-gradient(to bottom, #999, #ccc)",
+                                borderRadius: "0 0 1px 1px",
+                                boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
+                              }}
+                            />
+                          </div>
 
                           {/* Bilhete de recado */}
                           <article
