@@ -227,8 +227,8 @@
   flex-shrink: 0;
   font-weight: bold;
   line-height: 33px;
-  border-bottom: 1.5px solid #dbe9fb;
-  width: fit-content;
+  height: 33px;
+  display: flex; align-items: flex-end;
 }
 .hl-cards-grid {
   display: grid; grid-template-columns: repeat(3, 1fr);
@@ -599,11 +599,10 @@
 /* ── Rodapé ── */
 .hl-footer-strip {
   position: absolute; left: 50px; right: 16px; bottom: 0;
-  display: flex; justify-content: space-between; gap: 10px;
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 10px;
   color: #758692; font-size: .72rem; font-weight: 800;
   font-family: "Patrick Hand", cursive;
-  line-height: 33px;
-  border-top: 1.5px solid #dbe9fb;
+  height: 33px;
   padding: 0 4px;
 }
 
