@@ -1651,233 +1651,233 @@ export default function Dashboard() {
                     <div className="hint-chip">Fonte: FNDE / PDDE Info</div>
                   </div>
                   <div className="organic-divider" />
-                  <div className="finance-layout">
-                    <div className="soft-card" style={{padding:0,overflow:'hidden'}}>
-                      <div className="financial-head">
-                        <h3 style={{margin:'0 0 4px',fontSize:'18px',letterSpacing:'-0.03em'}}>Situação PDDE</h3>
-                        <p style={{margin:'0 0 14px',color:'var(--m-muted)',fontSize:'13px'}}>Dados obtidos do PDDE Info — ano {pddeAno}</p>
-                      </div>
-                      <div style={{padding:'0 20px 20px'}}>
-                        {(pddeLoading || cadastralLoading || prestacaoContaLoading || atendimentoLoading) && (
-                          <div className="flex items-center gap-2 py-4">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span className="text-sm text-muted-foreground">Carregando dados do FNDE...</span>
-                          </div>
-                        )}
-                        {cadastralData?.ok && cadastralData.itens.length > 0 && (
-                          <div className="status-banner ok" style={{marginBottom:'14px'}}>
-                            <Landmark className="w-4 h-4 shrink-0" />
-                            <div>
-                              <strong>{cadastralData.itens[0].razao_social || 'UEx Cadastrada'}</strong>
-                              {cadastralData.itens[0].mandato_dirigente && <p className="text-xs mt-0.5 opacity-80">Mandato: {cadastralData.itens[0].mandato_dirigente}</p>}
-                              {cadastralData.itens[0].data_fim_mandato && <p className="text-xs opacity-70">Fim: {cadastralData.itens[0].data_fim_mandato}</p>}
-                            </div>
-                          </div>
-                        )}
-                        {prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 && (
-                          <div style={{marginBottom:'14px'}}>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                              <FileText className="w-3.5 h-3.5" /> Prestação de Contas
-                            </p>
-                            <div className="table-card">
-                              <table className="w-full text-sm">
-                                <thead>
-                                  <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
-                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
-                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
-                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Situação</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {prestacaoContaData.itens.map((item: any, i: number) => {
-                                    const isOk = item.situacao_pc_uex?.toLowerCase().includes('adimpl');
-                                    return (
-                                      <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                        <td className="py-2 px-3 text-xs font-medium">{item.ds_programa || 'PDDE'}</td>
-                                        <td className="py-2 px-3 text-xs">{item.ano || pddeAno}</td>
-                                        <td className="py-2 px-3">
-                                          <span className={`badge ${isOk ? 'badge-good' : 'badge-attn'}`}>
-                                            {item.situacao_pc_uex || 'Sem info'}
-                                          </span>
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-                        {atendimentoData?.ok && atendimentoData.itens.length > 0 && (
-                          <div style={{marginBottom:'14px'}}>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                              <Wallet className="w-3.5 h-3.5" /> Repasses por Programa
-                            </p>
-                            <div className="table-card">
-                              <table className="w-full text-sm">
-                                <thead>
-                                  <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
-                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
-                                    <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Custeio</th>
-                                    <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Capital</th>
-                                    <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {atendimentoData.itens.map((item: any, i: number) => {
-                                    const t = (item.vl_repasse_custeio || 0) + (item.vl_repasse_capital || 0);
-                                    return (
-                                      <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                        <td className="py-2 px-3 text-xs font-medium">{item.ds_programa}</td>
-                                        <td className="py-2 px-3 text-xs text-right font-mono">{brl(item.vl_repasse_custeio || 0)}</td>
-                                        <td className="py-2 px-3 text-xs text-right font-mono">{brl(item.vl_repasse_capital || 0)}</td>
-                                        <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{brl(t)}</td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-                        {pddeData?.ok && (
-                          <div style={{marginBottom:'14px'}}>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                              <Landmark className="w-3.5 h-3.5" /> Unidade Executora (UEx)
-                            </p>
-                            <div className="row-list">
-                              {[
-                                ['Executora', pddeData.uex?.executora],
-                                ['CNPJ', pddeData.uex?.cnpj],
-                                ['Município', pddeData.uex?.municipio],
-                              ].filter(([,v]) => v).map(([k, v], i) => (
-                                <div key={i} className="row-item">
-                                  <span className="text-xs text-muted-foreground">{k}</span>
-                                  <span className="text-xs font-semibold">{String(v)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {pddeUexSaldoData?.ok && (
-                          <div style={{marginBottom:'14px'}}>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                              <BanknoteIcon className="w-3.5 h-3.5" /> Saldo Conta UEx
-                            </p>
-                            <div className="flex gap-2 mb-2">
-                              <select className="text-xs bg-background border border-border/50 rounded px-1.5 py-1" value={saldoMesSel.split("-")[0]} onChange={e => setSaldoMesSel(`${e.target.value}-${saldoMesSel.split("-")[1]}`)}>
-                                {Array.from({length:12},(_,i)=>i+1).map(m => <option key={m} value={String(m).padStart(2,"0")}>{String(m).padStart(2,"0")}</option>)}
-                              </select>
-                              <select className="text-xs bg-background border border-border/50 rounded px-1.5 py-1" value={saldoMesSel.split("-")[1]} onChange={e => setSaldoMesSel(`${saldoMesSel.split("-")[0]}-${e.target.value}`)}>
-                                {Array.from({length:10},(_,i)=>new Date().getFullYear()-i).map(y => <option key={y} value={String(y)}>{y}</option>)}
-                              </select>
-                            </div>
-                            <div className="row-list">
-                              {[
-                                ['Saldo Fundos', pddeUexSaldoData.total_saldo_fundos != null ? brl(pddeUexSaldoData.total_saldo_fundos) : null],
-                                ['Saldo Geral', pddeUexSaldoData.total_saldo_geral != null ? brl(pddeUexSaldoData.total_saldo_geral) : null],
-                              ].filter(([,v]) => v != null).map(([k, v], i) => (
-                                <div key={i} className="row-item">
-                                  <span className="text-xs text-muted-foreground">{k}</span>
-                                  <span className="text-xs font-bold text-emerald-700">{String(v)}</span>
-                                </div>
-                              ))}
-                              {pddeUexSaldoData.saldos.length > 0 && pddeUexSaldoData.saldos.slice(0, 3).map((s: any, i: number) => (
-                                <div key={`s-${i}`} className="row-item">
-                                  <span className="text-xs text-muted-foreground">{s.programa || 'Programa'}</span>
-                                  <span className="text-xs font-bold text-emerald-700">{s.saldo_total != null ? brl(s.saldo_total) : '—'}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {pddeSaldosData?.ok && pddeSaldosData.saldos.length > 0 && (
-                          <div style={{marginBottom:'14px'}}>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                              <BanknoteIcon className="w-3.5 h-3.5" /> Saldos PDDE Básico ({pddeSaldosData.anosDisponiveis.join(', ')})
-                            </p>
-                            <div className="table-card">
-                              <table className="w-full text-sm">
-                                <thead>
-                                  <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
-                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Exercício</th>
-                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Banco</th>
-                                    <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Saldo Acumulado</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {pddeSaldosData.saldos.slice().sort((a: any, b: any) => b.an_exercicio - a.an_exercicio).map((s: any, i: number) => (
-                                    <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                      <td className="py-2 px-3 text-xs font-medium">{s.an_exercicio}</td>
-                                      <td className="py-2 px-3 text-xs">{s.banco || '-'}</td>
-                                      <td className={`py-2 px-3 text-xs text-right font-mono ${s.saldo_acumulado > 0 ? 'font-bold text-emerald-700' : ''}`}>{brl(s.saldo_acumulado)}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-                        {pddeExecFinData?.ok && pddeExecFinData.repasses.length > 0 && (
-                          <div style={{marginBottom:'14px'}}>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                              <Wallet className="w-3.5 h-3.5" /> Execução Financeira ({pddeExecFinData.anosDisponiveis.join(', ')})
-                            </p>
-                            <div className="table-card">
-                              <table className="w-full text-sm">
-                                <thead>
-                                  <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
-                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
-                                    <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Destinação</th>
-                                    <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total Pago</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {[...pddeExecFinData.repasses].sort((a: any, b: any) => b.an_exercicio - a.an_exercicio).map((r: any, i: number) => (
-                                    <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                      <td className="py-2 px-3 text-xs font-medium">{r.an_exercicio}</td>
-                                      <td className="py-2 px-3 text-xs">{r.sg_destinacao}</td>
-                                      <td className={`py-2 px-3 text-xs text-right font-mono ${r.vl_pago_total > 0 ? 'font-bold text-emerald-700' : ''}`}>{brl(r.vl_pago_total)}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-                        {!pddeLoading && !pddeSaldosLoading && !pddeExecFinLoading && !cadastralLoading && !prestacaoContaLoading && !atendimentoLoading && !pddeData?.ok && !pddeSaldosData?.ok && !pddeExecFinData?.ok && !cadastralData?.ok && !prestacaoContaData?.ok && (
-                          <div className="text-center py-6">
-                            <p className="text-sm text-muted-foreground">Dados financeiros não disponíveis para esta escola no momento.</p>
-                          </div>
-                        )}
-                        <div style={{paddingTop:'12px',borderTop:'1px solid #f0ece4'}}>
-                          <p style={{fontSize:'11px',color:'var(--m-muted)',lineHeight:'1.6'}}>
-                            Dados obtidos do PDDE Info e Dados Abertos do FNDE (2020–2026). Para dados oficiais, acesse{' '}
-                            <a href="https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar" target="_blank" rel="noopener noreferrer" style={{color:'var(--m-blue)',textDecoration:'underline'}}>PDDE Info</a>.
-                          </p>
+                  <div className="soft-card" style={{padding:0,overflow:'hidden'}}>
+                    <div className="financial-head">
+                      <h3 style={{margin:'0 0 4px',fontSize:'18px',letterSpacing:'-0.03em'}}>Situação PDDE</h3>
+                      <p style={{margin:'0 0 14px',color:'var(--m-muted)',fontSize:'13px'}}>Dados obtidos do PDDE Info — ano {pddeAno}</p>
+                    </div>
+                    <div style={{padding:'0 20px 20px'}}>
+                      {(pddeLoading || cadastralLoading || prestacaoContaLoading || atendimentoLoading) && (
+                        <div className="flex items-center gap-2 py-4">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span className="text-sm text-muted-foreground">Carregando dados do FNDE...</span>
                         </div>
+                      )}
+                      {cadastralData?.ok && cadastralData.itens.length > 0 && (
+                        <div className="status-banner ok" style={{marginBottom:'14px'}}>
+                          <Landmark className="w-4 h-4 shrink-0" />
+                          <div>
+                            <strong>{cadastralData.itens[0].razao_social || 'UEx Cadastrada'}</strong>
+                            {cadastralData.itens[0].mandato_dirigente && <p className="text-xs mt-0.5 opacity-80">Mandato: {cadastralData.itens[0].mandato_dirigente}</p>}
+                            {cadastralData.itens[0].data_fim_mandato && <p className="text-xs opacity-70">Fim: {cadastralData.itens[0].data_fim_mandato}</p>}
+                          </div>
+                        </div>
+                      )}
+                      {prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 && (
+                        <div style={{marginBottom:'14px'}}>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                            <FileText className="w-3.5 h-3.5" /> Prestação de Contas
+                          </p>
+                          <div className="table-card">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Situação</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {prestacaoContaData.itens.map((item: any, i: number) => {
+                                  const isOk = item.situacao_pc_uex?.toLowerCase().includes('adimpl');
+                                  return (
+                                    <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                      <td className="py-2 px-3 text-xs font-medium">{item.ds_programa || 'PDDE'}</td>
+                                      <td className="py-2 px-3 text-xs">{item.ano || pddeAno}</td>
+                                      <td className="py-2 px-3">
+                                        <span className={`badge ${isOk ? 'badge-good' : 'badge-attn'}`}>
+                                          {item.situacao_pc_uex || 'Sem info'}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                      {atendimentoData?.ok && atendimentoData.itens.length > 0 && (
+                        <div style={{marginBottom:'14px'}}>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                            <Wallet className="w-3.5 h-3.5" /> Repasses por Programa
+                          </p>
+                          <div className="table-card">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
+                                  <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Custeio</th>
+                                  <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Capital</th>
+                                  <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {atendimentoData.itens.map((item: any, i: number) => {
+                                  const t = (item.vl_repasse_custeio || 0) + (item.vl_repasse_capital || 0);
+                                  return (
+                                    <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                      <td className="py-2 px-3 text-xs font-medium">{item.ds_programa}</td>
+                                      <td className="py-2 px-3 text-xs text-right font-mono">{brl(item.vl_repasse_custeio || 0)}</td>
+                                      <td className="py-2 px-3 text-xs text-right font-mono">{brl(item.vl_repasse_capital || 0)}</td>
+                                      <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{brl(t)}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                      {pddeData?.ok && (
+                        <div style={{marginBottom:'14px'}}>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                            <Landmark className="w-3.5 h-3.5" /> Unidade Executora (UEx)
+                          </p>
+                          <div className="row-list">
+                            {[
+                              ['Executora', pddeData.uex?.executora],
+                              ['CNPJ', pddeData.uex?.cnpj],
+                              ['Município', pddeData.uex?.municipio],
+                            ].filter(([,v]) => v).map(([k, v], i) => (
+                              <div key={i} className="row-item">
+                                <span className="text-xs text-muted-foreground">{k}</span>
+                                <span className="text-xs font-semibold">{String(v)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {pddeUexSaldoData?.ok && (
+                        <div style={{marginBottom:'14px'}}>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                            <BanknoteIcon className="w-3.5 h-3.5" /> Saldo Conta UEx
+                          </p>
+                          <div className="flex gap-2 mb-2">
+                            <select className="text-xs bg-background border border-border/50 rounded px-1.5 py-1" value={saldoMesSel.split("-")[0]} onChange={e => setSaldoMesSel(`${e.target.value}-${saldoMesSel.split("-")[1]}`)}>
+                              {Array.from({length:12},(_,i)=>i+1).map(m => <option key={m} value={String(m).padStart(2,"0")}>{String(m).padStart(2,"0")}</option>)}
+                            </select>
+                            <select className="text-xs bg-background border border-border/50 rounded px-1.5 py-1" value={saldoMesSel.split("-")[1]} onChange={e => setSaldoMesSel(`${saldoMesSel.split("-")[0]}-${e.target.value}`)}>
+                              {Array.from({length:10},(_,i)=>new Date().getFullYear()-i).map(y => <option key={y} value={String(y)}>{y}</option>)}
+                            </select>
+                          </div>
+                          <div className="row-list">
+                            {[
+                              ['Saldo Fundos', pddeUexSaldoData.total_saldo_fundos != null ? brl(pddeUexSaldoData.total_saldo_fundos) : null],
+                              ['Saldo Geral', pddeUexSaldoData.total_saldo_geral != null ? brl(pddeUexSaldoData.total_saldo_geral) : null],
+                            ].filter(([,v]) => v != null).map(([k, v], i) => (
+                              <div key={i} className="row-item">
+                                <span className="text-xs text-muted-foreground">{k}</span>
+                                <span className="text-xs font-bold text-emerald-700">{String(v)}</span>
+                              </div>
+                            ))}
+                            {pddeUexSaldoData.saldos.length > 0 && pddeUexSaldoData.saldos.slice(0, 3).map((s: any, i: number) => (
+                              <div key={`s-${i}`} className="row-item">
+                                <span className="text-xs text-muted-foreground">{s.programa || 'Programa'}</span>
+                                <span className="text-xs font-bold text-emerald-700">{s.saldo_total != null ? brl(s.saldo_total) : '—'}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {pddeSaldosData?.ok && pddeSaldosData.saldos.length > 0 && (
+                        <div style={{marginBottom:'14px'}}>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                            <BanknoteIcon className="w-3.5 h-3.5" /> Saldos PDDE Básico ({pddeSaldosData.anosDisponiveis.join(', ')})
+                          </p>
+                          <div className="table-card">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Exercício</th>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Banco</th>
+                                  <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Saldo Acumulado</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {pddeSaldosData.saldos.slice().sort((a: any, b: any) => b.an_exercicio - a.an_exercicio).map((s: any, i: number) => (
+                                  <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                    <td className="py-2 px-3 text-xs font-medium">{s.an_exercicio}</td>
+                                    <td className="py-2 px-3 text-xs">{s.banco || '-'}</td>
+                                    <td className={`py-2 px-3 text-xs text-right font-mono ${s.saldo_acumulado > 0 ? 'font-bold text-emerald-700' : ''}`}>{brl(s.saldo_acumulado)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                      {pddeExecFinData?.ok && pddeExecFinData.repasses.length > 0 && (
+                        <div style={{marginBottom:'14px'}}>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                            <Wallet className="w-3.5 h-3.5" /> Execução Financeira ({pddeExecFinData.anosDisponiveis.join(', ')})
+                          </p>
+                          <div className="table-card">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Destinação</th>
+                                  <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total Pago</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {[...pddeExecFinData.repasses].sort((a: any, b: any) => b.an_exercicio - a.an_exercicio).map((r: any, i: number) => (
+                                  <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                    <td className="py-2 px-3 text-xs font-medium">{r.an_exercicio}</td>
+                                    <td className="py-2 px-3 text-xs">{r.sg_destinacao}</td>
+                                    <td className={`py-2 px-3 text-xs text-right font-mono ${r.vl_pago_total > 0 ? 'font-bold text-emerald-700' : ''}`}>{brl(r.vl_pago_total)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                      {!pddeLoading && !pddeSaldosLoading && !pddeExecFinLoading && !cadastralLoading && !prestacaoContaLoading && !atendimentoLoading && !pddeData?.ok && !pddeSaldosData?.ok && !pddeExecFinData?.ok && !cadastralData?.ok && !prestacaoContaData?.ok && (
+                        <div className="text-center py-6">
+                          <p className="text-sm text-muted-foreground">Dados financeiros não disponíveis para esta escola no momento.</p>
+                        </div>
+                      )}
+                      <div style={{paddingTop:'12px',borderTop:'1px solid #f0ece4'}}>
+                        <p style={{fontSize:'11px',color:'var(--m-muted)',lineHeight:'1.6'}}>
+                          Dados obtidos do PDDE Info e Dados Abertos do FNDE (2020–2026). Para dados oficiais, acesse{' '}
+                          <a href="https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar" target="_blank" rel="noopener noreferrer" style={{color:'var(--m-blue)',textDecoration:'underline'}}>PDDE Info</a>.
+                        </p>
                       </div>
                     </div>
-                    <div className="info-stack">
-                      <div className="soft-card theme-blue">
-                        <div className="attention-head"><span>🔗</span><strong>Links Úteis</strong></div>
-                        <div className="link-list">
-                          {[
-                            { nome: 'PDDE Interativo', url: 'https://pddeinterativo.mec.gov.br' },
-                            { nome: 'Portal FNDE', url: 'https://www.fnde.gov.br' },
-                            { nome: 'Dados INEP', url: 'https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos' },
-                            { nome: 'PDDE Info', url: 'https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar' },
-                          ].map((link, i) => (
-                            <a key={i} href={link.url} target="_blank" rel="noopener noreferrer">
-                              {link.nome} <ExternalLink className="w-3 h-3" style={{display:'inline',marginLeft:'4px'}} />
-                            </a>
-                          ))}
-                        </div>
+                  </div>
+
+                  {/* ── LINKS ÚTEIS ── */}
+                  <div style={{marginTop:'16px',display:'flex',gap:'16px',flexWrap:'wrap',alignItems:'flex-start'}}>
+                    <div className="soft-card theme-blue" style={{flex:'1 1 280px'}}>
+                      <div className="attention-head"><span>🔗</span><strong>Links Úteis</strong></div>
+                      <div className="link-list">
+                        {[
+                          { nome: 'PDDE Interativo', url: 'https://pddeinterativo.mec.gov.br' },
+                          { nome: 'Portal FNDE', url: 'https://www.fnde.gov.br' },
+                          { nome: 'Dados INEP', url: 'https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos' },
+                          { nome: 'PDDE Info', url: 'https://www.fnde.gov.br/pddeinfo/pddeinfo/escola/consultar' },
+                        ].map((link, i) => (
+                          <a key={i} href={link.url} target="_blank" rel="noopener noreferrer">
+                            {link.nome} <ExternalLink className="w-3 h-3" style={{display:'inline',marginLeft:'4px'}} />
+                          </a>
+                        ))}
                       </div>
-                      <div className="footer-note">
-                        <strong className="scribble">📌 Nota sobre os dados</strong>
-                        <p style={{margin:'8px 0 0',fontSize:'13px'}}>Os dados financeiros são obtidos em tempo real do PDDE Info e dos Dados Abertos do FNDE. Podem apresentar atraso ou indisponibilidade. Os dados censais são do Censo Escolar INEP/MEC.</p>
-                      </div>
+                    </div>
+                    <div className="footer-note" style={{flex:'1 1 280px'}}>
+                      <strong className="scribble">📌 Nota sobre os dados</strong>
+                      <p style={{margin:'8px 0 0',fontSize:'13px'}}>Os dados financeiros são obtidos em tempo real do PDDE Info e dos Dados Abertos do FNDE. Podem apresentar atraso ou indisponibilidade. Os dados censais são do Censo Escolar INEP/MEC.</p>
                     </div>
                   </div>
                 </section>
