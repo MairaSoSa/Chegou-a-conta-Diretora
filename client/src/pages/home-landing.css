@@ -260,12 +260,10 @@
   border-radius: 8px 18px 10px 14px;
   padding: 20px 14px 16px 14px;
   min-height: 170px;
-  /* Glue strip shadow at top + paper lift shadow */
+  /* sombra suave, só embaixo */
   box-shadow:
-    0 4px 24px 0 rgba(60,40,20,0.18),
-    -4px 0 12px -4px rgba(60,40,20,0.04),
-    0 1.5px 8px 0 rgba(0,0,0,.10),
-    0 0.5px 2px 0 rgba(0,0,0,.08);
+    0 3px 10px 0 rgba(60,40,20,0.07),
+    0 1px 3px 0 rgba(0,0,0,.05);
   transition: box-shadow 0.25s cubic-bezier(.4,2,.6,1);
 }
 .hl-note-card::before {
@@ -313,10 +311,8 @@
 .hl-note-card:hover {
   transform: translateY(-7px) rotate(calc(var(--rot,0deg) * .6)) scale(1.04);
   box-shadow:
-    0 8px 36px 0 rgba(60,40,20,0.28),
-    -6px 0 18px -6px rgba(60,40,20,0.06),
-    0 3px 16px 0 rgba(0,0,0,.16),
-    0 1px 4px 0 rgba(0,0,0,.10);
+    0 6px 18px 0 rgba(60,40,20,0.11),
+    0 2px 6px 0 rgba(0,0,0,.07);
   z-index: 3;
 }
 .hl-note-card:hover::after { border-width: 0 0 28px 28px; }
