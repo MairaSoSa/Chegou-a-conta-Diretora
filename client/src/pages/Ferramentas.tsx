@@ -3,10 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
 import type { Tool } from "@shared/schema";
 
-const CATEGORIAS = [
+// ---------------------------------------------------------------------------
+// Dados do mural (design fixo – substituído por dados da API quando disponível)
+// ---------------------------------------------------------------------------
+const SECOES_DESIGN = [
   {
     id: "planejar",
     titulo: "Planejar",
@@ -18,6 +20,14 @@ const CATEGORIAS = [
     fitas: ["bg-violet-300/90", "bg-fuchsia-200/90", "bg-violet-200/90", "bg-purple-200/90"],
     papeis: ["bg-[#fcf8ff]", "bg-[#fffaff]", "bg-[#fdf9ff]", "bg-[#fcf7ff]"],
     marcadores: ["bg-yellow-200/75", "bg-lime-200/70", "bg-cyan-200/70", "bg-pink-200/70"],
+    cartoes: [
+      { tipo: "EXCEL", nome: "Plano de Aplicação do PDDE", desc: "Planilha para planejar a aplicação dos recursos por ação e prioridade." },
+      { tipo: "EXCEL", nome: "Cronograma de Compras da Escola", desc: "Modelo para organizar prazos de cotação, compra, entrega e conferência." },
+      { tipo: "WORD", nome: "Roteiro de Prioridades", desc: "Folha simples para registrar urgências, responsáveis e prazos da escola." },
+      { tipo: "CHECKLIST", nome: "Checklist do Início do Ano", desc: "Lista rápida para revisar pendências de organização antes das atividades." },
+      { tipo: "PDF", nome: "Guia de Planejamento Mensal", desc: "Resumo visual para apoiar a organização das ações e acompanhar o mês." },
+      { tipo: "WORD", nome: "Quadro de Metas da Escola", desc: "Documento para registrar metas, tarefas principais e acompanhamento." },
+    ],
   },
   {
     id: "pesquisar",
@@ -30,6 +40,14 @@ const CATEGORIAS = [
     fitas: ["bg-sky-300/90", "bg-cyan-200/90", "bg-blue-200/90", "bg-sky-200/90"],
     papeis: ["bg-[#f8fdff]", "bg-[#f8ffff]", "bg-[#f9fcff]", "bg-[#f7fdff]"],
     marcadores: ["bg-cyan-200/70", "bg-yellow-200/70", "bg-lime-200/70", "bg-pink-200/70"],
+    cartoes: [
+      { tipo: "EXCEL", nome: "Mapa de Pesquisa de Preços", desc: "Planilha para comparar propostas de fornecedores e justificar a escolha." },
+      { tipo: "CHECKLIST", nome: "Checklist de Pesquisa de Mercado", desc: "Lista rápida para validar documentação e critérios antes da contratação." },
+      { tipo: "WORD", nome: "Modelo de Cotação Simples", desc: "Documento para reunir respostas de fornecedores em linguagem direta." },
+      { tipo: "PDF", nome: "Guia de Boas Práticas", desc: "Orientações objetivas para apoiar a pesquisa de preços na escola." },
+      { tipo: "CHECKLIST", nome: "Verificação de Documentos", desc: "Ajuda a conferir se as informações básicas dos fornecedores estão presentes." },
+      { tipo: "WORD", nome: "Registro de Contatos", desc: "Ficha para registrar contato, retorno e condições apresentadas." },
+    ],
   },
   {
     id: "comprar",
@@ -42,6 +60,14 @@ const CATEGORIAS = [
     fitas: ["bg-emerald-300/90", "bg-teal-200/90", "bg-green-200/90", "bg-emerald-200/90"],
     papeis: ["bg-[#f7fff9]", "bg-[#f7fffc]", "bg-[#fbfff9]", "bg-[#f9fffb]"],
     marcadores: ["bg-lime-200/70", "bg-yellow-200/70", "bg-cyan-200/70", "bg-pink-200/70"],
+    cartoes: [
+      { tipo: "WORD", nome: "Modelo de Solicitação de Orçamento", desc: "Documento padrão para solicitar orçamento a fornecedores." },
+      { tipo: "WORD", nome: "Ata de Deliberação de Compra", desc: "Modelo de ata para registrar decisão colegiada sobre a aquisição." },
+      { tipo: "CHECKLIST", nome: "Checklist da Compra", desc: "Ajuda a acompanhar etapas antes, durante e depois da contratação." },
+      { tipo: "PDF", nome: "Guia Rápido de Aquisição", desc: "Resumo prático com pontos importantes para apoiar a compra." },
+      { tipo: "WORD", nome: "Registro de Decisão", desc: "Documento para formalizar justificativas e escolhas da escola." },
+      { tipo: "EXCEL", nome: "Controle de Pedidos", desc: "Planilha para acompanhar pedidos, valores e status das aquisições." },
+    ],
   },
   {
     id: "receber",
@@ -54,6 +80,14 @@ const CATEGORIAS = [
     fitas: ["bg-amber-300/90", "bg-orange-200/90", "bg-amber-200/90", "bg-yellow-200/90"],
     papeis: ["bg-[#fffdf5]", "bg-[#fffaf3]", "bg-[#fffdf8]", "bg-[#fffdf4]"],
     marcadores: ["bg-yellow-200/75", "bg-lime-200/70", "bg-cyan-200/70", "bg-pink-200/70"],
+    cartoes: [
+      { tipo: "CHECKLIST", nome: "Checklist de Recebimento de Materiais", desc: "Roteiro para conferência de quantidade, qualidade e conformidade na entrega." },
+      { tipo: "WORD", nome: "Termo de Recebimento", desc: "Modelo para formalizar o recebimento de bens e serviços." },
+      { tipo: "WORD", nome: "Ficha de Conferência", desc: "Documento para anotar pendências, ajustes e observações da entrega." },
+      { tipo: "PDF", nome: "Guia de Conferência Visual", desc: "Apoio rápido para revisar o que observar no momento do recebimento." },
+      { tipo: "CHECKLIST", nome: "Conferência de Quantidades", desc: "Lista simples para garantir que os itens recebidos batem com o pedido." },
+      { tipo: "WORD", nome: "Registro de Ocorrências", desc: "Modelo para registrar danos, divergências ou problemas encontrados." },
+    ],
   },
   {
     id: "prestar",
@@ -66,6 +100,14 @@ const CATEGORIAS = [
     fitas: ["bg-rose-300/90", "bg-pink-200/90", "bg-rose-200/90", "bg-red-200/90"],
     papeis: ["bg-[#fff8fa]", "bg-[#fff8fb]", "bg-[#fff9fb]", "bg-[#fff7f9]"],
     marcadores: ["bg-pink-200/75", "bg-yellow-200/70", "bg-cyan-200/70", "bg-lime-200/70"],
+    cartoes: [
+      { tipo: "CHECKLIST", nome: "Checklist de Prestação de Contas", desc: "Guia de verificação final antes do envio da prestação de contas." },
+      { tipo: "PDF", nome: "Relatório Simplificado de Execução", desc: "Modelo para consolidar despesas executadas e anexos comprobatórios." },
+      { tipo: "WORD", nome: "Resumo de Despesas", desc: "Documento para organizar despesas por categoria de forma clara." },
+      { tipo: "EXCEL", nome: "Planilha de Anexos", desc: "Acompanha comprovantes e facilita a conferência da documentação." },
+      { tipo: "WORD", nome: "Declaração de Regularidade", desc: "Modelo para apoiar registros formais e organização documental." },
+      { tipo: "CHECKLIST", nome: "Revisão Final da Pasta", desc: "Lista final para checar se os documentos estão completos antes do envio." },
+    ],
   },
 ];
 
@@ -78,41 +120,51 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out;
 }
 
-function tipoLabel(type: string) {
-  if (type === "excel") return "EXCEL";
-  if (type === "word") return "WORD";
-  if (type === "checklist") return "CHECKLIST";
-  return "PDF";
+// ---------------------------------------------------------------------------
+// Cartão individual
+// ---------------------------------------------------------------------------
+interface Cartao {
+  tipo: string;
+  nome: string;
+  desc: string;
+  downloadUrl?: string;
+  featured?: boolean;
 }
 
 function CartaoFerramenta({
-  tool, index, linhaIdx, secaoIdx, cat,
+  cartao, index, linhaIdx, secaoIdx, secao,
 }: {
-  tool: Tool; index: number; linhaIdx: number; secaoIdx: number; cat: typeof CATEGORIAS[0];
+  cartao: Cartao;
+  index: number;
+  linhaIdx: number;
+  secaoIdx: number;
+  secao: typeof SECOES_DESIGN[0];
 }) {
   const { toast } = useToast();
   const rotacao = (index + linhaIdx) % 2 === 0 ? -1.6 : 1.45;
   const fitaClasse = FITAS_HEADER[(index + linhaIdx) % FITAS_HEADER.length];
-  const fitaCartao = cat.fitas[(index + linhaIdx) % cat.fitas.length];
-  const papel = cat.papeis[index % cat.papeis.length];
-  const marcador = cat.marcadores[(index + linhaIdx) % cat.marcadores.length];
+  const fitaCartao = secao.fitas[(index + linhaIdx) % secao.fitas.length];
+  const papel = secao.papeis[index % secao.papeis.length];
+  const marcador = secao.marcadores[(index + linhaIdx) % secao.marcadores.length];
 
   const handleDownload = () => {
-    if (tool.downloadUrl) {
-      window.open(tool.downloadUrl, "_blank");
+    if (cartao.downloadUrl) {
+      window.open(cartao.downloadUrl, "_blank");
     } else {
-      toast({ title: "Download iniciado", description: `Baixando ${tool.title}...`, duration: 3000 });
+      toast({ title: "Em breve!", description: `${cartao.nome} estará disponível para download em breve.`, duration: 3000 });
     }
   };
 
   return (
     <div className="relative mx-auto w-full max-w-[340px] sm:max-w-[320px] xl:max-w-[340px]">
+      {/* sombra flutuante */}
       <div
         className="paper-shadow absolute inset-x-6 bottom-[-8px] h-6 rounded-[50%] bg-black/10 blur-[10px]"
         style={{ animationDelay: `${(index + linhaIdx) * 0.2}s` }}
       />
+
       <article
-        className={`flyer-float group relative min-h-[260px] sm:min-h-[280px] overflow-visible rounded-[14px] border border-[#f1eadf] ${papel} px-4 pb-4 pt-6 sm:px-5 sm:pb-5 sm:pt-7 shadow-[0_18px_34px_rgba(84,61,39,0.12)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_22px_40px_rgba(84,61,39,0.16)] cursor-pointer`}
+        className={`flyer-float group relative min-h-[260px] sm:min-h-[280px] overflow-visible rounded-[14px] border border-[#f1eadf] ${papel} px-4 pb-4 pt-7 sm:px-5 sm:pb-5 sm:pt-8 shadow-[0_18px_34px_rgba(84,61,39,0.12)] transition duration-300 hover:-translate-y-2 hover:shadow-[0_26px_44px_rgba(84,61,39,0.18)] cursor-pointer`}
         style={{
           transform: `rotate(${rotacao}deg)`,
           animationDelay: `${(index + linhaIdx) * 0.25}s`,
@@ -124,7 +176,7 @@ function CartaoFerramenta({
         }}
         onClick={handleDownload}
       >
-        {/* fita dupla no topo */}
+        {/* fitas duplas no topo */}
         <div className={`absolute left-1/2 top-0 h-5 w-20 -translate-x-1/2 -translate-y-[45%] rotate-[-2deg] rounded-sm ${fitaClasse} opacity-95 shadow-[0_2px_8px_rgba(70,60,40,0.12)]`} />
         <div className={`absolute left-6 right-6 top-0 h-4 -translate-y-[45%] rotate-[1deg] rounded-sm ${fitaCartao} opacity-80`} />
 
@@ -134,50 +186,48 @@ function CartaoFerramenta({
         </div>
         <div className="absolute left-1/2 top-0 z-0 h-2.5 w-2.5 -translate-x-1/2 -translate-y-[135%] rounded-full bg-[#6f4926]" />
 
-        {/* textura de fundo */}
-        <div className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: "radial-gradient(#000 0.4px, transparent 0.4px)", backgroundSize: "6px 6px" }} />
+        {/* texturas decorativas */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.10]" style={{ backgroundImage: "radial-gradient(#000 0.4px, transparent 0.4px)", backgroundSize: "6px 6px" }} />
         <div className="pointer-events-none absolute left-0 right-0 top-0 h-3 bg-gradient-to-b from-black/5 to-transparent" />
-
-        {/* detalhes decorativos */}
-        <div className="pointer-events-none absolute left-4 top-14 rotate-[-6deg] text-[9px] font-bold text-red-400 opacity-40">PROTOCOLO</div>
-        <div className="pointer-events-none absolute right-6 bottom-16 rotate-[8deg] text-[9px] font-bold text-blue-400 opacity-40">ARQUIVO</div>
-        <div className="pointer-events-none absolute right-4 top-14 hidden sm:flex h-[66px] w-[66px] items-center justify-center rounded-full border-[2.5px] border-red-500/22 text-center text-[8px] font-black uppercase leading-[1.1] tracking-[0.16em] text-red-500/28 rotate-[14deg]">
-          <div className="flex h-[48px] w-[48px] items-center justify-center rounded-full border border-red-500/20 px-1">escola municipal</div>
+        <div className="pointer-events-none absolute left-4 top-14 rotate-[-6deg] text-[9px] font-bold text-red-400 opacity-35">PROTOCOLO</div>
+        <div className="pointer-events-none absolute right-6 bottom-14 rotate-[8deg] text-[9px] font-bold text-blue-400 opacity-35">ARQUIVO</div>
+        <div className="pointer-events-none absolute right-4 top-14 hidden sm:flex h-[60px] w-[60px] items-center justify-center rounded-full border-[2px] border-red-500/20 text-center text-[7px] font-black uppercase leading-[1.1] tracking-[0.14em] text-red-500/25 rotate-[14deg]">
+          <div className="flex h-[44px] w-[44px] items-center justify-center rounded-full border border-red-500/18 px-1">escola municipal</div>
         </div>
-        <div className="absolute right-3 top-4 rotate-[10deg] text-[9px] font-black uppercase tracking-[0.16em] text-[#b24e4e] opacity-50 sm:text-[10px] sm:tracking-[0.2em]">
+        <div className="absolute right-3 top-4 rotate-[10deg] text-[9px] font-black uppercase tracking-[0.14em] text-[#b24e4e] opacity-45">
           pronto para uso
         </div>
 
         {/* conteúdo */}
-        <div className="mb-3 flex items-start justify-between gap-3 sm:mb-4">
-          <span className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-            {tipoLabel(tool.type)}
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+            {cartao.tipo}
           </span>
-          {tool.featured && (
-            <span className="rounded-full bg-[#fff5e8] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#b56a22] shadow-sm">
+          {cartao.featured && (
+            <span className="rounded-full bg-[#fff5e8] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#b56a22] shadow-sm">
               essencial
             </span>
           )}
         </div>
 
         <div className="relative inline-block max-w-full">
-          <span className={`absolute inset-x-0 bottom-1 h-3 rounded-sm ${marcador}`} />
-          <h3 className="relative text-[1.15rem] sm:text-[1.3rem] font-black leading-[1.15] text-slate-800">
-            {tool.title}
+          <span className={`absolute inset-x-0 bottom-0.5 h-3 rounded-sm ${marcador}`} />
+          <h3 className="relative text-[1.1rem] sm:text-[1.22rem] font-black leading-[1.2] text-slate-800">
+            {cartao.nome}
           </h3>
         </div>
 
-        <p className="mt-3 min-h-[72px] sm:min-h-[84px] text-[0.9rem] sm:text-[0.95rem] leading-6 text-slate-600">
-          {tool.description}
+        <p className="mt-3 min-h-[72px] text-[0.88rem] sm:text-[0.93rem] leading-6 text-slate-600">
+          {cartao.desc}
         </p>
 
-        <div className="mt-4 flex flex-col items-start justify-between gap-3 sm:mt-5 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400" />
-            Arquivo pronto
+        <div className="mt-4 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+            {cartao.downloadUrl ? "Arquivo pronto" : "Em breve"}
           </div>
           <button
-            className="w-full sm:w-auto rounded-2xl bg-white/90 px-5 py-3 text-sm font-bold text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_4px_10px_rgba(0,0,0,0.05)] transition hover:bg-white"
+            className="w-full sm:w-auto rounded-2xl bg-white/90 px-4 py-2.5 text-sm font-bold text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_4px_10px_rgba(0,0,0,0.06)] transition hover:bg-white active:scale-95"
             onClick={(e) => { e.stopPropagation(); handleDownload(); }}
           >
             ⬇ Baixar
@@ -188,58 +238,67 @@ function CartaoFerramenta({
   );
 }
 
+// ---------------------------------------------------------------------------
+// Seção com estandarte + varal + cartões
+// ---------------------------------------------------------------------------
 function SecaoCategoria({
-  cat, ferramentas, secaoIdx,
+  secao, cartoes, secaoIdx,
 }: {
-  cat: typeof CATEGORIAS[0]; ferramentas: Tool[]; secaoIdx: number;
+  secao: typeof SECOES_DESIGN[0];
+  cartoes: Cartao[];
+  secaoIdx: number;
 }) {
-  if (ferramentas.length === 0) return null;
-  const fileiras = chunk(ferramentas, 3);
+  if (cartoes.length === 0) return null;
+  const fileiras = chunk(cartoes, 3);
 
   return (
     <section className="relative">
-      {/* estandarte */}
-      <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center">
-        <div
-          className="banner-sway relative mt-2 w-[92%] max-w-[420px] rounded-b-[26px] rounded-t-[12px] border-2 border-white/70 px-5 pb-7 pt-5 text-center shadow-[0_18px_34px_rgba(70,52,36,0.14)] backdrop-blur-sm sm:px-6 md:min-w-[320px] md:px-8 md:pb-8 md:pt-6 md:rounded-b-[30px]"
-        >
-          <div className={`absolute inset-0 rounded-b-[30px] rounded-t-[12px] border-2 ${cat.borda} bg-gradient-to-b ${cat.cor} opacity-95`} />
+      {/* ---- estandarte oscilante ---- */}
+      <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center" style={{ zIndex: 2 }}>
+        <div className="banner-sway relative mt-2 w-[88%] max-w-[400px] rounded-b-[26px] rounded-t-[12px] border-2 border-white/70 px-5 pb-8 pt-5 text-center shadow-[0_18px_34px_rgba(70,52,36,0.14)] backdrop-blur-sm sm:px-6 md:max-w-[440px] md:px-8 md:pb-9 md:pt-6 md:rounded-b-[30px]">
+          {/* fundo colorido */}
+          <div className={`absolute inset-0 rounded-b-[30px] rounded-t-[12px] border-2 ${secao.borda} bg-gradient-to-b ${secao.cor} opacity-95`} />
+
+          {/* haste do estandarte */}
           <div className="absolute left-1/2 top-0 h-5 w-16 -translate-x-1/2 -translate-y-[70%] rounded-md bg-[#b78555] shadow-[0_3px_8px_rgba(90,60,30,0.18)]" />
           <div className="absolute left-6 top-0 h-3 w-3 -translate-y-[145%] rounded-full bg-[#82552d]" />
           <div className="absolute right-6 top-0 h-3 w-3 -translate-y-[145%] rounded-full bg-[#82552d]" />
+
+          {/* ponteiras triangulares na base */}
           <div className="absolute bottom-0 left-0 right-0 flex justify-between px-10 translate-y-[92%]">
-            <span className="h-0 w-0 border-l-[18px] border-r-[18px] border-t-[26px] border-l-transparent border-r-transparent border-t-white/65" />
-            <span className="h-0 w-0 border-l-[18px] border-r-[18px] border-t-[26px] border-l-transparent border-r-transparent border-t-white/65" />
+            <span className="h-0 w-0 border-l-[18px] border-r-[18px] border-t-[26px] border-l-transparent border-r-transparent border-t-white/60" />
+            <span className="h-0 w-0 border-l-[18px] border-r-[18px] border-t-[26px] border-l-transparent border-r-transparent border-t-white/60" />
           </div>
+
           <div className="relative z-10">
-            <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full ${cat.selo} text-2xl shadow-inner`}>
-              {cat.icone}
+            <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full ${secao.selo} text-2xl shadow-inner`}>
+              {secao.icone}
             </div>
             <div className="relative inline-block">
               <span className="absolute inset-x-0 bottom-1 h-3 rounded-sm bg-yellow-200/70" />
-              <h2 className={`relative text-2xl font-black sm:text-3xl ${cat.texto}`}>{cat.titulo}</h2>
+              <h2 className={`relative text-2xl font-black sm:text-3xl ${secao.texto}`}>{secao.titulo}</h2>
             </div>
-            <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 md:text-base">
-              {ferramentas.length} {ferramentas.length === 1 ? "modelo disponível" : "modelos disponíveis"}
+            <p className="mt-2 text-sm font-medium tracking-wide text-slate-600">
+              {cartoes.length} {cartoes.length === 1 ? "modelo disponível" : "modelos disponíveis"}
             </p>
           </div>
         </div>
       </div>
 
-      {/* fileiras com varal */}
-      <div className="pt-32 sm:pt-36">
-        <div className="space-y-12 sm:space-y-14">
+      {/* ---- fileiras com varal ---- */}
+      <div className="pt-36 sm:pt-40">
+        <div className="space-y-14 sm:space-y-16">
           {fileiras.map((linha, linhaIdx) => (
-            <div key={linhaIdx} className="relative px-0 sm:px-1 md:px-3">
+            <div key={linhaIdx} className="relative px-1 md:px-4">
               {/* corda do varal */}
-              <div className="pointer-events-none absolute left-2 right-2 top-4 h-[5px] rounded-full bg-[repeating-linear-gradient(45deg,#9a6a3a,#9a6a3a_6px,#b07b45_6px,#b07b45_12px)] shadow-sm md:left-8 md:right-8 line-wind" />
+              <div className="pointer-events-none absolute left-2 right-2 top-3 h-[5px] rounded-full bg-[repeating-linear-gradient(45deg,#9a6a3a,#9a6a3a_6px,#b07b45_6px,#b07b45_12px)] shadow-sm md:left-6 md:right-6 line-wind" />
 
               {/* bandeirinhas do varal */}
-              <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center gap-4 opacity-95 md:gap-6">
+              <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center gap-5 opacity-90 md:gap-7">
                 {[0, 1, 2, 3, 4].map((item) => (
                   <div
                     key={item}
-                    className="flag-sway h-0 w-0 border-l-[10px] border-r-[10px] border-t-[16px] border-l-transparent border-r-transparent md:border-l-[11px] md:border-r-[11px] md:border-t-[18px]"
+                    className="flag-sway h-0 w-0 border-l-[10px] border-r-[10px] border-t-[17px] border-l-transparent border-r-transparent drop-shadow-sm"
                     style={{
                       borderTopColor: BANDEIRINHAS[(secaoIdx + linhaIdx + item) % BANDEIRINHAS.length],
                       animationDelay: `${(item + linhaIdx) * 0.12}s`,
@@ -248,15 +307,16 @@ function SecaoCategoria({
                 ))}
               </div>
 
-              <div className="grid gap-x-5 gap-y-12 pt-8 sm:gap-x-6 sm:gap-y-14 sm:grid-cols-2 xl:grid-cols-3">
-                {linha.map((tool, i) => (
+              {/* grade de cartões */}
+              <div className="grid gap-x-6 gap-y-14 pt-10 sm:grid-cols-2 xl:grid-cols-3">
+                {linha.map((cartao, i) => (
                   <CartaoFerramenta
-                    key={tool.id}
-                    tool={tool}
+                    key={`${cartao.nome}-${i}-${linhaIdx}`}
+                    cartao={cartao}
                     index={i}
                     linhaIdx={linhaIdx}
                     secaoIdx={secaoIdx}
-                    cat={cat}
+                    secao={secao}
                   />
                 ))}
               </div>
@@ -268,20 +328,58 @@ function SecaoCategoria({
   );
 }
 
+// ---------------------------------------------------------------------------
+// Página principal
+// ---------------------------------------------------------------------------
 export default function Ferramentas() {
   const [filtroTipo, setFiltroTipo] = useState<string | null>(null);
 
-  const { data: tools = [], isLoading } = useQuery<Tool[]>({
+  const { data: toolsDB = [] } = useQuery<Tool[]>({
     queryKey: ["/api/tools"],
   });
 
-  const ferramentasFiltradas = filtroTipo
-    ? tools.filter((f) => f.type === filtroTipo)
-    : tools;
+  // Merge: para cada cartão do design, tenta encontrar correspondente no banco pelo título
+  function mergeCartoes(secaoId: string, cartoes: typeof SECOES_DESIGN[0]["cartoes"]): Cartao[] {
+    const dbDaCategoria = toolsDB.filter((t) => t.category === secaoId);
+    const resultado: Cartao[] = cartoes.map((c) => {
+      const match = dbDaCategoria.find(
+        (t) => t.title.toLowerCase().trim() === c.nome.toLowerCase().trim()
+      );
+      return {
+        tipo: c.tipo,
+        nome: c.nome,
+        desc: c.desc,
+        downloadUrl: match?.downloadUrl || undefined,
+        featured: match?.featured || false,
+      };
+    });
+    // Adiciona ferramentas do banco que não existem no design
+    dbDaCategoria.forEach((t) => {
+      const jaExiste = resultado.find((r) => r.nome.toLowerCase().trim() === t.title.toLowerCase().trim());
+      if (!jaExiste) {
+        resultado.push({
+          tipo: (t.type || "pdf").toUpperCase(),
+          nome: t.title,
+          desc: t.description || "",
+          downloadUrl: t.downloadUrl || undefined,
+          featured: t.featured || false,
+        });
+      }
+    });
+    return resultado;
+  }
+
+  const totalModelos = SECOES_DESIGN.reduce((acc, s) => acc + s.cartoes.length, 0);
+
+  // Filtro de tipo aplicado sobre os cartões de design
+  function filtrarCartoes(cartoes: Cartao[]): Cartao[] {
+    if (!filtroTipo) return cartoes;
+    return cartoes.filter((c) => c.tipo.toLowerCase() === filtroTipo);
+  }
 
   return (
     <div
-      className="min-h-screen overflow-hidden text-slate-800"
+      className="min-h-screen overflow-x-hidden text-slate-800"
       style={{
         background: "#efe8dd",
         backgroundImage:
@@ -291,50 +389,52 @@ export default function Ferramentas() {
     >
       <style>{`
         @keyframes swayTiny {
-          0% { transform: rotate(-1.8deg) translateY(0px); }
-          50% { transform: rotate(1.8deg) translateY(1.5px); }
+          0%   { transform: rotate(-1.8deg) translateY(0px); }
+          50%  { transform: rotate(1.8deg) translateY(1.5px); }
           100% { transform: rotate(-1.8deg) translateY(0px); }
         }
         @keyframes swayMedium {
-          0% { transform: rotate(-1.35deg) translateY(0px); }
-          50% { transform: rotate(1.35deg) translateY(2.5px); }
+          0%   { transform: rotate(-1.35deg) translateY(0px); }
+          50%  { transform: rotate(1.35deg) translateY(2.5px); }
           100% { transform: rotate(-1.35deg) translateY(0px); }
         }
         @keyframes flyerFloat {
-          0% { transform: translateY(0px); }
-          50% { transform: translateY(-4.5px); }
+          0%   { transform: translateY(0px); }
+          50%  { transform: translateY(-4.5px); }
           100% { transform: translateY(0px); }
         }
         @keyframes shadowPulse {
-          0% { opacity: .11; transform: scaleX(1); }
-          50% { opacity: .16; transform: scaleX(1.03); }
+          0%   { opacity: .11; transform: scaleX(1); }
+          50%  { opacity: .17; transform: scaleX(1.03); }
           100% { opacity: .11; transform: scaleX(1); }
         }
         @keyframes lineWind {
-          0% { transform: rotate(-0.22deg) translateX(0px); }
-          50% { transform: rotate(0.22deg) translateX(1.5px); }
+          0%   { transform: rotate(-0.22deg) translateX(0px); }
+          50%  { transform: rotate(0.22deg) translateX(1.5px); }
           100% { transform: rotate(-0.22deg) translateX(0px); }
         }
-        .flag-sway { animation: swayTiny 5.3s ease-in-out infinite; transform-origin: top center; }
+        .flag-sway   { animation: swayTiny 5.3s ease-in-out infinite; transform-origin: top center; }
         .banner-sway { animation: swayMedium 7.6s ease-in-out infinite; transform-origin: top center; }
         .flyer-float { animation: flyerFloat 6.4s ease-in-out infinite; }
         .paper-shadow { animation: shadowPulse 6.4s ease-in-out infinite; }
-        .line-wind { animation: lineWind 8.8s ease-in-out infinite; transform-origin: center center; }
+        .line-wind   { animation: lineWind 8.8s ease-in-out infinite; transform-origin: center center; }
       `}</style>
 
       <Navigation />
 
       <div className="mx-auto max-w-[1500px] px-4 py-8 sm:px-5 md:px-8 md:py-10 xl:px-10">
-        {/* header */}
-        <header className="relative mb-14 overflow-hidden rounded-[28px] border border-[#ddd1bf] bg-[#f8f2e8] px-4 pb-7 pt-6 shadow-[0_16px_40px_rgba(86,65,40,0.10)] sm:px-6 md:mb-16 md:rounded-[34px] md:px-8 md:pb-8 md:pt-7">
-          {/* corda + bandeirinhas do topo */}
+
+        {/* ===== HEADER ===== */}
+        <header className="relative mb-16 overflow-hidden rounded-[28px] border border-[#ddd1bf] bg-[#f8f2e8] px-4 pb-7 pt-6 shadow-[0_16px_40px_rgba(86,65,40,0.10)] sm:px-6 md:mb-20 md:rounded-[34px] md:px-8 md:pb-8 md:pt-7">
+
+          {/* corda + bandeirinhas do cabeçalho */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-28">
             <div className="absolute left-5 right-5 top-6 h-[4px] rounded-full bg-[repeating-linear-gradient(45deg,#9a6a3a,#9a6a3a_7px,#b07b45_7px,#b07b45_14px)] opacity-90" />
-            <div className="flex justify-between px-7 pt-8 md:px-10">
+            <div className="flex justify-between px-8 pt-8 md:px-12">
               {BANDEIRINHAS.map((cor, i) => (
                 <div
                   key={i}
-                  className="flag-sway h-0 w-0 border-l-[16px] border-r-[16px] border-t-[28px] border-l-transparent border-r-transparent drop-shadow-sm md:border-l-[18px] md:border-r-[18px] md:border-t-[32px]"
+                  className="flag-sway h-0 w-0 border-l-[15px] border-r-[15px] border-t-[26px] border-l-transparent border-r-transparent drop-shadow-sm md:border-l-[18px] md:border-r-[18px] md:border-t-[32px]"
                   style={{ borderTopColor: cor, animationDelay: `${i * 0.15}s` }}
                 />
               ))}
@@ -343,8 +443,10 @@ export default function Ferramentas() {
 
           <div className="relative pt-12 md:pt-14">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+
+              {/* título */}
               <div className="flex items-start gap-3 sm:gap-4">
-                <div className="relative mt-1 flex h-16 w-16 items-center justify-center rounded-[22px] bg-emerald-500 text-3xl text-white shadow-[0_12px_20px_rgba(16,120,80,0.28)]">
+                <div className="relative mt-1 flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-[22px] bg-emerald-500 text-3xl shadow-[0_12px_20px_rgba(16,120,80,0.28)]">
                   🔧
                   <div className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-white/70 blur-[1px]" />
                 </div>
@@ -353,15 +455,13 @@ export default function Ferramentas() {
                     Mural de Ferramentas
                   </h1>
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7 md:text-lg">
-                    {isLoading
-                      ? "Carregando modelos..."
-                      : `${tools.length} modelos prontos para baixar e usar — estandartes, varais e papéis com pregadores.`}
+                    {totalModelos} modelos prontos para baixar e usar — organizados em estandartes por etapa do trabalho da diretora.
                   </p>
                 </div>
               </div>
 
               {/* filtros */}
-              <div className="relative rounded-[20px] border border-[#ded4c8] bg-white/85 p-3 shadow-[0_10px_24px_rgba(90,70,40,0.08)] backdrop-blur-sm lg:min-w-[360px]">
+              <div className="relative rounded-[20px] border border-[#ded4c8] bg-white/85 p-3 shadow-[0_10px_24px_rgba(90,70,40,0.08)] backdrop-blur-sm lg:min-w-[380px]">
                 <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
                   <span className="mr-1 text-slate-500">Tipo:</span>
                   {[
@@ -374,7 +474,7 @@ export default function Ferramentas() {
                     <button
                       key={label}
                       onClick={() => setFiltroTipo(valor)}
-                      className={`rounded-full px-4 py-2 transition ${
+                      className={`rounded-full px-4 py-2 transition-all ${
                         filtroTipo === valor
                           ? "bg-[#f4ead8] text-slate-900 ring-1 ring-[#b99668] shadow-sm"
                           : "bg-[#fbf8f3] hover:bg-[#f3eee6]"
@@ -389,28 +489,25 @@ export default function Ferramentas() {
           </div>
         </header>
 
-        {/* conteúdo */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-32">
-            <Loader2 className="w-10 h-10 animate-spin text-amber-700/60" />
-          </div>
-        ) : ferramentasFiltradas.length === 0 ? (
-          <div className="py-24 text-center text-slate-500">Nenhum modelo encontrado para este filtro.</div>
-        ) : (
-          <div className="space-y-20 md:space-y-24">
-            {CATEGORIAS.map((cat, secaoIdx) => {
-              const ferramentas = ferramentasFiltradas.filter((f) => f.category === cat.id);
-              return (
-                <SecaoCategoria
-                  key={cat.id}
-                  cat={cat}
-                  ferramentas={ferramentas}
-                  secaoIdx={secaoIdx}
-                />
-              );
-            })}
-          </div>
-        )}
+        {/* ===== SEÇÕES ===== */}
+        <div className="space-y-28 md:space-y-32">
+          {SECOES_DESIGN.map((secao, secaoIdx) => {
+            const merged = mergeCartoes(secao.id, secao.cartoes);
+            const cartoesFiltrados = filtrarCartoes(merged);
+            return (
+              <SecaoCategoria
+                key={secao.id}
+                secao={secao}
+                cartoes={cartoesFiltrados}
+                secaoIdx={secaoIdx}
+              />
+            );
+          })}
+        </div>
+
+        <div className="mt-20 pb-6 text-center text-sm text-slate-500">
+          Os checklists funcionam melhor impressos e colados no mural da secretaria! 📌
+        </div>
       </div>
 
       <Footer />
