@@ -21,10 +21,10 @@ const SECOES_DESIGN = [
     papeis: ["bg-[#fcf8ff]", "bg-[#fffaff]", "bg-[#fdf9ff]", "bg-[#fcf7ff]"],
     marcadores: ["bg-yellow-200/75", "bg-lime-200/70", "bg-cyan-200/70", "bg-pink-200/70"],
     cartoes: [
-      { tipo: "EXCEL", nome: "Plano de Aplicação do PDDE", desc: "Planilha para planejar a aplicação dos recursos por ação e prioridade." },
+      { tipo: "EXCEL", nome: "Plano de Aplicação do PDDE", desc: "Planilha para planejar a aplicação dos recursos por ação e prioridade.", popular: true },
       { tipo: "EXCEL", nome: "Cronograma de Compras da Escola", desc: "Modelo para organizar prazos de cotação, compra, entrega e conferência." },
       { tipo: "WORD", nome: "Roteiro de Prioridades", desc: "Folha simples para registrar urgências, responsáveis e prazos da escola." },
-      { tipo: "CHECKLIST", nome: "Checklist do Início do Ano", desc: "Lista rápida para revisar pendências de organização antes das atividades." },
+      { tipo: "CHECKLIST", nome: "Checklist do Início do Ano", desc: "Lista rápida para revisar pendências de organização antes das atividades.", popular: true },
       { tipo: "PDF", nome: "Guia de Planejamento Mensal", desc: "Resumo visual para apoiar a organização das ações e acompanhar o mês." },
       { tipo: "WORD", nome: "Quadro de Metas da Escola", desc: "Documento para registrar metas, tarefas principais e acompanhamento." },
     ],
@@ -41,9 +41,9 @@ const SECOES_DESIGN = [
     papeis: ["bg-[#f8fdff]", "bg-[#f8ffff]", "bg-[#f9fcff]", "bg-[#f7fdff]"],
     marcadores: ["bg-cyan-200/70", "bg-yellow-200/70", "bg-lime-200/70", "bg-pink-200/70"],
     cartoes: [
-      { tipo: "EXCEL", nome: "Mapa de Pesquisa de Preços", desc: "Planilha para comparar propostas de fornecedores e justificar a escolha." },
+      { tipo: "EXCEL", nome: "Mapa de Pesquisa de Preços", desc: "Planilha para comparar propostas de fornecedores e justificar a escolha.", popular: true },
       { tipo: "CHECKLIST", nome: "Checklist de Pesquisa de Mercado", desc: "Lista rápida para validar documentação e critérios antes da contratação." },
-      { tipo: "WORD", nome: "Modelo de Cotação Simples", desc: "Documento para reunir respostas de fornecedores em linguagem direta." },
+      { tipo: "WORD", nome: "Modelo de Cotação Simples", desc: "Documento para reunir respostas de fornecedores em linguagem direta.", popular: true },
       { tipo: "PDF", nome: "Guia de Boas Práticas", desc: "Orientações objetivas para apoiar a pesquisa de preços na escola." },
       { tipo: "CHECKLIST", nome: "Verificação de Documentos", desc: "Ajuda a conferir se as informações básicas dos fornecedores estão presentes." },
       { tipo: "WORD", nome: "Registro de Contatos", desc: "Ficha para registrar contato, retorno e condições apresentadas." },
@@ -61,9 +61,9 @@ const SECOES_DESIGN = [
     papeis: ["bg-[#f7fff9]", "bg-[#f7fffc]", "bg-[#fbfff9]", "bg-[#f9fffb]"],
     marcadores: ["bg-lime-200/70", "bg-yellow-200/70", "bg-cyan-200/70", "bg-pink-200/70"],
     cartoes: [
-      { tipo: "WORD", nome: "Modelo de Solicitação de Orçamento", desc: "Documento padrão para solicitar orçamento a fornecedores." },
+      { tipo: "WORD", nome: "Modelo de Solicitação de Orçamento", desc: "Documento padrão para solicitar orçamento a fornecedores.", popular: true },
       { tipo: "WORD", nome: "Ata de Deliberação de Compra", desc: "Modelo de ata para registrar decisão colegiada sobre a aquisição." },
-      { tipo: "CHECKLIST", nome: "Checklist da Compra", desc: "Ajuda a acompanhar etapas antes, durante e depois da contratação." },
+      { tipo: "CHECKLIST", nome: "Checklist da Compra", desc: "Ajuda a acompanhar etapas antes, durante e depois da contratação.", popular: true },
       { tipo: "PDF", nome: "Guia Rápido de Aquisição", desc: "Resumo prático com pontos importantes para apoiar a compra." },
       { tipo: "WORD", nome: "Registro de Decisão", desc: "Documento para formalizar justificativas e escolhas da escola." },
       { tipo: "EXCEL", nome: "Controle de Pedidos", desc: "Planilha para acompanhar pedidos, valores e status das aquisições." },
@@ -81,8 +81,8 @@ const SECOES_DESIGN = [
     papeis: ["bg-[#fffdf5]", "bg-[#fffaf3]", "bg-[#fffdf8]", "bg-[#fffdf4]"],
     marcadores: ["bg-yellow-200/75", "bg-lime-200/70", "bg-cyan-200/70", "bg-pink-200/70"],
     cartoes: [
-      { tipo: "CHECKLIST", nome: "Checklist de Recebimento de Materiais", desc: "Roteiro para conferência de quantidade, qualidade e conformidade na entrega." },
-      { tipo: "WORD", nome: "Termo de Recebimento", desc: "Modelo para formalizar o recebimento de bens e serviços." },
+      { tipo: "CHECKLIST", nome: "Checklist de Recebimento de Materiais", desc: "Roteiro para conferência de quantidade, qualidade e conformidade na entrega.", popular: true },
+      { tipo: "WORD", nome: "Termo de Recebimento", desc: "Modelo para formalizar o recebimento de bens e serviços.", popular: true },
       { tipo: "WORD", nome: "Ficha de Conferência", desc: "Documento para anotar pendências, ajustes e observações da entrega." },
       { tipo: "PDF", nome: "Guia de Conferência Visual", desc: "Apoio rápido para revisar o que observar no momento do recebimento." },
       { tipo: "CHECKLIST", nome: "Conferência de Quantidades", desc: "Lista simples para garantir que os itens recebidos batem com o pedido." },
@@ -101,10 +101,10 @@ const SECOES_DESIGN = [
     papeis: ["bg-[#fff8fa]", "bg-[#fff8fb]", "bg-[#fff9fb]", "bg-[#fff7f9]"],
     marcadores: ["bg-pink-200/75", "bg-yellow-200/70", "bg-cyan-200/70", "bg-lime-200/70"],
     cartoes: [
-      { tipo: "CHECKLIST", nome: "Checklist de Prestação de Contas", desc: "Guia de verificação final antes do envio da prestação de contas." },
+      { tipo: "CHECKLIST", nome: "Checklist de Prestação de Contas", desc: "Guia de verificação final antes do envio da prestação de contas.", popular: true },
       { tipo: "PDF", nome: "Relatório Simplificado de Execução", desc: "Modelo para consolidar despesas executadas e anexos comprobatórios." },
       { tipo: "WORD", nome: "Resumo de Despesas", desc: "Documento para organizar despesas por categoria de forma clara." },
-      { tipo: "EXCEL", nome: "Planilha de Anexos", desc: "Acompanha comprovantes e facilita a conferência da documentação." },
+      { tipo: "EXCEL", nome: "Planilha de Anexos", desc: "Acompanha comprovantes e facilita a conferência da documentação.", popular: true },
       { tipo: "WORD", nome: "Declaração de Regularidade", desc: "Modelo para apoiar registros formais e organização documental." },
       { tipo: "CHECKLIST", nome: "Revisão Final da Pasta", desc: "Lista final para checar se os documentos estão completos antes do envio." },
     ],
@@ -129,6 +129,7 @@ interface Cartao {
   desc: string;
   downloadUrl?: string;
   featured?: boolean;
+  popular?: boolean;
 }
 
 function CartaoFerramenta({
@@ -215,14 +216,25 @@ function CartaoFerramenta({
 
         <div className="mt-4 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
           <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-            <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
-            {cartao.downloadUrl ? "Arquivo pronto" : "Em breve"}
+            {cartao.popular ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-bold text-orange-600">
+                🔥 Mais baixado
+              </span>
+            ) : (
+              <>
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+                {cartao.downloadUrl ? "Arquivo pronto" : "Em breve"}
+              </>
+            )}
           </div>
           <button
-            className="w-full sm:w-auto rounded-2xl bg-white/90 px-4 py-2.5 text-sm font-bold text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_4px_10px_rgba(0,0,0,0.06)] transition hover:bg-white active:scale-95"
+            className="download-btn w-full sm:w-auto rounded-2xl bg-white/90 px-4 py-2.5 text-sm font-bold text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_4px_10px_rgba(0,0,0,0.06)] transition hover:bg-white active:scale-95 overflow-hidden relative"
             onClick={(e) => { e.stopPropagation(); handleDownload(); }}
           >
-            ⬇ Baixar
+            <span className="relative z-10 flex items-center justify-center gap-1.5">
+              <span className="download-arrow inline-block">⬇</span> Baixar
+            </span>
+            <span className="shimmer-sweep absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent" />
           </button>
         </div>
       </article>
@@ -300,40 +312,79 @@ function SecaoCategoria({
 
           {/* — estandarte — */}
           <div
-            className="banner-sway relative w-[88%] max-w-[380px] rounded-b-[24px] rounded-t-[10px] border-2 border-white/70 px-5 pb-8 pt-5 text-center shadow-[0_20px_36px_rgba(70,52,36,0.16)]"
+            className="banner-sway relative w-[92%] max-w-[400px] text-center"
             style={{ transformOrigin: "top center", marginTop: -2 }}
           >
-            {/* fundo colorido */}
-            <div className={`absolute inset-0 rounded-b-[24px] rounded-t-[10px] border-2 ${secao.borda} bg-gradient-to-b ${secao.cor} opacity-96`} />
+            {/* moldura externa */}
+            <div className={`absolute inset-0 rounded-t-[14px] rounded-b-none border-[3px] ${secao.borda} opacity-60`}
+              style={{ bottom: 32, clipPath: "polygon(0 0, 100% 0, 100% 100%, 94% 100%, 50% calc(100% + 28px), 6% 100%, 0 100%)" }} />
 
-            {/* suporte horizontal no topo (fixação no mastro) */}
-            <div className="absolute left-1/2 top-0 h-[6px] w-20 -translate-x-1/2 -translate-y-[50%] rounded-full bg-[#b78555] shadow-[0_2px_6px_rgba(90,60,30,0.22)]" />
-            {/* argolas laterais */}
-            <div className="absolute left-5 top-0 h-3 w-3 -translate-y-[120%] rounded-full bg-[#7a4e23] shadow-sm" />
-            <div className="absolute right-5 top-0 h-3 w-3 -translate-y-[120%] rounded-full bg-[#7a4e23] shadow-sm" />
+            {/* painel principal */}
+            <div
+              className={`relative overflow-hidden rounded-t-[12px] border-2 border-white/80 shadow-[0_24px_48px_rgba(60,40,20,0.22),inset_0_1px_0_rgba(255,255,255,0.9)]`}
+              style={{
+                clipPath: "polygon(0 0, 100% 0, 100% 100%, 94% 100%, 50% calc(100% + 32px), 6% 100%, 0 100%)",
+                paddingBottom: 48,
+              }}
+            >
+              {/* fundo gradiente rico */}
+              <div className={`absolute inset-0 bg-gradient-to-b ${secao.cor} opacity-98`} />
+              {/* textura sutil */}
+              <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #000 1px, transparent 0)", backgroundSize: "8px 8px" }} />
+              {/* brilho no topo */}
+              <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white/40 to-transparent" />
 
-            {/* ponteiras triangulares na base */}
-            <div className="absolute bottom-0 left-0 right-0 flex justify-around px-8 translate-y-[90%]">
-              {[0,1,2].map((i) => (
-                <span
-                  key={i}
-                  className="h-0 w-0 border-l-[16px] border-r-[16px] border-t-[22px] border-l-transparent border-r-transparent border-t-white/55"
-                />
-              ))}
+              {/* borda interna decorativa */}
+              <div className={`absolute inset-[6px] rounded-[8px] border ${secao.borda} opacity-40`}
+                style={{ bottom: 20, clipPath: "polygon(0 0, 100% 0, 100% 100%, 93% 100%, 50% calc(100% + 22px), 7% 100%, 0 100%)" }} />
+
+              {/* suporte horizontal no topo (fixação no mastro) */}
+              <div className="absolute left-1/2 top-0 h-[7px] w-24 -translate-x-1/2 -translate-y-[50%] rounded-full bg-[linear-gradient(to_right,#9a6530,#d4a05a,#9a6530)] shadow-[0_3px_8px_rgba(90,60,30,0.30)]" />
+              {/* parafusos / argolas */}
+              <div className="absolute left-6 top-0 h-[14px] w-[14px] -translate-y-[90%] rounded-full bg-[linear-gradient(135deg,#c8894a,#7a4e23)] shadow-[0_2px_5px_rgba(0,0,0,0.25)]" />
+              <div className="absolute right-6 top-0 h-[14px] w-[14px] -translate-y-[90%] rounded-full bg-[linear-gradient(135deg,#c8894a,#7a4e23)] shadow-[0_2px_5px_rgba(0,0,0,0.25)]" />
+
+              {/* conteúdo */}
+              <div className="relative z-10 px-6 pt-6 pb-2">
+                {/* ícone em medalha */}
+                <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${secao.selo} text-3xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.10),0_6px_16px_rgba(0,0,0,0.12)]`}>
+                  {secao.icone}
+                </div>
+
+                {/* separador ornamental */}
+                <div className="flex items-center gap-2 mb-3 px-4">
+                  <div className={`flex-1 h-[1.5px] bg-gradient-to-r from-transparent ${secao.borda.replace('border-', 'to-')} opacity-50`} />
+                  <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">etapa</span>
+                  <div className={`flex-1 h-[1.5px] bg-gradient-to-l from-transparent ${secao.borda.replace('border-', 'to-')} opacity-50`} />
+                </div>
+
+                {/* título */}
+                <h2 className={`text-3xl font-black tracking-tight sm:text-4xl ${secao.texto} drop-shadow-sm`}>
+                  {secao.titulo}
+                </h2>
+
+                {/* contador de modelos */}
+                <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/60 px-3 py-1 text-xs font-bold text-slate-600 shadow-sm backdrop-blur-sm">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  {cartoes.length} modelos disponíveis
+                </div>
+              </div>
             </div>
 
-            {/* conteúdo do estandarte */}
-            <div className="relative z-10">
-              <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full ${secao.selo} text-2xl shadow-inner`}>
-                {secao.icone}
-              </div>
-              <div className="relative inline-block">
-                <span className="absolute inset-x-0 bottom-0.5 h-3 rounded-sm bg-yellow-200/65" />
-                <h2 className={`relative text-2xl font-black sm:text-3xl ${secao.texto}`}>{secao.titulo}</h2>
-              </div>
-              <p className="mt-2 text-sm font-medium tracking-wide text-slate-600">
-                {cartoes.length} {cartoes.length === 1 ? "modelo disponível" : "modelos disponíveis"}
-              </p>
+            {/* franja inferior — triângulos decorativos */}
+            <div className="absolute bottom-0 left-0 right-0 flex translate-y-0 overflow-hidden" style={{ height: 32 }}>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex-1 h-0 w-0"
+                  style={{
+                    borderLeft: "none",
+                    borderRight: "none",
+                    borderTop: `32px solid`,
+                    borderTopColor: i % 2 === 0 ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.25)",
+                  }}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -451,11 +502,22 @@ export default function Ferramentas() {
           50%  { transform: rotate(0.22deg) translateX(1.5px); }
           100% { transform: rotate(-0.22deg) translateX(0px); }
         }
-        .flag-sway   { animation: swayTiny 5.3s ease-in-out infinite; transform-origin: top center; }
-        .banner-sway { animation: swayMedium 7.6s ease-in-out infinite; transform-origin: top center; }
-        .flyer-float { animation: flyerFloat 6.4s ease-in-out infinite; }
+        @keyframes arrowBounce {
+          0%, 100% { transform: translateY(0); }
+          40%      { transform: translateY(3px); }
+          60%      { transform: translateY(1px); }
+        }
+        @keyframes shimmer {
+          0%   { transform: translateX(-100%); }
+          100% { transform: translateX(200%); }
+        }
+        .flag-sway    { animation: swayTiny 5.3s ease-in-out infinite; transform-origin: top center; }
+        .banner-sway  { animation: swayMedium 7.6s ease-in-out infinite; transform-origin: top center; }
+        .flyer-float  { animation: flyerFloat 6.4s ease-in-out infinite; }
         .paper-shadow { animation: shadowPulse 6.4s ease-in-out infinite; }
-        .line-wind   { animation: lineWind 8.8s ease-in-out infinite; transform-origin: center center; }
+        .line-wind    { animation: lineWind 8.8s ease-in-out infinite; transform-origin: center center; }
+        .download-btn:hover .download-arrow { animation: arrowBounce 0.6s ease-in-out; }
+        .download-btn:hover .shimmer-sweep  { animation: shimmer 0.7s ease-in-out; }
       `}</style>
 
       <Navigation />
