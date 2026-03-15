@@ -180,16 +180,45 @@
   color: #677b86; line-height: 1.5; font-size: .85rem;
 }
 .hl-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 9px; }
+/* Botão base */
+/* Botão estilo fita (ribbon) */
+/* Botão estilo fita (ribbon) com contorno */
+/* Botão pill moderno */
 .hl-btn {
-  min-height: 40px; padding: 0 16px;
-  border-radius: 14px 18px 14px 16px;
+  min-height: 44px; padding: 0 32px;
+  border-radius: 999px;
   font-weight: 800; display: inline-flex; align-items: center; justify-content: center;
-  box-shadow: 0 8px 18px rgba(93,71,46,.10);
+  box-shadow: 0 4px 16px rgba(93,71,46,.10);
   text-decoration: none; font-family: Nunito, system-ui, sans-serif;
-  font-size: .9rem; cursor: pointer; border: none;
+  font-size: 1.08rem; cursor: pointer; border: none;
+  position: relative;
+  transition: background .18s, box-shadow .18s, color .18s, filter .18s;
+  margin-bottom: 8px;
 }
-.hl-btn-primary  { background: linear-gradient(135deg,#2f7a5f,#25644c); color: #fff; transform: rotate(-1deg); }
-.hl-btn-secondary{ background: #fffefb; border: 1px dashed #e8d9c6; color: #23404b; transform: rotate(1deg); }
+/* Primário: gradiente e brilho */
+/* Ribbon primário */
+.hl-btn-primary {
+  background: linear-gradient(90deg, #3fa07a 0%, #25644c 100%);
+  color: #fff;
+  filter: brightness(1.04) saturate(1.1);
+}
+.hl-btn-primary:hover {
+  background: linear-gradient(90deg, #4fd6b0 0%, #25644c 100%);
+  filter: brightness(1.09) saturate(1.18);
+  box-shadow: 0 8px 32px rgba(47,122,95,.13);
+}
+/* Secundário: efeito vidro */
+/* Ribbon secundário */
+.hl-btn-secondary {
+  background: #fffefb;
+  color: #25644c;
+  box-shadow: 0 2px 8px rgba(93,71,46,.07);
+}
+.hl-btn-secondary:hover {
+  background: #f7efe3;
+  color: #3fa07a;
+  box-shadow: 0 6px 18px rgba(47,122,95,.10);
+}
 .hl-hero-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 7px; }
 .hl-tag {
   padding: 5px 11px; border-radius: 999px;
@@ -354,17 +383,37 @@
 .hl-remendo {
   position: absolute;
   bottom: 10px; right: 8px;
-  background: #fffef5;
-  border: 1.5px dashed #c9a84c;
-  border-radius: 5px;
-  padding: 3px 8px;
+  background: #fffefb;
+  border: 1.5px solid #e8d9c6;
+  border-radius: 10px 18px 14px 16px / 18px 10px 16px 14px;
+  padding: 2px 7px 3px 7px;
   font-family: "Patrick Hand", cursive;
-  font-size: .72rem;
+  font-size: 0.82rem;
   color: #7a5a18;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(93,71,46,.13), 0 1.5px 0 #fff inset;
   transform: rotate(-4deg);
-  box-shadow: 1px 2px 5px rgba(0,0,0,.10);
-  pointer-events: none;
+  pointer-events: auto;
   white-space: nowrap;
+  cursor: pointer;
+  transition: box-shadow .18s, border .18s, filter .18s;
+  z-index: 2;
+}
+.hl-remendo::before {
+  content: "";
+  position: absolute;
+  top: -7px; left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 16px; height: 7px;
+  background: linear-gradient(120deg, #ffe28a 60%, #fffbe5 100%);
+  border-radius: 3px 4px 3px 3px;
+  box-shadow: 0 1px 2px rgba(200,170,76,.10);
+  opacity: 0.85;
+  z-index: 1;
+}
+.hl-remendo:hover {
+  box-shadow: 0 5px 12px rgba(93,71,46,.18), 0 2px 0 #fff5 inset;
+  filter: brightness(1.04) saturate(1.08);
 }
 .hl-remendo::before {
   content: "";
@@ -382,23 +431,36 @@
 }
 .hl-remendo-jornada {
   position: static;
-  transform: rotate(-1.5deg);
-  font-size: .88rem;
-  padding: 6px 20px;
-  background: #f0faf3;
-  border-color: #4da876;
+  font-size: 1.13rem;
+  padding: 12px 38px 14px 28px;
+  background: linear-gradient(120deg, #e3f5e7 70%, #c7e7d2 100%);
+  border: 1.5px solid #e8d9c6;
+  border-radius: 14px 22px 16px 18px / 22px 14px 18px 16px;
   color: #1e6b42;
+  font-family: "Patrick Hand", cursive;
+  font-weight: 700;
+  box-shadow: 0 8px 28px rgba(77,168,118,.13), 0 1.5px 0 #fff inset;
+  transform: rotate(-2deg);
   pointer-events: auto;
   cursor: pointer;
-  transition: transform .2s ease, box-shadow .2s ease;
+  transition: box-shadow .18s, border .18s, filter .18s;
+  z-index: 2;
 }
 .hl-remendo-jornada::before {
-  background: rgba(180,230,195,.75);
-  width: 28px; height: 10px;
+  content: "";
+  position: absolute;
+  top: -15px; left: 50%;
+  transform: translateX(-50%) rotate(2deg);
+  width: 44px; height: 18px;
+  background: linear-gradient(120deg, #b8ffe7 60%, #e6fff2 100%);
+  border-radius: 7px 10px 8px 9px;
+  box-shadow: 0 2px 8px rgba(77,168,118,.10);
+  opacity: 0.85;
+  z-index: 1;
 }
-.hl-remendo-jornada-wrap:hover .hl-remendo-jornada {
-  transform: rotate(0deg) scale(1.03);
-  box-shadow: 2px 4px 10px rgba(0,0,0,.13);
+.hl-remendo-jornada:hover {
+  box-shadow: 0 16px 36px rgba(77,168,118,.18), 0 2px 0 #fff5 inset;
+  filter: brightness(1.04) saturate(1.08);
 }
 
 /* ── Coluna direita ── */
