@@ -57,15 +57,21 @@ const PASTEL_COLORS = [
   '#f9c6c9', // rosa coral
   '#f6eac2', // amarelo manteiga
   '#e0eafc', // azul céu
-  '#c9e4de', // verde menta
   '#f7d9c4', // pêssego
-  '#e2eafc', // azul lavanda
-  '#f6eac2', // amarelo manteiga
-  '#e0c3fc', // roxo claro
-  '#f3c6e8', // lilás
-  '#b5ead7', // verde água
+  '#d5c6f0', // violeta suave
+  '#c8ead8', // verde salvia
+  '#fce4b4', // amarelo abacaxi
+  '#f0d0e8', // rosa mallow
+  '#cce5ff', // azul bebê
+  '#d0f0c0', // verde pistache
   '#ffd6e0'  // rosa claro
 ];
+
+/* cores fixas por sigla — garantem distinção independente do ranking */
+const STATE_FIXED_COLORS: Record<string, string> = {
+  MT: "#d4554a",  /* terracota — se destaca dos vizinhos AM/GO/MS */
+  RO: "#e8a825",  /* âmbar dourado — se destaca dos vizinhos AM/AC/PA */
+};
 
 // Paleta para gráficos de pizza
 const PIE_COLORS = ["#2d6a4f", "#40916c", "#74c69d", "#b7e4c7"];
@@ -772,7 +778,7 @@ export default function Dashboard() {
                             acc[item.uf] = {
                               name: item.name,
                               escolas: item.escolas,
-                              color: PASTEL_COLORS[idx % PASTEL_COLORS.length]
+                              color: STATE_FIXED_COLORS[item.uf] ?? PASTEL_COLORS[idx % PASTEL_COLORS.length]
                             };
                             return acc;
                           }, {} as Record<string, { name: string; escolas: number; color: string }>)}

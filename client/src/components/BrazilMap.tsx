@@ -15,8 +15,8 @@ const COLORS = [
 
 /* cores fixas para estados com problemas visuais no array acima */
 const STATE_COLOR_OVERRIDES: Record<string, string> = {
-  MT: "#c8822a",  /* ocre quente — Cerrado */
-  RO: "#3a7d5e",  /* verde-floresta vivo — Amazônia */
+  MT: "#d4554a",  /* terracota — contrasta com AM(mint), GO(verde-água), MS(amarelo) */
+  RO: "#e8a825",  /* âmbar dourado — contrasta com AM(mint), AC(verde-escuro), PA(salmão) */
 };
 
 type Props = {
