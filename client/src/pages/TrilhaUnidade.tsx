@@ -140,28 +140,96 @@ function Ficha({
   );
 }
 
-// ── Baralho de fichas empilhadas ──
-// Fichas de aprofundamento aparecem uma em cima da outra
-// como uma fila/deck de cartões de índice
+// ── Quadro de fluxo ──
+function FluxoQuadro({
+  tone,
+  steps,
+}: {
+  tone: (typeof toneMap)[ToneKey];
+  steps: Array<{ num: number; label: string; desc: string }>;
+}) {
+  return (
+    <div
+      className="relative overflow-hidden rounded-[16px]"
+      style={{
+        background: "linear-gradient(135deg, #fdfaf4 0%, #f5f0e8 100%)",
+        border: `1px solid ${tone.border}`,
+        boxShadow: "0 3px 10px rgba(0,0,0,0.07)",
+      }}
+    >
+      {/* Header */}
+      <div
+        className="flex items-center gap-2 px-5 py-2.5"
+        style={{ background: tone.tab, borderBottom: `1px solid ${tone.border}` }}
+      >
+        <span className="text-base">🗺️</span>
+        <span className="text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.tabText }}>
+          quadro de fluxo
+        </span>
+      </div>
+
+      {/* Flow steps — horizontal with arrows */}
+      <div className="flex flex-wrap items-start gap-0 p-4 md:flex-nowrap">
+        {steps.map((step, i) => (
+          <div key={step.num} className="flex min-w-0 flex-1 items-start">
+            {/* Step box */}
+            <div className="flex min-w-0 flex-1 flex-col items-center text-center">
+              {/* Number badge */}
+              <div
+                className="mb-2 flex h-8 w-8 items-center justify-center rounded-full text-sm font-extrabold shadow-sm"
+                style={{ background: tone.spineLight, color: "#fff" }}
+              >
+                {step.num}
+              </div>
+              {/* Label chip */}
+              <div
+                className="mb-1.5 rounded-[8px] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide"
+                style={{ background: tone.tab, color: tone.tabText }}
+              >
+                {step.label}
+              </div>
+              {/* Description */}
+              <p className="text-[11px] leading-4 text-slate-500 px-1">{step.desc}</p>
+            </div>
+
+            {/* Arrow connector (not after last step) */}
+            {i < steps.length - 1 && (
+              <div
+                className="flex-shrink-0 self-center px-1 text-lg font-bold"
+                style={{ color: tone.accent }}
+              >
+                →
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function FichaStack({
   fichas,
   tone,
   onOpen,
 }: {
-  fichas: Array<{ id: string; label: string; title: string; preview: string; paragraphs: string[] }>;
+  fichas: Array<{ id: string; label: string; emoji: string; title: string; preview: string; paragraphs: string[] }>;
   tone: (typeof toneMap)[ToneKey];
   onOpen: (id: string) => void;
 }) {
   const [topIdx, setTopIdx] = useState(0);
 
-  // Rotate stack so topIdx card is front
   const ordered = [
     ...fichas.slice(topIdx),
     ...fichas.slice(0, topIdx),
   ];
 
+  // Height: front card body ~170px + tabs for remaining cards
+  const peekOffset = 36;
+  const totalHeight = 190 + (fichas.length - 1) * peekOffset;
+
   return (
-    <div className="relative select-none" style={{ minHeight: "270px", paddingBottom: "76px" }}>
+    <div className="relative select-none" style={{ minHeight: `${totalHeight}px`, paddingBottom: `${(fichas.length - 1) * peekOffset}px` }}>
       {/* Render back-to-front so front card is on top */}
       {[...ordered].reverse().map((ficha, reversedIdx) => {
         const stackPos = ordered.length - 1 - reversedIdx; // 0 = front card
@@ -195,16 +263,17 @@ function FichaStack({
               }}
             >
               <span
-                className="text-[9px] font-extrabold uppercase tracking-[0.22em]"
+                className="flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-[0.22em]"
                 style={{ color: tone.tabText }}
               >
+                <span className="text-sm leading-none">{ficha.emoji}</span>
                 {ficha.label}
               </span>
               <span
                 className="text-[9px] font-bold opacity-70"
                 style={{ color: tone.tabText }}
               >
-                {isFront ? "abrir →" : "↓"}
+                {isFront ? "abrir →" : "ver ↑"}
               </span>
             </button>
 
@@ -214,17 +283,11 @@ function FichaStack({
                 <p className="text-sm font-bold text-slate-700">{ficha.title}</p>
                 <p className="mt-1 text-xs leading-5 text-slate-500">{ficha.preview}</p>
                 <div className="mt-3 flex items-center gap-2">
-                  <div
-                    className="h-px flex-1"
-                    style={{ background: tone.border }}
-                  />
+                  <div className="h-px flex-1" style={{ background: tone.border }} />
                   <span className="text-[10px] font-semibold" style={{ color: tone.spineLight }}>
-                    4–5 páginas · leitura completa
+                    {ficha.paragraphs.length} parágrafos · leitura completa
                   </span>
-                  <div
-                    className="h-px flex-1"
-                    style={{ background: tone.border }}
-                  />
+                  <div className="h-px flex-1" style={{ background: tone.border }} />
                 </div>
               </div>
             )}
@@ -239,36 +302,110 @@ const FICHAS_APROFUNDAMENTO = [
   {
     id: "leitura",
     label: "leitura",
+    emoji: "📖",
     title: "Leitura ampliada da unidade",
-    preview: "Uma explicação mais longa para compreender o sentido geral do tema.",
+    preview: "Texto corrido de 4–5 páginas para compreensão aprofundada do tema.",
     paragraphs: [
-      "Esta ficha transforma o tema da unidade em uma leitura mais contínua, menos fragmentada.",
-      "Aqui, o objetivo não é apenas listar regras, mas mostrar como esse conteúdo pode fortalecer a tomada de decisão e diminuir dúvidas na rotina da escola.",
-      "Ela serve como texto-base para estudo, reunião interna e retomada do assunto com mais calma.",
+      "Esta ficha transforma o tema da unidade em uma leitura mais contínua, menos fragmentada. Aqui, o objetivo não é apenas listar regras, mas mostrar como esse conteúdo pode fortalecer a tomada de decisão e diminuir dúvidas na rotina da escola.",
+      "O texto parte do contexto geral — por que esse tema existe, qual problema ele resolve na gestão escolar — e avança progressivamente para os pontos mais técnicos, sempre amarrando o conteúdo à realidade vivida pela diretora.",
+      "A leitura é dividida em blocos temáticos que podem ser estudados em partes. Cada bloco termina com um destaque que resume o ponto central daquela seção, facilitando a revisão e o uso posterior como material de consulta.",
+      "Esta ficha serve como texto-base para estudo pessoal, reunião interna de formação e retomada do assunto com mais calma em momentos de dúvida ou decisão.",
+      "Ao final da leitura, a diretora deve ser capaz de explicar o tema para sua equipe com suas próprias palavras, conectando os conceitos à realidade concreta da escola e do programa de financiamento.",
     ],
   },
   {
     id: "pratica",
     label: "prática",
+    emoji: "🛠️",
     title: "Como isso aparece na prática",
-    preview: "Exemplos concretos de como o tema aparece no dia a dia da escola.",
+    preview: "Situações reais, exemplos e o que fazer quando o tema aparece no dia a dia.",
     paragraphs: [
-      "Na prática, esta unidade aparece quando a direção precisa transformar regra em decisão concreta.",
-      "Ela também surge quando a equipe tenta organizar melhor papéis, tempos e responsabilidades.",
-      "Quando esse conteúdo fica claro, a escola ganha previsibilidade e mais segurança para agir.",
+      "Na prática, esta unidade aparece quando a direção precisa transformar uma regra em decisão concreta. A distância entre saber o que diz a norma e saber o que fazer na segunda-feira de manhã é exatamente o que esta ficha pretende reduzir.",
+      "Começamos com situações frequentes que toda diretora já viveu ou vai viver: o recurso que chegou fora do prazo, a dúvida sobre qual despesa é permitida, o documento que foi solicitado na auditoria e ninguém sabia onde estava.",
+      "Para cada situação, esta ficha apresenta o contexto, o que a legislação diz, o que costuma dar errado e o que fazer passo a passo. Os exemplos são baseados em casos reais coletados de escolas públicas de diferentes estados.",
+      "A ficha também apresenta boas práticas que escolas bem-geridas adotam para evitar os problemas mais comuns: rotinas de registro, fluxos de aprovação interna, formas de organizar a documentação de comprovação.",
+      "Esta é a ficha para consultar quando o problema já está acontecendo — não apenas para estudar antes. Guarde-a acessível para o momento em que a situação real aparecer.",
     ],
   },
   {
     id: "conversa",
     label: "conversa",
+    emoji: "💬",
     title: "Perguntas para conversa com a equipe",
-    preview: "Uma ficha pensada para apoiar reunião, formação ou conversa interna.",
+    preview: "Roteiro para reunião, formação ou conversa interna sobre o tema.",
     paragraphs: [
-      "Quais pontos desta unidade a equipe já domina e quais ainda parecem mais nebulosos?",
-      "Que quadro, checklist ou fluxo ajudaria a tornar esse conteúdo mais claro para toda a escola?",
-      "Como este tema conversa com a próxima decisão administrativa que a direção vai tomar?",
+      "Esta ficha é um roteiro para conduzir uma conversa estruturada com a equipe escolar sobre o tema desta unidade. Ela pode ser usada em reunião pedagógica, formação interna, encontro com o conselho escolar ou conversa com a secretaria.",
+      "Ponto de partida: o que a equipe já sabe? Antes de apresentar novos conteúdos, vale mapear o nível de familiaridade do grupo com o tema. As primeiras perguntas desta ficha servem exatamente para isso.",
+      "Bloco central: quais pontos desta unidade a equipe já domina e quais ainda parecem nebulosos? Como esse conteúdo aparece no dia a dia da escola? Que situações já geraram dúvida ou conflito relacionadas a esse tema?",
+      "Bloco de ação: o que a escola pode fazer diferente a partir de agora? Que mudança pequena, concreta e imediata poderia ser implementada? Quem seria responsável? Em que prazo?",
+      "Encerramento: quais recursos, materiais ou apoios externos seriam úteis para aprofundar o tema? Existe alguém na rede que já resolveu bem esse problema e poderia compartilhar a experiência?",
     ],
   },
+  {
+    id: "glossario",
+    label: "glossário",
+    emoji: "📚",
+    title: "Glossário dos termos desta unidade",
+    preview: "Definições claras dos termos técnicos que aparecem na unidade.",
+    paragraphs: [
+      "Esta ficha apresenta os principais termos técnicos que aparecem nesta unidade, com definições em linguagem acessível. O objetivo é que a diretora possa consultar rapidamente quando encontrar um termo desconhecido em um documento oficial.",
+      "Os termos são organizados em ordem de importância para a compreensão da unidade — não em ordem alfabética. Os mais centrais aparecem primeiro, seguidos de termos de apoio e termos relacionados que aparecem em documentos do MEC e do FNDE.",
+      "Para cada termo, a ficha apresenta: a definição técnica (o que o documento oficial diz), a definição prática (o que isso significa na realidade da escola) e, quando relevante, um exemplo de como o termo aparece em formulários, portarias ou relatórios.",
+      "Esta ficha foi elaborada com base nas portarias, resoluções e manuais publicados pelo FNDE e pelo MEC relacionados ao tema desta unidade. As definições são atualizadas conforme a legislação vigente.",
+      "Dica de uso: imprima esta ficha e cole na pasta de documentos relacionados ao tema. Ela serve como guia de referência rápida durante o preenchimento de formulários, elaboração de relatórios e atendimento de auditorias.",
+    ],
+  },
+  {
+    id: "checklist",
+    label: "checklist",
+    emoji: "✅",
+    title: "Lista de verificação da unidade",
+    preview: "O que checar antes, durante e depois de cada processo desta unidade.",
+    paragraphs: [
+      "Esta ficha apresenta um checklist prático dividido em três momentos: antes do processo começar, durante a execução e após a conclusão. Ela foi elaborada para que a diretora possa verificar se nada foi esquecido em cada etapa.",
+      "Antes de começar: verificar se os documentos de habilitação estão atualizados, se o plano de aplicação está aprovado pelo conselho escolar, se os prazos do calendário do FNDE foram consultados e se a equipe responsável pela execução foi orientada.",
+      "Durante a execução: conferir se cada despesa está dentro do objeto do programa, se os comprovantes estão sendo coletados no momento do pagamento, se os registros no sistema estão sendo feitos em tempo real e se o saldo está sendo monitorado.",
+      "Após a conclusão: verificar se todos os comprovantes foram digitalizados e organizados, se o relatório de execução foi concluído, se a prestação de contas foi submetida dentro do prazo e se o conselho escolar aprovou as contas.",
+      "Esta lista não substitui os manuais e normativos oficiais, mas serve como guia de memória para evitar os erros mais comuns. Adapte-a à realidade da sua escola e complemente com os requisitos específicos do seu programa e estado.",
+    ],
+  },
+  {
+    id: "legislacao",
+    label: "legislação",
+    emoji: "⚖️",
+    title: "Base legal desta unidade",
+    preview: "As leis, portarias e resoluções que fundamentam o tema desta unidade.",
+    paragraphs: [
+      "Esta ficha apresenta a base legal que fundamenta o tema desta unidade. Conhecer a legislação não significa memorizar artigos, mas saber quais documentos consultar quando surge uma dúvida ou contestação.",
+      "A legislação relacionada a este tema é composta principalmente por: resoluções do FNDE que definem as regras de cada programa, portarias do MEC que estabelecem diretrizes gerais, e leis federais que determinam o marco legal do financiamento da educação pública.",
+      "Para cada norma listada nesta ficha, apresentamos: o número e ano do documento, o órgão que publicou, o que ela determina em relação a esta unidade e onde encontrar o texto completo (site do FNDE, Diário Oficial da União, portal do MEC).",
+      "Atenção especial: a legislação é atualizada periodicamente. Resolução vigente até ontem pode ter sido substituída. Sempre verifique a data de publicação e se há versão mais recente antes de citar uma norma em um documento oficial.",
+      "Esta ficha também apresenta os principais pontos de divergência que costumam gerar dúvida: casos em que a lei estadual diverge da federal, situações não previstas explicitamente e interpretações que variam entre os órgãos de controle.",
+    ],
+  },
+  {
+    id: "erros",
+    label: "erros comuns",
+    emoji: "⚠️",
+    title: "Erros mais comuns e como evitá-los",
+    preview: "Os equívocos que aparecem com mais frequência e como não repeti-los.",
+    paragraphs: [
+      "Esta ficha reúne os erros mais frequentemente encontrados em auditorias, prestações de contas e relatórios de fiscalização relacionados ao tema desta unidade. Conhecer os erros mais comuns é a forma mais eficiente de evitá-los.",
+      "Erro 1 — Documentação incompleta: comprovantes ausentes, rasuras não justificadas, notas fiscais sem identificação do programa. Este é o erro mais frequente e também o mais fácil de evitar com uma rotina simples de organização no momento da despesa.",
+      "Erro 2 — Aplicação fora do objeto: despesas realizadas com recursos de um programa em itens não permitidos por aquele programa específico. Cada programa tem seu objeto definido em resolução — consulte antes de gastar.",
+      "Erro 3 — Prazos perdidos: submissão da prestação de contas fora do prazo, ausência de registro no sistema PDDE Web, reunião do conselho escolar não realizada no período exigido.",
+      "Erro 4 — Processo licitatório inadequado: compras sem cotação prévia, fornecedores sem regularidade fiscal, contratos sem seguir as modalidades exigidas pela legislação. Este erro tem consequências graves e pode gerar devolução de recursos.",
+      "Como usar esta ficha: revise esta lista antes de iniciar cada processo. Compartilhe com o responsável financeiro da escola. Use como pauta em reuniões de preparação para auditoria ou prestação de contas.",
+    ],
+  },
+];
+
+const FLUXO_STEPS = [
+  { num: 1, label: "Identificar", desc: "Mapear os recursos disponíveis e as fontes de financiamento da escola" },
+  { num: 2, label: "Planejar", desc: "Definir prioridades e elaborar o plano de aplicação dos recursos" },
+  { num: 3, label: "Executar", desc: "Realizar as despesas respeitando as normas e o objeto do programa" },
+  { num: 4, label: "Registrar", desc: "Documentar toda movimentação com comprovantes e registros no sistema" },
+  { num: 5, label: "Prestar", desc: "Elaborar e enviar a prestação de contas dentro do prazo ao FNDE" },
 ];
 
 export default function TrilhaUnidade() {
@@ -523,6 +660,18 @@ export default function TrilhaUnidade() {
               </Ficha>
             </div>
 
+            {/* ── QUADRO DE FLUXO ── */}
+            <div>
+              <div className="mb-3 flex items-center gap-3">
+                <div className="h-px flex-1" style={{ background: `linear-gradient(to right, ${tone.border}, transparent)` }} />
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
+                  fluxo do processo
+                </span>
+                <div className="h-px flex-1" style={{ background: `linear-gradient(to left, ${tone.border}, transparent)` }} />
+              </div>
+              <FluxoQuadro tone={tone} steps={FLUXO_STEPS} />
+            </div>
+
             {/* ── FICHAS DE APROFUNDAMENTO — deck empilhado ── */}
             <div>
               <div className="mb-4 flex items-center gap-3">
@@ -572,8 +721,9 @@ export default function TrilhaUnidade() {
               <div className="flex-1 bg-[#f8f4ee] p-6">
                 <div className="mb-4 flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
-                      ficha aberta
+                    <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
+                      <span className="text-base leading-none">{FICHAS_APROFUNDAMENTO.find((f) => f.id === openFicha)?.emoji}</span>
+                      ficha aberta · {FICHAS_APROFUNDAMENTO.find((f) => f.id === openFicha)?.label}
                     </p>
                     <h3 className="mt-1 text-xl font-extrabold text-slate-800">
                       {FICHAS_APROFUNDAMENTO.find((f) => f.id === openFicha)?.title}
