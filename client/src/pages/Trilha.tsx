@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
@@ -6,6 +6,71 @@ import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Loader2 } from "lucide-react";
 import type { TrilhaUnit } from "@shared/schema";
+
+// Realistic push-pin SVG component
+function Taxinha({ color, dark, size = 28 }: { color: string; dark: string; size?: number }) {
+  const id = color.replace("#", "pin");
+  return (
+    <svg
+      width={size}
+      height={Math.round(size * 1.55)}
+      viewBox="0 0 22 34"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.38)) drop-shadow(0 1px 2px rgba(0,0,0,0.25))" }}
+    >
+      <defs>
+        {/* Head radial gradient — bright highlight top-left, deep shadow bottom-right */}
+        <radialGradient id={`hg-${id}`} cx="34%" cy="28%" r="70%">
+          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.55" />
+          <stop offset="30%" stopColor={color}   stopOpacity="1" />
+          <stop offset="78%" stopColor={color}   stopOpacity="1" />
+          <stop offset="100%" stopColor={dark}   stopOpacity="1" />
+        </radialGradient>
+        {/* Metal shank gradient — left-to-right highlight */}
+        <linearGradient id={`mg-${id}`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%"  stopColor="#7a7a7a" />
+          <stop offset="38%" stopColor="#e8e8e8" />
+          <stop offset="65%" stopColor="#c0c0c0" />
+          <stop offset="100%" stopColor="#888" />
+        </linearGradient>
+        {/* Tip gradient */}
+        <linearGradient id={`tg-${id}`} x1="0.5" y1="0" x2="0.5" y2="1">
+          <stop offset="0%"  stopColor="#c8c8c8" />
+          <stop offset="100%" stopColor="#888" />
+        </linearGradient>
+      </defs>
+
+      {/* Drop shadow of the disc on the cork */}
+      <ellipse cx="11" cy="21.5" rx="7.5" ry="1.8" fill="rgba(0,0,0,0.22)" />
+
+      {/* Main disc head */}
+      <circle cx="11" cy="11" r="10" fill={`url(#hg-${id})`} />
+
+      {/* Outer rim — subtle dark border */}
+      <circle cx="11" cy="11" r="10" stroke={dark} strokeWidth="0.7" strokeOpacity="0.45" fill="none" />
+
+      {/* Inner ring crease (plastic moulding line) */}
+      <circle cx="11" cy="11" r="7" stroke="rgba(0,0,0,0.10)" strokeWidth="0.6" fill="none" />
+
+      {/* Specular highlight — main blob */}
+      <ellipse
+        cx="6.8" cy="6.2" rx="3.8" ry="2.4"
+        fill="rgba(255,255,255,0.52)"
+        transform="rotate(-28 6.8 6.2)"
+        style={{ filter: "blur(0.6px)" }}
+      />
+      {/* Specular — tiny second glint */}
+      <ellipse cx="14.5" cy="14.8" rx="1.2" ry="0.7" fill="rgba(255,255,255,0.18)" />
+
+      {/* Shank / neck */}
+      <rect x="9" y="19.5" width="4" height="9" rx="2" fill={`url(#mg-${id})`} />
+
+      {/* Tip */}
+      <path d="M9 28.5 L13 28.5 L11 33.5 Z" fill={`url(#tg-${id})`} />
+    </svg>
+  );
+}
 
 const GROUPS = [
   {
@@ -100,7 +165,6 @@ function emojiFor(personalidade: keyof typeof toneMap) {
 }
 
 export default function Trilha() {
-  const [pinned, setPinned] = useState<string | null>(null);
   const [, navigate] = useLocation();
 
   const { data: units = [], isLoading } = useQuery<TrilhaUnit[]>({
@@ -221,7 +285,15 @@ export default function Trilha() {
         {/* Trilha sections */}
         <section className="space-y-14">
           {groups.map((group, groupIdx) => {
-            const pinColors = ["#e74c3c","#3498db","#2ecc71","#f39c12","#9b59b6","#e67e22","#1abc9c"];
+            const pinDefs = [
+              { color: "#e74c3c", dark: "#8b1a1a" },
+              { color: "#3498db", dark: "#1a5276" },
+              { color: "#2ecc71", dark: "#145a32" },
+              { color: "#f39c12", dark: "#7d4e00" },
+              { color: "#9b59b6", dark: "#5b2c6f" },
+              { color: "#e67e22", dark: "#784a00" },
+              { color: "#1abc9c", dark: "#0e6655" },
+            ];
             const rotations = [-3.2, 1.8, -1.5, 2.6, -2.8, 1.2, -0.8, 3.1, -2.2, 1.6];
 
             // Bilhete de recado color schemes
@@ -314,66 +386,28 @@ export default function Trilha() {
                   {/* Cards grid — bilhetes de recado no mural */}
                   <div className="grid gap-x-5 gap-y-10 md:grid-cols-2 xl:grid-cols-3">
                     {group.items.map((unit, itemIdx) => {
-                      const isPinned = pinned === unit.unitId;
                       const rot = rotations[itemIdx % rotations.length];
                       const memo = memoVariants[itemIdx % memoVariants.length];
-                      const pinColor = pinColors[itemIdx % pinColors.length];
+                      const pin = pinDefs[itemIdx % pinDefs.length];
 
-                      // Realistic taxinha positions — slightly off-center for authenticity
-                      const pinOffset = itemIdx % 3 === 0 ? "45%" : itemIdx % 3 === 1 ? "50%" : "55%";
+                      // Slightly off-center pin position for natural look
+                      const pinOffset = itemIdx % 3 === 0 ? "43%" : itemIdx % 3 === 1 ? "50%" : "57%";
 
                       return (
                         <motion.div
                           key={unit.unitId}
                           style={{ rotate: rot, transformOrigin: "top center" }}
-                          whileHover={{ y: -12, rotate: 0, scale: 1.03, zIndex: 20 }}
-                          animate={isPinned ? { rotate: 0, y: -10, scale: 1.05, zIndex: 20 } : {}}
+                          whileHover={{ y: -14, rotate: 0, scale: 1.04, zIndex: 20 }}
                           transition={{ type: "spring", stiffness: 280, damping: 22 }}
                           className="relative cursor-pointer"
-                          onClick={() => setPinned((cur) => (cur === unit.unitId ? null : unit.unitId))}
+                          onClick={() => navigate(`/trilha/${unit.unitId}`)}
                         >
-                          {/* Taxinha (push pin) — sempre, diferenciando dos papéis de etapa que usam fita */}
+                          {/* Taxinha SVG realista */}
                           <div
                             className="absolute z-10"
-                            style={{ top: "-14px", left: pinOffset, transform: "translateX(-50%)" }}
+                            style={{ top: "-20px", left: pinOffset, transform: "translateX(-50%)" }}
                           >
-                            {/* Cabeça da taxinha */}
-                            <div
-                              className="relative h-6 w-6 rounded-full"
-                              style={{
-                                background: isPinned
-                                  ? `radial-gradient(circle at 32% 28%, #fff5, ${pinColor} 52%, color-mix(in srgb, ${pinColor} 60%, #000))`
-                                  : `radial-gradient(circle at 32% 28%, #ffffffaa, ${pinColor} 50%, color-mix(in srgb, ${pinColor} 55%, #111))`,
-                                boxShadow: isPinned
-                                  ? `0 5px 12px ${pinColor}bb, 0 2px 4px rgba(0,0,0,0.45), inset 0 1px 2px rgba(255,255,255,0.35)`
-                                  : `0 3px 8px ${pinColor}88, 0 1px 3px rgba(0,0,0,0.35), inset 0 1px 2px rgba(255,255,255,0.25)`,
-                                border: "1.5px solid rgba(0,0,0,0.15)",
-                              }}
-                            >
-                              {/* Reflexo especular da taxinha */}
-                              <div
-                                className="absolute rounded-full"
-                                style={{
-                                  top: "3px", left: "4px", width: "7px", height: "5px",
-                                  background: "rgba(255,255,255,0.55)",
-                                  transform: "rotate(-30deg)",
-                                  borderRadius: "50%",
-                                  filter: "blur(0.5px)",
-                                }}
-                              />
-                            </div>
-                            {/* Ponta da taxinha (agulha) */}
-                            <div
-                              className="absolute left-1/2 -translate-x-1/2"
-                              style={{
-                                top: "20px",
-                                width: "2px",
-                                height: "6px",
-                                background: "linear-gradient(to bottom, #999, #ccc)",
-                                borderRadius: "0 0 1px 1px",
-                                boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
-                              }}
-                            />
+                            <Taxinha color={pin.color} dark={pin.dark} size={30} />
                           </div>
 
                           {/* Bilhete de recado */}
@@ -384,9 +418,7 @@ export default function Trilha() {
                               borderColor: memo.border,
                               borderWidth: "1px",
                               borderStyle: "solid",
-                              boxShadow: isPinned
-                                ? "0 18px 40px rgba(0,0,0,0.30), 0 3px 8px rgba(0,0,0,0.18)"
-                                : "0 6px 22px rgba(0,0,0,0.24), 0 2px 5px rgba(0,0,0,0.14)",
+                              boxShadow: "0 6px 22px rgba(0,0,0,0.24), 0 2px 5px rgba(0,0,0,0.14)",
                             }}
                           >
                             {/* Colored stripe on left edge (like message pad) */}
@@ -487,21 +519,12 @@ export default function Trilha() {
                                 >
                                   ⏱ {unit.duration}
                                 </span>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/trilha/${unit.unitId}`);
-                                  }}
-                                  className="rounded px-3 py-1 text-[11px] font-bold transition hover:opacity-80"
-                                  style={{
-                                    background: memo.header,
-                                    color: memo.stripe,
-                                    border: `1px solid ${memo.border}`,
-                                  }}
+                                <span
+                                  className="text-[10px] font-bold opacity-60"
+                                  style={{ color: memo.stripe }}
                                 >
-                                  ler →
-                                </button>
+                                  clique para ler →
+                                </span>
                               </div>
                             </div>
                           </article>
