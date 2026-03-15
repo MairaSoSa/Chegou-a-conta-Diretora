@@ -125,14 +125,14 @@ export default function Home() {
               <div className="hl-hero-note">
                 <span className="hl-eyebrow">
                   <span className="hl-dots" />
-                  um cantinho mais bonito para cuidar da escola
+                  quando a escola administra seus recursos, o direito de aprender se fortalece
                 </span>
                 <h2>
                   Chegou a Conta,{" "}
                   <span className="hl-accent">Diretora.</span>
                 </h2>
                 <p className="hl-hero-desc">
-                  Aqui você acompanha dados, programas federais, prazos e ferramentas — tudo num só lugar.
+                  Um lugar para entender como funcionam os recursos e programas da educação.
                 </p>
                 <div className="hl-hero-tags">
                   <span className="hl-tag">dados educacionais</span>
