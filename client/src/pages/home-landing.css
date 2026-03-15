@@ -282,6 +282,8 @@
 .hl-yellow  { background: #fff2bf; } .hl-pink   { background: #ffe2ea; }
 .hl-blue    { background: #e5f1ff; } .hl-green  { background: #dff3e8; }
 .hl-orange  { background: #ffe7d6; } .hl-purple { background: #eee8ff; }
+.hl-teal    { background: #d6f5f0; }
+
 
 /* ── Coluna direita ── */
 .hl-right-col {
@@ -367,6 +369,9 @@
   background: #dff3e8; color: #2f7a5f;
   border: 1px solid #b4dfc8; border-radius: 999px;
   padding: 2px 9px;
+}
+.hl-trilha-desc {
+  margin: 2px 0 6px; font-size: .74rem; color: #7a9aaa; line-height: 1.45; font-weight: 600;
 }
 
 .hl-checklist { display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto; padding-right: 2px; }

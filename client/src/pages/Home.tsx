@@ -41,14 +41,6 @@ const NOTE_CARDS = [
     href: "/calendario",
   },
   {
-    color: "hl-green",
-    emoji: "🧭",
-    title: "Trilha Guiada",
-    desc: "Jornada passo a passo para dominar a gestão.",
-    small: "comece aqui",
-    href: "/trilha",
-  },
-  {
     color: "hl-purple",
     emoji: "💰",
     title: "Programas",
@@ -63,6 +55,14 @@ const NOTE_CARDS = [
     desc: "Modelos de ofício, planilhas e materiais prontos.",
     small: "apoio prático",
     href: "/ferramentas",
+  },
+  {
+    color: "hl-teal",
+    emoji: "📓",
+    title: "Caderno da Diretora",
+    desc: "IA especializada em gestão escolar para tirar dúvidas.",
+    small: "inteligência artificial",
+    href: "/chat",
   },
 ];
 
@@ -201,6 +201,9 @@ export default function Home() {
                     {done}/{TRILHA_ITEMS.length}
                   </span>
                 </div>
+                <p className="hl-trilha-desc">
+                  Marque cada etapa conforme for explorando a plataforma. Sua jornada fica salva automaticamente.
+                </p>
                 <div className="hl-checklist">
                   {TRILHA_ITEMS.map(item => (
                     <div
