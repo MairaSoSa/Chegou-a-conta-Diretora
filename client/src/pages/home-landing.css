@@ -147,7 +147,7 @@
 /* ── Layout principal ── */
 .hl-layout {
   display: grid; grid-template-columns: 1.08fr .92fr;
-  gap: 14px; flex: 1; min-height: 0; padding: 4px 4px 0 0;
+  gap: 14px; flex: 1; min-height: 0; padding: 0 4px 0 0;
 }
 
 /* ── Coluna esquerda ── */

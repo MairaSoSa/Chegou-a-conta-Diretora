@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import {
-  SlidersHorizontal, GraduationCap, Scale, CalendarDays,
+  GraduationCap, Scale, CalendarDays,
   Landmark, Wrench, BookOpen, type LucideIcon,
 } from "lucide-react";
-import { useAccessibility } from "@/App";
 import "./home-landing.css";
 
 const STORAGE_KEY = "chegou-conta-trilha-progresso";
@@ -85,18 +84,7 @@ const NOTE_CARDS: NoteCard[] = [
   },
 ];
 
-const MENU_PILLS = [
-  { label: "dados",       href: "/dashboard" },
-  { label: "legislação",  href: "/legislacao" },
-  { label: "calendário",  href: "/calendario" },
-  { label: "trilha",      href: "/trilha" },
-  { label: "programas",   href: "/programas" },
-  { label: "ferramentas", href: "/ferramentas" },
-  { label: "caderno",     href: "/chat" },
-];
-
 export default function Home() {
-  const { toggle: toggleAccessibility } = useAccessibility();
   const [checks, setChecks] = useState<Record<string, boolean>>(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
@@ -126,32 +114,6 @@ export default function Home() {
         <aside className="hl-spiral" />
 
         <section className="hl-page">
-          {/* ── Topo ── */}
-          <div className="hl-topbar">
-            <div className="hl-brand">
-              <span className="hl-brand-badge" />
-              <div>
-                <h1>Chegou a Conta, Diretora!</h1>
-                <p>gestão escolar mais bonita e mais simples</p>
-              </div>
-              <button
-                onClick={toggleAccessibility}
-                className="hl-a11y-btn"
-                aria-label="Ajustes de acessibilidade"
-                title="Acessibilidade"
-              >
-                <SlidersHorizontal size={15} />
-              </button>
-            </div>
-            <nav className="hl-mini-menu">
-              {MENU_PILLS.map(p => (
-                <Link key={p.href} href={p.href}>
-                  <span className="hl-pill">{p.label}</span>
-                </Link>
-              ))}
-            </nav>
-          </div>
-
           {/* ── Layout principal ── */}
           <div className="hl-layout">
             {/* Coluna esquerda */}
