@@ -319,13 +319,12 @@ function CartaoFerramenta({
           </div>
         )}
 
-        {/* nome com marcação + tipo colado */}
-        <div className="relative inline-block max-w-full">
-          <span className={`absolute inset-x-0 bottom-0.5 h-3 rounded-sm ${marcador}`} />
-          <h3 className="relative text-[1.1rem] sm:text-[1.22rem] font-black leading-[1.2] text-slate-800">
+        {/* nome com marcação multilinhas */}
+        <h3 className="text-[1.1rem] sm:text-[1.22rem] font-black leading-[1.7] text-slate-800">
+          <span className={`box-decoration-clone ${marcador} px-0.5 leading-[1.7]`}>
             {cartao.nome}
-          </h3>
-        </div>
+          </span>
+        </h3>
         {/* tipo badge colado abaixo do nome */}
         <div className="mt-1.5">
           <TipoBadge tipo={cartao.tipo} />
