@@ -144,10 +144,11 @@
 }
 .hl-eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 6px 11px; border-radius: 999px;
+  padding: 5px 11px; border-radius: 999px;
   background: #fffefb; border: 1px dashed #e6d8c6;
-  color: #677b86; font-size: .68rem; font-weight: 800;
-  text-transform: uppercase; letter-spacing: .08em;
+  color: #677b86; font-size: .62rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .04em;
+  white-space: nowrap;
 }
 .hl-dots {
   width: 8px; height: 8px; border-radius: 50%;

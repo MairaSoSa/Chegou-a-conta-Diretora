@@ -125,11 +125,11 @@ export default function Home() {
               <div className="hl-hero-note">
                 <span className="hl-eyebrow">
                   <span className="hl-dots" />
-                  quando a escola administra seus recursos, o direito de aprender se fortalece
+                  quando a escola administra bem, o direito de aprender se fortalece
                 </span>
                 <h2>
                   Chegou a Conta,{" "}
-                  <span className="hl-accent">Diretora.</span>
+                  <span className="hl-accent">Diretora!</span>
                 </h2>
                 <p className="hl-hero-desc">
                   Um lugar para entender como funcionam os recursos e programas da educação.
