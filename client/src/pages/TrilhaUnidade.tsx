@@ -9,40 +9,52 @@ import type { TrilhaUnit } from "@shared/schema";
 
 const toneMap = {
   origem: {
-    section: "bg-[#f7fbff] border-sky-100",
+    spine: "#4a7a9b",
+    spineLight: "#6a9db8",
+    tab: "#b8d8ee",
+    tabText: "#1e4a6a",
+    strip: "#deeef8",
+    punch: "#c0daea",
+    header: "#eef6fc",
     chip: "bg-sky-100 text-sky-800",
-    title: "text-sky-950",
-    button: "border-sky-200 text-sky-800 hover:bg-sky-50",
-    accent: "bg-sky-100",
-    page: "bg-[#f8fcff] border-sky-200",
-    flow: "bg-sky-50 border-sky-100",
+    border: "#cfe5f4",
+    accent: "#a8ccdf",
   },
   estrutura: {
-    section: "bg-[#fffaf2] border-amber-100",
+    spine: "#8b6914",
+    spineLight: "#b08c2a",
+    tab: "#f0dea0",
+    tabText: "#5a3d08",
+    strip: "#fdf4d8",
+    punch: "#e8d090",
+    header: "#fefaf0",
     chip: "bg-amber-100 text-amber-900",
-    title: "text-amber-950",
-    button: "border-amber-200 text-amber-900 hover:bg-amber-50",
-    accent: "bg-amber-100",
-    page: "bg-[#fff9ef] border-amber-200",
-    flow: "bg-amber-50 border-amber-100",
+    border: "#f0e0a8",
+    accent: "#d4b84a",
   },
   planejamento: {
-    section: "bg-[#f7fff9] border-emerald-100",
+    spine: "#2d7a54",
+    spineLight: "#48a070",
+    tab: "#b8eacc",
+    tabText: "#0e4a28",
+    strip: "#e4f8ec",
+    punch: "#a8dab8",
+    header: "#f0faf4",
     chip: "bg-emerald-100 text-emerald-900",
-    title: "text-emerald-950",
-    button: "border-emerald-200 text-emerald-900 hover:bg-emerald-50",
-    accent: "bg-emerald-100",
-    page: "bg-[#f7fff9] border-emerald-200",
-    flow: "bg-emerald-50 border-emerald-100",
+    border: "#b8ddc8",
+    accent: "#6ab88a",
   },
   prestacao: {
-    section: "bg-[#fff8fc] border-rose-100",
+    spine: "#8b3a5a",
+    spineLight: "#b05878",
+    tab: "#f0b8cc",
+    tabText: "#5a1830",
+    strip: "#fde8f0",
+    punch: "#e0a0b8",
+    header: "#fff4f8",
     chip: "bg-rose-100 text-rose-900",
-    title: "text-rose-950",
-    button: "border-rose-200 text-rose-900 hover:bg-rose-50",
-    accent: "bg-rose-100",
-    page: "bg-[#fff8fc] border-rose-200",
-    flow: "bg-rose-50 border-rose-100",
+    border: "#e8b8cc",
+    accent: "#c87898",
   },
 };
 
@@ -70,10 +82,86 @@ function groupName(p: ToneKey) {
     : "Prestação de contas e continuidade";
 }
 
-const FICHAS = [
+// Hole punch marks for the binder margin
+function HolePunches({ color }: { color: string }) {
+  return (
+    <div className="absolute left-0 top-0 bottom-0 flex w-9 flex-col items-center justify-around py-5">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="h-4 w-4 rounded-full border-2"
+          style={{
+            borderColor: color,
+            background: "rgba(255,255,255,0.7)",
+            boxShadow: `inset 0 1px 3px rgba(0,0,0,0.12)`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Binder ring clip SVG
+function RingClip({ color }: { color: string }) {
+  return (
+    <div className="relative flex h-10 w-10 items-center justify-center">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <circle cx="18" cy="18" r="13" stroke={color} strokeWidth="4" fill="none" />
+        <circle cx="18" cy="18" r="13" stroke="rgba(0,0,0,0.18)" strokeWidth="4" fill="none" strokeDasharray="20 62" strokeDashoffset="10" />
+        <rect x="13" y="16" width="10" height="4" rx="2" fill={color} />
+        <rect x="13" y="16" width="10" height="4" rx="2" fill="rgba(255,255,255,0.25)" />
+      </svg>
+    </div>
+  );
+}
+
+// A single "ficha" card in the binder
+function Ficha({
+  tone,
+  tabLabel,
+  tabColor,
+  children,
+  className = "",
+}: {
+  tone: (typeof toneMap)[ToneKey];
+  tabLabel?: string;
+  tabColor?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-[18px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.09),0_1px_2px_rgba(0,0,0,0.06)] ${className}`}
+      style={{ border: `1px solid ${tone.border}` }}
+    >
+      {/* Left margin strip with hole punches */}
+      <div
+        className="absolute bottom-0 left-0 top-0 w-9 border-r"
+        style={{ background: tone.strip, borderColor: tone.punch }}
+      >
+        <HolePunches color={tone.punch} />
+      </div>
+
+      {/* Tab label protrudes at top-right */}
+      {tabLabel && (
+        <div
+          className="absolute -top-px right-8 rounded-b-[10px] px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-widest shadow-sm"
+          style={{ background: tabColor || tone.tab, color: tone.tabText }}
+        >
+          {tabLabel}
+        </div>
+      )}
+
+      {/* Content — shifted right to clear margin */}
+      <div className="pl-11 pr-4 py-4">{children}</div>
+    </div>
+  );
+}
+
+const FICHAS_APROFUNDAMENTO = [
   {
     id: "leitura",
-    tab: "leitura",
+    label: "leitura",
     title: "Leitura ampliada da unidade",
     preview: "Uma explicação mais longa para compreender o sentido geral do tema.",
     paragraphs: [
@@ -84,7 +172,7 @@ const FICHAS = [
   },
   {
     id: "pratica",
-    tab: "prática",
+    label: "prática",
     title: "Como isso aparece na prática",
     preview: "Exemplos concretos de como o tema aparece no dia a dia da escola.",
     paragraphs: [
@@ -95,7 +183,7 @@ const FICHAS = [
   },
   {
     id: "conversa",
-    tab: "conversa",
+    label: "conversa",
     title: "Perguntas para conversa com a equipe",
     preview: "Uma ficha pensada para apoiar reunião, formação ou conversa interna.",
     paragraphs: [
@@ -130,12 +218,18 @@ export default function TrilhaUnidade() {
 
   const unitNum = parseInt(unitId.replace("U", ""), 10);
 
+  const sections = (unidade?.sections || []) as Array<{
+    tipo: string;
+    titulo: string;
+    conteudo: string | string[];
+  }>;
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#f6f0e6]">
+      <div className="flex min-h-screen flex-col bg-[#ede8df]">
         <Navigation />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
         </div>
         <Footer />
       </div>
@@ -144,9 +238,9 @@ export default function TrilhaUnidade() {
 
   if (!unidade) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#f6f0e6]">
+      <div className="flex min-h-screen flex-col bg-[#ede8df]">
         <Navigation />
-        <div className="flex-1 flex items-center justify-center flex-col gap-4">
+        <div className="flex flex-1 flex-col items-center justify-center gap-4">
           <p className="text-slate-500">Unidade não encontrada</p>
           <button
             onClick={() => navigate("/trilha")}
@@ -161,15 +255,16 @@ export default function TrilhaUnidade() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f0e6] text-slate-700 flex flex-col">
+    <div className="flex min-h-screen flex-col bg-[#ede8df]" style={{ fontFamily: "'Nunito', sans-serif" }}>
       <Navigation />
 
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-10 font-['Nunito','Quicksand',sans-serif] md:px-10 lg:px-12">
-        {/* Nav bar */}
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 md:px-8">
+
+        {/* Navigation bar */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <button
             onClick={() => navigate("/trilha")}
-            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-[#6f8094] shadow-sm hover:bg-slate-50 transition"
+            className="rounded-full border border-stone-300 bg-white/80 px-4 py-2 text-sm font-semibold text-stone-600 shadow-sm backdrop-blur-sm transition hover:bg-white"
           >
             ← voltar ao mural
           </button>
@@ -177,316 +272,321 @@ export default function TrilhaUnidade() {
             {prevUnit ? (
               <button
                 onClick={() => navigate(`/trilha/${prevUnit.unitId}`)}
-                className={`rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition ${tone.button}`}
+                className="rounded-full border px-4 py-2 text-sm font-semibold shadow-sm transition hover:opacity-80"
+                style={{ borderColor: tone.border, color: tone.tabText, background: tone.header }}
               >
                 ← anterior
               </button>
             ) : (
-              <span className="rounded-full border border-slate-100 bg-white/50 px-4 py-2 text-sm font-medium text-slate-300 shadow-sm">
+              <span className="rounded-full border border-stone-200 bg-white/40 px-4 py-2 text-sm font-semibold text-stone-300">
                 ← anterior
               </span>
             )}
             {nextUnit ? (
               <button
                 onClick={() => navigate(`/trilha/${nextUnit.unitId}`)}
-                className={`rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition ${tone.button}`}
+                className="rounded-full border px-4 py-2 text-sm font-semibold shadow-sm transition hover:opacity-80"
+                style={{ borderColor: tone.border, color: tone.tabText, background: tone.header }}
               >
                 próxima →
               </button>
             ) : (
-              <span className="rounded-full border border-slate-100 bg-white/50 px-4 py-2 text-sm font-medium text-slate-300 shadow-sm">
+              <span className="rounded-full border border-stone-200 bg-white/40 px-4 py-2 text-sm font-semibold text-stone-300">
                 próxima →
               </span>
             )}
           </div>
         </div>
 
-        {/* Unit page card */}
-        <section
-          className={`relative overflow-hidden rounded-[34px] border p-8 shadow-[0_20px_70px_rgba(123,84,45,0.12)] md:p-10 ${tone.page}`}
+        {/* ═══ FICHÁRIO / BINDER ═══ */}
+        <div
+          className="flex overflow-hidden rounded-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.18),0_4px_12px_rgba(0,0,0,0.10)]"
         >
-          {/* top tab decoration */}
-          <div className="absolute left-1/2 top-0 h-7 w-40 -translate-x-1/2 rounded-b-[20px] border border-white/70 bg-white/75 shadow-sm" />
-          <div className={`absolute right-8 top-8 h-16 w-16 rotate-6 rounded-[18px] opacity-55 ${tone.accent}`} />
+          {/* ── BINDER SPINE ── */}
+          <div
+            className="flex w-14 flex-shrink-0 flex-col items-center justify-around py-10"
+            style={{
+              background: `linear-gradient(180deg, ${tone.spineLight} 0%, ${tone.spine} 50%, ${tone.spineLight} 100%)`,
+              boxShadow: "inset -3px 0 8px rgba(0,0,0,0.25), inset 3px 0 4px rgba(255,255,255,0.12)",
+            }}
+          >
+            {/* Spine label (rotated) */}
+            <span
+              className="mb-4 block text-[9px] font-extrabold uppercase tracking-[0.3em] opacity-70"
+              style={{
+                writingMode: "vertical-rl",
+                transform: "rotate(180deg)",
+                color: "rgba(255,255,255,0.85)",
+                letterSpacing: "0.28em",
+              }}
+            >
+              {groupName(personalidade)}
+            </span>
 
-          <div className="relative grid gap-8 xl:grid-cols-[0.78fr_1.22fr]">
-            {/* Aside: unit identity */}
-            <aside className="rounded-[28px] border border-white/80 bg-[#fffdf7] p-6 shadow-sm">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-14 w-14 items-center justify-center rounded-[18px] border border-slate-200 bg-white text-2xl shadow-sm">
-                  {emojiFor(personalidade)}
+            {/* Ring clips */}
+            <div className="flex flex-col gap-6">
+              {[0, 1, 2].map((i) => (
+                <RingClip key={i} color="rgba(255,255,255,0.65)" />
+              ))}
+            </div>
+          </div>
+
+          {/* ── PAPER AREA ── */}
+          <div
+            className="flex-1 space-y-4 p-5 md:p-7"
+            style={{ background: "#f8f4ee" }}
+          >
+
+            {/* ── CAPA: Title ficha ── */}
+            <Ficha tone={tone} tabLabel={unitId} className="">
+              <div className="flex items-start gap-4">
+                {/* Unit number badge */}
+                <div
+                  className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[14px] text-3xl font-black shadow-sm"
+                  style={{ background: tone.tab, color: tone.tabText }}
+                >
+                  {unitNum.toString().padStart(2, "0")}
                 </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.22em] text-slate-500">
-                    unidade {unitNum.toString().padStart(2, "0")}
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.22em]"
+                    style={{ color: tone.spineLight }}
+                  >
+                    {groupName(personalidade)} · {emojiFor(personalidade)} · ⏱ {unidade.duration}
                   </p>
-                  <p className="text-sm font-semibold text-slate-600">{unitId}</p>
-                  <p className="mt-1 text-xs text-slate-400">{groupName(personalidade)}</p>
+                  <h1 className="text-2xl font-extrabold leading-tight text-slate-800 md:text-3xl">
+                    {unidade.title}
+                  </h1>
+                  <p className="mt-1.5 text-sm leading-6 text-slate-500">{unidade.subtitle}</p>
                 </div>
               </div>
+            </Ficha>
 
-              {/* Visual placeholder */}
-              <div className="rounded-[20px] border border-white/80 bg-white/78 p-5 shadow-sm">
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                    visual da unidade
-                  </span>
-                  <span className="text-3xl">📓</span>
-                </div>
-                <div className="space-y-3">
-                  <div className="h-2 w-4/5 rounded-full bg-slate-200" />
-                  <div className="h-2 w-3/4 rounded-full bg-slate-200" />
-                  <div className="h-2 w-2/3 rounded-full bg-slate-200" />
-                </div>
-              </div>
+            {/* ── INTRO + EMENTA ── */}
+            <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
 
-              <div className="mt-4 rounded-[18px] border border-white/80 bg-[#fffdf7] p-4 text-[14px] leading-6 text-slate-600 shadow-sm">
-                <span className="font-semibold">Nesta unidade:</span> visão geral, leitura guiada,
-                materiais de apoio e fichas longas para consulta.
-              </div>
-
-              {/* Fichas */}
-              <div className="mt-5 space-y-3">
-                <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                  fichas de aprofundamento
+              <Ficha tone={tone} tabLabel="leitura principal">
+                <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
+                  introdução
                 </p>
-                {FICHAS.map((ficha) => (
-                  <button
+                <p className="text-sm leading-7 text-slate-700">
+                  {unidade.intro || "Esta unidade apresenta conceitos fundamentais para a gestão financeira escolar de forma prática e acessível."}
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-[12px] border p-3" style={{ background: tone.header, borderColor: tone.border }}>
+                    <p className="text-[9px] font-extrabold uppercase tracking-widest" style={{ color: tone.tabText }}>olhar geral</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-600">Liga o conteúdo à rotina concreta da escola.</p>
+                  </div>
+                  <div className="rounded-[12px] border p-3" style={{ background: tone.header, borderColor: tone.border }}>
+                    <p className="text-[9px] font-extrabold uppercase tracking-widest" style={{ color: tone.tabText }}>pergunta-chave</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-600">O que a diretora precisa enxergar para decidir melhor?</p>
+                  </div>
+                </div>
+              </Ficha>
+
+              <div className="flex flex-col gap-4">
+                <Ficha tone={tone} tabLabel="ementa">
+                  <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
+                    ementa
+                  </p>
+                  <p className="text-sm leading-6 text-slate-600">
+                    {sections[0]
+                      ? typeof sections[0].conteudo === "string"
+                        ? sections[0].conteudo
+                        : Array.isArray(sections[0].conteudo)
+                        ? sections[0].conteudo[0]
+                        : ""
+                      : unidade.subtitle}
+                  </p>
+                </Ficha>
+
+                <Ficha tone={tone} tabLabel="vídeo" tabColor={tone.accent}>
+                  <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
+                    vídeo sugerido
+                  </p>
+                  <div className="flex items-center gap-3 rounded-[12px] border p-2.5" style={{ borderColor: tone.border, background: tone.header }}>
+                    <span className="text-2xl">🎬</span>
+                    <p className="text-xs leading-5 text-slate-500">
+                      Vídeo sobre {unidade.title.toLowerCase()}
+                    </p>
+                  </div>
+                </Ficha>
+              </div>
+            </div>
+
+            {/* ── DB SECTIONS ── */}
+            {sections.length > 0 && (
+              <div className="grid gap-4 md:grid-cols-2">
+                {sections.slice(0, 4).map((sec, idx) => (
+                  <Ficha key={idx} tone={tone} tabLabel={sec.titulo || `seção ${idx + 1}`}>
+                    <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
+                      {sec.titulo || `seção ${idx + 1}`}
+                    </p>
+                    <p className="text-sm leading-6 text-slate-600">
+                      {typeof sec.conteudo === "string"
+                        ? sec.conteudo
+                        : Array.isArray(sec.conteudo)
+                        ? sec.conteudo.join(" · ")
+                        : ""}
+                    </p>
+                  </Ficha>
+                ))}
+              </div>
+            )}
+
+            {/* ── OBSERVAR + PASSOS ── */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Ficha tone={tone} tabLabel="o que observar">
+                <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
+                  o que observar
+                </p>
+                <ul className="space-y-2 text-sm leading-6 text-slate-600">
+                  {[
+                    "Se a equipe compreende a lógica geral da unidade.",
+                    "Se existem registros claros para consulta futura.",
+                    "Se o conteúdo já conversa com a rotina da escola.",
+                  ].map((item, i) => (
+                    <li key={i} className="flex gap-2">
+                      <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: tone.accent }} />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Ficha>
+
+              <Ficha tone={tone} tabLabel="próximos passos">
+                <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
+                  próximos passos
+                </p>
+                <ul className="space-y-2 text-sm leading-6 text-slate-600">
+                  {[
+                    "Relacionar esta unidade à próxima da trilha.",
+                    "Usar a ficha longa em reunião interna.",
+                    "Criar um apoio visual próprio para a equipe.",
+                  ].map((item, i) => (
+                    <li key={i} className="flex gap-2">
+                      <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: tone.accent }} />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Ficha>
+            </div>
+
+            {/* ── FICHAS DE APROFUNDAMENTO ── */}
+            <div>
+              <div className="mb-3 flex items-center gap-3 pl-1">
+                <div
+                  className="h-px flex-1"
+                  style={{ background: `linear-gradient(to right, ${tone.border}, transparent)` }}
+                />
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
+                  fichas de aprofundamento
+                </span>
+                <div
+                  className="h-px flex-1"
+                  style={{ background: `linear-gradient(to left, ${tone.border}, transparent)` }}
+                />
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                {FICHAS_APROFUNDAMENTO.map((ficha) => (
+                  <motion.button
                     key={ficha.id}
                     type="button"
                     onClick={() => setOpenFicha(ficha.id)}
-                    className={`w-full rounded-[18px] border p-4 text-left shadow-sm transition hover:-translate-y-0.5 ${tone.flow}`}
+                    whileHover={{ y: -3 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className="relative overflow-hidden rounded-[18px] bg-white p-0 text-left shadow-[0_2px_8px_rgba(0,0,0,0.09)] transition"
+                    style={{ border: `1px solid ${tone.border}` }}
                   >
-                    <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                      {ficha.tab}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-700">{ficha.title}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">{ficha.preview}</p>
-                  </button>
+                    {/* Left strip */}
+                    <div className="absolute bottom-0 left-0 top-0 w-2 rounded-l-[17px]" style={{ background: tone.accent }} />
+                    <div className="pl-5 pr-4 py-4">
+                      <p className="text-[9px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.tabText }}>
+                        {ficha.label}
+                      </p>
+                      <p className="mt-1.5 text-sm font-bold text-slate-700">{ficha.title}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">{ficha.preview}</p>
+                      <p className="mt-3 text-[10px] font-semibold" style={{ color: tone.spineLight }}>
+                        abrir ficha →
+                      </p>
+                    </div>
+                  </motion.button>
                 ))}
               </div>
-            </aside>
+            </div>
 
-            {/* Main content */}
-            <section className="relative min-w-0">
-              {/* Title */}
-              <div className="relative inline-flex max-w-full rotate-[-1deg] rounded-[16px] border border-white/80 bg-[#fffdf7] px-4 py-2 shadow-sm">
-                <div className="absolute -top-3 left-6 h-5 w-16 rotate-[-4deg] rounded-sm border border-white/70 bg-white/75" />
-                <h1 className="text-3xl font-extrabold leading-tight text-slate-700 md:text-4xl">
-                  {unidade.title}
-                </h1>
-              </div>
-              <p className="mt-4 max-w-3xl text-lg font-medium leading-8 text-slate-600">
-                {unidade.subtitle}
-              </p>
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <div className="inline-flex rounded-full border border-slate-200 bg-[#fffdf7] px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-500">
-                  leitura completa da unidade
-                </div>
-                <div className={`inline-flex rotate-[1deg] rounded-[14px] border border-white/80 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] shadow-sm ${tone.chip}`}>
-                  {unidade.duration}
-                </div>
-              </div>
-
-              <div className="mt-8 grid gap-5">
-                {/* Intro + key panels */}
-                <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-                  <section className="rounded-[24px] border border-white/80 bg-white/78 p-5 shadow-sm">
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                        leitura principal
-                      </div>
-                      <div className="hidden md:block rounded-[16px] border bg-white/88 px-3 py-2 text-[11px] font-semibold shadow-sm text-slate-500">
-                        olhe esta unidade como uma peça do todo
-                      </div>
-                    </div>
-                    <p className="text-base leading-8 text-slate-700">
-                      {unidade.intro ||
-                        "Esta unidade apresenta conceitos fundamentais para a gestão financeira escolar de forma prática e acessível."}
-                    </p>
-                    <div className="mt-4 grid gap-3 md:grid-cols-2">
-                      <div className="rounded-[18px] border border-slate-200 bg-[#fffdf8] p-4 shadow-sm">
-                        <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                          olhar geral
-                        </p>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">
-                          Ajuda a ligar o conteúdo da unidade à rotina concreta da escola.
-                        </p>
-                      </div>
-                      <div className="rounded-[18px] border border-slate-200 bg-[#fffdf8] p-4 shadow-sm">
-                        <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                          pergunta-chave
-                        </p>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">
-                          O que a diretora precisa enxergar com clareza para tomar decisões melhores?
-                        </p>
-                      </div>
-                    </div>
-                  </section>
-
-                  <div className="grid gap-4">
-                    {/* Ementa */}
-                    <section className="rounded-[24px] border border-white/80 bg-white/94 p-4 shadow-sm">
-                      <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                        ementa
-                      </p>
-                      <p className="mt-3 text-sm leading-6 text-slate-600">
-                        {(() => {
-                          const sections = (unidade.sections || []) as Array<{
-                            tipo: string;
-                            titulo: string;
-                            conteudo: string | string[];
-                          }>;
-                          const first = sections[0];
-                          return first
-                            ? typeof first.conteudo === "string"
-                              ? first.conteudo
-                              : Array.isArray(first.conteudo)
-                              ? first.conteudo[0]
-                              : ""
-                            : unidade.subtitle;
-                        })()}
-                      </p>
-                    </section>
-
-                    {/* Video suggestion */}
-                    <section className={`rounded-[24px] border p-4 shadow-sm ${tone.flow}`}>
-                      <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                        vídeo sugerido
-                      </p>
-                      <div className="mt-3 flex items-center gap-3 rounded-[16px] border border-white/80 bg-white/80 px-3 py-2 shadow-sm">
-                        <span className="text-xl">🎬</span>
-                        <p className="text-sm leading-5 text-slate-600">
-                          Vídeo explicativo sobre {unidade.title.toLowerCase()}
-                        </p>
-                      </div>
-                    </section>
-                  </div>
-                </div>
-
-                {/* Sections from DB */}
-                {(() => {
-                  const sections = (unidade.sections || []) as Array<{
-                    tipo: string;
-                    titulo: string;
-                    conteudo: string | string[];
-                  }>;
-                  if (sections.length === 0) return null;
-                  return (
-                    <div className="grid gap-5 md:grid-cols-2">
-                      {sections.slice(0, 4).map((sec, idx) => (
-                        <div
-                          key={idx}
-                          className="rounded-[22px] border border-slate-200 bg-white/78 p-4 shadow-sm"
-                        >
-                          <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                            {sec.titulo || `seção ${idx + 1}`}
-                          </p>
-                          <p className="mt-2 text-sm leading-6 text-slate-600">
-                            {typeof sec.conteudo === "string"
-                              ? sec.conteudo
-                              : Array.isArray(sec.conteudo)
-                              ? sec.conteudo.join(" · ")
-                              : ""}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-
-                {/* What to observe + next steps */}
-                <div className="grid gap-5 md:grid-cols-2">
-                  <div className="rounded-[20px] border border-slate-200 bg-white/78 p-4 shadow-sm">
-                    <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                      o que observar
-                    </p>
-                    <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
-                      <li className="flex gap-2">
-                        <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
-                        <span>Se a equipe compreende a lógica geral da unidade.</span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
-                        <span>Se existem registros claros para consulta futura.</span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
-                        <span>Se o conteúdo já conversa com a rotina da escola.</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="rounded-[20px] border border-slate-200 bg-white/78 p-4 shadow-sm">
-                    <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                      próximos passos
-                    </p>
-                    <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
-                      <li className="flex gap-2">
-                        <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
-                        <span>Relacionar esta unidade à próxima da trilha.</span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
-                        <span>Usar a ficha longa em reunião interna.</span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
-                        <span>Criar um apoio visual próprio para a equipe.</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </section>
           </div>
-        </section>
+        </div>
+      </main>
 
-        {/* Ficha modal */}
-        <AnimatePresence>
-          {openFicha && (
+      {/* Ficha modal */}
+      <AnimatePresence>
+        {openFicha && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/40 px-4 py-8 backdrop-blur-sm"
+            onClick={() => setOpenFicha(null)}
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/35 px-4 py-8 backdrop-blur-sm"
-              onClick={() => setOpenFicha(null)}
+              initial={{ opacity: 0, y: 20, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.97 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative flex w-full max-w-3xl overflow-hidden rounded-[24px] shadow-[0_30px_80px_rgba(0,0,0,0.25)]"
             >
-              <motion.div
-                initial={{ opacity: 0, y: 18, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 12, scale: 0.98 }}
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                onClick={(e) => e.stopPropagation()}
-                className={`relative w-full max-w-4xl overflow-hidden rounded-[30px] border p-6 shadow-[0_30px_80px_rgba(0,0,0,0.22)] ${tone.page}`}
+              {/* Modal spine */}
+              <div
+                className="flex w-10 flex-shrink-0 flex-col items-center justify-center"
+                style={{ background: `linear-gradient(180deg, ${tone.spineLight}, ${tone.spine})` }}
               >
-                <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-transparent via-white/80 to-transparent" />
-                <div className="mb-5 flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-5">
+                  {[0, 1, 2].map((i) => (
+                    <RingClip key={i} color="rgba(255,255,255,0.6)" />
+                  ))}
+                </div>
+              </div>
+              {/* Modal content */}
+              <div className="flex-1 bg-[#f8f4ee] p-6">
+                <div className="mb-4 flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
                       ficha aberta
                     </p>
-                    <h3 className="mt-2 text-2xl font-extrabold leading-tight text-slate-700">
-                      {FICHAS.find((f) => f.id === openFicha)?.title}
+                    <h3 className="mt-1 text-xl font-extrabold text-slate-800">
+                      {FICHAS_APROFUNDAMENTO.find((f) => f.id === openFicha)?.title}
                     </h3>
                   </div>
                   <button
                     onClick={() => setOpenFicha(null)}
-                    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-[#6f8094] shadow-sm hover:bg-slate-50 transition"
+                    className="rounded-full border border-stone-300 bg-white px-4 py-1.5 text-sm font-semibold text-stone-500 shadow-sm transition hover:bg-stone-50"
                   >
-                    fechar
+                    fechar ×
                   </button>
                 </div>
-                <div className="max-h-[68vh] space-y-5 overflow-auto rounded-[22px] border border-white/80 bg-[#fffdf7] p-6 text-[15px] leading-8 text-slate-600 shadow-sm">
-                  {FICHAS.find((f) => f.id === openFicha)?.paragraphs.map((paragraph, idx) => (
-                    <p key={idx}>{paragraph}</p>
-                  ))}
+                <div
+                  className="max-h-[60vh] space-y-4 overflow-auto rounded-[16px] border p-5 text-sm leading-8 text-slate-700"
+                  style={{ background: "#fff", borderColor: tone.border }}
+                >
+                  {/* Left margin line */}
+                  <div className="relative pl-6">
+                    <div
+                      className="absolute left-0 top-0 bottom-0 w-px"
+                      style={{ background: `${tone.accent}88` }}
+                    />
+                    {FICHAS_APROFUNDAMENTO.find((f) => f.id === openFicha)?.paragraphs.map((p, i) => (
+                      <p key={i} className="mb-3">{p}</p>
+                    ))}
+                  </div>
                 </div>
-              </motion.div>
+              </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Footer />
     </div>

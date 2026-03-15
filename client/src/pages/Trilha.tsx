@@ -305,13 +305,13 @@ export default function Trilha() {
         <section className="space-y-14">
           {groups.map((group, groupIdx) => {
             const pinDefs = [
-              { color: "#e74c3c", dark: "#8b1a1a" },
-              { color: "#3498db", dark: "#1a5276" },
-              { color: "#2ecc71", dark: "#145a32" },
-              { color: "#f39c12", dark: "#7d4e00" },
-              { color: "#9b59b6", dark: "#5b2c6f" },
-              { color: "#e67e22", dark: "#784a00" },
-              { color: "#1abc9c", dark: "#0e6655" },
+              { color: "#f4a8a8", dark: "#c07070" },
+              { color: "#a8c8f4", dark: "#6090c8" },
+              { color: "#a8e0b8", dark: "#5aaa78" },
+              { color: "#f5d898", dark: "#c8a040" },
+              { color: "#d4b8f0", dark: "#9a72c8" },
+              { color: "#f5c098", dark: "#c88040" },
+              { color: "#98e0d0", dark: "#44aA90" },
             ];
             const rotations = [-3.2, 1.8, -1.5, 2.6, -2.8, 1.2, -0.8, 3.1, -2.2, 1.6];
 
