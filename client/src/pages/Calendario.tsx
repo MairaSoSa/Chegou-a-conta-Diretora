@@ -111,7 +111,7 @@ export default function CalendarioPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#faf9f6" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f4ede3" }}>
       <Navigation />
       <div style={{
         background: "#f0f5ed",

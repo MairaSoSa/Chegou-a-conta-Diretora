@@ -1393,7 +1393,7 @@ export default function Legislacao() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#f5f6fa", fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif", color: "#1e293b", fontSize: "14px", lineHeight: 1.5 }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "#f4ede3", fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif", color: "#1e293b", fontSize: "14px", lineHeight: 1.5 }}>
       <Navigation />
 
       <div style={{

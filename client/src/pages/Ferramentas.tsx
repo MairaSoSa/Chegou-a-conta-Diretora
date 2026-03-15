@@ -170,11 +170,11 @@ export default function Ferramentas() {
   }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans">
+    <div className="min-h-screen flex flex-col font-sans" style={{ background: "#f4ede3" }}>
       <Navigation />
       
       <main className="flex-1">
-        <div className="bg-gradient-to-br from-emerald-100/30 via-green-50/20 to-transparent py-10 border-b">
+        <div className="py-10 border-b border-[#e4d9cc]">
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
