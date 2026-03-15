@@ -1,379 +1,327 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
-import { useTrilhaProgress } from "@/hooks/useTrilhaProgress";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  CheckCircle2, Clock, ChevronRight, Play, RotateCcw,
-  Ship, Anchor, MapPin, BookOpen, Compass, Loader2
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Link } from "wouter";
-import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import type { TrilhaUnit } from "@shared/schema";
 
-const PARTES = [
-  { id: 0, nome: 'Antes de Começar', icone: Compass, cor: 'amber' },
-  { id: 1, nome: 'De onde veio essa história', icone: BookOpen, cor: 'sky' },
-  { id: 2, nome: 'Como o dinheiro chega e como usar', icone: MapPin, cor: 'emerald' },
-  { id: 3, nome: 'Prestação de contas sem pânico', icone: CheckCircle2, cor: 'purple' },
-  { id: 4, nome: 'Gente que faz', icone: Ship, cor: 'rose' },
-  { id: 5, nome: 'De onde vem o dinheiro', icone: Anchor, cor: 'indigo' },
+const GROUPS = [
+  {
+    id: "origem",
+    titulo: "De onde vêm os recursos",
+    personalidade: "origem" as const,
+    descricao:
+      "O começo da jornada: entender as fontes de financiamento, os programas e o tempo dos repasses que chegam à escola.",
+    range: [1, 4],
+  },
+  {
+    id: "estrutura",
+    titulo: "Estrutura administrativa",
+    personalidade: "estrutura" as const,
+    descricao:
+      "Aqui a diretora encontra os pilares formais que sustentam a gestão: unidade executora, estatuto, cartório, conta e responsabilidades.",
+    range: [5, 11],
+  },
+  {
+    id: "planejamento",
+    titulo: "Planejamento e uso dos recursos",
+    personalidade: "planejamento" as const,
+    descricao:
+      "Uma trilha para transformar recurso em ação concreta: planejar, comprar, registrar e manter tudo bem organizado.",
+    range: [12, 15],
+  },
+  {
+    id: "prestacao",
+    titulo: "Prestação de contas e continuidade",
+    personalidade: "prestacao" as const,
+    descricao:
+      "A etapa que garante memória, transparência, participação e segurança na passagem de uma gestão para outra.",
+    range: [16, 20],
+  },
 ];
 
-const COR_CLASSES: Record<string, { bg: string; border: string; text: string; badge: string; wave: string }> = {
-  amber: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-800', wave: '#fef3c7' },
-  sky: { bg: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-700', badge: 'bg-sky-100 text-sky-800', wave: '#e0f2fe' },
-  emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-800', wave: '#d1fae5' },
-  purple: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700', badge: 'bg-purple-100 text-purple-800', wave: '#f3e8ff' },
-  rose: { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', badge: 'bg-rose-100 text-rose-800', wave: '#ffe4e6' },
-  indigo: { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700', badge: 'bg-indigo-100 text-indigo-800', wave: '#e0e7ff' },
+const toneMap = {
+  origem: {
+    section: "bg-[#f7fbff] border-sky-100",
+    chip: "bg-sky-100 text-sky-800",
+    title: "text-sky-950",
+    button: "border-sky-200 text-sky-800 hover:bg-sky-50",
+    accent: "bg-sky-100",
+    page: "bg-[#f8fcff] border-sky-200",
+  },
+  estrutura: {
+    section: "bg-[#fffaf2] border-amber-100",
+    chip: "bg-amber-100 text-amber-900",
+    title: "text-amber-950",
+    button: "border-amber-200 text-amber-900 hover:bg-amber-50",
+    accent: "bg-amber-100",
+    page: "bg-[#fff9ef] border-amber-200",
+  },
+  planejamento: {
+    section: "bg-[#f7fff9] border-emerald-100",
+    chip: "bg-emerald-100 text-emerald-900",
+    title: "text-emerald-950",
+    button: "border-emerald-200 text-emerald-900 hover:bg-emerald-50",
+    accent: "bg-emerald-100",
+    page: "bg-[#f7fff9] border-emerald-200",
+  },
+  prestacao: {
+    section: "bg-[#fff8fc] border-rose-100",
+    chip: "bg-rose-100 text-rose-900",
+    title: "text-rose-950",
+    button: "border-rose-200 text-rose-900 hover:bg-rose-50",
+    accent: "bg-rose-100",
+    page: "bg-[#fff8fc] border-rose-200",
+  },
 };
 
-function Barquinho({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 24" className={className} fill="none">
-      <path d="M4 16 C8 20, 32 20, 36 16 L34 12 L6 12 Z" fill="#8B4513" />
-      <path d="M20 12 L20 4 L30 10 L20 10 Z" fill="#fff" stroke="#ddd" strokeWidth="0.5" />
-      <path d="M18 14 L22 14 L22 12 L18 12 Z" fill="#5D4037" />
-    </svg>
-  );
+function unitNum(unit: TrilhaUnit) {
+  return parseInt(unit.unitId.replace("U", ""), 10);
 }
 
-function UnidadeCard({ 
-  unidade, 
-  index,
-  isCompleted, 
-  isCurrent,
-  corParte,
-  onComplete 
-}: { 
-  unidade: TrilhaUnit;
-  index: number;
-  isCompleted: boolean;
-  isCurrent: boolean;
-  corParte: string;
-  onComplete: () => void;
-}) {
-  const cores = COR_CLASSES[corParte];
-  
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="relative"
-    >
-      {isCurrent && !isCompleted && (
-        <div className="absolute -left-10 top-1/2 -translate-y-1/2 z-10">
-          <motion.div
-            animate={{ x: [0, 3, 0] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-          >
-            <Barquinho className="w-8 h-5" />
-          </motion.div>
-        </div>
-      )}
-      
-      <Link href={`/trilha/${unidade.unitId}`}>
-        <Card 
-          className={cn(
-            "group cursor-pointer transition-all duration-300 hover:shadow-md border-2",
-            isCompleted && "border-primary/40 bg-primary/5",
-            isCurrent && !isCompleted && "border-emerald-400 ring-2 ring-emerald-200 shadow-lg bg-gradient-to-r from-emerald-50/50 to-transparent",
-            !isCompleted && !isCurrent && "border-slate-200 hover:border-slate-300"
-          )}
-          data-testid={`unidade-${unidade.unitId}`}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-lg transition-all",
-                isCompleted && "bg-primary text-white",
-                isCurrent && !isCompleted && "bg-emerald-500 text-white",
-                !isCompleted && !isCurrent && cn(cores.bg, cores.text)
-              )}>
-                {isCompleted ? (
-                  <CheckCircle2 className="w-6 h-6" />
-                ) : (
-                  <span>{index + 1}</span>
-                )}
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <Badge variant="outline" className={cn("text-xs", cores.badge)}>
-                    {unidade.unitId}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {unidade.duration}
-                  </span>
-                  {isCurrent && !isCompleted && (
-                    <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">
-                      <Ship className="w-3 h-3 mr-1" />
-                      Seu barco está aqui
-                    </Badge>
-                  )}
-                </div>
-                <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                  {unidade.title}
-                </h3>
-                <p className="text-sm text-muted-foreground line-clamp-1">
-                  {unidade.subtitle}
-                </p>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                {!isCompleted && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onComplete();
-                    }}
-                    className="text-xs text-muted-foreground hover:text-primary hidden sm:flex"
-                    data-testid={`concluir-${unidade.unitId}`}
-                  >
-                    Concluir
-                  </Button>
-                )}
-                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
-    </motion.div>
-  );
+function getPersonalidade(unit: TrilhaUnit): keyof typeof toneMap {
+  const n = unitNum(unit);
+  if (n <= 4) return "origem";
+  if (n <= 11) return "estrutura";
+  if (n <= 15) return "planejamento";
+  return "prestacao";
 }
 
-function ParteSection({ 
-  parte, 
-  unidades, 
-  progress,
-  isUnitCompleted,
-  completeUnit,
-  globalIndex 
-}: { 
-  parte: typeof PARTES[0];
-  unidades: TrilhaUnit[];
-  progress: { currentUnit: string };
-  isUnitCompleted: (id: string) => boolean;
-  completeUnit: (id: string) => void;
-  globalIndex: number;
-}) {
-  const Icon = parte.icone;
-  const cores = COR_CLASSES[parte.cor];
-  const completedInPart = unidades.filter(u => isUnitCompleted(u.unitId)).length;
-  
-  return (
-    <div className="mb-10">
-      <div className={cn(
-        "flex items-center gap-4 mb-4 p-4 rounded-xl border-2 relative overflow-hidden",
-        cores.bg,
-        cores.border
-      )}>
-        <svg className="absolute inset-0 w-full h-full opacity-30" preserveAspectRatio="none">
-          <pattern id={`wave-${parte.id}`} patternUnits="userSpaceOnUse" width="100" height="20">
-            <path 
-              d="M0 10 Q25 0, 50 10 T100 10" 
-              fill="none" 
-              stroke={cores.wave} 
-              strokeWidth="2"
-            />
-          </pattern>
-          <rect width="100%" height="100%" fill={`url(#wave-${parte.id})`} />
-        </svg>
-        
-        <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center relative z-10",
-          cores.badge
-        )}>
-          <Icon className="w-6 h-6" />
-        </div>
-        <div className="flex-1 relative z-10">
-          <div className="flex items-center gap-2 flex-wrap">
-            {parte.id > 0 && (
-              <Badge variant="outline" className={cores.badge}>
-                Trecho {parte.id}
-              </Badge>
-            )}
-            <h2 className={cn("font-bold text-lg", cores.text)}>
-              {parte.nome}
-            </h2>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {completedInPart} de {unidades.length} paradas visitadas
-          </p>
-        </div>
-        <div className={cn(
-          "w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg relative z-10",
-          completedInPart === unidades.length ? "bg-primary text-white" : cores.badge
-        )}>
-          {unidades.length > 0 ? Math.round((completedInPart / unidades.length) * 100) : 0}%
-        </div>
-      </div>
-      
-      <div className="space-y-3 pl-6 ml-2 border-l-2 border-dashed border-emerald-200 relative">
-        <div className="absolute left-0 top-0 w-4 h-full pointer-events-none opacity-20">
-          <svg className="w-full h-full" preserveAspectRatio="none">
-            <pattern id="river-dots" patternUnits="userSpaceOnUse" width="4" height="20">
-              <circle cx="2" cy="10" r="1.5" fill="#10b981" />
-            </pattern>
-            <rect width="100%" height="100%" fill="url(#river-dots)" />
-          </svg>
-        </div>
-        
-        {unidades.map((unidade, i) => (
-          <UnidadeCard
-            key={unidade.unitId}
-            unidade={unidade}
-            index={globalIndex + i}
-            isCompleted={isUnitCompleted(unidade.unitId)}
-            isCurrent={progress.currentUnit === unidade.unitId}
-            corParte={parte.cor}
-            onComplete={() => completeUnit(unidade.unitId)}
-          />
-        ))}
-      </div>
-    </div>
-  );
+function emojiFor(personalidade: keyof typeof toneMap) {
+  return personalidade === "origem"
+    ? "💧"
+    : personalidade === "estrutura"
+    ? "📁"
+    : personalidade === "planejamento"
+    ? "🗂️"
+    : "📝";
 }
 
 export default function Trilha() {
-  const { progress, completedCount, totalUnits, completeUnit, isUnitCompleted, resetProgress } = useTrilhaProgress();
-  
+  const [pinned, setPinned] = useState<string | null>(null);
+  const [, navigate] = useLocation();
+
   const { data: units = [], isLoading } = useQuery<TrilhaUnit[]>({
     queryKey: ["/api/trilha"],
   });
 
-  const unitCount = units.length || totalUnits;
-  const progressPercent = unitCount > 0 ? Math.round((completedCount / unitCount) * 100) : 0;
-  
-  let globalIndex = 0;
+  const groups = useMemo(
+    () =>
+      GROUPS.map((g) => ({
+        ...g,
+        items: units.filter((u) => {
+          const n = unitNum(u);
+          return n >= g.range[0] && n <= g.range[1];
+        }),
+      })),
+    [units]
+  );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#f6f0e6]">
+        <Navigation />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans">
+    <div className="min-h-screen bg-[#f6f0e6] text-slate-700 flex flex-col">
       <Navigation />
-      
-      <main className="flex-1">
-        <div className="relative border-b overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <svg className="w-full h-full" preserveAspectRatio="none">
-              <pattern id="header-waves" patternUnits="userSpaceOnUse" width="200" height="40">
-                <path d="M0 20 Q50 10, 100 20 T200 20" fill="none" stroke="#10b981" strokeWidth="1.5" />
-                <path d="M0 30 Q50 20, 100 30 T200 30" fill="none" stroke="#34d399" strokeWidth="1" />
-              </pattern>
-              <rect width="100%" height="100%" fill="url(#header-waves)" />
-            </svg>
-          </div>
-          
-          <div className="bg-gradient-to-br from-emerald-100/40 via-green-50/50 to-transparent py-8 relative z-10">
-            <div className="container mx-auto px-4">
-              <div className="max-w-4xl mx-auto">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg">
-                      <Ship className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h1 className="text-2xl md:text-3xl font-bold font-display text-foreground">
-                        Navegue pelo Rio
-                      </h1>
-                      <p className="text-sm text-muted-foreground">
-                        {completedCount} de {unitCount} paradas visitadas
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-14 h-14 rounded-full flex items-center justify-center"
-                      style={{
-                        background: `conic-gradient(#10b981 ${progressPercent}%, #e5e7eb ${progressPercent}%)`
-                      }}
-                    >
-                      <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
-                        <span className="text-lg font-bold text-emerald-600">{progressPercent}%</span>
-                      </div>
-                    </div>
-                    
-                    <Link href={`/trilha/${progress.currentUnit}`}>
-                      <Button className="bg-emerald-600 hover:bg-emerald-700" data-testid="button-continuar">
-                        <Play className="w-4 h-4 mr-2" />
-                        Continuar
-                      </Button>
-                    </Link>
-                    <Button 
-                      variant="outline"
-                      size="icon"
-                      onClick={resetProgress}
-                      className="border-emerald-200 hover:bg-emerald-50"
-                      data-testid="button-reset"
-                      title="Recomeçar do início"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div className="container mx-auto px-4 py-10">
-          <div className="max-w-4xl mx-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+      <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-10 font-['Nunito','Quicksand',sans-serif] md:px-10 lg:px-12">
+        {/* Hero */}
+        <section className="relative mb-10 overflow-hidden rounded-[34px] border border-[#dcccb4] bg-[#fff9ef] p-8 shadow-[0_20px_70px_rgba(123,84,45,0.12)] md:p-12">
+          <div className="absolute right-8 top-6 rounded-full border border-amber-300 bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900 shadow-sm">
+            guia visual da diretora
+          </div>
+          <div className="grid items-center gap-10 lg:grid-cols-[1.08fr_0.92fr]">
+            <div>
+              <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-900">
+                <span>🗺️</span> mapa das unidades
+              </p>
+              <h1 className="max-w-3xl text-4xl font-extrabold tracking-tight text-slate-800 md:text-6xl">
+                Trilha da Diretora
+              </h1>
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-[#617285] md:text-xl">
+                Um mural visual para navegar pelas unidades do{" "}
+                <span className="font-semibold text-slate-700">
+                  Chegou a Conta, Diretora
+                </span>
+                .
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                {["20 unidades", "4 trilhas", "visual de mural", "navegação afetiva"].map(
+                  (chip) => (
+                    <span
+                      key={chip}
+                      className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-[#6f8094] shadow-sm"
+                    >
+                      {chip}
+                    </span>
+                  )
+                )}
               </div>
-            ) : (
-              <>
-                {PARTES.map((parte) => {
-                  const unidadesDaParte = units.filter(u => u.part === parte.id);
-                  if (unidadesDaParte.length === 0) return null;
-                  const section = (
-                    <ParteSection
-                      key={parte.id}
-                      parte={parte}
-                      unidades={unidadesDaParte}
-                      progress={progress}
-                      isUnitCompleted={isUnitCompleted}
-                      completeUnit={completeUnit}
-                      globalIndex={globalIndex}
-                    />
-                  );
-                  globalIndex += unidadesDaParte.length;
-                  return section;
-                })}
-              </>
-            )}
-            
-            <div className="mt-12 text-center p-8 rounded-2xl bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 relative overflow-hidden">
-              <svg className="absolute inset-0 w-full h-full opacity-20" preserveAspectRatio="none">
-                <pattern id="end-waves" patternUnits="userSpaceOnUse" width="100" height="20">
-                  <path d="M0 10 Q25 5, 50 10 T100 10" fill="none" stroke="#10b981" strokeWidth="2" />
-                </pattern>
-                <rect width="100%" height="100%" fill="url(#end-waves)" />
-              </svg>
-              
-              <div className="relative z-10">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-                  <Anchor className="w-8 h-8 text-emerald-600" />
+            </div>
+
+            {/* Mini-map */}
+            <div className="rounded-[34px] border-[10px] border-slate-900/10 bg-[#fffaf2] p-6 shadow-[0_25px_60px_rgba(0,0,0,0.12)]">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-4 w-4 rounded-full bg-rose-300" />
+                  <div className="h-4 w-4 rounded-full bg-amber-300" />
+                  <div className="h-4 w-4 rounded-full bg-emerald-300" />
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-emerald-800">Porto Final</h3>
-                <p className="text-muted-foreground max-w-md mx-auto">
-                  Quando completar toda a jornada pelo rio, você terá o conhecimento 
-                  pra gerenciar as verbas da escola com confiança e segurança.
-                </p>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-slate-600">
+                  visão geral
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {groups.map((g, idx) => {
+                  const tone = toneMap[g.personalidade];
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() =>
+                        document
+                          .getElementById(`trilha-${g.id}`)
+                          ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                      }
+                      className={`rounded-[24px] border border-white/80 p-4 text-left shadow-[0_10px_24px_rgba(0,0,0,0.06)] transition hover:-translate-y-1 ${tone.accent}`}
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="rounded-[16px] border border-slate-300 bg-white/90 px-3 py-2 text-lg shadow-sm">
+                          {idx + 1}
+                        </span>
+                        <span className="rounded-full bg-white/75 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">
+                          trilha {idx + 1}
+                        </span>
+                      </div>
+                      <h3 className="text-base font-extrabold leading-tight text-slate-700">
+                        {g.titulo}
+                      </h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        {g.items.length} unidades
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Trilha sections */}
+        <section className="space-y-12">
+          {groups.map((group, groupIdx) => {
+            const tone = toneMap[group.personalidade];
+            return (
+              <section
+                key={group.id}
+                id={`trilha-${group.id}`}
+                className={`relative overflow-hidden rounded-[34px] border p-6 shadow-[0_18px_44px_rgba(123,84,45,0.12)] md:p-8 ${tone.section}`}
+              >
+                <div
+                  className={`absolute right-6 top-6 rounded-xl border px-3 py-2 text-sm shadow-sm ${tone.chip}`}
+                >
+                  etapa {groupIdx + 1}
+                </div>
+                <div
+                  className={`absolute left-10 top-6 h-16 w-16 rotate-6 rounded-[18px] opacity-55 ${tone.accent}`}
+                />
+
+                <div className="relative mb-8 max-w-3xl pt-8">
+                  <p className="mb-3 inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium uppercase tracking-[0.22em] text-[#8093aa]">
+                    mapa da jornada
+                  </p>
+                  <div className="inline-flex max-w-full rotate-[-1deg] rounded-[18px] border border-white/80 bg-white/92 px-4 py-3 shadow-sm">
+                    <h2 className={`text-3xl font-extrabold md:text-4xl ${tone.title}`}>
+                      {group.titulo}
+                    </h2>
+                  </div>
+                  <p className="mt-4 text-lg leading-8 text-[#68788d]">{group.descricao}</p>
+                </div>
+
+                <div className="relative grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                  {group.items.map((unit, itemIdx) => {
+                    const isPinned = pinned === unit.unitId;
+                    const headerLabels = ["anotação da diretora", "guia rápido", "comunicado oficial"];
+                    const header = headerLabels[itemIdx % 3];
+                    const paperStyle =
+                      itemIdx % 3 === 2
+                        ? "bg-[repeating-linear-gradient(to_bottom,#ffffff,#ffffff_24px,#e5e7eb_25px)] border-[#e3c9c3]"
+                        : "bg-[#fffdf7] border-slate-200";
+
+                    return (
+                      <motion.article
+                        key={unit.unitId}
+                        whileHover={{ y: -2, rotate: itemIdx % 2 === 0 ? -0.35 : 0.35 }}
+                        onClick={() =>
+                          setPinned((cur) => (cur === unit.unitId ? null : unit.unitId))
+                        }
+                        className={`cursor-pointer rounded-[26px] border p-5 shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-200 ${paperStyle} ${isPinned ? "ring-2 ring-offset-2 ring-slate-300" : ""}`}
+                      >
+                        <div className="mb-3 flex items-center justify-between">
+                          <span className="rounded-[12px] border border-slate-200 bg-white/80 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500 shadow-sm">
+                            {header}
+                          </span>
+                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${tone.chip}`}>
+                            {unit.unitId}
+                          </span>
+                        </div>
+
+                        <div className="mb-4 mt-1 flex items-center gap-3">
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border border-slate-200 bg-white text-xl shadow-sm">
+                            {emojiFor(group.personalidade)}
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-400">
+                              unidade {unitNum(unit).toString().padStart(2, "0")}
+                            </p>
+                          </div>
+                        </div>
+
+                        <h3 className="text-lg font-extrabold leading-snug text-slate-700">
+                          {unit.title}
+                        </h3>
+                        <p className="mt-2 text-sm leading-6 text-slate-500">{unit.subtitle}</p>
+
+                        <div className="mt-4 flex items-center justify-between">
+                          <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${tone.chip}`}>
+                            {unit.duration}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/trilha/${unit.unitId}`);
+                            }}
+                            className={`rounded-full border px-4 py-1.5 text-sm font-semibold shadow-sm transition ${tone.button}`}
+                          >
+                            abrir →
+                          </button>
+                        </div>
+                      </motion.article>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </section>
+
+        {/* Footer note */}
+        <div className="mt-14 text-center">
+          <p className="text-sm text-slate-400">
+            20 unidades · 4 trilhas · Chegou a Conta, Diretora
+          </p>
         </div>
       </main>
 

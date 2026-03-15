@@ -1,259 +1,141 @@
 import { useState } from "react";
-import { useParams, Link } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
-import { useTrilhaProgress } from "@/hooks/useTrilhaProgress";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Barquinho } from "@/components/Barquinho";
-import { 
-  CheckCircle2, ChevronLeft, ChevronRight, Clock, 
-  FileText, Download, MapPin, ListChecks,
-  Lightbulb, BookOpen, Sparkles, Anchor, Ship, Paperclip, Loader2
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import type { TrilhaUnit } from "@shared/schema";
 
-function NotebookLines() {
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      <div className="absolute left-8 top-0 bottom-0 w-px bg-red-300/40" />
-      <div className="absolute left-10 top-0 bottom-0 w-px bg-red-300/20" />
-      {Array.from({ length: 40 }).map((_, i) => (
-        <div 
-          key={i} 
-          className="absolute left-0 right-0 h-px bg-emerald-200/50" 
-          style={{ top: `${(i + 1) * 28}px` }}
-        />
-      ))}
-    </div>
-  );
+const toneMap = {
+  origem: {
+    section: "bg-[#f7fbff] border-sky-100",
+    chip: "bg-sky-100 text-sky-800",
+    title: "text-sky-950",
+    button: "border-sky-200 text-sky-800 hover:bg-sky-50",
+    accent: "bg-sky-100",
+    page: "bg-[#f8fcff] border-sky-200",
+    flow: "bg-sky-50 border-sky-100",
+  },
+  estrutura: {
+    section: "bg-[#fffaf2] border-amber-100",
+    chip: "bg-amber-100 text-amber-900",
+    title: "text-amber-950",
+    button: "border-amber-200 text-amber-900 hover:bg-amber-50",
+    accent: "bg-amber-100",
+    page: "bg-[#fff9ef] border-amber-200",
+    flow: "bg-amber-50 border-amber-100",
+  },
+  planejamento: {
+    section: "bg-[#f7fff9] border-emerald-100",
+    chip: "bg-emerald-100 text-emerald-900",
+    title: "text-emerald-950",
+    button: "border-emerald-200 text-emerald-900 hover:bg-emerald-50",
+    accent: "bg-emerald-100",
+    page: "bg-[#f7fff9] border-emerald-200",
+    flow: "bg-emerald-50 border-emerald-100",
+  },
+  prestacao: {
+    section: "bg-[#fff8fc] border-rose-100",
+    chip: "bg-rose-100 text-rose-900",
+    title: "text-rose-950",
+    button: "border-rose-200 text-rose-900 hover:bg-rose-50",
+    accent: "bg-rose-100",
+    page: "bg-[#fff8fc] border-rose-200",
+    flow: "bg-rose-50 border-rose-100",
+  },
+};
+
+type ToneKey = keyof typeof toneMap;
+
+function getPersonalidade(unitId: string): ToneKey {
+  const n = parseInt(unitId.replace("U", ""), 10);
+  if (n <= 4) return "origem";
+  if (n <= 11) return "estrutura";
+  if (n <= 15) return "planejamento";
+  return "prestacao";
 }
 
-function PaperClip({ className }: { className?: string }) {
-  return (
-    <svg 
-      viewBox="0 0 24 40" 
-      className={cn("w-6 h-10", className)}
-      fill="none"
-    >
-      <path 
-        d="M12 2 C6 2 2 6 2 12 L2 28 C2 34 6 38 12 38 C18 38 22 34 22 28 L22 12 C22 8 19 5 16 5 C13 5 10 8 10 12 L10 26 C10 28 11 30 12 30 C13 30 14 28 14 26 L14 12"
-        stroke="#9ca3af"
-        strokeWidth="2"
-        strokeLinecap="round"
-        fill="none"
-      />
-    </svg>
-  );
+function emojiFor(p: ToneKey) {
+  return p === "origem" ? "💧" : p === "estrutura" ? "📁" : p === "planejamento" ? "🗂️" : "📝";
 }
 
-function FloatingLeaf({ delay, left, size }: { delay: number; left: string; size: number }) {
-  return (
-    <motion.div
-      className="absolute pointer-events-none opacity-20"
-      style={{ left, top: -20 }}
-      initial={{ y: -20, rotate: 0, opacity: 0 }}
-      animate={{ 
-        y: ['0%', '100vh'],
-        rotate: [0, 360],
-        opacity: [0, 0.2, 0.2, 0]
-      }}
-      transition={{
-        duration: 20,
-        delay,
-        repeat: Infinity,
-        ease: "linear"
-      }}
-    >
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-        <path 
-          d="M12 2C8 6 4 10 4 14c0 4 4 8 8 8s8-4 8-8c0-4-4-8-8-12z" 
-          fill="#22c55e" 
-          opacity="0.6"
-        />
-      </svg>
-    </motion.div>
-  );
+function groupName(p: ToneKey) {
+  return p === "origem"
+    ? "De onde vêm os recursos"
+    : p === "estrutura"
+    ? "Estrutura administrativa"
+    : p === "planejamento"
+    ? "Planejamento e uso dos recursos"
+    : "Prestação de contas e continuidade";
 }
+
+const FICHAS = [
+  {
+    id: "leitura",
+    tab: "leitura",
+    title: "Leitura ampliada da unidade",
+    preview: "Uma explicação mais longa para compreender o sentido geral do tema.",
+    paragraphs: [
+      "Esta ficha transforma o tema da unidade em uma leitura mais contínua, menos fragmentada.",
+      "Aqui, o objetivo não é apenas listar regras, mas mostrar como esse conteúdo pode fortalecer a tomada de decisão e diminuir dúvidas na rotina da escola.",
+      "Ela serve como texto-base para estudo, reunião interna e retomada do assunto com mais calma.",
+    ],
+  },
+  {
+    id: "pratica",
+    tab: "prática",
+    title: "Como isso aparece na prática",
+    preview: "Exemplos concretos de como o tema aparece no dia a dia da escola.",
+    paragraphs: [
+      "Na prática, esta unidade aparece quando a direção precisa transformar regra em decisão concreta.",
+      "Ela também surge quando a equipe tenta organizar melhor papéis, tempos e responsabilidades.",
+      "Quando esse conteúdo fica claro, a escola ganha previsibilidade e mais segurança para agir.",
+    ],
+  },
+  {
+    id: "conversa",
+    tab: "conversa",
+    title: "Perguntas para conversa com a equipe",
+    preview: "Uma ficha pensada para apoiar reunião, formação ou conversa interna.",
+    paragraphs: [
+      "Quais pontos desta unidade a equipe já domina e quais ainda parecem mais nebulosos?",
+      "Que quadro, checklist ou fluxo ajudaria a tornar esse conteúdo mais claro para toda a escola?",
+      "Como este tema conversa com a próxima decisão administrativa que a direção vai tomar?",
+    ],
+  },
+];
 
 export default function TrilhaUnidade() {
   const params = useParams();
-  const unitId = params.unitId || 'U00';
-  const { completeUnit, isUnitCompleted, totalUnits } = useTrilhaProgress();
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
-  
+  const unitId = params.unitId || "U01";
+  const [, navigate] = useLocation();
+  const [openFicha, setOpenFicha] = useState<string | null>(null);
+
   const { data: unidade, isLoading } = useQuery<TrilhaUnit>({
     queryKey: ["/api/trilha", unitId],
   });
 
-  const isCompleted = isUnitCompleted(unitId);
-  const unitNumber = parseInt(unitId.replace('U', ''));
-  const progressPercent = Math.round(((unitNumber + 1) / totalUnits) * 100);
+  const { data: allUnits = [] } = useQuery<TrilhaUnit[]>({
+    queryKey: ["/api/trilha"],
+  });
 
-  const toggleCheck = (key: string) => {
-    setCheckedItems(prev => ({ ...prev, [key]: !prev[key] }));
-  };
+  const personalidade = getPersonalidade(unitId);
+  const tone = toneMap[personalidade];
 
-  const renderSecao = (secao: { tipo: string; titulo: string; conteudo: string | string[] }, idx: number) => {
-    const variants = {
-      hidden: { opacity: 0, y: 20 },
-      visible: { opacity: 1, y: 0 }
-    };
+  const allSorted = [...allUnits].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  const currentIdx = allSorted.findIndex((u) => u.unitId === unitId);
+  const prevUnit = currentIdx > 0 ? allSorted[currentIdx - 1] : null;
+  const nextUnit = currentIdx < allSorted.length - 1 ? allSorted[currentIdx + 1] : null;
 
-    switch (secao.tipo) {
-      case 'texto':
-        return (
-          <motion.div
-            key={idx}
-            variants={variants}
-            initial="hidden"
-            animate="visible"
-            transition={{ delay: idx * 0.1 }}
-            className="relative"
-          >
-            <div className="bg-[#fffef8] rounded-lg shadow-sm border border-amber-100/50 overflow-hidden relative">
-              <NotebookLines />
-              <div className="relative p-8 pl-14">
-                <h3 className="font-semibold text-lg mb-4 text-amber-900 flex items-center gap-3">
-                  <span className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-sm text-amber-700 font-bold flex-shrink-0">
-                    {idx + 1}
-                  </span>
-                  {secao.titulo}
-                </h3>
-                <p className="text-amber-800/80 leading-loose text-base">{secao.conteudo as string}</p>
-              </div>
-            </div>
-          </motion.div>
-        );
-      
-      case 'checklist':
-        return (
-          <motion.div
-            key={idx}
-            variants={variants}
-            initial="hidden"
-            animate="visible"
-            transition={{ delay: idx * 0.1 }}
-          >
-            <div className="bg-[#f0fdf4] rounded-lg shadow-sm border border-emerald-200/50 overflow-hidden relative">
-              <NotebookLines />
-              <div className="relative p-8 pl-14">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center shadow-sm">
-                    <ListChecks className="w-6 h-6 text-emerald-600" />
-                  </div>
-                  <h3 className="font-semibold text-xl text-emerald-900">{secao.titulo}</h3>
-                </div>
-                <div className="space-y-4">
-                  {(secao.conteudo as string[]).map((item, i) => {
-                    const key = `${idx}-${i}`;
-                    const isChecked = checkedItems[key] || false;
-                    return (
-                      <motion.div 
-                        key={i} 
-                        className={cn(
-                          "flex items-start gap-4 p-4 rounded-lg transition-all duration-200 border",
-                          isChecked 
-                            ? "bg-emerald-100/70 border-emerald-200" 
-                            : "bg-white/70 border-emerald-100 hover:bg-white hover:border-emerald-200"
-                        )}
-                        whileHover={{ x: 4 }}
-                      >
-                        <Checkbox 
-                          id={key}
-                          checked={isChecked}
-                          onCheckedChange={() => toggleCheck(key)}
-                          className="mt-1 border-emerald-400 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 w-5 h-5"
-                          data-testid={`checkbox-${idx}-${i}`}
-                        />
-                        <label 
-                          htmlFor={key}
-                          className={cn(
-                            "cursor-pointer leading-relaxed flex-1 text-base",
-                            isChecked ? "line-through text-emerald-600/60" : "text-emerald-800"
-                          )}
-                        >
-                          {item}
-                        </label>
-                        {isChecked && (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                        )}
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        );
-      
-      case 'dica':
-        return (
-          <motion.div
-            key={idx}
-            variants={variants}
-            initial="hidden"
-            animate="visible"
-            transition={{ delay: idx * 0.1 }}
-          >
-            <div className="bg-[#fffbeb] rounded-lg shadow-sm border border-amber-200/50 overflow-hidden relative">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-300" />
-              <div className="p-8">
-                <div className="flex items-start gap-5">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-100 to-yellow-100 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <Lightbulb className="w-7 h-7 text-amber-500" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-amber-900 mb-3">{secao.titulo}</h3>
-                    <p className="text-amber-700/90 leading-relaxed text-base">{secao.conteudo as string}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        );
-      
-      case 'pratica':
-        return (
-          <motion.div
-            key={idx}
-            variants={variants}
-            initial="hidden"
-            animate="visible"
-            transition={{ delay: idx * 0.1 }}
-          >
-            <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-lg shadow-sm border border-violet-200/50 overflow-hidden relative">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-400 via-purple-500 to-violet-400" />
-              <div className="p-8">
-                <div className="flex items-start gap-5">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <BookOpen className="w-7 h-7 text-violet-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-violet-900 mb-3">{secao.titulo}</h3>
-                    <p className="text-violet-700/90 leading-relaxed text-base">{secao.conteudo as string}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        );
-      
-      default:
-        return null;
-    }
-  };
+  const unitNum = parseInt(unitId.replace("U", ""), 10);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans">
+      <div className="min-h-screen flex flex-col bg-[#f6f0e6]">
         <Navigation />
         <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+          <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
         </div>
         <Footer />
       </div>
@@ -262,279 +144,348 @@ export default function TrilhaUnidade() {
 
   if (!unidade) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans">
+      <div className="min-h-screen flex flex-col bg-[#f6f0e6]">
         <Navigation />
         <div className="flex-1 flex items-center justify-center flex-col gap-4">
-          <p className="text-muted-foreground">Unidade não encontrada</p>
-          <Link href="/trilha">
-            <Button variant="outline">
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Voltar ao Mapa
-            </Button>
-          </Link>
+          <p className="text-slate-500">Unidade não encontrada</p>
+          <button
+            onClick={() => navigate("/trilha")}
+            className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-medium text-[#6f8094] shadow-sm"
+          >
+            ← voltar ao mural
+          </button>
         </div>
         <Footer />
       </div>
     );
   }
 
-  const sections = (unidade.sections || []) as Array<{ tipo: string; titulo: string; conteudo: string | string[] }>;
-  const materials = (unidade.materials || []) as Array<{ nome: string; descricao: string; tipo: string }>;
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col font-sans overflow-hidden">
+    <div className="min-h-screen bg-[#f6f0e6] text-slate-700 flex flex-col">
       <Navigation />
-      
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <FloatingLeaf delay={0} left="5%" size={14} />
-        <FloatingLeaf delay={5} left="90%" size={12} />
-        <FloatingLeaf delay={10} left="50%" size={10} />
-      </div>
-      
-      <main className="flex-1 relative z-10">
-        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-100/50 via-green-50/30 to-transparent">
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
-          
-          <svg className="absolute bottom-0 left-0 right-0 w-full h-6" preserveAspectRatio="none" viewBox="0 0 1200 30">
-            <path 
-              d="M0 30 Q200 15 400 22 T800 18 T1200 25 V30 H0 Z" 
-              fill="url(#waveGrad)" 
-              opacity="0.25"
-            />
-            <defs>
-              <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#34d399" />
-                <stop offset="50%" stopColor="#10b981" />
-                <stop offset="100%" stopColor="#34d399" />
-              </linearGradient>
-            </defs>
-          </svg>
-          
-          <div className="container mx-auto px-4 py-10 relative">
-            <motion.div 
-              className="flex items-center gap-4 mb-8"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <Link href="/trilha">
-                <Button variant="ghost" size="sm" className="group" data-testid="button-voltar-mapa">
-                  <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
-                  Voltar ao Mapa
-                </Button>
-              </Link>
-              
-              <div className="h-5 w-px bg-border/50" />
-              
-              <Badge variant="outline" className="bg-white/80 backdrop-blur-sm border-emerald-200 px-3 py-1">
-                <Clock className="w-3.5 h-3.5 mr-2 text-emerald-500" />
-                <span className="text-emerald-700">{unidade.duration}</span>
-              </Badge>
-              
-              {isCompleted && (
-                <Badge className="bg-emerald-500 text-white border-0 px-3 py-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 mr-2" />
-                  Concluída
-                </Badge>
-              )}
-            </motion.div>
-            
-            <motion.div 
-              className="flex flex-col lg:flex-row items-start gap-8"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="relative">
-                <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-gradient-to-br from-accent via-orange-500 to-amber-500 flex items-center justify-center shadow-xl shadow-accent/30">
-                  <span className="font-bold text-white text-2xl md:text-3xl">{unidade.unitId}</span>
+
+      <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-10 font-['Nunito','Quicksand',sans-serif] md:px-10 lg:px-12">
+        {/* Nav bar */}
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <button
+            onClick={() => navigate("/trilha")}
+            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-[#6f8094] shadow-sm hover:bg-slate-50 transition"
+          >
+            ← voltar ao mural
+          </button>
+          <div className="flex gap-2">
+            {prevUnit ? (
+              <button
+                onClick={() => navigate(`/trilha/${prevUnit.unitId}`)}
+                className={`rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition ${tone.button}`}
+              >
+                ← anterior
+              </button>
+            ) : (
+              <span className="rounded-full border border-slate-100 bg-white/50 px-4 py-2 text-sm font-medium text-slate-300 shadow-sm">
+                ← anterior
+              </span>
+            )}
+            {nextUnit ? (
+              <button
+                onClick={() => navigate(`/trilha/${nextUnit.unitId}`)}
+                className={`rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition ${tone.button}`}
+              >
+                próxima →
+              </button>
+            ) : (
+              <span className="rounded-full border border-slate-100 bg-white/50 px-4 py-2 text-sm font-medium text-slate-300 shadow-sm">
+                próxima →
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Unit page card */}
+        <section
+          className={`relative overflow-hidden rounded-[34px] border p-8 shadow-[0_20px_70px_rgba(123,84,45,0.12)] md:p-10 ${tone.page}`}
+        >
+          {/* top tab decoration */}
+          <div className="absolute left-1/2 top-0 h-7 w-40 -translate-x-1/2 rounded-b-[20px] border border-white/70 bg-white/75 shadow-sm" />
+          <div className={`absolute right-8 top-8 h-16 w-16 rotate-6 rounded-[18px] opacity-55 ${tone.accent}`} />
+
+          <div className="relative grid gap-8 xl:grid-cols-[0.78fr_1.22fr]">
+            {/* Aside: unit identity */}
+            <aside className="rounded-[28px] border border-white/80 bg-[#fffdf7] p-6 shadow-sm">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-14 w-14 items-center justify-center rounded-[18px] border border-slate-200 bg-white text-2xl shadow-sm">
+                  {emojiFor(personalidade)}
                 </div>
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center border-2 border-accent/20">
-                  <MapPin className="w-5 h-5 text-accent" />
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.22em] text-slate-500">
+                    unidade {unitNum.toString().padStart(2, "0")}
+                  </p>
+                  <p className="text-sm font-semibold text-slate-600">{unitId}</p>
+                  <p className="mt-1 text-xs text-slate-400">{groupName(personalidade)}</p>
                 </div>
               </div>
-              
-              <div className="flex-1">
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-display mb-3 text-foreground/90 leading-tight">
+
+              {/* Visual placeholder */}
+              <div className="rounded-[20px] border border-white/80 bg-white/78 p-5 shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                    visual da unidade
+                  </span>
+                  <span className="text-3xl">📓</span>
+                </div>
+                <div className="space-y-3">
+                  <div className="h-2 w-4/5 rounded-full bg-slate-200" />
+                  <div className="h-2 w-3/4 rounded-full bg-slate-200" />
+                  <div className="h-2 w-2/3 rounded-full bg-slate-200" />
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-[18px] border border-white/80 bg-[#fffdf7] p-4 text-[14px] leading-6 text-slate-600 shadow-sm">
+                <span className="font-semibold">Nesta unidade:</span> visão geral, leitura guiada,
+                materiais de apoio e fichas longas para consulta.
+              </div>
+
+              {/* Fichas */}
+              <div className="mt-5 space-y-3">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                  fichas de aprofundamento
+                </p>
+                {FICHAS.map((ficha) => (
+                  <button
+                    key={ficha.id}
+                    type="button"
+                    onClick={() => setOpenFicha(ficha.id)}
+                    className={`w-full rounded-[18px] border p-4 text-left shadow-sm transition hover:-translate-y-0.5 ${tone.flow}`}
+                  >
+                    <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                      {ficha.tab}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-700">{ficha.title}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">{ficha.preview}</p>
+                  </button>
+                ))}
+              </div>
+            </aside>
+
+            {/* Main content */}
+            <section className="relative min-w-0">
+              {/* Title */}
+              <div className="relative inline-flex max-w-full rotate-[-1deg] rounded-[16px] border border-white/80 bg-[#fffdf7] px-4 py-2 shadow-sm">
+                <div className="absolute -top-3 left-6 h-5 w-16 rotate-[-4deg] rounded-sm border border-white/70 bg-white/75" />
+                <h1 className="text-3xl font-extrabold leading-tight text-slate-700 md:text-4xl">
                   {unidade.title}
                 </h1>
-                <p className="text-lg md:text-xl text-muted-foreground mb-6">{unidade.subtitle}</p>
-                
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 max-w-sm h-3 bg-emerald-100 rounded-full overflow-hidden shadow-inner">
-                    <motion.div 
-                      className="h-full bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-400 rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progressPercent}%` }}
-                      transition={{ duration: 1, delay: 0.3 }}
-                    />
-                  </div>
-                  <span className="text-sm text-muted-foreground font-medium">
-                    Trapiche {unitNumber + 1} de {totalUnits}
-                  </span>
+              </div>
+              <p className="mt-4 max-w-3xl text-lg font-medium leading-8 text-slate-600">
+                {unidade.subtitle}
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <div className="inline-flex rounded-full border border-slate-200 bg-[#fffdf7] px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-500">
+                  leitura completa da unidade
+                </div>
+                <div className={`inline-flex rotate-[1deg] rounded-[14px] border border-white/80 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] shadow-sm ${tone.chip}`}>
+                  {unidade.duration}
                 </div>
               </div>
-              
-              <div className="hidden xl:block">
-                <motion.div
-                  className="w-28 h-20"
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <Barquinho />
-                </motion.div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
 
-        <div className="container mx-auto px-4 py-12">
-          <div className="max-w-4xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <div className="mb-12 bg-gradient-to-br from-accent/10 via-orange-50 to-amber-50/50 rounded-2xl shadow-md overflow-hidden relative border border-accent/10">
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-accent via-orange-400 to-amber-400" />
-                <div className="p-10">
-                  <div className="flex items-start gap-6">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/20 to-orange-100 flex items-center justify-center flex-shrink-0 shadow-sm">
-                      <Sparkles className="w-8 h-8 text-accent" />
+              <div className="mt-8 grid gap-5">
+                {/* Intro + key panels */}
+                <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+                  <section className="rounded-[24px] border border-white/80 bg-white/78 p-5 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                        leitura principal
+                      </div>
+                      <div className="hidden md:block rounded-[16px] border bg-white/88 px-3 py-2 text-[11px] font-semibold shadow-sm text-slate-500">
+                        olhe esta unidade como uma peça do todo
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h2 className="font-semibold text-xl text-accent mb-4">Sobre este trapiche</h2>
-                      <p className="text-lg text-foreground/80 leading-relaxed">{unidade.intro}</p>
+                    <p className="text-base leading-8 text-slate-700">
+                      {unidade.intro ||
+                        "Esta unidade apresenta conceitos fundamentais para a gestão financeira escolar de forma prática e acessível."}
+                    </p>
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      <div className="rounded-[18px] border border-slate-200 bg-[#fffdf8] p-4 shadow-sm">
+                        <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                          olhar geral
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                          Ajuda a ligar o conteúdo da unidade à rotina concreta da escola.
+                        </p>
+                      </div>
+                      <div className="rounded-[18px] border border-slate-200 bg-[#fffdf8] p-4 shadow-sm">
+                        <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                          pergunta-chave
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                          O que a diretora precisa enxergar com clareza para tomar decisões melhores?
+                        </p>
+                      </div>
                     </div>
+                  </section>
+
+                  <div className="grid gap-4">
+                    {/* Ementa */}
+                    <section className="rounded-[24px] border border-white/80 bg-white/94 p-4 shadow-sm">
+                      <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                        ementa
+                      </p>
+                      <p className="mt-3 text-sm leading-6 text-slate-600">
+                        {(() => {
+                          const sections = (unidade.sections || []) as Array<{
+                            tipo: string;
+                            titulo: string;
+                            conteudo: string | string[];
+                          }>;
+                          const first = sections[0];
+                          return first
+                            ? typeof first.conteudo === "string"
+                              ? first.conteudo
+                              : Array.isArray(first.conteudo)
+                              ? first.conteudo[0]
+                              : ""
+                            : unidade.subtitle;
+                        })()}
+                      </p>
+                    </section>
+
+                    {/* Video suggestion */}
+                    <section className={`rounded-[24px] border p-4 shadow-sm ${tone.flow}`}>
+                      <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                        vídeo sugerido
+                      </p>
+                      <div className="mt-3 flex items-center gap-3 rounded-[16px] border border-white/80 bg-white/80 px-3 py-2 shadow-sm">
+                        <span className="text-xl">🎬</span>
+                        <p className="text-sm leading-5 text-slate-600">
+                          Vídeo explicativo sobre {unidade.title.toLowerCase()}
+                        </p>
+                      </div>
+                    </section>
                   </div>
                 </div>
-              </div>
-            </motion.div>
 
-            <div className="space-y-8">
-              {sections.map((secao, idx) => renderSecao(secao, idx))}
-            </div>
-
-            {materials.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="mt-12"
-              >
-                <div className="bg-[#f8fafc] rounded-2xl border border-slate-200/50 overflow-hidden shadow-sm">
-                  <div className="bg-gradient-to-r from-slate-100 to-slate-50 px-8 py-5 border-b border-slate-200/50">
-                    <div className="flex items-center gap-3">
-                      <Paperclip className="w-5 h-5 text-slate-500" />
-                      <h3 className="font-semibold text-lg text-slate-800">Materiais de Apoio</h3>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <div className="grid gap-4">
-                      {materials.map((material, idx) => (
-                        <motion.div
+                {/* Sections from DB */}
+                {(() => {
+                  const sections = (unidade.sections || []) as Array<{
+                    tipo: string;
+                    titulo: string;
+                    conteudo: string | string[];
+                  }>;
+                  if (sections.length === 0) return null;
+                  return (
+                    <div className="grid gap-5 md:grid-cols-2">
+                      {sections.slice(0, 4).map((sec, idx) => (
+                        <div
                           key={idx}
-                          className="relative group"
-                          whileHover={{ x: 4 }}
+                          className="rounded-[22px] border border-slate-200 bg-white/78 p-4 shadow-sm"
                         >
-                          <div className="absolute -left-3 top-1/2 -translate-y-1/2">
-                            <PaperClip className="text-slate-400 group-hover:text-slate-500 transition-colors" />
-                          </div>
-                          <div className="ml-6 bg-white rounded-xl border border-slate-200 p-5 flex items-center justify-between gap-4 shadow-sm group-hover:shadow-md group-hover:border-slate-300 transition-all">
-                            <div className="flex items-center gap-4 flex-1">
-                              <div className={cn(
-                                "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
-                                material.tipo === 'pdf' && "bg-red-50",
-                                material.tipo === 'planilha' && "bg-emerald-50",
-                                material.tipo === 'modelo' && "bg-sky-50"
-                              )}>
-                                <FileText className={cn(
-                                  "w-6 h-6",
-                                  material.tipo === 'pdf' && "text-red-500",
-                                  material.tipo === 'planilha' && "text-emerald-500",
-                                  material.tipo === 'modelo' && "text-sky-500"
-                                )} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-slate-900 mb-1">{material.nome}</h4>
-                                <p className="text-sm text-slate-500 truncate">{material.descricao}</p>
-                              </div>
-                            </div>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="flex-shrink-0 border-slate-200 hover:bg-slate-50"
-                              data-testid={`download-material-${idx}`}
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Baixar
-                            </Button>
-                          </div>
-                        </motion.div>
+                          <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                            {sec.titulo || `seção ${idx + 1}`}
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">
+                            {typeof sec.conteudo === "string"
+                              ? sec.conteudo
+                              : Array.isArray(sec.conteudo)
+                              ? sec.conteudo.join(" · ")
+                              : ""}
+                          </p>
+                        </div>
                       ))}
                     </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
+                  );
+                })()}
 
-            <motion.div 
-              className="mt-16 relative"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-              
-              <div className="pt-12">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-                  <div>
-                    {unidade.previousUnit && (
-                      <Link href={`/trilha/${unidade.previousUnit}`}>
-                        <Button variant="outline" size="lg" className="group" data-testid="button-anterior">
-                          <ChevronLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-                          Trapiche Anterior
-                        </Button>
-                      </Link>
-                    )}
+                {/* What to observe + next steps */}
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div className="rounded-[20px] border border-slate-200 bg-white/78 p-4 shadow-sm">
+                    <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                      o que observar
+                    </p>
+                    <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                      <li className="flex gap-2">
+                        <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
+                        <span>Se a equipe compreende a lógica geral da unidade.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
+                        <span>Se existem registros claros para consulta futura.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
+                        <span>Se o conteúdo já conversa com a rotina da escola.</span>
+                      </li>
+                    </ul>
                   </div>
-                  
-                  <div className="flex gap-4">
-                    {!isCompleted && (
-                      <Button 
-                        size="lg"
-                        className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 shadow-lg shadow-emerald-500/25"
-                        onClick={() => completeUnit(unitId)}
-                        data-testid="button-concluir"
-                      >
-                        <Anchor className="w-5 h-5 mr-2" />
-                        Ancorar neste Trapiche
-                      </Button>
-                    )}
-                    {isCompleted && (
-                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 px-5 py-2.5 text-base">
-                        <CheckCircle2 className="w-5 h-5 mr-2" />
-                        Trapiche Visitado
-                      </Badge>
-                    )}
-                    {unidade.nextUnit && (
-                      <Link href={`/trilha/${unidade.nextUnit}`}>
-                        <Button 
-                          size="lg"
-                          className="bg-gradient-to-r from-accent to-orange-500 hover:from-accent/90 hover:to-orange-500/90 shadow-lg shadow-accent/25 group" 
-                          data-testid="button-proximo"
-                        >
-                          <Ship className="w-5 h-5 mr-2" />
-                          Navegar pro Próximo
-                          <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                        </Button>
-                      </Link>
-                    )}
+
+                  <div className="rounded-[20px] border border-slate-200 bg-white/78 p-4 shadow-sm">
+                    <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                      próximos passos
+                    </p>
+                    <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                      <li className="flex gap-2">
+                        <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
+                        <span>Relacionar esta unidade à próxima da trilha.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
+                        <span>Usar a ficha longa em reunião interna.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="mt-2 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
+                        <span>Criar um apoio visual próprio para a equipe.</span>
+                      </li>
+                    </ul>
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </section>
           </div>
-        </div>
+        </section>
+
+        {/* Ficha modal */}
+        <AnimatePresence>
+          {openFicha && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/35 px-4 py-8 backdrop-blur-sm"
+              onClick={() => setOpenFicha(null)}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 18, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                onClick={(e) => e.stopPropagation()}
+                className={`relative w-full max-w-4xl overflow-hidden rounded-[30px] border p-6 shadow-[0_30px_80px_rgba(0,0,0,0.22)] ${tone.page}`}
+              >
+                <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-transparent via-white/80 to-transparent" />
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                      ficha aberta
+                    </p>
+                    <h3 className="mt-2 text-2xl font-extrabold leading-tight text-slate-700">
+                      {FICHAS.find((f) => f.id === openFicha)?.title}
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setOpenFicha(null)}
+                    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-[#6f8094] shadow-sm hover:bg-slate-50 transition"
+                  >
+                    fechar
+                  </button>
+                </div>
+                <div className="max-h-[68vh] space-y-5 overflow-auto rounded-[22px] border border-white/80 bg-[#fffdf7] p-6 text-[15px] leading-8 text-slate-600 shadow-sm">
+                  {FICHAS.find((f) => f.id === openFicha)?.paragraphs.map((paragraph, idx) => (
+                    <p key={idx}>{paragraph}</p>
+                  ))}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       <Footer />
