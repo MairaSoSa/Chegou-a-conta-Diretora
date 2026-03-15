@@ -73,12 +73,9 @@ const PIE_COLORS = ["#2d6a4f", "#40916c", "#74c69d", "#b7e4c7"];
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInep, setSelectedInep] = useState<string | null>(null);
-  const [showSearchDropdown, setShowSearchDropdown] = useState(true);
   const [selectedAno, setSelectedAno] = useState(2024);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [selectedChart, setSelectedChart] = useState("matriculas");
-  const [activeTab, setActiveTab] = useState<"overview" | "search">("overview");
-  const [overviewSearch, setOverviewSearch] = useState("");
   const [activeSchoolTab, setActiveSchoolTab] = useState<"alunos" | "etapas" | "docentes" | "infra">("alunos");
   const [filterUf, setFilterUf] = useState("");
   const [filterDep, setFilterDep] = useState("");
@@ -116,19 +113,16 @@ export default function Dashboard() {
 
   const selectSchool = (inep: string) => {
     setSelectedInep(inep);
-    setShowSearchDropdown(false);
-    if (activeTab !== "search") setActiveTab("search");
+    setSearchQuery("");
   };
 
-  const handleOverviewSearch = () => {
-    const q = overviewSearch.trim();
+  const handleSearch = () => {
+    const q = searchQuery.trim();
     if (!q) return;
     if (/^\d{8}$/.test(q)) {
       selectSchool(q);
     } else {
-      setSearchQuery(q);
-      setShowSearchDropdown(true);
-      setActiveTab("search");
+      refetchSearch();
     }
   };
 
@@ -449,43 +443,20 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-foreground">Painel de Dados Educacionais</h1>
             <p className="text-sm text-muted-foreground mt-1">Censo Escolar {selectedAno} - Fonte: INEP/MEC</p>
           </div>
-          {activeTab === "overview" && (
-            <div className="flex items-center gap-2">
-              <select
-                value={selectedAno}
-                onChange={(e) => setSelectedAno(Number(e.target.value))}
-                className="text-sm bg-background border border-border/50 rounded-lg px-3 py-2"
-              >
-                {[2024, 2023, 2022, 2021, 2020].map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-2 border-b border-border/30 pb-1">
-          {[
-            { key: "overview" as const, label: "Visão Geral", icon: BarChart3 },
-            { key: "search" as const, label: "Buscar Escolas", icon: Search },
-          ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-all ${
-                activeTab === tab.key
-                  ? "bg-accent/10 text-accent border-b-2 border-accent"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-              }`}
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedAno}
+              onChange={(e) => setSelectedAno(Number(e.target.value))}
+              className="text-sm bg-background border border-border/50 rounded-lg px-3 py-2"
             >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          ))}
+              {[2024, 2023, 2022, 2021, 2020].map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
         </div>
 
-        {activeTab === "overview" && (
-          <div className="space-y-6">
+        <div className="space-y-6">
             {/* RESUMO EXECUTIVO */}
-            {stats && (
+            {!selectedInep && stats && (
               <section className="section">
                 <div className="summary-grid">
                   <div className="metric theme-blue">
@@ -521,13 +492,13 @@ export default function Dashboard() {
                         <input
                           className="w-full pl-9 pr-3 h-10 rounded-xl text-sm border border-border/50 bg-white outline-none focus:ring-2 focus:ring-blue-200"
                           placeholder="Ex: EMEF Jardim das Acácias ou 35000001"
-                          value={overviewSearch}
-                          onChange={e => setOverviewSearch(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') handleOverviewSearch(); }}
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
                         />
                       </div>
                       <button
-                        onClick={handleOverviewSearch}
+                        onClick={handleSearch}
                         className="flex items-center gap-1.5 px-4 h-10 rounded-xl text-sm font-semibold text-white shrink-0"
                         style={{background:'#2d5a88'}}
                       >
@@ -553,8 +524,53 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
+            {/* RESULTADOS DA BUSCA */}
+            {!selectedInep && searchLoading && searchQuery.length >= 2 && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground px-1 py-2">
+                <Loader2 className="w-4 h-4 animate-spin" /> Buscando escolas...
+              </div>
+            )}
+            {!selectedInep && !searchLoading && searchResults && searchResults.dados && searchResults.dados.length > 0 && (
+              <Card className="card-clay">
+                <CardContent className="p-0">
+                  <div className="px-4 py-2.5 border-b border-border/20 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {searchResults.dados.length} escola(s) encontrada(s)
+                    </span>
+                    <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setSearchQuery("")}>
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="divide-y divide-border/20 max-h-96 overflow-y-auto">
+                    {searchResults.dados.map((result: any) => (
+                      <button
+                        key={result.co_entidade}
+                        className="w-full text-left px-4 py-3.5 hover:bg-accent/5 transition-colors flex justify-between items-center group"
+                        onClick={() => selectSchool(String(result.co_entidade))}
+                      >
+                        <div>
+                          <p className="font-semibold text-sm group-hover:text-accent transition-colors">{result.no_entidade}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            INEP {result.co_entidade} · {result.no_municipio}/{result.sg_uf} · {result.ds_dependencia}
+                            {result.qt_matriculas > 0 && ` · ${result.qt_matriculas.toLocaleString('pt-BR')} alunos`}
+                          </p>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 ml-2 group-hover:text-accent transition-colors" />
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {!selectedInep && !searchLoading && searchQuery.length >= 2 && searchResults && searchResults.dados && searchResults.dados.length === 0 && (
+              <div className="text-center py-6 text-sm text-muted-foreground">
+                <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                Nenhuma escola encontrada para "<strong>{searchQuery}</strong>"
+              </div>
+            )}
+
             {/* BILHETE DA DIRETORA */}
-            {stats && (
+            {!selectedInep && stats && (
               <section className="section" style={{
                 display: 'flex',
                 flexDirection: 'row',
@@ -622,12 +638,12 @@ export default function Dashboard() {
                 </div>
               </section>
             )}
-            {statsLoading ? (
+            {!selectedInep && statsLoading ? (
               <div className="py-20 text-center">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto text-accent mb-3" />
                 <p className="text-muted-foreground">Carregando estatísticas...</p>
               </div>
-            ) : stats ? (
+            ) : !selectedInep && stats ? (
               <>
                 {/* ...existing code... */}
 
@@ -655,7 +671,6 @@ export default function Dashboard() {
                             setFilterUf(uf);
                             setFilterDep("");
                             setListPage(1);
-                            setActiveTab("search");
                           }}
                         />
                       </CardContent>
@@ -746,12 +761,20 @@ export default function Dashboard() {
 
               </>
             ) : null}
-          </div>
-        )}
 
-        {activeTab === "search" && (
-          <div className="space-y-4">
-            {!selectedInep && (
+            {/* BUSCAR OUTRA ESCOLA - botão de reset quando escola selecionada */}
+            {selectedInep && (
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  onClick={() => { setSelectedInep(null); setSearchQuery(""); }}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowRight className="w-4 h-4 rotate-180" /> Buscar outra escola
+                </button>
+              </div>
+            )}
+
+            {false && (
               <>
                 <Card className="card-clay">
                   <CardContent className="p-4">
@@ -946,7 +969,7 @@ export default function Dashboard() {
                               placeholder="Nome ou código INEP..."
                               className="pl-10 h-10 rounded-xl"
                               value={searchQuery}
-                              onChange={e => { setSearchQuery(e.target.value); setShowSearchDropdown(true); }}
+                              onChange={e => { setSearchQuery(e.target.value); }}
                               onKeyDown={e => {
                                 if (e.key === 'Enter') {
                                   if (searchQuery.length === 8 && /^\d+$/.test(searchQuery)) selectSchool(searchQuery);
@@ -954,7 +977,7 @@ export default function Dashboard() {
                                 }
                               }}
                             />
-                            {showSearchDropdown && searchResults?.dados?.length > 0 && (
+                            {searchResults?.dados?.length > 0 && (
                               <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/50 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto">
                                 {searchResults.dados.map((r: any) => (
                                   <button key={r.co_entidade} className="w-full text-left px-3 py-2.5 hover:bg-accent/5 border-b border-border/20 last:border-0 text-sm" onClick={() => { selectSchool(String(r.co_entidade)); setSearchQuery(r.no_entidade); }}>
@@ -1841,14 +1864,7 @@ export default function Dashboard() {
               </>
             )}
 
-            {!selectedInep && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Search className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                <p className="text-sm">Digite o nome ou código INEP de uma escola para ver seus dados.</p>
-              </div>
-            )}
-          </div>
-        )}
+        </div>
       </main>
       <Footer />
     </div>
