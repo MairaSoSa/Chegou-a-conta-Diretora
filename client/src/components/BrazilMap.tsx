@@ -13,6 +13,12 @@ const COLORS = [
   "#b5ead7", "#ffb7b2", "#b5ead7"
 ];
 
+/* cores fixas para estados com problemas visuais no array acima */
+const STATE_COLOR_OVERRIDES: Record<string, string> = {
+  MT: "#c8822a",  /* ocre quente — Cerrado */
+  RO: "#3a7d5e",  /* verde-floresta vivo — Amazônia */
+};
+
 type Props = {
   onStateClick?: (uf: string) => void;
   ufStats?: Record<string, { name: string; escolas: number; color?: string }>;
@@ -27,7 +33,7 @@ export function BrazilMap({ onStateClick, ufStats }: Props) {
     const map: Record<string, string> = {};
     ufs.forEach((uf, i) => {
       const customColor = ufStats[uf]?.color;
-      map[uf] = customColor || COLORS[i % COLORS.length];
+      map[uf] = customColor || STATE_COLOR_OVERRIDES[uf] || COLORS[i % COLORS.length];
     });
     return map;
   }, [ufStats]);
@@ -44,7 +50,7 @@ export function BrazilMap({ onStateClick, ufStats }: Props) {
             geographies.map((geo) => {
               const uf = geo.properties.sigla || geo.properties.UF || geo.properties.name;
               const stat = ufStats?.[uf];
-              const fill = ufColorMap[uf] || "#b7e4c7";
+              const fill = ufColorMap[uf] || STATE_COLOR_OVERRIDES[uf] || "#b7e4c7";
               return (
                 <Geography
                   key={geo.rsmKey}
