@@ -223,21 +223,16 @@ export default function Trilha() {
           {groups.map((group, groupIdx) => {
             const pinColors = ["#e74c3c","#3498db","#2ecc71","#f39c12","#9b59b6","#e67e22","#1abc9c"];
             const rotations = [-3.2, 1.8, -1.5, 2.6, -2.8, 1.2, -0.8, 3.1, -2.2, 1.6];
-            const paperVariants = [
-              // plain cream
-              { bg: "#fffef9", lines: false, borderColor: "#e8ddc8", fold: false },
-              // lined
-              { bg: "#ffffff", lines: true, borderColor: "#dce3ed", fold: false },
-              // warm white with fold
-              { bg: "#fdf9f0", lines: false, borderColor: "#e0d5c0", fold: true },
-              // faint blue lined
-              { bg: "#f8fbff", lines: true, borderColor: "#ccd9ea", fold: false },
-              // sticky yellow
-              { bg: "#fefce8", lines: false, borderColor: "#e9e083", fold: false },
-              // plain white
-              { bg: "#ffffff", lines: false, borderColor: "#e2e8f0", fold: true },
-              // aged cream
-              { bg: "#fdf6e3", lines: true, borderColor: "#d6c89e", fold: false },
+
+            // Bilhete de recado color schemes
+            const memoVariants = [
+              { header: "#fce8ed", body: "#fff7f9", border: "#f4c5d0", stripe: "#e88fa3", lines: false },
+              { header: "#dbeafe", body: "#f8fbff", border: "#bfdbfe", stripe: "#6ea8e8", lines: true  },
+              { header: "#fef3c7", body: "#fffdf0", border: "#fde68a", stripe: "#d4a74a", lines: false },
+              { header: "#d1fae5", body: "#f0fdf9", border: "#a7f3d0", stripe: "#4aad7e", lines: true  },
+              { header: "#ede9fe", body: "#faf8ff", border: "#ddd6fe", stripe: "#9177e0", lines: false },
+              { header: "#fee2e2", body: "#fff8f8", border: "#fecaca", stripe: "#dc7a7a", lines: false },
+              { header: "#e0f2fe", body: "#f8fcff", border: "#bae6fd", stripe: "#5aadcf", lines: true  },
             ];
 
             const tapeColors = ["rgba(255,255,180,0.82)","rgba(200,230,255,0.82)","rgba(255,200,200,0.76)","rgba(200,255,210,0.82)"];
@@ -290,12 +285,12 @@ export default function Trilha() {
                     </div>
                   </div>
 
-                  {/* Cards grid — paper sheets on the board */}
+                  {/* Cards grid — bilhetes de recado no mural */}
                   <div className="grid gap-x-5 gap-y-10 md:grid-cols-2 xl:grid-cols-3">
                     {group.items.map((unit, itemIdx) => {
                       const isPinned = pinned === unit.unitId;
                       const rot = rotations[itemIdx % rotations.length];
-                      const paper = paperVariants[itemIdx % paperVariants.length];
+                      const memo = memoVariants[itemIdx % memoVariants.length];
                       const pinColor = pinColors[itemIdx % pinColors.length];
                       const tape = tapeColors[itemIdx % tapeColors.length];
                       const useTape = itemIdx % 2 === 0;
@@ -304,163 +299,168 @@ export default function Trilha() {
                         <motion.div
                           key={unit.unitId}
                           style={{ rotate: rot, transformOrigin: "top center" }}
-                          whileHover={{
-                            y: -10,
-                            rotate: 0,
-                            scale: 1.03,
-                            zIndex: 20,
-                            boxShadow: "0 20px 40px rgba(0,0,0,0.28)",
-                          }}
-                          animate={isPinned ? { rotate: 0, y: -6, scale: 1.04, zIndex: 20 } : {}}
+                          whileHover={{ y: -10, rotate: 0, scale: 1.03, zIndex: 20 }}
+                          animate={isPinned ? { rotate: 0, y: -8, scale: 1.04, zIndex: 20 } : {}}
                           transition={{ type: "spring", stiffness: 280, damping: 22 }}
                           className="relative cursor-pointer"
-                          onClick={() =>
-                            setPinned((cur) => (cur === unit.unitId ? null : unit.unitId))
-                          }
+                          onClick={() => setPinned((cur) => (cur === unit.unitId ? null : unit.unitId))}
                         >
-                          {/* Push pin or tape */}
+                          {/* Tape or push pin fixador */}
                           {useTape ? (
                             <div
-                              className="absolute -top-3 left-1/2 z-10 h-5 w-16 -translate-x-1/2 rotate-[-1deg] rounded-sm"
-                              style={{
-                                background: tape,
-                                boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
-                              }}
+                              className="absolute -top-3 left-1/2 z-10 h-[18px] w-16 -translate-x-1/2 rotate-[-1.5deg] rounded-[3px]"
+                              style={{ background: tape, boxShadow: "0 1px 3px rgba(0,0,0,0.18)" }}
                             />
+                          ) : isPinned ? (
+                            <>
+                              <div
+                                className="absolute -top-4 left-1/2 z-10 h-7 w-7 -translate-x-1/2 rounded-full border-2 border-white/60"
+                                style={{
+                                  background: `radial-gradient(circle at 35% 35%, #f87e8a, ${pinColor} 55%, #7a1020)`,
+                                  boxShadow: `0 4px 10px ${pinColor}aa, 0 1px 3px rgba(0,0,0,0.4)`,
+                                }}
+                              />
+                              <div className="absolute left-1/2 top-[14px] z-10 h-2 w-2 -translate-x-1/2 rounded-full bg-black/10" />
+                            </>
                           ) : (
                             <div className="absolute -top-3 left-1/2 z-10 -translate-x-1/2">
                               <div
-                                className="h-6 w-6 rounded-full border-2 border-white/60"
+                                className="h-6 w-6 rounded-full border-2 border-white/50"
                                 style={{
-                                  background: pinColor,
-                                  boxShadow: `0 2px 6px ${pinColor}88, 0 1px 2px rgba(0,0,0,0.3)`,
+                                  background: `radial-gradient(circle at 35% 35%, #fff6, ${pinColor} 60%, ${pinColor}cc)`,
+                                  boxShadow: `0 3px 7px ${pinColor}88, 0 1px 2px rgba(0,0,0,0.3)`,
                                 }}
                               />
                             </div>
                           )}
 
-                          {/* Paper card */}
+                          {/* Bilhete de recado */}
                           <article
-                            className="relative overflow-hidden rounded-sm"
+                            className="relative overflow-hidden"
                             style={{
-                              background: paper.lines
-                                ? `repeating-linear-gradient(to bottom, ${paper.bg} 0px, ${paper.bg} 23px, #d1d9e6 24px)`
-                                : paper.bg,
-                              borderColor: paper.borderColor,
+                              borderRadius: "2px 8px 4px 6px",
+                              borderColor: memo.border,
                               borderWidth: "1px",
                               borderStyle: "solid",
                               boxShadow: isPinned
-                                ? "0 16px 36px rgba(0,0,0,0.28), 0 2px 6px rgba(0,0,0,0.16)"
-                                : "0 6px 20px rgba(0,0,0,0.22), 0 2px 4px rgba(0,0,0,0.14)",
-                              padding: "20px 18px 18px",
+                                ? "0 18px 40px rgba(0,0,0,0.30), 0 3px 8px rgba(0,0,0,0.18)"
+                                : "0 6px 22px rgba(0,0,0,0.24), 0 2px 5px rgba(0,0,0,0.14)",
                             }}
                           >
-                            {/* Fold corner */}
-                            {paper.fold && (
-                              <div
-                                className="absolute right-0 top-0"
-                                style={{
-                                  width: 0,
-                                  height: 0,
-                                  borderStyle: "solid",
-                                  borderWidth: "0 28px 28px 0",
-                                  borderColor: `transparent ${paper.borderColor} transparent transparent`,
-                                }}
-                              >
-                                <div
-                                  className="absolute"
-                                  style={{
-                                    width: 0, height: 0,
-                                    borderStyle: "solid",
-                                    borderWidth: "0 26px 26px 0",
-                                    borderColor: `transparent #f0ebe0 transparent transparent`,
-                                    right: -26, top: 0,
-                                  }}
-                                />
-                              </div>
-                            )}
+                            {/* Colored stripe on left edge (like message pad) */}
+                            <div
+                              className="absolute bottom-0 left-0 top-0 w-1"
+                              style={{ background: memo.stripe }}
+                            />
 
-                            {/* Red left margin line */}
-                            {paper.lines && (
-                              <div
-                                className="absolute bottom-0 left-9 top-0 w-px"
-                                style={{ background: "rgba(220,80,80,0.25)" }}
-                              />
-                            )}
-
-                            {/* Header row */}
-                            <div className="mb-3 flex items-center justify-between">
-                              <span
-                                className="rounded px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.16em]"
-                                style={{
-                                  background: "rgba(0,0,0,0.06)",
-                                  color: "#7a6f60",
-                                }}
-                              >
-                                {group.personalidade === "origem"
-                                  ? "fonte"
-                                  : group.personalidade === "estrutura"
-                                  ? "estrutura"
-                                  : group.personalidade === "planejamento"
-                                  ? "planejamento"
-                                  : "prestação"}
-                              </span>
-                              <span
-                                className="font-mono text-[11px] font-bold text-slate-400"
-                                style={{ letterSpacing: "0.1em" }}
-                              >
-                                {unit.unitId}
-                              </span>
-                            </div>
-
-                            {/* Emoji + number */}
-                            <div className="mb-3 flex items-center gap-2">
-                              <span className="text-2xl">{emojiFor(group.personalidade)}</span>
-                              <span
-                                className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
-                                style={{
-                                  background: `${paper.borderColor}88`,
-                                  color: "#6b7280",
-                                }}
-                              >
-                                {unitNum(unit).toString().padStart(2, "0")}
-                              </span>
-                            </div>
-
-                            {/* Title */}
-                            <h3
-                              className="font-extrabold leading-snug text-slate-800"
-                              style={{ fontSize: "1.05rem", fontFamily: "'Nunito', sans-serif" }}
+                            {/* Header section — topo colorido do bilhete */}
+                            <div
+                              className="px-4 py-2.5"
+                              style={{ background: memo.header }}
                             >
-                              {unit.title}
-                            </h3>
-                            <p className="mt-1.5 text-[13px] leading-5 text-slate-500">
-                              {unit.subtitle}
-                            </p>
+                              <div className="flex items-center justify-between">
+                                <span
+                                  className="text-[9px] font-extrabold uppercase tracking-[0.22em]"
+                                  style={{ color: memo.stripe }}
+                                >
+                                  bilhete de recado
+                                </span>
+                                <span
+                                  className="rounded px-1.5 py-0.5 font-mono text-[10px] font-bold"
+                                  style={{ background: "rgba(0,0,0,0.08)", color: "#6b7280" }}
+                                >
+                                  {unit.unitId}
+                                </span>
+                              </div>
+                              {/* Para / De fields */}
+                              <div className="mt-1.5 grid grid-cols-2 gap-x-2 text-[10px]" style={{ color: memo.stripe }}>
+                                <div>
+                                  <span className="font-extrabold uppercase tracking-wide">Para:</span>{" "}
+                                  <span className="font-medium opacity-80">Diretora</span>
+                                </div>
+                                <div>
+                                  <span className="font-extrabold uppercase tracking-wide">De:</span>{" "}
+                                  <span className="font-medium opacity-80">
+                                    {group.personalidade === "origem" ? "FNDE" : group.personalidade === "estrutura" ? "Secretaria" : group.personalidade === "planejamento" ? "Coordenação" : "TCE"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
 
-                            {/* Footer */}
-                            <div className="mt-4 flex items-center justify-between border-t border-dashed border-slate-200 pt-3">
-                              <span
-                                className="text-[11px] font-semibold text-slate-400"
-                                style={{ fontFamily: "monospace" }}
+                            {/* Body section — corpo do bilhete */}
+                            <div
+                              className="px-4 py-3 pl-5"
+                              style={{
+                                background: memo.lines
+                                  ? `repeating-linear-gradient(to bottom, ${memo.body} 0px, ${memo.body} 23px, ${memo.border}99 24px)`
+                                  : memo.body,
+                              }}
+                            >
+                              {/* Left margin red line on lined paper */}
+                              {memo.lines && (
+                                <div
+                                  className="absolute bottom-0 left-[38px] top-[52px] w-px"
+                                  style={{ background: "rgba(220,80,80,0.22)" }}
+                                />
+                              )}
+
+                              {/* Emoji + tag */}
+                              <div className="mb-2 flex items-center gap-2">
+                                <span className="text-lg leading-none">{emojiFor(group.personalidade)}</span>
+                                <span
+                                  className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                                  style={{ background: memo.header, color: memo.stripe }}
+                                >
+                                  {group.personalidade === "origem" ? "Fontes" : group.personalidade === "estrutura" ? "Estrutura" : group.personalidade === "planejamento" ? "Planejamento" : "Prestação"}
+                                </span>
+                              </div>
+
+                              {/* Assunto label */}
+                              <p
+                                className="mb-1 text-[9px] font-extrabold uppercase tracking-[0.22em]"
+                                style={{ color: memo.stripe }}
                               >
-                                ⏱ {unit.duration}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/trilha/${unit.unitId}`);
-                                }}
-                                className="rounded-full border px-3.5 py-1 text-[12px] font-bold shadow-sm transition hover:shadow-md"
-                                style={{
-                                  borderColor: paper.borderColor,
-                                  background: "rgba(255,255,255,0.8)",
-                                  color: "#374151",
-                                }}
+                                Assunto
+                              </p>
+
+                              {/* Title */}
+                              <h3
+                                className="font-extrabold leading-snug text-slate-800"
+                                style={{ fontSize: "0.98rem", fontFamily: "'Nunito', sans-serif" }}
                               >
-                                abrir →
-                              </button>
+                                {unit.title}
+                              </h3>
+                              <p className="mt-1 text-[12px] leading-[1.45] text-slate-500">
+                                {unit.subtitle}
+                              </p>
+
+                              {/* Dashed separator */}
+                              <div className="my-3 border-t border-dashed" style={{ borderColor: memo.border }} />
+
+                              {/* Footer — assinatura do bilhete */}
+                              <div className="flex items-center justify-between">
+                                <span
+                                  className="text-[10px] font-semibold"
+                                  style={{ color: memo.stripe, fontFamily: "monospace" }}
+                                >
+                                  ⏱ {unit.duration}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/trilha/${unit.unitId}`);
+                                  }}
+                                  className="rounded px-3 py-1 text-[11px] font-bold transition hover:opacity-80"
+                                  style={{
+                                    background: memo.header,
+                                    color: memo.stripe,
+                                    border: `1px solid ${memo.border}`,
+                                  }}
+                                >
+                                  ler →
+                                </button>
+                              </div>
                             </div>
                           </article>
                         </motion.div>
