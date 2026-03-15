@@ -17,13 +17,7 @@
 }
 
 /* ── Doodles decorativos ── */
-.hl-doodle-1 {
-  position: fixed; left: 14px; top: 24px;
-  width: 140px; height: 140px;
-  border: 5px dashed #f6adc0; border-radius: 30px;
-  transform: rotate(-14deg);
-  pointer-events: none; opacity: .22; z-index: 0;
-}
+.hl-doodle-1 { display: none; }
 .hl-doodle-2 {
   position: fixed; right: 24px; top: 42px;
   width: 120px; height: 120px;
