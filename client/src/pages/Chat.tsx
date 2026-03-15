@@ -242,7 +242,8 @@ function PesquisaPanel() {
   const [input, setInput] = useState("");
   const [pageKey, setPageKey] = useState(0);
   const [apiNotes, setApiNotes] = useState<any[]>([]);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const leftScrollRef = useRef<HTMLDivElement>(null);
+  const rightScrollRef = useRef<HTMLDivElement>(null);
 
   const { mutate: createConversation } = useCreateConversation();
   const { mutate: sendMessage, isPending: isSending } = useSendMessage();
@@ -254,7 +255,8 @@ function PesquisaPanel() {
   }, []);
 
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (leftScrollRef.current) leftScrollRef.current.scrollTop = leftScrollRef.current.scrollHeight;
+    if (rightScrollRef.current) rightScrollRef.current.scrollTop = rightScrollRef.current.scrollHeight;
   }, [conversationData?.messages, isSending]);
 
   const handleSend = (texto?: string) => {
@@ -282,167 +284,203 @@ function PesquisaPanel() {
     } catch {}
   };
 
-  const temMensagens = conversationData?.messages && conversationData.messages.length > 0;
+  const msgs = conversationData?.messages ?? [];
+  const userMsgs = msgs.filter(m => m.role === "user");
+  const aiMsgs = msgs.filter(m => m.role === "assistant");
+  const temMensagens = msgs.length > 0;
 
-  // Spiral ring count that adapts to height – fixed at 14
-  const RINGS = 14;
+  // Lined paper background (shared between pages)
+  const linedPaper = {
+    backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #c8ddf5 31px, #c8ddf5 32.5px)",
+    backgroundSize: "100% 32px",
+    backgroundPosition: "0 20px",
+  } as React.CSSProperties;
 
   return (
-    <div className="flex h-full overflow-hidden">
+    /* ── Capa vermelha aberta ── */
+    <div
+      className="relative h-full"
+      style={{
+        background: "linear-gradient(180deg,#a73c3c 0%,#8e2f2f 45%,#742020 100%)",
+        padding: "14px",
+        boxShadow: "0 36px 90px rgba(94,36,36,0.34)",
+      }}
+    >
+      {/* Sombra no topo da capa */}
+      <div className="absolute inset-x-[6%] top-3 h-5 rounded-full bg-black/15 blur-md pointer-events-none" />
+      {/* Anel interno decorativo */}
+      <div className="absolute inset-[8px] rounded-[28px] border border-[#c96f6f]/40 pointer-events-none" />
+      {/* Brilho no topo */}
+      <div className="absolute inset-x-10 top-4 h-7 rounded-full bg-white/10 blur-xl pointer-events-none" />
 
-      {/* ── Capa vermelha com espiral ── */}
+      {/* ── Páginas abertas ── */}
       <div
-        className="w-[52px] shrink-0 relative flex flex-col items-center py-5"
-        style={{
-          background: "linear-gradient(165deg,#c0392b 0%,#96281b 55%,#b03a2e 100%)",
-          boxShadow: "inset -5px 0 10px rgba(0,0,0,0.22), 2px 0 4px rgba(0,0,0,0.12)",
-        }}
+        className="relative h-full grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-[22px] overflow-hidden border border-[#692020]"
+        style={{ background: "linear-gradient(180deg,#7f2626 0%,#6f1f1f 100%)" }}
       >
-        {/* Título vertical na capa */}
-        <span
-          className="text-white/50 font-black text-[7px] uppercase tracking-[0.45em] mb-5 select-none"
-          style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
-        >
-          Pesquisa
-        </span>
-
-        {/* Argolas da espiral */}
-        {Array.from({ length: RINGS }).map((_, i) => (
-          <div key={i} className="relative my-[7px] shrink-0">
-            {/* sombra/base da argola */}
-            <div
-              className="w-8 h-[17px] rounded-full"
-              style={{
-                background: "radial-gradient(ellipse at 38% 32%, #c8bfb8, #706460)",
-                boxShadow: "0 2px 5px rgba(0,0,0,0.45)",
-              }}
-            />
-            {/* reflexo interno */}
-            <div
-              className="absolute inset-[3px] rounded-full"
-              style={{
-                background: "radial-gradient(ellipse at 40% 30%, rgba(255,255,255,0.18), transparent 70%)",
-                border: "1.5px solid rgba(255,255,255,0.12)",
-              }}
-            />
-          </div>
-        ))}
-
-        {/* Reflexo de luz na capa */}
+        {/* Dobra central — sombra */}
         <div
-          className="absolute top-0 left-0 w-5 h-full pointer-events-none"
-          style={{ background: "linear-gradient(to right, rgba(255,255,255,0.07), transparent)" }}
+          className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 z-10 hidden lg:block"
+          style={{
+            width: "80px",
+            background: "radial-gradient(ellipse at center, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.16) 38%, transparent 70%)",
+          }}
         />
-      </div>
+        {/* Dobra central — linha */}
+        <div
+          className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px] z-10 hidden lg:block"
+          style={{ background: "linear-gradient(180deg,#5a1717 0%,#8e2f2f 50%,#5a1717 100%)", opacity: 0.65 }}
+        />
 
-      {/* ── Folha pautada ── */}
-      <div
-        className="flex-1 flex flex-col overflow-hidden"
-        style={{
-          background: "#fcfaf7",
-          backgroundImage: [
-            // margem vermelha
-            "linear-gradient(to right, transparent 63px, #f4a0a0 63px, #f4a0a0 65px, transparent 65px)",
-            // pautas horizontais azul-claro
-            "repeating-linear-gradient(transparent, transparent 31px, #cce0f5 31px, #cce0f5 32.5px)",
-          ].join(", "),
-          backgroundSize: "100% 100%, 100% 32px",
-          backgroundPosition: "0 0, 0 20px",
-        }}
-      >
-        {/* Notas salvas — coladas no topo da folha */}
-        {apiNotes.length > 0 && (
-          <div className="flex gap-3 overflow-x-auto pl-[82px] pr-5 pt-4 pb-2 shrink-0">
-            {apiNotes.slice(0, 4).map((note: any, i) => (
-              <div
-                key={note.id || i}
-                className="shrink-0 w-44 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2.5 shadow-sm"
-                style={{
-                  transform: `rotate(${(i % 2 === 0 ? -1.2 : 1.0) * (i * 0.3 + 0.4)}deg)`,
-                  boxShadow: "2px 3px 6px rgba(0,0,0,0.12)",
-                }}
-              >
-                <div className="mb-1 flex items-center gap-1 text-[9px] uppercase tracking-[0.16em] text-yellow-700/70">
-                  <BookMarked className="w-2.5 h-2.5" /> Nota
-                </div>
-                <p className="text-[12px] leading-[18px] text-yellow-900 line-clamp-3">{note.title || note.content}</p>
-              </div>
-            ))}
+        {/* ════════════════ PÁGINA ESQUERDA — Perguntas ════════════════ */}
+        <div
+          className="relative flex flex-col overflow-hidden border-b lg:border-b-0 lg:border-r border-[#d9c9be]"
+          style={{ background: "#fbf4eb", ...linedPaper }}
+        >
+          {/* Cabeçalho da página esquerda */}
+          <div className="shrink-0 px-6 pt-5 pb-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#fff1e7] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9a5a4f] shadow-sm">
+              <span>✍️</span><span>Pergunte à Secretaria Virtual</span>
+            </div>
+            <h3 className="mt-3 text-[22px] font-black leading-tight text-[#4d2318]">Folha de pesquisa</h3>
+            <p className="mt-1 text-[12px] text-[#7b5b4d] leading-5">
+              Escreva sua dúvida — a resposta aparece na página ao lado.
+            </p>
           </div>
-        )}
 
-        {/* Área de conversa / sugestões */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={pageKey}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex-1 overflow-y-auto pl-[82px] pr-5 pt-3 pb-2 space-y-4 min-h-0"
-            ref={scrollRef}
-          >
-            {!temMensagens ? (
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-[#b07a6a] mb-3 font-semibold">
-                  Toque numa pergunta para começar
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {SUGESTOES.map((s, i) => (
-                    <motion.button
-                      key={i}
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.06 }}
-                      onClick={() => handleSend(s)}
-                      className="rounded-full border border-[#d9bfb5] bg-white/90 px-4 py-1.5 text-[13px] text-[#5a3328] shadow-sm hover:border-[#8e2f2f] hover:bg-[#fff0eb] transition-colors text-left"
-                    >
-                      {s}
-                    </motion.button>
+          {/* Notas salvas */}
+          {apiNotes.length > 0 && (
+            <div className="shrink-0 flex gap-3 overflow-x-auto px-6 pb-3">
+              {apiNotes.slice(0, 3).map((note: any, i) => (
+                <div
+                  key={note.id || i}
+                  className="shrink-0 w-40 rounded-md bg-[#fff4a8] px-3 py-2.5 shadow-sm relative"
+                  style={{
+                    transform: `rotate(${(i % 2 === 0 ? -1.5 : 1.2) * (i * 0.3 + 0.4)}deg)`,
+                    boxShadow: "0 8px 18px rgba(95,64,50,0.12)",
+                  }}
+                >
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 h-4 w-12 bg-[#f7dfcf] rounded-sm" />
+                  <p className="text-[11px] leading-[17px] text-[#5a3828] line-clamp-3">{note.title || note.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Mensagens do usuário / sugestões */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={pageKey}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 overflow-y-auto px-6 pt-2 pb-2 min-h-0"
+              ref={leftScrollRef}
+            >
+              {!temMensagens ? (
+                <div className="pt-2">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-[#b07a6a] mb-2 font-semibold">
+                    Sugestões para começar
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {SUGESTOES.map((s, i) => (
+                      <motion.button
+                        key={i}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.06 }}
+                        onClick={() => handleSend(s)}
+                        className="rounded-full border border-[#d9bfb5] bg-white/80 px-3 py-1.5 text-[12px] text-[#5a3328] shadow-sm hover:border-[#8e2f2f] hover:bg-[#fff0eb] transition-colors text-left"
+                      >
+                        {s}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 pb-2">
+                  {userMsgs.map(msg => (
+                    <MensagemUsuario key={msg.id} conteudo={msg.content} />
                   ))}
                 </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Campo de escrita */}
+          <div className="shrink-0 px-5 pb-4 pt-2">
+            {temMensagens && (
+              <div className="mb-2 flex justify-end">
+                <button
+                  onClick={handleNewChat}
+                  className="inline-flex items-center gap-1 rounded-full border border-[#d9bfb5] bg-white/80 px-3 py-1 text-[10px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors"
+                >
+                  <RefreshCw className="w-2.5 h-2.5" /> Nova conversa
+                </button>
+              </div>
+            )}
+            <div className="flex items-end gap-2 rounded-2xl border border-[#dcc9bc] bg-white/80 px-3 py-2.5 shadow-sm backdrop-blur-sm">
+              <textarea
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                placeholder="Escreva sua pergunta aqui..."
+                className="flex-1 resize-none text-[14px] text-[#3d2318] placeholder:text-[#c5a898] outline-none bg-transparent min-h-[34px] max-h-20"
+                rows={1}
+                disabled={isSending}
+              />
+              <button
+                onClick={() => handleSend()}
+                disabled={!input.trim() || isSending}
+                className="shrink-0 flex h-8 w-8 items-center justify-center rounded-xl bg-[#8e2f2f] text-white transition hover:bg-[#6e2020] disabled:opacity-40"
+              >
+                {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ════════════════ PÁGINA DIREITA — Respostas ════════════════ */}
+        <div
+          className="relative flex flex-col overflow-hidden"
+          style={{ background: "#fffaf4", ...linedPaper }}
+        >
+          {/* Cabeçalho da página direita */}
+          <div className="shrink-0 px-6 pt-5 pb-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#f0f7ff] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#4a6d8e] shadow-sm">
+              <Bot className="w-3 h-3" /><span>Respostas da Secretaria</span>
+            </div>
+            <h3 className="mt-3 text-[22px] font-black leading-tight text-[#4d2318]">Página de respostas</h3>
+            <p className="mt-1 text-[12px] text-[#7b5b4d] leading-5">
+              As orientações aparecem aqui, organizadas para você usar.
+            </p>
+          </div>
+
+          {/* Respostas da IA */}
+          <div
+            className="flex-1 overflow-y-auto px-6 pt-2 pb-4 min-h-0"
+            ref={rightScrollRef}
+          >
+            {!temMensagens ? (
+              <div className="flex flex-col items-center justify-center h-full gap-3 text-[#c5a898] pb-10">
+                <div
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl"
+                  style={{ background: "rgba(142,47,47,0.07)" }}
+                >
+                  📖
+                </div>
+                <p className="text-[13px] text-center leading-6 text-[#b09080]">
+                  Escreva uma pergunta ao lado<br />e a resposta vai aparecer aqui.
+                </p>
               </div>
             ) : (
-              <div className="space-y-4 pb-4">
-                {conversationData?.messages.map(msg =>
-                  msg.role === "user"
-                    ? <MensagemUsuario key={msg.id} conteudo={msg.content} />
-                    : <MensagemAssistente key={msg.id} conteudo={msg.content} onSaveNote={handleSaveNote} />
-                )}
+              <div className="space-y-4 pb-2">
+                {aiMsgs.map(msg => (
+                  <MensagemAssistente key={msg.id} conteudo={msg.content} onSaveNote={handleSaveNote} />
+                ))}
                 {isSending && <IndicadorDigitando />}
               </div>
             )}
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Campo de escrita — na pauta, com margem */}
-        <div className="shrink-0 pl-[82px] pr-5 pb-4 pt-2">
-          {temMensagens && (
-            <div className="mb-2 flex justify-end">
-              <button
-                onClick={handleNewChat}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#d9bfb5] bg-white/80 px-3 py-1 text-[11px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors"
-              >
-                <RefreshCw className="w-3 h-3" /> Nova conversa
-              </button>
-            </div>
-          )}
-          <div className="flex items-end gap-2 rounded-xl border border-[#d9bfb5] bg-white/70 px-3 py-2.5 shadow-sm backdrop-blur-sm">
-            <textarea
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-              placeholder="Escreva sua pergunta aqui..."
-              className="flex-1 resize-none text-[15px] text-[#3d2318] placeholder:text-[#c5a898] outline-none bg-transparent min-h-[36px] max-h-24"
-              rows={1}
-              disabled={isSending}
-            />
-            <button
-              onClick={() => handleSend()}
-              disabled={!input.trim() || isSending}
-              className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg bg-[#8e2f2f] text-white transition hover:bg-[#6e2020] disabled:opacity-40"
-            >
-              {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-            </button>
           </div>
         </div>
       </div>
@@ -950,7 +988,7 @@ export default function Chat() {
         <AnimatePresence mode="wait">
           {tab === "pesquisa" ? (
             <motion.div key="pesquisa" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="flex-1 flex flex-col rounded-3xl border border-[#e0cfc6] bg-white/80 backdrop-blur-sm shadow-lg overflow-hidden"
+              className="flex-1 flex flex-col rounded-3xl overflow-hidden"
             >
               <PesquisaPanel />
             </motion.div>
