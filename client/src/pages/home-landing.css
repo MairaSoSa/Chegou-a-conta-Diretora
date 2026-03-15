@@ -424,40 +424,46 @@
 /* Variante colada na Trilha */
 .hl-remendo-jornada-wrap {
   display: flex; justify-content: center;
-  margin-bottom: 10px; text-decoration: none;
+  margin-bottom: 12px; text-decoration: none;
 }
 .hl-remendo-jornada {
-  position: static;
-  font-size: 1.13rem;
-  padding: 12px 38px 14px 28px;
-  background: linear-gradient(120deg, #e3f5e7 70%, #c7e7d2 100%);
-  border: 1.5px solid #e8d9c6;
-  border-radius: 14px 22px 16px 18px / 22px 14px 18px 16px;
-  color: #1e6b42;
+  position: relative;
+  font-size: 1.05rem;
+  padding: 11px 36px 13px;
+  background: linear-gradient(150deg, #2f7a5f 0%, #1e5940 100%);
+  border: none;
+  border-radius: 6px 14px 8px 10px / 14px 6px 10px 8px;
+  color: #d6f5e7;
   font-family: "Patrick Hand", cursive;
   font-weight: 700;
-  box-shadow: 0 8px 28px rgba(77,168,118,.13), 0 1.5px 0 #fff inset;
-  transform: rotate(-2deg);
+  letter-spacing: .03em;
+  box-shadow:
+    0 6px 22px rgba(31,89,64,.32),
+    0 1px 0 rgba(255,255,255,.18) inset,
+    0 -2px 0 rgba(0,0,0,.15) inset;
+  transform: rotate(-1.5deg);
   pointer-events: auto;
   cursor: pointer;
-  transition: box-shadow .18s, border .18s, filter .18s;
-  z-index: 2;
+  transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
 }
 .hl-remendo-jornada::before {
   content: "";
   position: absolute;
-  top: -15px; left: 50%;
-  transform: translateX(-50%) rotate(2deg);
-  width: 44px; height: 18px;
-  background: linear-gradient(120deg, #b8ffe7 60%, #e6fff2 100%);
-  border-radius: 7px 10px 8px 9px;
-  box-shadow: 0 2px 8px rgba(77,168,118,.10);
-  opacity: 0.85;
-  z-index: 1;
+  top: -10px; left: 50%;
+  transform: translateX(-50%) rotate(1deg);
+  width: 38px; height: 12px;
+  background: linear-gradient(135deg, #a8d8c0 60%, #c5ead5 100%);
+  border-radius: 4px 6px 5px 4px;
+  box-shadow: 0 1px 4px rgba(31,89,64,.18);
+  opacity: 0.9;
 }
-.hl-remendo-jornada:hover {
-  box-shadow: 0 16px 36px rgba(77,168,118,.18), 0 2px 0 #fff5 inset;
-  filter: brightness(1.04) saturate(1.08);
+.hl-remendo-jornada-wrap:hover .hl-remendo-jornada {
+  transform: rotate(0deg) scale(1.04);
+  box-shadow:
+    0 10px 32px rgba(31,89,64,.38),
+    0 1px 0 rgba(255,255,255,.2) inset,
+    0 -2px 0 rgba(0,0,0,.15) inset;
+  filter: brightness(1.08) saturate(1.1);
 }
 
 /* ── Coluna direita ── */
@@ -469,25 +475,33 @@
 /* ── Dica do dia ── */
 .hl-tip-box {
   position: relative;
-  border-radius: 16px 20px 16px 18px;
-  padding: 13px 18px;
-  background: linear-gradient(135deg, #e3f0ff 60%, #cbe6ff 100%);
-  border: 1.5px solid #b97a56;
-  transform: rotate(-2deg);
-  width: 88%; margin: 0 auto;
-  box-shadow: 0 10px 24px rgba(185,122,86,.13);
+  border-radius: 5px 18px 5px 5px;
+  padding: 14px 18px 14px 20px;
+  background: linear-gradient(150deg, #fff8e1 0%, #fff3b0 100%);
+  border: 1.5px solid #e8c84a;
+  border-left: 5px solid #e8c84a;
+  transform: rotate(-1.5deg);
+  width: 90%; margin: 0 auto;
+  box-shadow:
+    0 6px 20px rgba(200,160,40,.18),
+    0 1px 0 rgba(255,255,255,.6) inset;
   flex-shrink: 0;
 }
 .hl-tip-box::before {
-  content: ""; position: absolute; top: -5px; left: 16px;
-  width: 42px; height: 11px; background: rgba(255,255,255,.62);
-  border-radius: 4px; transform: rotate(-7deg);
+  content: ""; position: absolute; top: -7px; left: 18px;
+  width: 36px; height: 12px;
+  background: linear-gradient(135deg, #ffe566 60%, #fff3a0 100%);
+  border-radius: 4px 6px 5px 4px;
+  box-shadow: 0 1px 4px rgba(200,160,40,.18);
+  transform: rotate(-3deg);
 }
 .hl-tip-box strong {
-  display: block; font-family: "Patrick Hand", cursive;
-  font-size: 1.1rem; color: #856619;
+  display: flex; align-items: center; gap: 6px;
+  font-family: "Patrick Hand", cursive;
+  font-size: 1.08rem; color: #7a5200;
+  margin-bottom: 4px;
 }
-.hl-tip-box p { margin: 3px 0 0; color: #6d5a2b; font-size: .78rem; line-height: 1.4; }
+.hl-tip-box p { margin: 0; color: #5c3d00; font-size: .79rem; line-height: 1.45; }
 
 /* ── Caderno / Trilha ── */
 .hl-caderno-box {
