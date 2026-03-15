@@ -96,6 +96,13 @@ function RingClip({ color }: { color: string }) {
   );
 }
 
+type ModalData = {
+  emoji?: string;
+  label: string;
+  title: string;
+  paragraphs: string[];
+};
+
 // Paper / sticker card — sem furinhos, parece uma folha colada na página
 function Ficha({
   tone,
@@ -104,6 +111,7 @@ function Ficha({
   rotate = 0,
   children,
   className = "",
+  onClick,
 }: {
   tone: (typeof toneMap)[ToneKey];
   label?: string;
@@ -111,28 +119,31 @@ function Ficha({
   rotate?: number;
   children: React.ReactNode;
   className?: string;
+  onClick?: () => void;
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-[14px] bg-white ${className}`}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={onClick ? (e) => e.key === "Enter" && onClick() : undefined}
+      className={`relative overflow-hidden rounded-[14px] bg-white ${onClick ? "cursor-pointer transition-shadow hover:shadow-[0_6px_18px_rgba(0,0,0,0.13)]" : ""} ${className}`}
       style={{
         border: `1px solid ${tone.border}`,
         boxShadow: "0 3px 10px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05)",
         transform: rotate ? `rotate(${rotate}deg)` : undefined,
       }}
     >
-      {/* Colored label strip at top — like a sticker header */}
       {label && (
-        <div
-          className="px-4 py-1.5"
-          style={{ background: accent || tone.tab }}
-        >
-          <span
-            className="text-[9px] font-extrabold uppercase tracking-[0.22em]"
-            style={{ color: tone.tabText }}
-          >
+        <div className="flex items-center justify-between px-4 py-1.5" style={{ background: accent || tone.tab }}>
+          <span className="text-[9px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.tabText }}>
             {label}
           </span>
+          {onClick && (
+            <span className="text-[9px] font-semibold opacity-60" style={{ color: tone.tabText }}>
+              ler tudo →
+            </span>
+          )}
         </div>
       )}
       <div className="px-4 py-3">{children}</div>
@@ -208,6 +219,7 @@ function FluxoQuadro({
   );
 }
 
+// ── Baralho de fichas empilhadas com animação de subida ──
 function FichaStack({
   fichas,
   tone,
@@ -215,85 +227,84 @@ function FichaStack({
 }: {
   fichas: Array<{ id: string; label: string; emoji: string; title: string; preview: string; paragraphs: string[] }>;
   tone: (typeof toneMap)[ToneKey];
-  onOpen: (id: string) => void;
+  onOpen: (data: ModalData) => void;
 }) {
   const [topIdx, setTopIdx] = useState(0);
 
-  const ordered = [
-    ...fichas.slice(topIdx),
-    ...fichas.slice(0, topIdx),
-  ];
+  // Build ordered list: front card first
+  const ordered = [...fichas.slice(topIdx), ...fichas.slice(0, topIdx)];
 
-  // Height: front card body ~170px + tabs for remaining cards
-  const peekOffset = 36;
-  const totalHeight = 190 + (fichas.length - 1) * peekOffset;
+  const peekOffset = 38;
+  const totalHeight = 180 + (fichas.length - 1) * peekOffset;
 
   return (
-    <div className="relative select-none" style={{ minHeight: `${totalHeight}px`, paddingBottom: `${(fichas.length - 1) * peekOffset}px` }}>
-      {/* Render back-to-front so front card is on top */}
-      {[...ordered].reverse().map((ficha, reversedIdx) => {
-        const stackPos = ordered.length - 1 - reversedIdx; // 0 = front card
-        const isFront = stackPos === 0;
-        const offset = stackPos * 38; // px each card peeks below the previous
+    <div className="relative select-none" style={{ minHeight: `${totalHeight}px` }}>
+      <AnimatePresence initial={false}>
+        {[...ordered].reverse().map((ficha) => {
+          const stackPos = ordered.indexOf(ficha); // 0 = front
+          const isFront = stackPos === 0;
+          const topPx = stackPos * peekOffset;
 
-        return (
-          <div
-            key={ficha.id}
-            className="absolute left-0 right-0 overflow-hidden rounded-[16px] transition-all duration-300"
-            style={{
-              top: `${offset}px`,
-              zIndex: ordered.length - stackPos,
-              boxShadow: isFront
-                ? "0 6px 20px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08)"
-                : "0 3px 10px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06)",
-              border: `1px solid ${tone.border}`,
-            }}
-          >
-            {/* Colored tab header — always visible, clicking brings to front or opens */}
-            <button
-              type="button"
-              className="flex w-full items-center justify-between px-4 py-2.5 text-left"
-              style={{ background: tone.tab }}
-              onClick={() => {
-                if (!isFront) {
-                  setTopIdx(fichas.indexOf(ficha));
-                } else {
-                  onOpen(ficha.id);
-                }
+          return (
+            <motion.div
+              key={ficha.id}
+              layout
+              initial={false}
+              animate={{ top: topPx, zIndex: ordered.length - stackPos }}
+              transition={{ type: "spring", stiffness: 380, damping: 32 }}
+              className="absolute left-0 right-0 overflow-hidden rounded-[16px]"
+              style={{
+                boxShadow: isFront
+                  ? "0 8px 24px rgba(0,0,0,0.16), 0 2px 6px rgba(0,0,0,0.08)"
+                  : "0 3px 10px rgba(0,0,0,0.10)",
+                border: `1px solid ${tone.border}`,
               }}
             >
-              <span
-                className="flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-[0.22em]"
-                style={{ color: tone.tabText }}
+              {/* Tab header — always visible */}
+              <button
+                type="button"
+                className="flex w-full items-center justify-between px-4 py-2.5 text-left"
+                style={{ background: isFront ? tone.tab : `${tone.tab}cc` }}
+                onClick={() => {
+                  if (!isFront) {
+                    setTopIdx(fichas.indexOf(ficha));
+                  } else {
+                    onOpen({ emoji: ficha.emoji, label: ficha.label, title: ficha.title, paragraphs: ficha.paragraphs });
+                  }
+                }}
               >
-                <span className="text-sm leading-none">{ficha.emoji}</span>
-                {ficha.label}
-              </span>
-              <span
-                className="text-[9px] font-bold opacity-70"
-                style={{ color: tone.tabText }}
-              >
-                {isFront ? "abrir →" : "ver ↑"}
-              </span>
-            </button>
+                <span className="flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.tabText }}>
+                  <span className="text-sm leading-none">{ficha.emoji}</span>
+                  {ficha.label}
+                </span>
+                <span className="text-[9px] font-bold opacity-70" style={{ color: tone.tabText }}>
+                  {isFront ? "abrir →" : "subir ↑"}
+                </span>
+              </button>
 
-            {/* Body — only visible on front card */}
-            {isFront && (
-              <div className="bg-white px-4 py-3">
-                <p className="text-sm font-bold text-slate-700">{ficha.title}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{ficha.preview}</p>
-                <div className="mt-3 flex items-center gap-2">
-                  <div className="h-px flex-1" style={{ background: tone.border }} />
-                  <span className="text-[10px] font-semibold" style={{ color: tone.spineLight }}>
-                    {ficha.paragraphs.length} parágrafos · leitura completa
-                  </span>
-                  <div className="h-px flex-1" style={{ background: tone.border }} />
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
+              {/* Body — visible only on front card */}
+              {isFront && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.2 }}
+                  className="bg-white px-4 py-3"
+                >
+                  <p className="text-sm font-bold text-slate-700">{ficha.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{ficha.preview}</p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="h-px flex-1" style={{ background: tone.border }} />
+                    <span className="text-[10px] font-semibold" style={{ color: tone.spineLight }}>
+                      {ficha.paragraphs.length} parágrafos · clique para ler
+                    </span>
+                    <div className="h-px flex-1" style={{ background: tone.border }} />
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
     </div>
   );
 }
@@ -412,7 +423,7 @@ export default function TrilhaUnidade() {
   const params = useParams();
   const unitId = params.unitId || "U01";
   const [, navigate] = useLocation();
-  const [openFicha, setOpenFicha] = useState<string | null>(null);
+  const [openModal, setOpenModal] = useState<ModalData | null>(null);
 
   const { data: unidade, isLoading } = useQuery<TrilhaUnit>({
     queryKey: ["/api/trilha", unitId],
@@ -574,10 +585,23 @@ export default function TrilhaUnidade() {
 
             {/* ── INTRO + EMENTA ── */}
             <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
-              <Ficha tone={tone} label="leitura principal">
-                <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
-                  introdução
-                </p>
+              <Ficha
+                tone={tone}
+                label="leitura principal"
+                onClick={() => setOpenModal({
+                  emoji: "📝",
+                  label: "leitura principal",
+                  title: "Introdução: por que este tema importa",
+                  paragraphs: [
+                    unidade.intro || "Esta unidade apresenta conceitos fundamentais para a gestão financeira escolar de forma prática e acessível.",
+                    "Este tema é central porque todo recurso que chega à escola — seja pelo PDDE, PNAE, PNATE ou outras fontes — segue um fluxo que começa antes do dinheiro chegar e termina depois que ele é gasto.",
+                    "A diretora que compreende a origem dos recursos consegue planejar melhor, evitar erros na aplicação e sustentar decisões na prestação de contas. Ela não precisa memorizar a lei — precisa entender a lógica.",
+                    "Quando o tema fica claro para toda a equipe, a escola ganha previsibilidade: as pessoas sabem o que esperar, o que documentar e quando agir. Isso reduz o estresse e aumenta a segurança institucional.",
+                    "Esta unidade é o ponto de partida. Ela não resolve todos os problemas, mas abre o mapa — mostrando onde estamos, para onde vamos e por que o caminho percorrido nessa trilha faz sentido.",
+                  ],
+                })}
+              >
+                <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>introdução</p>
                 <p className="text-sm leading-7 text-slate-700">
                   {unidade.intro || "Esta unidade apresenta conceitos fundamentais para a gestão financeira escolar de forma prática e acessível."}
                 </p>
@@ -594,19 +618,47 @@ export default function TrilhaUnidade() {
               </Ficha>
 
               <div className="flex flex-col gap-4">
-                <Ficha tone={tone} label="ementa">
+                <Ficha
+                  tone={tone}
+                  label="ementa"
+                  onClick={() => setOpenModal({
+                    emoji: "📋",
+                    label: "ementa",
+                    title: "Ementa: o que esta unidade cobre",
+                    paragraphs: [
+                      sections[0]
+                        ? typeof sections[0].conteudo === "string" ? sections[0].conteudo : Array.isArray(sections[0].conteudo) ? sections[0].conteudo.join(" ") : unidade.subtitle
+                        : unidade.subtitle,
+                      "Competência esperada ao final: a diretora consegue identificar as fontes de recurso da sua escola, sabe a quais programas está vinculada e compreende a lógica geral de fluxo e prestação de contas.",
+                      "Pré-requisitos: nenhum. Esta unidade foi projetada para ser o ponto de entrada da trilha, sem exigir conhecimento técnico prévio sobre finanças públicas ou legislação educacional.",
+                      "Conexão com outras unidades: os conceitos apresentados aqui são retomados em todas as demais unidades da trilha. Voltar a esta unidade para rever fundamentos é sempre válido e recomendado.",
+                    ],
+                  })}
+                >
                   <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>ementa</p>
                   <p className="text-sm leading-6 text-slate-600">
                     {sections[0]
-                      ? typeof sections[0].conteudo === "string"
-                        ? sections[0].conteudo
-                        : Array.isArray(sections[0].conteudo)
-                        ? sections[0].conteudo[0]
-                        : ""
+                      ? typeof sections[0].conteudo === "string" ? sections[0].conteudo : Array.isArray(sections[0].conteudo) ? sections[0].conteudo[0] : ""
                       : unidade.subtitle}
                   </p>
                 </Ficha>
-                <Ficha tone={tone} label="vídeo" accent={tone.accent}>
+
+                <Ficha
+                  tone={tone}
+                  label="vídeo"
+                  accent={tone.accent}
+                  onClick={() => setOpenModal({
+                    emoji: "🎬",
+                    label: "vídeo sugerido",
+                    title: `Guia de vídeo: ${unidade.title}`,
+                    paragraphs: [
+                      `Este vídeo foi selecionado para complementar a leitura desta unidade sobre "${unidade.title}". Ele apresenta o tema em formato audiovisual, com exemplos visuais e linguagem acessível.`,
+                      "Como usar: assista ao vídeo antes ou depois da leitura do conteúdo escrito. Se usado em formação com a equipe, pause em momentos-chave para discussão em grupo.",
+                      "O que observar no vídeo: atenção aos exemplos práticos, às referências de documentos e aos passos de processo que aparecem. Anote os pontos que fazem mais sentido para a realidade da sua escola.",
+                      "Após assistir: utilize as fichas de aprofundamento para aprofundar os pontos que chamaram mais atenção. O vídeo é uma porta de entrada — o conteúdo completo está nas fichas.",
+                    ],
+                  })}
+                >
                   <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>vídeo sugerido</p>
                   <div className="flex items-center gap-3 rounded-[12px] border p-2.5" style={{ borderColor: tone.border, background: tone.header }}>
                     <span className="text-2xl">🎬</span>
@@ -619,26 +671,52 @@ export default function TrilhaUnidade() {
             {/* ── DB SECTIONS ── */}
             {sections.length > 0 && (
               <div className="grid gap-4 md:grid-cols-2">
-                {sections.slice(0, 4).map((sec, idx) => (
-                  <Ficha key={idx} tone={tone} label={sec.titulo || `seção ${idx + 1}`} rotate={idx % 2 === 0 ? -0.4 : 0.5}>
-                    <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
-                      {sec.titulo || `seção ${idx + 1}`}
-                    </p>
-                    <p className="text-sm leading-6 text-slate-600">
-                      {typeof sec.conteudo === "string"
-                        ? sec.conteudo
-                        : Array.isArray(sec.conteudo)
-                        ? sec.conteudo.join(" · ")
-                        : ""}
-                    </p>
-                  </Ficha>
-                ))}
+                {sections.slice(0, 4).map((sec, idx) => {
+                  const secText = typeof sec.conteudo === "string" ? sec.conteudo : Array.isArray(sec.conteudo) ? sec.conteudo.join(" ") : "";
+                  return (
+                    <Ficha
+                      key={idx}
+                      tone={tone}
+                      label={sec.titulo || `seção ${idx + 1}`}
+                      rotate={idx % 2 === 0 ? -0.4 : 0.5}
+                      onClick={() => setOpenModal({
+                        emoji: "📄",
+                        label: sec.titulo || `seção ${idx + 1}`,
+                        title: sec.titulo || `Seção ${idx + 1}`,
+                        paragraphs: Array.isArray(sec.conteudo) ? sec.conteudo : [secText],
+                      })}
+                    >
+                      <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>
+                        {sec.titulo || `seção ${idx + 1}`}
+                      </p>
+                      <p className="text-sm leading-6 text-slate-600">
+                        {typeof sec.conteudo === "string" ? sec.conteudo : Array.isArray(sec.conteudo) ? sec.conteudo.join(" · ") : ""}
+                      </p>
+                    </Ficha>
+                  );
+                })}
               </div>
             )}
 
             {/* ── OBSERVAR + PASSOS ── */}
             <div className="grid gap-4 md:grid-cols-2">
-              <Ficha tone={tone} label="o que observar" rotate={-0.5}>
+              <Ficha
+                tone={tone}
+                label="o que observar"
+                rotate={-0.5}
+                onClick={() => setOpenModal({
+                  emoji: "🔍",
+                  label: "o que observar",
+                  title: "Guia de observação: o que acompanhar nesta unidade",
+                  paragraphs: [
+                    "Se a equipe compreende a lógica geral da unidade e consegue explicá-la com suas próprias palavras — sem precisar ler o texto de novo para cada dúvida simples.",
+                    "Se existem registros claros para consulta futura: documentos organizados, pastas físicas ou digitais com os comprovantes e registros de cada decisão tomada.",
+                    "Se o conteúdo já conversa com a rotina da escola: as pessoas conseguem conectar os conceitos desta unidade a situações que já viveram ou que estão vivendo agora.",
+                    "Se há alguém na equipe que ficou com dúvidas que ainda não foram respondidas — essas dúvidas devem ser endereçadas antes de avançar para a próxima unidade.",
+                    "Se a unidade gerou alguma mudança concreta de comportamento ou de processo na escola: esse é o sinal mais claro de que a aprendizagem foi efetiva.",
+                  ],
+                })}
+              >
                 <ul className="space-y-2 text-sm leading-6 text-slate-600">
                   {["Se a equipe compreende a lógica geral da unidade.", "Se existem registros claros para consulta futura.", "Se o conteúdo já conversa com a rotina da escola."].map((item, i) => (
                     <li key={i} className="flex gap-2">
@@ -648,7 +726,24 @@ export default function TrilhaUnidade() {
                   ))}
                 </ul>
               </Ficha>
-              <Ficha tone={tone} label="próximos passos" rotate={0.5}>
+
+              <Ficha
+                tone={tone}
+                label="próximos passos"
+                rotate={0.5}
+                onClick={() => setOpenModal({
+                  emoji: "➡️",
+                  label: "próximos passos",
+                  title: "Próximos passos: o que fazer depois desta unidade",
+                  paragraphs: [
+                    "Relacionar esta unidade à próxima da trilha: identificar como os conceitos se conectam e o que muda no conhecimento necessário quando se avança ao próximo tema.",
+                    "Usar a ficha longa em reunião interna: selecionar uma das fichas de aprofundamento e utilizá-la como base para uma conversa estruturada com a equipe pedagógica ou administrativa.",
+                    "Criar um apoio visual próprio para a equipe: um quadro, um cartaz, uma tabela ou qualquer material que ajude a equipe a consultar rapidamente os pontos centrais desta unidade.",
+                    "Verificar se há pendências relacionadas ao tema na escola: documentos que precisam ser organizados, processos que precisam ser ajustados, perguntas que precisam de resposta.",
+                    "Registrar aprendizados no diário de gestão: anotar o que ficou mais claro, o que ainda gera dúvida e o que vai mudar na rotina a partir do que foi estudado.",
+                  ],
+                })}
+              >
                 <ul className="space-y-2 text-sm leading-6 text-slate-600">
                   {["Relacionar esta unidade à próxima da trilha.", "Usar a ficha longa em reunião interna.", "Criar um apoio visual próprio para a equipe."].map((item, i) => (
                     <li key={i} className="flex gap-2">
@@ -681,7 +776,7 @@ export default function TrilhaUnidade() {
                 </span>
                 <div className="h-px flex-1" style={{ background: `linear-gradient(to left, ${tone.border}, transparent)` }} />
               </div>
-              <FichaStack fichas={FICHAS_APROFUNDAMENTO} tone={tone} onOpen={setOpenFicha} />
+              <FichaStack fichas={FICHAS_APROFUNDAMENTO} tone={tone} onOpen={setOpenModal} />
             </div>
 
           </div>
@@ -690,65 +785,76 @@ export default function TrilhaUnidade() {
 
       {/* Ficha modal */}
       <AnimatePresence>
-        {openFicha && (
+        {openModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/40 px-4 py-8 backdrop-blur-sm"
-            onClick={() => setOpenFicha(null)}
+            onClick={() => setOpenModal(null)}
           >
             <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.97 }}
+              initial={{ opacity: 0, y: 24, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 12, scale: 0.97 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
+              exit={{ opacity: 0, y: 14, scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 340, damping: 28 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative flex w-full max-w-3xl overflow-hidden rounded-[24px] shadow-[0_30px_80px_rgba(0,0,0,0.25)]"
+              className="relative flex w-full max-w-3xl overflow-hidden rounded-[24px] shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
             >
-              {/* Modal spine */}
+              {/* Binder spine */}
               <div
-                className="flex w-10 flex-shrink-0 flex-col items-center justify-center"
+                className="flex w-10 flex-shrink-0 flex-col items-center justify-center gap-5 py-6"
                 style={{ background: `linear-gradient(180deg, ${tone.spineLight}, ${tone.spine})` }}
               >
-                <div className="flex flex-col gap-5">
-                  {[0, 1, 2].map((i) => (
-                    <RingClip key={i} color="rgba(255,255,255,0.6)" />
-                  ))}
-                </div>
+                {[0, 1, 2].map((i) => <RingClip key={i} color="rgba(255,255,255,0.6)" />)}
               </div>
-              {/* Modal content */}
-              <div className="flex-1 bg-[#f8f4ee] p-6">
-                <div className="mb-4 flex items-start justify-between gap-4">
+
+              {/* Content area */}
+              <div className="flex flex-1 flex-col bg-[#f8f4ee]">
+                {/* Header bar */}
+                <div
+                  className="flex items-start justify-between gap-4 border-b px-6 py-4"
+                  style={{ borderColor: tone.border }}
+                >
                   <div>
                     <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
-                      <span className="text-base leading-none">{FICHAS_APROFUNDAMENTO.find((f) => f.id === openFicha)?.emoji}</span>
-                      ficha aberta · {FICHAS_APROFUNDAMENTO.find((f) => f.id === openFicha)?.label}
+                      {openModal.emoji && <span className="text-base leading-none">{openModal.emoji}</span>}
+                      {openModal.label}
                     </p>
-                    <h3 className="mt-1 text-xl font-extrabold text-slate-800">
-                      {FICHAS_APROFUNDAMENTO.find((f) => f.id === openFicha)?.title}
-                    </h3>
+                    <h3 className="mt-1 text-xl font-extrabold text-slate-800">{openModal.title}</h3>
                   </div>
                   <button
-                    onClick={() => setOpenFicha(null)}
-                    className="rounded-full border border-stone-300 bg-white px-4 py-1.5 text-sm font-semibold text-stone-500 shadow-sm transition hover:bg-stone-50"
+                    onClick={() => setOpenModal(null)}
+                    className="flex-shrink-0 rounded-full border border-stone-300 bg-white px-4 py-1.5 text-sm font-semibold text-stone-500 shadow-sm transition hover:bg-stone-50"
                   >
                     fechar ×
                   </button>
                 </div>
-                <div
-                  className="max-h-[60vh] space-y-4 overflow-auto rounded-[16px] border p-5 text-sm leading-8 text-slate-700"
-                  style={{ background: "#fff", borderColor: tone.border }}
-                >
-                  {/* Left margin line */}
-                  <div className="relative pl-6">
+
+                {/* Scrollable body — lined paper style */}
+                <div className="max-h-[62vh] overflow-y-auto px-6 py-5">
+                  <div
+                    className="relative rounded-[14px] border bg-white p-5"
+                    style={{ borderColor: tone.border }}
+                  >
+                    {/* Red left margin line */}
                     <div
-                      className="absolute left-0 top-0 bottom-0 w-px"
-                      style={{ background: `${tone.accent}88` }}
+                      className="absolute left-12 top-0 bottom-0 w-px"
+                      style={{ background: "#f0a0a088" }}
                     />
-                    {FICHAS_APROFUNDAMENTO.find((f) => f.id === openFicha)?.paragraphs.map((p, i) => (
-                      <p key={i} className="mb-3">{p}</p>
-                    ))}
+                    {/* Ruled lines background */}
+                    <div
+                      className="pointer-events-none absolute inset-0 rounded-[14px] opacity-30"
+                      style={{
+                        backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #c7d0e0 31px, #c7d0e0 32px)",
+                        backgroundPosition: "0 40px",
+                      }}
+                    />
+                    <div className="relative pl-8 space-y-5 text-sm leading-8 text-slate-700">
+                      {openModal.paragraphs.map((p, i) => (
+                        <p key={i}>{p}</p>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
