@@ -441,83 +441,85 @@ function SecaoCategoria({
           {/* — estandarte — */}
           {(() => {
             const ec = ESTANDARTE_CORES[secao.id] ?? ESTANDARTE_CORES.planejar;
-            const CLIP = "polygon(0 0, 100% 0, 100% 84%, 50% 100%, 0 84%)";
-            const CLIP_INNER = "polygon(0 0, 100% 0, 100% 82%, 50% 98%, 0 82%)";
             return (
-              <div className="banner-sway relative text-center" style={{ transformOrigin: "top center", width: "min(300px, 86vw)", marginTop: 0 }}>
+              <div className="banner-sway relative text-center" style={{ transformOrigin: "top center", width: "min(260px, 82vw)" }}>
 
-                {/* travessa horizontal (crossbar) */}
-                <div className="relative flex items-center" style={{ height: 26, zIndex: 20, marginLeft: -18, marginRight: -18 }}>
-                  {/* knobs dourados nas extremidades */}
-                  <div className="h-[22px] w-[22px] flex-none rounded-full shadow-[0_3px_8px_rgba(0,0,0,0.4)]"
-                    style={{ background: "radial-gradient(circle at 35% 30%, #f0d060, #8b5e1a)" }} />
-                  {/* barra dourada */}
-                  <div className="flex-1 rounded-full shadow-[0_3px_10px_rgba(0,0,0,0.35)]"
-                    style={{ height: 10, background: "linear-gradient(to bottom, #e8c050, #9a6520, #e8c050)" }}>
-                    {/* argolas de fixação */}
-                    <div className="flex h-full items-center justify-around px-4">
-                      {[0, 1].map((k) => (
-                        <div key={k} className="h-[8px] w-[8px] rounded-full border-[2px] border-[#5a3a0a]"
-                          style={{ background: "radial-gradient(circle at 35% 30%, #c8a030, #6b4010)" }} />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="h-[22px] w-[22px] flex-none rounded-full shadow-[0_3px_8px_rgba(0,0,0,0.4)]"
-                    style={{ background: "radial-gradient(circle at 35% 30%, #f0d060, #8b5e1a)" }} />
+                {/* === travessa de madeira === */}
+                <div className="relative z-20 flex items-center" style={{ height: 20, marginLeft: -20, marginRight: -20 }}>
+                  {/* bolota esquerda */}
+                  <div className="h-5 w-5 flex-none rounded-full shadow-md"
+                    style={{ background: "radial-gradient(circle at 38% 32%, #c8894a, #5a3210)" }} />
+                  {/* haste */}
+                  <div className="flex-1 rounded-full shadow-sm"
+                    style={{ height: 7, background: "linear-gradient(to bottom, #c89048 0%, #7a4d18 50%, #c89048 100%)" }} />
+                  {/* bolota direita */}
+                  <div className="h-5 w-5 flex-none rounded-full shadow-md"
+                    style={{ background: "radial-gradient(circle at 38% 32%, #c8894a, #5a3210)" }} />
                 </div>
 
-                {/* painel principal com V na base */}
-                <div className="relative" style={{ clipPath: CLIP, paddingBottom: "26%" }}>
-                  {/* fundo rico escuro */}
-                  <div className="absolute inset-0" style={{ background: ec.fundo }} />
-                  {/* reflexo de luz (veludo) */}
-                  <div className="absolute inset-0 opacity-20"
-                    style={{ background: "radial-gradient(ellipse at 35% 15%, rgba(255,255,255,0.5) 0%, transparent 55%)" }} />
-                  {/* borda interna dourada */}
-                  <div className="absolute inset-[7px]"
-                    style={{ clipPath: CLIP_INNER, border: `1.5px solid ${ec.borda}`, borderRadius: 2 }} />
-                  {/* segunda borda interna (dupla moldura) */}
-                  <div className="absolute inset-[11px]"
-                    style={{ clipPath: CLIP_INNER, border: `1px solid ${ec.borda.replace("0.45", "0.22")}`, borderRadius: 2 }} />
+                {/* === corpo do estandarte === */}
+                <div className="relative overflow-visible shadow-[0_24px_48px_rgba(50,30,10,0.22)]">
 
-                  {/* faixa do topo — rótulo "ETAPA" */}
-                  <div className="relative z-10 py-2" style={{ background: "rgba(0,0,0,0.28)", borderBottom: `1px solid ${ec.borda}` }}>
-                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/60">etapa</span>
-                  </div>
+                  {/* borda externa */}
+                  <div className={`absolute -inset-[3px] rounded-t-[10px] border-[3px] ${secao.borda} opacity-70`}
+                    style={{ bottom: 0, borderBottomColor: "transparent" }} />
 
-                  {/* conteúdo central */}
-                  <div className="relative z-10 px-5 pb-12 pt-4">
-                    {/* ícone em círculo de vidro */}
-                    <div className="mx-auto mb-3 flex h-[60px] w-[60px] items-center justify-center rounded-full"
-                      style={{
-                        background: "rgba(255,255,255,0.12)",
-                        boxShadow: `0 0 0 1.5px ${ec.borda}, 0 8px 24px rgba(0,0,0,0.35)`,
-                        color: "white",
-                      }}>
-                      <div style={{ transform: "scale(1.5)" }}>{ICONES_SVG[secao.id]}</div>
+                  {/* fundo com gradiente suave */}
+                  <div className={`absolute inset-0 rounded-t-[8px] bg-gradient-to-b ${secao.cor}`} />
+
+                  {/* padrão de tecido (linhas diagonais sutis) */}
+                  <div className="absolute inset-0 rounded-t-[8px] opacity-[0.06]"
+                    style={{ backgroundImage: "repeating-linear-gradient(45deg, #000 0px, #000 1px, transparent 1px, transparent 8px)" }} />
+
+                  {/* borda interna decorativa */}
+                  <div className={`absolute inset-[8px] rounded-[4px] border border-dashed ${secao.borda} opacity-50`}
+                    style={{ bottom: 12 }} />
+
+                  {/* conteúdo */}
+                  <div className="relative z-10 px-5 pb-8 pt-5">
+                    {/* rótulo etapa */}
+                    <p className="mb-3 text-[9px] font-black uppercase tracking-[0.45em] text-slate-400">etapa</p>
+
+                    {/* ícone */}
+                    <div className={`mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full ${secao.selo} shadow-[inset_0_2px_4px_rgba(0,0,0,0.08),0_6px_18px_rgba(0,0,0,0.12)]`}>
+                      <div style={{ transform: "scale(1.45)" }}>{ICONES_SVG[secao.id]}</div>
                     </div>
 
-                    {/* título em branco */}
-                    <h2 className="text-2xl font-black tracking-tight text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)] sm:text-3xl">
-                      {secao.titulo}
-                    </h2>
+                    {/* título com grifado */}
+                    <div className="relative inline-block">
+                      <span className="absolute inset-x-0 bottom-0.5 h-[11px] rounded-sm bg-yellow-200/75" />
+                      <h2 className={`relative text-2xl font-black sm:text-[1.7rem] ${secao.texto}`}>{secao.titulo}</h2>
+                    </div>
 
-                    {/* divisor dourado */}
-                    <div className="mx-auto my-2.5 h-[1px] w-14"
-                      style={{ background: `linear-gradient(to right, transparent, ${ec.franja}, transparent)` }} />
+                    {/* divisor */}
+                    <div className={`mx-auto mt-2.5 mb-2 h-[2px] w-10 rounded-full ${secao.borda.replace("border-", "bg-")} opacity-50`} />
 
                     {/* contador */}
-                    <p className="text-xs font-semibold text-white/55">
-                      {cartoes.length} modelos disponíveis
+                    <p className="text-xs font-semibold text-slate-500">
+                      {cartoes.length} modelos
                     </p>
                   </div>
                 </div>
 
-                {/* franja pendente na ponta do V */}
-                <div className="flex justify-center gap-[3px]" style={{ marginTop: -1 }}>
-                  {[14, 20, 24, 28, 24, 20, 14].map((h, i) => (
-                    <div key={i} className="w-[3px] rounded-b-full"
-                      style={{ height: h, background: `linear-gradient(to bottom, ${ec.franja}, transparent)`, opacity: 0.75 }} />
+                {/* === franja em V na base === */}
+                <div className="relative overflow-hidden" style={{ height: 44 }}>
+                  {/* tecido que forma o V */}
+                  <div className={`absolute inset-x-0 top-0 bg-gradient-to-b ${secao.cor}`}
+                    style={{ height: "100%", clipPath: "polygon(0 0, 100% 0, 50% 100%)" }} />
+                  {/* borda do V */}
+                  <div className={`absolute inset-x-0 top-0 border-l-[130px] border-r-[130px] border-t-[44px] border-l-transparent border-r-transparent`}
+                    style={{ borderTopColor: "transparent" }} />
+                </div>
+
+                {/* === franjas pendentes (tassels) === */}
+                <div className="flex justify-center" style={{ gap: 4, marginTop: -2 }}>
+                  {[10, 15, 20, 24, 20, 15, 10].map((h, i) => (
+                    <div key={i} className="rounded-b-full"
+                      style={{
+                        width: 4,
+                        height: h,
+                        background: `linear-gradient(to bottom, ${ec.franja}cc, ${ec.franja}44)`,
+                      }} />
                   ))}
                 </div>
               </div>
