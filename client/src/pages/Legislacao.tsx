@@ -1310,6 +1310,164 @@ const LEIS_DESTAQUE = [
   },
 ];
 
+const MESES_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+function AtualizacoesLegislativas() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const monthLabel = `${MESES_PT[currentMonth - 1]} ${currentYear}`;
+  const monthPattern = `/${String(currentMonth).padStart(2, "0")}/${currentYear}`;
+
+  const yearStr = String(currentYear);
+
+  const { data: dataNew, isLoading: loadingNew } = useMecNormasAll({ q: yearStr, size: 50, page: 0 });
+  const { data: dataRevoked, isLoading: loadingRevoked } = useMecNormasAll({ q: yearStr, vigente: "false", size: 30, page: 0 });
+
+  const isLoading = loadingNew || loadingRevoked;
+
+  const allNew: any[] = dataNew?.entidades || [];
+  const allRevoked: any[] = dataRevoked?.entidades || [];
+
+  function matchesMonth(norma: any) {
+    const d = norma.dataDePublicacaoString || norma.dataPublicacao || norma.dataPublicacaoAto || norma.dataDePublicacao || "";
+    return d.includes(monthPattern);
+  }
+
+  const novas = allNew.filter(n => matchesMonth(n) && n.vigente !== false && !((n.correlacoes || []).some((c: any) => c.encerraVigencia)));
+  const alteradas = allNew.filter(n => matchesMonth(n) && n.vigente !== false && (n.correlacoes || []).some((c: any) => c.encerraVigencia));
+  const revogadas = allRevoked.filter(n => matchesMonth(n));
+
+  const total = novas.length + alteradas.length + revogadas.length;
+
+  if (!isLoading && total === 0) {
+    return (
+      <div className="mb-10 rounded-[28px] border border-[#e6ddcf] bg-[#fffdf8] p-5 shadow-sm">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="h-8 w-1.5 rounded-full bg-[#b3c4a0]" />
+          <h2 className="text-lg font-black text-[#43513d]">
+            Atualizações Legislativas
+            <span className="ml-2 text-xs font-semibold text-[#94a3b8]">— {monthLabel}</span>
+          </h2>
+        </div>
+        <p className="text-sm text-[#8a9a84] pl-5">Nenhuma norma nova, alterada ou revogada encontrada no MEC neste mês.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-10 rounded-[28px] border border-[#d9e4d1] bg-[#f5faf3] p-5 sm:p-6 shadow-[0_8px_24px_rgba(90,120,70,0.08)]">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="h-10 w-2 rounded-full bg-[#7f9a70]" />
+        <div>
+          <h2 className="text-xl font-black text-[#3a4d35]">Atualizações Legislativas</h2>
+          <p className="text-sm text-[#6b7a66]">{monthLabel} · normas novas, alteradas ou revogadas no MEC</p>
+        </div>
+        {!isLoading && (
+          <span className="ml-auto rounded-full bg-[#7f9a70] px-3 py-1 text-xs font-black text-white shadow-sm">
+            {total} atualização{total !== 1 ? "ões" : ""}
+          </span>
+        )}
+      </div>
+
+      {isLoading && (
+        <div className="flex items-center gap-3 py-4 pl-5 text-[#7f9a70]">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span className="text-sm">Verificando atualizações deste mês...</span>
+        </div>
+      )}
+
+      {!isLoading && (
+        <div className="space-y-6">
+          {novas.length > 0 && (
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <span className="inline-flex rounded-full bg-[#dcead7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#4e7a4d]">Nova</span>
+                <span className="text-xs text-[#7f9a70] font-semibold">{novas.length} norma{novas.length !== 1 ? "s" : ""} publicada{novas.length !== 1 ? "s" : ""} este mês</span>
+              </div>
+              <div className="space-y-2">
+                {novas.map(n => {
+                  const title = n.titulo || n.tituloAto || n.identificacao || `Ato ${n.id}`;
+                  const tipo = n.tipo?.nome || "";
+                  const date = n.dataDePublicacaoString || "";
+                  const link = n.disponivelEm || n.disponivel_em || "";
+                  const s = tipoStyle(tipo);
+                  return (
+                    <div key={n.id} className="flex flex-wrap items-center gap-3 rounded-[18px] border border-[#d1e4cb] bg-white px-4 py-3">
+                      <div className="flex-1 min-w-0">
+                        <span className="font-black text-sm text-[#3a4d35] line-clamp-1">{title}</span>
+                        {date && <span className="ml-2 text-[10px] text-[#94a3b8]">{date}</span>}
+                      </div>
+                      {tipo && <span className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ background: s.bg, color: s.text }}>{tipo}</span>}
+                      {link && <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-[#5d7452] px-3 py-1.5 text-[10px] font-bold text-white hover:bg-[#4e6344] transition whitespace-nowrap"><ExternalLink className="w-2.5 h-2.5" />Abrir</a>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {alteradas.length > 0 && (
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <span className="inline-flex rounded-full bg-[#f5e6b8] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8a6a14]">Alterada</span>
+                <span className="text-xs text-[#8a7a50] font-semibold">{alteradas.length} norma{alteradas.length !== 1 ? "s" : ""} com alteração este mês</span>
+              </div>
+              <div className="space-y-2">
+                {alteradas.map(n => {
+                  const title = n.titulo || n.tituloAto || n.identificacao || `Ato ${n.id}`;
+                  const tipo = n.tipo?.nome || "";
+                  const date = n.dataDePublicacaoString || "";
+                  const link = n.disponivelEm || n.disponivel_em || "";
+                  const s = tipoStyle(tipo);
+                  return (
+                    <div key={n.id} className="flex flex-wrap items-center gap-3 rounded-[18px] border border-[#e8dab0] bg-white px-4 py-3">
+                      <div className="flex-1 min-w-0">
+                        <span className="font-black text-sm text-[#5a4a20] line-clamp-1">{title}</span>
+                        {date && <span className="ml-2 text-[10px] text-[#94a3b8]">{date}</span>}
+                      </div>
+                      {tipo && <span className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ background: s.bg, color: s.text }}>{tipo}</span>}
+                      {link && <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-[#c9913a] px-3 py-1.5 text-[10px] font-bold text-white hover:bg-[#b57e30] transition whitespace-nowrap"><ExternalLink className="w-2.5 h-2.5" />Abrir</a>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {revogadas.length > 0 && (
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <span className="inline-flex rounded-full bg-[#f3d2cf] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#9b4b45]">Revogada</span>
+                <span className="text-xs text-[#9b6a66] font-semibold">{revogadas.length} norma{revogadas.length !== 1 ? "s" : ""} revogada{revogadas.length !== 1 ? "s" : ""} este mês</span>
+              </div>
+              <div className="space-y-2">
+                {revogadas.map(n => {
+                  const title = n.titulo || n.tituloAto || n.identificacao || `Ato ${n.id}`;
+                  const tipo = n.tipo?.nome || "";
+                  const date = n.dataDePublicacaoString || "";
+                  const link = n.disponivelEm || n.disponivel_em || "";
+                  const s = tipoStyle(tipo);
+                  return (
+                    <div key={n.id} className="flex flex-wrap items-center gap-3 rounded-[18px] border border-[#ecc8c5] bg-white px-4 py-3 opacity-80">
+                      <div className="flex-1 min-w-0">
+                        <span className="font-black text-sm text-[#7a3d3a] line-clamp-1 line-through decoration-[#e08080]/60">{title}</span>
+                        {date && <span className="ml-2 text-[10px] text-[#94a3b8]">{date}</span>}
+                      </div>
+                      {tipo && <span className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ background: s.bg, color: s.text }}>{tipo}</span>}
+                      {link && <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full border border-[#ecc8c5] bg-white px-3 py-1.5 text-[10px] font-semibold text-[#9b4b45] hover:bg-[#fef5f4] transition whitespace-nowrap"><ExternalLink className="w-2.5 h-2.5" />Ver</a>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Legislacao() {
   const [activeTab, setActiveTab] = useState<CategoryId>("cat-normas");
 
@@ -1493,6 +1651,9 @@ export default function Legislacao() {
                     </div>
                   </div>
                 </section>
+
+                {/* Atualizações legislativas do mês */}
+                <AtualizacoesLegislativas />
 
                 {/* Acervo de normas — dados reais da API MEC */}
                 <div className="rounded-[30px] border border-[#d7cab4] bg-[#f9f6ef] p-4 sm:p-6 shadow-[0_14px_36px_rgba(90,80,50,0.08)]">
