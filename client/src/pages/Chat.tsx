@@ -399,24 +399,58 @@ function PesquisaPanel() {
 
   return (
     /* ── Capa vermelha aberta ── */
-    <section className="relative rounded-[44px] bg-[linear-gradient(180deg,#a73c3c_0%,#8e2f2f_45%,#742020_100%)] p-4 md:p-5 shadow-[0_36px_90px_rgba(94,36,36,0.34)] ring-1 ring-[#b65454]/40">
+    <section
+      className="relative rounded-[44px] shadow-[0_40px_100px_rgba(94,36,36,0.38),0_8px_20px_rgba(94,36,36,0.22)] ring-1 ring-[#b65454]/40"
+      style={{
+        background: "linear-gradient(160deg,#c44040 0%,#8e2f2f 40%,#6e1e1e 100%)",
+        padding: "18px 18px 0 18px",
+      }}
+    >
+      {/* ── Textura de linho na capa ── */}
+      <div className="absolute inset-0 rounded-[44px] pointer-events-none opacity-[0.07]"
+        style={{ backgroundImage: "repeating-linear-gradient(0deg,rgba(0,0,0,0.4) 0px,rgba(0,0,0,0.4) 1px,transparent 1px,transparent 4px),repeating-linear-gradient(90deg,rgba(0,0,0,0.2) 0px,rgba(0,0,0,0.2) 1px,transparent 1px,transparent 4px)" }} />
 
-      {/* Sombra de profundidade no topo */}
-      <div className="absolute inset-x-[6%] top-3 h-5 rounded-full bg-black/15 blur-md pointer-events-none" />
-      {/* Borda interna */}
-      <div className="absolute inset-[10px] rounded-[36px] border border-[#c96f6f]/40 pointer-events-none" />
-      {/* Brilho no topo */}
-      <div className="absolute inset-x-8 top-5 h-8 rounded-full bg-white/10 blur-xl pointer-events-none" />
+      {/* ── Brilho de luz na capa (reflexo) ── */}
+      <div className="absolute inset-x-[10%] top-0 h-[3px] rounded-full bg-white/30 pointer-events-none" />
+      <div className="absolute inset-x-8 top-4 h-8 rounded-full bg-white/08 blur-xl pointer-events-none" />
+
+      {/* ── Borda interna decorativa ── */}
+      <div className="absolute inset-[10px] rounded-[36px] border border-[#c96f6f]/35 pointer-events-none" />
+
+      {/* ── Sombra de profundidade no topo ── */}
+      <div className="absolute inset-x-[8%] top-4 h-4 rounded-full bg-black/20 blur-md pointer-events-none" />
+
+      {/* ── Fitas marcadoras (ribbons) no topo ── */}
+      <div className="absolute top-0 left-[42%] w-5 h-7 z-30 pointer-events-none"
+        style={{ background: "linear-gradient(to bottom,#d4a850,#b8922a)", borderRadius: "0 0 4px 4px", boxShadow: "inset 0 -2px 4px rgba(0,0,0,0.2),0 2px 6px rgba(0,0,0,0.25)" }} />
+      <div className="absolute top-0 left-[46%] w-4 h-5 z-30 pointer-events-none"
+        style={{ background: "linear-gradient(to bottom,#6aaa4a,#4a8a30)", borderRadius: "0 0 4px 4px", boxShadow: "inset 0 -2px 4px rgba(0,0,0,0.2),0 2px 6px rgba(0,0,0,0.25)" }} />
+
+      {/* ── Etiqueta branca colada na capa (acima das páginas) ── */}
+      <div className="relative flex justify-center mb-2 pt-1">
+        <div className="inline-flex items-center gap-2 rounded-md px-5 py-1.5 pointer-events-none"
+          style={{ background: "#fdf8f0", border: "1.5px solid #e4d8c8", boxShadow: "0 2px 8px rgba(0,0,0,0.18),inset 0 1px 2px rgba(255,255,255,0.8)" }}>
+          <span className="text-sm">📕</span>
+          <div>
+            <div className="text-[8px] font-black uppercase tracking-[0.35em] text-[#8e2f2f]">Caderneta</div>
+            <div className="text-[7px] uppercase tracking-[0.22em] text-[#a07060] -mt-0.5">da Diretora</div>
+          </div>
+        </div>
+      </div>
 
       {/* ── Páginas abertas ── */}
-      <div className="relative grid grid-cols-1 lg:grid-cols-[0.92fr_1.08fr] gap-0 rounded-[34px] overflow-hidden bg-[linear-gradient(180deg,#7f2626_0%,#6f1f1f_100%)] border border-[#692020]">
+      <div className="relative grid grid-cols-1 lg:grid-cols-[0.92fr_1.08fr] gap-0 rounded-t-[28px] overflow-hidden bg-[linear-gradient(180deg,#7f2626_0%,#6f1f1f_100%)] border-x border-t border-[#692020]">
 
         {/* Dobra central — sombra de encadernação */}
-        <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[90px] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.35)_0%,rgba(0,0,0,0.18)_35%,rgba(0,0,0,0.05)_60%,transparent_75%)] opacity-40 z-10 hidden lg:block" />
-        <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px] bg-[linear-gradient(180deg,#5a1717_0%,#8e2f2f_50%,#5a1717_100%)] opacity-70 z-10 hidden lg:block" />
+        <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[100px] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.40)_0%,rgba(0,0,0,0.20)_35%,rgba(0,0,0,0.05)_60%,transparent_75%)] opacity-50 z-10 hidden lg:block" />
+        <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] bg-[linear-gradient(180deg,#4a1212_0%,#8e2f2f_50%,#4a1212_100%)] opacity-80 z-10 hidden lg:block" />
 
         {/* ══════════════ PÁGINA ESQUERDA — Perguntas ══════════════ */}
-        <div className="relative bg-[#fbf4eb] min-h-[680px] p-6 md:p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-[#e8d6c7] flex flex-col">
+        <div className="relative min-h-[680px] p-6 md:p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-[#e0cfc0] flex flex-col"
+          style={{ background: "linear-gradient(160deg,#fdf7ee 0%,#f8efe2 100%)" }}>
+          {/* Textura sutil de papel */}
+          <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
+            style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
 
           {/* Cabeçalho */}
           <div className="flex items-start justify-between gap-4 mb-6">
@@ -512,7 +546,11 @@ function PesquisaPanel() {
         </div>
 
         {/* ══════════════ PÁGINA DIREITA — Trilha + Legislação ══════════════ */}
-        <div className="relative bg-[#fffbf6] min-h-[680px] overflow-y-auto p-6 md:p-8 lg:p-10">
+        <div className="relative min-h-[680px] overflow-y-auto p-6 md:p-8 lg:p-10"
+          style={{ background: "linear-gradient(160deg,#fffdf8 0%,#fdf8ef 100%)" }}>
+          {/* Textura sutil de papel */}
+          <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
+            style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
 
           {/* ── Unidades da Trilha ── */}
           <div className="mb-8">
@@ -570,6 +608,23 @@ function PesquisaPanel() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Pilha de páginas visível na borda inferior ── */}
+      <div className="relative w-full h-6 pointer-events-none overflow-hidden" aria-hidden>
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute left-0 right-0"
+            style={{
+              bottom: `${i * 3}px`,
+              height: "3px",
+              background: i % 2 === 0 ? "#f0e8dc" : "#e4d5c4",
+              opacity: 1 - i * 0.1,
+              borderRadius: i === 0 ? "0 0 6px 6px" : undefined,
+            }}
+          />
+        ))}
       </div>
     </section>
   );
