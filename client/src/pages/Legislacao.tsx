@@ -1303,12 +1303,7 @@ export default function Legislacao() {
       <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 flex-1">
         <div className="relative overflow-hidden rounded-[34px] border border-[#d9ceb8] bg-[#fbf7ee] shadow-[0_20px_60px_rgba(90,80,50,0.10)]">
 
-          {/* Faixa verde topo */}
-          <div className="absolute inset-x-0 top-0 h-14 bg-[repeating-linear-gradient(90deg,#adc09f_0px,#adc09f_90px,#a0b392_90px,#a0b392_180px)] opacity-70" />
-          <div className="absolute left-6 top-5 h-4 w-24 rotate-[-4deg] rounded-sm bg-[#d9c289]/70" />
-          <div className="absolute right-10 top-6 h-5 w-28 rotate-[6deg] rounded-sm bg-[#b7d0e8]/60" />
-
-          <div className="relative px-5 pb-8 pt-20 sm:px-8 lg:px-10">
+          <div className="relative px-5 pb-8 pt-8 sm:px-8 lg:px-10">
 
             {/* Seletor de abas */}
             <div className="mb-8 rounded-[28px] border border-[#ddd2bc] bg-[#f6f2e9] p-3 shadow-sm">
