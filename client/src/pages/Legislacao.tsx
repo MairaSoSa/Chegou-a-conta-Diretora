@@ -1378,90 +1378,85 @@ function AtualizacoesLegislativas() {
       )}
 
       {!isLoading && (
-        <div className="space-y-6">
-          {novas.length > 0 && (
-            <div>
+        <div className="space-y-8">
+          {[
+            {
+              items: novas,
+              badge: { label: "Nova", bg: "#dcead7", text: "#4e7a4d" },
+              subtitle: (n: number) => `${n} norma${n !== 1 ? "s" : ""} publicada${n !== 1 ? "s" : ""} este mês`,
+              btnBg: "#5d7452", btnHover: "#4e6344", isRevoked: false,
+            },
+            {
+              items: alteradas,
+              badge: { label: "Alterada", bg: "#f5e6b8", text: "#8a6a14" },
+              subtitle: (n: number) => `${n} norma${n !== 1 ? "s" : ""} com alteração este mês`,
+              btnBg: "#c9913a", btnHover: "#b57e30", isRevoked: false,
+            },
+            {
+              items: revogadas,
+              badge: { label: "Revogada", bg: "#f3d2cf", text: "#9b4b45" },
+              subtitle: (n: number) => `${n} norma${n !== 1 ? "s" : ""} revogada${n !== 1 ? "s" : ""} este mês`,
+              btnBg: "#9b4b45", btnHover: "#7a3d3a", isRevoked: true,
+            },
+          ].map(group => group.items.length > 0 && (
+            <div key={group.badge.label}>
               <div className="mb-3 flex items-center gap-2">
-                <span className="inline-flex rounded-full bg-[#dcead7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#4e7a4d]">Nova</span>
-                <span className="text-xs text-[#7f9a70] font-semibold">{novas.length} norma{novas.length !== 1 ? "s" : ""} publicada{novas.length !== 1 ? "s" : ""} este mês</span>
+                <span className="inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
+                  style={{ background: group.badge.bg, color: group.badge.text }}>
+                  {group.badge.label}
+                </span>
+                <span className="text-xs font-semibold text-[#8a9a84]">{group.subtitle(group.items.length)}</span>
               </div>
-              <div className="space-y-2">
-                {novas.map(n => {
+              <div className="space-y-3">
+                {group.items.map((n: any) => {
                   const title = n.titulo || n.tituloAto || n.identificacao || `Ato ${n.id}`;
+                  const ementa = n.ementa || n.resumo || "";
                   const tipo = n.tipo?.nome || "";
-                  const date = n.dataDePublicacaoString || "";
+                  const date = n.dataDePublicacaoString || n.dataPublicacao || "";
                   const link = n.disponivelEm || n.disponivel_em || "";
                   const s = tipoStyle(tipo);
                   return (
-                    <div key={n.id} className="flex flex-wrap items-center gap-3 rounded-[18px] border border-[#d1e4cb] bg-white px-4 py-3">
-                      <div className="flex-1 min-w-0">
-                        <span className="font-black text-sm text-[#3a4d35] line-clamp-1">{title}</span>
-                        {date && <span className="ml-2 text-[10px] text-[#94a3b8]">{date}</span>}
+                    <div key={n.id}
+                      className="grid gap-4 rounded-[24px] border border-[#e6ddcf] bg-white p-4 md:grid-cols-[2fr_1fr_1fr_auto] md:items-center transition hover:-translate-y-0.5 hover:shadow-md"
+                    >
+                      <div>
+                        <h4 className={`text-sm font-black leading-snug text-[#46543f] ${group.isRevoked ? "line-through decoration-[#e08080]/60 text-[#7a3d3a]" : ""}`}>
+                          {title}
+                        </h4>
+                        {ementa && <p className="mt-1.5 text-xs leading-5 text-[#60685a]">{ementa.length > 130 ? ementa.slice(0, 130) + "…" : ementa}</p>}
+                        {date && <div className="mt-1 text-[10px] text-[#94a3b8]">{date}</div>}
                       </div>
-                      {tipo && <span className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ background: s.bg, color: s.text }}>{tipo}</span>}
-                      {link && <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-[#5d7452] px-3 py-1.5 text-[10px] font-bold text-white hover:bg-[#4e6344] transition whitespace-nowrap"><ExternalLink className="w-2.5 h-2.5" />Abrir</a>}
+                      <div>
+                        {tipo && (
+                          <span className="inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em]"
+                            style={{ background: s.bg, color: s.text }}>
+                            {tipo}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
+                          style={{ background: group.badge.bg, color: group.badge.text }}>
+                          {group.badge.label}
+                        </span>
+                      </div>
+                      <div>
+                        {link ? (
+                          <a href={link} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-[#d4c7b3] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:opacity-90 whitespace-nowrap"
+                            style={{ background: group.btnBg }}>
+                            <ExternalLink className="w-3 h-3" /> Abrir
+                          </a>
+                        ) : (
+                          <span className="inline-flex rounded-full border border-[#e6ddcf] bg-[#f9f6ef] px-4 py-2.5 text-[10px] font-semibold text-[#94a3b8]">Sem link</span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </div>
-          )}
-
-          {alteradas.length > 0 && (
-            <div>
-              <div className="mb-3 flex items-center gap-2">
-                <span className="inline-flex rounded-full bg-[#f5e6b8] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8a6a14]">Alterada</span>
-                <span className="text-xs text-[#8a7a50] font-semibold">{alteradas.length} norma{alteradas.length !== 1 ? "s" : ""} com alteração este mês</span>
-              </div>
-              <div className="space-y-2">
-                {alteradas.map(n => {
-                  const title = n.titulo || n.tituloAto || n.identificacao || `Ato ${n.id}`;
-                  const tipo = n.tipo?.nome || "";
-                  const date = n.dataDePublicacaoString || "";
-                  const link = n.disponivelEm || n.disponivel_em || "";
-                  const s = tipoStyle(tipo);
-                  return (
-                    <div key={n.id} className="flex flex-wrap items-center gap-3 rounded-[18px] border border-[#e8dab0] bg-white px-4 py-3">
-                      <div className="flex-1 min-w-0">
-                        <span className="font-black text-sm text-[#5a4a20] line-clamp-1">{title}</span>
-                        {date && <span className="ml-2 text-[10px] text-[#94a3b8]">{date}</span>}
-                      </div>
-                      {tipo && <span className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ background: s.bg, color: s.text }}>{tipo}</span>}
-                      {link && <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-[#c9913a] px-3 py-1.5 text-[10px] font-bold text-white hover:bg-[#b57e30] transition whitespace-nowrap"><ExternalLink className="w-2.5 h-2.5" />Abrir</a>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {revogadas.length > 0 && (
-            <div>
-              <div className="mb-3 flex items-center gap-2">
-                <span className="inline-flex rounded-full bg-[#f3d2cf] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#9b4b45]">Revogada</span>
-                <span className="text-xs text-[#9b6a66] font-semibold">{revogadas.length} norma{revogadas.length !== 1 ? "s" : ""} revogada{revogadas.length !== 1 ? "s" : ""} este mês</span>
-              </div>
-              <div className="space-y-2">
-                {revogadas.map(n => {
-                  const title = n.titulo || n.tituloAto || n.identificacao || `Ato ${n.id}`;
-                  const tipo = n.tipo?.nome || "";
-                  const date = n.dataDePublicacaoString || "";
-                  const link = n.disponivelEm || n.disponivel_em || "";
-                  const s = tipoStyle(tipo);
-                  return (
-                    <div key={n.id} className="flex flex-wrap items-center gap-3 rounded-[18px] border border-[#ecc8c5] bg-white px-4 py-3 opacity-80">
-                      <div className="flex-1 min-w-0">
-                        <span className="font-black text-sm text-[#7a3d3a] line-clamp-1 line-through decoration-[#e08080]/60">{title}</span>
-                        {date && <span className="ml-2 text-[10px] text-[#94a3b8]">{date}</span>}
-                      </div>
-                      {tipo && <span className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ background: s.bg, color: s.text }}>{tipo}</span>}
-                      {link && <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full border border-[#ecc8c5] bg-white px-3 py-1.5 text-[10px] font-semibold text-[#9b4b45] hover:bg-[#fef5f4] transition whitespace-nowrap"><ExternalLink className="w-2.5 h-2.5" />Ver</a>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          ))}
         </div>
       )}
     </div>
