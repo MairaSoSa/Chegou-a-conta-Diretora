@@ -431,97 +431,92 @@ function PesquisaPanel() {
         ══════════════════════════════════ */}
         <div
           className="relative flex flex-col border-b lg:border-b-0 lg:border-r border-[#d8c4ae]"
-          style={{ minHeight: 660, background: "#fdf5e8" }}
+          style={{ height: "clamp(460px, calc(100vh - 340px), 680px)", background: "#fdf5e8" }}
         >
-          {/* padding maior no lado da lombada (direita) para não invadir a dobra */}
-          <div className="relative z-10 flex flex-col h-full p-7 pr-10 lg:pr-14">
+          <div className="relative z-10 flex flex-col" style={{ height: "100%" }}>
 
-            {/* Badge */}
-            <div className="mb-4">
+            {/* ── Cabeçalho fixo ── */}
+            <div className="flex items-center justify-between px-7 pr-10 lg:pr-14 pt-6 pb-3 shrink-0">
               <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-bold uppercase text-[#8e2f2f]"
                 style={{ background: "rgba(142,47,47,0.10)", fontSize: 10, letterSpacing: "0.20em" }}>
                 ✍️ Folha de Pesquisa
               </div>
+              {temMensagens && (
+                <button onClick={handleNewChat}
+                  className="inline-flex items-center gap-1 rounded-full border border-[#d9bfb5] bg-white/80 px-3 py-1 text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors"
+                  style={{ fontSize: 10 }}>
+                  <RefreshCw className="w-3 h-3" /> Nova conversa
+                </button>
+              )}
             </div>
 
-            {/* Campo de pergunta — logo no topo */}
-            <div className="relative mb-5">
-              <textarea
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                placeholder="Ex: O que posso comprar com o PDDE?"
-                className="w-full resize-none outline-none placeholder:text-[#c5a898] text-[#5f4032]"
-                style={{
-                  minHeight: 90,
-                  borderRadius: 18,
-                  border: "1.5px solid #dcc8b8",
-                  background: "rgba(255,255,255,0.82)",
-                  padding: "14px 52px 14px 18px",
-                  fontSize: 14,
-                  boxShadow: "0 3px 14px rgba(95,64,50,0.10)",
-                  lineHeight: "1.6",
-                }}
-                disabled={isSending}
-              />
-              <button
-                onClick={() => handleSend()}
-                disabled={!input.trim() || isSending}
-                className="absolute bottom-3 right-3 flex items-center justify-center text-white transition-colors"
-                style={{
-                  width: 38, height: 38, borderRadius: 12,
-                  background: input.trim() && !isSending ? "#8e2f2f" : "rgba(142,47,47,0.35)",
-                  boxShadow: "0 2px 8px rgba(80,18,18,0.25)",
-                }}
-              >
-                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </button>
-            </div>
-
-            {/* Bilhetinhos colados */}
-            {apiNotes.length > 0 && (
-              <div className="flex gap-3 overflow-x-auto pb-3 mb-4 -ml-1 pl-1">
-                {apiNotes.slice(0, 3).map((note: any, i) => (
-                  <div key={note.id || i} className="shrink-0 w-36 relative rounded-[4px] px-3 py-3"
-                    style={{
-                      background: "#fff4a8",
-                      transform: `rotate(${i % 2 === 0 ? -1.8 : 1.5}deg)`,
-                      boxShadow: "2px 4px 14px rgba(95,64,50,0.20),0 1px 2px rgba(0,0,0,0.08)",
-                    }}>
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 h-5 w-10 rounded-sm" style={{ background: "rgba(235,190,145,0.75)" }} />
-                    <p className="text-[10.5px] leading-[16px] text-[#5a3828] line-clamp-4">{note.title || note.content}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Área de conversa / sugestões — ocupa o espaço restante */}
-            <div className="flex-1 overflow-y-auto" ref={convScrollRef}>
-              <AnimatePresence mode="wait">
-                <motion.div key={pageKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  {!temMensagens ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {SUGESTOES.map((s, i) => (
-                        <SugestaoCard key={i} s={s} idx={i} onClick={() => handleSend(s)} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-4 pb-2">
-                      {msgs.map(msg =>
-                        msg.role === "user"
-                          ? <MensagemUsuario key={msg.id} conteudo={msg.content} />
-                          : <MensagemAssistente key={msg.id} conteudo={msg.content} onSaveNote={handleSaveNote} />
-                      )}
-                      {isSending && <IndicadorDigitando />}
-                      <button onClick={handleNewChat}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-[#d9bfb5] bg-white/80 px-4 py-1.5 text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors"
-                        style={{ fontSize: 11 }}>
-                        <RefreshCw className="w-3 h-3" /> Nova conversa
+            {/* ── Área rolável de mensagens ── */}
+            <div className="flex-1 overflow-y-auto px-7 pr-10 lg:pr-14 pb-3" ref={convScrollRef}>
+              {!temMensagens ? (
+                /* Estado vazio: boas-vindas + chips de sugestão */
+                <div className="pt-4 space-y-4">
+                  <p className="text-[#b09080] text-sm leading-6">
+                    Olá! Pergunte sobre PDDE, PNAE, PNATE, prestação de contas, compras ou documentos. 📚
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {SUGESTOES.slice(0, 4).map((s, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSend(s)}
+                        className="rounded-full border border-[#dcc8b8] bg-white/80 px-3 py-1.5 text-left text-[#6b4a3a] hover:bg-[#fff0e8] hover:border-[#c8a898] transition-colors"
+                        style={{ fontSize: 12 }}
+                      >
+                        {s}
                       </button>
-                    </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 py-2">
+                  {msgs.map(msg =>
+                    msg.role === "user"
+                      ? <MensagemUsuario key={msg.id} conteudo={msg.content} />
+                      : <MensagemAssistente key={msg.id} conteudo={msg.content} onSaveNote={handleSaveNote} />
                   )}
-                </motion.div>
-              </AnimatePresence>
+                  {isSending && <IndicadorDigitando />}
+                </div>
+              )}
+            </div>
+
+            {/* ── Input fixo no fundo ── */}
+            <div className="shrink-0 px-7 pr-10 lg:pr-14 pb-6 pt-2 border-t border-[#e8d8c8]">
+              <div className="relative">
+                <textarea
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                  placeholder="Digite sua dúvida… (Enter para enviar)"
+                  rows={2}
+                  className="w-full resize-none outline-none placeholder:text-[#c5a898] text-[#5f4032]"
+                  style={{
+                    borderRadius: 16,
+                    border: "1.5px solid #dcc8b8",
+                    background: "rgba(255,255,255,0.90)",
+                    padding: "12px 50px 12px 16px",
+                    fontSize: 14,
+                    boxShadow: "0 2px 10px rgba(95,64,50,0.08)",
+                    lineHeight: "1.5",
+                  }}
+                  disabled={isSending}
+                />
+                <button
+                  onClick={() => handleSend()}
+                  disabled={!input.trim() || isSending}
+                  className="absolute bottom-2.5 right-2.5 flex items-center justify-center text-white transition-colors"
+                  style={{
+                    width: 34, height: 34, borderRadius: 10,
+                    background: input.trim() && !isSending ? "#8e2f2f" : "rgba(142,47,47,0.30)",
+                    boxShadow: input.trim() ? "0 2px 8px rgba(80,18,18,0.25)" : "none",
+                  }}
+                >
+                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
           </div>
@@ -532,7 +527,7 @@ function PesquisaPanel() {
         ══════════════════════════════════ */}
         <div
           className="relative overflow-y-auto"
-          style={{ minHeight: 660, background: "#fffaf2" }}
+          style={{ height: "clamp(460px, calc(100vh - 340px), 680px)", background: "#fffaf2" }}
         >
           {/* padding maior no lado da lombada (esquerda) para não invadir a dobra */}
           <div className="relative z-10 p-7 pl-10 lg:pl-14 pb-8">
