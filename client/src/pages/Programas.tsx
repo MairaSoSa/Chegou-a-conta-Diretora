@@ -78,7 +78,6 @@ function GlossarioSection() {
   const [activeLetra, setActiveLetra] = useState<string | null>(null);
 
   const { data: glossaryItems = [], isLoading } = useQuery<GlossaryItem[]>({ queryKey: ["/api/glossary"] });
-  const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
 
   const glossario = useMemo(() =>
     glossaryItems.map(i => ({ termo: i.term, explicacao: i.explanation, letra: i.letter })),
@@ -259,6 +258,8 @@ function VerbasSection() {
 }
 
 export default function Programas() {
+  const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
+
   return (
     <div className="min-h-screen text-slate-700" style={{ background: "#f4ede3" }}>
       <Navigation />
