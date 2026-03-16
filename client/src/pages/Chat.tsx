@@ -433,17 +433,49 @@ function PesquisaPanel() {
           className="relative flex flex-col border-b lg:border-b-0 lg:border-r border-[#d8c4ae]"
           style={{ minHeight: 660, background: "#fdf5e8" }}
         >
-          <div className="relative z-10 flex flex-col h-full p-7">
+          {/* padding maior no lado da lombada (direita) para não invadir a dobra */}
+          <div className="relative z-10 flex flex-col h-full p-7 pr-10 lg:pr-14">
 
-            {/* Header da página */}
-            <div className="mb-5">
+            {/* Badge */}
+            <div className="mb-4">
               <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-bold uppercase text-[#8e2f2f]"
                 style={{ background: "rgba(142,47,47,0.10)", fontSize: 10, letterSpacing: "0.20em" }}>
                 ✍️ Folha de Pesquisa
               </div>
-              <p className="mt-3 text-[#8a6450] leading-6" style={{ fontSize: 13 }}>
-                Escreva sua dúvida abaixo — a resposta aparece na página ao lado.
-              </p>
+            </div>
+
+            {/* Campo de pergunta — logo no topo */}
+            <div className="relative mb-5">
+              <textarea
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                placeholder="Ex: O que posso comprar com o PDDE?"
+                className="w-full resize-none outline-none placeholder:text-[#c5a898] text-[#5f4032]"
+                style={{
+                  minHeight: 90,
+                  borderRadius: 18,
+                  border: "1.5px solid #dcc8b8",
+                  background: "rgba(255,255,255,0.82)",
+                  padding: "14px 52px 14px 18px",
+                  fontSize: 14,
+                  boxShadow: "0 3px 14px rgba(95,64,50,0.10)",
+                  lineHeight: "1.6",
+                }}
+                disabled={isSending}
+              />
+              <button
+                onClick={() => handleSend()}
+                disabled={!input.trim() || isSending}
+                className="absolute bottom-3 right-3 flex items-center justify-center text-white transition-colors"
+                style={{
+                  width: 38, height: 38, borderRadius: 12,
+                  background: input.trim() && !isSending ? "#8e2f2f" : "rgba(142,47,47,0.35)",
+                  boxShadow: "0 2px 8px rgba(80,18,18,0.25)",
+                }}
+              >
+                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </button>
             </div>
 
             {/* Bilhetinhos colados */}
@@ -463,8 +495,8 @@ function PesquisaPanel() {
               </div>
             )}
 
-            {/* Área de conversa / sugestões */}
-            <div className="flex-1 overflow-y-auto mb-4" ref={convScrollRef}>
+            {/* Área de conversa / sugestões — ocupa o espaço restante */}
+            <div className="flex-1 overflow-y-auto" ref={convScrollRef}>
               <AnimatePresence mode="wait">
                 <motion.div key={pageKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   {!temMensagens ? (
@@ -492,40 +524,6 @@ function PesquisaPanel() {
               </AnimatePresence>
             </div>
 
-            {/* Campo de pergunta */}
-            <div className="relative">
-              <textarea
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                placeholder="Ex: O que posso comprar com o PDDE?"
-                className="w-full resize-none outline-none placeholder:text-[#c5a898] text-[#5f4032]"
-                style={{
-                  minHeight: 80,
-                  borderRadius: 18,
-                  border: "1.5px solid #dcc8b8",
-                  background: "rgba(255,255,255,0.82)",
-                  padding: "14px 52px 14px 18px",
-                  fontSize: 14,
-                  boxShadow: "0 3px 14px rgba(95,64,50,0.10)",
-                  lineHeight: "1.6",
-                }}
-                disabled={isSending}
-              />
-              <button
-                onClick={() => handleSend()}
-                disabled={!input.trim() || isSending}
-                className="absolute bottom-3 right-3 flex items-center justify-center text-white transition-colors"
-                style={{
-                  width: 38, height: 38, borderRadius: 12,
-                  background: input.trim() && !isSending ? "#8e2f2f" : "rgba(142,47,47,0.35)",
-                  boxShadow: "0 2px 8px rgba(80,18,18,0.25)",
-                }}
-              >
-                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </button>
-            </div>
-
           </div>
         </div>
 
@@ -536,7 +534,8 @@ function PesquisaPanel() {
           className="relative overflow-y-auto"
           style={{ minHeight: 660, background: "#fffaf2" }}
         >
-          <div className="relative z-10 p-7 pb-8">
+          {/* padding maior no lado da lombada (esquerda) para não invadir a dobra */}
+          <div className="relative z-10 p-7 pl-10 lg:pl-14 pb-8">
 
             {/* Trilha */}
             <div className="mb-7">
