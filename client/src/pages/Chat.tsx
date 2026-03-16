@@ -110,6 +110,23 @@ const SUGESTOES = [
 
 const STORAGE_KEY = "caderno-diretora-v2";
 
+const TRILHA_DESTAQUES = [
+  { id: "U03", title: "Como funciona o PDDE", sub: "Regras, objetivos e funcionamento do programa", emoji: "📚", accent: "bg-[#fff1a8]" },
+  { id: "U12", title: "Como planejar o uso dos recursos", sub: "Planejamento e priorização de compras", emoji: "📋", accent: "bg-[#ffd9c8]" },
+  { id: "U13", title: "O que pode ser pago com os recursos", sub: "Itens permitidos e vedados pelo PDDE", emoji: "💰", accent: "bg-[#d4f0d4]" },
+  { id: "U16", title: "Como funciona a prestação de contas", sub: "Documentos e prazos obrigatórios", emoji: "📊", accent: "bg-[#c8e0ff]" },
+  { id: "U05", title: "O que é a unidade executora (UEx)", sub: "Organização e papel da UEx na escola", emoji: "🏛️", accent: "bg-[#f9e4ff]" },
+  { id: "U14", title: "Notas fiscais e comprovantes", sub: "Como guardar e organizar os documentos", emoji: "🧾", accent: "bg-[#ffe4b2]" },
+];
+
+const LEGISLACAO_BASE = [
+  { emoji: "📜", titulo: "Lei nº 11.947/2009", desc: "Institui o PDDE e define as regras de execução financeira" },
+  { emoji: "📋", titulo: "Resolução FNDE nº 15/2021", desc: "Normas de execução do PDDE — compras, documentos e prestação de contas" },
+  { emoji: "📗", titulo: "Manual de Execução do PDDE – FNDE", desc: "Orientações práticas para gestão dos recursos do PDDE" },
+  { emoji: "⚖️", titulo: "Lei nº 14.133/2021", desc: "Nova Lei de Licitações e Contratos Administrativos" },
+  { emoji: "📑", titulo: "Decreto nº 6.253/2007", desc: "Regulamenta o FUNDEB e o repasse de recursos às escolas" },
+];
+
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
 function createDoc(template: TemplateName, suffix = ""): OpenDoc {
@@ -337,7 +354,7 @@ function PesquisaPanel() {
   const [input, setInput] = useState("");
   const [pageKey, setPageKey] = useState(0);
   const [apiNotes, setApiNotes] = useState<any[]>([]);
-  const rightScrollRef = useRef<HTMLDivElement>(null);
+  const convScrollRef = useRef<HTMLDivElement>(null);
 
   const { mutate: createConversation } = useCreateConversation();
   const { mutate: sendMessage, isPending: isSending } = useSendMessage();
@@ -349,7 +366,7 @@ function PesquisaPanel() {
   }, []);
 
   useEffect(() => {
-    if (rightScrollRef.current) rightScrollRef.current.scrollTop = rightScrollRef.current.scrollHeight;
+    if (convScrollRef.current) convScrollRef.current.scrollTop = convScrollRef.current.scrollHeight;
   }, [conversationData?.messages, isSending]);
 
   const handleSend = (texto?: string) => {
@@ -378,7 +395,6 @@ function PesquisaPanel() {
   };
 
   const msgs = conversationData?.messages ?? [];
-  const aiMsgs = msgs.filter(m => m.role === "assistant");
   const temMensagens = msgs.length > 0;
 
   return (
@@ -456,9 +472,16 @@ function PesquisaPanel() {
             </div>
           </div>
 
-          {/* Sugestões ou mensagens anteriores */}
+          {/* Conversa ou sugestões */}
           <AnimatePresence mode="wait">
-            <motion.div key={pageKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
+            <motion.div
+              key={pageKey}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 overflow-y-auto"
+              ref={convScrollRef}
+            >
               {!temMensagens ? (
                 <>
                   <div className="text-xs uppercase tracking-[0.2em] text-[#a38778] mb-3">Sugestões de perguntas</div>
@@ -469,17 +492,14 @@ function PesquisaPanel() {
                   </div>
                 </>
               ) : (
-                <div>
-                  <div className="text-xs uppercase tracking-[0.2em] text-[#a38778] mb-3">Perguntas desta sessão</div>
-                  <div className="space-y-2">
-                    {msgs.filter(m => m.role === "user").map((msg, i) => (
-                      <div key={msg.id} className="rounded-2xl bg-[#8e2f2f]/10 border border-[#8e2f2f]/15 px-4 py-2.5 text-[13px] text-[#5f4032] flex items-start gap-2">
-                        <span className="text-[#8e2f2f] font-bold shrink-0">{i + 1}.</span>
-                        <span>{msg.content}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4">
+                <div className="space-y-4 pb-2">
+                  {msgs.map(msg =>
+                    msg.role === "user"
+                      ? <MensagemUsuario key={msg.id} conteudo={msg.content} />
+                      : <MensagemAssistente key={msg.id} conteudo={msg.content} onSaveNote={handleSaveNote} />
+                  )}
+                  {isSending && <IndicadorDigitando />}
+                  <div className="pt-2">
                     <button onClick={handleNewChat}
                       className="inline-flex items-center gap-1.5 rounded-full border border-[#d9bfb5] bg-white/80 px-4 py-1.5 text-[12px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors">
                       <RefreshCw className="w-3 h-3" /> Nova conversa
@@ -491,49 +511,63 @@ function PesquisaPanel() {
           </AnimatePresence>
         </div>
 
-        {/* ══════════════ PÁGINA DIREITA — Respostas ══════════════ */}
-        <div className="relative bg-[#fffbf6] min-h-[680px] flex flex-col">
+        {/* ══════════════ PÁGINA DIREITA — Trilha + Legislação ══════════════ */}
+        <div className="relative bg-[#fffbf6] min-h-[680px] overflow-y-auto p-6 md:p-8 lg:p-10">
 
-          {/* Cabeçalho fixo da página direita */}
-          <div className="shrink-0 px-6 md:px-8 lg:px-10 pt-8 pb-4">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#fff1e7] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9a5a4f] shadow-sm">
-              <Bot className="w-3 h-3" /><span>Respostas da Secretaria</span>
+          {/* ── Unidades da Trilha ── */}
+          <div className="mb-8">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#fff1e7] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9a5a4f] shadow-sm mb-4">
+              📘 Orientação da Trilha
             </div>
-            <h3 className="mt-3 text-2xl font-black leading-tight text-[#4d2318]">Página de respostas</h3>
-            <p className="mt-1 text-sm text-[#7b5b4d] leading-6">
-              As orientações aparecem aqui, organizadas para consulta.
+            <h3 className="text-2xl font-black leading-tight text-[#4d2318] mb-1">Unidades para você visitar</h3>
+            <p className="text-sm text-[#7b5b4d] leading-6 mb-5">
+              Estas unidades da Trilha de Aprendizagem aprofundam os temas mais comuns na gestão financeira escolar.
             </p>
+
+            <div className="space-y-3">
+              {TRILHA_DESTAQUES.map((u, i) => (
+                <a
+                  key={u.id}
+                  href={`/trilha?unit=${u.id}`}
+                  className={`group flex items-center gap-4 rounded-[22px] border border-[#e4d7ce] bg-[#fffaf6] p-4 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all ${i % 2 === 0 ? "rotate-[-0.4deg]" : "rotate-[0.3deg]"}`}
+                >
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] ${u.accent} text-xl shadow-sm`}>
+                    {u.emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-[#a38778] mb-0.5">Unidade {u.id}</div>
+                    <div className="text-[13px] font-semibold text-[#5f4032] leading-5">{u.title}</div>
+                    <div className="text-[11px] text-[#9a7060] mt-0.5">{u.sub}</div>
+                  </div>
+                  <div className="shrink-0 rounded-full border border-[#ead8cc] bg-[#fff8f3] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8e2f2f] group-hover:bg-[#fff0eb] transition-colors">
+                    Ver →
+                  </div>
+                </a>
+              ))}
+            </div>
           </div>
 
-          {/* Área scrollável com cards de resposta */}
-          <div
-            ref={rightScrollRef}
-            className="flex-1 overflow-y-auto px-6 md:px-8 lg:px-10 pb-8 pt-2 space-y-6"
-          >
-            {!temMensagens ? (
-              <div className="flex flex-col items-center justify-center h-64 gap-4 text-[#c5a898]">
-                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[#8e2f2f]/07 text-4xl">
-                  📖
-                </div>
-                <p className="text-[14px] text-center leading-7 text-[#b09080] max-w-xs">
-                  Escreva uma pergunta ao lado<br />e a orientação vai aparecer aqui.
-                </p>
-              </div>
-            ) : (
-              <>
-                {aiMsgs.map((msg, i) => (
-                  <CardRespostaAI key={msg.id} msg={msg} onSave={handleSaveNote} idx={i} />
-                ))}
-                {isSending && (
-                  <div className="rounded-[28px] border border-[#e4d7ce] bg-[#fffdf9] p-6 shadow-sm">
-                    <div className="flex items-center gap-3 text-[#a38778]">
-                      <Loader2 className="w-5 h-5 animate-spin text-[#8e2f2f]" />
-                      <span className="text-[13px]">Preparando orientação…</span>
-                    </div>
+          {/* ── Legislação relacionada ── */}
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#fff08f] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#75591d] shadow-sm mb-4">
+              ⚖️ Base Legal
+            </div>
+            <h3 className="text-xl font-black leading-tight text-[#4d2318] mb-1">Legislação relacionada</h3>
+            <p className="text-sm text-[#7b5b4d] leading-6 mb-4">
+              Normas que orientam o uso dos recursos públicos na escola.
+            </p>
+
+            <div className="rounded-[22px] border border-dashed border-[#e4d8cf] bg-[#fffaf6] px-5 py-5 space-y-3">
+              {LEGISLACAO_BASE.map((lei) => (
+                <div key={lei.titulo} className="flex items-start gap-3 rounded-xl bg-white/70 px-3 py-2.5">
+                  <span className="text-base shrink-0 mt-0.5">{lei.emoji}</span>
+                  <div>
+                    <div className="text-[13px] font-semibold text-[#5f4032] leading-5">{lei.titulo}</div>
+                    <div className="text-[11px] text-[#9a7060] mt-0.5">{lei.desc}</div>
                   </div>
-                )}
-              </>
-            )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
