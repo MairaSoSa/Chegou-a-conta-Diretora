@@ -259,7 +259,7 @@
   text-decoration: none;
   border-radius: 8px 18px 10px 14px;
   padding: 20px 14px 16px 14px;
-  min-height: 170px;
+  min-height: 110px;
   box-shadow:
     0 1px 2px rgba(0,0,0,.06),
     0 3px 8px rgba(60,40,20,.07),
@@ -325,12 +325,7 @@
 }
 
 .hl-note-card p {
-  margin: 5px 0 0;
-  font-family: Nunito, sans-serif;
-  font-size: .71rem;
-  line-height: 1.45;
-  color: rgba(0,0,0,.48);
-  font-weight: 600;
+  display: none;
 }
 
 .hl-note-card small {
@@ -711,18 +706,13 @@
   }
   .hl-hero-note::before,
   .hl-hero-note::after { display: none; } /* remove fitas decorativas */
-  .hl-eyebrow {
-    white-space: normal;
-    line-height: 1.5;
-    font-size: .58rem;
-    max-width: 100%;
-  }
+  .hl-eyebrow { display: none; }          /* remove eyebrow pill no mobile */
   .hl-hero-note h2 {
     font-size: 2rem;
     line-height: 1;
-    margin-top: 8px;
+    margin-top: 0;
   }
-  .hl-hero-desc { font-size: .82rem; max-width: 100%; }
+  .hl-hero-desc { display: none; }        /* remove parágrafo descritivo no mobile */
   .hl-hero-tags { gap: 6px; }
   .hl-tag { font-size: .70rem; }
 
