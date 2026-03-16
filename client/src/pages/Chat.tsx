@@ -346,6 +346,29 @@ function SugestaoCard({ s, idx, onClick }: { s: string; idx: number; onClick: ()
   );
 }
 
+// ── Sugestões contextuais para a página direita ───────────────────────────
+function getSuggestionsFromConversation(msgs: { role: string; content: string }[]) {
+  const txt = msgs.map(m => m.content).join(" ").toLowerCase();
+  const trilha = TRILHA_DESTAQUES.filter(u => {
+    if (u.id === "U03") return /pdde|programa|repasse|recurso|fnde/.test(txt);
+    if (u.id === "U12") return /planeja|compra|uso|recurso|gastar/.test(txt);
+    if (u.id === "U13") return /pagar|comprar|permitido|vedado|pode|gasto/.test(txt);
+    if (u.id === "U16") return /prest|conta|documento|prazo|relatório|pc/.test(txt);
+    if (u.id === "U05") return /uex|executora|conselho|reunião|ata|colegiado/.test(txt);
+    if (u.id === "U14") return /nota fiscal|comprovante|guardar|documento/.test(txt);
+    return false;
+  });
+  const leis = LEGISLACAO_BASE.filter(l => {
+    if (/pdde|fnde|recurso|execução/.test(txt) && l.titulo.includes("11.947")) return true;
+    if (/resolução|execução|compra/.test(txt) && l.titulo.includes("15/2021")) return true;
+    if (/manual|orientação/.test(txt) && l.titulo.toLowerCase().includes("manual")) return true;
+    if (/licitação|contrat|compra|fornecedor/.test(txt) && l.titulo.includes("14.133")) return true;
+    if (/fundeb|repasse/.test(txt) && l.titulo.includes("6.253")) return true;
+    return false;
+  });
+  return { trilha: trilha.slice(0, 3), leis: leis.slice(0, 3) };
+}
+
 // ── PesquisaPanel principal ───────────────────────────────────────────────
 function PesquisaPanel() {
   const [conversationId, setConversationId] = useState<number | null>(null);
@@ -433,7 +456,7 @@ function PesquisaPanel() {
         ══════════════════════════════════ */}
         <div
           className="relative flex flex-col border-b lg:border-b-0 lg:border-r border-[#d8c4ae]"
-          style={{ height: "clamp(460px, calc(100vh - 320px), 600px)", background: "#fdf5e8" }}
+          style={{ height: "clamp(540px, calc(100vh - 250px), 720px)", background: "#fdf5e8" }}
         >
           <div className="relative z-10 flex flex-col" style={{ height: "100%" }}>
 
@@ -516,60 +539,76 @@ function PesquisaPanel() {
             PÁGINA DIREITA — Contexto
         ══════════════════════════════════ */}
         <div
-          className="relative overflow-y-auto"
-          style={{ height: "clamp(460px, calc(100vh - 320px), 600px)", background: "#fffaf2" }}
+          className="relative flex flex-col"
+          style={{ height: "clamp(540px, calc(100vh - 250px), 720px)", background: "#fffaf2" }}
         >
-          {/* padding maior no lado da lombada (esquerda) para não invadir a dobra */}
-          <div className="relative z-10 p-7 pl-10 lg:pl-14 pb-8">
-
-            {/* Trilha */}
-            <div className="mb-7">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff1e7] px-3 py-1 font-bold uppercase text-[#9a5a4f] mb-3"
-                style={{ fontSize: 10, letterSpacing: "0.20em" }}>
-                📘 Orientação da Trilha
+          <div className="relative z-10 flex-1 overflow-y-auto p-7 pl-10 lg:pl-14 pb-8">
+            {!temMensagens ? (
+              /* ── Estado vazio ── */
+              <div className="h-full flex flex-col items-center justify-center text-center px-4">
+                <div className="text-4xl mb-4 opacity-30">📖</div>
+                <p className="text-[#b09080] leading-6" style={{ fontSize: 13 }}>
+                  Comece uma pesquisa ao lado e sugestões de leitura e legislação relevante aparecerão aqui.
+                </p>
               </div>
-              <h3 className="text-xl font-black text-[#4d2318] mb-1">Unidades para você visitar</h3>
-              <p className="text-[#8a6450] leading-6 mb-4" style={{ fontSize: 13 }}>
-                Estas unidades aprofundam os temas mais comuns na gestão financeira escolar.
-              </p>
-              <div className="space-y-2">
-                {TRILHA_DESTAQUES.map(u => (
-                  <a key={u.id} href={`/trilha?unit=${u.id}`}
-                    className="group flex items-center gap-3 rounded-[16px] border border-[#ead8cc] bg-white/70 px-4 py-3 hover:bg-[#fff6f2] hover:border-[#e0bfb0] transition-all">
-                    <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                      style={{ background: u.accent + "22" }}>{u.emoji}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold uppercase text-[#b07860]" style={{ fontSize: 10, letterSpacing: "0.12em" }}>Unidade {u.id}</div>
-                      <div className="font-semibold text-[#5f4032] leading-5 truncate" style={{ fontSize: 13 }}>{u.title}</div>
-                      <div className="text-[#9a7060]" style={{ fontSize: 11 }}>{u.sub}</div>
-                    </div>
-                    <div className="shrink-0 font-semibold uppercase text-[#8e2f2f] opacity-50 group-hover:opacity-100 transition-opacity" style={{ fontSize: 10, letterSpacing: "0.12em" }}>Ver →</div>
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Legislação */}
-            <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff08f] px-3 py-1 font-bold uppercase text-[#75591d] mb-3"
-                style={{ fontSize: 10, letterSpacing: "0.18em" }}>
-                ⚖️ Base Legal
-              </div>
-              <h3 className="text-xl font-black text-[#4d2318] mb-1">Legislação relacionada</h3>
-              <p className="text-[#8a6450] leading-6 mb-4" style={{ fontSize: 13 }}>Normas que orientam o uso dos recursos públicos na escola.</p>
-              <div className="rounded-[18px] border border-dashed border-[#ddc8bc] bg-[#fffaf6] px-4 py-4 space-y-2">
-                {LEGISLACAO_BASE.map(lei => (
-                  <div key={lei.titulo} className="flex items-start gap-2.5 rounded-xl bg-white/60 px-3 py-2.5">
-                    <span className="text-base shrink-0 mt-0.5">{lei.emoji}</span>
-                    <div>
-                      <div className="font-semibold text-[#5f4032] leading-5" style={{ fontSize: 12 }}>{lei.titulo}</div>
-                      <div className="text-[#9a7060]" style={{ fontSize: 11 }}>{lei.desc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
+            ) : (
+              /* ── Conteúdo dinâmico baseado na conversa ── */
+              (() => {
+                const { trilha, leis } = getSuggestionsFromConversation(msgs);
+                return (
+                  <motion.div key={msgs.length} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+                    {trilha.length > 0 && (
+                      <div className="mb-6">
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff1e7] px-3 py-1 font-bold uppercase text-[#9a5a4f] mb-3"
+                          style={{ fontSize: 10, letterSpacing: "0.20em" }}>
+                          📘 Leituras sugeridas
+                        </div>
+                        <div className="space-y-2">
+                          {trilha.map(u => (
+                            <a key={u.id} href={`/trilha?unit=${u.id}`}
+                              className="group flex items-center gap-3 rounded-[16px] border border-[#ead8cc] bg-white/70 px-4 py-3 hover:bg-[#fff6f2] hover:border-[#e0bfb0] transition-all">
+                              <div className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-base"
+                                style={{ background: u.accent + "33" }}>{u.emoji}</div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-bold uppercase text-[#b07860]" style={{ fontSize: 10, letterSpacing: "0.12em" }}>Unidade {u.id}</div>
+                                <div className="font-semibold text-[#5f4032] leading-5 truncate" style={{ fontSize: 12 }}>{u.title}</div>
+                                <div className="text-[#9a7060]" style={{ fontSize: 11 }}>{u.sub}</div>
+                              </div>
+                              <div className="shrink-0 font-semibold uppercase text-[#8e2f2f] opacity-40 group-hover:opacity-100 transition-opacity" style={{ fontSize: 10 }}>Ver →</div>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {leis.length > 0 && (
+                      <div>
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff8d6] px-3 py-1 font-bold uppercase text-[#75591d] mb-3"
+                          style={{ fontSize: 10, letterSpacing: "0.18em" }}>
+                          ⚖️ Base Legal
+                        </div>
+                        <div className="rounded-[16px] border border-dashed border-[#ddc8bc] bg-[#fffaf6] px-4 py-3 space-y-2">
+                          {leis.map(lei => (
+                            <div key={lei.titulo} className="flex items-start gap-2.5 rounded-xl bg-white/60 px-3 py-2">
+                              <span className="text-sm shrink-0 mt-0.5">{lei.emoji}</span>
+                              <div>
+                                <div className="font-semibold text-[#5f4032] leading-5" style={{ fontSize: 12 }}>{lei.titulo}</div>
+                                <div className="text-[#9a7060]" style={{ fontSize: 11 }}>{lei.desc}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {trilha.length === 0 && leis.length === 0 && (
+                      <div className="flex flex-col items-center justify-center h-40 text-center px-4">
+                        <div className="text-3xl mb-3 opacity-25">🔍</div>
+                        <p className="text-[#b09080]" style={{ fontSize: 12 }}>Continue pesquisando para ver sugestões relacionadas.</p>
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })()
+            )}
           </div>
         </div>
       </div>
