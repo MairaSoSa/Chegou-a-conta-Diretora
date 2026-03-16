@@ -1330,10 +1330,6 @@ export default function Legislacao() {
               <>
                 {/* Hero */}
                 <div className="mb-10">
-                    <div className="mb-4 inline-flex rotate-[-2deg] items-center gap-2 rounded-full border border-[#d8cdb5] bg-[#fffdf8] px-4 py-2 text-sm shadow-sm">
-                      <HandDrawnIcon className="h-4 w-4"><path d="M4.3 6.1h5.6v13.4H4.3z" strokeDasharray="38" strokeDashoffset="38" style={{ animationDelay: "0.04s" }} /><path d="M14.1 6.1h5.6v13.4h-5.6z" strokeDasharray="38" strokeDashoffset="38" style={{ animationDelay: "0.14s" }} /></HandDrawnIcon>
-                      Normas
-                    </div>
                     <h1 className="max-w-3xl text-3xl font-black tracking-tight text-[#40513b] sm:text-4xl">Normas da gestão escolar</h1>
                     <p className="mt-4 max-w-3xl text-base leading-7 text-[#5f6659]">
                       Com as leis fundamentais da educação em destaque, pesquise por palavras-chave, filtre por tipo e confira o status de vigência de cada norma.

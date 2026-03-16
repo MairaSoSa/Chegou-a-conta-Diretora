@@ -1159,10 +1159,6 @@ export default function Chat() {
 
         {/* Header */}
         <header className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#d8b8ad] bg-[#fff7f3]/90 px-4 py-1.5 shadow-sm mb-3">
-            <span className="text-base">📕</span>
-            <span className="text-[11px] tracking-[0.22em] uppercase text-[#9a5a4f]">Caderneta da Diretora</span>
-          </div>
           <h1 className="text-3xl sm:text-4xl font-black text-[#3d2318]">Caderno da Diretora</h1>
           <p className="mt-2 text-[15px] text-[#8b5a4d]">Pesquise orientações e monte documentos escolares com facilidade</p>
 
