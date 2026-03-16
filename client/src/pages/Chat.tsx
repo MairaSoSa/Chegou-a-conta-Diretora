@@ -100,8 +100,6 @@ const TEMPLATES: { icon: React.ReactNode; title: TemplateName; desc: string }[] 
 ];
 
 const SUGESTOES = [
-  "PDDE: o que pode comprar?",
-  "Como fazer pesquisa de preços do jeito certo?",
   "Como registrar uma ata de reunião?",
   "Quais são as regras de prestação de contas do PDDE?",
   "Quais documentos a escola precisa guardar?",
@@ -333,15 +331,15 @@ function SugestaoCard({ s, idx, onClick }: { s: string; idx: number; onClick: ()
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.07 }}
       onClick={onClick}
-      className={`group rounded-[22px] border border-[#e4d7ce] bg-[#fffaf6] p-4 text-left shadow-sm hover:-translate-y-1 hover:shadow-md transition-all ${idx % 2 === 0 ? "rotate-[-0.5deg]" : "rotate-[0.4deg]"}`}
+      className={`group rounded-[16px] border border-[#e4d7ce] bg-[#fffaf6] p-3 text-left shadow-sm hover:-translate-y-1 hover:shadow-md transition-all ${idx % 2 === 0 ? "rotate-[-0.5deg]" : "rotate-[0.4deg]"}`}
     >
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff1a8] text-lg shadow-sm">
+      <div className="flex items-start gap-2">
+        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fff1a8] text-sm shadow-sm">
           {SUGESTAO_EMOJIS[idx % SUGESTAO_EMOJIS.length]}
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-[#a38778] mb-1">Clique para usar</div>
-          <span className="text-[13px] font-semibold text-[#5f4032] leading-5">{s}</span>
+          <div className="text-[9px] uppercase tracking-[0.16em] text-[#a38778] mb-0.5">Clique para usar</div>
+          <span className="text-[12px] font-semibold text-[#5f4032] leading-[1.35]">{s}</span>
         </div>
       </div>
     </motion.button>
@@ -366,7 +364,10 @@ function PesquisaPanel() {
   }, []);
 
   useEffect(() => {
-    if (convScrollRef.current) convScrollRef.current.scrollTop = convScrollRef.current.scrollHeight;
+    const msgs = conversationData?.messages ?? [];
+    if (convScrollRef.current && (msgs.length > 0 || isSending)) {
+      convScrollRef.current.scrollTop = convScrollRef.current.scrollHeight;
+    }
   }, [conversationData?.messages, isSending]);
 
   const handleSend = (texto?: string) => {
@@ -401,9 +402,10 @@ function PesquisaPanel() {
     /* ════════════════════════════════════════════════════
        CADERNETA ABERTA — capa vermelha + duas páginas
     ════════════════════════════════════════════════════ */
+    <div className="mx-auto w-full" style={{ maxWidth: 860 }}>
     <section
-      className="relative overflow-hidden shadow-[0_32px_90px_rgba(80,18,18,0.50),0_6px_18px_rgba(80,18,18,0.22)]"
-      style={{ borderRadius: 36, background: "linear-gradient(155deg,#c23535 0%,#8e2f2f 48%,#6a1e1e 100%)" }}
+      className="relative overflow-hidden shadow-[0_28px_70px_rgba(80,18,18,0.48),0_6px_16px_rgba(80,18,18,0.20)]"
+      style={{ borderRadius: 28, background: "linear-gradient(155deg,#c23535 0%,#8e2f2f 48%,#6a1e1e 100%)" }}
     >
       {/* Textura de linho na capa */}
       <div className="absolute inset-0 pointer-events-none"
@@ -417,8 +419,8 @@ function PesquisaPanel() {
           PÁGINAS ABERTAS
       ────────────────────────────────────────────────── */}
       <div
-        className="relative grid grid-cols-1 lg:grid-cols-[0.92fr_1.08fr] mx-3"
-        style={{ borderRadius: "20px 20px 0 0", overflow: "hidden" }}
+        className="relative grid grid-cols-1 lg:grid-cols-2 mx-2"
+        style={{ borderRadius: "18px 18px 0 0", overflow: "hidden" }}
       >
         {/* Dobra central (crease) */}
         <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 z-10 hidden lg:block"
@@ -431,7 +433,7 @@ function PesquisaPanel() {
         ══════════════════════════════════ */}
         <div
           className="relative flex flex-col border-b lg:border-b-0 lg:border-r border-[#d8c4ae]"
-          style={{ height: "clamp(460px, calc(100vh - 340px), 680px)", background: "#fdf5e8" }}
+          style={{ height: "clamp(460px, calc(100vh - 320px), 600px)", background: "#fdf5e8" }}
         >
           <div className="relative z-10 flex flex-col" style={{ height: "100%" }}>
 
@@ -454,7 +456,7 @@ function PesquisaPanel() {
             <div className="flex-1 overflow-y-auto px-7 pr-10 lg:pr-14 pb-3" ref={convScrollRef}>
               {!temMensagens ? (
                 /* Estado vazio: cards de sugestão */
-                <div className="pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="pt-4 grid grid-cols-2 gap-2.5">
                   {SUGESTOES.map((s, i) => (
                     <SugestaoCard key={i} s={s} idx={i} onClick={() => handleSend(s)} />
                   ))}
@@ -515,7 +517,7 @@ function PesquisaPanel() {
         ══════════════════════════════════ */}
         <div
           className="relative overflow-y-auto"
-          style={{ height: "clamp(460px, calc(100vh - 340px), 680px)", background: "#fffaf2" }}
+          style={{ height: "clamp(460px, calc(100vh - 320px), 600px)", background: "#fffaf2" }}
         >
           {/* padding maior no lado da lombada (esquerda) para não invadir a dobra */}
           <div className="relative z-10 p-7 pl-10 lg:pl-14 pb-8">
@@ -591,6 +593,7 @@ function PesquisaPanel() {
       {/* Sombra interna na base */}
       <div className="pointer-events-none" style={{ height: 8, background: "linear-gradient(to bottom,rgba(80,18,18,0.18),transparent)" }} />
     </section>
+    </div>
   );
 }
 
