@@ -1587,21 +1587,45 @@ function AiDocsManager({ token }: { token: string }) {
 
 function SettingsManager({ token }: { token: string }) {
   const { toast } = useToast();
-  const [settings, setSettings] = useState<Record<string, string>>({
-    footer_text: "",
-    footer_slogan: "",
-    site_title: "",
-    hero_subtitle: "",
-    home_footer_text: "",
-  });
+  const [settings, setSettings] = useState<Record<string, string>>({});
   const [loaded, setLoaded] = useState(false);
 
-  const FIELDS = [
-    { key: "site_title", label: "Título do Site", type: "input" },
-    { key: "hero_subtitle", label: "Subtítulo da Página Inicial", type: "textarea" },
-    { key: "home_footer_text", label: "Texto no rodapé da Página Inicial", type: "input" },
-    { key: "footer_slogan", label: "Slogan do Rodapé (geral)", type: "input" },
-    { key: "footer_text", label: "Texto extra do Rodapé (geral)", type: "textarea" },
+  type FieldDef = { key: string; label: string; type: "input" | "textarea"; section: string; hint?: string };
+  const FIELDS: FieldDef[] = [
+    // ── GERAL ──
+    { section: "Geral", key: "site_title", label: "Título do Site", type: "input" },
+    { section: "Geral", key: "footer_slogan", label: "Slogan do Rodapé", type: "input" },
+    { section: "Geral", key: "footer_text", label: "Texto extra do Rodapé", type: "textarea" },
+    // ── PÁGINA INICIAL ──
+    { section: "Página Inicial", key: "home_eyebrow", label: "Frase destaque acima do título", type: "input", hint: "Aparece em letras pequenas acima do título principal." },
+    { section: "Página Inicial", key: "home_hero_titulo", label: "Título principal", type: "input" },
+    { section: "Página Inicial", key: "home_hero_desc", label: "Descrição do hero", type: "textarea" },
+    { section: "Página Inicial", key: "home_hero_tags", label: "Tags/chips do hero", type: "input", hint: "Separadas por vírgula. Ex: PDDE,financiamento,ferramentas" },
+    { section: "Página Inicial", key: "home_por_onde_label", label: "Título 'Por onde começar'", type: "input" },
+    { section: "Página Inicial", key: "home_dica_titulo", label: "Título da caixa de Dica", type: "input" },
+    { section: "Página Inicial", key: "home_dica_texto", label: "Texto da caixa de Dica", type: "textarea" },
+    { section: "Página Inicial", key: "home_footer_text", label: "Texto no rodapé da home", type: "input" },
+    // ── LEGISLAÇÃO ──
+    { section: "Legislação", key: "legislacao_normas_titulo", label: "Título da aba Normas", type: "input" },
+    { section: "Legislação", key: "legislacao_normas_desc", label: "Descrição da aba Normas", type: "textarea" },
+    { section: "Legislação", key: "legislacao_chips", label: "Sugestões de busca", type: "input", hint: "Separadas por vírgula. Ex: prestação de contas,PDDE,merenda" },
+    // ── CALENDÁRIO ──
+    { section: "Calendário", key: "calendario_titulo", label: "Título da página", type: "input" },
+    { section: "Calendário", key: "calendario_desc", label: "Descrição da página", type: "textarea" },
+    { section: "Calendário", key: "calendario_como_usar", label: "Texto 'Como usar esta agenda'", type: "textarea" },
+    // ── PROGRAMAS ──
+    { section: "Programas", key: "programas_hero_titulo", label: "Título do hero", type: "textarea" },
+    { section: "Programas", key: "programas_hero_desc", label: "Descrição do hero", type: "textarea" },
+    // ── FERRAMENTAS ──
+    { section: "Ferramentas", key: "ferramentas_titulo", label: "Título da página", type: "input" },
+    { section: "Ferramentas", key: "ferramentas_desc", label: "Descrição da página", type: "textarea" },
+    // ── CADERNO DA DIRETORA ──
+    { section: "Caderno da Diretora", key: "chat_titulo", label: "Título da página", type: "input" },
+    { section: "Caderno da Diretora", key: "chat_subtitulo", label: "Subtítulo da página", type: "input" },
+    { section: "Caderno da Diretora", key: "chat_chips", label: "Sugestões de perguntas", type: "textarea", hint: "Uma pergunta por linha. Aparecem como chips clicáveis para a usuária." },
+    // ── TRILHA ──
+    { section: "Trilha", key: "trilha_titulo", label: "Título da página", type: "input" },
+    { section: "Trilha", key: "trilha_desc", label: "Descrição da página", type: "textarea" },
   ];
 
   const { data: currentSettings, isLoading } = useQuery<Record<string, string>>({
@@ -1624,12 +1648,14 @@ function SettingsManager({ token }: { token: string }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
-      toast({ title: "Configurações salvas" });
+      toast({ title: "Configurações salvas!" });
     },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Carregando...</div>;
+
+  const sections = [...new Set(FIELDS.map(f => f.section))];
 
   return (
     <div className="space-y-4">
@@ -1637,37 +1663,42 @@ function SettingsManager({ token }: { token: string }) {
         <Settings className="w-5 h-5 text-emerald-600" />
         Configurações do Site
       </h2>
+      <p className="text-sm text-muted-foreground">Edite os textos e títulos de cada página. Deixe em branco para usar o texto padrão.</p>
 
-      <Card>
-        <CardContent className="p-4 space-y-4">
-          {FIELDS.map((field) => (
-            <div key={field.key}>
-              <label className="text-sm font-medium mb-2 block">{field.label}</label>
-              {field.type === "textarea" ? (
-                <Textarea
-                  value={settings[field.key] || ""}
-                  onChange={(e) => setSettings(prev => ({ ...prev, [field.key]: e.target.value }))}
-                  rows={3}
-                  data-testid={`input-setting-${field.key}`}
-                />
-              ) : (
-                <Input
-                  value={settings[field.key] || ""}
-                  onChange={(e) => setSettings(prev => ({ ...prev, [field.key]: e.target.value }))}
-                  data-testid={`input-setting-${field.key}`}
-                />
-              )}
-            </div>
-          ))}
+      {sections.map((section) => (
+        <Card key={section}>
+          <CardContent className="p-4 space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wide text-emerald-700 border-b pb-2">{section}</h3>
+            {FIELDS.filter(f => f.section === section).map((field) => (
+              <div key={field.key}>
+                <label className="text-sm font-medium mb-1 block">{field.label}</label>
+                {field.hint && <p className="text-xs text-muted-foreground mb-1">{field.hint}</p>}
+                {field.type === "textarea" ? (
+                  <Textarea
+                    value={settings[field.key] || ""}
+                    onChange={(e) => setSettings(prev => ({ ...prev, [field.key]: e.target.value }))}
+                    rows={3}
+                    data-testid={`input-setting-${field.key}`}
+                  />
+                ) : (
+                  <Input
+                    value={settings[field.key] || ""}
+                    onChange={(e) => setSettings(prev => ({ ...prev, [field.key]: e.target.value }))}
+                    data-testid={`input-setting-${field.key}`}
+                  />
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ))}
 
-          <div className="flex justify-end pt-2">
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} data-testid="button-save-settings">
-              <Save className="w-4 h-4 mr-2" />
-              {saveMutation.isPending ? "Salvando..." : "Salvar Configurações"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex justify-end pt-2">
+        <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} data-testid="button-save-settings">
+          <Save className="w-4 h-4 mr-2" />
+          {saveMutation.isPending ? "Salvando..." : "Salvar todas as configurações"}
+        </Button>
+      </div>
     </div>
   );
 }

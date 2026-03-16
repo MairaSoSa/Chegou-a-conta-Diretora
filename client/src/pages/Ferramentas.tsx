@@ -557,6 +557,7 @@ export default function Ferramentas() {
   const { data: toolsDB = [] } = useQuery<Tool[]>({
     queryKey: ["/api/tools"],
   });
+  const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
 
   // Merge: para cada cartão do design, tenta encontrar correspondente no banco pelo título
   function mergeCartoes(secaoId: string, cartoes: typeof SECOES_DESIGN[0]["cartoes"]): Cartao[] {
@@ -682,10 +683,10 @@ export default function Ferramentas() {
               {/* título */}
               <div>
                 <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl md:text-5xl xl:text-6xl">
-                  Mural de Ferramentas
+                  {settings?.ferramentas_titulo || "Mural de Ferramentas"}
                 </h1>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7 md:text-lg">
-                  {totalModelos} modelos prontos para baixar e usar — organizados em estandartes por etapa do trabalho da diretora.
+                  {settings?.ferramentas_desc || `${totalModelos} modelos prontos para baixar e usar — organizados em estandartes por etapa do trabalho da diretora.`}
                 </p>
               </div>
 

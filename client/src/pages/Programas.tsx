@@ -78,6 +78,7 @@ function GlossarioSection() {
   const [activeLetra, setActiveLetra] = useState<string | null>(null);
 
   const { data: glossaryItems = [], isLoading } = useQuery<GlossaryItem[]>({ queryKey: ["/api/glossary"] });
+  const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
 
   const glossario = useMemo(() =>
     glossaryItems.map(i => ({ termo: i.term, explicacao: i.explanation, letra: i.letter })),
@@ -273,10 +274,10 @@ export default function Programas() {
                 Programas e Políticas
               </div>
               <h2 className="mt-4 max-w-3xl text-3xl font-extrabold leading-tight tracking-tight text-[#1f2a37] md:text-4xl" style={{ fontFamily: "Georgia, serif" }}>
-                Entenda de onde vem o dinheiro da escola e como cuidar de cada <Hl>verba</Hl> com segurança.
+                {settings?.programas_hero_titulo || <>Entenda de onde vem o dinheiro da escola e como cuidar de cada <Hl>verba</Hl> com segurança.</>}
               </h2>
               <p className="mt-4 max-w-2xl text-base leading-7 text-[#66768a]">
-                Tudo em linguagem simples: como o recurso chega, quem decide, o que pode comprar e o que precisa guardar para <Hl>prestar contas</Hl> direitinho.
+                {settings?.programas_hero_desc || <>Tudo em linguagem simples: como o recurso chega, quem decide, o que pode comprar e o que precisa guardar para <Hl>prestar contas</Hl> direitinho.</>}
               </p>
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 {FEAT.map(f => (

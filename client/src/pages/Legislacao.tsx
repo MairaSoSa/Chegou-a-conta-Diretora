@@ -5,6 +5,7 @@ import {
   Info, MapPin, Globe
 } from "lucide-react";
 import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useMecNormasAll, useMecNormasTipos } from "@/hooks/use-mecnormas";
 import { useDOUSearch, useMunicipalGazetteSearch, useStateGazetteSearch } from "@/hooks/use-dou";
 
@@ -1294,6 +1295,7 @@ function AtualizacoesLegislativas() {
 
 export default function Legislacao() {
   const [activeTab, setActiveTab] = useState<CategoryId>("cat-normas");
+  const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#f4efe4", color: "#3f4637" }}>
@@ -1330,17 +1332,20 @@ export default function Legislacao() {
               <>
                 {/* Hero */}
                 <div className="mb-10">
-                    <h1 className="max-w-3xl text-3xl font-black tracking-tight text-[#40513b] sm:text-4xl">Normas da gestão escolar</h1>
+                    <h1 className="max-w-3xl text-3xl font-black tracking-tight text-[#40513b] sm:text-4xl">
+                      {settings?.legislacao_normas_titulo || "Normas da gestão escolar"}
+                    </h1>
                     <p className="mt-4 max-w-3xl text-base leading-7 text-[#5f6659]">
-                      Com as leis fundamentais da educação em destaque, pesquise por palavras-chave, filtre por tipo e confira o status de vigência de cada norma.
+                      {settings?.legislacao_normas_desc || "Com as leis fundamentais da educação em destaque, pesquise por palavras-chave, filtre por tipo e confira o status de vigência de cada norma."}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-3 text-sm text-[#5e6659]">
                       <span className="rounded-full border border-[#d8cdb5] bg-[#f8f4ea] px-4 py-2 font-semibold">Fonte: MEC Normas – Ministério da Educação</span>
                     </div>
                     <div className="mt-5 flex flex-wrap gap-3">
-                      {["prestação de contas", "PDDE", "alimentação escolar", "transporte"].map(tag => (
-                        <span key={tag} className="rounded-full border border-[#d9ceb8] bg-white px-4 py-2 text-sm font-medium text-[#53604f] shadow-sm">{tag}</span>
-                      ))}
+                      {(settings?.legislacao_chips || "prestação de contas,PDDE,alimentação escolar,transporte")
+                        .split(",").map(t => t.trim()).filter(Boolean).map(tag => (
+                          <span key={tag} className="rounded-full border border-[#d9ceb8] bg-white px-4 py-2 text-sm font-medium text-[#53604f] shadow-sm">{tag}</span>
+                        ))}
                     </div>
                 </div>
 

@@ -189,6 +189,7 @@ export default function Trilha() {
   const { data: units = [], isLoading } = useQuery<TrilhaUnit[]>({
     queryKey: ["/api/trilha"],
   });
+  const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
 
   const groups = useMemo(
     () =>
@@ -230,14 +231,10 @@ export default function Trilha() {
                 <span>🗺️</span> mapa das unidades
               </p>
               <h1 className="max-w-3xl text-4xl font-extrabold tracking-tight text-slate-800 md:text-6xl">
-                Trilha da Diretora
+                {settings?.trilha_titulo || "Trilha da Diretora"}
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-[#617285] md:text-xl">
-                Um mural visual para navegar pelas unidades do{" "}
-                <span className="font-semibold text-slate-700">
-                  Chegou a Conta, Diretora
-                </span>
-                .
+                {settings?.trilha_desc || <>Um mural visual para navegar pelas unidades do{" "}<span className="font-semibold text-slate-700">Chegou a Conta, Diretora</span>.</>}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 {["20 unidades", "4 trilhas", "visual de mural", "navegação afetiva"].map(

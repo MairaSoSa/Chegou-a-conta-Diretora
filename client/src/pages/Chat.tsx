@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Navigation } from "@/components/Navigation";
 import { useCreateConversation, useSendMessage, useConversation } from "@/hooks/use-chat";
 import { motion, AnimatePresence } from "framer-motion";
@@ -376,6 +377,11 @@ function PesquisaPanel() {
   const [pageKey, setPageKey] = useState(0);
   const [apiNotes, setApiNotes] = useState<any[]>([]);
   const convScrollRef = useRef<HTMLDivElement>(null);
+  const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
+
+  const sugestoes = settings?.chat_chips
+    ? settings.chat_chips.split("\n").map(s => s.trim()).filter(Boolean)
+    : SUGESTOES;
 
   const { mutate: createConversation } = useCreateConversation();
   const { mutate: sendMessage, isPending: isSending } = useSendMessage();
@@ -480,7 +486,7 @@ function PesquisaPanel() {
               {!temMensagens ? (
                 /* Estado vazio: cards de sugestão */
                 <div className="pt-4 grid grid-cols-2 gap-2.5">
-                  {SUGESTOES.map((s, i) => (
+                  {sugestoes.map((s, i) => (
                     <SugestaoCard key={i} s={s} idx={i} onClick={() => handleSend(s)} />
                   ))}
                 </div>
@@ -1144,6 +1150,7 @@ function templateToType(t: TemplateName): string {
 
 export default function Chat() {
   const [tab, setTab] = useState<"pesquisa" | "editor">("pesquisa");
+  const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg,#f5ede4 0%,#ede0d4 60%,#f5ede4 100%)" }}>
@@ -1159,8 +1166,8 @@ export default function Chat() {
 
         {/* Header */}
         <header className="text-center mb-6">
-          <h1 className="text-3xl sm:text-4xl font-black text-[#3d2318]">Caderno da Diretora</h1>
-          <p className="mt-2 text-[15px] text-[#8b5a4d]">Pesquise orientações e monte documentos escolares com facilidade</p>
+          <h1 className="text-3xl sm:text-4xl font-black text-[#3d2318]">{settings?.chat_titulo || "Caderno da Diretora"}</h1>
+          <p className="mt-2 text-[15px] text-[#8b5a4d]">{settings?.chat_subtitulo || "Pesquise orientações e monte documentos escolares com facilidade"}</p>
 
           {/* Tab switcher */}
           <div className="mt-5 inline-flex rounded-full border border-[#d9bfb5] bg-[#fff8f4] p-1 shadow-sm">

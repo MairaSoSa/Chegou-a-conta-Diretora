@@ -80,6 +80,10 @@ const NOTE_CARDS: NoteCard[] = [
 export default function Home() {
   const { toggle: toggleA11y } = useAccessibility();
   const { data: trilhaUnits = [] } = useQuery<TrilhaUnit[]>({ queryKey: ["/api/trilha"] });
+  const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
+
+  const heroTags = (settings?.home_hero_tags || "PDDE,financiamento,ferramentas,políticas públicas")
+    .split(",").map(t => t.trim()).filter(Boolean);
 
   return (
     <div className="hl-root">
@@ -99,24 +103,25 @@ export default function Home() {
               <div className="hl-hero-note">
                 <span className="hl-eyebrow">
                   <span className="hl-dots" />
-                  quando a escola administra bem, o direito de aprender se fortalece
+                  {settings?.home_eyebrow || "quando a escola administra bem, o direito de aprender se fortalece"}
                 </span>
-                <h2>
-                  Chegou a Conta,{" "}
-                  <span className="hl-accent">Diretora!</span>
-                </h2>
+                {settings?.home_hero_titulo ? (
+                  <h2>{settings.home_hero_titulo}</h2>
+                ) : (
+                  <h2>
+                    Chegou a Conta,{" "}
+                    <span className="hl-accent">Diretora!</span>
+                  </h2>
+                )}
                 <p className="hl-hero-desc">
-                  Um lugar para entender como funcionam os recursos e programas da educação.
+                  {settings?.home_hero_desc || "Um lugar para entender como funcionam os recursos e programas da educação."}
                 </p>
                 <div className="hl-hero-tags">
-                  <span className="hl-tag">PDDE</span>
-                  <span className="hl-tag">financiamento</span>
-                  <span className="hl-tag">ferramentas</span>
-                  <span className="hl-tag">políticas públicas</span>
+                  {heroTags.map(tag => <span key={tag} className="hl-tag">{tag}</span>)}
                 </div>
               </div>
 
-              <p className="hl-mural-label">Por onde começar</p>
+              <p className="hl-mural-label">{settings?.home_por_onde_label || "Por onde começar"}</p>
               <div className="hl-cards-grid">
                 {NOTE_CARDS.map((card, i) => (
                   <Link key={i} href={card.href}>
@@ -140,9 +145,9 @@ export default function Home() {
             <div className="hl-right-col">
               {/* Dica do dia */}
               <div className="hl-tip-box">
-                <strong>Dica</strong>
+                <strong>{settings?.home_dica_titulo || "Dica"}</strong>
                 <p>
-                  Comece pelo Painel da Escola. Se tiver dúvidas, procure o termo no Glossário ou siga a Trilha da Diretora.
+                  {settings?.home_dica_texto || "Comece pelo Painel da Escola. Se tiver dúvidas, procure o termo no Glossário ou siga a Trilha da Diretora."}
                 </p>
               </div>
 

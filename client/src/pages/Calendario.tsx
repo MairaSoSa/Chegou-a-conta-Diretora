@@ -141,6 +141,8 @@ export default function CalendarioPage() {
   const [query, setQuery] = useState("");
   const calendarPanelRef = useRef<HTMLDivElement | null>(null);
 
+  const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
+
   const prazosQuery = useQuery<{ ok: boolean; prazos: PrazoEducacional[]; ano: number }>({
     queryKey: ["/api/prazos-educacionais", ano],
     queryFn: async () => {
@@ -280,11 +282,11 @@ export default function CalendarioPage() {
                   <div className="relative inline-block">
                     <div className="absolute bottom-2 left-1 right-1 h-4 rounded-md bg-[#f5db69]/65" />
                     <h1 className="relative text-3xl font-black tracking-[-0.03em] text-[#3d5130] sm:text-4xl">
-                      Agenda da Diretora
+                      {settings?.calendario_titulo || "Agenda da Diretora"}
                     </h1>
                   </div>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-[#6d6a63] sm:text-[15px]">
-                    Prazos, rotinas da gestão escolar e notícias importantes organizados como uma agenda viva da secretaria.
+                    {settings?.calendario_desc || "Prazos, rotinas da gestão escolar e notícias importantes organizados como uma agenda viva da secretaria."}
                   </p>
                 </div>
 
@@ -300,7 +302,7 @@ export default function CalendarioPage() {
                   Como usar esta agenda
                 </div>
                 <p className="leading-6">
-                  Escolha um mês, filtre por palavra-chave e acompanhe os principais marcos da rotina escolar. As datas podem variar conforme edital — confirme sempre nos portais oficiais.
+                  {settings?.calendario_como_usar || "Escolha um mês, filtre por palavra-chave e acompanhe os principais marcos da rotina escolar. As datas podem variar conforme edital — confirme sempre nos portais oficiais."}
                 </p>
               </div>
             </div>
