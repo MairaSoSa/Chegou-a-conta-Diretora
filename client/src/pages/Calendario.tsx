@@ -60,10 +60,16 @@ function mapUrgencia(u: string): "Urgente" | "Atenção" | "Informativo" {
   return "Informativo";
 }
 
-function extractDay(dataInicio?: string): number {
-  if (!dataInicio) return 1;
-  const d = new Date(dataInicio + "T12:00:00");
-  return isNaN(d.getTime()) ? 1 : d.getDate();
+function extractDay(dataInicio?: string, dataFim?: string): number | null {
+  if (dataInicio) {
+    const d = new Date(dataInicio + "T12:00:00");
+    if (!isNaN(d.getTime())) return d.getDate();
+  }
+  if (dataFim) {
+    const d = new Date(dataFim + "T12:00:00");
+    if (!isNaN(d.getTime())) return d.getDate();
+  }
+  return null;
 }
 
 function Tape({ rotate = "rotate-[-6deg]", className = "" }: { rotate?: string; className?: string }) {
@@ -188,11 +194,16 @@ export default function CalendarioPage() {
 
   const deadlinesByDay = useMemo(() =>
     filteredItems.reduce<Record<number, PrazoEducacional[]>>((acc, p) => {
-      const day = extractDay(p.dataInicio);
+      const day = extractDay(p.dataInicio, p.dataFim);
+      if (day === null) return acc;
       if (!acc[day]) acc[day] = [];
       acc[day].push(p);
       return acc;
     }, {}), [filteredItems]);
+
+  const prazosSemData = useMemo(() =>
+    filteredItems.filter(p => extractDay(p.dataInicio, p.dataFim) === null),
+    [filteredItems]);
 
   const urgentCount = filteredItems.filter(p => p.urgencia === "alta").length;
   const attentionCount = filteredItems.filter(p => p.urgencia === "media").length;
@@ -372,6 +383,26 @@ export default function CalendarioPage() {
 
                             <ScribbleLoop className="mb-3 h-6 w-full opacity-50" />
 
+                            {prazosSemData.length > 0 && (
+                              <div className="mb-3 rounded-[18px] border border-[#ecdece] bg-[#fdf8f0] p-3">
+                                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8a7f72]">
+                                  Sem data específica neste mês
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {prazosSemData.map((p) => {
+                                    const c = categoryStyles[p.categoria] || categoryStyles.GERAL;
+                                    const Icon = c.icon;
+                                    return (
+                                      <span key={p.titulo} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${c.tone}`} title={p.titulo}>
+                                        <Icon className="h-3 w-3" />
+                                        {p.titulo.length > 32 ? p.titulo.slice(0, 32) + "…" : p.titulo}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
                             <div className="rounded-[28px] border-2 border-[#ddd1c1] bg-[#fffefb] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-4"
                               style={{ clipPath: "polygon(1% 2%,98% 1%,100% 18%,98% 99%,2% 98%,0% 12%)" }}>
                               <div className="mb-3 grid grid-cols-7 gap-2">
@@ -499,7 +530,7 @@ export default function CalendarioPage() {
                           const cat = categoryStyles[prazo.categoria] || categoryStyles.GERAL;
                           const Icon = cat.icon;
                           const urgLabel = mapUrgencia(prazo.urgencia);
-                          const day = extractDay(prazo.dataInicio);
+                          const day = extractDay(prazo.dataInicio, prazo.dataFim);
                           return (
                             <motion.article key={`${prazo.mes}-${prazo.titulo}`}
                               initial={{ opacity: 0, y: 10 }}
@@ -515,7 +546,10 @@ export default function CalendarioPage() {
                                 <div className="flex shrink-0 flex-col items-center gap-1">
                                   <div className="flex h-11 w-11 flex-col items-center justify-center rounded-[14px] border border-[#efe5d8] bg-white shadow-sm">
                                     <span className="text-[9px] font-black uppercase tracking-[0.14em] text-[#a89e94]">{monthLabel}</span>
-                                    <span className="text-[15px] font-black leading-none text-[#514c45]">{String(day).padStart(2,"0")}</span>
+                                    {day !== null
+                                      ? <span className="text-[15px] font-black leading-none text-[#514c45]">{String(day).padStart(2,"0")}</span>
+                                      : <span className="text-[10px] font-black leading-none text-[#b0a898]">—</span>
+                                    }
                                   </div>
                                   <div className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-bold ${urgencyStyles[urgLabel]}`}>
                                     {urgLabel}
@@ -627,10 +661,9 @@ export default function CalendarioPage() {
                       <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#d5c9b8] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#f0e9de]">
                         {noticias.map((news, idx) => (
                           <motion.a key={idx} href={news.url} target="_blank" rel="noopener noreferrer"
-                            whileHover={{ x: 3, rotate: idx % 2 === 0 ? -0.25 : 0.25 }}
-                            className="relative block rounded-[22px] border border-[#e8dccd] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                            whileHover={{ x: 3 }}
+                            className="block rounded-[18px] border border-[#e8dccd] bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                           >
-                            <Tape className="left-4 top-[-10px]" rotate={idx % 2 === 0 ? "rotate-[-7deg]" : "rotate-[6deg]"} />
                             <div className="flex items-start gap-3">
                               <div className={`mt-0.5 shrink-0 rounded-xl border p-2 ${fonteBadgeClass(news.fonte)}`}>
                                 {fonteIcon(news.fonte)}
