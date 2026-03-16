@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
 import {
   ExternalLink, Scale, FileText, Search, Landmark,
   Loader2, AlertCircle, Newspaper, BookMarked,
@@ -1473,6 +1474,7 @@ export default function Legislacao() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

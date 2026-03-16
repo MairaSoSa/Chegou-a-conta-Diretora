@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navigation } from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
 import { useCreateConversation, useSendMessage, useConversation } from "@/hooks/use-chat";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
@@ -1216,6 +1217,7 @@ export default function Chat() {
           margin-bottom: 2px;
         }
       `}</style>
+      <Footer />
     </div>
   );
 }

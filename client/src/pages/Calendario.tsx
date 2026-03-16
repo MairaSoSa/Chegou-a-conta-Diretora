@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
@@ -748,6 +749,7 @@ export default function CalendarioPage() {
           </motion.div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
