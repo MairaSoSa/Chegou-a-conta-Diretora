@@ -651,60 +651,48 @@ function NormasContent() {
   );
 }
 
-function GazetteResultsTable({ gazettes, bgColor }: { gazettes: any[]; bgColor: string }) {
+function GazetteResultsTable({ gazettes }: { gazettes: any[]; bgColor?: string }) {
   return (
-    <div style={{ maxHeight: "500px", overflowY: "auto", overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "650px" }}>
-        <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
-          <tr>
-            <th style={thStyle}>Município / UF</th>
-            <th style={thStyle}>Trecho</th>
-            <th style={thStyle}>Data</th>
-            <th style={{ ...thStyle, textAlign: "center" }}>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {gazettes.map((g: any, index: number) => (
-            <tr key={`gz-${index}`} style={{ background: index % 2 === 0 ? "transparent" : bgColor }}>
-              <td style={tdStyle}>
-                <div style={{ fontWeight: 600, fontSize: "13px", color: "#1e293b" }}>{g.territory_name}</div>
-                <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "2px" }}>{g.state_code}</div>
-              </td>
-              <td style={tdStyle}>
-                {g.excerpts && g.excerpts.length > 0 ? (
-                  <div
-                    style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.4, maxWidth: "400px" }}
-                    dangerouslySetInnerHTML={{
-                      __html: g.excerpts[0].length > 180 ? g.excerpts[0].slice(0, 180) + "..." : g.excerpts[0]
-                    }}
-                  />
-                ) : (
-                  <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
-                )}
-              </td>
-              <td style={tdStyle}>
-                <span style={{ fontSize: "12px", color: "#64748b" }}>
-                  {g.date ? new Date(g.date + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
-                </span>
-              </td>
-              <td style={{ ...tdStyle, textAlign: "center" }}>
-                <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
-                  <a href={g.url} target="_blank" rel="noopener noreferrer" style={{ padding: "4px 10px", border: "none", borderRadius: "4px", background: "#166534", color: "white", fontSize: "11px", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                    <ExternalLink style={{ width: "11px", height: "11px" }} />
-                    PDF
-                  </a>
-                  {g.txt_url && (
-                    <a href={g.txt_url} target="_blank" rel="noopener noreferrer" style={{ padding: "4px 10px", border: "1px solid #e2e5ec", borderRadius: "4px", background: "white", color: "#64748b", fontSize: "11px", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                      <FileText style={{ width: "11px", height: "11px" }} />
-                      TXT
-                    </a>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      {gazettes.map((g: any, index: number) => (
+        <div key={`gz-${index}`}
+          className="grid gap-3 rounded-[22px] border border-[#e6ddcf] bg-white p-4 md:grid-cols-[2fr_1fr_auto] md:items-start transition hover:-translate-y-0.5 hover:shadow-md">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-black text-sm text-[#46543f]">{g.territory_name || g.title || "—"}</span>
+              {g.state_code && (
+                <span className="inline-flex rounded-full bg-[#eef3e8] px-2 py-0.5 text-[10px] font-bold text-[#4e7a4d]">{g.state_code}</span>
+              )}
+            </div>
+            {g.excerpts && g.excerpts.length > 0 ? (
+              <div className="mt-1.5 text-xs leading-5 text-[#60685a]"
+                dangerouslySetInnerHTML={{
+                  __html: g.excerpts[0].length > 200 ? g.excerpts[0].slice(0, 200) + "…" : g.excerpts[0]
+                }}
+              />
+            ) : g.abstract ? (
+              <p className="mt-1.5 text-xs leading-5 text-[#60685a]">
+                {g.abstract.length > 200 ? g.abstract.slice(0, 200) + "…" : g.abstract}
+              </p>
+            ) : null}
+          </div>
+          <div className="text-[10px] text-[#94a3b8] md:pt-0.5">
+            {g.date ? new Date(g.date + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a href={g.url || g.href} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#5d7452] px-3 py-2 text-[10px] font-bold text-white shadow-sm transition hover:opacity-90">
+              <ExternalLink className="w-3 h-3" />PDF
+            </a>
+            {g.txt_url && (
+              <a href={g.txt_url} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#d8dcd3] bg-white px-3 py-2 text-[10px] font-semibold text-[#5e6659] transition hover:bg-[#f8faf7]">
+                <FileText className="w-3 h-3" />TXT
+              </a>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -784,479 +772,320 @@ function DiarioOficialContent() {
 
   const doePortal = doeState ? doeLinks.find(d => d.sigla === doeState) : null;
 
+  const currentSearch = activeSubTab === "dou" ? douSubmitted : activeSubTab === "doe" ? doeSubmitted : munSubmitted;
+  const isLoading = activeSubTab === "dou" ? douQuery.isLoading : activeSubTab === "doe" ? doeQuery.isLoading : munQuery.isLoading;
+  const hasError = activeSubTab === "dou" ? !!douQuery.error : activeSubTab === "doe" ? !!doeQuery.error : !!munQuery.error;
+  const hasResults =
+    activeSubTab === "dou" ? douResults.length > 0 :
+    activeSubTab === "doe" ? doeGazettes.length > 0 :
+    munGazettes.length > 0;
+
   return (
-    <>
-      <div style={{
-        background: "#f0f5ed",
-        borderLeft: "4px solid #7d9070",
-        padding: "14px 20px",
-        borderRadius: "0 10px 10px 0",
-        fontSize: "13px",
-        color: "#6d4c41",
-        marginBottom: "16px",
-        lineHeight: 1.6,
-      }}>
-        <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "4px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <Info className="w-4 h-4" />
-          Diários Oficiais
-        </div>
-        <p>Busque publicações oficiais do DOU (federal), dos diários estaduais (DOE) e dos diários municipais. Escolha a aba desejada abaixo.</p>
-        <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid #c5d4b8", fontSize: "12px", color: "#4a5d3e" }}>
-          <strong>Fontes: Imprensa Nacional (in.gov.br) | Querido Diário API (queridodiario.ok.org.br)</strong>
+    <div className="space-y-6">
+      {/* ── 1. Hero ── */}
+      <div className="rounded-[28px] border border-[#d8cab4] bg-[#eef3e8] p-6 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="mt-1 shrink-0 text-[#4f5b45]">
+            <svg viewBox="0 0 24 24" className="h-8 w-8 overflow-visible" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <g className="icon-sketch">
+                <path d="M4.3 4.3h15.4v15.4H4.3z" strokeDasharray="48" strokeDashoffset="48" style={{ animationDelay: "0.03s" }} />
+                <path d="M7.1 8.1h9.9" strokeDasharray="10" strokeDashoffset="10" style={{ animationDelay: "0.13s" }} />
+                <path d="M7.1 12h6.1" strokeDasharray="7" strokeDashoffset="7" style={{ animationDelay: "0.21s" }} />
+                <path d="M7.1 15.9h8.1" strokeDasharray="9" strokeDashoffset="9" style={{ animationDelay: "0.29s" }} />
+              </g>
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-[#43513d]">Diários oficiais</h2>
+            <p className="mt-2 text-sm leading-6 text-[#5f6659]">
+              Busque publicações do DOU, dos diários estaduais e dos diários municipais. A mesma estética do Chegou a Conta, com cara de painel de clipping e acompanhamento.
+            </p>
+            <p className="mt-3 text-sm font-semibold text-[#4f6944]">
+              Fontes: Imprensa Nacional · Querido Diário (queridodiario.ok.org.br)
+            </p>
+          </div>
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "4px", marginBottom: "16px", flexWrap: "wrap" }}>
-        {subTabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveSubTab(tab.id)}
-            style={{
-              padding: "10px 18px",
-              borderRadius: "8px 8px 0 0",
-              cursor: "pointer",
-              fontSize: "13px",
-              fontWeight: 600,
-              border: activeSubTab === tab.id ? `2px solid ${tab.color}` : "1px solid #e2e5ec",
-              borderBottom: activeSubTab === tab.id ? "2px solid white" : "1px solid #e2e5ec",
-              background: activeSubTab === tab.id ? "white" : "#fafbfc",
-              color: activeSubTab === tab.id ? tab.color : "#64748b",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              transition: "all 0.15s",
-              marginBottom: "-1px",
+      {/* ── 2. Sub-tab switcher ── */}
+      <div className="rounded-[24px] border border-[#ddd2bc] bg-[#f6f2e9] p-3 shadow-sm">
+        <div className="flex flex-wrap gap-3">
+          {subTabs.map(tab => (
+            <button key={tab.id} type="button" onClick={() => setActiveSubTab(tab.id)}
+              className={`rounded-[18px] px-5 py-3 text-sm font-black transition ${
+                activeSubTab === tab.id
+                  ? "border-2 border-[#9b7a66] bg-[#fffdf8] text-[#7b5d4a] shadow-sm"
+                  : "border border-[#ddd2bc] bg-white text-[#64715f]"
+              }`}>
+              <span className="flex items-center gap-2">{tab.icon}{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 3. Search panel ── */}
+      <div className="rounded-[30px] border border-[#d7cab4] bg-white p-5 shadow-[0_14px_36px_rgba(90,80,50,0.08)]">
+        <div className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-[#7c8b75]">
+          {activeSubTab === "dou" ? "Buscar no DOU Federal" : activeSubTab === "doe" ? "Buscar nos diários estaduais" : "Buscar nos diários municipais"}
+        </div>
+
+        {activeSubTab === "doe" && (
+          <div className="mb-3">
+            <select value={doeState} onChange={(e) => { setDoeState(e.target.value); setDoeOffset(0); }}
+              className="w-full rounded-2xl border border-[#d8dcd3] bg-[#f8faf7] px-4 py-3 text-sm text-[#5e6659] shadow-inner focus:outline-none sm:w-auto">
+              <option value="">Selecione o estado (UF)...</option>
+              {estados.map(e => <option key={e.sigla} value={e.sigla}>{e.sigla} — {e.nome}</option>)}
+            </select>
+          </div>
+        )}
+
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          if (activeSubTab === "dou") { setDouSubmitted(douSearch.trim()); }
+          else if (activeSubTab === "doe") { if (doeSearch.trim() && doeState) { setDoeSubmitted(doeSearch.trim()); setDoeOffset(0); } }
+          else { setMunSubmitted(munSearch.trim()); setMunOffset(0); }
+        }} className="grid gap-3 lg:grid-cols-[1fr_auto]">
+          <input
+            type="text"
+            value={activeSubTab === "dou" ? douSearch : activeSubTab === "doe" ? doeSearch : munSearch}
+            onChange={(e) => {
+              if (activeSubTab === "dou") setDouSearch(e.target.value);
+              else if (activeSubTab === "doe") setDoeSearch(e.target.value);
+              else setMunSearch(e.target.value);
             }}
-          >
-            {tab.icon}
-            {tab.label}
+            placeholder="Ex.: PDDE, alimentação escolar, prestação de contas..."
+            className="w-full rounded-2xl border border-[#d8dcd3] bg-[#f8faf7] px-4 py-3 text-sm shadow-inner focus:outline-none"
+          />
+          <button type="submit"
+            className="rounded-2xl bg-[#8b9ab0] px-5 py-3 text-sm font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
+            disabled={activeSubTab === "doe" ? (!doeSearch.trim() || !doeState) : activeSubTab === "dou" ? !douSearch.trim() : !munSearch.trim()}>
+            <span className="flex items-center gap-2"><Search className="w-4 h-4" />Buscar</span>
           </button>
-        ))}
+        </form>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-[#93a08f]">Sugestões:</span>
+          {quickSearches.map((term) => (
+            <button key={term} type="button"
+              onClick={() => {
+                if (activeSubTab === "dou") { setDouSearch(term); setDouSubmitted(term); }
+                else if (activeSubTab === "doe") { setDoeSearch(term); if (doeState) { setDoeSubmitted(term); setDoeOffset(0); } }
+                else { setMunSearch(term); setMunSubmitted(term); setMunOffset(0); }
+              }}
+              className="rounded-full bg-[#edf1e5] px-3 py-1.5 text-xs font-semibold text-[#6d745e] transition hover:-translate-y-0.5">
+              {term}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {activeSubTab === "dou" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
-            <form onSubmit={(e) => { e.preventDefault(); setDouSubmitted(douSearch.trim()); }}>
-              <div style={{ padding: "16px 20px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1, minWidth: "200px" }}>
-                  <label style={labelStyle}>Buscar no DOU (Diário Oficial da União)</label>
-                  <input
-                    type="text"
-                    value={douSearch}
-                    onChange={(e) => setDouSearch(e.target.value)}
-                    placeholder="Ex: PDDE, alimentação escolar, prestação de contas..."
-                    style={inputStyle}
-                  />
-                </div>
-                <button type="submit" disabled={!douSearch.trim()} style={{ padding: "8px 18px", border: "none", borderRadius: "6px", fontSize: "13px", fontWeight: 600, cursor: douSearch.trim() ? "pointer" : "not-allowed", display: "inline-flex", alignItems: "center", gap: "6px", background: douSearch.trim() ? "#6d4c41" : "#94a3b8", color: "white", transition: "all 0.15s" }}>
-                  <Search style={{ width: "14px", height: "14px" }} />
-                  Buscar
-                </button>
-              </div>
-            </form>
-            <div style={{ padding: "0 20px 12px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
-              <span style={{ fontSize: "11px", color: "#94a3b8", alignSelf: "center" }}>Sugestões:</span>
-              {quickSearches.map((term) => (
-                <button key={term} onClick={() => { setDouSearch(term); setDouSubmitted(term); }} style={{ padding: "4px 10px", borderRadius: "20px", border: "none", fontSize: "11px", fontWeight: 500, cursor: "pointer", background: "#e8f0e0", color: "#6d4c41", transition: "all 0.15s" }}>
-                  {term}
-                </button>
-              ))}
+      {/* ── 4. Loading / Error ── */}
+      {isLoading && (
+        <div className="flex flex-col items-center gap-3 rounded-[24px] border border-[#e6ddcf] bg-white py-12 text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#6d4c41]" />
+          <p className="text-sm text-[#94a3b8]">
+            {activeSubTab === "dou" ? "Consultando o DOU (Imprensa Nacional)..." :
+             activeSubTab === "doe" ? `Consultando diários de ${doeState} via Querido Diário...` :
+             "Consultando diários municipais via Querido Diário..."}
+          </p>
+        </div>
+      )}
+
+      {hasError && !isLoading && (
+        <div className="rounded-[22px] border-l-4 border-[#f59e0b] bg-[#fffbeb] px-5 py-4 text-sm text-[#92400e]">
+          <AlertCircle className="mr-2 inline h-4 w-4" />
+          {activeSubTab === "dou" ? "DOU temporariamente indisponível. Tente novamente em instantes." :
+           activeSubTab === "doe" ? `Erro ao consultar diários de ${doeState}. Tente novamente.` :
+           "Diários municipais temporariamente indisponíveis. Tente novamente."}
+        </div>
+      )}
+
+      {/* ── 5a. Results (when search was done and there are results) ── */}
+      {!isLoading && !hasError && currentSearch && hasResults && (
+        <div className="rounded-[30px] border border-[#d7cab4] bg-[#f9f6ef] p-5 shadow-[0_14px_36px_rgba(90,80,50,0.08)]">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-black text-[#44513e]">
+                Resultados para "{currentSearch}"
+                {activeSubTab === "doe" && doeState ? ` em ${doeState}` : ""}
+              </h3>
+              <p className="mt-0.5 text-xs text-[#8a9a84]">
+                {activeSubTab === "dou" ? `${douResults.length} publicação(ões)` :
+                 activeSubTab === "doe" ? `${doeTotal.toLocaleString("pt-BR")} resultado(s)` :
+                 `${munTotal.toLocaleString("pt-BR")} resultado(s)`}
+              </p>
             </div>
+            {activeSubTab === "dou" && douSearchUrl && (
+              <a href={douSearchUrl} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#d4c7b3] bg-white px-4 py-2 text-xs font-semibold text-[#6d4c41] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                <ExternalLink className="w-3 h-3" /> Ver mais no DOU
+              </a>
+            )}
+            {activeSubTab === "doe" && doePortal && (
+              <a href={doePortal.url} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#d4c7b3] bg-white px-4 py-2 text-xs font-semibold text-[#6d4c41] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                <Globe className="w-3 h-3" /> Portal oficial
+              </a>
+            )}
           </div>
 
-          {douQuery.isLoading && (
-            <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#6d4c41" }} />
-              <div style={{ fontSize: "13px" }}>Consultando o DOU (Imprensa Nacional)...</div>
-            </div>
-          )}
-
-          {douQuery.error && (
-            <div style={{ background: "#fffbeb", borderLeft: "3px solid #f59e0b", padding: "10px 14px", borderRadius: "0 6px 6px 0", fontSize: "12px", color: "#92400e" }}>
-              <AlertCircle className="w-4 h-4 inline mr-2" />
-              DOU temporariamente indisponível. Tente novamente em instantes.
-            </div>
-          )}
-
-          {!douQuery.isLoading && douSubmitted && !douQuery.error && (
-            <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
-              <div style={{ padding: "12px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "13px", color: "#6d4c41", fontWeight: 600 }}>
-                  Resultados para "{douSubmitted}"
-                </span>
-                <span style={{ fontSize: "11px", color: "#64748b" }}>
-                  {douResults.length > 0 ? `${douResults.length} publicação(ões)` : "Nenhum resultado"}
-                </span>
-              </div>
-              {douResults.length > 0 ? (
-                <>
-                  <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
-                      <thead>
-                        <tr>
-                          <th style={thStyle}>Publicacao</th>
-                          <th style={thStyle}>Data</th>
-                          <th style={thStyle}>Orgao</th>
-                          <th style={{ ...thStyle, textAlign: "center" }}>Acoes</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {douResults.map((item, index) => (
-                          <tr key={`dou-${index}`} style={{ background: index % 2 === 0 ? "transparent" : "#f0f5ed" }}>
-                            <td style={tdStyle}>
-                              <div style={{ maxWidth: "450px" }}>
-                                <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3, color: "#1e293b" }}>{item.title}</div>
-                                {item.abstract && (
-                                  <div style={{ fontSize: "11px", color: "#64748b", marginTop: "4px", lineHeight: 1.4 }}>
-                                    {item.abstract.length > 180 ? item.abstract.slice(0, 180) + "..." : item.abstract}
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                            <td style={tdStyle}><span style={{ fontSize: "12px", color: "#64748b" }}>{item.date || "—"}</span></td>
-                            <td style={tdStyle}><span style={{ fontSize: "12px", color: "#64748b" }}>{item.hierarchy || "Governo Federal"}</span></td>
-                            <td style={{ ...tdStyle, textAlign: "center" }}>
-                              <a href={item.href} target="_blank" rel="noopener noreferrer" style={{ padding: "4px 10px", border: "none", borderRadius: "4px", background: "#6d4c41", color: "white", fontSize: "11px", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                                <ExternalLink style={{ width: "11px", height: "11px" }} /> Abrir
-                              </a>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+          {activeSubTab === "dou" && (
+            <div className="space-y-3">
+              {douResults.map((item: any, index: number) => (
+                <div key={`dou-${index}`}
+                  className="grid gap-3 rounded-[22px] border border-[#e6ddcf] bg-white p-4 md:grid-cols-[2fr_1fr_auto] md:items-start transition hover:-translate-y-0.5 hover:shadow-md">
+                  <div>
+                    <h4 className="font-black text-sm text-[#46543f] leading-snug">{item.title}</h4>
+                    {item.abstract && (
+                      <p className="mt-1.5 text-xs leading-5 text-[#60685a]">
+                        {item.abstract.length > 200 ? item.abstract.slice(0, 200) + "…" : item.abstract}
+                      </p>
+                    )}
                   </div>
-                  {douSearchUrl && (
-                    <div style={{ padding: "10px 20px", borderTop: "1px solid #e2e5ec", textAlign: "center" }}>
-                      <a href={douSearchUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#6d4c41", textDecoration: "none", fontWeight: 600 }}>
-                        Ver mais resultados no site oficial do DOU →
-                      </a>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div style={{ padding: "28px 20px", textAlign: "center" }}>
-                  <Landmark className="w-8 h-8 mx-auto mb-3" style={{ color: "#6d4c41", opacity: 0.5 }} />
-                  <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "6px" }}>
-                    {douQuery.data?.message || `Nenhum resultado encontrado para "${douSubmitted}" no DOU.`}
-                  </p>
-                  <p style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "14px" }}>
-                    O site da Imprensa Nacional pode exigir acesso direto para algumas buscas.
-                  </p>
-                  {douSearchUrl && (
-                    <a href={douSearchUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "8px", background: "#6d4c41", color: "white", textDecoration: "none", fontSize: "14px", fontWeight: 600, boxShadow: "0 2px 8px rgba(93,64,55,0.3)", transition: "all 0.15s" }}>
-                      <Search style={{ width: "16px", height: "16px" }} />
-                      Buscar "{douSubmitted}" no site do DOU
-                      <ExternalLink style={{ width: "13px", height: "13px" }} />
+                  <div className="space-y-1">
+                    {item.date && <div className="text-[10px] text-[#94a3b8]">{item.date}</div>}
+                    {item.hierarchy && <div className="text-[10px] font-semibold text-[#7c8b75]">{item.hierarchy}</div>}
+                  </div>
+                  <div>
+                    <a href={item.href} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#5d7452] px-3 py-2 text-[10px] font-bold text-white shadow-sm transition hover:opacity-90">
+                      <ExternalLink className="w-3 h-3" /> Abrir
                     </a>
-                  )}
-                  <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "12px" }}>
-                    Dica: experimente buscar nas abas DOE Estados e Diários Municipais acima
-                  </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeSubTab === "doe" && (
+            <>
+              <GazetteResultsTable gazettes={doeGazettes} />
+              {doeTotalPages > 1 && (
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <button onClick={() => setDoeOffset(Math.max(0, doeOffset - doePageSize))} disabled={doeOffset <= 0}
+                    className="rounded-full border border-[#d8dcd3] bg-white px-5 py-2 text-xs font-semibold text-[#5e6659] shadow-sm disabled:opacity-40 transition hover:-translate-y-0.5">
+                    Anterior
+                  </button>
+                  <span className="text-xs text-[#94a3b8]">Página {doeCurrentPage + 1} de {doeTotalPages > 100 ? "100+" : doeTotalPages}</span>
+                  <button onClick={() => setDoeOffset(doeOffset + doePageSize)} disabled={doeCurrentPage >= doeTotalPages - 1 || doeCurrentPage >= 99}
+                    className="rounded-full border border-[#d8dcd3] bg-white px-5 py-2 text-xs font-semibold text-[#5e6659] shadow-sm disabled:opacity-40 transition hover:-translate-y-0.5">
+                    Próxima
+                  </button>
                 </div>
               )}
-            </div>
+            </>
           )}
 
-          {!douSubmitted && (
-            <div style={{ textAlign: "center", padding: "32px 48px", color: "#94a3b8" }}>
-              <Newspaper className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.3 }} />
-              <p style={{ fontSize: "14px" }}>Busque publicações no Diário Oficial da União</p>
-              <p style={{ fontSize: "12px", marginTop: "4px", opacity: 0.7 }}>Fonte: Imprensa Nacional (in.gov.br)</p>
-            </div>
+          {activeSubTab === "municipal" && (
+            <>
+              <GazetteResultsTable gazettes={munGazettes} />
+              {munTotalPages > 1 && (
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <button onClick={() => setMunOffset(Math.max(0, munOffset - munPageSize))} disabled={munOffset <= 0}
+                    className="rounded-full border border-[#d8dcd3] bg-white px-5 py-2 text-xs font-semibold text-[#5e6659] shadow-sm disabled:opacity-40 transition hover:-translate-y-0.5">
+                    Anterior
+                  </button>
+                  <span className="text-xs text-[#94a3b8]">Página {munCurrentPage + 1} de {munTotalPages > 100 ? "100+" : munTotalPages}</span>
+                  <button onClick={() => setMunOffset(munOffset + munPageSize)} disabled={munCurrentPage >= munTotalPages - 1 || munCurrentPage >= 99}
+                    className="rounded-full border border-[#d8dcd3] bg-white px-5 py-2 text-xs font-semibold text-[#5e6659] shadow-sm disabled:opacity-40 transition hover:-translate-y-0.5">
+                    Próxima
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
 
-      {activeSubTab === "doe" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
-            <form onSubmit={(e) => { e.preventDefault(); if (doeSearch.trim() && doeState) { setDoeSubmitted(doeSearch.trim()); setDoeOffset(0); } }}>
-              <div style={{ padding: "16px 20px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: "160px" }}>
-                  <label style={labelStyle}>Estado (UF)</label>
-                  <select
-                    value={doeState}
-                    onChange={(e) => { setDoeState(e.target.value); setDoeOffset(0); }}
-                    style={selectStyle}
-                  >
-                    <option value="">Selecione o estado...</option>
-                    {estados.map(e => (
-                      <option key={e.sigla} value={e.sigla}>{e.sigla} — {e.nome}</option>
-                    ))}
-                  </select>
+      {/* ── 5b. No results message (searched but nothing found) ── */}
+      {!isLoading && !hasError && currentSearch && !hasResults && (
+        <div className="rounded-[28px] border border-dashed border-[#ddd2bc] bg-[#f9f6ef] p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-[#ded8ca] bg-white text-[#9eaa99]">
+            <Newspaper className="h-7 w-7 opacity-50" />
+          </div>
+          <h3 className="text-lg font-black text-[#8c9ab0]">Nenhum resultado encontrado</h3>
+          <p className="mt-2 text-sm leading-6 text-[#9da6b2]">
+            {activeSubTab === "dou" && douQuery.data?.message ? douQuery.data.message :
+             activeSubTab === "doe" ? `Nenhum resultado para "${currentSearch}" em ${doeState}.` :
+             `Nenhum resultado para "${currentSearch}" nos diários municipais.`}
+          </p>
+          {activeSubTab === "dou" && douSearchUrl && (
+            <a href={douSearchUrl} target="_blank" rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#6d4c41] px-5 py-3 text-sm font-bold text-white shadow transition hover:opacity-90">
+              <Search className="w-4 h-4" /> Buscar no site do DOU
+            </a>
+          )}
+          {activeSubTab === "doe" && doePortal && (
+            <a href={doePortal.searchUrl ? doePortal.searchUrl(currentSearch) : doePortal.url} target="_blank" rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#6d4c41] px-5 py-3 text-sm font-bold text-white shadow transition hover:opacity-90">
+              <ExternalLink className="w-4 h-4" /> Buscar no portal oficial de {doeState}
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* ── 6. Como usar + empty state (when no search yet) ── */}
+      {!currentSearch && !isLoading && (
+        <div className="grid gap-6 xl:grid-cols-2">
+          <div className="rounded-[28px] border border-[#d7cab4] bg-[#fffaf2] p-6 shadow-sm">
+            <div className="mb-4 inline-flex rotate-[-2deg] rounded-full bg-[#c95c4b] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white">
+              monitoramento
+            </div>
+            <h3 className="text-xl font-black text-[#44513e]">Como usar esta aba</h3>
+            <div className="mt-4 space-y-3">
+              {[
+                "Pesquise por programa, assunto ou palavra-chave.",
+                "Veja resultados recentes do diário escolhido.",
+                "Abra a publicação original ou leia um resumo curto.",
+                "Acompanhe normas novas, alteradas e revogações.",
+              ].map((item) => (
+                <div key={item} className="rounded-[18px] border border-[#e9dfcf] bg-white p-3 text-sm text-[#5e6659]">
+                  ✓ {item}
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1, minWidth: "200px" }}>
-                  <label style={labelStyle}>Buscar nos diários do estado</label>
-                  <input
-                    type="text"
-                    value={doeSearch}
-                    onChange={(e) => setDoeSearch(e.target.value)}
-                    placeholder="Ex: PDDE, alimentação escolar..."
-                    style={inputStyle}
-                  />
-                </div>
-                <button type="submit" disabled={!doeSearch.trim() || !doeState} style={{ padding: "8px 18px", border: "none", borderRadius: "6px", fontSize: "13px", fontWeight: 600, cursor: (doeSearch.trim() && doeState) ? "pointer" : "not-allowed", display: "inline-flex", alignItems: "center", gap: "6px", background: (doeSearch.trim() && doeState) ? "#6d4c41" : "#94a3b8", color: "white", transition: "all 0.15s" }}>
-                  <Search style={{ width: "14px", height: "14px" }} />
-                  Buscar
-                </button>
-              </div>
-            </form>
-            <div style={{ padding: "0 20px 12px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
-              <span style={{ fontSize: "11px", color: "#94a3b8", alignSelf: "center" }}>Sugestões:</span>
-              {quickSearches.map((term) => (
-                <button key={term} onClick={() => { setDoeSearch(term); if (doeState) { setDoeSubmitted(term); setDoeOffset(0); } }} style={{ padding: "4px 10px", borderRadius: "20px", border: "none", fontSize: "11px", fontWeight: 500, cursor: "pointer", background: "#e8f0e0", color: "#6d4c41", transition: "all 0.15s" }}>
-                  {term}
-                </button>
               ))}
             </div>
-          </div>
-
-          {doeQuery.isLoading && (
-            <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#6d4c41" }} />
-              <div style={{ fontSize: "13px" }}>Consultando diários de {doeState} via Querido Diário...</div>
-            </div>
-          )}
-
-          {doeQuery.error && (
-            <div style={{ background: "#fffbeb", borderLeft: "3px solid #f59e0b", padding: "10px 14px", borderRadius: "0 6px 6px 0", fontSize: "12px", color: "#92400e" }}>
-              <AlertCircle className="w-4 h-4 inline mr-2" />
-              Erro ao consultar diários de {doeState}. Tente novamente.
-            </div>
-          )}
-
-          {!doeQuery.isLoading && doeSubmitted && doeState && !doeQuery.error && (
-            <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
-              <div style={{ padding: "12px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-                <span style={{ fontSize: "13px", color: "#6d4c41", fontWeight: 600 }}>
-                  Resultados para "{doeSubmitted}" em {doeState}
-                </span>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ fontSize: "11px", color: "#64748b" }}>
-                    {doeGazettes.length > 0 ? `${doeTotal.toLocaleString("pt-BR")} resultado(s)` : "Nenhum resultado"}
-                  </span>
-                  {doePortal && (
-                    <a href={doePortal.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "#6d4c41", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "3px" }}>
-                      <Globe style={{ width: "10px", height: "10px" }} />
-                      Portal oficial
-                    </a>
-                  )}
-                </div>
-              </div>
-              {doeGazettes.length > 0 ? (
-                <>
-                  <GazetteResultsTable gazettes={doeGazettes} bgColor="#f0f5ed" />
-                  {doeTotalPages > 1 && (
-                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", padding: "14px", borderTop: "1px solid #e2e5ec" }}>
-                      <button onClick={() => setDoeOffset(Math.max(0, doeOffset - doePageSize))} disabled={doeOffset <= 0} style={{ ...paginationBtnStyle, opacity: doeOffset <= 0 ? 0.4 : 1, cursor: doeOffset <= 0 ? "not-allowed" : "pointer" }}>
-                        Anterior
-                      </button>
-                      <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-                        Página {doeCurrentPage + 1} de {doeTotalPages > 100 ? "100+" : doeTotalPages}
-                      </span>
-                      <button onClick={() => setDoeOffset(doeOffset + doePageSize)} disabled={doeCurrentPage >= doeTotalPages - 1 || doeCurrentPage >= 99} style={{ ...paginationBtnStyle, opacity: doeCurrentPage >= doeTotalPages - 1 ? 0.4 : 1, cursor: doeCurrentPage >= doeTotalPages - 1 ? "not-allowed" : "pointer" }}>
-                        Próxima
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div style={{ padding: "24px 20px", textAlign: "center" }}>
-                  <p style={{ fontSize: "13px", color: "#64748b" }}>
-                    {doeQuery.data?.message || `Nenhum resultado para "${doeSubmitted}" em ${doeState}.`}
-                  </p>
-                  {doePortal && (
-                    <a href={doePortal.searchUrl ? doePortal.searchUrl(doeSubmitted) : doePortal.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "6px", background: "#6d4c41", color: "white", textDecoration: "none", fontSize: "12px", fontWeight: 600, marginTop: "8px" }}>
-                      <ExternalLink style={{ width: "12px", height: "12px" }} /> Buscar no portal oficial de {doeState}
-                    </a>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {(!doeSubmitted || !doeState) && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ textAlign: "center", padding: "24px 48px", color: "#94a3b8" }}>
-                <Globe className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.3 }} />
-                <p style={{ fontSize: "14px" }}>Selecione um estado e pesquise nos diários oficiais</p>
-                <p style={{ fontSize: "12px", marginTop: "4px", opacity: 0.7 }}>
-                  Dados de {doeLinks.length} estados via Querido Diário (queridodiario.ok.org.br)
-                </p>
-              </div>
-              <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
-                <div style={{ padding: "12px 20px", borderBottom: "1px solid #e2e5ec" }}>
-                  <h4 style={{ fontSize: "13px", fontWeight: 700, color: "#6d4c41" }}>Portais oficiais dos DOEs</h4>
-                </div>
-                <div style={{ padding: "14px 20px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
+            {activeSubTab === "doe" && (
+              <div className="mt-5 rounded-[22px] border border-[#e6ddcf] bg-[#f9f6ef] p-4">
+                <div className="mb-2 text-xs font-black uppercase tracking-[0.15em] text-[#9b7a2c]">Portais oficiais dos estados</div>
+                <div className="flex flex-wrap gap-2">
                   {doeLinks.map(doe => (
-                    <a key={doe.sigla} href={doe.url} target="_blank" rel="noopener noreferrer" title={doe.estado} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "6px 12px", borderRadius: "6px", border: "1px solid #e2e5ec", background: "#fafbfc", color: "#6d4c41", fontSize: "12px", fontWeight: 600, textDecoration: "none", transition: "all 0.15s" }}>
-                      <Globe style={{ width: "11px", height: "11px" }} />
-                      {doe.sigla}
+                    <a key={doe.sigla} href={doe.url} target="_blank" rel="noopener noreferrer" title={doe.estado}
+                      className="inline-flex items-center gap-1 rounded-full border border-[#d8dcd3] bg-white px-3 py-1 text-xs font-semibold text-[#6d4c41] transition hover:-translate-y-0.5 hover:shadow-sm">
+                      <Globe className="w-2.5 h-2.5" />{doe.sigla}
                     </a>
                   ))}
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeSubTab === "municipal" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
-            <form onSubmit={(e) => { e.preventDefault(); setMunSubmitted(munSearch.trim()); setMunOffset(0); }}>
-              <div style={{ padding: "16px 20px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1, minWidth: "200px" }}>
-                  <label style={labelStyle}>Buscar nos diários municipais (350+ cidades)</label>
-                  <input
-                    type="text"
-                    value={munSearch}
-                    onChange={(e) => setMunSearch(e.target.value)}
-                    placeholder="Ex: PDDE, alimentação escolar, prestação de contas..."
-                    style={inputStyle}
-                  />
-                </div>
-                <button type="submit" disabled={!munSearch.trim()} style={{ padding: "8px 18px", border: "none", borderRadius: "6px", fontSize: "13px", fontWeight: 600, cursor: munSearch.trim() ? "pointer" : "not-allowed", display: "inline-flex", alignItems: "center", gap: "6px", background: munSearch.trim() ? "#166534" : "#94a3b8", color: "white", transition: "all 0.15s" }}>
-                  <Search style={{ width: "14px", height: "14px" }} />
-                  Buscar
-                </button>
-              </div>
-            </form>
-            <div style={{ padding: "0 20px 12px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
-              <span style={{ fontSize: "11px", color: "#94a3b8", alignSelf: "center" }}>Sugestões:</span>
-              {quickSearches.map((term) => (
-                <button key={term} onClick={() => { setMunSearch(term); setMunSubmitted(term); setMunOffset(0); }} style={{ padding: "4px 10px", borderRadius: "20px", border: "none", fontSize: "11px", fontWeight: 500, cursor: "pointer", background: "#dcfce7", color: "#166534", transition: "all 0.15s" }}>
-                  {term}
-                </button>
-              ))}
-            </div>
+            )}
           </div>
 
-          {munQuery.isLoading && (
-            <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#166534" }} />
-              <div style={{ fontSize: "13px" }}>Consultando diários municipais via Querido Diário...</div>
+          <div className="rounded-[28px] border border-dashed border-[#ddd2bc] bg-[#f9f6ef] p-8 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#ded8ca] bg-white text-[#9eaa99]">
+              <svg viewBox="0 0 24 24" className="h-8 w-8 overflow-visible" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <g className="icon-sketch">
+                  <path d="M4.3 4.3h15.4v15.4H4.3z" strokeDasharray="48" strokeDashoffset="48" style={{ animationDelay: "0.04s" }} />
+                  <path d="M7.1 8.1h9.9" strokeDasharray="10" strokeDashoffset="10" style={{ animationDelay: "0.13s" }} />
+                  <path d="M7.1 12h6.1" strokeDasharray="7" strokeDashoffset="7" style={{ animationDelay: "0.21s" }} />
+                  <path d="M7.1 15.9h8.1" strokeDasharray="9" strokeDashoffset="9" style={{ animationDelay: "0.29s" }} />
+                </g>
+              </svg>
             </div>
-          )}
-
-          {munQuery.error && (
-            <div style={{ background: "#fffbeb", borderLeft: "3px solid #f59e0b", padding: "10px 14px", borderRadius: "0 6px 6px 0", fontSize: "12px", color: "#92400e" }}>
-              <AlertCircle className="w-4 h-4 inline mr-2" />
-              Diários municipais temporariamente indisponíveis. Tente novamente.
-            </div>
-          )}
-
-          {!munQuery.isLoading && munSubmitted && !munQuery.error && (
-            <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
-              <div style={{ padding: "12px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "13px", color: "#166534", fontWeight: 600 }}>
-                  Resultados para "{munSubmitted}"
-                </span>
-                <span style={{ fontSize: "11px", color: "#64748b" }}>
-                  {munGazettes.length > 0 ? `${munTotal.toLocaleString("pt-BR")} resultado(s)` : "Nenhum resultado"}
-                </span>
-              </div>
-              {munGazettes.length > 0 ? (
-                <>
-                  <GazetteResultsTable gazettes={munGazettes} bgColor="#f0fdf4" />
-                  {munTotalPages > 1 && (
-                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", padding: "14px", borderTop: "1px solid #e2e5ec" }}>
-                      <button onClick={() => setMunOffset(Math.max(0, munOffset - munPageSize))} disabled={munOffset <= 0} style={{ ...paginationBtnStyle, opacity: munOffset <= 0 ? 0.4 : 1, cursor: munOffset <= 0 ? "not-allowed" : "pointer" }}>
-                        Anterior
-                      </button>
-                      <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-                        Página {munCurrentPage + 1} de {munTotalPages > 100 ? "100+" : munTotalPages}
-                      </span>
-                      <button onClick={() => setMunOffset(munOffset + munPageSize)} disabled={munCurrentPage >= munTotalPages - 1 || munCurrentPage >= 99} style={{ ...paginationBtnStyle, opacity: munCurrentPage >= munTotalPages - 1 ? 0.4 : 1, cursor: munCurrentPage >= munTotalPages - 1 ? "not-allowed" : "pointer" }}>
-                        Próxima
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div style={{ padding: "24px 20px", textAlign: "center" }}>
-                  <p style={{ fontSize: "13px", color: "#64748b" }}>
-                    Nenhum resultado para "{munSubmitted}" nos diários municipais.
-                  </p>
-                  <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "6px" }}>
-                    A busca cobre mais de 350 municípios via Querido Diário
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!munSubmitted && (
-            <div style={{ textAlign: "center", padding: "32px 48px", color: "#94a3b8" }}>
-              <MapPin className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.3 }} />
-              <p style={{ fontSize: "14px" }}>Pesquise nos diários municipais de 350+ cidades</p>
-              <p style={{ fontSize: "12px", marginTop: "4px", opacity: 0.7 }}>Fonte: Querido Diário (queridodiario.ok.org.br)</p>
-            </div>
-          )}
+            <h3 className="text-xl font-black text-[#8c9ab0]">Busque publicações no Diário Oficial</h3>
+            <p className="mt-2 text-sm leading-6 text-[#9da6b2]">
+              Aqui aparecem os resultados do DOU, dos diários estaduais ou dos diários municipais, com link para a publicação original e um pequeno resumo contextual.
+            </p>
+          </div>
         </div>
       )}
-    </>
+
+      {/* ── 7. Nota de rodapé ── */}
+      <div className="rounded-[22px] border-l-4 border-[#e9a42e] bg-[#fbf6e8] px-5 py-4 text-sm leading-6 text-[#99602f] shadow-sm">
+        <strong>Nota:</strong> Esta aba reúne publicações dos diários oficiais que podem impactar a gestão escolar. Funciona como complemento do acervo de normas e pode destacar novidades relevantes para a diretora.
+      </div>
+    </div>
   );
 }
 
-const thStyle: React.CSSProperties = {
-  background: "#f8fafc",
-  padding: "10px 14px",
-  textAlign: "left",
-  fontSize: "11px",
-  fontWeight: 700,
-  color: "#64748b",
-  textTransform: "uppercase",
-  letterSpacing: "0.5px",
-  borderBottom: "2px solid #e2e5ec",
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: "10px 14px",
-  borderBottom: "1px solid #f1f5f9",
-  fontSize: "13px",
-  verticalAlign: "middle",
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: "11px",
-  fontWeight: 600,
-  color: "#64748b",
-  textTransform: "uppercase",
-  letterSpacing: "0.4px",
-};
-
-const inputStyle: React.CSSProperties = {
-  padding: "8px 12px",
-  border: "1px solid #e2e5ec",
-  borderRadius: "6px",
-  fontSize: "13px",
-  background: "#fafbfc",
-  color: "#1e293b",
-  width: "100%",
-  outline: "none",
-};
-
-const selectStyle: React.CSSProperties = {
-  padding: "8px 12px",
-  border: "1px solid #e2e5ec",
-  borderRadius: "6px",
-  fontSize: "13px",
-  background: "#fafbfc",
-  color: "#1e293b",
-};
-
-const paginationBtnStyle: React.CSSProperties = {
-  padding: "6px 14px",
-  border: "1px solid #e2e5ec",
-  borderRadius: "6px",
-  background: "white",
-  fontSize: "12px",
-  fontWeight: 500,
-  color: "#64748b",
-};
 
 const ICON_SKETCH_CSS = `
   .icon-sketch > * {
@@ -1642,16 +1471,7 @@ export default function Legislacao() {
 
             {/* ── ABA DIÁRIO OFICIAL ── */}
             {activeTab === "cat-dou" && (
-              <div className="rounded-[24px] border border-[#d8cab4] bg-white/60 p-6 shadow-sm">
-                <div className="mb-5 flex items-center gap-3">
-                  <div className="h-10 w-2 rounded-full bg-[#5d7452]" />
-                  <div>
-                    <h2 className="text-2xl font-black text-[#43513d]">Diários Oficiais</h2>
-                    <p className="text-sm text-[#6b7066]">Busque publicações do DOU, dos diários estaduais e dos diários municipais</p>
-                  </div>
-                </div>
-                <DiarioOficialContent />
-              </div>
+              <DiarioOficialContent />
             )}
 
           </div>
