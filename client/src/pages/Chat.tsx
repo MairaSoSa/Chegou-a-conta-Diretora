@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import {
   Send, Bot, User, Loader2, BookMarked, Bookmark,
-  ChevronRight, ClipboardCopy, Plus, X, Download,
+  ChevronRight, ChevronLeft, ClipboardCopy, Plus, X, Download,
   FileText, Mail, Search, BarChart3, Bold, Italic,
   Underline, Highlighter, RefreshCw, MessageCircle, PenTool,
 } from "lucide-react";
@@ -1004,72 +1004,120 @@ function EditorPanel() {
       </div>
 
       {/* ── Right: guide panel with linguinhas ── */}
-      <aside className="relative w-72 shrink-0 border-l border-[#e0cfc6] bg-[linear-gradient(180deg,#f8efe8_0%,#f5e8de_100%)] hidden lg:block">
-        <div className="sticky top-0 p-5 overflow-y-auto max-h-screen">
+      <aside className="relative w-64 shrink-0 border-l border-[#e0cfc6] bg-[linear-gradient(180deg,#faf4ee_0%,#f5ebe0_100%)] hidden lg:flex flex-col">
 
-          {/* Linguinhas laterais */}
-          <div className="absolute -left-[88px] top-5 flex flex-col items-end gap-1.5">
-            {currentTips.map(item => {
-              const isFilled = String(currentData[item.field] || "").trim();
-              const isActive = activeGuideField === item.field;
-              return (
-                <button
-                  key={item.field}
-                  onClick={() => setActiveGuideField(item.field)}
-                  className={`relative flex h-9 w-24 items-center rounded-l-[10px] rounded-r-full border border-[#d7c7bb] px-2 text-[9px] font-bold uppercase tracking-[0.12em] shadow-sm transition-all overflow-hidden ${isActive ? "-translate-x-0 bg-[#8e2f2f] text-white" : isFilled ? "translate-x-2 bg-[#e9ddd2] text-[#6f4b3b] hover:translate-x-1" : "translate-x-2 bg-[#fff8f4] text-[#a15f49] hover:translate-x-1"}`}
-                  title={item.title}
-                >
-                  <span className="truncate">{item.title}</span>
-                  <span className={`absolute -right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border border-white shadow ${isFilled ? "bg-[#5da56d]" : "bg-[#d18b6c]"}`} />
-                </button>
-              );
-            })}
-          </div>
+        {/* Linguinhas — ficam presas à borda esquerda do painel */}
+        <div className="absolute -left-[80px] top-6 flex flex-col items-end gap-1">
+          {currentTips.map((item, idx) => {
+            const isFilled = !!String(currentData[item.field] || "").trim();
+            const isActive = activeGuideField === item.field;
+            return (
+              <button
+                key={item.field}
+                onClick={() => setActiveGuideField(item.field)}
+                title={item.title}
+                style={{ transition: "all 0.18s ease" }}
+                className={`relative flex h-8 w-[78px] items-center justify-between rounded-l-[8px] pl-2 pr-3 text-[8.5px] font-bold uppercase tracking-[0.1em] border border-r-0 shadow-sm overflow-hidden
+                  ${isActive
+                    ? "translate-x-0 bg-[#faf4ee] border-[#d7c7bb] border-r-[#faf4ee] text-[#8e2f2f] z-10 shadow-md"
+                    : isFilled
+                    ? "translate-x-2 bg-[#e9ddd2] border-[#d0bfb2] text-[#6f4b3b] hover:translate-x-1"
+                    : "translate-x-2 bg-[#fff6f0] border-[#deccbf] text-[#a87060] hover:translate-x-1"}`}
+              >
+                <span className="truncate leading-tight">{item.title}</span>
+                <span className={`shrink-0 h-2.5 w-2.5 rounded-full border border-white/70 shadow-sm ml-1 ${isFilled ? "bg-[#5da56d]" : "bg-[#d18b6c]"}`} />
+              </button>
+            );
+          })}
+        </div>
 
-          {/* Progress card */}
-          <div className="rounded-2xl border border-[#eadfd7] bg-white p-4 shadow-sm mb-4">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-[#a38778]">Progresso</div>
-            <div className="mt-2 flex items-baseline gap-1.5">
-              <span className="text-2xl font-black text-[#8e2f2f]">{filledCount}</span>
-              <span className="text-sm text-[#a38778]">de {currentTips.length} campos</span>
+        {/* Conteúdo do painel — dica focada no campo ativo */}
+        <div className="flex-1 flex flex-col p-4 pt-5 overflow-hidden">
+
+          {/* Cartão de dica focado */}
+          {(() => {
+            const activeIdx = currentTips.findIndex(t => t.field === activeGuideField);
+            const item = activeIdx >= 0 ? currentTips[activeIdx] : currentTips[0];
+            if (!item) return null;
+            const isFilled = !!String(currentData[item.field] || "").trim();
+            const prevItem = activeIdx > 0 ? currentTips[activeIdx - 1] : null;
+            const nextItem = activeIdx < currentTips.length - 1 ? currentTips[activeIdx + 1] : null;
+            return (
+              <motion.div
+                key={item.field}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="rounded-2xl border border-[#d7c7bb] bg-white shadow-sm flex flex-col gap-3 p-4 mb-4"
+              >
+                {/* Campo atual */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#8e2f2f]/10 text-[10px] font-black text-[#8e2f2f]">
+                      {activeIdx + 1}
+                    </span>
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-[#8e2f2f] font-bold">{item.title}</span>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${isFilled ? "bg-[#e7f4ea] text-[#3d7a4e]" : "bg-[#f6e9df] text-[#a15f49]"}`}>
+                    {isFilled ? "✓ OK" : "pendente"}
+                  </span>
+                </div>
+
+                {/* Texto da dica */}
+                <p className="text-[12px] leading-[1.6] text-[#5f4032] border-t border-[#f0e5df] pt-3">
+                  {item.tip}
+                </p>
+
+                {/* Navegação prev/next */}
+                <div className="flex items-center justify-between pt-1 border-t border-[#f0e5df]">
+                  <button
+                    onClick={() => prevItem && setActiveGuideField(prevItem.field)}
+                    disabled={!prevItem}
+                    className="flex items-center gap-1 text-[10px] text-[#a07060] disabled:opacity-30 hover:text-[#8e2f2f] transition-colors"
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                    {prevItem ? prevItem.title : ""}
+                  </button>
+                  <button
+                    onClick={() => nextItem && setActiveGuideField(nextItem.field)}
+                    disabled={!nextItem}
+                    className="flex items-center gap-1 text-[10px] text-[#a07060] disabled:opacity-30 hover:text-[#8e2f2f] transition-colors"
+                  >
+                    {nextItem ? nextItem.title : ""}
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })()}
+
+          {/* Progresso compacto */}
+          <div className="rounded-xl border border-[#eadfd7] bg-white/70 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] uppercase tracking-[0.16em] text-[#a38778]">Progresso</span>
+              <span className="text-[11px] font-black text-[#8e2f2f]">{filledCount}/{currentTips.length}</span>
             </div>
-            <div className="mt-2 h-1.5 w-full rounded-full bg-[#f0e5df] overflow-hidden">
+            <div className="h-1.5 w-full rounded-full bg-[#f0e5df] overflow-hidden mb-3">
               <div
-                className="h-full rounded-full bg-[#8e2f2f] transition-all"
+                className="h-full rounded-full bg-[#8e2f2f] transition-all duration-500"
                 style={{ width: `${currentTips.length ? (filledCount / currentTips.length) * 100 : 0}%` }}
               />
             </div>
-            <p className="mt-2 text-[11px] text-[#a38778] leading-5">
-              As linguinhas ao lado mostram pendências. Clique nelas para ver a dica do campo.
-            </p>
-          </div>
-
-          {/* Tips list */}
-          <div className="space-y-3">
-            {currentTips.map((item, idx) => {
-              const isFilled = String(currentData[item.field] || "").trim();
-              const isActive = activeGuideField === item.field;
-              return (
-                <div
-                  key={item.field}
-                  onClick={() => setActiveGuideField(item.field)}
-                  className={`cursor-pointer rounded-2xl border p-3.5 transition-all ${isActive ? "border-[#8e2f2f] bg-white shadow-md" : isFilled ? "border-[#d7c7bb] bg-white" : "border-[#eadfd7] bg-[#fff8f4]"}`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#f6ebe4] text-[10px] font-bold text-[#8e2f2f]">{idx + 1}</span>
-                        <span className="text-[10px] uppercase tracking-[0.16em] text-[#a38778] truncate">{item.title}</span>
-                      </div>
-                      <p className="text-[12px] leading-5 text-[#6c4e42]">{item.tip}</p>
-                    </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${isFilled ? "bg-[#e7f4ea] text-[#3d7a4e]" : "bg-[#f6e9df] text-[#a15f49]"}`}>
-                      {isFilled ? "OK" : "—"}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+            {/* Dots de progresso por campo */}
+            <div className="flex flex-wrap gap-1.5">
+              {currentTips.map((t, i) => {
+                const filled = !!String(currentData[t.field] || "").trim();
+                const active = activeGuideField === t.field;
+                return (
+                  <button
+                    key={t.field}
+                    onClick={() => setActiveGuideField(t.field)}
+                    title={t.title}
+                    className={`h-3 w-3 rounded-full border transition-all ${active ? "border-[#8e2f2f] scale-125" : "border-transparent"} ${filled ? "bg-[#5da56d]" : "bg-[#d9c4bc]"}`}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       </aside>
