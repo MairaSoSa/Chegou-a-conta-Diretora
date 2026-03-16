@@ -1510,8 +1510,7 @@ export default function Legislacao() {
             {activeTab === "cat-normas" && (
               <>
                 {/* Hero */}
-                <div className="grid gap-8 lg:grid-cols-2 lg:items-start mb-10">
-                  <div>
+                <div className="mb-10">
                     <div className="mb-4 inline-flex rotate-[-2deg] items-center gap-2 rounded-full border border-[#d8cdb5] bg-[#fffdf8] px-4 py-2 text-sm shadow-sm">
                       <HandDrawnIcon className="h-4 w-4"><path d="M4.3 6.1h5.6v13.4H4.3z" strokeDasharray="38" strokeDashoffset="38" style={{ animationDelay: "0.04s" }} /><path d="M14.1 6.1h5.6v13.4h-5.6z" strokeDasharray="38" strokeDashoffset="38" style={{ animationDelay: "0.14s" }} /></HandDrawnIcon>
                       Normas
@@ -1528,29 +1527,6 @@ export default function Legislacao() {
                         <span key={tag} className="rounded-full border border-[#d9ceb8] bg-white px-4 py-2 text-sm font-medium text-[#53604f] shadow-sm">{tag}</span>
                       ))}
                     </div>
-                  </div>
-
-                  {/* Mini painel de leis em destaque */}
-                  <div className="rotate-[1deg] rounded-[26px] border border-dashed border-[#d8cab1] bg-[#fffaf2] p-5 shadow-sm">
-                    <div className="mb-3 flex items-center gap-2">
-                      <span className="rounded-full bg-[#c95c4b] px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-white">Leis em destaque</span>
-                    </div>
-                    <div className="space-y-3">
-                      {leisFundamentais.slice(0, 4).map(lei => (
-                        <div key={lei.numero} className="relative rounded-[18px] border border-[#e7dccd] bg-[#fffdf8] p-3 shadow-sm">
-                          <div className="absolute -top-2 left-4 h-3 w-14 rotate-[-6deg] rounded-sm bg-[#e7d3a4]" />
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="rounded-full bg-[#dcead7] px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#4e7a4d]">{lei.categoria}</span>
-                            <a href={lei.link} target="_blank" rel="noopener noreferrer" className="text-[10px] font-semibold text-[#6b8d57] hover:underline flex items-center gap-1">
-                              <ExternalLink className="w-2.5 h-2.5" /> Abrir
-                            </a>
-                          </div>
-                          <div className="mt-1.5 text-sm font-bold text-[#46543f]">{lei.titulo}</div>
-                          <div className="mt-0.5 text-xs text-[#5d6558]">{lei.numero}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
 
                 {/* Mapa de categorias */}
