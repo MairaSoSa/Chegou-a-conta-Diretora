@@ -398,234 +398,250 @@ function PesquisaPanel() {
   const temMensagens = msgs.length > 0;
 
   return (
-    /* ── Capa vermelha aberta ── */
+    /* ════════════════════════════════════════════════════
+       CADERNETA ABERTA — capa vermelha + duas páginas
+    ════════════════════════════════════════════════════ */
     <section
-      className="relative rounded-[44px] shadow-[0_40px_100px_rgba(94,36,36,0.38),0_8px_20px_rgba(94,36,36,0.22)] ring-1 ring-[#b65454]/40"
-      style={{
-        background: "linear-gradient(160deg,#c44040 0%,#8e2f2f 40%,#6e1e1e 100%)",
-        padding: "18px 18px 0 18px",
-      }}
+      className="relative overflow-hidden shadow-[0_32px_90px_rgba(80,18,18,0.50),0_6px_18px_rgba(80,18,18,0.22)]"
+      style={{ borderRadius: 36, background: "linear-gradient(155deg,#c23535 0%,#8e2f2f 48%,#6a1e1e 100%)" }}
     >
-      {/* ── Textura de linho na capa ── */}
-      <div className="absolute inset-0 rounded-[44px] pointer-events-none opacity-[0.07]"
-        style={{ backgroundImage: "repeating-linear-gradient(0deg,rgba(0,0,0,0.4) 0px,rgba(0,0,0,0.4) 1px,transparent 1px,transparent 4px),repeating-linear-gradient(90deg,rgba(0,0,0,0.2) 0px,rgba(0,0,0,0.2) 1px,transparent 1px,transparent 4px)" }} />
+      {/* Textura de linho na capa */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ opacity: 0.055, backgroundImage: "repeating-linear-gradient(0deg,#000 0,#000 1px,transparent 1px,transparent 5px),repeating-linear-gradient(90deg,#000 0,#000 1px,transparent 1px,transparent 5px)" }} />
+      {/* Borda interna */}
+      <div className="absolute inset-[9px] pointer-events-none" style={{ borderRadius: 28, border: "1px solid rgba(220,110,110,0.28)" }} />
+      {/* Reflexo no topo */}
+      <div className="absolute inset-x-[12%] top-0 h-[2px] pointer-events-none" style={{ borderRadius: 999, background: "rgba(255,255,255,0.22)" }} />
 
-      {/* ── Brilho de luz na capa (reflexo) ── */}
-      <div className="absolute inset-x-[10%] top-0 h-[3px] rounded-full bg-white/30 pointer-events-none" />
-      <div className="absolute inset-x-8 top-4 h-8 rounded-full bg-white/08 blur-xl pointer-events-none" />
-
-      {/* ── Borda interna decorativa ── */}
-      <div className="absolute inset-[10px] rounded-[36px] border border-[#c96f6f]/35 pointer-events-none" />
-
-      {/* ── Sombra de profundidade no topo ── */}
-      <div className="absolute inset-x-[8%] top-4 h-4 rounded-full bg-black/20 blur-md pointer-events-none" />
-
-      {/* ── Fitas marcadoras (ribbons) no topo ── */}
-      <div className="absolute top-0 left-[42%] w-5 h-7 z-30 pointer-events-none"
-        style={{ background: "linear-gradient(to bottom,#d4a850,#b8922a)", borderRadius: "0 0 4px 4px", boxShadow: "inset 0 -2px 4px rgba(0,0,0,0.2),0 2px 6px rgba(0,0,0,0.25)" }} />
-      <div className="absolute top-0 left-[46%] w-4 h-5 z-30 pointer-events-none"
-        style={{ background: "linear-gradient(to bottom,#6aaa4a,#4a8a30)", borderRadius: "0 0 4px 4px", boxShadow: "inset 0 -2px 4px rgba(0,0,0,0.2),0 2px 6px rgba(0,0,0,0.25)" }} />
-
-      {/* ── Etiqueta branca colada na capa (acima das páginas) ── */}
-      <div className="relative flex justify-center mb-2 pt-1">
-        <div className="inline-flex items-center gap-2 rounded-md px-5 py-1.5 pointer-events-none"
-          style={{ background: "#fdf8f0", border: "1.5px solid #e4d8c8", boxShadow: "0 2px 8px rgba(0,0,0,0.18),inset 0 1px 2px rgba(255,255,255,0.8)" }}>
-          <span className="text-sm">📕</span>
+      {/* ──────────────────────────────────────────────────
+          TOPO DA CAPA — título visível na capa vermelha
+      ────────────────────────────────────────────────── */}
+      <div className="relative flex items-center justify-between px-8 pt-5 pb-4">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl select-none" aria-hidden>📕</span>
           <div>
-            <div className="text-[8px] font-black uppercase tracking-[0.35em] text-[#8e2f2f]">Caderneta</div>
-            <div className="text-[7px] uppercase tracking-[0.22em] text-[#a07060] -mt-0.5">da Diretora</div>
+            <div className="text-white font-black uppercase tracking-[0.28em] leading-none" style={{ fontSize: 13 }}>Caderneta</div>
+            <div className="text-white/50 uppercase tracking-[0.20em] mt-0.5" style={{ fontSize: 10 }}>da Diretora</div>
           </div>
         </div>
+        <span className="text-white/30 font-mono select-none" style={{ fontSize: 11 }}>pág. 01 — 02</span>
       </div>
 
-      {/* ── Páginas abertas ── */}
-      <div className="relative grid grid-cols-1 lg:grid-cols-[0.92fr_1.08fr] gap-0 rounded-t-[28px] overflow-hidden bg-[linear-gradient(180deg,#7f2626_0%,#6f1f1f_100%)] border-x border-t border-[#692020]">
+      {/* ──────────────────────────────────────────────────
+          PÁGINAS ABERTAS
+      ────────────────────────────────────────────────── */}
+      <div
+        className="relative grid grid-cols-1 lg:grid-cols-[0.92fr_1.08fr] mx-3"
+        style={{ borderRadius: "20px 20px 0 0", overflow: "hidden" }}
+      >
+        {/* Dobra central (crease) */}
+        <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 z-10 hidden lg:block"
+          style={{ width: 88, background: "radial-gradient(ellipse at center,rgba(0,0,0,0.38) 0%,rgba(0,0,0,0.14) 45%,transparent 72%)" }} />
+        <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 z-10 hidden lg:block"
+          style={{ width: 2, background: "linear-gradient(180deg,rgba(55,10,10,0.75) 0%,rgba(100,28,28,0.38) 50%,rgba(55,10,10,0.75) 100%)" }} />
 
-        {/* Dobra central — sombra de encadernação */}
-        <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[100px] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.40)_0%,rgba(0,0,0,0.20)_35%,rgba(0,0,0,0.05)_60%,transparent_75%)] opacity-50 z-10 hidden lg:block" />
-        <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] bg-[linear-gradient(180deg,#4a1212_0%,#8e2f2f_50%,#4a1212_100%)] opacity-80 z-10 hidden lg:block" />
+        {/* ══════════════════════════════════
+            PÁGINA ESQUERDA — Folha pautada
+        ══════════════════════════════════ */}
+        <div
+          className="relative flex flex-col border-b lg:border-b-0 lg:border-r border-[#d8c4ae]"
+          style={{
+            minHeight: 660,
+            /* Papel bege com pauta e margem esquerda vermelha */
+            background: "#fdf5e8",
+            backgroundImage: [
+              /* Margem esquerda — linha vermelha fina */
+              "linear-gradient(90deg,transparent 62px,rgba(200,80,80,0.22) 62px,rgba(200,80,80,0.22) 64px,transparent 64px)",
+              /* Pauta horizontal */
+              "linear-gradient(to bottom,transparent calc(100% - 1px),rgba(170,140,120,0.32) 100%)",
+            ].join(","),
+            backgroundSize: "100% 100%,100% 28px",
+          }}
+        >
+          <div className="relative z-10 flex flex-col h-full p-7 pl-[72px]">
 
-        {/* ══════════════ PÁGINA ESQUERDA — Perguntas ══════════════ */}
-        <div className="relative min-h-[680px] p-6 md:p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-[#e0cfc0] flex flex-col"
-          style={{ background: "linear-gradient(160deg,#fdf7ee 0%,#f8efe2 100%)" }}>
-          {/* Textura sutil de papel */}
-          <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
-            style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
-
-          {/* Cabeçalho */}
-          <div className="flex items-start justify-between gap-4 mb-6">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#fff1e7] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9a5a4f] shadow-sm">
-                <span>✍️</span><span>Pergunte à Secretaria Virtual</span>
+            {/* Header da página */}
+            <div className="mb-5">
+              <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-bold uppercase text-[#8e2f2f]"
+                style={{ background: "rgba(142,47,47,0.10)", fontSize: 10, letterSpacing: "0.20em" }}>
+                ✍️ Folha de Pesquisa
               </div>
-              <h3 className="mt-4 text-3xl font-black leading-tight text-[#4d2318]">Folha de pesquisa</h3>
-              <p className="mt-2 text-[#7b5b4d] leading-7 text-sm">
-                Como se fosse uma caderneta aberta: escreva sua pergunta aqui e a resposta aparece na página ao lado.
+              <p className="mt-3 text-[#8a6450] leading-6" style={{ fontSize: 13 }}>
+                Escreva sua dúvida abaixo — a resposta aparece na página ao lado.
               </p>
             </div>
-            <div className="hidden md:flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#8e2f2f] text-white shadow-lg text-2xl">
-              📎
-            </div>
-          </div>
 
-          {/* Notas coladas */}
-          {apiNotes.length > 0 && (
-            <div className="flex gap-3 overflow-x-auto pb-4 mb-2">
-              {apiNotes.slice(0, 3).map((note: any, i) => (
-                <div
-                  key={note.id || i}
-                  className="shrink-0 w-40 relative rounded-md bg-[#fff4a8] px-3 py-3 shadow-[0_8px_18px_rgba(95,64,50,0.12)]"
-                  style={{ transform: `rotate(${(i % 2 === 0 ? -1.5 : 1.2) * (i * 0.3 + 0.5)}deg)` }}
-                >
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 h-4 w-12 bg-[#f7dfcf] rounded-sm" />
-                  <p className="text-[11px] leading-[17px] text-[#5a3828] line-clamp-3">{note.title || note.content}</p>
-                </div>
-              ))}
-            </div>
-          )}
+            {/* Bilhetinhos colados */}
+            {apiNotes.length > 0 && (
+              <div className="flex gap-3 overflow-x-auto pb-3 mb-4 -ml-1 pl-1">
+                {apiNotes.slice(0, 3).map((note: any, i) => (
+                  <div key={note.id || i} className="shrink-0 w-36 relative rounded-[4px] px-3 py-3"
+                    style={{
+                      background: "#fff4a8",
+                      transform: `rotate(${i % 2 === 0 ? -1.8 : 1.5}deg)`,
+                      boxShadow: "2px 4px 14px rgba(95,64,50,0.20),0 1px 2px rgba(0,0,0,0.08)",
+                    }}>
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 h-5 w-10 rounded-sm" style={{ background: "rgba(235,190,145,0.75)" }} />
+                    <p className="text-[10.5px] leading-[16px] text-[#5a3828] line-clamp-4">{note.title || note.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
 
-          {/* Input de pergunta */}
-          <div className="rounded-[28px] border border-[#ead9cd] bg-white/75 p-5 shadow-[0_14px_30px_rgba(95,64,50,0.08)] backdrop-blur-sm mb-6">
-            <label className="text-xs uppercase tracking-[0.2em] text-[#a38778]">Escreva sua pergunta</label>
-            <div className="mt-3 flex gap-3 items-start">
+            {/* Área de conversa / sugestões */}
+            <div className="flex-1 overflow-y-auto mb-4" ref={convScrollRef}>
+              <AnimatePresence mode="wait">
+                <motion.div key={pageKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  {!temMensagens ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {SUGESTOES.map((s, i) => (
+                        <SugestaoCard key={i} s={s} idx={i} onClick={() => handleSend(s)} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-4 pb-2">
+                      {msgs.map(msg =>
+                        msg.role === "user"
+                          ? <MensagemUsuario key={msg.id} conteudo={msg.content} />
+                          : <MensagemAssistente key={msg.id} conteudo={msg.content} onSaveNote={handleSaveNote} />
+                      )}
+                      {isSending && <IndicadorDigitando />}
+                      <button onClick={handleNewChat}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[#d9bfb5] bg-white/80 px-4 py-1.5 text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors"
+                        style={{ fontSize: 11 }}>
+                        <RefreshCw className="w-3 h-3" /> Nova conversa
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Campo de pergunta */}
+            <div className="relative">
               <textarea
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                placeholder="Ex: O que posso comprar com o PDDE? Como fazer uma pesquisa de preços?"
-                className="min-h-[120px] flex-1 resize-none rounded-[22px] border border-[#e4d8cf] bg-[#fffdfa] px-5 py-4 text-[15px] text-[#5f4032] outline-none focus:border-[#c09080] placeholder:text-[#c5a898]"
+                placeholder="Ex: O que posso comprar com o PDDE?"
+                className="w-full resize-none outline-none placeholder:text-[#c5a898] text-[#5f4032]"
+                style={{
+                  minHeight: 80,
+                  borderRadius: 18,
+                  border: "1.5px solid #dcc8b8",
+                  background: "rgba(255,255,255,0.82)",
+                  padding: "14px 52px 14px 18px",
+                  fontSize: 14,
+                  boxShadow: "0 3px 14px rgba(95,64,50,0.10)",
+                  lineHeight: "1.6",
+                }}
                 disabled={isSending}
               />
               <button
                 onClick={() => handleSend()}
                 disabled={!input.trim() || isSending}
-                className="shrink-0 rounded-[22px] bg-[#8e2f2f] hover:bg-[#7d2828] disabled:opacity-40 text-white px-5 py-4 shadow-lg transition-colors flex items-center justify-center"
+                className="absolute bottom-3 right-3 flex items-center justify-center text-white transition-colors"
+                style={{
+                  width: 38, height: 38, borderRadius: 12,
+                  background: input.trim() && !isSending ? "#8e2f2f" : "rgba(142,47,47,0.35)",
+                  boxShadow: "0 2px 8px rgba(80,18,18,0.25)",
+                }}
               >
-                {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </button>
             </div>
-          </div>
 
-          {/* Conversa ou sugestões */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={pageKey}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex-1 overflow-y-auto"
-              ref={convScrollRef}
-            >
-              {!temMensagens ? (
-                <>
-                  <div className="text-xs uppercase tracking-[0.2em] text-[#a38778] mb-3">Sugestões de perguntas</div>
-                  <div className="grid md:grid-cols-2 gap-3">
-                    {SUGESTOES.map((s, i) => (
-                      <SugestaoCard key={i} s={s} idx={i} onClick={() => handleSend(s)} />
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="space-y-4 pb-2">
-                  {msgs.map(msg =>
-                    msg.role === "user"
-                      ? <MensagemUsuario key={msg.id} conteudo={msg.content} />
-                      : <MensagemAssistente key={msg.id} conteudo={msg.content} onSaveNote={handleSaveNote} />
-                  )}
-                  {isSending && <IndicadorDigitando />}
-                  <div className="pt-2">
-                    <button onClick={handleNewChat}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[#d9bfb5] bg-white/80 px-4 py-1.5 text-[12px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors">
-                      <RefreshCw className="w-3 h-3" /> Nova conversa
-                    </button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
+            {/* Número da página */}
+            <div className="mt-3 text-right text-[#c0a898] select-none font-mono" style={{ fontSize: 10 }}>01</div>
+          </div>
         </div>
 
-        {/* ══════════════ PÁGINA DIREITA — Trilha + Legislação ══════════════ */}
-        <div className="relative min-h-[680px] overflow-y-auto p-6 md:p-8 lg:p-10"
-          style={{ background: "linear-gradient(160deg,#fffdf8 0%,#fdf8ef 100%)" }}>
-          {/* Textura sutil de papel */}
-          <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
-            style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
+        {/* ══════════════════════════════════
+            PÁGINA DIREITA — Contexto
+        ══════════════════════════════════ */}
+        <div
+          className="relative overflow-y-auto"
+          style={{
+            minHeight: 660,
+            background: "#fffaf2",
+            backgroundImage: "linear-gradient(to bottom,transparent calc(100% - 1px),rgba(165,140,118,0.25) 100%)",
+            backgroundSize: "100% 28px",
+          }}
+        >
+          <div className="relative z-10 p-7 pb-8">
 
-          {/* ── Unidades da Trilha ── */}
-          <div className="mb-8">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#fff1e7] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9a5a4f] shadow-sm mb-4">
-              📘 Orientação da Trilha
+            {/* Trilha */}
+            <div className="mb-7">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff1e7] px-3 py-1 font-bold uppercase text-[#9a5a4f] mb-3"
+                style={{ fontSize: 10, letterSpacing: "0.20em" }}>
+                📘 Orientação da Trilha
+              </div>
+              <h3 className="text-xl font-black text-[#4d2318] mb-1">Unidades para você visitar</h3>
+              <p className="text-[#8a6450] leading-6 mb-4" style={{ fontSize: 13 }}>
+                Estas unidades aprofundam os temas mais comuns na gestão financeira escolar.
+              </p>
+              <div className="space-y-2">
+                {TRILHA_DESTAQUES.map(u => (
+                  <a key={u.id} href={`/trilha?unit=${u.id}`}
+                    className="group flex items-center gap-3 rounded-[16px] border border-[#ead8cc] bg-white/70 px-4 py-3 hover:bg-[#fff6f2] hover:border-[#e0bfb0] transition-all">
+                    <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg"
+                      style={{ background: u.accent + "22" }}>{u.emoji}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold uppercase text-[#b07860]" style={{ fontSize: 10, letterSpacing: "0.12em" }}>Unidade {u.id}</div>
+                      <div className="font-semibold text-[#5f4032] leading-5 truncate" style={{ fontSize: 13 }}>{u.title}</div>
+                      <div className="text-[#9a7060]" style={{ fontSize: 11 }}>{u.sub}</div>
+                    </div>
+                    <div className="shrink-0 font-semibold uppercase text-[#8e2f2f] opacity-50 group-hover:opacity-100 transition-opacity" style={{ fontSize: 10, letterSpacing: "0.12em" }}>Ver →</div>
+                  </a>
+                ))}
+              </div>
             </div>
-            <h3 className="text-2xl font-black leading-tight text-[#4d2318] mb-1">Unidades para você visitar</h3>
-            <p className="text-sm text-[#7b5b4d] leading-6 mb-5">
-              Estas unidades da Trilha de Aprendizagem aprofundam os temas mais comuns na gestão financeira escolar.
-            </p>
 
-            <div className="space-y-3">
-              {TRILHA_DESTAQUES.map((u, i) => (
-                <a
-                  key={u.id}
-                  href={`/trilha?unit=${u.id}`}
-                  className={`group flex items-center gap-4 rounded-[22px] border border-[#e4d7ce] bg-[#fffaf6] p-4 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all ${i % 2 === 0 ? "rotate-[-0.4deg]" : "rotate-[0.3deg]"}`}
-                >
-                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] ${u.accent} text-xl shadow-sm`}>
-                    {u.emoji}
+            {/* Legislação */}
+            <div>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff08f] px-3 py-1 font-bold uppercase text-[#75591d] mb-3"
+                style={{ fontSize: 10, letterSpacing: "0.18em" }}>
+                ⚖️ Base Legal
+              </div>
+              <h3 className="text-xl font-black text-[#4d2318] mb-1">Legislação relacionada</h3>
+              <p className="text-[#8a6450] leading-6 mb-4" style={{ fontSize: 13 }}>Normas que orientam o uso dos recursos públicos na escola.</p>
+              <div className="rounded-[18px] border border-dashed border-[#ddc8bc] bg-[#fffaf6] px-4 py-4 space-y-2">
+                {LEGISLACAO_BASE.map(lei => (
+                  <div key={lei.titulo} className="flex items-start gap-2.5 rounded-xl bg-white/60 px-3 py-2.5">
+                    <span className="text-base shrink-0 mt-0.5">{lei.emoji}</span>
+                    <div>
+                      <div className="font-semibold text-[#5f4032] leading-5" style={{ fontSize: 12 }}>{lei.titulo}</div>
+                      <div className="text-[#9a7060]" style={{ fontSize: 11 }}>{lei.desc}</div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-[#a38778] mb-0.5">Unidade {u.id}</div>
-                    <div className="text-[13px] font-semibold text-[#5f4032] leading-5">{u.title}</div>
-                    <div className="text-[11px] text-[#9a7060] mt-0.5">{u.sub}</div>
-                  </div>
-                  <div className="shrink-0 rounded-full border border-[#ead8cc] bg-[#fff8f3] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8e2f2f] group-hover:bg-[#fff0eb] transition-colors">
-                    Ver →
-                  </div>
-                </a>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* ── Legislação relacionada ── */}
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#fff08f] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#75591d] shadow-sm mb-4">
-              ⚖️ Base Legal
-            </div>
-            <h3 className="text-xl font-black leading-tight text-[#4d2318] mb-1">Legislação relacionada</h3>
-            <p className="text-sm text-[#7b5b4d] leading-6 mb-4">
-              Normas que orientam o uso dos recursos públicos na escola.
-            </p>
-
-            <div className="rounded-[22px] border border-dashed border-[#e4d8cf] bg-[#fffaf6] px-5 py-5 space-y-3">
-              {LEGISLACAO_BASE.map((lei) => (
-                <div key={lei.titulo} className="flex items-start gap-3 rounded-xl bg-white/70 px-3 py-2.5">
-                  <span className="text-base shrink-0 mt-0.5">{lei.emoji}</span>
-                  <div>
-                    <div className="text-[13px] font-semibold text-[#5f4032] leading-5">{lei.titulo}</div>
-                    <div className="text-[11px] text-[#9a7060] mt-0.5">{lei.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {/* Número da página */}
+            <div className="mt-5 text-right text-[#c0a898] select-none font-mono" style={{ fontSize: 10 }}>02</div>
           </div>
         </div>
       </div>
 
-      {/* ── Pilha de páginas visível na borda inferior ── */}
-      <div className="relative w-full h-6 pointer-events-none overflow-hidden" aria-hidden>
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute left-0 right-0"
+      {/* ──────────────────────────────────────────────────
+          BORDA INFERIOR — pilha de páginas
+      ────────────────────────────────────────────────── */}
+      <div className="relative mx-3 pointer-events-none" style={{ height: 20 }} aria-hidden>
+        {[...Array(7)].map((_, i) => (
+          <div key={i} className="absolute left-0 right-0"
             style={{
-              bottom: `${i * 3}px`,
-              height: "3px",
-              background: i % 2 === 0 ? "#f0e8dc" : "#e4d5c4",
-              opacity: 1 - i * 0.1,
-              borderRadius: i === 0 ? "0 0 6px 6px" : undefined,
-            }}
-          />
+              bottom: i * 3,
+              height: 3,
+              background: i % 2 === 0 ? "#f0e4d2" : "#e4d2bc",
+              opacity: 1 - i * 0.12,
+              borderRadius: i === 0 ? "0 0 8px 8px" : 2,
+            }} />
         ))}
       </div>
+
+      {/* Sombra interna na base */}
+      <div className="pointer-events-none" style={{ height: 8, background: "linear-gradient(to bottom,rgba(80,18,18,0.18),transparent)" }} />
     </section>
   );
 }
