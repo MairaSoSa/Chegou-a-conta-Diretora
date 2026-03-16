@@ -639,4 +639,13 @@
   .hl-mini-menu { justify-content: flex-start; }
   .hl-hero-note h2 { font-size: 2rem; }
   .hl-hero-note, .hl-caderno-box, .hl-tip-box, .hl-note-card { transform: none !important; animation: none !important; }
+  .hl-eyebrow { white-space: normal; font-size: .58rem; }
+  .hl-page { padding-left: 24px; padding-right: 12px; }
+}
+
+@media (max-width: 480px) {
+  .hl-notebook { border-radius: 16px; }
+  .hl-hero-note h2 { font-size: 1.75rem; }
+  .hl-hero-note { padding: 18px 18px 14px; }
+  .hl-page { padding: 18px 12px 14px 22px; }
 }

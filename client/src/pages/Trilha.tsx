@@ -262,7 +262,7 @@ export default function Trilha() {
                   visão geral
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {groups.map((g, idx) => {
                   const tone = toneMap[g.personalidade];
                   return (

@@ -486,7 +486,7 @@ function PesquisaPanel() {
             <div className="flex-1 overflow-y-auto px-7 pr-10 lg:pr-14 pb-3" ref={convScrollRef}>
               {!temMensagens ? (
                 /* Estado vazio: cards de sugestão */
-                <div className="pt-4 grid grid-cols-2 gap-2.5">
+                <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {sugestoes.map((s, i) => (
                     <SugestaoCard key={i} s={s} idx={i} onClick={() => handleSend(s)} />
                   ))}
@@ -845,7 +845,7 @@ function EditorPanel() {
         return (
           <div className="space-y-4">
             <div><label className="field-label">Título</label><InlineField field="titulo" placeholder="Nome da ata..." /></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label className="field-label">Data</label><InlineField field="data" placeholder="dd/mm/aaaa" /></div>
               <div><label className="field-label">Horário</label><InlineField field="horario" placeholder="08h00 às 10h00" /></div>
             </div>
@@ -860,11 +860,11 @@ function EditorPanel() {
       case "Ofício":
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label className="field-label">Número</label><InlineField field="numero" placeholder="Ofício nº ____/2026" /></div>
               <div><label className="field-label">Data</label><InlineField field="data" placeholder="dd/mm/aaaa" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label className="field-label">Destinatário</label><InlineField field="destinatario" placeholder="Nome completo..." /></div>
               <div><label className="field-label">Cargo</label><InlineField field="cargo" placeholder="Cargo do destinatário..." /></div>
             </div>
@@ -880,20 +880,20 @@ function EditorPanel() {
           <div className="space-y-4">
             <div><label className="field-label">Objeto da compra</label><InlineField field="objeto" placeholder="O que será adquirido..." /></div>
             <div><label className="field-label">Descrição do item</label><InlineField field="item" placeholder="Descrição detalhada..." multiline /></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label className="field-label">Fornecedor 1</label><InlineField field="fornecedor1" placeholder="Nome ou CNPJ..." /></div>
               <div><label className="field-label">Valor 1</label><InlineField field="valor1" placeholder="R$ 0,00" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label className="field-label">Fornecedor 2</label><InlineField field="fornecedor2" placeholder="Nome ou CNPJ..." /></div>
               <div><label className="field-label">Valor 2</label><InlineField field="valor2" placeholder="R$ 0,00" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label className="field-label">Fornecedor 3</label><InlineField field="fornecedor3" placeholder="Nome ou CNPJ..." /></div>
               <div><label className="field-label">Valor 3</label><InlineField field="valor3" placeholder="R$ 0,00" /></div>
             </div>
             <div><label className="field-label">Justificativa da escolha</label><InlineField field="justificativa" placeholder="Por que este fornecedor foi escolhido..." multiline /></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label className="field-label">Responsável</label><InlineField field="responsavel" placeholder="Nome de quem pesquisou..." /></div>
               <div><label className="field-label">Data</label><InlineField field="data" placeholder="dd/mm/aaaa" /></div>
             </div>
@@ -903,7 +903,7 @@ function EditorPanel() {
         return (
           <div className="space-y-4">
             <div><label className="field-label">Título</label><InlineField field="titulo" placeholder="Nome do relatório..." /></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label className="field-label">Período</label><InlineField field="periodo" placeholder="Jan–Dez 2025" /></div>
               <div><label className="field-label">Responsável</label><InlineField field="responsavel" placeholder="Nome e função..." /></div>
             </div>
