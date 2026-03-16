@@ -414,20 +414,6 @@ function PesquisaPanel() {
       <div className="absolute inset-x-[12%] top-0 h-[2px] pointer-events-none" style={{ borderRadius: 999, background: "rgba(255,255,255,0.22)" }} />
 
       {/* ──────────────────────────────────────────────────
-          TOPO DA CAPA — título visível na capa vermelha
-      ────────────────────────────────────────────────── */}
-      <div className="relative flex items-center justify-between px-8 pt-5 pb-4">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl select-none" aria-hidden>📕</span>
-          <div>
-            <div className="text-white font-black uppercase tracking-[0.28em] leading-none" style={{ fontSize: 13 }}>Caderneta</div>
-            <div className="text-white/50 uppercase tracking-[0.20em] mt-0.5" style={{ fontSize: 10 }}>da Diretora</div>
-          </div>
-        </div>
-        <span className="text-white/30 font-mono select-none" style={{ fontSize: 11 }}>pág. 01 — 02</span>
-      </div>
-
-      {/* ──────────────────────────────────────────────────
           PÁGINAS ABERTAS
       ────────────────────────────────────────────────── */}
       <div
@@ -441,24 +427,13 @@ function PesquisaPanel() {
           style={{ width: 2, background: "linear-gradient(180deg,rgba(55,10,10,0.75) 0%,rgba(100,28,28,0.38) 50%,rgba(55,10,10,0.75) 100%)" }} />
 
         {/* ══════════════════════════════════
-            PÁGINA ESQUERDA — Folha pautada
+            PÁGINA ESQUERDA
         ══════════════════════════════════ */}
         <div
           className="relative flex flex-col border-b lg:border-b-0 lg:border-r border-[#d8c4ae]"
-          style={{
-            minHeight: 660,
-            /* Papel bege com pauta e margem esquerda vermelha */
-            background: "#fdf5e8",
-            backgroundImage: [
-              /* Margem esquerda — linha vermelha fina */
-              "linear-gradient(90deg,transparent 62px,rgba(200,80,80,0.22) 62px,rgba(200,80,80,0.22) 64px,transparent 64px)",
-              /* Pauta horizontal */
-              "linear-gradient(to bottom,transparent calc(100% - 1px),rgba(170,140,120,0.32) 100%)",
-            ].join(","),
-            backgroundSize: "100% 100%,100% 28px",
-          }}
+          style={{ minHeight: 660, background: "#fdf5e8" }}
         >
-          <div className="relative z-10 flex flex-col h-full p-7 pl-[72px]">
+          <div className="relative z-10 flex flex-col h-full p-7">
 
             {/* Header da página */}
             <div className="mb-5">
@@ -551,8 +526,6 @@ function PesquisaPanel() {
               </button>
             </div>
 
-            {/* Número da página */}
-            <div className="mt-3 text-right text-[#c0a898] select-none font-mono" style={{ fontSize: 10 }}>01</div>
           </div>
         </div>
 
@@ -561,12 +534,7 @@ function PesquisaPanel() {
         ══════════════════════════════════ */}
         <div
           className="relative overflow-y-auto"
-          style={{
-            minHeight: 660,
-            background: "#fffaf2",
-            backgroundImage: "linear-gradient(to bottom,transparent calc(100% - 1px),rgba(165,140,118,0.25) 100%)",
-            backgroundSize: "100% 28px",
-          }}
+          style={{ minHeight: 660, background: "#fffaf2" }}
         >
           <div className="relative z-10 p-7 pb-8">
 
@@ -618,8 +586,6 @@ function PesquisaPanel() {
               </div>
             </div>
 
-            {/* Número da página */}
-            <div className="mt-5 text-right text-[#c0a898] select-none font-mono" style={{ fontSize: 10 }}>02</div>
           </div>
         </div>
       </div>
