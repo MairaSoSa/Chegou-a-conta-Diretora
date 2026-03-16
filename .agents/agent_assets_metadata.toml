@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "aUiCsC1zkIYoKX-3GNpzd"
+uri = "file://docs/arquitetura-dados.md"
+type = "text"
+title = "Arquitetura de Dados — Painel Educacional"
