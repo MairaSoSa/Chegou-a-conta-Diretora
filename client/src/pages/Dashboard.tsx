@@ -99,7 +99,7 @@ export default function Dashboard() {
   const { data: searchResults, refetch: refetchSearch, isLoading: searchLoading } = useSchoolSearch(searchQuery);
   const { data: evolucaoData, isLoading: evolucaoLoading } = useEscolaEvolucao(selectedInep || "");
   const { data: mediasNacionais } = useMediasNacionais(selectedAno);
-  const pddeAno = new Date().getFullYear();
+  const [pddeAno, setPddeAno] = useState<number>(new Date().getFullYear());
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
   const pddeCnpj = pddeData?.uex?.cnpj || null;
   const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
@@ -130,6 +130,10 @@ export default function Dashboard() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  useEffect(() => {
+    setPddeAno(new Date().getFullYear());
+  }, [selectedInep]);
 
   const selectSchool = (inep: string, name?: string) => {
     const tabId = `school-${inep}`;
@@ -1665,7 +1669,27 @@ export default function Dashboard() {
                 <section className="section">
                   <div className="section-title">
                     <div><h2>Dados financeiros PDDE</h2><p>Situação financeira e repasses do Programa Dinheiro Direto na Escola</p></div>
-                    <div className="hint-chip">Fonte: FNDE / PDDE Info</div>
+                    <div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}>
+                      {/* Seletor de ano por setas */}
+                      <div style={{display:'flex',alignItems:'center',gap:'0',background:'#f8f4ec',border:'1.5px solid #e0d5c0',borderRadius:'20px',overflow:'hidden',userSelect:'none'}}>
+                        <button
+                          onClick={() => setPddeAno(a => Math.max(a - 1, 2017))}
+                          disabled={pddeAno <= 2017}
+                          style={{padding:'5px 10px',border:'none',cursor: pddeAno <= 2017 ? 'not-allowed' : 'pointer',background:'transparent',color: pddeAno <= 2017 ? '#ccc' : 'var(--m-blue)',fontWeight:700,fontSize:'16px',lineHeight:1}}
+                          title="Ano anterior"
+                        >‹</button>
+                        <span style={{padding:'4px 10px',fontWeight:700,fontSize:'13px',color:'var(--m-blue)',minWidth:'44px',textAlign:'center',borderLeft:'1px solid #e0d5c0',borderRight:'1px solid #e0d5c0'}}>
+                          {pddeAno}
+                        </span>
+                        <button
+                          onClick={() => setPddeAno(a => Math.min(a + 1, new Date().getFullYear()))}
+                          disabled={pddeAno >= new Date().getFullYear()}
+                          style={{padding:'5px 10px',border:'none',cursor: pddeAno >= new Date().getFullYear() ? 'not-allowed' : 'pointer',background:'transparent',color: pddeAno >= new Date().getFullYear() ? '#ccc' : 'var(--m-blue)',fontWeight:700,fontSize:'16px',lineHeight:1}}
+                          title="Próximo ano"
+                        >›</button>
+                      </div>
+                      <div className="hint-chip">Fonte: FNDE / PDDE Info</div>
+                    </div>
                   </div>
                   <div className="organic-divider" />
                   {/* loading state */}
