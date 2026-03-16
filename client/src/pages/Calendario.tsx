@@ -210,7 +210,7 @@ export default function CalendarioPage() {
   const resumoDoMes = useMemo(() => {
     const mesNome = MONTH_FULL[monthIdx];
     if (filteredItems.length === 0) {
-      return `Não há prazos registrados para ${mesNome}. Bom momento para revisar documentação e se preparar para os próximos compromissos.`;
+      return `${mesNome} está tranquilo por enquanto — sem prazos registrados. Aproveite esse respiro para organizar pastas, revisar documentos e se preparar com calma para o que vem por aí. Você merece!`;
     }
     const categorias = [...new Set(filteredItems.map(p => p.categoria))];
     const urgentes = filteredItems.filter(p => p.urgencia === "alta");
@@ -223,22 +223,22 @@ export default function CalendarioPage() {
     const noticiasRelevantes = noticias.filter(n => {
       const txt = (n.titulo + " " + (n.resumo || "")).toLowerCase();
       return categorias.some(cat => (kw[cat] || [cat.toLowerCase()]).some(w => txt.includes(w)));
-    }).slice(0, 2);
+    }).slice(0, 1);
 
     const partes: string[] = [];
     partes.push(
-      `Em ${mesNome}, a agenda concentra ${filteredItems.length} prazo${filteredItems.length > 1 ? "s" : ""}` +
-      (categorias.length ? `, com foco em ${categorias.slice(0, 3).join(", ")}` : "") + "."
+      `Diretora, ${mesNome} traz ${filteredItems.length} compromisso${filteredItems.length > 1 ? "s" : ""} para ficar de olho` +
+      (categorias.length ? `, envolvendo ${categorias.slice(0, 3).join(", ")}` : "") + "."
     );
     if (urgentes.length > 0) {
       const nomes = urgentes.slice(0, 2).map(p => p.titulo);
-      partes.push(`Ação imediata necessária: ${nomes.join("; ")}.`);
+      partes.push(`Fique atenta: ${nomes.join(" e ")} ${urgentes.length > 1 ? "pedem" : "pede"} ação logo — não deixe passar!`);
     }
     if (attentionCount > 0) {
-      partes.push(`Também há ${attentionCount} item${attentionCount > 1 ? "s" : ""} de atenção que merecem planejamento antecipado.`);
+      partes.push(`Tem mais ${attentionCount} item${attentionCount > 1 ? "s" : ""} que valem um planejamento antecipado para não virar correria.`);
     }
     if (noticiasRelevantes.length > 0) {
-      partes.push(`Nas notícias recentes: ${noticiasRelevantes[0].titulo}.`);
+      partes.push(`Também vale conferir nas notícias: ${noticiasRelevantes[0].titulo}.`);
     }
     return partes.join(" ");
   }, [filteredItems, noticias, monthIdx, urgentCount, attentionCount]);
