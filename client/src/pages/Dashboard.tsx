@@ -1680,9 +1680,14 @@ export default function Dashboard() {
                   {(pddeData?.ok || cadastralData?.ok) && (() => {
                     const uexNome = pddeData?.uex?.executora || cadastralData?.itens?.[0]?.razao_social || null;
                     const cnpj = pddeData?.uex?.cnpj || null;
-                    const rede = pddeData?.rede || null;
+                    const cnpjEex = cadastralData?.itens?.[0]?.cnpj_eex || null;
+                    const rede = pddeData?.rede || cadastralData?.itens?.[0]?.rede_atendimento || null;
                     const municipio = pddeData?.municipio || pddeData?.uex?.municipio || null;
                     const uf = pddeData?.uf || pddeData?.uex?.uf || null;
+                    const localizacao = cadastralData?.itens?.[0]?.localizacao || null;
+                    const ddd = cadastralData?.itens?.[0]?.ddd || null;
+                    const telefone = cadastralData?.itens?.[0]?.telefone || null;
+                    const dataAtualizacao = cadastralData?.itens?.[0]?.data_atualizacao || null;
                     const dirigente = cadastralData?.itens?.[0]?.mandato_dirigente || null;
                     const mandatoFim = cadastralData?.itens?.[0]?.data_fim_mandato || pddeData?.situacao_uex?.mandato_fim || null;
                     const mandatoInicio = pddeData?.situacao_uex?.mandato_inicio || null;
@@ -1699,9 +1704,13 @@ export default function Dashboard() {
                             </p>
                             {uexNome && <p style={{fontWeight:700,fontSize:'14px',lineHeight:'1.4',marginBottom:'6px'}}>{uexNome}</p>}
                             <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
-                              {cnpj && <span className="meta-chip">CNPJ {cnpj}</span>}
+                              {cnpj && <span className="meta-chip">CNPJ UEx: {cnpj}</span>}
+                              {cnpjEex && <span className="meta-chip">CNPJ EEx: {cnpjEex}</span>}
                               {municipio && uf && <span className="meta-chip">📍 {municipio}/{uf}</span>}
                               {rede && <span className="meta-chip">🏢 {rede}</span>}
+                              {localizacao && <span className="meta-chip">📌 {localizacao}</span>}
+                              {(ddd || telefone) && <span className="meta-chip">📞 {ddd ? `(${ddd}) ` : ''}{telefone}</span>}
+                              {dataAtualizacao && <span className="meta-chip text-muted-foreground">Atualizado: {dataAtualizacao}</span>}
                             </div>
                           </div>
                           <div style={{flex:'1 1 220px',borderLeft:'2px solid #f0ece4',paddingLeft:'16px'}}>
@@ -1780,33 +1789,90 @@ export default function Dashboard() {
                     </div>
                   )}
 
+                  {/* ── 2b. MATRÍCULAS POR NÍVEL (PDDE) ── */}
+                  {pddeData?.ok && pddeData.matriculas_por_nivel && Object.keys(pddeData.matriculas_por_nivel).length > 0 && (
+                    <div style={{marginBottom:'16px'}}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                        <GraduationCap className="w-3.5 h-3.5" /> Matrículas por nível — PDDE {pddeData.ano}
+                      </p>
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:'8px'}}>
+                        {Object.entries(pddeData.matriculas_por_nivel).map(([nivel, qtd]: [string, any], i: number) => (
+                          <div key={i} className="soft-card" style={{padding:'12px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                            <span className="text-xs font-medium" style={{textTransform:'capitalize'}}>{nivel.toLowerCase()}</span>
+                            <strong style={{fontSize:'15px',color:'#2d5a88'}}>{Number(qtd).toLocaleString('pt-BR')}</strong>
+                          </div>
+                        ))}
+                        {pddeData.matriculas_total != null && (
+                          <div className="soft-card" style={{padding:'12px',display:'flex',justifyContent:'space-between',alignItems:'center',borderLeft:'3px solid var(--m-blue)'}}>
+                            <span className="text-xs font-semibold">Total</span>
+                            <strong style={{fontSize:'15px',color:'#2d5a88'}}>{Number(pddeData.matriculas_total).toLocaleString('pt-BR')}</strong>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 2c. SITUAÇÃO DA EEx ── */}
+                  {pddeData?.ok && pddeData.situacao_eex && (pddeData.situacao_eex.adesao || pddeData.situacao_eex.prestacao_contas) && (
+                    <div style={{marginBottom:'16px'}}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                        <FileText className="w-3.5 h-3.5" /> Situação da Entidade Executora (EEx)
+                      </p>
+                      <div className="soft-card" style={{padding:'14px',display:'flex',gap:'24px',flexWrap:'wrap'}}>
+                        {pddeData.situacao_eex.adesao && (
+                          <div>
+                            <span className="text-xs text-muted-foreground block mb-1">Adesão</span>
+                            <span className={`badge ${pddeData.situacao_eex.adesao.toLowerCase().includes('adimpl') ? 'badge-good' : 'badge-attn'}`}>{pddeData.situacao_eex.adesao}</span>
+                          </div>
+                        )}
+                        {pddeData.situacao_eex.prestacao_contas && (
+                          <div>
+                            <span className="text-xs text-muted-foreground block mb-1">Prestação de Contas EEx</span>
+                            <span className={`badge ${pddeData.situacao_eex.prestacao_contas.toLowerCase().includes('adimpl') ? 'badge-good' : 'badge-attn'}`}>{pddeData.situacao_eex.prestacao_contas}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* ── 3. PRESTAÇÃO DE CONTAS ── */}
                   {prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 && (
                     <div style={{marginBottom:'16px'}}>
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
                         <FileText className="w-3.5 h-3.5" /> Prestação de Contas
                       </p>
-                      <div className="table-card">
+                      <div className="table-card" style={{overflowX:'auto'}}>
                         <table className="w-full text-sm">
                           <thead>
                             <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
                               <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
                               <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Situação UEx</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. UEx</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. EEx</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp. UEx</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp. EEx</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Vl. Previsto</th>
                             </tr>
                           </thead>
                           <tbody>
                             {prestacaoContaData.itens.map((item: any, i: number) => {
-                              const isOk = item.situacao_pc_uex?.toLowerCase().includes('adimpl');
+                              const isOkUex = item.situacao_pc_uex?.toLowerCase().includes('adimpl');
+                              const isOkEex = item.situacao_pc_eex?.toLowerCase().includes('adimpl');
+                              const hasSuspUex = item.suspensao_uex && item.suspensao_uex !== '—' && item.suspensao_uex.trim() !== '';
+                              const hasSuspEex = item.suspensao_eex && item.suspensao_eex !== '—' && item.suspensao_eex.trim() !== '';
                               return (
                                 <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                  <td className="py-2 px-3 text-xs font-medium">{item.ds_programa || 'PDDE'}</td>
+                                  <td className="py-2 px-3 text-xs font-medium">{item.ds_programa || item.programa || 'PDDE'}</td>
                                   <td className="py-2 px-3 text-xs">{item.ano || pddeAno}</td>
                                   <td className="py-2 px-3">
-                                    <span className={`badge ${isOk ? 'badge-good' : 'badge-attn'}`}>
-                                      {item.situacao_pc_uex || 'Sem info'}
-                                    </span>
+                                    {item.situacao_pc_uex ? <span className={`badge ${isOkUex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_uex}</span> : <span className="text-muted-foreground text-xs">—</span>}
                                   </td>
+                                  <td className="py-2 px-3">
+                                    {item.situacao_pc_eex ? <span className={`badge ${isOkEex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_eex}</span> : <span className="text-muted-foreground text-xs">—</span>}
+                                  </td>
+                                  <td className="py-2 px-3 text-xs">{hasSuspUex ? <span className="badge badge-critical">{item.suspensao_uex}</span> : <span className="text-muted-foreground">—</span>}</td>
+                                  <td className="py-2 px-3 text-xs">{hasSuspEex ? <span className="badge badge-critical">{item.suspensao_eex}</span> : <span className="text-muted-foreground">—</span>}</td>
+                                  <td className="py-2 px-3 text-xs text-right font-mono">{item.valor_previsto || '—'}</td>
                                 </tr>
                               );
                             })}
@@ -1820,16 +1886,19 @@ export default function Dashboard() {
                   {atendimentoData?.ok && atendimentoData.itens.length > 0 && (
                     <div style={{marginBottom:'16px'}}>
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <Wallet className="w-3.5 h-3.5" /> Repasses por Programa
+                        <Wallet className="w-3.5 h-3.5" /> Repasses por Programa — {atendimentoData.itens[0]?.ano || pddeAno}
                       </p>
-                      <div className="table-card">
+                      <div className="table-card" style={{overflowX:'auto'}}>
                         <table className="w-full text-sm">
                           <thead>
                             <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
                               <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Destinação</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Alunos</th>
                               <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Custeio</th>
                               <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Capital</th>
                               <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Pgto.</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1837,13 +1906,104 @@ export default function Dashboard() {
                               const t = (item.vl_repasse_custeio || 0) + (item.vl_repasse_capital || 0);
                               return (
                                 <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                  <td className="py-2 px-3 text-xs font-medium">{item.ds_programa}</td>
+                                  <td className="py-2 px-3 text-xs font-medium">{item.ds_programa || item.programa}</td>
+                                  <td className="py-2 px-3 text-xs">{item.destinacao || '—'}</td>
+                                  <td className="py-2 px-3 text-xs text-right">{item.qtd_alunos ? Number(item.qtd_alunos).toLocaleString('pt-BR') : '—'}</td>
                                   <td className="py-2 px-3 text-xs text-right font-mono">{brl(item.vl_repasse_custeio || 0)}</td>
                                   <td className="py-2 px-3 text-xs text-right font-mono">{brl(item.vl_repasse_capital || 0)}</td>
                                   <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{brl(t)}</td>
+                                  <td className="py-2 px-3 text-xs text-muted-foreground">{item.data_ordem_pgto || '—'}</td>
                                 </tr>
                               );
                             })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 4b. DESTINAÇÕES (VALORES DEVIDOS × PAGOS) ── */}
+                  {pddeData?.ok && pddeData.destinacoes && pddeData.destinacoes.length > 0 && (
+                    <div style={{marginBottom:'16px'}}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                        <DollarSign className="w-3.5 h-3.5" /> Destinações — Valores Devidos e Pagos ({pddeData.ano})
+                      </p>
+                      <div className="table-card" style={{overflowX:'auto'}}>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Destinação</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Dev. Custeio</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Dev. Capital</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Ajuste Total</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Final Devido</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Custeio</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Capital</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total Pago</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Pgto.</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {pddeData.destinacoes.map((d: any, i: number) => {
+                              return (
+                                <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                  <td className="py-2 px-3 text-xs font-medium">{d.destinacao || '—'}</td>
+                                  <td className="py-2 px-3 text-xs text-right font-mono">{d.devido_custeio != null ? brl(d.devido_custeio) : '—'}</td>
+                                  <td className="py-2 px-3 text-xs text-right font-mono">{d.devido_capital != null ? brl(d.devido_capital) : '—'}</td>
+                                  <td className="py-2 px-3 text-xs text-right font-mono">{d.ajuste_total != null ? brl(d.ajuste_total) : '—'}</td>
+                                  <td className="py-2 px-3 text-xs text-right font-mono font-semibold">{d.final_devido_total != null ? brl(d.final_devido_total) : '—'}</td>
+                                  <td className="py-2 px-3 text-xs text-right font-mono">{d.pago_custeio != null ? brl(d.pago_custeio) : '—'}</td>
+                                  <td className="py-2 px-3 text-xs text-right font-mono">{d.pago_capital != null ? brl(d.pago_capital) : '—'}</td>
+                                  <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{d.pago_total != null ? brl(d.pago_total) : '—'}</td>
+                                  <td className="py-2 px-3 text-xs text-muted-foreground">{d.data_ordem_pgto || '—'}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 4c. SALDO UEx POR TIPO (consultasaldoentidade) ── */}
+                  {pddeUexSaldoData?.ok && pddeUexSaldoData.saldos && pddeUexSaldoData.saldos.length > 0 && (
+                    <div style={{marginBottom:'16px'}}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                        <BanknoteIcon className="w-3.5 h-3.5" /> Saldo bancário UEx — {pddeUexSaldoData.mes}
+                      </p>
+                      <div className="table-card" style={{overflowX:'auto'}}>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Banco</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ag./Conta</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Saldo C/C</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Fundos</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Poupança</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">RDB/CDB</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {pddeUexSaldoData.saldos.map((s: any, i: number) => (
+                              <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                <td className="py-2 px-3 text-xs font-medium">{s.programa || '—'}</td>
+                                <td className="py-2 px-3 text-xs">{s.banco || '—'}</td>
+                                <td className="py-2 px-3 text-xs font-mono">{s.agencia || '—'} / {s.conta || '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_conta != null ? brl(s.saldo_conta) : '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_fundos != null ? brl(s.saldo_fundos) : '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_poupanca != null ? brl(s.saldo_poupanca) : '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_rdb_cdb != null ? brl(s.saldo_rdb_cdb) : '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{s.saldo_total != null ? brl(s.saldo_total) : '—'}</td>
+                              </tr>
+                            ))}
+                            {pddeUexSaldoData.saldos.length > 1 && (
+                              <tr style={{background:'#f9f6f0',fontWeight:700}}>
+                                <td colSpan={7} className="py-2 px-3 text-xs text-right font-semibold">Total Geral</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{brl(pddeUexSaldoData.total_saldo_geral)}</td>
+                              </tr>
+                            )}
                           </tbody>
                         </table>
                       </div>
@@ -1883,14 +2043,16 @@ export default function Dashboard() {
                   {pddeExecFinData?.ok && pddeExecFinData.repasses.length > 0 && (
                     <div style={{marginBottom:'16px'}}>
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <Wallet className="w-3.5 h-3.5" /> Execução Financeira ({pddeExecFinData.anosDisponiveis.join(', ')})
+                        <Wallet className="w-3.5 h-3.5" /> Execução Financeira PDDE ({pddeExecFinData.anosDisponiveis.join(', ')})
                       </p>
-                      <div className="table-card">
+                      <div className="table-card" style={{overflowX:'auto'}}>
                         <table className="w-full text-sm">
                           <thead>
                             <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
                               <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
                               <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Destinação</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Custeio</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Capital</th>
                               <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total Pago</th>
                             </tr>
                           </thead>
@@ -1898,7 +2060,9 @@ export default function Dashboard() {
                             {[...pddeExecFinData.repasses].sort((a: any, b: any) => b.an_exercicio - a.an_exercicio).map((r: any, i: number) => (
                               <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
                                 <td className="py-2 px-3 text-xs font-medium">{r.an_exercicio}</td>
-                                <td className="py-2 px-3 text-xs">{r.sg_destinacao}</td>
+                                <td className="py-2 px-3 text-xs">{r.sg_destinacao || r.destinacao || '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono">{r.vl_pago_custeio != null ? brl(r.vl_pago_custeio) : '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono">{r.vl_pago_capital != null ? brl(r.vl_pago_capital) : '—'}</td>
                                 <td className={`py-2 px-3 text-xs text-right font-mono ${r.vl_pago_total > 0 ? 'font-bold text-emerald-700' : ''}`}>{brl(r.vl_pago_total)}</td>
                               </tr>
                             ))}
