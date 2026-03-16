@@ -367,6 +367,19 @@ function extrairResumoSimples(ementa: string, titulo: string): string {
   return "";
 }
 
+const TIPO_COLORS: Record<string, { bg: string; text: string }> = {
+  "Portaria":            { bg: "#f4e6a6", text: "#7a5e10" },
+  "Resolução":           { bg: "#dcead7", text: "#3d6e4a" },
+  "Lei":                 { bg: "#dce7f6", text: "#3b5a82" },
+  "Decreto":             { bg: "#f1dfd8", text: "#7a3d2e" },
+  "Instrução Normativa": { bg: "#e8ddf3", text: "#5a3d82" },
+  "Nota Técnica":        { bg: "#fff3cd", text: "#8a6a14" },
+};
+
+function tipoStyle(nome: string) {
+  return TIPO_COLORS[nome] || { bg: "#f3eedf", text: "#6b6a58" };
+}
+
 function NormasContent() {
   const [page, setPage] = useState(0);
   const [selectedTipo, setSelectedTipo] = useState("");
@@ -401,68 +414,212 @@ function NormasContent() {
   const showFundamentais = page === 0 && !submittedSearch && !selectedTipo;
 
   return (
-    <>
-      <div style={{
-        background: "#f0f5ed",
-        borderLeft: "4px solid #7d9070",
-        padding: "16px 20px",
-        borderRadius: "0 10px 10px 0",
-        fontSize: "13px",
-        color: "#4a5d3e",
-        marginBottom: "16px",
-        lineHeight: 1.7,
-      }}>
-        <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <Info className="w-4 h-4" />
-          Normas
-        </div>
-        <p>Acervo completo de atos normativos do Ministério da Educação, com as {leisFundamentais.length} leis fundamentais da educação em destaque. Pesquise por palavras-chave, filtre por tipo e confira o status de vigência de cada norma.</p>
-        <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #c5d4b8", fontSize: "12px", color: "#4a5d3e" }}>
-          <strong>Total no acervo: {tiposData?.totalGeral?.toLocaleString("pt-BR") || "carregando..."} normas | Fonte: MEC Normas - Ministério da Educação</strong>
-        </div>
-      </div>
+    <div className="space-y-6">
 
-      {!tiposLoading && tiposData && tiposData.tipos && (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-          gap: "12px",
-          marginBottom: "16px",
-        }}>
-          <div style={{
-            background: "white",
-            borderRadius: "10px",
-            padding: "16px 20px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
-            border: "1px solid #e2e5ec",
-            borderLeft: "3px solid #5a6e4e",
-          }}>
-            <div style={{ fontSize: "26px", fontWeight: 800, color: "#5a6e4e", lineHeight: 1.1 }}>
-              {tiposData.totalGeral.toLocaleString("pt-BR")}
-            </div>
-            <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginTop: "4px" }}>
-              Total de Normas
-            </div>
-          </div>
-          {tiposData.tipos.slice(0, 5).map((tipo, i) => {
-            const colors = ["#2e7d32", "#ef6c00", "#c62828", "#6d4c41", "#1565c0"];
+      {/* Filtros de tipo — chips clicáveis */}
+      {!tiposLoading && tiposData?.tipos && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => { setSelectedTipo(""); setPage(0); }}
+            className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.12em] transition ${!selectedTipo ? "bg-[#5d7452] text-white shadow-md" : "border border-[#d9ceb8] bg-white text-[#60705d] hover:bg-[#f0ebe0]"}`}
+          >
+            Todos · {tiposData.totalGeral.toLocaleString("pt-BR")}
+          </button>
+          {tiposData.tipos.slice(0, 7).map(tipo => {
+            const s = tipoStyle(tipo.nome);
+            const isActive = selectedTipo === String(tipo.id);
             return (
-              <div key={tipo.id} style={{
-                background: selectedTipo === String(tipo.id) ? "#f0f5ed" : "white",
-                borderRadius: "10px",
-                padding: "16px 20px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
-                border: selectedTipo === String(tipo.id) ? "1px solid #bcaaa4" : "1px solid #e2e5ec",
-                borderLeft: `3px solid ${colors[i % colors.length]}`,
-                cursor: "pointer",
-              }}
-              onClick={() => { setSelectedTipo(selectedTipo === String(tipo.id) ? "" : String(tipo.id)); setPage(0); }}
+              <button
+                key={tipo.id}
+                onClick={() => { setSelectedTipo(isActive ? "" : String(tipo.id)); setPage(0); }}
+                className="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.12em] transition border hover:shadow-sm"
+                style={{
+                  background: isActive ? s.bg : "white",
+                  color: isActive ? s.text : "#60705d",
+                  borderColor: isActive ? s.bg : "#d9ceb8",
+                  boxShadow: isActive ? "0 2px 8px rgba(0,0,0,0.08)" : "none",
+                }}
               >
-                <div style={{ fontSize: "26px", fontWeight: 800, color: "#5a6e4e", lineHeight: 1.1 }}>
-                  {tipo.total.toLocaleString("pt-BR")}
+                {tipo.nome} · {tipo.total.toLocaleString("pt-BR")}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Barra de busca */}
+      <form onSubmit={handleSearch} className="grid gap-3 md:grid-cols-[1fr_auto]">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Pesquisar lei, portaria, resolução, PDDE, alimentação..."
+          className="w-full rounded-2xl border border-[#e3d8c8] bg-white px-4 py-3 text-sm shadow-inner focus:outline-none focus:ring-2 focus:ring-[#8fa37f]/40"
+        />
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={!searchTerm.trim()}
+            className="rounded-2xl px-5 py-3 text-sm font-black text-white shadow-sm transition disabled:opacity-50"
+            style={{ background: "#5d7452" }}
+          >
+            <Search className="w-4 h-4 inline mr-1.5" />
+            Buscar
+          </button>
+          {(selectedTipo || submittedSearch) && (
+            <button
+              type="button"
+              onClick={() => { setSelectedTipo(""); handleClearSearch(); }}
+              className="rounded-2xl border border-[#d9ceb8] bg-white px-4 py-3 text-xs font-semibold text-[#6b7066] hover:bg-[#f0ebe0] transition"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+      </form>
+
+      {/* Loading */}
+      {isLoading && (
+        <div className="flex flex-col items-center gap-3 py-12 text-[#8a9a84]">
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#5d7452" }} />
+          <span className="text-sm">Carregando normas do MEC...</span>
+        </div>
+      )}
+
+      {/* Erro */}
+      {error && (
+        <div className="rounded-2xl border border-[#f5e6b8] bg-[#fffbeb] px-5 py-4 text-sm text-[#92400e]">
+          <AlertCircle className="w-4 h-4 inline mr-2" />
+          Não foi possível consultar o MEC Normas. Tente novamente em alguns instantes.
+        </div>
+      )}
+
+      {/* Vazio */}
+      {!isLoading && !error && normas.length === 0 && (
+        <div className="flex flex-col items-center gap-3 py-12 text-[#8a9a84]">
+          <BookMarked className="w-10 h-10 opacity-30" />
+          <p className="text-sm">Nenhuma norma encontrada</p>
+        </div>
+      )}
+
+      {/* Leis Fundamentais (estado padrão, sem busca) */}
+      {showFundamentais && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-1.5 rounded-full bg-[#d1a43c]" />
+            <h3 className="text-lg font-black text-[#43513d]">
+              Leis Fundamentais da Educação
+              <span className="ml-2 rounded-full bg-[#fef3c7] px-2 py-0.5 text-xs font-bold text-[#92400e]">{leisFundamentais.length} normas</span>
+            </h3>
+          </div>
+          {leisFundamentais.map(lei => {
+            const catColor = categoriaColors[lei.categoria] || { bg: "#e8f0e0", color: "#5a6e4e" };
+            return (
+              <div key={lei.numero} className="grid gap-4 rounded-[24px] border border-[#e6ddcf] bg-white p-5 md:grid-cols-[2fr_1fr_2fr_auto] md:items-start">
+                <div>
+                  <h4 className="text-base font-black text-[#46543f] leading-snug">{lei.titulo}</h4>
+                  <div className="mt-1 text-xs text-[#94a3b8] font-mono">{lei.numero}</div>
+                  <p className="mt-2 text-sm leading-6 text-[#60685a]">{lei.descricao}</p>
                 </div>
-                <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginTop: "4px" }}>
-                  {tipo.nome}
+                <div className="flex flex-wrap gap-2 items-start">
+                  <span className="inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em]"
+                    style={{ background: catColor.bg, color: catColor.color }}>
+                    {lei.categoria}
+                  </span>
+                </div>
+                <div className="rounded-[18px] border border-[#e8ddd0] bg-[#fffdf8] p-3">
+                  <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[#9b7a2c] mb-1">Para a diretora</div>
+                  <p className="text-xs leading-5 text-[#5d6558]">{lei.paraADiretora}</p>
+                </div>
+                <div>
+                  <a href={lei.link} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#d4c7b3] bg-[#5d7452] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#526847] whitespace-nowrap">
+                    <ExternalLink className="w-3 h-3" /> Abrir lei
+                  </a>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Separador para demais normas */}
+          <div className="flex items-center gap-3 pt-2">
+            <div className="h-8 w-1.5 rounded-full bg-[#cf7e3f]" />
+            <h3 className="text-lg font-black text-[#43513d]">
+              Demais Normas
+              <span className="ml-2 rounded-full bg-[#f3eedf] px-2 py-0.5 text-xs font-semibold text-[#6b6a58]">{total.toLocaleString("pt-BR")} no acervo</span>
+            </h3>
+          </div>
+        </div>
+      )}
+
+      {/* Título quando filtrando / buscando */}
+      {!showFundamentais && normas.length > 0 && (
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-1.5 rounded-full bg-[#8fa37f]" />
+          <h3 className="text-lg font-black text-[#43513d]">
+            {submittedSearch ? `Resultados para "${submittedSearch}"` : "Normas"}
+            <span className="ml-2 rounded-full bg-[#f3eedf] px-2 py-0.5 text-xs font-semibold text-[#6b6a58]">{total.toLocaleString("pt-BR")}</span>
+          </h3>
+        </div>
+      )}
+
+      {/* Lista de normas — novo card design */}
+      {normas.length > 0 && (
+        <div className="space-y-3">
+          {normas.map((norma: any) => {
+            const title = norma.titulo || norma.tituloAto || norma.identificacao || `Ato ${norma.id}`;
+            const ementa = norma.ementa || norma.resumo || "";
+            const date = norma.dataDePublicacaoString || norma.dataPublicacao || norma.dataPublicacaoAto || norma.dataDePublicacao || "";
+            const tipo = norma.tipo?.nome || "";
+            const link = norma.disponivelEm || norma.disponivel_em || "";
+            const isVigente = norma.vigente;
+            const correlacoes = norma.correlacoes || [];
+            const encerraVigencia = correlacoes.some((c: any) => c.encerraVigencia);
+            const s = tipoStyle(tipo);
+
+            const vigenciaBadge = isVigente === true && !encerraVigencia
+              ? { label: "Vigente", bg: "#dcead7", text: "#4e7a4d" }
+              : isVigente === true && encerraVigencia
+              ? { label: "Com alteração", bg: "#f5e6b8", text: "#8a6a14" }
+              : isVigente === false
+              ? { label: "Revogada", bg: "#f3d2cf", text: "#9b4b45" }
+              : null;
+
+            return (
+              <div key={norma.id} className="grid gap-4 rounded-[24px] border border-[#e6ddcf] bg-white p-4 md:grid-cols-[2fr_1fr_1fr_auto] md:items-center transition hover:-translate-y-0.5 hover:shadow-md">
+                <div>
+                  <h4 className="text-sm font-black text-[#46543f] leading-snug">{title}</h4>
+                  {ementa && <p className="mt-1.5 text-xs leading-5 text-[#60685a]">{ementa.length > 160 ? ementa.slice(0, 160) + "…" : ementa}</p>}
+                  {date && <div className="mt-1 text-[10px] text-[#94a3b8]">{norma.unidade?.sigla ? `${norma.unidade.sigla} · ` : ""}{date}</div>}
+                </div>
+                <div className="flex flex-wrap gap-2 items-start">
+                  {tipo && (
+                    <span className="inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em]"
+                      style={{ background: s.bg, color: s.text }}>
+                      {tipo}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  {vigenciaBadge ? (
+                    <span className="inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
+                      style={{ background: vigenciaBadge.bg, color: vigenciaBadge.text }}>
+                      {vigenciaBadge.label}
+                    </span>
+                  ) : <span className="text-xs text-[#cbd5e1]">—</span>}
+                  {correlacoes.slice(0, 1).map((c: any, ci: number) => (
+                    <div key={ci} className="mt-1 text-[10px] text-[#94a3b8] leading-4">{c.textoCorrelacao}</div>
+                  ))}
+                </div>
+                <div>
+                  {link ? (
+                    <a href={link} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[#d4c7b3] bg-[#5d7452] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#526847] whitespace-nowrap">
+                      <ExternalLink className="w-3 h-3" /> Abrir
+                    </a>
+                  ) : (
+                    <span className="inline-flex rounded-full border border-[#e6ddcf] bg-[#f9f6ef] px-4 py-2.5 text-[10px] font-semibold text-[#94a3b8]">Sem link</span>
+                  )}
                 </div>
               </div>
             );
@@ -470,343 +627,27 @@ function NormasContent() {
         </div>
       )}
 
-      <div style={{ background: "white", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e5ec" }}>
-        <div style={{ padding: "16px 20px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end", borderBottom: "1px solid #e2e5ec" }}>
-          <form onSubmit={handleSearch} style={{ display: "flex", gap: "10px", flex: 1, minWidth: "200px", alignItems: "flex-end" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1 }}>
-              <label style={labelStyle}>Pesquisar normas</label>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Ex: PDDE, PNAE, alimentação escolar, prestação de contas..."
-                style={inputStyle}
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={!searchTerm.trim()}
-              style={{
-                padding: "8px 18px", border: "none", borderRadius: "6px",
-                fontSize: "13px", fontWeight: 600, cursor: searchTerm.trim() ? "pointer" : "not-allowed",
-                display: "inline-flex", alignItems: "center", gap: "6px",
-                background: searchTerm.trim() ? "#5a6e4e" : "#94a3b8", color: "white",
-              }}
-            >
-              <Search style={{ width: "14px", height: "14px" }} />
-              Buscar
-            </button>
-          </form>
-          {tiposData && tiposData.tipos && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-              <label style={labelStyle}>Filtrar por tipo</label>
-              <select
-                value={selectedTipo}
-                onChange={(e) => { setSelectedTipo(e.target.value); setPage(0); }}
-                style={selectStyle}
-              >
-                <option value="">Todos os tipos</option>
-                {tiposData.tipos.map((t) => (
-                  <option key={t.id} value={t.id}>{t.nome} ({t.total.toLocaleString("pt-BR")})</option>
-                ))}
-              </select>
-            </div>
-          )}
-          {(selectedTipo || submittedSearch) && (
-            <button
-              onClick={() => { setSelectedTipo(""); handleClearSearch(); }}
-              style={{
-                padding: "8px 14px", border: "1px solid #e2e5ec", borderRadius: "6px",
-                fontSize: "12px", fontWeight: 500, cursor: "pointer",
-                background: "white", color: "#64748b",
-              }}
-            >
-              Limpar filtros
-            </button>
-          )}
+      {/* Paginação */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page <= 0}
+            className="rounded-full border border-[#d9ceb8] bg-white px-5 py-2.5 text-sm font-semibold text-[#6b7066] shadow-sm transition disabled:opacity-40 hover:bg-[#f0ebe0]"
+          >
+            Anterior
+          </button>
+          <span className="text-sm font-semibold text-[#8a9a84]">Página {page + 1} de {totalPages}</span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="rounded-full border border-[#d9ceb8] bg-white px-5 py-2.5 text-sm font-semibold text-[#6b7066] shadow-sm transition disabled:opacity-40 hover:bg-[#f0ebe0]"
+          >
+            Próxima
+          </button>
         </div>
-
-        {isLoading && (
-          <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: "#5a6e4e" }} />
-            <div style={{ fontSize: "13px" }}>Carregando normas do MEC...</div>
-          </div>
-        )}
-
-        {error && (
-          <div style={{
-            background: "#fffbeb", borderLeft: "3px solid #f59e0b",
-            padding: "10px 14px", borderRadius: "0 6px 6px 0",
-            fontSize: "12px", color: "#92400e", margin: "16px",
-          }}>
-            <AlertCircle className="w-4 h-4 inline mr-2" />
-            Não foi possível consultar o MEC Normas. Tente novamente em alguns instantes.
-          </div>
-        )}
-
-        {!isLoading && !error && normas.length === 0 && (
-          <div style={{ textAlign: "center", padding: "48px", color: "#94a3b8" }}>
-            <BookMarked className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.4 }} />
-            <p style={{ fontSize: "14px" }}>Nenhuma norma encontrada</p>
-          </div>
-        )}
-
-        {showFundamentais && (
-          <>
-            <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fffbeb" }}>
-              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#92400e", display: "flex", alignItems: "center", gap: "8px" }}>
-                <Scale style={{ width: "16px", height: "16px" }} />
-                Leis Fundamentais da Educação
-              </h3>
-              <span style={{ fontSize: "12px", color: "#92400e", background: "#fef3c7", padding: "3px 10px", borderRadius: "12px", fontWeight: 600 }}>
-                {leisFundamentais.length} normas essenciais
-              </span>
-            </div>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "900px" }}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Norma</th>
-                    <th style={thStyle}>Categoria</th>
-                    <th style={thStyle}>Para a Diretora</th>
-                    <th style={{ ...thStyle, textAlign: "center" }}>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leisFundamentais.map((lei, index) => {
-                    const catColor = categoriaColors[lei.categoria] || { bg: "#e8f0e0", color: "#5a6e4e" };
-                    return (
-                      <tr key={lei.numero} style={{ background: index % 2 === 0 ? "#fffef5" : "#fefce8" }}>
-                        <td style={tdStyle}>
-                          <div style={{ maxWidth: "300px" }}>
-                            <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3, color: "#1e293b" }}>
-                              {lei.titulo}
-                            </div>
-                            <div style={{ fontSize: "11px", fontFamily: "monospace", color: "#94a3b8", marginTop: "2px" }}>
-                              {lei.numero}
-                            </div>
-                            <div style={{ fontSize: "11.5px", color: "#64748b", marginTop: "4px", lineHeight: 1.5 }}>
-                              {lei.descricao}
-                            </div>
-                          </div>
-                        </td>
-                        <td style={tdStyle}>
-                          <span style={{
-                            display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                            fontSize: "11px", fontWeight: 600, letterSpacing: "0.2px",
-                            background: catColor.bg, color: catColor.color,
-                          }}>
-                            {lei.categoria}
-                          </span>
-                        </td>
-                        <td style={tdStyle}>
-                          <div style={{
-                            fontSize: "12px", color: "#4a5568", lineHeight: 1.6, maxWidth: "350px",
-                            background: "#f0fdf4", padding: "8px 12px", borderRadius: "6px",
-                            borderLeft: "3px solid #22c55e",
-                          }}>
-                            {lei.paraADiretora}
-                          </div>
-                        </td>
-                        <td style={{ ...tdStyle, textAlign: "center" }}>
-                          <a href={lei.link} target="_blank" rel="noopener noreferrer"
-                            style={{
-                              padding: "6px 14px", border: "none", borderRadius: "6px",
-                              background: "#5a6e4e", color: "white", fontSize: "11px", fontWeight: 600,
-                              textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
-                            }}>
-                            <ExternalLink style={{ width: "11px", height: "11px" }} />
-                            Abrir
-                          </a>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div style={{
-              padding: "12px 20px",
-              borderTop: "2px solid #e2e5ec",
-              borderBottom: "1px solid #e2e5ec",
-              background: "#f8fafc",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}>
-              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#5a6e4e", display: "flex", alignItems: "center", gap: "8px" }}>
-                <FileText style={{ width: "16px", height: "16px" }} />
-                Demais Normas
-              </h3>
-              <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
-                {total.toLocaleString("pt-BR")} norma(s) no acervo
-              </span>
-            </div>
-          </>
-        )}
-
-        {!showFundamentais && normas.length > 0 && (
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e5ec", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h3 style={{ fontSize: "15px", fontWeight: 600 }}>
-              {submittedSearch ? `Resultados para "${submittedSearch}"` : "Normas"}
-            </h3>
-            <span style={{ fontSize: "12px", color: "#94a3b8", background: "#f1f5f9", padding: "3px 10px", borderRadius: "12px" }}>
-              {total.toLocaleString("pt-BR")} norma(s)
-            </span>
-          </div>
-        )}
-
-        {normas.length > 0 && (
-          <>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "900px" }}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Norma</th>
-                    <th style={thStyle}>Tipo</th>
-                    <th style={thStyle}>Vigência</th>
-                    <th style={thStyle}>Para a Diretora</th>
-                    <th style={{ ...thStyle, textAlign: "center" }}>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {normas.map((norma: any, index: number) => {
-                    const title = norma.titulo || norma.tituloAto || norma.identificacao || `Ato ${norma.id}`;
-                    const ementa = norma.ementa || norma.resumo || "";
-                    const date = norma.dataDePublicacaoString || norma.dataPublicacao || norma.dataPublicacaoAto || norma.dataDePublicacao || "";
-                    const tipo = norma.tipo?.nome || "";
-                    const link = norma.disponivelEm || norma.disponivel_em || "";
-                    const isVigente = norma.vigente;
-                    const correlacoes = norma.correlacoes || [];
-                    const hasAlteracao = correlacoes.length > 0;
-                    const encerraVigencia = correlacoes.some((c: any) => c.encerraVigencia);
-
-                    return (
-                      <tr key={norma.id} style={{ background: index % 2 === 0 ? "transparent" : "#fcfcfd" }}>
-                        <td style={tdStyle}>
-                          <div style={{ maxWidth: "350px" }}>
-                            <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: 1.3, color: "#1e293b" }}>
-                              {title}
-                            </div>
-                            {ementa && (
-                              <div style={{ fontSize: "11.5px", color: "#64748b", marginTop: "4px", lineHeight: 1.5 }}>
-                                {ementa.length > 150 ? ementa.slice(0, 150) + "..." : ementa}
-                              </div>
-                            )}
-                            {date && (
-                              <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "3px" }}>
-                                {norma.unidade?.sigla ? `${norma.unidade.sigla} | ` : ""}{date}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td style={tdStyle}>
-                          {tipo && (
-                            <span style={{
-                              display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                              fontSize: "11px", fontWeight: 600, background: "#e8f0e0", color: "#6d4c41",
-                            }}>
-                              {tipo}
-                            </span>
-                          )}
-                        </td>
-                        <td style={tdStyle}>
-                          <div>
-                            {isVigente === true && !encerraVigencia && (
-                              <span style={{
-                                display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                                fontSize: "11px", fontWeight: 600, background: "#dcfce7", color: "#166534",
-                              }}>
-                                Vigente
-                              </span>
-                            )}
-                            {isVigente === true && encerraVigencia && (
-                              <span style={{
-                                display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                                fontSize: "11px", fontWeight: 600, background: "#fef3c7", color: "#92400e",
-                              }}>
-                                Com alteração
-                              </span>
-                            )}
-                            {isVigente === false && (
-                              <span style={{
-                                display: "inline-block", padding: "2px 8px", borderRadius: "4px",
-                                fontSize: "11px", fontWeight: 600, background: "#fee2e2", color: "#991b1b",
-                              }}>
-                                Revogada
-                              </span>
-                            )}
-                            {(isVigente === undefined || isVigente === null) && (
-                              <span style={{ fontSize: "11px", color: "#cbd5e1" }}>—</span>
-                            )}
-                            {hasAlteracao && correlacoes.slice(0, 1).map((c: any, ci: number) => (
-                              <div key={ci} style={{ fontSize: "10px", color: "#94a3b8", marginTop: "3px", lineHeight: 1.3 }}>
-                                {c.textoCorrelacao}
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                        <td style={tdStyle}>
-                          <div style={{
-                            fontSize: "12px", color: "#2d3748", lineHeight: 1.5, maxWidth: "300px",
-                            background: "#fffbeb", padding: "8px 10px", borderRadius: "6px",
-                            borderLeft: "3px solid #f59e0b",
-                          }}>
-                            {gerarExplicacaoDiretora(title, ementa, tipo)}
-                          </div>
-                        </td>
-                        <td style={{ ...tdStyle, textAlign: "center" }}>
-                          {link && (
-                            <a
-                              href={link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{
-                                padding: "4px 10px", border: "none", borderRadius: "4px",
-                                background: "#5a6e4e", color: "white", fontSize: "11px", fontWeight: 600,
-                                textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px",
-                              }}
-                            >
-                              <ExternalLink style={{ width: "11px", height: "11px" }} />
-                              Abrir
-                            </a>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {totalPages > 1 && (
-              <div style={{
-                display: "flex", justifyContent: "center", alignItems: "center",
-                gap: "8px", padding: "14px", borderTop: "1px solid #e2e5ec",
-              }}>
-                <button
-                  onClick={() => setPage(p => Math.max(0, p - 1))}
-                  disabled={page <= 0}
-                  style={{ ...paginationBtnStyle, opacity: page <= 0 ? 0.4 : 1, cursor: page <= 0 ? "not-allowed" : "pointer" }}
-                >
-                  Anterior
-                </button>
-                <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-                  Página {page + 1} de {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                  disabled={page >= totalPages - 1}
-                  style={{ ...paginationBtnStyle, opacity: page >= totalPages - 1 ? 0.4 : 1, cursor: page >= totalPages - 1 ? "not-allowed" : "pointer" }}
-                >
-                  Próxima
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </>
+      )}
+    </div>
   );
 }
 
