@@ -237,12 +237,106 @@ function IndicadorDigitando() {
 
 // ─── PESQUISA PANEL ───────────────────────────────────────────────────────────
 
+// ── Card de resposta IA (página direita da caderneta) ────────────────────────
+const CARD_EMOJIS = ["📋", "📚", "🧾", "📊", "💡", "📎", "📌", "🔍"];
+const CARD_ACCENTS = [
+  "bg-[#fff1a8]", "bg-[#ffd9c8]", "bg-[#d4f0d4]",
+  "bg-[#c8e0ff]", "bg-[#f9e4ff]", "bg-[#ffe4b2]",
+];
+
+function CardRespostaAI({
+  msg, onSave, idx,
+}: { msg: { id: number; content: string }; onSave: (t: string, s: string | null) => void; idx: number }) {
+  const [saved, setSaved] = useState(false);
+  const { corpo, fontes } = parseMessage(msg.content);
+  const emoji = CARD_EMOJIS[idx % CARD_EMOJIS.length];
+  const accent = CARD_ACCENTS[idx % CARD_ACCENTS.length];
+  const rotation = idx % 2 === 0 ? "rotate-[-0.5deg]" : "rotate-[0.4deg]";
+
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.05 }}
+      className={`relative overflow-hidden rounded-[28px] border border-[#e4d7ce] bg-[#fffdf9] shadow-[0_16px_34px_rgba(95,64,50,0.10)] ${rotation}`}
+    >
+      {/* Cabeçalho do card */}
+      <div className="border-b border-[#efe5dd] bg-[linear-gradient(180deg,#fffaf4_0%,#fffdf9_100%)] px-5 pt-5 pb-4">
+        <div className="flex items-start gap-4">
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] ${accent} text-xl shadow-sm`}>
+            {emoji}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff08f] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#75591d]">
+              📍 Secretaria Virtual
+            </div>
+            <div className="mt-3 text-[14px] leading-7 text-[#5f4032] prose prose-sm max-w-none">
+              <ReactMarkdown>{corpo}</ReactMarkdown>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Fontes */}
+      {fontes && (
+        <div className="px-5 py-4 border-t border-[#efe5dd] bg-[#fffaf6]">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-[#a38778] mb-2">📚 Base legal</div>
+          <div className="text-[13px] text-[#5f4032] leading-6">
+            <ReactMarkdown>{fontes}</ReactMarkdown>
+          </div>
+        </div>
+      )}
+
+      {/* Ação */}
+      <div className="px-5 pb-4 pt-3 flex items-center gap-3">
+        <button
+          onClick={() => { onSave(corpo, fontes); setSaved(true); setTimeout(() => setSaved(false), 2000); }}
+          className="inline-flex items-center gap-1.5 rounded-full border border-[#e4d7ce] bg-[#fff8f3] px-3 py-1.5 text-[11px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors shadow-sm"
+        >
+          <BookMarked className="w-3 h-3" />
+          {saved ? "Nota salva!" : "Salvar nota"}
+        </button>
+        <button
+          onClick={() => navigator.clipboard.writeText(corpo)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-[#e4d7ce] bg-[#fff8f3] px-3 py-1.5 text-[11px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors shadow-sm"
+        >
+          <ClipboardCopy className="w-3 h-3" /> Copiar
+        </button>
+      </div>
+    </motion.article>
+  );
+}
+
+// ── Suggestions grid (cards estilo preview) ────────────────────────────────
+const SUGESTAO_EMOJIS = ["💰", "📝", "🧾", "📂", "🏫", "📊"];
+function SugestaoCard({ s, idx, onClick }: { s: string; idx: number; onClick: () => void }) {
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: idx * 0.07 }}
+      onClick={onClick}
+      className={`group rounded-[22px] border border-[#e4d7ce] bg-[#fffaf6] p-4 text-left shadow-sm hover:-translate-y-1 hover:shadow-md transition-all ${idx % 2 === 0 ? "rotate-[-0.5deg]" : "rotate-[0.4deg]"}`}
+    >
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff1a8] text-lg shadow-sm">
+          {SUGESTAO_EMOJIS[idx % SUGESTAO_EMOJIS.length]}
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-[#a38778] mb-1">Clique para usar</div>
+          <span className="text-[13px] font-semibold text-[#5f4032] leading-5">{s}</span>
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
+// ── PesquisaPanel principal ───────────────────────────────────────────────
 function PesquisaPanel() {
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [input, setInput] = useState("");
   const [pageKey, setPageKey] = useState(0);
   const [apiNotes, setApiNotes] = useState<any[]>([]);
-  const leftScrollRef = useRef<HTMLDivElement>(null);
   const rightScrollRef = useRef<HTMLDivElement>(null);
 
   const { mutate: createConversation } = useCreateConversation();
@@ -255,7 +349,6 @@ function PesquisaPanel() {
   }, []);
 
   useEffect(() => {
-    if (leftScrollRef.current) leftScrollRef.current.scrollTop = leftScrollRef.current.scrollHeight;
     if (rightScrollRef.current) rightScrollRef.current.scrollTop = rightScrollRef.current.scrollHeight;
   }, [conversationData?.messages, isSending]);
 
@@ -285,80 +378,54 @@ function PesquisaPanel() {
   };
 
   const msgs = conversationData?.messages ?? [];
-  const userMsgs = msgs.filter(m => m.role === "user");
   const aiMsgs = msgs.filter(m => m.role === "assistant");
   const temMensagens = msgs.length > 0;
 
-  // Lined paper background (shared between pages)
-  const linedPaper = {
-    backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #c8ddf5 31px, #c8ddf5 32.5px)",
-    backgroundSize: "100% 32px",
-    backgroundPosition: "0 20px",
-  } as React.CSSProperties;
-
   return (
     /* ── Capa vermelha aberta ── */
-    <div
-      className="relative h-full"
-      style={{
-        background: "linear-gradient(180deg,#a73c3c 0%,#8e2f2f 45%,#742020 100%)",
-        padding: "14px",
-        boxShadow: "0 36px 90px rgba(94,36,36,0.34)",
-      }}
-    >
-      {/* Sombra no topo da capa */}
+    <section className="relative rounded-[44px] bg-[linear-gradient(180deg,#a73c3c_0%,#8e2f2f_45%,#742020_100%)] p-4 md:p-5 shadow-[0_36px_90px_rgba(94,36,36,0.34)] ring-1 ring-[#b65454]/40">
+
+      {/* Sombra de profundidade no topo */}
       <div className="absolute inset-x-[6%] top-3 h-5 rounded-full bg-black/15 blur-md pointer-events-none" />
-      {/* Anel interno decorativo */}
-      <div className="absolute inset-[8px] rounded-[28px] border border-[#c96f6f]/40 pointer-events-none" />
+      {/* Borda interna */}
+      <div className="absolute inset-[10px] rounded-[36px] border border-[#c96f6f]/40 pointer-events-none" />
       {/* Brilho no topo */}
-      <div className="absolute inset-x-10 top-4 h-7 rounded-full bg-white/10 blur-xl pointer-events-none" />
+      <div className="absolute inset-x-8 top-5 h-8 rounded-full bg-white/10 blur-xl pointer-events-none" />
 
       {/* ── Páginas abertas ── */}
-      <div
-        className="relative h-full grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-[22px] overflow-hidden border border-[#692020]"
-        style={{ background: "linear-gradient(180deg,#7f2626 0%,#6f1f1f 100%)" }}
-      >
-        {/* Dobra central — sombra */}
-        <div
-          className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 z-10 hidden lg:block"
-          style={{
-            width: "80px",
-            background: "radial-gradient(ellipse at center, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.16) 38%, transparent 70%)",
-          }}
-        />
-        {/* Dobra central — linha */}
-        <div
-          className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px] z-10 hidden lg:block"
-          style={{ background: "linear-gradient(180deg,#5a1717 0%,#8e2f2f 50%,#5a1717 100%)", opacity: 0.65 }}
-        />
+      <div className="relative grid grid-cols-1 lg:grid-cols-[0.92fr_1.08fr] gap-0 rounded-[34px] overflow-hidden bg-[linear-gradient(180deg,#7f2626_0%,#6f1f1f_100%)] border border-[#692020]">
 
-        {/* ════════════════ PÁGINA ESQUERDA — Perguntas ════════════════ */}
-        <div
-          className="relative flex flex-col overflow-hidden border-b lg:border-b-0 lg:border-r border-[#d9c9be]"
-          style={{ background: "#fbf4eb", ...linedPaper }}
-        >
-          {/* Cabeçalho da página esquerda */}
-          <div className="shrink-0 px-6 pt-5 pb-3">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#fff1e7] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9a5a4f] shadow-sm">
-              <span>✍️</span><span>Pergunte à Secretaria Virtual</span>
+        {/* Dobra central — sombra de encadernação */}
+        <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[90px] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.35)_0%,rgba(0,0,0,0.18)_35%,rgba(0,0,0,0.05)_60%,transparent_75%)] opacity-40 z-10 hidden lg:block" />
+        <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px] bg-[linear-gradient(180deg,#5a1717_0%,#8e2f2f_50%,#5a1717_100%)] opacity-70 z-10 hidden lg:block" />
+
+        {/* ══════════════ PÁGINA ESQUERDA — Perguntas ══════════════ */}
+        <div className="relative bg-[#fbf4eb] min-h-[680px] p-6 md:p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-[#e8d6c7] flex flex-col">
+
+          {/* Cabeçalho */}
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#fff1e7] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9a5a4f] shadow-sm">
+                <span>✍️</span><span>Pergunte à Secretaria Virtual</span>
+              </div>
+              <h3 className="mt-4 text-3xl font-black leading-tight text-[#4d2318]">Folha de pesquisa</h3>
+              <p className="mt-2 text-[#7b5b4d] leading-7 text-sm">
+                Como se fosse uma caderneta aberta: escreva sua pergunta aqui e a resposta aparece na página ao lado.
+              </p>
             </div>
-            <h3 className="mt-3 text-[22px] font-black leading-tight text-[#4d2318]">Folha de pesquisa</h3>
-            <p className="mt-1 text-[12px] text-[#7b5b4d] leading-5">
-              Escreva sua dúvida — a resposta aparece na página ao lado.
-            </p>
+            <div className="hidden md:flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#8e2f2f] text-white shadow-lg text-2xl">
+              📎
+            </div>
           </div>
 
-          {/* Notas salvas */}
+          {/* Notas coladas */}
           {apiNotes.length > 0 && (
-            <div className="shrink-0 flex gap-3 overflow-x-auto px-6 pb-3">
+            <div className="flex gap-3 overflow-x-auto pb-4 mb-2">
               {apiNotes.slice(0, 3).map((note: any, i) => (
                 <div
                   key={note.id || i}
-                  className="shrink-0 w-40 rounded-md bg-[#fff4a8] px-3 py-2.5 shadow-sm relative"
-                  style={{
-                    transform: `rotate(${(i % 2 === 0 ? -1.5 : 1.2) * (i * 0.3 + 0.4)}deg)`,
-                    boxShadow: "0 8px 18px rgba(95,64,50,0.12)",
-                  }}
+                  className="shrink-0 w-40 relative rounded-md bg-[#fff4a8] px-3 py-3 shadow-[0_8px_18px_rgba(95,64,50,0.12)]"
+                  style={{ transform: `rotate(${(i % 2 === 0 ? -1.5 : 1.2) * (i * 0.3 + 0.5)}deg)` }}
                 >
                   <div className="absolute -top-2 left-1/2 -translate-x-1/2 h-4 w-12 bg-[#f7dfcf] rounded-sm" />
                   <p className="text-[11px] leading-[17px] text-[#5a3828] line-clamp-3">{note.title || note.content}</p>
@@ -367,124 +434,110 @@ function PesquisaPanel() {
             </div>
           )}
 
-          {/* Mensagens do usuário / sugestões */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={pageKey}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex-1 overflow-y-auto px-6 pt-2 pb-2 min-h-0"
-              ref={leftScrollRef}
-            >
-              {!temMensagens ? (
-                <div className="pt-2">
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-[#b07a6a] mb-2 font-semibold">
-                    Sugestões para começar
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {SUGESTOES.map((s, i) => (
-                      <motion.button
-                        key={i}
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.06 }}
-                        onClick={() => handleSend(s)}
-                        className="rounded-full border border-[#d9bfb5] bg-white/80 px-3 py-1.5 text-[12px] text-[#5a3328] shadow-sm hover:border-[#8e2f2f] hover:bg-[#fff0eb] transition-colors text-left"
-                      >
-                        {s}
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3 pb-2">
-                  {userMsgs.map(msg => (
-                    <MensagemUsuario key={msg.id} conteudo={msg.content} />
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Campo de escrita */}
-          <div className="shrink-0 px-5 pb-4 pt-2">
-            {temMensagens && (
-              <div className="mb-2 flex justify-end">
-                <button
-                  onClick={handleNewChat}
-                  className="inline-flex items-center gap-1 rounded-full border border-[#d9bfb5] bg-white/80 px-3 py-1 text-[10px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors"
-                >
-                  <RefreshCw className="w-2.5 h-2.5" /> Nova conversa
-                </button>
-              </div>
-            )}
-            <div className="flex items-end gap-2 rounded-2xl border border-[#dcc9bc] bg-white/80 px-3 py-2.5 shadow-sm backdrop-blur-sm">
+          {/* Input de pergunta */}
+          <div className="rounded-[28px] border border-[#ead9cd] bg-white/75 p-5 shadow-[0_14px_30px_rgba(95,64,50,0.08)] backdrop-blur-sm mb-6">
+            <label className="text-xs uppercase tracking-[0.2em] text-[#a38778]">Escreva sua pergunta</label>
+            <div className="mt-3 flex gap-3 items-start">
               <textarea
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                placeholder="Escreva sua pergunta aqui..."
-                className="flex-1 resize-none text-[14px] text-[#3d2318] placeholder:text-[#c5a898] outline-none bg-transparent min-h-[34px] max-h-20"
-                rows={1}
+                placeholder="Ex: O que posso comprar com o PDDE? Como fazer uma pesquisa de preços?"
+                className="min-h-[120px] flex-1 resize-none rounded-[22px] border border-[#e4d8cf] bg-[#fffdfa] px-5 py-4 text-[15px] text-[#5f4032] outline-none focus:border-[#c09080] placeholder:text-[#c5a898]"
                 disabled={isSending}
               />
               <button
                 onClick={() => handleSend()}
                 disabled={!input.trim() || isSending}
-                className="shrink-0 flex h-8 w-8 items-center justify-center rounded-xl bg-[#8e2f2f] text-white transition hover:bg-[#6e2020] disabled:opacity-40"
+                className="shrink-0 rounded-[22px] bg-[#8e2f2f] hover:bg-[#7d2828] disabled:opacity-40 text-white px-5 py-4 shadow-lg transition-colors flex items-center justify-center"
               >
-                {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
               </button>
             </div>
           </div>
+
+          {/* Sugestões ou mensagens anteriores */}
+          <AnimatePresence mode="wait">
+            <motion.div key={pageKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
+              {!temMensagens ? (
+                <>
+                  <div className="text-xs uppercase tracking-[0.2em] text-[#a38778] mb-3">Sugestões de perguntas</div>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    {SUGESTOES.map((s, i) => (
+                      <SugestaoCard key={i} s={s} idx={i} onClick={() => handleSend(s)} />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-[#a38778] mb-3">Perguntas desta sessão</div>
+                  <div className="space-y-2">
+                    {msgs.filter(m => m.role === "user").map((msg, i) => (
+                      <div key={msg.id} className="rounded-2xl bg-[#8e2f2f]/10 border border-[#8e2f2f]/15 px-4 py-2.5 text-[13px] text-[#5f4032] flex items-start gap-2">
+                        <span className="text-[#8e2f2f] font-bold shrink-0">{i + 1}.</span>
+                        <span>{msg.content}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4">
+                    <button onClick={handleNewChat}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[#d9bfb5] bg-white/80 px-4 py-1.5 text-[12px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors">
+                      <RefreshCw className="w-3 h-3" /> Nova conversa
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
-        {/* ════════════════ PÁGINA DIREITA — Respostas ════════════════ */}
-        <div
-          className="relative flex flex-col overflow-hidden"
-          style={{ background: "#fffaf4", ...linedPaper }}
-        >
-          {/* Cabeçalho da página direita */}
-          <div className="shrink-0 px-6 pt-5 pb-3">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#f0f7ff] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#4a6d8e] shadow-sm">
+        {/* ══════════════ PÁGINA DIREITA — Respostas ══════════════ */}
+        <div className="relative bg-[#fffbf6] min-h-[680px] flex flex-col">
+
+          {/* Cabeçalho fixo da página direita */}
+          <div className="shrink-0 px-6 md:px-8 lg:px-10 pt-8 pb-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#fff1e7] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9a5a4f] shadow-sm">
               <Bot className="w-3 h-3" /><span>Respostas da Secretaria</span>
             </div>
-            <h3 className="mt-3 text-[22px] font-black leading-tight text-[#4d2318]">Página de respostas</h3>
-            <p className="mt-1 text-[12px] text-[#7b5b4d] leading-5">
-              As orientações aparecem aqui, organizadas para você usar.
+            <h3 className="mt-3 text-2xl font-black leading-tight text-[#4d2318]">Página de respostas</h3>
+            <p className="mt-1 text-sm text-[#7b5b4d] leading-6">
+              As orientações aparecem aqui, organizadas para consulta.
             </p>
           </div>
 
-          {/* Respostas da IA */}
+          {/* Área scrollável com cards de resposta */}
           <div
-            className="flex-1 overflow-y-auto px-6 pt-2 pb-4 min-h-0"
             ref={rightScrollRef}
+            className="flex-1 overflow-y-auto px-6 md:px-8 lg:px-10 pb-8 pt-2 space-y-6"
           >
             {!temMensagens ? (
-              <div className="flex flex-col items-center justify-center h-full gap-3 text-[#c5a898] pb-10">
-                <div
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl"
-                  style={{ background: "rgba(142,47,47,0.07)" }}
-                >
+              <div className="flex flex-col items-center justify-center h-64 gap-4 text-[#c5a898]">
+                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[#8e2f2f]/07 text-4xl">
                   📖
                 </div>
-                <p className="text-[13px] text-center leading-6 text-[#b09080]">
-                  Escreva uma pergunta ao lado<br />e a resposta vai aparecer aqui.
+                <p className="text-[14px] text-center leading-7 text-[#b09080] max-w-xs">
+                  Escreva uma pergunta ao lado<br />e a orientação vai aparecer aqui.
                 </p>
               </div>
             ) : (
-              <div className="space-y-4 pb-2">
-                {aiMsgs.map(msg => (
-                  <MensagemAssistente key={msg.id} conteudo={msg.content} onSaveNote={handleSaveNote} />
+              <>
+                {aiMsgs.map((msg, i) => (
+                  <CardRespostaAI key={msg.id} msg={msg} onSave={handleSaveNote} idx={i} />
                 ))}
-                {isSending && <IndicadorDigitando />}
-              </div>
+                {isSending && (
+                  <div className="rounded-[28px] border border-[#e4d7ce] bg-[#fffdf9] p-6 shadow-sm">
+                    <div className="flex items-center gap-3 text-[#a38778]">
+                      <Loader2 className="w-5 h-5 animate-spin text-[#8e2f2f]" />
+                      <span className="text-[13px]">Preparando orientação…</span>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -987,9 +1040,7 @@ export default function Chat() {
         {/* Content */}
         <AnimatePresence mode="wait">
           {tab === "pesquisa" ? (
-            <motion.div key="pesquisa" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="flex-1 flex flex-col rounded-3xl overflow-hidden"
-            >
+            <motion.div key="pesquisa" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               <PesquisaPanel />
             </motion.div>
           ) : (
