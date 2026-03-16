@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais } from "@/hooks/use-schools";
 import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento } from "@/hooks/use-pdde";
+import { useSigpcLocalizar } from "@/hooks/use-sigpc";
 import { DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -108,6 +109,7 @@ export default function Dashboard() {
   const { data: cadastralData, isLoading: cadastralLoading } = usePddeSituacaoCadastral(selectedInep, pddeAno);
   const { data: prestacaoContaData, isLoading: prestacaoContaLoading } = usePddePrestacaoConta(selectedInep, pddeAno);
   const { data: atendimentoData, isLoading: atendimentoLoading } = usePddeAtendimento(selectedInep, pddeAno);
+  const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined, pddeAno);
   const listFilters = useMemo(() => {
     const f: Record<string, string> = {};
     if (filterUf) f.uf = filterUf;
@@ -2095,6 +2097,122 @@ export default function Dashboard() {
                       </div>
                     </div>
                   )}
+
+                  {/* ── 7. SIGPC — PRESTAÇÃO DE CONTAS DETALHADA ── */}
+                  {(pddeCnpj || pddeData?.ok === false) && (<div style={{marginBottom:'16px'}}>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                      <FileText className="w-3.5 h-3.5" /> SIGPC — Prestação de Contas Detalhada
+                      <a
+                        href={`https://www.fnde.gov.br/sigpcadm/actionPublico.pu?tilesPublico=ConsultarSituacao`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 inline-flex items-center gap-1 text-xs text-blue-600 hover:underline font-normal"
+                        style={{textTransform:'none',letterSpacing:0}}
+                      >
+                        <ExternalLink className="w-3 h-3" /> Abrir no SIGPC
+                      </a>
+                    </p>
+
+                    {sigpcLoading && (
+                      <div className="flex items-center gap-2 py-3">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Consultando SIGPC/FNDE...</span>
+                      </div>
+                    )}
+
+                    {!sigpcLoading && sigpcData?.ok && sigpcData.prestacoes.length > 0 && (
+                      <div className="table-card" style={{overflowX:'auto'}}>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Processo</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. UEx (OPC)</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Fase UEx</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Vl. Pago UEx</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. EEx</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Fase EEx</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Vl. Pago EEx</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp.</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Med. Exceção</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sigpcData.prestacoes.map((p: any, i: number) => {
+                              const isAdimpl = p.situacaoNome?.toLowerCase().includes('adimpl');
+                              const isAdimplEex = p.situacaoPcEex?.toLowerCase().includes('adimpl');
+                              const hasSusp = p.efeitoSuspensivo && p.efeitoSuspensivo !== 'NÃO' && p.efeitoSuspensivo !== 'Não' && p.efeitoSuspensivo.trim() !== '';
+                              const hasSuspEex = p.efeitoSuspensivoEex && p.efeitoSuspensivoEex !== 'NÃO' && p.efeitoSuspensivoEex !== 'Não' && p.efeitoSuspensivoEex.trim() !== '';
+                              const hasMedExc = p.medidaExcecao && p.medidaExcecao !== 'NÃO' && p.medidaExcecao !== 'Não' && p.medidaExcecao.trim() !== '';
+                              return (
+                                <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                  <td className="py-2 px-3 text-xs font-mono">{p.processoNumero || '—'}</td>
+                                  <td className="py-2 px-3 text-xs font-medium">{p.programaNome || '—'}</td>
+                                  <td className="py-2 px-3 text-xs">{p.anoConcessao || '—'}</td>
+                                  <td className="py-2 px-3">
+                                    {p.situacaoNome
+                                      ? <span className={`badge ${isAdimpl ? 'badge-good' : 'badge-attn'}`}>{p.situacaoNome}</span>
+                                      : <span className="text-muted-foreground text-xs">—</span>}
+                                  </td>
+                                  <td className="py-2 px-3 text-xs">{p.faseNome || '—'}</td>
+                                  <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">
+                                    {p.valorConcessao ? brl(p.valorConcessao) : '—'}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    {p.situacaoPcEex
+                                      ? <span className={`badge ${isAdimplEex ? 'badge-good' : 'badge-attn'}`}>{p.situacaoPcEex}</span>
+                                      : <span className="text-muted-foreground text-xs">—</span>}
+                                  </td>
+                                  <td className="py-2 px-3 text-xs">{p.fasePcEex || '—'}</td>
+                                  <td className="py-2 px-3 text-xs text-right font-mono">
+                                    {p.valorPagoEex ? brl(parseFloat(String(p.valorPagoEex).replace(/\./g,'').replace(',','.'))) : '—'}
+                                  </td>
+                                  <td className="py-2 px-3 text-xs">
+                                    {(hasSusp || hasSuspEex)
+                                      ? <span className="badge badge-critical">Sim</span>
+                                      : <span className="text-muted-foreground">Não</span>}
+                                  </td>
+                                  <td className="py-2 px-3 text-xs">
+                                    {hasMedExc
+                                      ? <span className="badge badge-attn">{p.medidaExcecao}</span>
+                                      : <span className="text-muted-foreground">—</span>}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {!sigpcLoading && (!sigpcData?.ok || sigpcData?.prestacoes?.length === 0) && (
+                      <div className="soft-card" style={{padding:'14px',display:'flex',alignItems:'flex-start',gap:'12px'}}>
+                        <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-xs font-semibold text-amber-700 mb-1">
+                            {sigpcData?.fonte === 'indisponivel'
+                              ? 'SIGPC/OLINDA temporariamente indisponível'
+                              : 'Nenhuma prestação de contas encontrada no SIGPC para este ano'}
+                          </p>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {sigpcData?.fonte === 'indisponivel'
+                              ? 'A API aberta do FNDE (OLINDA) está fora do ar no momento. Os dados de Prestação de Contas do SIGPC ficam disponíveis automaticamente quando o serviço for restaurado.'
+                              : `Não foram localizados registros para o CNPJ ${pddeCnpj || 'da UEx'} no SIGPC em ${pddeAno}. Tente outro ano ou consulte diretamente pelo site.`}
+                          </p>
+                          <a
+                            href="https://www.fnde.gov.br/sigpcadm/actionPublico.pu?tilesPublico=ConsultarSituacao"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline font-semibold"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Consultar diretamente no SIGPC (FNDE)
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>)}
 
                   {/* ── sem dados ── */}
                   {!pddeLoading && !pddeSaldosLoading && !pddeExecFinLoading && !cadastralLoading && !prestacaoContaLoading && !atendimentoLoading && !pddeData?.ok && !pddeSaldosData?.ok && !pddeExecFinData?.ok && !cadastralData?.ok && !prestacaoContaData?.ok && (
