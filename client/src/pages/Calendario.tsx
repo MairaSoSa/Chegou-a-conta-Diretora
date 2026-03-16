@@ -625,7 +625,7 @@ export default function CalendarioPage() {
                         <p className="text-xs text-[#94a3b8]">Nenhuma notícia encontrada no momento.</p>
                       </div>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#d5c9b8] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#f0e9de]">
                         {noticias.map((news, idx) => (
                           <motion.a key={idx} href={news.url} target="_blank" rel="noopener noreferrer"
                             whileHover={{ x: 3, rotate: idx % 2 === 0 ? -0.25 : 0.25 }}
@@ -638,9 +638,15 @@ export default function CalendarioPage() {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="text-sm font-bold leading-5 text-[#4f4a44]">{news.titulo}</div>
-                                <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-[#898276]">
+                                {news.resumo && (
+                                  <p className="mt-1.5 text-[12px] leading-5 text-[#6d6860] line-clamp-3">{news.resumo}</p>
+                                )}
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
                                   <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${fonteBadgeClass(news.fonte)}`}>{news.fonte}</span>
-                                  {news.data && <span>{news.data}</span>}
+                                  {news.categoria && (
+                                    <span className="rounded-full bg-[#f2f4ee] px-2 py-0.5 text-[10px] font-semibold text-[#6d7a5a]">{news.categoria}</span>
+                                  )}
+                                  {news.data && <span className="text-[10px] text-[#a09890]">{news.data}</span>}
                                 </div>
                               </div>
                               <ExternalLink className="h-3.5 w-3.5 shrink-0 text-[#cbd5e1]" />
