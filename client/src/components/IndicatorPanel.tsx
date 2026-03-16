@@ -155,6 +155,85 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
     }
   }
 
+  if (indicadores.icg) {
+    const nivel = Number(indicadores.icg.nivel ?? indicadores.icg.icg_nivel);
+    if (!isNaN(nivel) && nivel > 0) {
+      let st = "bom";
+      if (nivel >= 5) st = "critico";
+      else if (nivel >= 4) st = "atencao";
+      else if (nivel >= 3) st = "adequado";
+      result.push({
+        tipo: "ICG",
+        label: `Nível ${nivel}`,
+        titulo: "Complexidade de Gestão (ICG)",
+        valor: `Nível ${nivel} / 6`,
+        status: st,
+        explicacao: "Índice de complexidade de gestão de 1 a 6. Escolas nos níveis 5–6 exigem maior suporte administrativo.",
+      });
+    }
+  }
+
+  if (indicadores.ird) {
+    const media = Number(indicadores.ird.media_ird ?? indicadores.ird.media ?? indicadores.ird.ird_media);
+    if (!isNaN(media) && media > 0) {
+      let st = "bom";
+      if (media < 2) st = "critico";
+      else if (media < 3) st = "atencao";
+      else if (media < 4) st = "adequado";
+      result.push({
+        tipo: "IRD",
+        label: fmt(media),
+        titulo: "Regularidade Docente (IRD)",
+        valor: fmt(media) + " / 5",
+        status: st,
+        explicacao: "Mede a regularidade do vínculo dos professores com a escola (escala 1–5). Abaixo de 3 indica alta rotatividade.",
+      });
+    }
+  }
+
+  if (indicadores.afd) {
+    const d = indicadores.afd;
+    const cat1Fund = Number(d.fun_cat_1 ?? d.afd_fund_cat1 ?? d.cat_1_fund);
+    const cat1Med = Number(d.med_cat_1 ?? d.afd_med_cat1 ?? d.cat_1_med);
+    const pairs = [
+      { v: cat1Fund, label: "Fundamental" },
+      { v: cat1Med, label: "Ensino Médio" },
+    ];
+    for (const { v, label } of pairs) {
+      if (!isNaN(v) && v > 0) {
+        let st = "bom";
+        if (v < 50) st = "critico";
+        else if (v < 70) st = "atencao";
+        else if (v < 85) st = "adequado";
+        result.push({
+          tipo: "AFD",
+          label,
+          titulo: `Adequação Formação Docente — ${label}`,
+          valor: fmt(v) + "%",
+          status: st,
+          explicacao: `% de professores do ${label} com formação adequada (Grupo 1) para a disciplina que lecionam.`,
+        });
+      }
+    }
+  }
+
+  if (indicadores.ied) {
+    const d = indicadores.ied;
+    const n5 = Number(d.nivel_5 ?? d.ied_nivel5 ?? 0);
+    const n6 = Number(d.nivel_6 ?? d.ied_nivel6 ?? 0);
+    const alto = n5 + n6;
+    if (alto >= 0 && (n5 > 0 || n6 > 0 || d.nivel_1 != null)) {
+      result.push({
+        tipo: "IED",
+        label: `Nív. 5+6`,
+        titulo: "Esforço Docente (IED)",
+        valor: fmt(alto) + "% sobrecarga",
+        status: alto > 50 ? "atencao" : "bom",
+        explicacao: "% de professores nos níveis de esforço mais altos (5 e 6), atuando em múltiplas escolas e turnos. Acima de 50% é preocupante.",
+      });
+    }
+  }
+
   if (indicadores.taxas_rendimento) {
     const d = indicadores.taxas_rendimento;
     const pairs = [
