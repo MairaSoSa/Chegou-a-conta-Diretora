@@ -1006,8 +1006,8 @@ function EditorPanel() {
       {/* ── Right: guide panel com strip de linguinhas + conteúdo ── */}
       <aside className="w-[300px] shrink-0 border-l border-[#e0cfc6] hidden lg:flex flex-row">
 
-        {/* Strip das linguinhas — coluna esquerda encaixada */}
-        <div className="flex flex-col gap-0.5 py-4 px-1 border-r border-[#ddd0c6]" style={{ width: 72, background: "#ede5db" }}>
+        {/* Strip das linguinhas — coluna esquerda, overflow visível para o efeito de sair */}
+        <div className="relative flex flex-col gap-0.5 py-4 pl-1 overflow-visible" style={{ width: 72, background: "#ede5db", zIndex: 1 }}>
           {currentTips.map((item) => {
             const isFilled = !!String(currentData[item.field] || "").trim();
             const isActive = activeGuideField === item.field;
@@ -1017,14 +1017,17 @@ function EditorPanel() {
                 onClick={() => setActiveGuideField(item.field)}
                 title={item.title}
                 style={{
-                  transition: "all 0.15s ease",
-                  background: isActive ? "#faf4ee" : "transparent",
-                  borderRight: isActive ? "1px solid #faf4ee" : "1px solid transparent",
-                  marginRight: isActive ? -1 : 0,
-                  zIndex: isActive ? 2 : 1,
+                  transition: "all 0.18s ease",
+                  transform: isActive ? "translateX(6px)" : "translateX(0px)",
+                  background: isActive ? "#faf4ee" : isFilled ? "#e2d8ce" : "#f0e8e0",
+                  border: `1px solid ${isActive ? "#d7c7bb" : "#ccc0b4"}`,
+                  borderRight: isActive ? "1px solid #faf4ee" : undefined,
+                  zIndex: isActive ? 10 : 1,
+                  position: "relative",
+                  boxShadow: isActive ? "-2px 2px 6px rgba(0,0,0,0.10)" : "none",
                 }}
-                className={`relative flex items-center justify-between w-full rounded-l-lg px-2 py-[7px] text-[8px] font-bold uppercase tracking-[0.1em] overflow-hidden
-                  ${isActive ? "text-[#8e2f2f] shadow-sm" : isFilled ? "text-[#6f4b3b] hover:bg-[#e4d8ce]" : "text-[#a07060] hover:bg-[#e4d8ce]"}`}
+                className={`flex items-center justify-between w-full rounded-l-lg px-2 py-[7px] text-[8px] font-bold uppercase tracking-[0.1em] overflow-hidden
+                  ${isActive ? "text-[#8e2f2f]" : isFilled ? "text-[#6f4b3b] hover:brightness-95" : "text-[#a07060] hover:brightness-95"}`}
               >
                 <span className="truncate leading-tight">{item.title}</span>
                 <span className={`shrink-0 h-2 w-2 rounded-full ml-1 ${isFilled ? "bg-[#5da56d]" : "bg-[#d18b6c]"}`} />
