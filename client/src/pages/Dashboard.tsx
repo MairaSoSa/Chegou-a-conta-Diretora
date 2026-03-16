@@ -686,7 +686,7 @@ export default function Dashboard() {
 
             {/* BILHETE DA DIRETORA */}
             {!selectedInep && stats && (
-              <section className="section" style={{
+              <section className="section postit-row" style={{
                 display: 'flex',
                 flexDirection: 'row',
                 justifyContent: 'flex-start',
@@ -698,7 +698,7 @@ export default function Dashboard() {
               }}>
                 {/* Post-it Bilhete da Diretora */}
                 <div
-                  className="postit-card"
+                  className="postit-card postit-card-wrap"
                   style={{
                     background: 'linear-gradient(135deg, #fffbe7 80%, #ffe066 100%)',
                     border: '2.5px solid #ffe066',
@@ -725,7 +725,7 @@ export default function Dashboard() {
                 </div>
                 {/* Post-it Situação das Escolas */}
                 <div
-                  className="postit-card"
+                  className="postit-card postit-card-wrap"
                   style={{
                     background: 'linear-gradient(135deg, #e0f7fa 80%, #b2ebf2 100%)',
                     border: '2.5px solid #4dd0e1',

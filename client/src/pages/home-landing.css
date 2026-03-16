@@ -729,14 +729,17 @@
     gap: 10px;
   }
   .hl-note-card {
-    min-height: 120px;
+    height: 104px;
+    min-height: unset;
     padding: 14px 12px 12px;
     transform: none !important;
     animation: none !important;
     border-radius: 14px;
+    overflow: hidden;
   }
-  .hl-note-card h3 { font-size: .95rem; }
-  .hl-note-card p  { display: none; }
+  .hl-note-card h3    { font-size: .95rem; }
+  .hl-note-card p     { display: none; }
+  .hl-note-card small { display: none; }
   .hl-remendo { font-size: .72rem; bottom: 8px; right: 6px; }
 
   /* Coluna direita: empilha verticalmente */
@@ -749,7 +752,11 @@
     margin: 0;
     transform: none;
     animation: none;
+    overflow: hidden;
+    padding: 14px 16px 16px;
   }
+  .hl-tip-box::before,
+  .hl-tip-box::after { display: none; }
   .hl-caderno-box {
     flex: none;
     max-height: 300px;
@@ -780,9 +787,8 @@
   .hl-page { padding: 16px 12px 90px 16px; }
   .hl-hero-note h2 { font-size: 1.75rem; }
   .hl-cards-grid { gap: 8px; }
-  .hl-note-card { min-height: 105px; padding: 12px 10px; }
+  .hl-note-card { height: 96px; min-height: unset; padding: 12px 10px; }
   .hl-note-card h3 { font-size: .88rem; }
-  .hl-note-card p  { font-size: .64rem; }
   .hl-caderno-box { max-height: 260px; }
 }
 

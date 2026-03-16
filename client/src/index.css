@@ -1558,4 +1558,15 @@
   .compare-grid { grid-template-columns: 1fr; }
   .auto-text-grid { grid-template-columns: 1fr; }
   .big-stat { min-width: 0; flex-shrink: 1; }
+  /* Post-its empilhados no mobile */
+  .postit-row {
+    flex-direction: column !important;
+    gap: 20px !important;
+    margin: 24px 0 16px 0 !important;
+  }
+  .postit-card-wrap {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
 }
