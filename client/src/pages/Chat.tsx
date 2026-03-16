@@ -1003,12 +1003,12 @@ function EditorPanel() {
         </div>
       </div>
 
-      {/* ── Right: guide panel with linguinhas ── */}
-      <aside className="relative w-64 shrink-0 border-l border-[#e0cfc6] bg-[linear-gradient(180deg,#faf4ee_0%,#f5ebe0_100%)] hidden lg:flex flex-col">
+      {/* ── Right: guide panel com strip de linguinhas + conteúdo ── */}
+      <aside className="w-[300px] shrink-0 border-l border-[#e0cfc6] hidden lg:flex flex-row">
 
-        {/* Linguinhas — ficam presas à borda esquerda do painel */}
-        <div className="absolute -left-[80px] top-6 flex flex-col items-end gap-1">
-          {currentTips.map((item, idx) => {
+        {/* Strip das linguinhas — coluna esquerda encaixada */}
+        <div className="flex flex-col gap-0.5 py-4 px-1 border-r border-[#ddd0c6]" style={{ width: 72, background: "#ede5db" }}>
+          {currentTips.map((item) => {
             const isFilled = !!String(currentData[item.field] || "").trim();
             const isActive = activeGuideField === item.field;
             return (
@@ -1016,23 +1016,25 @@ function EditorPanel() {
                 key={item.field}
                 onClick={() => setActiveGuideField(item.field)}
                 title={item.title}
-                style={{ transition: "all 0.18s ease" }}
-                className={`relative flex h-8 w-[78px] items-center justify-between rounded-l-[8px] pl-2 pr-3 text-[8.5px] font-bold uppercase tracking-[0.1em] border border-r-0 shadow-sm overflow-hidden
-                  ${isActive
-                    ? "translate-x-0 bg-[#faf4ee] border-[#d7c7bb] border-r-[#faf4ee] text-[#8e2f2f] z-10 shadow-md"
-                    : isFilled
-                    ? "translate-x-2 bg-[#e9ddd2] border-[#d0bfb2] text-[#6f4b3b] hover:translate-x-1"
-                    : "translate-x-2 bg-[#fff6f0] border-[#deccbf] text-[#a87060] hover:translate-x-1"}`}
+                style={{
+                  transition: "all 0.15s ease",
+                  background: isActive ? "#faf4ee" : "transparent",
+                  borderRight: isActive ? "1px solid #faf4ee" : "1px solid transparent",
+                  marginRight: isActive ? -1 : 0,
+                  zIndex: isActive ? 2 : 1,
+                }}
+                className={`relative flex items-center justify-between w-full rounded-l-lg px-2 py-[7px] text-[8px] font-bold uppercase tracking-[0.1em] overflow-hidden
+                  ${isActive ? "text-[#8e2f2f] shadow-sm" : isFilled ? "text-[#6f4b3b] hover:bg-[#e4d8ce]" : "text-[#a07060] hover:bg-[#e4d8ce]"}`}
               >
                 <span className="truncate leading-tight">{item.title}</span>
-                <span className={`shrink-0 h-2.5 w-2.5 rounded-full border border-white/70 shadow-sm ml-1 ${isFilled ? "bg-[#5da56d]" : "bg-[#d18b6c]"}`} />
+                <span className={`shrink-0 h-2 w-2 rounded-full ml-1 ${isFilled ? "bg-[#5da56d]" : "bg-[#d18b6c]"}`} />
               </button>
             );
           })}
         </div>
 
         {/* Conteúdo do painel — dica focada no campo ativo */}
-        <div className="flex-1 flex flex-col p-4 pt-5 overflow-hidden">
+        <div className="flex-1 flex flex-col p-4 pt-5 overflow-hidden" style={{ background: "#faf4ee" }}>
 
           {/* Cartão de dica focado */}
           {(() => {
