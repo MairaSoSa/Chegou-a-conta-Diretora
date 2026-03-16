@@ -494,7 +494,7 @@ export default function CalendarioPage() {
                         <p className="text-sm text-[#94a3b8]">Nenhum prazo encontrado para este mês.</p>
                       </div>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-2.5">
                         {filteredItems.map((prazo, idx) => {
                           const cat = categoryStyles[prazo.categoria] || categoryStyles.GERAL;
                           const Icon = cat.icon;
@@ -502,62 +502,61 @@ export default function CalendarioPage() {
                           const day = extractDay(prazo.dataInicio);
                           return (
                             <motion.article key={`${prazo.mes}-${prazo.titulo}`}
-                              initial={{ opacity: 0, y: 16 }}
+                              initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.3, delay: idx * 0.03 }}
-                              whileHover={{ y: -4, rotate: idx % 2 === 0 ? -0.3 : 0.3 }}
-                              className={`group relative overflow-hidden rounded-[26px] border border-[#e4d9cb] bg-gradient-to-br ${cat.wash} p-4 shadow-[0_10px_35px_rgba(81,64,42,0.06)] sm:p-5`}
+                              transition={{ duration: 0.25, delay: idx * 0.03 }}
+                              whileHover={{ y: -2, rotate: idx % 2 === 0 ? -0.2 : 0.2 }}
+                              className={`group relative overflow-hidden rounded-[20px] border border-[#e4d9cb] bg-gradient-to-br ${cat.wash} p-3 shadow-[0_4px_16px_rgba(81,64,42,0.05)]`}
                             >
-                              <Tape className="left-6 top-[-8px]" rotate={idx % 2 === 0 ? "rotate-[-8deg]" : "rotate-[7deg]"} />
-                              <HandDrawnPin className="absolute right-4 top-3 z-20" />
-                              <div className={`absolute left-0 top-0 h-full w-2 border-l-4 ${cat.line}`} />
+                              <div className={`absolute left-0 top-0 h-full w-1.5 ${cat.line} border-l-[3px]`} />
 
-                              <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-start">
-                                <div className="flex shrink-0 items-center gap-3 sm:w-[92px] sm:flex-col sm:items-center sm:justify-start">
-                                  <div className="flex h-14 w-14 flex-col items-center justify-center rounded-[18px] border border-[#efe5d8] bg-white shadow-sm">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#948a7f]">{monthLabel}</span>
-                                    <span className="text-lg font-black leading-none text-[#514c45]">{String(day).padStart(2,"0")}</span>
+                              <div className="relative z-10 flex items-start gap-3 pl-1">
+                                {/* date pill */}
+                                <div className="flex shrink-0 flex-col items-center gap-1">
+                                  <div className="flex h-11 w-11 flex-col items-center justify-center rounded-[14px] border border-[#efe5d8] bg-white shadow-sm">
+                                    <span className="text-[9px] font-black uppercase tracking-[0.14em] text-[#a89e94]">{monthLabel}</span>
+                                    <span className="text-[15px] font-black leading-none text-[#514c45]">{String(day).padStart(2,"0")}</span>
                                   </div>
-                                  <div className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold ${urgencyStyles[urgLabel]}`}>
+                                  <div className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-bold ${urgencyStyles[urgLabel]}`}>
                                     {urgLabel}
                                   </div>
                                 </div>
 
                                 <div className="min-w-0 flex-1">
-                                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                                    <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold ${cat.tone}`}>
-                                      <Icon className="h-4 w-4 rotate-[-5deg] stroke-[2.2]" />
+                                  <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${cat.tone}`}>
+                                      <Icon className="h-3 w-3" />
                                       {prazo.categoria}
                                     </span>
                                     {prazo.aConfirmar && (
-                                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
-                                        <AlertTriangle className="h-3 w-3" /> A confirmar
+                                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                                        <AlertTriangle className="h-2.5 w-2.5" /> A confirmar
                                       </span>
                                     )}
                                   </div>
-                                  <h3 className="text-xl font-black tracking-[-0.02em] text-[#4d4a43]">{prazo.titulo}</h3>
-                                  <p className="mt-2 max-w-3xl text-sm leading-6 text-[#6d675f]">{prazo.descricao}</p>
-                                  <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold text-[#8b857a]">
+                                  <h3 className="text-[14px] font-black leading-snug tracking-[-0.01em] text-[#4d4a43]">{prazo.titulo}</h3>
+                                  <p className="mt-1 text-[12px] leading-5 text-[#6d675f] line-clamp-2">{prazo.descricao}</p>
+                                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-semibold text-[#9b9388]">
                                     <span>Fonte: {prazo.fonte}</span>
                                     {prazo.dataFim && !prazo.aConfirmar && (
                                       <>
-                                        <span className="text-[#9b9388]">•</span>
-                                        <span className="text-rose-600">
-                                          Até {new Date(prazo.dataFim + "T12:00:00").toLocaleDateString("pt-BR")}
-                                        </span>
+                                        <span>·</span>
+                                        <span className="text-rose-500">Até {new Date(prazo.dataFim + "T12:00:00").toLocaleDateString("pt-BR")}</span>
                                       </>
                                     )}
                                     {prazo.url && (
                                       <>
-                                        <span className="text-[#9b9388]">•</span>
+                                        <span>·</span>
                                         <a href={prazo.url} target="_blank" rel="noopener noreferrer"
-                                          className="text-[#587cc9] underline decoration-dotted underline-offset-4 transition hover:text-[#315dbb]">
+                                          className="text-[#587cc9] underline decoration-dotted underline-offset-2 transition hover:text-[#315dbb]">
                                           Saiba mais
                                         </a>
                                       </>
                                     )}
                                   </div>
                                 </div>
+
+                                <HandDrawnPin className="hidden shrink-0 scale-75 sm:block" />
                               </div>
                             </motion.article>
                           );
