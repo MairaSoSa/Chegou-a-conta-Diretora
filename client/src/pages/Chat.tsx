@@ -453,23 +453,11 @@ function PesquisaPanel() {
             {/* ── Área rolável de mensagens ── */}
             <div className="flex-1 overflow-y-auto px-7 pr-10 lg:pr-14 pb-3" ref={convScrollRef}>
               {!temMensagens ? (
-                /* Estado vazio: boas-vindas + chips de sugestão */
-                <div className="pt-4 space-y-4">
-                  <p className="text-[#b09080] text-sm leading-6">
-                    Olá! Pergunte sobre PDDE, PNAE, PNATE, prestação de contas, compras ou documentos. 📚
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {SUGESTOES.slice(0, 4).map((s, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleSend(s)}
-                        className="rounded-full border border-[#dcc8b8] bg-white/80 px-3 py-1.5 text-left text-[#6b4a3a] hover:bg-[#fff0e8] hover:border-[#c8a898] transition-colors"
-                        style={{ fontSize: 12 }}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
+                /* Estado vazio: cards de sugestão */
+                <div className="pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {SUGESTOES.map((s, i) => (
+                    <SugestaoCard key={i} s={s} idx={i} onClick={() => handleSend(s)} />
+                  ))}
                 </div>
               ) : (
                 <div className="space-y-3 py-2">
