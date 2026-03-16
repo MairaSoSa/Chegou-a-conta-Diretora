@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   CalendarDays, Newspaper, Pin, BellRing, BadgeAlert, BookOpenCheck,
   FileText, CircleDollarSign, BusFront, Apple, GraduationCap,
-  ChevronLeft, ChevronRight, Search, Sparkles, CheckCircle2, Clock3,
+  Search, Sparkles, CheckCircle2, Clock3,
   Dot, X, Loader2, RefreshCw, AlertTriangle, AlertCircle,
   ExternalLink, Landmark, BookOpen,
 } from "lucide-react";
@@ -134,10 +134,8 @@ function fonteBadgeClass(fonte: string): string {
 
 export default function CalendarioPage() {
   const currentDate = new Date();
-  const anoAtual = Math.max(currentDate.getFullYear(), 2026);
   const mesAtual = currentDate.getMonth() + 1;
-
-  const [ano, setAno] = useState(anoAtual);
+  const ano = 2026;
   const [mesSelecionado, setMesSelecionado] = useState<number>(mesAtual);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -209,6 +207,42 @@ export default function CalendarioPage() {
   const attentionCount = filteredItems.filter(p => p.urgencia === "media").length;
   const infoCount = filteredItems.filter(p => p.urgencia === "baixa").length;
 
+  const resumoDoMes = useMemo(() => {
+    const mesNome = MONTH_FULL[monthIdx];
+    if (filteredItems.length === 0) {
+      return `Não há prazos registrados para ${mesNome}. Bom momento para revisar documentação e se preparar para os próximos compromissos.`;
+    }
+    const categorias = [...new Set(filteredItems.map(p => p.categoria))];
+    const urgentes = filteredItems.filter(p => p.urgencia === "alta");
+    const kw: Record<string, string[]> = {
+      PDDE: ["pdde","dinheiro direto"], PNAE: ["pnae","alimentação","merenda","cae"],
+      PNATE: ["pnate","transporte"], FUNDEB: ["fundeb"],
+      CENSO: ["censo","matrícula","inep"], SAEB: ["saeb","avaliação"],
+      PRESTAÇÃO: ["prestação","contas"], PLANEJAMENTO: ["planejamento","ppp","conselho escolar"],
+    };
+    const noticiasRelevantes = noticias.filter(n => {
+      const txt = (n.titulo + " " + (n.resumo || "")).toLowerCase();
+      return categorias.some(cat => (kw[cat] || [cat.toLowerCase()]).some(w => txt.includes(w)));
+    }).slice(0, 2);
+
+    const partes: string[] = [];
+    partes.push(
+      `Em ${mesNome}, a agenda concentra ${filteredItems.length} prazo${filteredItems.length > 1 ? "s" : ""}` +
+      (categorias.length ? `, com foco em ${categorias.slice(0, 3).join(", ")}` : "") + "."
+    );
+    if (urgentes.length > 0) {
+      const nomes = urgentes.slice(0, 2).map(p => p.titulo);
+      partes.push(`Ação imediata necessária: ${nomes.join("; ")}.`);
+    }
+    if (attentionCount > 0) {
+      partes.push(`Também há ${attentionCount} item${attentionCount > 1 ? "s" : ""} de atenção que merecem planejamento antecipado.`);
+    }
+    if (noticiasRelevantes.length > 0) {
+      partes.push(`Nas notícias recentes: ${noticiasRelevantes[0].titulo}.`);
+    }
+    return partes.join(" ");
+  }, [filteredItems, noticias, monthIdx, urgentCount, attentionCount]);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") setIsCalendarOpen(false); }
     function onMouse(e: MouseEvent) {
@@ -254,17 +288,9 @@ export default function CalendarioPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 self-start rounded-[22px] border border-[#d8cfbf] bg-[#fffdf8] p-2 shadow-sm">
-                  <button onClick={() => ano > 2026 && setAno(a => a - 1)}
-                    className="rounded-xl border border-[#e6dccf] bg-white p-2 text-[#736b60] transition hover:-translate-y-0.5 disabled:opacity-40"
-                    disabled={ano <= 2026}>
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <div className="min-w-[72px] text-center text-lg font-bold text-[#4f5a44]">{ano}</div>
-                  <button onClick={() => setAno(a => a + 1)}
-                    className="rounded-xl border border-[#e6dccf] bg-white p-2 text-[#736b60] transition hover:-translate-y-0.5">
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
+                <div className="flex items-center gap-2 self-start rounded-[18px] border border-[#d8cfbf] bg-[#fffdf8] px-4 py-2 shadow-sm">
+                  <CalendarDays className="h-4 w-4 text-[#7a8a68]" />
+                  <span className="text-base font-bold text-[#4f5a44]">2026</span>
                 </div>
               </div>
 
@@ -274,8 +300,7 @@ export default function CalendarioPage() {
                   Como usar esta agenda
                 </div>
                 <p className="leading-6">
-                  Escolha um mês, filtre por palavra-chave e acompanhe os principais marcos da rotina escolar.
-                  {ano > 2026 && <span className="ml-1 font-semibold text-amber-700"> Datas de {ano} baseadas em anos anteriores — confirme nos editais oficiais.</span>}
+                  Escolha um mês, filtre por palavra-chave e acompanhe os principais marcos da rotina escolar. As datas podem variar conforme edital — confirme sempre nos portais oficiais.
                 </p>
               </div>
             </div>
@@ -712,10 +737,7 @@ export default function CalendarioPage() {
                       </div>
                     </div>
                     <div className="rounded-[22px] border border-dashed border-[#d9d0c2] bg-[#faf7f0] p-4 text-sm leading-6 text-[#6f695f]">
-                      Em <span className="font-bold text-[#4f4a43]">{MONTH_FULL[monthIdx]}</span>, a agenda reúne{" "}
-                      <span className="font-bold text-[#4f4a43]">{filteredItems.length} prazo{filteredItems.length !== 1 ? "s" : ""}</span>, com foco especial em{" "}
-                      <span className="font-bold text-rose-600">{urgentCount} item{urgentCount !== 1 ? "s" : ""} urgente{urgentCount !== 1 ? "s" : ""}</span>.
-                      {" "}Isso ajuda a visualizar o que exige ação imediata e o que pode ser organizado com mais calma.
+                      {resumoDoMes}
                     </div>
                   </div>
                 </aside>
