@@ -621,31 +621,177 @@
   box-shadow: 2px 5px 14px rgba(0,0,0,.18);
 }
 
-/* ── Responsivo ── */
-@media (max-width: 980px) {
-  .hl-root { overflow: auto; }
-  .hl-notebook { height: auto; min-height: 760px; grid-template-columns: 1fr; }
-  .hl-page { overflow-y: auto; padding-left: 38px; }
-  .hl-layout { grid-template-columns: 1fr; flex: none; }
-  .hl-right-col { flex-direction: row; flex-wrap: wrap; }
-  .hl-caderno-box { flex: 1 1 280px; }
-  .hl-tip-box { width: 100%; transform: none; }
-  .hl-cards-grid { grid-template-columns: repeat(2,1fr); }
-  .hl-footer-strip { position: static; margin-top: 8px; padding-left: 10px; }
-}
-@media (max-width: 700px) {
-  .hl-cards-grid { grid-template-columns: 1fr; }
-  .hl-topbar { grid-template-columns: 1fr; }
-  .hl-mini-menu { justify-content: flex-start; }
-  .hl-hero-note h2 { font-size: 2rem; }
-  .hl-hero-note, .hl-caderno-box, .hl-tip-box, .hl-note-card { transform: none !important; animation: none !important; }
-  .hl-eyebrow { white-space: normal; font-size: .58rem; }
-  .hl-page { padding-left: 24px; padding-right: 12px; }
+/* ══════════════════════════════════════════
+   RESPONSIVIDADE
+   ══════════════════════════════════════════ */
+
+/* ── Tablet largo (≤ 1080px) ── */
+@media (max-width: 1080px) {
+  .hl-cards-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-@media (max-width: 480px) {
-  .hl-notebook { border-radius: 16px; }
+/* ── Tablet (≤ 980px): caderno empilhado ── */
+@media (max-width: 980px) {
+  .hl-root { overflow: auto; }
+  .hl-notebook {
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+    grid-template-columns: 1fr;
+    border-radius: 20px;
+  }
+  .hl-page {
+    overflow: visible;
+    height: auto;
+    padding-left: 40px;
+    padding-bottom: 32px;
+  }
+  .hl-layout { grid-template-columns: 1fr; flex: none; gap: 24px; }
+  .hl-left-col { overflow: visible; }
+  .hl-right-col { flex-direction: row; flex-wrap: wrap; gap: 20px; }
+  .hl-caderno-box { flex: 1 1 280px; max-height: 380px; }
+  .hl-tip-box { width: 100%; transform: none; margin: 0; }
+  .hl-cards-grid { grid-template-columns: repeat(2, 1fr); }
+  .hl-footer-strip { position: static; margin-top: 12px; padding-left: 0; }
+}
+
+/* ── Mobile grande (≤ 640px): redesign completo ── */
+@media (max-width: 640px) {
+  /* Raiz: sem padding lateral, deixa o caderno ir de ponta a ponta */
+  .hl-root {
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    place-items: start;
+  }
+
+  /* Caderno: vira página aberta full-width sem moldura */
+  .hl-notebook {
+    width: 100%;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    box-shadow: none;
+    overflow: visible;
+    min-height: 100svh;
+  }
+
+  /* Decorações flutuantes fora da tela — esconde */
+  .hl-doodle-2,
+  .hl-doodle-3 { display: none; }
+
+  /* Página: sem a linha vermelha (usa padding menor),
+     mantém o papel pautado */
+  .hl-page {
+    height: auto;
+    overflow: visible;
+    padding: 20px 16px 100px 20px;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        #fffdf8 0 32px,
+        #dbe9fb 32px 33px
+      );
+  }
+
+  /* Layout: coluna única */
+  .hl-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .hl-left-col {
+    gap: 18px;
+    overflow: visible;
+  }
+
+  /* Hero: mais compacto */
+  .hl-hero-note {
+    padding: 18px 16px 16px;
+  }
+  .hl-hero-note::before,
+  .hl-hero-note::after { display: none; } /* remove fitas decorativas */
+  .hl-eyebrow {
+    white-space: normal;
+    line-height: 1.5;
+    font-size: .58rem;
+    max-width: 100%;
+  }
+  .hl-hero-note h2 {
+    font-size: 2rem;
+    line-height: 1;
+    margin-top: 8px;
+  }
+  .hl-hero-desc { font-size: .82rem; max-width: 100%; }
+  .hl-hero-tags { gap: 6px; }
+  .hl-tag { font-size: .70rem; }
+
+  /* Cards: 2 colunas compactas */
+  .hl-mural-label { font-size: .95rem; }
+  .hl-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .hl-note-card {
+    min-height: 120px;
+    padding: 14px 12px 12px;
+    transform: none !important;
+    animation: none !important;
+    border-radius: 14px;
+  }
+  .hl-note-card h3 { font-size: .95rem; }
+  .hl-note-card p  { font-size: .68rem; }
+  .hl-remendo { font-size: .72rem; bottom: 8px; right: 6px; }
+
+  /* Coluna direita: empilha verticalmente */
+  .hl-right-col {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .hl-tip-box {
+    width: 100%;
+    margin: 0;
+    transform: none;
+    animation: none;
+  }
+  .hl-caderno-box {
+    flex: none;
+    max-height: 300px;
+  }
+  .hl-trilha-item-title,
+  .hl-trilha-item-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Rodapé estático */
+  .hl-footer-strip {
+    position: static;
+    margin-top: 16px;
+    padding-left: 0;
+    height: auto;
+    font-size: .68rem;
+  }
+
+  /* Botão acessibilidade */
+  .hl-a11y-btn {
+    bottom: 14px;
+    left: 14px;
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* ── Mobile pequeno (≤ 420px): ajustes finos ── */
+@media (max-width: 420px) {
+  .hl-page { padding: 16px 12px 90px 16px; }
   .hl-hero-note h2 { font-size: 1.75rem; }
-  .hl-hero-note { padding: 18px 18px 14px; }
-  .hl-page { padding: 18px 12px 14px 22px; }
+  .hl-cards-grid { gap: 8px; }
+  .hl-note-card { min-height: 105px; padding: 12px 10px; }
+  .hl-note-card h3 { font-size: .88rem; }
+  .hl-note-card p  { font-size: .64rem; }
+  .hl-caderno-box { max-height: 260px; }
+}
+
+/* ── Mobile mínimo (≤ 360px): 1 coluna de cards ── */
+@media (max-width: 360px) {
+  .hl-cards-grid { grid-template-columns: 1fr; }
+  .hl-note-card { min-height: 80px; }
 }

@@ -11,6 +11,8 @@ Preferred communication style: Simple, everyday language.
 ### UI/UX Decisions
 The application features a "Ghibli/territorial" visual style with warm, earthy colors and hand-drawn aesthetics. The UI uses React with TypeScript, Tailwind CSS, shadcn/ui components (New York style), Framer Motion for animations, and Recharts for data visualizations. An accessibility icon is available in the navbar.
 
+**Responsive design**: Navigation uses a custom Framer Motion sidebar drawer for mobile/tablet (< lg = 1024px) — slides in from the left with spring animation, sage gradient matching the header, icon bubbles, item descriptions, and active indicators. Home page (`/`) is a fixed-height notebook on desktop that becomes a full-width scrollable lined-paper page on mobile (≤ 640px). All inner-page grids use `sm:` breakpoints to collapse to 1-column on small phones.
+
 ### Technical Implementations
 The frontend is built with React, TypeScript, Vite, Wouter for routing, and TanStack React Query for state management. The backend uses Node.js with Express 5 and TypeScript, defining REST API endpoints validated with Zod. Custom esbuild scripts handle server bundling, and Vite manages client builds. Admin authentication uses a Bearer token.
 
