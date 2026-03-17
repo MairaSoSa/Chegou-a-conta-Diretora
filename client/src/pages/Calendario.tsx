@@ -453,15 +453,15 @@ export default function CalendarioPage() {
                                     <motion.button key={day}
                                       whileHover={{ y: -3, rotate: day % 2 === 0 ? -0.8 : 0.8 }}
                                       whileTap={{ scale: 0.98 }}
-                                      onClick={() => { if (hasItem && window.innerWidth < 640) setMobileDaySheet({ day, items }); }}
+                                      onClick={() => { if (hasItem) setMobileDaySheet({ day, items }); }}
                                       className={`group relative min-h-[56px] sm:min-h-[92px] overflow-visible rounded-[14px] sm:rounded-[20px] border p-1 sm:p-2 text-left shadow-sm transition ${
-                                        hasItem ? "border-[#dfcfbd] bg-[#fffdf8]" : "border-[#efe4d7] bg-[#fcfaf5]"
+                                        hasItem ? "border-[#dfcfbd] bg-[#fffdf8] cursor-pointer" : "border-[#efe4d7] bg-[#fcfaf5] cursor-default"
                                       }`}
                                       style={{ clipPath: day % 2 === 0 ? "polygon(3% 2%,98% 4%,100% 26%,97% 99%,1% 97%,0% 12%)" : "polygon(1% 4%,96% 1%,99% 16%,98% 98%,4% 99%,0 22%)" }}>
                                       {hasItem && (
                                         <>
                                           <div className={`absolute left-1 right-1 top-1 sm:left-2 sm:right-2 sm:top-2 h-4 sm:h-6 rounded-md opacity-80 ${urgent ? "bg-[#ffd7a8]" : attention ? "bg-[#fff2a8]" : "bg-[#dff2bf]"}`} />
-                                          <div className="absolute right-1 top-1 sm:right-2 sm:top-1.5 z-20 hidden sm:block">
+                                          <div className="absolute right-1 top-1 sm:right-2 sm:top-1.5 z-20">
                                             {urgent ? <HandDrawnPin className="scale-[0.72]" /> : <HandDrawnStar className="h-5 w-5 rotate-[10deg]" />}
                                           </div>
                                         </>
@@ -476,18 +476,12 @@ export default function CalendarioPage() {
                                       <div className="relative z-10 mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
                                         {items.slice(0, 2).map((item) => (
                                           <div key={item.titulo}
-                                            className={`hidden sm:block rounded-[8px] border px-1.5 py-0.5 text-[9px] font-bold leading-4 ${cat?.tone || "bg-stone-100 text-stone-700 border-stone-200"}`}>
+                                            className={`rounded-[8px] border px-1.5 py-0.5 text-[9px] font-bold leading-4 ${cat?.tone || "bg-stone-100 text-stone-700 border-stone-200"}`}>
                                             {item.categoria}
                                           </div>
                                         ))}
-                                        {items.length > 2 && <div className="hidden sm:block text-[9px] font-bold text-[#8b8478]">+{items.length - 2} mais</div>}
+                                        {items.length > 2 && <div className="text-[9px] font-bold text-[#8b8478]">+{items.length - 2} mais</div>}
                                       </div>
-                                      {hasItem && (
-                                        <div className="pointer-events-none absolute left-1/2 top-[-12px] z-30 w-[170px] -translate-x-1/2 rounded-[14px] border border-[#d9cdbf] bg-[#fffdf7] px-3 py-2 text-[11px] font-semibold leading-4 text-[#5e584f] opacity-0 shadow-[0_10px_30px_rgba(77,61,38,0.12)] transition duration-200 group-hover:opacity-100">
-                                          <div className="font-black text-[#4f4a43]">{firstTitle}</div>
-                                          {items.length > 1 && <div className="mt-1 text-[#8b8478]">+{items.length - 1} outro{items.length > 2 ? "s" : ""} prazo{items.length > 2 ? "s" : ""}</div>}
-                                        </div>
-                                      )}
                                       <div className="pointer-events-none absolute inset-0 rounded-[20px] border border-dashed border-[#e9dfd1] opacity-40" />
                                     </motion.button>
                                   );
@@ -755,7 +749,7 @@ export default function CalendarioPage() {
               exit={{ opacity: 0 }}
               onClick={() => setMobileDaySheet(null)}
               onMouseDown={(e) => e.stopPropagation()}
-              className="fixed inset-0 z-40 bg-black/40 sm:hidden"
+              className="fixed inset-0 z-40 bg-black/40"
             />
             {/* Sheet */}
             <motion.div
@@ -765,16 +759,16 @@ export default function CalendarioPage() {
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 26, stiffness: 280 }}
               onMouseDown={(e) => e.stopPropagation()}
-              className="fixed bottom-0 left-0 right-0 z-50 sm:hidden rounded-t-[28px] border-t border-[#d8cfc0] bg-[#fffdf8] shadow-[0_-12px_40px_rgba(80,60,30,0.14)]"
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[28px] border-t border-[#d8cfc0] bg-[#fffdf8] shadow-[0_-12px_40px_rgba(80,60,30,0.14)] sm:left-auto sm:right-6 sm:bottom-6 sm:rounded-[28px] sm:border sm:w-[400px]"
               style={{ maxHeight: "82vh", overflowY: "auto" }}
             >
-              {/* Drag handle */}
-              <div className="flex justify-center pt-3 pb-1">
+              {/* Drag handle — mobile only */}
+              <div className="flex justify-center pt-3 pb-1 sm:hidden">
                 <div className="h-1 w-10 rounded-full bg-[#d0c8bb]" />
               </div>
 
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-[#ece5d8]">
+              <div className="flex items-center justify-between px-5 py-3 sm:pt-4 border-b border-[#ece5d8]">
                 <div>
                   <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#9b9388]">
                     {MONTH_FULL[mesSelecionado - 1]} {ano}
