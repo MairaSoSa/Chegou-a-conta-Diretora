@@ -784,80 +784,150 @@ export default function TrilhaUnidade() {
       {/* Ficha modal */}
       <AnimatePresence>
         {openModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/40 px-4 py-8 backdrop-blur-sm"
-            onClick={() => setOpenModal(null)}
-          >
+          <>
+            {/* ── MOBILE: tela cheia deslizando de baixo ── */}
             <motion.div
-              initial={{ opacity: 0, y: 24, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 14, scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 340, damping: 28 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative flex w-full max-w-3xl overflow-hidden rounded-[24px] shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
+              key="mobile-sheet"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 320, damping: 34 }}
+              className="sm:hidden fixed inset-0 z-[90] flex flex-col bg-[#f8f4ee]"
+              style={{ fontFamily: "'Nunito', sans-serif" }}
             >
-              {/* Binder spine */}
+              {/* Top bar colorida (estilo lombada horizontal) */}
               <div
-                className="flex w-10 flex-shrink-0 flex-col items-center justify-center gap-5 py-6"
-                style={{ background: `linear-gradient(180deg, ${tone.spineLight}, ${tone.spine})` }}
+                className="flex shrink-0 items-center gap-3 px-4 py-3"
+                style={{
+                  background: `linear-gradient(90deg, ${tone.spine} 0%, ${tone.spineLight} 100%)`,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+                }}
               >
-                {[0, 1, 2].map((i) => <RingClip key={i} color="rgba(255,255,255,0.6)" />)}
+                <button
+                  onClick={() => setOpenModal(null)}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-[12px] font-extrabold text-white backdrop-blur-sm"
+                >
+                  ← voltar
+                </button>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-white/70 truncate">
+                    {openModal.emoji && <span className="mr-1">{openModal.emoji}</span>}
+                    {openModal.label}
+                  </p>
+                </div>
               </div>
 
-              {/* Content area */}
-              <div className="flex flex-1 flex-col bg-[#f8f4ee]">
-                {/* Header bar */}
+              {/* Título */}
+              <div
+                className="shrink-0 border-b px-5 py-4"
+                style={{ borderColor: tone.border, background: tone.header }}
+              >
+                <h3 className="text-xl font-extrabold leading-snug text-slate-800">{openModal.title}</h3>
+              </div>
+
+              {/* Conteúdo scrollável — papel pautado */}
+              <div className="flex-1 overflow-y-auto px-4 py-5">
                 <div
-                  className="flex items-start justify-between gap-4 border-b px-6 py-4"
+                  className="relative rounded-[14px] border bg-white p-5"
                   style={{ borderColor: tone.border }}
                 >
-                  <div>
-                    <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
-                      {openModal.emoji && <span className="text-base leading-none">{openModal.emoji}</span>}
-                      {openModal.label}
-                    </p>
-                    <h3 className="mt-1 text-xl font-extrabold text-slate-800">{openModal.title}</h3>
-                  </div>
-                  <button
-                    onClick={() => setOpenModal(null)}
-                    className="flex-shrink-0 rounded-full border border-stone-300 bg-white px-4 py-1.5 text-sm font-semibold text-stone-500 shadow-sm transition hover:bg-stone-50"
-                  >
-                    fechar ×
-                  </button>
-                </div>
-
-                {/* Scrollable body — lined paper style */}
-                <div className="max-h-[62vh] overflow-y-auto px-6 py-5">
+                  {/* Margem vermelha */}
                   <div
-                    className="relative rounded-[14px] border bg-white p-5"
-                    style={{ borderColor: tone.border }}
-                  >
-                    {/* Red left margin line */}
-                    <div
-                      className="absolute left-12 top-0 bottom-0 w-px"
-                      style={{ background: "#f0a0a088" }}
-                    />
-                    {/* Ruled lines background */}
-                    <div
-                      className="pointer-events-none absolute inset-0 rounded-[14px] opacity-30"
-                      style={{
-                        backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #c7d0e0 31px, #c7d0e0 32px)",
-                        backgroundPosition: "0 40px",
-                      }}
-                    />
-                    <div className="relative pl-8 space-y-5 text-sm leading-8 text-slate-700">
-                      {openModal.paragraphs.map((p, i) => (
-                        <p key={i}>{p}</p>
-                      ))}
-                    </div>
+                    className="absolute left-10 top-0 bottom-0 w-px"
+                    style={{ background: "#f0a0a088" }}
+                  />
+                  {/* Linhas pautadas */}
+                  <div
+                    className="pointer-events-none absolute inset-0 rounded-[14px] opacity-25"
+                    style={{
+                      backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #c7d0e0 31px, #c7d0e0 32px)",
+                      backgroundPosition: "0 40px",
+                    }}
+                  />
+                  <div className="relative pl-6 space-y-5 text-[15px] leading-8 text-slate-700">
+                    {openModal.paragraphs.map((p, i) => (
+                      <p key={i}>{p}</p>
+                    ))}
                   </div>
                 </div>
               </div>
             </motion.div>
-          </motion.div>
+
+            {/* ── DESKTOP: modal flutuante com lombada ── */}
+            <motion.div
+              key="desktop-modal"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="hidden sm:flex fixed inset-0 z-[90] items-center justify-center bg-slate-950/40 px-4 py-8 backdrop-blur-sm"
+              onClick={() => setOpenModal(null)}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 24, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 14, scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 340, damping: 28 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative flex w-full max-w-3xl overflow-hidden rounded-[24px] shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
+              >
+                {/* Binder spine */}
+                <div
+                  className="flex w-10 flex-shrink-0 flex-col items-center justify-center gap-5 py-6"
+                  style={{ background: `linear-gradient(180deg, ${tone.spineLight}, ${tone.spine})` }}
+                >
+                  {[0, 1, 2].map((i) => <RingClip key={i} color="rgba(255,255,255,0.6)" />)}
+                </div>
+
+                {/* Content area */}
+                <div className="flex flex-1 flex-col bg-[#f8f4ee]">
+                  {/* Header bar */}
+                  <div
+                    className="flex items-start justify-between gap-4 border-b px-6 py-4"
+                    style={{ borderColor: tone.border }}
+                  >
+                    <div>
+                      <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
+                        {openModal.emoji && <span className="text-base leading-none">{openModal.emoji}</span>}
+                        {openModal.label}
+                      </p>
+                      <h3 className="mt-1 text-xl font-extrabold text-slate-800">{openModal.title}</h3>
+                    </div>
+                    <button
+                      onClick={() => setOpenModal(null)}
+                      className="flex-shrink-0 rounded-full border border-stone-300 bg-white px-4 py-1.5 text-sm font-semibold text-stone-500 shadow-sm transition hover:bg-stone-50"
+                    >
+                      fechar ×
+                    </button>
+                  </div>
+
+                  {/* Scrollable body — lined paper style */}
+                  <div className="max-h-[62vh] overflow-y-auto px-6 py-5">
+                    <div
+                      className="relative rounded-[14px] border bg-white p-5"
+                      style={{ borderColor: tone.border }}
+                    >
+                      <div
+                        className="absolute left-12 top-0 bottom-0 w-px"
+                        style={{ background: "#f0a0a088" }}
+                      />
+                      <div
+                        className="pointer-events-none absolute inset-0 rounded-[14px] opacity-30"
+                        style={{
+                          backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #c7d0e0 31px, #c7d0e0 32px)",
+                          backgroundPosition: "0 40px",
+                        }}
+                      />
+                      <div className="relative pl-8 space-y-5 text-sm leading-8 text-slate-700">
+                        {openModal.paragraphs.map((p, i) => (
+                          <p key={i}>{p}</p>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
