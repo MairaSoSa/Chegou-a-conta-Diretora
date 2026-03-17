@@ -265,12 +265,12 @@ export function AccessibilityMenu({ isOpen, onToggle }: { isOpen: boolean; onTog
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, y: -6, scale: 0.96 }}
+          initial={{ opacity: 0, y: 8, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -6, scale: 0.96 }}
+          exit={{ opacity: 0, y: 8, scale: 0.96 }}
           transition={{ duration: 0.15 }}
           className="fixed right-4 z-50 rounded-2xl shadow-xl border border-[#ddd0c8] p-4 w-68"
-          style={{ top: "4.2rem", background: "#faf4ee", width: 268 }}
+          style={{ bottom: "3.5rem", background: "#faf4ee", width: 268 }}
           role="dialog"
           aria-label="Ajustes de visualização e leitura"
         >

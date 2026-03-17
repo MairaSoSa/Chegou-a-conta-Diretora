@@ -1,10 +1,13 @@
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { Accessibility } from "lucide-react";
+import { useAccessibility } from "@/App";
 
 export function Footer() {
   const { data: settings } = useQuery<Record<string, string>>({
     queryKey: ["/api/settings"],
   });
+  const { toggle: toggleAccessibility } = useAccessibility();
 
   return (
     <footer
@@ -68,31 +71,51 @@ export function Footer() {
       <div className="relative mx-auto max-w-7xl px-4 py-4 lg:px-10">
         <div className="flex items-center justify-between">
 
-          {/* Quem somos */}
-          <Link
-            href="/quem-somos"
-            className="group flex items-center gap-2 text-sm font-medium transition-all"
-            style={{ color: "#2e4030" }}
-            data-testid="text-footer-slogan"
-          >
-            <span style={{ textShadow: "0 1px 0 rgba(255,255,255,0.50)" }}>
-              {settings?.footer_slogan || "Quem somos"}
-            </span>
+          {/* Quem somos + botão acessibilidade */}
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/quem-somos"
+              className="group flex items-center gap-2 text-sm font-medium transition-all"
+              style={{ color: "#2e4030" }}
+              data-testid="text-footer-slogan"
+            >
+              <span style={{ textShadow: "0 1px 0 rgba(255,255,255,0.50)" }}>
+                {settings?.footer_slogan || "Quem somos"}
+              </span>
 
-            {/* risco de lápis no hover — igual ao nav */}
-            <span className="relative block h-[3px] w-12 overflow-visible">
-              <span
-                className="absolute inset-0 transition-opacity duration-200 opacity-0 group-hover:opacity-100"
-                style={{
-                  background: "linear-gradient(90deg, transparent 0%, rgba(38,30,18,0.72) 10%, rgba(52,42,24,0.88) 40%, rgba(44,36,20,0.82) 70%, transparent 100%)",
-                  transform: "rotate(-0.6deg) skewX(-1deg)",
-                  filter: "blur(0.3px)",
-                  borderRadius: "1px",
-                  top: "0px",
-                }}
-              />
-            </span>
-          </Link>
+              {/* risco de lápis no hover — igual ao nav */}
+              <span className="relative block h-[3px] w-12 overflow-visible">
+                <span
+                  className="absolute inset-0 transition-opacity duration-200 opacity-0 group-hover:opacity-100"
+                  style={{
+                    background: "linear-gradient(90deg, transparent 0%, rgba(38,30,18,0.72) 10%, rgba(52,42,24,0.88) 40%, rgba(44,36,20,0.82) 70%, transparent 100%)",
+                    transform: "rotate(-0.6deg) skewX(-1deg)",
+                    filter: "blur(0.3px)",
+                    borderRadius: "1px",
+                    top: "0px",
+                  }}
+                />
+              </span>
+            </Link>
+
+            <button
+              onClick={toggleAccessibility}
+              aria-label="Ajustes de acessibilidade"
+              data-testid="button-accessibility-menu"
+              title="Acessibilidade"
+              className="flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200 active:scale-95"
+              style={{
+                background: "rgba(218,185,60,.18)",
+                border: "1px solid rgba(180,150,30,.28)",
+                color: "#6b5208",
+                opacity: 0.6,
+              }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+              onMouseLeave={e => (e.currentTarget.style.opacity = "0.6")}
+            >
+              <Accessibility className="h-3 w-3" />
+            </button>
+          </div>
 
           {/* Ícone admin */}
           <Link
