@@ -468,14 +468,14 @@ function PesquisaPanel() {
           <div className="relative z-10 flex flex-col" style={{ height: "100%" }}>
 
             {/* ── Cabeçalho fixo ── */}
-            <div className="flex items-center justify-between px-7 pr-10 lg:pr-14 pt-6 pb-3 shrink-0">
-              <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-bold uppercase text-[#8e2f2f]"
+            <div className="flex items-center px-7 pr-10 lg:pr-14 pt-6 pb-3 shrink-0 gap-2">
+              <div className="flex-1 flex justify-center items-center gap-1.5 rounded-full px-3 py-1 font-bold uppercase text-[#8e2f2f]"
                 style={{ background: "rgba(142,47,47,0.10)", fontSize: 10, letterSpacing: "0.20em" }}>
                 ✍️ Folha de Pesquisa
               </div>
               {temMensagens && (
                 <button onClick={handleNewChat}
-                  className="inline-flex items-center gap-1 rounded-full border border-[#d9bfb5] bg-white/80 px-3 py-1 text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors"
+                  className="flex-1 flex justify-center items-center gap-1 rounded-full border border-[#d9bfb5] bg-white/80 px-3 py-1 text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors"
                   style={{ fontSize: 10 }}>
                   <RefreshCw className="w-3 h-3" /> Nova conversa
                 </button>
