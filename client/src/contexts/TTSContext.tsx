@@ -86,8 +86,8 @@ function detectCard(el: HTMLElement): boolean {
   return el.querySelector("h1,h2,h3,h4,h5,h6,strong") !== null;
 }
 
-// Builds a rich, interpretive description of a colored card.
-function describeCard(el: HTMLElement, index?: number): string {
+// Builds a spatial, interpretive description of a colored card — like guiding someone with eyes closed.
+function describeCard(el: HTMLElement): string {
   const style = window.getComputedStyle(el);
   const colorName = cssColorToName(style.backgroundColor);
 
@@ -98,22 +98,20 @@ function describeCard(el: HTMLElement, index?: number): string {
   const bodyNodes = Array.from(el.querySelectorAll("p,span,small"))
     .map(n => n.textContent?.trim() ?? "")
     .filter(t => t && t !== headText && t.length > 2)
-    .filter((t, i, arr) => arr.indexOf(t) === i); // deduplicate
+    .filter((t, i, arr) => arr.indexOf(t) === i);
   const bodyText = bodyNodes.slice(0, 2).join(". ");
 
-  // Detect presence of buttons or links with labels
+  // Named button or link inside the card
   const cta = Array.from(el.querySelectorAll("a,button"))
     .map(n => n.textContent?.trim())
-    .filter(Boolean)
-    .join(", ");
+    .filter(t => t && t.length > 1)
+    .slice(0, 1)[0];
 
-  const ordinal = index !== undefined ? `${index + 1}. ` : "";
-  const colorDesc = colorName ? `de cor ${colorName}` : "colorido";
-  let desc = `${ordinal}Card ${colorDesc}`;
-  if (headText) desc += `, intitulado "${headText}"`;
-  if (bodyText) desc += `. ${bodyText}`;
-  if (cta) desc += `. Botão: ${cta}`;
-  desc += ".";
+  const postIt = colorName ? `No post-it ${colorName}` : "No post-it";
+  let desc = `${postIt} está escrito: ${headText}.`;
+  if (bodyText) desc += ` ${bodyText}.`;
+  if (cta) desc += ` Tem um botão que diz: ${cta}.`;
+  desc += " É clicável.";
   return desc;
 }
 
@@ -130,7 +128,21 @@ function getPageTextDescribed(): string {
     path.startsWith("/calendario") ? "Calendário" :
     "esta página";
 
-  parts.push(`Você está na ${sectionName} do site Chegou a Conta, Diretora.`);
+  const siteIntros: Record<string, string> = {
+    "/": "Estamos na página inicial do site, chamada Chegou a Conta, Diretora. É um espaço feito para diretoras de escola pública entenderem como funcionam os recursos e programas da educação.",
+    "/dashboard": "Estamos no Painel da Escola. Aqui você pode pesquisar sua escola e ver os dados do censo, indicadores do IDEB e informações financeiras dos programas do FNDE.",
+    "/trilha": "Estamos na Trilha da Diretora. É um caminho de aprendizado com etapas sobre como funciona a gestão financeira das escolas públicas.",
+    "/legislacao": "Estamos na seção de Legislação. Aqui ficam as leis, resoluções, portarias e instruções normativas do MEC, além do Diário Oficial.",
+    "/programas": "Estamos na seção de Programas. Aqui você encontra informações sobre o PDDE e as Ações Integradas.",
+    "/ferramentas": "Estamos na seção de Ferramentas. Aqui ficam modelos de ofício, planilhas e materiais de apoio prontos para usar.",
+    "/chat": "Estamos no Caderno da Diretora. Aqui você pode pesquisar, perguntar para a inteligência artificial e redigir documentos escolares.",
+    "/calendario": "Estamos no Calendário. Aqui ficam os prazos de prestação de contas e repasses do FNDE.",
+  };
+  const intro = siteIntros["/"] && path === "/"
+    ? siteIntros["/"]
+    : Object.entries(siteIntros).filter(([k]) => k !== "/").find(([k]) => path.startsWith(k))?.[1]
+    ?? `Estamos na seção ${sectionName} do site Chegou a Conta, Diretora.`;
+  parts.push(intro);
 
   // Describe navigation links
   const nav = document.querySelector("nav");
@@ -139,7 +151,7 @@ function getPageTextDescribed(): string {
       .map(a => a.textContent?.trim())
       .filter(t => t && t.length > 1);
     if (navLinks.length) {
-      parts.push(`No menu de navegação você encontra as seções: ${navLinks.join(", ")}.`);
+      parts.push(`O menu de navegação tem as seguintes seções disponíveis: ${navLinks.join(", ")}.`);
     }
   }
 
@@ -165,10 +177,13 @@ function getPageTextDescribed(): string {
         // Mark all card children visited so they won't be re-described
         cardChildren.forEach(c => visited.add(c));
         const heading = el.querySelector(":scope > h1,:scope > h2,:scope > h3");
-        if (heading) {
-          parts.push(`Grupo de cards: ${heading.textContent?.trim()}.`);
+        const groupTitle = heading?.textContent?.trim();
+        if (groupTitle) {
+          parts.push(`Logo abaixo, na seção "${groupTitle}", você vê um conjunto de post-its coloridos. Cada um leva a uma área diferente do site.`);
+        } else {
+          parts.push(`Há um conjunto de post-its coloridos na tela. Cada um leva a uma área diferente do site.`);
         }
-        cardChildren.forEach((card, i) => parts.push(describeCard(card, i)));
+        cardChildren.forEach((card) => parts.push(describeCard(card)));
         // Still walk non-card children of this container
         Array.from(el.childNodes).forEach(child => {
           if (child.nodeType === Node.ELEMENT_NODE && !cardChildren.includes(child as HTMLElement)) {
