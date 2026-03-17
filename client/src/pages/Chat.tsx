@@ -491,7 +491,7 @@ function PesquisaPanel() {
             </div>
 
             {/* ── Área rolável de mensagens ── */}
-            <div className="flex-1 overflow-y-auto px-7 pr-10 lg:pr-14 pb-3" ref={convScrollRef}>
+            <div className="flex-1 overflow-y-auto px-7 pr-10 lg:pr-14 pb-3 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-[#f0e4d0] [&::-webkit-scrollbar-thumb]:bg-[#d4b896] [&::-webkit-scrollbar-thumb]:rounded-full" ref={convScrollRef}>
               {!temMensagens ? (
                 /* Estado vazio: cards de sugestão */
                 <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -563,7 +563,7 @@ function PesquisaPanel() {
           <div className="pointer-events-none absolute inset-y-0 left-0 z-[5] w-20 hidden lg:block"
             style={{ background: "linear-gradient(to right, rgba(100,40,20,0.10) 0%, transparent 100%)" }} />
 
-          <div className="relative z-10 flex-1 overflow-y-auto p-7 pl-10 lg:pl-14 pb-8">
+          <div className="relative z-10 flex-1 overflow-y-auto p-7 pl-10 lg:pl-14 pb-8 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-[#ede8dc] [&::-webkit-scrollbar-thumb]:bg-[#d0c4b0] [&::-webkit-scrollbar-thumb]:rounded-full">
             {!temMensagens ? (
               /* ── Estado vazio ── */
               <div className="h-full flex flex-col items-center justify-center text-center px-4">
@@ -1242,7 +1242,7 @@ export default function Chat() {
 
       <Navigation />
 
-      <main className="relative z-10 flex-1 flex flex-col mx-auto w-full max-w-[1400px] px-4 sm:px-6 py-6">
+      <main className="relative z-10 flex-1 flex flex-col mx-auto w-full max-w-[1400px] px-4 sm:px-6 py-6 pb-16">
 
         {/* Header */}
         <header className="text-center mb-6">
