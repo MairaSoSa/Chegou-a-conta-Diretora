@@ -219,7 +219,7 @@ function FluxoQuadro({
   );
 }
 
-// ── Grade de fichas colapsáveis: compactadas por padrão, expandem no hover ──
+// ── Grade de fichas de aprofundamento ──
 function FichaGrid({
   fichas,
   tone,
@@ -229,50 +229,128 @@ function FichaGrid({
   tone: (typeof toneMap)[ToneKey];
   onOpen: (data: ModalData) => void;
 }) {
-  return (
-    <div className="grid gap-2 md:grid-cols-2">
-      {fichas.map((ficha) => (
-        <button
-          key={ficha.id}
-          type="button"
-          onClick={() =>
-            onOpen({ emoji: ficha.emoji, label: ficha.label, title: ficha.title, paragraphs: ficha.paragraphs })
-          }
-          className="group w-full overflow-hidden rounded-[14px] text-left shadow-sm transition-shadow duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.13)]"
-          style={{ border: `1px solid ${tone.border}` }}
-        >
-          {/* Colored tab — sempre visível */}
-          <div
-            className="flex items-center justify-between px-4 py-2.5 transition-opacity"
-            style={{ background: tone.tab }}
-          >
-            <span
-              className="flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-[0.22em]"
-              style={{ color: tone.tabText }}
-            >
-              <span className="text-base leading-none">{ficha.emoji}</span>
-              {ficha.label}
-            </span>
-            <span
-              className="text-[9px] font-bold opacity-0 transition-opacity duration-200 group-hover:opacity-60"
-              style={{ color: tone.tabText }}
-            >
-              abrir →
-            </span>
-          </div>
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-          {/* Corpo: altura 0 por padrão, expande no hover via max-h transition */}
-          <div className="max-h-0 overflow-hidden bg-white transition-[max-height] duration-300 ease-out group-hover:max-h-32">
-            <div className="px-4 py-3">
-              <p className="text-sm font-semibold text-slate-700">{ficha.title}</p>
-              <p className="mt-1 text-xs leading-5 text-slate-500">{ficha.preview}</p>
-              <p className="mt-2 text-[10px] font-semibold" style={{ color: tone.spineLight }}>
-                {ficha.paragraphs.length} parágrafos · clique para ler
-              </p>
-            </div>
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      {fichas.map((ficha) => {
+        const isHov = hoveredId === ficha.id;
+        return (
+          <div
+            key={ficha.id}
+            className="relative"
+            onMouseEnter={() => setHoveredId(ficha.id)}
+            onMouseLeave={() => setHoveredId(null)}
+          >
+            <button
+              type="button"
+              onClick={() =>
+                onOpen({ emoji: ficha.emoji, label: ficha.label, title: ficha.title, paragraphs: ficha.paragraphs })
+              }
+              className="w-full text-left"
+              style={{
+                borderRadius: 14,
+                border: `1.5px solid ${isHov ? tone.accent : tone.border}`,
+                background: isHov ? tone.tab : "#fff",
+                boxShadow: isHov
+                  ? `0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08)`
+                  : `0 2px 8px rgba(0,0,0,0.07)`,
+                transition: "border-color 0.18s, background 0.18s, box-shadow 0.18s, transform 0.18s",
+                transform: isHov ? "translateY(-3px)" : "translateY(0)",
+                overflow: "hidden",
+              }}
+            >
+              {/* Faixa colorida no topo */}
+              <div
+                style={{
+                  background: `linear-gradient(90deg, ${tone.tab} 0%, ${tone.strip} 100%)`,
+                  borderBottom: `1px solid ${tone.border}`,
+                  padding: "10px 14px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontSize: 9,
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.2em",
+                    color: tone.tabText,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 30,
+                      height: 30,
+                      borderRadius: "50%",
+                      background: "rgba(255,255,255,0.6)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 15,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {ficha.emoji}
+                  </span>
+                  {ficha.label}
+                </span>
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: tone.spine,
+                    opacity: isHov ? 1 : 0,
+                    transition: "opacity 0.18s",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  abrir →
+                </span>
+              </div>
+
+              {/* Corpo fixo — sem expansão, sem mexer no grid */}
+              <div style={{ padding: "12px 14px 14px", background: "#fff" }}>
+                <p
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#1e293b",
+                    lineHeight: 1.35,
+                    marginBottom: 5,
+                  }}
+                >
+                  {ficha.title}
+                </p>
+                <p
+                  style={{
+                    fontSize: 11.5,
+                    color: "#64748b",
+                    lineHeight: 1.5,
+                    marginBottom: 8,
+                  }}
+                >
+                  {ficha.preview}
+                </p>
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: tone.spineLight,
+                  }}
+                >
+                  {ficha.paragraphs.length} parágrafos
+                </span>
+              </div>
+            </button>
           </div>
-        </button>
-      ))}
+        );
+      })}
     </div>
   );
 }
