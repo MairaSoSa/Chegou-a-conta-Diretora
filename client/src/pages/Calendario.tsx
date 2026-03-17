@@ -312,7 +312,7 @@ export default function CalendarioPage() {
                         style={{ boxShadow: "0 6px 0 rgba(0,0,0,0.04),0 12px 20px rgba(0,0,0,0.05)", transformOrigin: "center" }}
                       >
                         <div className="relative z-10 flex items-center gap-2">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-md border-2 border-[#7b7467] bg-white text-[10px] font-black">
+                          <div className="hidden sm:flex h-7 w-7 items-center justify-center rounded-md border-2 border-[#7b7467] bg-white text-[10px] font-black">
                             {label.slice(0,1)}
                           </div>
                           <div className="text-xs font-black tracking-[0.2em] text-[#5e594f]">{label}</div>
@@ -622,9 +622,6 @@ export default function CalendarioPage() {
                 <aside className="space-y-5">
                   {/* News panel */}
                   <div className="relative overflow-hidden rounded-[28px] border border-[#ddd2c4] bg-[#f8f4eb] p-4 shadow-sm sm:p-5">
-                    <div className="absolute right-4 top-4 rotate-[8deg] rounded-md border border-[#efe3cf] bg-[#fff7c7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d7b33] shadow-sm">
-                      mural
-                    </div>
                     <div className="mb-4 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="rounded-2xl bg-[#eef3e4] p-3 text-[#708255]"><Newspaper className="h-5 w-5" /></div>
