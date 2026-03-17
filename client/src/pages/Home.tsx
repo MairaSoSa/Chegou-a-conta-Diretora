@@ -179,27 +179,31 @@ export default function Home() {
             </div>
           </div>
 
-          {/* ── Rodapé ── */}
-          <div className="hl-footer-strip" style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 10 }}>
-            <span>Acesso livre para quem trabalha e acredita na escola pública.</span>
-            <span style={{ color: "#c5bfb6" }}>·</span>
+          {/* ── Botão acessibilidade acima do rodapé ── */}
+          <div className="hl-a11y-pill-wrap">
             <button
               onClick={toggleAccessibility}
               aria-label="Ajustes de acessibilidade"
               data-testid="button-accessibility-menu"
-              className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-all duration-200 shrink-0"
+              className="hl-a11y-pill flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all duration-200"
               style={{
                 background: "rgba(218,185,60,.18)",
                 border: "1px solid rgba(180,150,30,.28)",
                 color: "#6b5208",
                 opacity: 0.65,
+                fontFamily: '"Patrick Hand", cursive',
               }}
               onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
               onMouseLeave={e => (e.currentTarget.style.opacity = "0.65")}
             >
-              <Accessibility style={{ width: 10, height: 10, flexShrink: 0 }} />
+              <Accessibility style={{ width: 11, height: 11, flexShrink: 0 }} />
               Acessibilidade
             </button>
+          </div>
+
+          {/* ── Rodapé ── */}
+          <div className="hl-footer-strip">
+            <span>Acesso livre para quem trabalha e acredita na escola pública.</span>
           </div>
         </section>
 

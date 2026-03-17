@@ -737,7 +737,15 @@
   padding: 0 4px;
 }
 
-/* ── Botão de acessibilidade flutuante ── */
+/* ── Pílula de acessibilidade (acima do rodapé) ── */
+.hl-a11y-pill-wrap {
+  position: absolute;
+  bottom: 38px;
+  left: 54px;
+  z-index: 5;
+}
+
+/* ── Botão de acessibilidade flutuante (legado) ── */
 .hl-a11y-btn {
   position: fixed;
   bottom: 22px; left: 22px;
@@ -789,6 +797,7 @@
   .hl-tip-box { width: 100%; transform: none; margin: 0; }
   .hl-cards-grid { grid-template-columns: repeat(2, 1fr); }
   .hl-footer-strip { position: static; margin-top: 12px; padding-left: 0; }
+  .hl-a11y-pill-wrap { position: static; margin-top: 10px; }
 }
 
 /* ── Mobile grande (≤ 640px): redesign completo ── */
@@ -911,10 +920,18 @@
   /* Rodapé estático */
   .hl-footer-strip {
     position: static;
-    margin-top: 16px;
+    margin-top: 4px;
     padding-left: 0;
     height: auto;
     font-size: .68rem;
+  }
+
+  /* Pílula acessibilidade no mobile */
+  .hl-a11y-pill-wrap {
+    position: static;
+    margin-top: 14px;
+    display: flex;
+    justify-content: center;
   }
 
   /* Botão acessibilidade */
