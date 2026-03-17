@@ -325,9 +325,6 @@ export default function CalendarioPage() {
                         <div className={`mt-2 text-[11px] font-semibold ${count ? "text-rose-500" : "text-[#9a9488]"}`}>
                           {count ? `${count} prazo${count > 1 ? "s" : ""}` : "sem prazo"}
                         </div>
-                        {hasUrgente && (
-                          <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-rose-400" />
-                        )}
                         <div className="pointer-events-none absolute inset-0 rounded-[14px] border border-dashed border-[#d8cfc0] opacity-40"
                           style={{ clipPath: index % 2 === 0 ? "polygon(2% 3%,98% 2%,100% 18%,97% 100%,3% 98%,1% 27%)" : "polygon(3% 1%,97% 4%,99% 28%,97% 99%,2% 97%,0 16%)" }} />
                       </motion.button>
