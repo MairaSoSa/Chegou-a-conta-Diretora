@@ -190,7 +190,7 @@
 /* ── Página ── */
 .hl-page {
   position: relative; height: 100%;
-  padding: 24px 32px 18px 60px;
+  padding: 24px 32px 22px 60px;
   background:
     linear-gradient(to right, transparent 0, transparent 34px, rgba(255,139,139,.75) 34px, rgba(255,139,139,.75) 36px, transparent 36px),
     repeating-linear-gradient(to bottom, #fffdf8 0 32px, #dbe9fb 32px 33px);
@@ -730,20 +730,13 @@
 /* ── Rodapé ── */
 .hl-footer-strip {
   position: absolute; left: 50px; right: 16px; bottom: 0;
-  display: flex; justify-content: space-between; align-items: flex-end; gap: 10px;
+  display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 8px;
   color: #758692; font-size: .72rem; font-weight: 800;
   font-family: "Patrick Hand", cursive;
-  height: 33px;
+  height: 36px;
   padding: 0 4px;
 }
 
-/* ── Pílula de acessibilidade (acima do rodapé) ── */
-.hl-a11y-pill-wrap {
-  position: absolute;
-  bottom: 38px;
-  left: 54px;
-  z-index: 5;
-}
 
 /* ── Botão de acessibilidade flutuante (legado) ── */
 .hl-a11y-btn {
@@ -796,8 +789,7 @@
   .hl-caderno-box { flex: 1 1 280px; max-height: 380px; }
   .hl-tip-box { width: 100%; transform: none; margin: 0; }
   .hl-cards-grid { grid-template-columns: repeat(2, 1fr); }
-  .hl-footer-strip { position: static; margin-top: 12px; padding-left: 0; }
-  .hl-a11y-pill-wrap { position: static; margin-top: 10px; }
+  .hl-footer-strip { position: static; margin-top: 12px; padding-left: 0; height: auto; }
 }
 
 /* ── Mobile grande (≤ 640px): redesign completo ── */
@@ -920,18 +912,13 @@
   /* Rodapé estático */
   .hl-footer-strip {
     position: static;
-    margin-top: 4px;
-    padding-left: 0;
+    margin-top: 14px;
+    padding: 0;
     height: auto;
     font-size: .68rem;
-  }
-
-  /* Pílula acessibilidade no mobile */
-  .hl-a11y-pill-wrap {
-    position: static;
-    margin-top: 14px;
-    display: flex;
-    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: space-between;
   }
 
   /* Botão acessibilidade */
