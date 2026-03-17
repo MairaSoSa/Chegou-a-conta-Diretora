@@ -125,28 +125,54 @@ export function Navigation() {
               </nav>
             )}
 
-            {/* Accessibility + Mobile hamburger */}
-            <div className="flex items-center gap-2">
+            {/* Desktop: Quem Somos + botão acessibilidade */}
+            <div className="hidden lg:flex items-center gap-1.5 ml-1 pl-2" style={{ borderLeft: "1px solid rgba(255,255,255,.30)" }}>
+              <Link
+                href="/quem-somos"
+                className="rounded-lg px-2.5 py-1.5 text-sm transition-all duration-200"
+                style={{ color: "rgba(46,64,48,.70)", textShadow: "0 1px 0 rgba(255,255,255,.40)", fontSize: 13 }}
+              >
+                Quem Somos
+              </Link>
               <button
                 onClick={toggleAccessibility}
                 aria-label="Ajustes de acessibilidade"
                 data-testid="button-accessibility-menu"
-                className="flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 active:scale-95"
+                title="Acessibilidade"
+                className="flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200 active:scale-95"
                 style={{
-                  background: "rgba(255,255,255,.22)",
-                  border: "1px solid rgba(255,255,255,.38)",
-                  color: "#3a5030",
-                  opacity: 0.65,
+                  background: "rgba(218,185,80,.22)",
+                  border: "1px solid rgba(200,165,50,.35)",
+                  color: "#7a6010",
+                  opacity: 0.7,
                 }}
                 onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
-                onMouseLeave={e => (e.currentTarget.style.opacity = "0.65")}
+                onMouseLeave={e => (e.currentTarget.style.opacity = "0.7")}
+              >
+                <Accessibility className="h-3 w-3" />
+              </button>
+            </div>
+
+            {/* Mobile: hamburger + botão acessibilidade */}
+            <div className="lg:hidden flex items-center gap-2">
+              <button
+                onClick={toggleAccessibility}
+                aria-label="Ajustes de acessibilidade"
+                data-testid="button-accessibility-menu"
+                title="Acessibilidade"
+                className="flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 active:scale-95"
+                style={{
+                  background: "rgba(218,185,80,.22)",
+                  border: "1px solid rgba(200,165,50,.35)",
+                  color: "#7a6010",
+                  opacity: 0.7,
+                }}
               >
                 <Accessibility className="h-3.5 w-3.5" />
               </button>
-
               {isInner && (
                 <button
-                  className="lg:hidden relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 active:scale-95"
+                  className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 active:scale-95"
                   aria-label="Abrir menu de navegação"
                   onClick={() => setOpen(true)}
                   style={{
