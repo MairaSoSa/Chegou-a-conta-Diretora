@@ -515,7 +515,7 @@ function NormasContent() {
             </h3>
           </div>
           <div className="leg-scroll-wrap border border-[#d9cfc0] rounded-2xl">
-          <div className="leg-scroll max-h-[480px] overflow-y-scroll space-y-4 p-2 pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#7f9a70] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#d9ebd0]">
+          <div className="leg-scroll max-h-[480px] overflow-y-scroll space-y-4 p-2 pr-2 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#5a7a50] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#b8d4ae]">
           {leisFundamentais.map(lei => {
             const catColor = categoriaColors[lei.categoria] || { bg: "#e8f0e0", color: "#5a6e4e" };
             return (
@@ -572,7 +572,7 @@ function NormasContent() {
       {/* Lista de normas — novo card design */}
       {normas.length > 0 && (
         <div className="leg-scroll-wrap border border-[#d9cfc0] rounded-2xl">
-        <div className="leg-scroll max-h-[600px] overflow-y-scroll space-y-3 p-2 pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#7f9a70] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#d9ebd0]">
+        <div className="leg-scroll max-h-[600px] overflow-y-scroll space-y-3 p-2 pr-2 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#5a7a50] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#b8d4ae]">
           {normas.map((norma: any) => {
             const title = norma.titulo || norma.tituloAto || norma.identificacao || `Ato ${norma.id}`;
             const ementa = norma.ementa || norma.resumo || "";
@@ -1245,7 +1245,7 @@ function AtualizacoesLegislativas() {
                 <span className="text-xs font-semibold text-[#8a9a84]">{group.subtitle(group.items.length)}</span>
               </div>
               <div className="leg-scroll-wrap border border-[#d9cfc0] rounded-2xl" style={group.isRevoked ? { borderColor: "#e8c4c1" } : {}}>
-              <div className={`${group.isRevoked ? "leg-scroll-red" : "leg-scroll"} max-h-[320px] overflow-y-scroll space-y-3 p-2 pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:rounded-full ${group.isRevoked ? "[&::-webkit-scrollbar-thumb]:bg-[#9b4b45] [&::-webkit-scrollbar-track]:bg-[#f3d2cf]" : "[&::-webkit-scrollbar-thumb]:bg-[#7f9a70] [&::-webkit-scrollbar-track]:bg-[#d9ebd0]"}`}>
+              <div className={`${group.isRevoked ? "leg-scroll-red" : "leg-scroll"} max-h-[320px] overflow-y-scroll space-y-3 p-2 pr-2 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:rounded-full ${group.isRevoked ? "[&::-webkit-scrollbar-thumb]:bg-[#8b3a35] [&::-webkit-scrollbar-track]:bg-[#ddb8b5]" : "[&::-webkit-scrollbar-thumb]:bg-[#5a7a50] [&::-webkit-scrollbar-track]:bg-[#b8d4ae]"}`}>
                 {group.items.map((n: any) => {
                   const title = n.titulo || n.tituloAto || n.identificacao || `Ato ${n.id}`;
                   const ementa = n.ementa || n.resumo || "";
