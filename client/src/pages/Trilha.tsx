@@ -423,8 +423,8 @@ export default function Trilha() {
                         <div
                           style={{
                             position: "relative",
-                            transform: `rotate(${isHovered ? 0 : rot}deg)`,
-                            transition: "transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                            transform: `rotate(${rot}deg) translateY(${isHovered ? -10 : 0}px)`,
+                            transition: "transform 0.18s ease",
                             zIndex: isHovered ? 20 : 0,
                           }}
                         >
