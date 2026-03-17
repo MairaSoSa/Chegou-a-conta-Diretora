@@ -171,37 +171,31 @@ const legislacaoCategorias = [
     icon: <HandDrawnIcon><circle cx="12" cy="12" r="8.2" strokeDasharray="58" strokeDashoffset="58" style={{ animationDelay: "0.02s" }} /><path d="M8 12.1c1.3.1 2.7.1 4 .1 1.5 0 2.8 0 4-.1" strokeDasharray="9" strokeDashoffset="9" style={{ animationDelay: "0.14s" }} /><path d="M12 8.2v7.6" strokeDasharray="8" strokeDashoffset="8" style={{ animationDelay: "0.24s" }} /></HandDrawnIcon>,
     title: "Recursos e financiamento", count: "PDDE, FUNDEB, repasses", note: "PDDE, FUNDEB, repasses e uso do recurso",
     color: "from-[#f4e6a6] to-[#fff7d6]", tape: "rotate-[-2deg]",
-    stickerBg: "#e6a817", stickerLabel: "R$", stickerSub: "FNDE",
   },
   {
     icon: <HandDrawnIcon><path d="M6.2 3.6h11.4v16l-1.8-.9-1.8.9-2-1-2 1-1.8-.9-1.8.9z" strokeDasharray="56" strokeDashoffset="56" style={{ animationDelay: "0.04s" }} /><path d="M9 8.2h6.1" strokeDasharray="7" strokeDashoffset="7" style={{ animationDelay: "0.18s" }} /><path d="M9 12.1h5.4" strokeDasharray="6" strokeDashoffset="6" style={{ animationDelay: "0.26s" }} /></HandDrawnIcon>,
     title: "Prestação de contas", count: "Transparência e documentação", note: "transparência, documentação e cuidados",
     color: "from-[#dcead7] to-[#f3faf0]", tape: "rotate-[1deg]",
-    stickerBg: "#3d9e5f", stickerLabel: "PC", stickerSub: "SIGPC",
   },
   {
     icon: <HandDrawnIcon><path d="M4.3 6.1h5.6v13.4H4.3z" strokeDasharray="38" strokeDashoffset="38" style={{ animationDelay: "0.03s" }} /><path d="M14.1 6.1h5.6v13.4h-5.6z" strokeDasharray="38" strokeDashoffset="38" style={{ animationDelay: "0.15s" }} /><path d="M10.2 7.2v11" strokeDasharray="11" strokeDashoffset="11" style={{ animationDelay: "0.23s" }} /><path d="M13.8 7.2v11" strokeDasharray="11" strokeDashoffset="11" style={{ animationDelay: "0.29s" }} /></HandDrawnIcon>,
     title: "Currículo e ensino", count: "BNCC e diretrizes pedagógicas", note: "BNCC, diretrizes e organização pedagógica",
     color: "from-[#e8ddf3] to-[#faf5ff]", tape: "rotate-[-1deg]",
-    stickerBg: "#8b4dbf", stickerLabel: "✏️", stickerSub: "BNCC",
   },
   {
     icon: <HandDrawnIcon><path d="M3.4 10.2 12 4.4l8.6 5.8" strokeDasharray="21" strokeDashoffset="21" style={{ animationDelay: "0.03s" }} /><path d="M5.1 10.2v9.5h13.8v-9.5" strokeDasharray="33" strokeDashoffset="33" style={{ animationDelay: "0.15s" }} /><path d="M10.1 19.7v-5.8h3.8v5.8" strokeDasharray="16" strokeDashoffset="16" style={{ animationDelay: "0.25s" }} /></HandDrawnIcon>,
     title: "Gestão escolar", count: "Funcionamento e atribuições", note: "funcionamento da escola e atribuições da gestão",
     color: "from-[#f1dfd8] to-[#fff8f4]", tape: "rotate-[2deg]",
-    stickerBg: "#d14f3a", stickerLabel: "🏫", stickerSub: "GESTÃO",
   },
   {
     icon: <HandDrawnIcon><path d="M11.8 8.2c1.8-2.7 5.8-2 6 2 .2 4.8-3 7.7-5.9 7.7-3.1 0-6.2-2.9-6-7.7.2-4 4.1-4.7 5.9-2" strokeDasharray="42" strokeDashoffset="42" style={{ animationDelay: "0.04s" }} /><path d="M12.1 6c-.1-1.6 1.2-2.8 2.8-3.1" strokeDasharray="6" strokeDashoffset="6" style={{ animationDelay: "0.18s" }} /></HandDrawnIcon>,
     title: "Alimentação escolar", count: "PNAE e cardápio", note: "PNAE, compra de alimentos e cardápio",
     color: "from-[#ffe1cf] to-[#fff6ef]", tape: "rotate-[-2deg]",
-    stickerBg: "#d46b1a", stickerLabel: "🍎", stickerSub: "PNAE",
   },
   {
     icon: <HandDrawnIcon><rect x="4.2" y="5.2" width="15.6" height="10.8" rx="2.2" strokeDasharray="44" strokeDashoffset="44" style={{ animationDelay: "0.03s" }} /><circle cx="8.1" cy="18" r="1.8" strokeDasharray="12" strokeDashoffset="12" style={{ animationDelay: "0.18s" }} /><circle cx="15.9" cy="18" r="1.8" strokeDasharray="12" strokeDashoffset="12" style={{ animationDelay: "0.26s" }} /><path d="M6.7 9.1h10.7" strokeDasharray="11" strokeDashoffset="11" style={{ animationDelay: "0.34s" }} /></HandDrawnIcon>,
     title: "Transporte escolar", count: "PNATE e deslocamento", note: "PNATE e regras para deslocamento dos estudantes",
     color: "from-[#dce7f6] to-[#f7fbff]", tape: "rotate-[1deg]",
-    stickerBg: "#2b7ec1", stickerLabel: "🚌", stickerSub: "PNATE",
   },
 ];
 
@@ -1368,28 +1362,7 @@ export default function Legislacao() {
                   <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                     {legislacaoCategorias.map(item => (
                       <article key={item.title} className={`group relative overflow-hidden rounded-[28px] border border-[#d8cab4] bg-gradient-to-br ${item.color} p-5 shadow-[0_8px_18px_rgba(90,80,50,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(90,80,50,0.10)]`}>
-                        {/* post-it sticker */}
-                        <div
-                          className={`absolute right-4 top-4 flex flex-col items-center justify-center gap-0.5 rounded-[6px] ${item.tape} select-none`}
-                          style={{
-                            width: 52, height: 52,
-                            background: item.stickerBg,
-                            boxShadow: '2px 3px 10px rgba(0,0,0,0.28)',
-                          }}
-                        >
-                          <span className="text-xl font-black leading-none text-white drop-shadow-sm">{item.stickerLabel}</span>
-                          <span className="text-[9px] font-black tracking-widest text-white/80 uppercase leading-none">{item.stickerSub}</span>
-                          {/* fold corner */}
-                          <span
-                            className="absolute bottom-0 right-0"
-                            style={{
-                              width: 0, height: 0,
-                              borderStyle: 'solid',
-                              borderWidth: '10px 10px 0 0',
-                              borderColor: `transparent rgba(0,0,0,0.18) transparent transparent`,
-                            }}
-                          />
-                        </div>
+                        <div className={`absolute right-0 top-3 h-7 w-20 ${item.tape} rounded-sm bg-[#efe4c7]/85 shadow-sm`} />
                         <div className="relative flex items-start gap-4">
                           <div className="mt-1 text-3xl">{item.icon}</div>
                           <div>
