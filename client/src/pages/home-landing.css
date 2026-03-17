@@ -586,6 +586,7 @@
 .hl-right-col {
   display: flex; flex-direction: column;
   gap: 28px; padding-top: 6px; min-height: 0;
+  align-self: start;
 }
 
 /* ── Dica do dia ── */
