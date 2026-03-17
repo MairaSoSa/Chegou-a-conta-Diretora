@@ -173,7 +173,7 @@
 /* ── Caderno ── */
 .hl-notebook {
   position: relative; z-index: 1;
-  width: min(1280px, calc(100vw - 20px));
+  width: min(1380px, calc(100vw - 20px));
   height: min(760px, calc(100vh - 20px));
   background: #fffdf8;
   border-radius: 28px;
@@ -248,7 +248,7 @@
 
 /* ── Layout principal ── */
 .hl-layout {
-  display: grid; grid-template-columns: 1.08fr .92fr;
+  display: grid; grid-template-columns: 1.25fr .75fr;
   gap: 28px; flex: 1; min-height: 0; padding: 0 4px 0 0;
 }
 
