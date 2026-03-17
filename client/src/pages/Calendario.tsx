@@ -448,16 +448,15 @@ export default function CalendarioPage() {
                                           style={{ transform: `rotate(${day % 2 === 0 ? "-3deg" : "2deg"})` }}>
                                           {day}
                                         </div>
-                                        {hasItem && <div className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full mt-0.5 shrink-0 ${urgent ? "bg-rose-500" : attention ? "bg-amber-500" : "bg-emerald-500"}`} />}
                                       </div>
                                       <div className="relative z-10 mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
                                         {items.slice(0, 2).map((item) => (
                                           <div key={item.titulo}
-                                            className={`rounded-[8px] border px-1.5 py-0.5 text-[9px] font-bold leading-4 ${cat?.tone || "bg-stone-100 text-stone-700 border-stone-200"}`}>
+                                            className={`hidden sm:block rounded-[8px] border px-1.5 py-0.5 text-[9px] font-bold leading-4 ${cat?.tone || "bg-stone-100 text-stone-700 border-stone-200"}`}>
                                             {item.categoria}
                                           </div>
                                         ))}
-                                        {items.length > 2 && <div className="text-[9px] font-bold text-[#8b8478]">+{items.length - 2} mais</div>}
+                                        {items.length > 2 && <div className="hidden sm:block text-[9px] font-bold text-[#8b8478]">+{items.length - 2} mais</div>}
                                       </div>
                                       <div className="pointer-events-none absolute inset-0 rounded-[20px] border border-dashed border-[#e9dfd1] opacity-40" />
                                     </motion.button>
