@@ -43,11 +43,84 @@ function isClickable(el: HTMLElement): boolean {
   return style.cursor === "pointer";
 }
 
+// Maps a computed rgb() color to a Portuguese color name for audio description.
+// Returns "" for near-white, transparent or unrecognized colors.
+function cssColorToName(rgb: string): string {
+  const m = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (!m) return "";
+  const r = +m[1], g = +m[2], b = +m[3];
+  // Skip near-white, very-light-beige or fully transparent backgrounds
+  if (r > 240 && g > 232 && b > 218) return "";
+  if (r === 0 && g === 0 && b === 0) return "";
+  // Yellow / golden
+  if (r > 220 && g > 195 && b < 140 && r - b > 90) return "amarela";
+  // Peach / salmon
+  if (r > 225 && g > 155 && g < 210 && b < 165 && r - g > 20 && r - b > 60) return "pêssego";
+  // Orange / amber
+  if (r > 225 && g > 120 && g < 175 && b < 100) return "laranja";
+  // Pink / rose
+  if (r > 215 && g > 165 && g < 215 && b > 160 && b < 215 && r - g > 10) return "rosada";
+  // Light red / coral
+  if (r > 220 && g < 150 && b < 150) return "vermelha";
+  // Lilac / purple
+  if (r > 170 && r < 230 && b > 185 && g < r && g < b) return "lilás";
+  // Teal / mint / sage
+  if (g > 170 && b > 165 && r < 180 && g > r && b > r) return "verde-água";
+  // Light green / pistachio
+  if (g > 195 && r > 180 && b < 185 && g - b > 30 && g >= r) return "verde-claro";
+  // Blue
+  if (b > 185 && r < 170 && g < 185 && b - r > 40) return "azul";
+  // Warm brown / tan
+  if (r > 180 && g > 140 && b < 120 && r - b > 70) return "bege-escuro";
+  return "";
+}
+
+// Returns true if el appears to be a content card with a colored background.
+function detectCard(el: HTMLElement): boolean {
+  const tag = el.tagName.toLowerCase();
+  if (!["div","article","li"].includes(tag)) return false;
+  const style = window.getComputedStyle(el);
+  if (!cssColorToName(style.backgroundColor)) return false;
+  const rect = el.getBoundingClientRect();
+  if (rect.width < 90 || rect.height < 60) return false;
+  return el.querySelector("h1,h2,h3,h4,h5,h6,strong") !== null;
+}
+
+// Builds a rich, interpretive description of a colored card.
+function describeCard(el: HTMLElement, index?: number): string {
+  const style = window.getComputedStyle(el);
+  const colorName = cssColorToName(style.backgroundColor);
+
+  const heading = el.querySelector("h1,h2,h3,h4,h5,h6");
+  const headText = heading?.textContent?.trim() ?? "";
+
+  // Collect subtitle / body text, excluding the heading itself
+  const bodyNodes = Array.from(el.querySelectorAll("p,span,small"))
+    .map(n => n.textContent?.trim() ?? "")
+    .filter(t => t && t !== headText && t.length > 2)
+    .filter((t, i, arr) => arr.indexOf(t) === i); // deduplicate
+  const bodyText = bodyNodes.slice(0, 2).join(". ");
+
+  // Detect presence of buttons or links with labels
+  const cta = Array.from(el.querySelectorAll("a,button"))
+    .map(n => n.textContent?.trim())
+    .filter(Boolean)
+    .join(", ");
+
+  const ordinal = index !== undefined ? `${index + 1}. ` : "";
+  const colorDesc = colorName ? `de cor ${colorName}` : "colorido";
+  let desc = `${ordinal}Card ${colorDesc}`;
+  if (headText) desc += `, intitulado "${headText}"`;
+  if (bodyText) desc += `. ${bodyText}`;
+  if (cta) desc += `. Botão: ${cta}`;
+  desc += ".";
+  return desc;
+}
+
 function getPageTextDescribed(): string {
   const parts: string[] = [];
-  const title = getPageTitle();
   const path = window.location.pathname;
-  const sectionName = path === "/" ? "Página inicial" :
+  const sectionName = path === "/" ? "página inicial" :
     path.startsWith("/dashboard") ? "Painel da Escola" :
     path.startsWith("/trilha") ? "Trilha da Diretora" :
     path.startsWith("/legislacao") ? "Legislação" :
@@ -57,74 +130,96 @@ function getPageTextDescribed(): string {
     path.startsWith("/calendario") ? "Calendário" :
     "esta página";
 
-  parts.push(`Você está em: ${sectionName}. ${title ? `Título da página: ${title}.` : ""}`);
+  parts.push(`Você está na ${sectionName} do site Chegou a Conta, Diretora.`);
 
-  const skip = new Set(["script","style","noscript","svg","path","iframe"]);
+  // Describe navigation links
+  const nav = document.querySelector("nav");
+  if (nav) {
+    const navLinks = Array.from(nav.querySelectorAll("a,button"))
+      .map(a => a.textContent?.trim())
+      .filter(t => t && t.length > 1);
+    if (navLinks.length) {
+      parts.push(`No menu de navegação você encontra as seções: ${navLinks.join(", ")}.`);
+    }
+  }
 
-  function walk(node: Node, depth = 0) {
+  const skip = new Set(["script","style","noscript","svg","path","iframe","nav","footer"]);
+  const visited = new WeakSet<HTMLElement>();
+
+  function walk(node: Node) {
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     const el = node as HTMLElement;
+    if (visited.has(el)) return;
     const tag = el.tagName.toLowerCase();
     if (skip.has(tag)) return;
     if (el.getAttribute("aria-hidden") === "true") return;
     const style = window.getComputedStyle(el);
     if (style.display === "none" || style.visibility === "hidden") return;
 
-    const ariaLabel = el.getAttribute("aria-label") ?? "";
-    const text = innerText(el);
-    if (!text) return;
-
-    if (tag === "nav") {
-      parts.push("Início da navegação.");
-      for (const child of Array.from(el.childNodes)) walk(child, depth + 1);
-      parts.push("Fim da navegação.");
-      return;
-    }
-
-    if (["h1","h2","h3","h4"].includes(tag)) {
-      const level = tag.charAt(1);
-      parts.push(`Título nível ${level}: ${text}.`);
-      return;
-    }
-
-    if (tag === "a" && el.getAttribute("href")) {
-      const label = ariaLabel || text;
-      parts.push(`Link clicável: ${label}.`);
-      return;
-    }
-
-    if (tag === "button") {
-      const label = ariaLabel || text;
-      parts.push(`Botão: ${label}.`);
-      return;
-    }
-
-    if (isClickable(el) && (tag === "div" || tag === "article" || tag === "li")) {
-      const label = ariaLabel || text.slice(0, 120);
-      parts.push(`Card clicável: ${label}.`);
-      return;
-    }
-
-    if (tag === "section" || tag === "article" || tag === "main") {
-      const regionLabel = ariaLabel || (el.getAttribute("aria-labelledby") ?? "");
-      if (regionLabel) parts.push(`Seção: ${regionLabel}.`);
-      for (const child of Array.from(el.childNodes)) walk(child, depth + 1);
-      return;
-    }
-
-    if (tag === "p" || tag === "span" || tag === "label" || tag === "li" || tag === "td") {
-      if (text.length > 1) parts.push(text);
-      return;
-    }
-
-    for (const child of Array.from(el.childNodes)) {
-      if (child.nodeType === Node.TEXT_NODE) {
-        const t = child.textContent?.trim();
-        if (t && t.length > 1) parts.push(t);
-      } else {
-        walk(child, depth + 1);
+    // Detect a group of sibling cards and describe them as a set
+    if (tag === "div" || tag === "section" || tag === "ul") {
+      const cardChildren = Array.from(el.children).filter(
+        c => detectCard(c as HTMLElement)
+      ) as HTMLElement[];
+      if (cardChildren.length >= 2) {
+        // Mark all card children visited so they won't be re-described
+        cardChildren.forEach(c => visited.add(c));
+        const heading = el.querySelector(":scope > h1,:scope > h2,:scope > h3");
+        if (heading) {
+          parts.push(`Grupo de cards: ${heading.textContent?.trim()}.`);
+        }
+        cardChildren.forEach((card, i) => parts.push(describeCard(card, i)));
+        // Still walk non-card children of this container
+        Array.from(el.childNodes).forEach(child => {
+          if (child.nodeType === Node.ELEMENT_NODE && !cardChildren.includes(child as HTMLElement)) {
+            walk(child);
+          }
+        });
+        return;
       }
     }
+
+    // Individual card
+    if (detectCard(el)) {
+      visited.add(el);
+      parts.push(describeCard(el));
+      return;
+    }
+
+    // Headings — describe by visual weight, not level number
+    if (["h1","h2","h3","h4"].includes(tag)) {
+      const text = el.textContent?.trim();
+      if (!text) return;
+      const sz = parseFloat(style.fontSize);
+      if (sz >= 28) parts.push(`Em letras grandes e destacadas: ${text}.`);
+      else if (sz >= 20) parts.push(`Destaque: ${text}.`);
+      else parts.push(`Subtítulo: ${text}.`);
+      return;
+    }
+
+    // Standalone buttons
+    if (tag === "button") {
+      const label = el.getAttribute("aria-label") || el.textContent?.trim();
+      if (label) parts.push(`Botão "${label}".`);
+      return;
+    }
+
+    // Standalone anchor links (not inside a card)
+    if (tag === "a" && el.getAttribute("href")) {
+      const label = el.getAttribute("aria-label") || el.textContent?.trim();
+      if (label && label.length > 1) parts.push(`Link: ${label}.`);
+      return;
+    }
+
+    // Paragraphs and list items
+    if (["p","li"].includes(tag)) {
+      const text = el.textContent?.trim();
+      if (text && text.length > 2) parts.push(text);
+      return;
+    }
+
+    // Generic container — recurse
+    for (const child of Array.from(el.childNodes)) walk(child);
   }
 
   const root = document.querySelector("main") ?? document.body;
