@@ -410,32 +410,34 @@ export default function Trilha() {
                       const pinOffset = itemIdx % 3 === 0 ? "43%" : itemIdx % 3 === 1 ? "50%" : "57%";
 
                       return (
-                        <motion.div
+                        <div
                           key={unit.unitId}
-                          style={{ rotate: rot, transformOrigin: "top center" }}
-                          whileHover={{ y: -5, rotate: rot, zIndex: 20 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
                           className="relative cursor-pointer"
+                          style={{ paddingTop: "20px" }}
                           onClick={() => navigate(`/trilha/${unit.unitId}`)}
                         >
-                          {/* Pin ímã */}
+                          {/* Pin ímã — fica fixo, fora do elemento que anima */}
                           <div
-                            className="absolute z-10"
-                            style={{ top: "-18px", left: pinOffset, transform: "translateX(-50%)" }}
+                            className="absolute z-20"
+                            style={{ top: 0, left: pinOffset, transform: "translateX(-50%)" }}
                           >
                             <Pin color={pin.color} dark={pin.dark} size={34} />
                           </div>
 
-                          {/* Bilhete de recado */}
-                          <article
+                          {/* Bilhete de recado — balança como pêndulo */}
+                          <motion.article
                             className="relative overflow-hidden"
                             style={{
+                              rotate: rot,
+                              transformOrigin: `${pinOffset} 0px`,
                               borderRadius: "2px 8px 4px 6px",
                               borderColor: memo.border,
                               borderWidth: "1px",
                               borderStyle: "solid",
                               boxShadow: "0 6px 22px rgba(0,0,0,0.24), 0 2px 5px rgba(0,0,0,0.14)",
                             }}
+                            whileHover={{ rotate: -rot, zIndex: 20 }}
+                            transition={{ type: "spring", stiffness: 130, damping: 10 }}
                           >
                             {/* Colored stripe on left edge (like message pad) */}
                             <div
@@ -543,8 +545,8 @@ export default function Trilha() {
                                 </span>
                               </div>
                             </div>
-                          </article>
-                        </motion.div>
+                          </motion.article>
+                        </div>
                       );
                     })}
                   </div>
