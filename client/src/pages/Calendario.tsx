@@ -312,7 +312,7 @@ export default function CalendarioPage() {
             <div className="px-4 py-5 sm:px-6 lg:px-8">
               <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                 {/* Month cards */}
-                <div className="flex gap-3 overflow-x-auto pb-2">
+                <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2">
                   {MONTH_LABELS.map((label, index) => {
                     const mes = index + 1;
                     const active = mesSelecionado === mes;
@@ -324,7 +324,7 @@ export default function CalendarioPage() {
                         whileHover={{ y: -4, rotate: active ? 0 : index % 2 === 0 ? -2 : 2 }}
                         whileTap={{ scale: 0.96 }}
                         onClick={() => { setMesSelecionado(mes); setIsCalendarOpen(true); }}
-                        className={`relative min-w-[92px] rounded-[14px] border-2 px-4 pb-4 pt-4 text-left transition ${
+                        className={`relative min-w-[72px] sm:min-w-[92px] rounded-[14px] border-2 px-2 sm:px-4 pb-3 sm:pb-4 pt-3 sm:pt-4 text-left transition ${
                           active ? "border-[#c9bba7] bg-[#fffdf7]" : "border-[#e6dac9] bg-[#f6f1e7]"
                         }`}
                         style={{ boxShadow: "0 6px 0 rgba(0,0,0,0.04),0 12px 20px rgba(0,0,0,0.05)", transformOrigin: "center" }}
@@ -431,24 +431,24 @@ export default function CalendarioPage() {
                               </div>
                             )}
 
-                            <div className="rounded-[28px] border-2 border-[#ddd1c1] bg-[#fffefb] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-4"
+                            <div className="rounded-[28px] border-2 border-[#ddd1c1] bg-[#fffefb] p-2 sm:p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-4"
                               style={{ clipPath: "polygon(1% 2%,98% 1%,100% 18%,98% 99%,2% 98%,0% 12%)" }}>
-                              <div className="mb-3 grid grid-cols-7 gap-2">
+                              <div className="mb-2 sm:mb-3 grid grid-cols-7 gap-1 sm:gap-2">
                                 {WEEKDAY_LABELS.map((lbl, idx) => (
                                   <div key={lbl}
-                                    className={`rounded-[12px] border px-2 py-2 text-center text-[10px] font-black tracking-[0.18em] sm:text-[11px] ${
+                                    className={`rounded-[8px] sm:rounded-[12px] border px-0.5 sm:px-2 py-1 sm:py-2 text-center text-[8px] sm:text-[10px] font-black tracking-tight sm:tracking-[0.18em] ${
                                       idx === 0 || idx === 6
                                         ? "border-[#f0d6d6] bg-[#fff5f5] text-[#a66a6a]"
                                         : "border-[#ece2d4] bg-[#faf6ef] text-[#8a8377]"
                                     }`}>
-                                    {lbl}
+                                    {lbl.slice(0, 1)}
                                   </div>
                                 ))}
                               </div>
-                              <div className="grid grid-cols-7 gap-2">
+                              <div className="grid grid-cols-7 gap-1 sm:gap-2">
                                 {calendarCells.map((day, idx) => {
                                   if (!day) {
-                                    return <div key={`e-${idx}`} className="min-h-[80px] rounded-[18px] border border-dashed border-[#efe7da] bg-[#fbf8f2]/70 sm:min-h-[92px]" />;
+                                    return <div key={`e-${idx}`} className="min-h-[56px] sm:min-h-[92px] rounded-[12px] sm:rounded-[18px] border border-dashed border-[#efe7da] bg-[#fbf8f2]/70" />;
                                   }
                                   const items = deadlinesByDay[day] || [];
                                   const urgent = items.some(i => i.urgencia === "alta");
@@ -460,33 +460,33 @@ export default function CalendarioPage() {
                                     <motion.button key={day}
                                       whileHover={{ y: -3, rotate: day % 2 === 0 ? -0.8 : 0.8 }}
                                       whileTap={{ scale: 0.98 }}
-                                      className={`group relative min-h-[80px] overflow-visible rounded-[20px] border p-2 text-left shadow-sm transition sm:min-h-[92px] ${
+                                      className={`group relative min-h-[56px] sm:min-h-[92px] overflow-visible rounded-[14px] sm:rounded-[20px] border p-1 sm:p-2 text-left shadow-sm transition ${
                                         hasItem ? "border-[#dfcfbd] bg-[#fffdf8]" : "border-[#efe4d7] bg-[#fcfaf5]"
                                       }`}
                                       style={{ clipPath: day % 2 === 0 ? "polygon(3% 2%,98% 4%,100% 26%,97% 99%,1% 97%,0% 12%)" : "polygon(1% 4%,96% 1%,99% 16%,98% 98%,4% 99%,0 22%)" }}>
                                       {hasItem && (
                                         <>
-                                          <div className={`absolute left-2 right-2 top-2 h-6 rounded-md opacity-80 ${urgent ? "bg-[#ffd7a8]" : attention ? "bg-[#fff2a8]" : "bg-[#dff2bf]"}`} />
-                                          <div className="absolute right-2 top-1.5 z-20">
+                                          <div className={`absolute left-1 right-1 top-1 sm:left-2 sm:right-2 sm:top-2 h-4 sm:h-6 rounded-md opacity-80 ${urgent ? "bg-[#ffd7a8]" : attention ? "bg-[#fff2a8]" : "bg-[#dff2bf]"}`} />
+                                          <div className="absolute right-1 top-1 sm:right-2 sm:top-1.5 z-20 hidden sm:block">
                                             {urgent ? <HandDrawnPin className="scale-[0.72]" /> : <HandDrawnStar className="h-5 w-5 rotate-[10deg]" />}
                                           </div>
                                         </>
                                       )}
                                       <div className="relative z-10 flex items-start justify-between">
-                                        <div className="relative inline-flex h-8 w-8 items-center justify-center rounded-[10px] border-2 border-[#d9cdbd] bg-white text-sm font-black italic text-[#5a564e]"
+                                        <div className="relative inline-flex h-5 w-5 sm:h-8 sm:w-8 items-center justify-center rounded-[6px] sm:rounded-[10px] border sm:border-2 border-[#d9cdbd] bg-white text-[10px] sm:text-sm font-black italic text-[#5a564e]"
                                           style={{ transform: `rotate(${day % 2 === 0 ? "-3deg" : "2deg"})` }}>
                                           {day}
                                         </div>
-                                        {hasItem && <Dot className={`h-5 w-5 ${urgent ? "text-rose-500" : attention ? "text-amber-500" : "text-emerald-500"}`} />}
+                                        {hasItem && <Dot className={`h-3 w-3 sm:h-5 sm:w-5 ${urgent ? "text-rose-500" : attention ? "text-amber-500" : "text-emerald-500"}`} />}
                                       </div>
-                                      <div className="relative z-10 mt-1 space-y-1">
+                                      <div className="relative z-10 mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
                                         {items.slice(0, 2).map((item) => (
                                           <div key={item.titulo}
-                                            className={`rounded-[8px] border px-1.5 py-0.5 text-[9px] font-bold leading-4 ${cat?.tone || "bg-stone-100 text-stone-700 border-stone-200"}`}>
+                                            className={`hidden sm:block rounded-[8px] border px-1.5 py-0.5 text-[9px] font-bold leading-4 ${cat?.tone || "bg-stone-100 text-stone-700 border-stone-200"}`}>
                                             {item.categoria}
                                           </div>
                                         ))}
-                                        {items.length > 2 && <div className="text-[9px] font-bold text-[#8b8478]">+{items.length - 2} mais</div>}
+                                        {items.length > 2 && <div className="hidden sm:block text-[9px] font-bold text-[#8b8478]">+{items.length - 2} mais</div>}
                                       </div>
                                       {hasItem && (
                                         <div className="pointer-events-none absolute left-1/2 top-[-12px] z-30 w-[170px] -translate-x-1/2 rounded-[14px] border border-[#d9cdbf] bg-[#fffdf7] px-3 py-2 text-[11px] font-semibold leading-4 text-[#5e584f] opacity-0 shadow-[0_10px_30px_rgba(77,61,38,0.12)] transition duration-200 group-hover:opacity-100">
@@ -507,18 +507,18 @@ export default function CalendarioPage() {
                   </AnimatePresence>
 
                   {/* ── Count cards ── */}
-                  <div className="grid gap-4 md:grid-cols-3">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-4">
                     {[
                       { label: "Urgentes", count: urgentCount, bg: "bg-rose-50", text: "text-rose-600", Icon: BellRing },
                       { label: "Atenção", count: attentionCount, bg: "bg-amber-50", text: "text-amber-600", Icon: BadgeAlert },
                       { label: "Informativos", count: infoCount, bg: "bg-emerald-50", text: "text-emerald-600", Icon: CheckCircle2 },
                     ].map(({ label, count, bg, text, Icon }) => (
-                      <div key={label} className="rounded-[24px] border border-[#e6dccf] bg-white p-4 shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className={`rounded-2xl ${bg} ${text} p-3`}><Icon className="h-5 w-5" /></div>
+                      <div key={label} className="rounded-[18px] sm:rounded-[24px] border border-[#e6dccf] bg-white p-3 sm:p-4 shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                          <div className={`rounded-xl sm:rounded-2xl ${bg} ${text} p-2 sm:p-3 self-start sm:self-auto`}><Icon className="h-4 w-4 sm:h-5 sm:w-5" /></div>
                           <div>
-                            <div className="text-xs uppercase tracking-[0.16em] text-[#9c9388]">{label}</div>
-                            <div className="text-2xl font-black text-[#4e4a43]">{count}</div>
+                            <div className="text-[10px] sm:text-xs uppercase tracking-[0.12em] sm:tracking-[0.16em] text-[#9c9388]">{label}</div>
+                            <div className="text-xl sm:text-2xl font-black text-[#4e4a43]">{count}</div>
                           </div>
                         </div>
                       </div>
