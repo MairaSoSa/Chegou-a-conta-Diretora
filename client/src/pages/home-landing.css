@@ -586,7 +586,6 @@
 .hl-right-col {
   display: flex; flex-direction: column;
   gap: 28px; padding-top: 6px; min-height: 0;
-  align-self: start;
 }
 
 /* ── Dica do dia ── */
@@ -640,7 +639,7 @@
 
 /* ── Caderno / Trilha ── papel sem pauta ── */
 .hl-caderno-box {
-  position: relative; flex: 1; min-height: 0;
+  position: relative; flex: 1; min-height: 0; max-height: 488px;
   border-radius: 3px 14px 3px 3px;
   padding: 16px 18px 14px;
   background:
