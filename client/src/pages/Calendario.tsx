@@ -7,7 +7,7 @@ import {
   CalendarDays, Newspaper, Pin, BellRing, BadgeAlert, BookOpenCheck,
   FileText, CircleDollarSign, BusFront, Apple, GraduationCap,
   Search, Sparkles, CheckCircle2, Clock3,
-  Dot, X, Loader2, RefreshCw, AlertTriangle, AlertCircle,
+  X, Loader2, RefreshCw, AlertTriangle, AlertCircle,
   ExternalLink, Landmark, BookOpen,
 } from "lucide-react";
 
@@ -471,7 +471,7 @@ export default function CalendarioPage() {
                                           style={{ transform: `rotate(${day % 2 === 0 ? "-3deg" : "2deg"})` }}>
                                           {day}
                                         </div>
-                                        {hasItem && <Dot className={`h-3 w-3 sm:h-5 sm:w-5 ${urgent ? "text-rose-500" : attention ? "text-amber-500" : "text-emerald-500"}`} />}
+                                        {hasItem && <div className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full mt-0.5 shrink-0 ${urgent ? "bg-rose-500" : attention ? "bg-amber-500" : "bg-emerald-500"}`} />}
                                       </div>
                                       <div className="relative z-10 mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
                                         {items.slice(0, 2).map((item) => (
@@ -754,6 +754,7 @@ export default function CalendarioPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMobileDaySheet(null)}
+              onMouseDown={(e) => e.stopPropagation()}
               className="fixed inset-0 z-40 bg-black/40 sm:hidden"
             />
             {/* Sheet */}
@@ -763,6 +764,7 @@ export default function CalendarioPage() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 26, stiffness: 280 }}
+              onMouseDown={(e) => e.stopPropagation()}
               className="fixed bottom-0 left-0 right-0 z-50 sm:hidden rounded-t-[28px] border-t border-[#d8cfc0] bg-[#fffdf8] shadow-[0_-12px_40px_rgba(80,60,30,0.14)]"
               style={{ maxHeight: "82vh", overflowY: "auto" }}
             >
