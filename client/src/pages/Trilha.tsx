@@ -413,8 +413,8 @@ export default function Trilha() {
                         <motion.div
                           key={unit.unitId}
                           style={{ rotate: rot, transformOrigin: "top center" }}
-                          whileHover={{ y: -14, rotate: 0, scale: 1.04, zIndex: 20 }}
-                          transition={{ type: "spring", stiffness: 280, damping: 22 }}
+                          whileHover={{ y: -5, rotate: rot, zIndex: 20 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
                           className="relative cursor-pointer"
                           onClick={() => navigate(`/trilha/${unit.unitId}`)}
                         >
