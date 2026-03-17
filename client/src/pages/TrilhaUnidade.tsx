@@ -959,12 +959,12 @@ export default function TrilhaUnidade() {
         </div>{/* end binder */}
       </main>
 
-      {/* Toolbar flutuante de grifo — aparece perto da seleção */}
+      {/* ─── Toolbar flutuante de grifo: aparece perto da seleção ─── */}
       {selectionRect && !eraserMode && (
         <div
           className="fixed z-[110] flex items-center gap-1.5 rounded-full bg-slate-800/95 px-3 py-2 shadow-2xl backdrop-blur-sm"
           style={{
-            left: Math.max(8, selectionRect.left + selectionRect.width / 2 - 95),
+            left: Math.max(8, Math.min(selectionRect.left + selectionRect.width / 2 - 95, window.innerWidth - 200)),
             top: Math.max(8, selectionRect.top - 52),
           }}
           onPointerDown={(e) => e.preventDefault()}
@@ -982,7 +982,7 @@ export default function TrilhaUnidade() {
         </div>
       )}
 
-      {/* Ficha modal — tela cheia em todos os tamanhos */}
+      {/* ─── Ficha modal ─── */}
       <AnimatePresence>
         {openModal && (
           <motion.div
@@ -990,142 +990,177 @@ export default function TrilhaUnidade() {
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", stiffness: 320, damping: 34 }}
-            className="fixed inset-0 z-[90] flex flex-col bg-[#f8f4ee]"
-            style={{ fontFamily: "'Nunito', sans-serif" }}
+            transition={{ type: "spring", stiffness: 300, damping: 36 }}
+            className="fixed inset-0 z-[90] flex flex-col"
+            style={{ background: "#f0e9df", fontFamily: "'Nunito', sans-serif" }}
           >
-            {/* Barra superior colorida */}
+            {/* ── Barra superior ── */}
             <div
-              className="flex shrink-0 items-center gap-3 px-4 py-3"
+              className="shrink-0 flex items-center gap-2 px-3 py-2.5 sm:px-5"
               style={{
-                background: `linear-gradient(90deg, ${tone.spine} 0%, ${tone.spineLight} 100%)`,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+                background: `linear-gradient(105deg, ${tone.spine} 0%, ${tone.spineLight} 100%)`,
+                boxShadow: "0 3px 12px rgba(0,0,0,0.22)",
               }}
             >
               <button
                 onClick={() => setOpenModal(null)}
-                className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-[12px] font-extrabold text-white backdrop-blur-sm"
+                className="flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-extrabold text-white/90 backdrop-blur-sm transition hover:bg-white/25"
               >
                 ← voltar
               </button>
-              <div className="flex-1 min-w-0">
-                <p className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-white/70 truncate">
-                  {openModal.emoji && <span className="mr-1">{openModal.emoji}</span>}
-                  {openModal.label}
+              <div className="flex-1 min-w-0 px-1">
+                <p className="text-[9px] font-extrabold uppercase tracking-[0.24em] text-white/65 truncate leading-none">
+                  {openModal.emoji && <span className="mr-1">{openModal.emoji}</span>}{openModal.label}
                 </p>
               </div>
-            </div>
-
-            {/* Título */}
-            <div
-              className="shrink-0 border-b px-4 pt-3 pb-3"
-              style={{ borderColor: tone.border, background: tone.header }}
-            >
-              <h3 className="text-xl font-extrabold leading-snug text-slate-800">{openModal.title}</h3>
-              {/* Dica de uso — aparece apenas se não há grifos */}
-              {!hasHighlights && !eraserMode && (
-                <p className="mt-1 text-[11px] text-slate-400">
-                  Selecione um trecho e escolha uma cor para grifar
-                </p>
-              )}
-              {/* Banner modo borracha */}
-              {eraserMode && (
-                <div className="mt-1.5 flex items-center gap-2">
-                  <p className="text-[11px] font-semibold text-rose-600">
-                    Toque em um grifo para apagá-lo
-                  </p>
-                  <button
-                    onPointerDown={(e) => e.preventDefault()}
-                    onClick={() => setEraserMode(false)}
-                    className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-600"
-                  >
-                    ✕ sair
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Conteúdo scrollável — papel pautado */}
-            <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-8 sm:py-6">
-              <div
-                className="mx-auto max-w-2xl relative rounded-[14px] border bg-white p-5 sm:p-7"
-                style={{ borderColor: tone.border, boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}
-              >
-                {/* Margem vermelha */}
-                <div
-                  className="absolute left-12 top-0 bottom-0 w-px"
-                  style={{ background: "#f0a0a088" }}
-                />
-                {/* Linhas pautadas */}
-                <div
-                  className="pointer-events-none absolute inset-0 rounded-[14px] opacity-25"
-                  style={{
-                    backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #c7d0e0 31px, #c7d0e0 32px)",
-                    backgroundPosition: "0 40px",
-                  }}
-                />
-                <div
-                  ref={contentRef}
-                  onClick={handleContentClick}
-                  className="relative pl-8 space-y-5 text-[15px] leading-8 text-slate-700 select-text"
-                  style={{ cursor: eraserMode ? "crosshair" : "text" }}
-                >
-                  {openModal.paragraphs.map((p, i) => (
-                    <p key={i}>{p}</p>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Rodapé fixo — aviso de não-persistência + ações */}
-            <div
-              className="shrink-0 flex flex-wrap items-center gap-2 border-t px-4 py-2.5"
-              style={{ borderColor: "#e8d5b0", background: "#fffbf0" }}
-            >
-              {/* Aviso */}
-              <p className="flex-1 min-w-0 text-[10px] leading-tight text-amber-700">
-                <span className="mr-1">⚠️</span>
-                <strong>Grifos não ficam salvos</strong> ao fechar.{" "}
-                <span className="hidden sm:inline">Salve em PDF para guardar seu estudo.</span>
-              </p>
-              {/* Borracha — só aparece se houver grifos */}
-              {hasHighlights && (
-                <button
-                  onPointerDown={(e) => e.preventDefault()}
-                  onClick={() => setEraserMode((v) => !v)}
-                  className="rounded-full border px-3 py-1.5 text-[11px] font-bold transition"
-                  style={{
-                    background: eraserMode ? "#fef2f2" : "#fff",
-                    borderColor: eraserMode ? "#fca5a5" : "#e2e8f0",
-                    color: eraserMode ? "#dc2626" : "#64748b",
-                  }}
-                >
-                  {eraserMode ? "🧹 apagando..." : "🧹 Apagar grifo"}
-                </button>
-              )}
-              {hasHighlights && (
-                <button
-                  onPointerDown={(e) => e.preventDefault()}
-                  onClick={clearHighlights}
-                  className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-[11px] font-bold text-stone-400 transition hover:text-rose-500"
-                >
-                  Limpar todos
-                </button>
-              )}
-              {/* PDF — sempre visível, destaque */}
+              {/* PDF — destaque no topo */}
               <button
                 onClick={() => printFicha(openModal.title, unidade?.title)}
-                className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[12px] font-extrabold text-white shadow-md transition hover:opacity-90"
-                style={{ background: tone.spine }}
+                className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-3.5 py-1.5 text-[11px] font-extrabold shadow-md transition hover:bg-white"
+                style={{ color: tone.spine }}
               >
-                📄 Salvar PDF
+                📄 <span className="hidden sm:inline">Salvar </span>PDF
               </button>
+            </div>
+
+            {/* ── Cabeçalho da ficha ── */}
+            <div
+              className="shrink-0 px-4 sm:px-7 py-3 border-b"
+              style={{ background: tone.header, borderColor: tone.border }}
+            >
+              {/* Linha com título + ferramentas */}
+              <div className="flex items-start gap-3">
+                {/* Ícone grande da ficha */}
+                <div
+                  className="shrink-0 flex h-10 w-10 items-center justify-center rounded-xl text-2xl shadow-sm"
+                  style={{ background: `${tone.spine}18`, border: `1.5px solid ${tone.spine}30` }}
+                >
+                  {openModal.emoji || "📄"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg sm:text-xl font-extrabold leading-tight text-slate-800 pr-2">
+                    {openModal.title}
+                  </h3>
+                  {/* Ferramentas de grifo — ficam aqui no topo */}
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {eraserMode ? (
+                      <>
+                        <span className="text-[11px] font-semibold text-rose-600">
+                          🧹 Toque em um grifo para apagá-lo
+                        </span>
+                        <button
+                          onPointerDown={(e) => e.preventDefault()}
+                          onClick={() => setEraserMode(false)}
+                          className="rounded-full bg-rose-100 border border-rose-300 px-2.5 py-0.5 text-[10px] font-bold text-rose-600"
+                        >
+                          ✕ sair
+                        </button>
+                      </>
+                    ) : hasHighlights ? (
+                      <>
+                        <button
+                          onPointerDown={(e) => e.preventDefault()}
+                          onClick={() => setEraserMode(true)}
+                          className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition hover:border-rose-300 hover:text-rose-600"
+                        >
+                          🧹 Apagar grifo
+                        </button>
+                        <button
+                          onPointerDown={(e) => e.preventDefault()}
+                          onClick={clearHighlights}
+                          className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-400 transition hover:text-rose-500"
+                        >
+                          Limpar todos
+                        </button>
+                      </>
+                    ) : (
+                      <p className="text-[10px] text-slate-400 italic">
+                        Selecione um trecho de texto para grifar
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Conteúdo scrollável ── */}
+            <div className="flex-1 overflow-y-auto py-5 px-3 sm:py-7 sm:px-6">
+              <div
+                className="mx-auto max-w-2xl rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.13),0_2px_8px_rgba(0,0,0,0.07)]"
+              >
+                {/* Banda decorativa da ficha */}
+                <div
+                  className="flex items-center gap-3 px-5 py-3"
+                  style={{
+                    background: `linear-gradient(90deg, ${tone.spine}22 0%, ${tone.spine}08 100%)`,
+                    borderBottom: `2px solid ${tone.spine}30`,
+                  }}
+                >
+                  <div
+                    className="h-2 w-2 rounded-full"
+                    style={{ background: tone.spine }}
+                  />
+                  <span
+                    className="text-[9px] font-extrabold uppercase tracking-[0.28em]"
+                    style={{ color: tone.spine }}
+                  >
+                    {openModal.label}
+                  </span>
+                  <div className="flex-1" />
+                  <div className="flex gap-1">
+                    {[0,1,2].map(i => (
+                      <div key={i} className="h-1.5 w-1.5 rounded-full" style={{ background: `${tone.spine}${i === 0 ? 'cc' : i === 1 ? '66' : '33'}` }} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Papel pautado com conteúdo */}
+                <div
+                  className="relative bg-white"
+                  style={{
+                    backgroundImage: `
+                      linear-gradient(${tone.spine}18 1px, transparent 1px)
+                    `,
+                    backgroundSize: "100% 2rem",
+                    backgroundPosition: "0 3.5rem",
+                  }}
+                >
+                  {/* Margem vertical colorida */}
+                  <div
+                    className="absolute left-11 top-0 bottom-0 w-[2px]"
+                    style={{ background: `${tone.spine}40` }}
+                  />
+                  {/* Conteúdo */}
+                  <div
+                    ref={contentRef}
+                    onClick={handleContentClick}
+                    className="relative pl-14 pr-5 sm:pr-8 pt-5 pb-8 space-y-[2rem] text-[15px] sm:text-[16px] leading-[2rem] text-slate-700 select-text"
+                    style={{ cursor: eraserMode ? "crosshair" : "text" }}
+                  >
+                    {openModal.paragraphs.map((p, i) => (
+                      <p key={i} className={i === 0 ? "first-of-type" : ""}>{p}</p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Aviso de não-persistência ── */}
+            <div
+              className="shrink-0 flex items-center gap-2 px-4 py-2 border-t"
+              style={{ background: "#fffbf0", borderColor: "#e8d5a0" }}
+            >
+              <span className="text-amber-500 text-sm">⚠️</span>
+              <p className="flex-1 text-[10px] text-amber-700">
+                <strong>Grifos não ficam salvos</strong> ao fechar.{" "}
+                Use o botão <strong>PDF</strong> para guardar seu estudo.
+              </p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <Footer />
+            <Footer />
     </div>
   );
 }
