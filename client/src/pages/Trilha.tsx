@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
@@ -185,6 +185,7 @@ function emojiFor(personalidade: keyof typeof toneMap) {
 
 export default function Trilha() {
   const [, navigate] = useLocation();
+  const [hoveredUnit, setHoveredUnit] = useState<string | null>(null);
 
   const { data: units = [], isLoading } = useQuery<TrilhaUnit[]>({
     queryKey: ["/api/trilha"],
@@ -409,14 +410,20 @@ export default function Trilha() {
                       // Slightly off-center pin position for natural look
                       const pinOffset = itemIdx % 3 === 0 ? "43%" : itemIdx % 3 === 1 ? "50%" : "57%";
 
+                      const isHovered = hoveredUnit === unit.unitId;
+
                       return (
-                        <motion.div
+                        <div
                           key={unit.unitId}
-                          style={{ rotate: rot }}
-                          whileHover={{ rotate: 0, zIndex: 20 }}
-                          transition={{ type: "spring", stiffness: 340, damping: 30 }}
                           className="relative cursor-pointer"
+                          onMouseEnter={() => setHoveredUnit(unit.unitId)}
+                          onMouseLeave={() => setHoveredUnit(null)}
                           onClick={() => navigate(`/trilha/${unit.unitId}`)}
+                        >
+                        <motion.div
+                          animate={{ rotate: isHovered ? 0 : rot, zIndex: isHovered ? 20 : 0 }}
+                          transition={{ type: "spring", stiffness: 340, damping: 30 }}
+                          className="relative"
                         >
                           {/* Pin ímã */}
                           <div
@@ -545,6 +552,7 @@ export default function Trilha() {
                             </div>
                           </article>
                         </motion.div>
+                        </div>
                       );
                     })}
                   </div>
