@@ -93,7 +93,7 @@ export function Footer() {
 
             <Link
               href="/quem-somos"
-              className="group flex items-center gap-2 text-sm font-medium transition-all"
+              className="group relative text-sm font-medium transition-all pb-[3px]"
               style={{ color: "#2e4030" }}
               data-testid="text-footer-slogan"
             >
@@ -101,19 +101,16 @@ export function Footer() {
                 {settings?.footer_slogan || "Quem somos"}
               </span>
 
-              {/* risco de lápis no hover — igual ao nav */}
-              <span className="relative block h-[3px] w-12 overflow-visible">
-                <span
-                  className="absolute inset-0 transition-opacity duration-200 opacity-0 group-hover:opacity-100"
-                  style={{
-                    background: "linear-gradient(90deg, transparent 0%, rgba(38,30,18,0.72) 10%, rgba(52,42,24,0.88) 40%, rgba(44,36,20,0.82) 70%, transparent 100%)",
-                    transform: "rotate(-0.6deg) skewX(-1deg)",
-                    filter: "blur(0.3px)",
-                    borderRadius: "1px",
-                    top: "0px",
-                  }}
-                />
-              </span>
+              {/* risco de lápis no hover — embaixo do texto */}
+              <span
+                className="absolute bottom-0 left-[4px] right-[4px] h-[3px] pointer-events-none transition-opacity duration-200 opacity-0 group-hover:opacity-100"
+                style={{
+                  background: "linear-gradient(90deg, transparent 0%, rgba(38,30,18,0.72) 10%, rgba(52,42,24,0.88) 40%, rgba(44,36,20,0.82) 70%, transparent 100%)",
+                  transform: "rotate(-0.6deg) skewX(-1deg)",
+                  filter: "blur(0.3px)",
+                  borderRadius: "1px",
+                }}
+              />
             </Link>
           </div>
 
