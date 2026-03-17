@@ -139,21 +139,6 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* ── Rodapé desktop (oculto no mobile) ── */}
-              <div className="hl-footer-strip hl-footer-desktop">
-                <span>Acesso livre para quem trabalha e acredita na escola pública.</span>
-                <button
-                  onClick={toggleAccessibility}
-                  aria-label="Ajustes de acessibilidade"
-                  className="hl-a11y-pill flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all duration-200 shrink-0"
-                  style={{ background:"rgba(218,185,60,.18)", border:"1px solid rgba(180,150,30,.28)", color:"#6b5208", opacity:0.65, fontFamily:'"Patrick Hand", cursive' }}
-                  onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
-                  onMouseLeave={e => (e.currentTarget.style.opacity = "0.65")}
-                >
-                  <Accessibility style={{ width: 11, height: 11, flexShrink: 0 }} />
-                  Acessibilidade
-                </button>
-              </div>
             </div>
 
             {/* Coluna direita */}
@@ -209,6 +194,21 @@ export default function Home() {
                 Acessibilidade
               </button>
             </div>
+          </div>{/* fim hl-layout */}
+          {/* ── Rodapé desktop (oculto no mobile) ── */}
+          <div className="hl-footer-strip hl-footer-desktop">
+            <span>Acesso livre para quem trabalha e acredita na escola pública.</span>
+            <button
+              onClick={toggleAccessibility}
+              aria-label="Ajustes de acessibilidade"
+              className="hl-a11y-pill flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all duration-200 shrink-0"
+              style={{ background:"rgba(218,185,60,.18)", border:"1px solid rgba(180,150,30,.28)", color:"#6b5208", opacity:0.65, fontFamily:'"Patrick Hand", cursive' }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+              onMouseLeave={e => (e.currentTarget.style.opacity = "0.65")}
+            >
+              <Accessibility style={{ width: 11, height: 11, flexShrink: 0 }} />
+              Acessibilidade
+            </button>
           </div>
 
         </section>
