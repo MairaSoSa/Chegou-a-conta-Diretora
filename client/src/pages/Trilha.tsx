@@ -436,8 +436,8 @@ export default function Trilha() {
                               borderStyle: "solid",
                               boxShadow: "0 6px 22px rgba(0,0,0,0.24), 0 2px 5px rgba(0,0,0,0.14)",
                             }}
-                            whileHover={{ rotate: -rot, zIndex: 20 }}
-                            transition={{ type: "spring", stiffness: 130, damping: 10 }}
+                            whileHover={{ rotate: rot * 0.3, zIndex: 20 }}
+                            transition={{ type: "spring", stiffness: 200, damping: 20 }}
                           >
                             {/* Colored stripe on left edge (like message pad) */}
                             <div
