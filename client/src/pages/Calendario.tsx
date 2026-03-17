@@ -269,9 +269,6 @@ export default function CalendarioPage() {
             transition={{ duration: 0.5 }}
             className="relative overflow-hidden rounded-[30px] border border-[#d8cfbf] bg-[#f8f4ec] shadow-[0_20px_70px_rgba(91,74,52,0.08)]"
           >
-            <Tape className="left-7 top-4" />
-            <Tape rotate="rotate-[8deg]" className="right-8 top-5 hidden sm:block" />
-
             {/* ── Header ── */}
             <div className="border-b border-[#e6dccf] bg-[linear-gradient(180deg,#eef4df_0%,#e5eed3_100%)] px-5 pb-5 pt-8 sm:px-8">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -380,11 +377,6 @@ export default function CalendarioPage() {
                       >
                         <IrregularCalendarCard>
                           <div className="relative border border-[#e8dece] bg-[linear-gradient(180deg,#fffdf8_0%,#f8f3ea_100%)] p-4 sm:p-5">
-                            <Tape className="left-8 top-[-10px]" rotate="rotate-[-7deg]" />
-                            <Tape className="right-12 top-[-11px] hidden sm:block" rotate="rotate-[8deg]" />
-                            <HandDrawnPin className="absolute left-5 top-4 z-20" />
-                            <HandDrawnPin className="absolute right-6 top-4 z-20 hidden sm:block" />
-
                             <div className="relative z-10 mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                               <div>
                                 <div className="inline-flex items-center gap-2 rounded-full border border-[#eadfcd] bg-[#fff8da] px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#8b7631]">
