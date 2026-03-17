@@ -248,7 +248,7 @@
 
 /* ── Layout principal ── */
 .hl-layout {
-  display: grid; grid-template-columns: 1.08fr .92fr;
+  display: grid; grid-template-columns: 1.3fr .7fr;
   gap: 22px; flex: 1; min-height: 0; padding: 0 4px 0 0;
 }
 
