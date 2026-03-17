@@ -392,92 +392,162 @@ export default function TrilhaUnidade() {
   const unitId = params.unitId || "U01";
   const [, navigate] = useLocation();
   const [openModal, setOpenModal] = useState<ModalData | null>(null);
+  const personalidade = getPersonalidade(unitId);
+  const tone = toneMap[personalidade];
 
   // ── Grifo / highlight state ──
-  const contentMobileRef = useRef<HTMLDivElement>(null);
-  const contentDesktopRef = useRef<HTMLDivElement>(null);
-  const [toolbarPos, setToolbarPos] = useState<{ x: number; y: number } | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [hasHighlights, setHasHighlights] = useState(false);
+  const [highlightColor, setHighlightColor] = useState("#fef08a");
+  const [eraserMode, setEraserMode] = useState(false);
 
-  // Reset toolbar when modal closes
+  const HIGHLIGHT_COLORS = [
+    { bg: "#fef08a", border: "#ca8a04", label: "Amarelo" },
+    { bg: "#bbf7d0", border: "#16a34a", label: "Verde" },
+    { bg: "#fecdd3", border: "#e11d48", label: "Rosa" },
+    { bg: "#bae6fd", border: "#0284c7", label: "Azul" },
+    { bg: "#fed7aa", border: "#ea580c", label: "Laranja" },
+  ];
+
   useEffect(() => {
-    if (!openModal) { setToolbarPos(null); setHasHighlights(false); }
+    if (!openModal) { setHasHighlights(false); setEraserMode(false); }
   }, [openModal]);
-
-  const handleMouseUp = useCallback(() => {
-    const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || !sel.toString().trim()) {
-      setToolbarPos(null);
-      return;
-    }
-    const range = sel.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    setToolbarPos({ x: rect.left + rect.width / 2, y: rect.top + window.scrollY - 52 });
-  }, []);
 
   const applyHighlight = useCallback(() => {
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
+    const color = highlightColor;
     try {
-      // Try simple wrap first
       const mark = document.createElement("mark");
       mark.className = "ficha-grifo";
+      mark.style.background = color;
       range.surroundContents(mark);
     } catch {
-      // Cross-element: extract + wrap fragment
       const frag = range.extractContents();
       const mark = document.createElement("mark");
       mark.className = "ficha-grifo";
+      mark.style.background = color;
       mark.appendChild(frag);
       range.insertNode(mark);
     }
     sel.removeAllRanges();
-    setToolbarPos(null);
     setHasHighlights(true);
-  }, []);
+  }, [highlightColor]);
 
-  const clearHighlights = useCallback((ref: React.RefObject<HTMLDivElement>) => {
-    if (!ref.current) return;
-    ref.current.querySelectorAll("mark.ficha-grifo").forEach((mark) => {
+  const clearHighlights = useCallback(() => {
+    if (!contentRef.current) return;
+    contentRef.current.querySelectorAll("mark.ficha-grifo").forEach((mark) => {
       const parent = mark.parentNode!;
       while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
       parent.removeChild(mark);
       parent.normalize();
     });
     setHasHighlights(false);
-    setToolbarPos(null);
+    setEraserMode(false);
   }, []);
 
-  const printFicha = useCallback((ref: React.RefObject<HTMLDivElement>, title: string) => {
-    if (!ref.current) return;
-    const printWin = window.open("", "_blank", "width=800,height=900");
+  const handleContentClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!eraserMode) return;
+    const target = e.target as HTMLElement;
+    if (target.tagName === "MARK" && target.classList.contains("ficha-grifo")) {
+      const parent = target.parentNode!;
+      while (target.firstChild) parent.insertBefore(target.firstChild, target);
+      parent.removeChild(target);
+      parent.normalize();
+      if (contentRef.current && contentRef.current.querySelectorAll("mark.ficha-grifo").length === 0) {
+        setHasHighlights(false);
+        setEraserMode(false);
+      }
+    }
+  }, [eraserMode]);
+
+  const printFicha = useCallback((title: string, unitTitleOverride?: string) => {
+    if (!contentRef.current) return;
+    const printWin = window.open("", "_blank", "width=860,height=960");
     if (!printWin) return;
-    const content = ref.current.innerHTML;
-    const unitTitle = (document.querySelector("h1.text-2xl, h1.text-3xl") as HTMLElement)?.innerText || "";
+    const content = contentRef.current.innerHTML;
+    const unitTitle = unitTitleOverride || "";
+    const spineColor = tone.spine;
     printWin.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
       <meta charset="UTF-8"/>
       <title>${unitTitle} — ${title}</title>
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
-        body { font-family: 'Nunito', sans-serif; margin: 0; padding: 32px; background: #fff; color: #374151; font-size: 15px; line-height: 1.8; }
-        h2 { font-size: 20px; font-weight: 800; color: #1e293b; margin: 0 0 6px; }
-        .label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.22em; color: #64748b; margin-bottom: 4px; }
-        .content { margin-top: 20px; }
-        p { margin: 0 0 20px; }
-        mark.ficha-grifo { background: #fef08a; border-radius: 2px; padding: 0 1px; }
-        .ruled { border-left: 3px solid #e2e8f0; padding-left: 20px; margin-top: 16px; }
-        @media print { body { padding: 16px; } }
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&display=swap');
+        @page {
+          size: A4;
+          margin: 2.2cm 2cm 2.8cm;
+          @bottom-right {
+            content: "Página " counter(page) " de " counter(pages);
+            font-family: 'Nunito', sans-serif;
+            font-size: 8pt;
+            color: #94a3b8;
+          }
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Nunito', sans-serif; margin: 0; background: #fff; color: #374151; font-size: 14pt; line-height: 1.85; }
+
+        /* Cabeçalho */
+        .pdf-header {
+          display: flex; align-items: flex-start; justify-content: space-between;
+          border-bottom: 3px solid ${spineColor};
+          padding-bottom: 14px; margin-bottom: 22px;
+        }
+        .pdf-brand { font-size: 18pt; font-weight: 900; color: ${spineColor}; line-height: 1.1; }
+        .pdf-brand span { display: block; font-size: 8pt; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.14em; margin-top: 4px; }
+        .pdf-unit-badge {
+          background: ${spineColor}18; border: 1.5px solid ${spineColor}44;
+          border-radius: 8px; padding: 6px 14px; text-align: right;
+        }
+        .pdf-unit-badge .unit-id { font-size: 9pt; font-weight: 800; color: ${spineColor}; text-transform: uppercase; letter-spacing: 0.18em; }
+        .pdf-unit-badge .unit-name { font-size: 7.5pt; color: #64748b; margin-top: 2px; }
+
+        /* Ficha label + título */
+        .pdf-label { font-size: 7.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.22em; color: ${spineColor}; margin-bottom: 5px; }
+        .pdf-title { font-size: 20pt; font-weight: 900; color: #1e293b; line-height: 1.2; margin: 0 0 24px; padding-bottom: 12px; border-bottom: 1px dashed #e2e8f0; }
+
+        /* Conteúdo pautado */
+        .pdf-content { padding-left: 24px; border-left: 3px solid ${spineColor}33; }
+        .pdf-content p { margin: 0 0 18pt; }
+
+        /* Grifos — preservar cores */
+        mark.ficha-grifo { border-radius: 3px; padding: 0 2px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+        /* Rodapé de assinatura */
+        .pdf-footer {
+          margin-top: 40px; padding-top: 14px; border-top: 1px solid #e2e8f0;
+          display: flex; align-items: center; justify-content: space-between;
+          font-size: 8pt; color: #94a3b8;
+        }
+        .pdf-footer strong { color: #64748b; }
       </style>
     </head><body>
-      <p class="label">${unitId} · ${title}</p>
-      <h2>${title}</h2>
-      <div class="ruled content">${content}</div>
+      <div class="pdf-header">
+        <div class="pdf-brand">
+          Chegou a Conta, Diretora!
+          <span>Escrito por Mairã de Castro</span>
+        </div>
+        <div class="pdf-unit-badge">
+          <div class="unit-id">${unitId}</div>
+          <div class="unit-name">${unitTitle}</div>
+        </div>
+      </div>
+
+      <div class="pdf-label">${openModal?.emoji || ""} ${title}</div>
+      <div class="pdf-title">${title}</div>
+
+      <div class="pdf-content">${content}</div>
+
+      <div class="pdf-footer">
+        <span>chegouaconta.com.br</span>
+        <strong>Chegou a Conta, Diretora! · Mairã de Castro</strong>
+        <span>Gerado em ${new Date().toLocaleDateString("pt-BR")}</span>
+      </div>
     </body></html>`);
     printWin.document.close();
     printWin.focus();
-    setTimeout(() => { printWin.print(); }, 400);
-  }, [unitId]);
+    setTimeout(() => { printWin.print(); }, 500);
+  }, [unitId, tone, openModal]);
 
   const { data: unidade, isLoading } = useQuery<TrilhaUnit>({
     queryKey: ["/api/trilha", unitId],
@@ -486,9 +556,6 @@ export default function TrilhaUnidade() {
   const { data: allUnits = [] } = useQuery<TrilhaUnit[]>({
     queryKey: ["/api/trilha"],
   });
-
-  const personalidade = getPersonalidade(unitId);
-  const tone = toneMap[personalidade];
 
   const allSorted = [...allUnits].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   const currentIdx = allSorted.findIndex((u) => u.unitId === unitId);
@@ -867,217 +934,144 @@ export default function TrilhaUnidade() {
         </div>{/* end binder */}
       </main>
 
-      {/* Ficha modal */}
+      {/* Ficha modal — tela cheia em todos os tamanhos */}
       <AnimatePresence>
         {openModal && (
-          <>
-            {/* ── MOBILE: tela cheia deslizando de baixo ── */}
-            <motion.div
-              key="mobile-sheet"
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 320, damping: 34 }}
-              className="sm:hidden fixed inset-0 z-[90] flex flex-col bg-[#f8f4ee]"
-              style={{ fontFamily: "'Nunito', sans-serif" }}
+          <motion.div
+            key="ficha-sheet"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", stiffness: 320, damping: 34 }}
+            className="fixed inset-0 z-[90] flex flex-col bg-[#f8f4ee]"
+            style={{ fontFamily: "'Nunito', sans-serif" }}
+          >
+            {/* Barra superior colorida */}
+            <div
+              className="flex shrink-0 items-center gap-3 px-4 py-3"
+              style={{
+                background: `linear-gradient(90deg, ${tone.spine} 0%, ${tone.spineLight} 100%)`,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+              }}
             >
-              {/* Top bar colorida (estilo lombada horizontal) */}
-              <div
-                className="flex shrink-0 items-center gap-3 px-4 py-3"
-                style={{
-                  background: `linear-gradient(90deg, ${tone.spine} 0%, ${tone.spineLight} 100%)`,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
-                }}
+              <button
+                onClick={() => setOpenModal(null)}
+                className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-[12px] font-extrabold text-white backdrop-blur-sm"
               >
-                <button
-                  onClick={() => setOpenModal(null)}
-                  className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-[12px] font-extrabold text-white backdrop-blur-sm"
-                >
-                  ← voltar
-                </button>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-white/70 truncate">
-                    {openModal.emoji && <span className="mr-1">{openModal.emoji}</span>}
-                    {openModal.label}
-                  </p>
-                </div>
+                ← voltar
+              </button>
+              <div className="flex-1 min-w-0">
+                <p className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-white/70 truncate">
+                  {openModal.emoji && <span className="mr-1">{openModal.emoji}</span>}
+                  {openModal.label}
+                </p>
               </div>
-
-              {/* Título + ações */}
-              <div
-                className="shrink-0 border-b px-5 py-3"
-                style={{ borderColor: tone.border, background: tone.header }}
+              <button
+                onClick={() => printFicha(openModal.title, unidade?.title)}
+                className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-[11px] font-extrabold text-white backdrop-blur-sm"
               >
-                <h3 className="text-xl font-extrabold leading-snug text-slate-800">{openModal.title}</h3>
-                <div className="mt-2 flex items-center gap-2">
+                📄 PDF
+              </button>
+            </div>
+
+            {/* Título + ferramentas de grifo */}
+            <div
+              className="shrink-0 border-b px-4 pt-3 pb-3"
+              style={{ borderColor: tone.border, background: tone.header }}
+            >
+              <h3 className="text-xl font-extrabold leading-snug text-slate-800">{openModal.title}</h3>
+
+              {/* Toolbar de grifo */}
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                {HIGHLIGHT_COLORS.map((c) => (
                   <button
+                    key={c.bg}
+                    title={`Grifar em ${c.label}`}
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={applyHighlight}
-                    className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold"
-                    style={{ background: "#fef08a", borderColor: "#e8d020", color: "#78620a" }}
-                  >
-                    🖊 Grifar seleção
-                  </button>
-                  {hasHighlights && (
-                    <button
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => clearHighlights(contentMobileRef)}
-                      className="rounded-full border border-stone-300 bg-white px-3 py-1 text-[11px] font-bold text-stone-500"
-                    >
-                      ✕ Limpar grifos
-                    </button>
-                  )}
-                  <button
-                    onClick={() => printFicha(contentMobileRef, openModal.title)}
-                    className="ml-auto flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold text-white"
-                    style={{ background: tone.spine }}
-                  >
-                    📄 Salvar PDF
-                  </button>
-                </div>
-              </div>
-
-              {/* Conteúdo scrollável — papel pautado */}
-              <div className="flex-1 overflow-y-auto px-4 py-5">
-                <div
-                  className="relative rounded-[14px] border bg-white p-5"
-                  style={{ borderColor: tone.border }}
-                >
-                  {/* Margem vermelha */}
-                  <div
-                    className="absolute left-10 top-0 bottom-0 w-px"
-                    style={{ background: "#f0a0a088" }}
-                  />
-                  {/* Linhas pautadas */}
-                  <div
-                    className="pointer-events-none absolute inset-0 rounded-[14px] opacity-25"
+                    onClick={() => { setHighlightColor(c.bg); setEraserMode(false); }}
+                    className="h-6 w-6 rounded-full border-2 shadow-sm transition-transform hover:scale-110 active:scale-95"
                     style={{
-                      backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #c7d0e0 31px, #c7d0e0 32px)",
-                      backgroundPosition: "0 40px",
+                      background: c.bg,
+                      borderColor: highlightColor === c.bg && !eraserMode ? c.border : "rgba(0,0,0,0.12)",
+                      boxShadow: highlightColor === c.bg && !eraserMode ? `0 0 0 2px ${c.border}` : undefined,
                     }}
                   />
-                  <div
-                    ref={contentMobileRef}
-                    onMouseUp={handleMouseUp}
-                    onTouchEnd={handleMouseUp}
-                    className="relative pl-6 space-y-5 text-[15px] leading-8 text-slate-700 select-text"
+                ))}
+
+                <div className="h-5 w-px bg-slate-300" />
+
+                <button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={applyHighlight}
+                  className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold transition"
+                  style={{ background: highlightColor, borderColor: "rgba(0,0,0,0.15)", color: "#374151" }}
+                >
+                  🖊 Grifar
+                </button>
+
+                <button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setEraserMode((v) => !v)}
+                  className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold transition"
+                  style={{
+                    background: eraserMode ? "#fef2f2" : "#fff",
+                    borderColor: eraserMode ? "#fca5a5" : "#e2e8f0",
+                    color: eraserMode ? "#dc2626" : "#64748b",
+                  }}
+                >
+                  {eraserMode ? "🧹 apagando..." : "🧹 Borracha"}
+                </button>
+
+                {hasHighlights && (
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={clearHighlights}
+                    className="rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-bold text-stone-400 transition hover:text-rose-500"
                   >
-                    {openModal.paragraphs.map((p, i) => (
-                      <p key={i}>{p}</p>
-                    ))}
-                  </div>
+                    ✕ Limpar todos
+                  </button>
+                )}
+              </div>
+
+              {eraserMode && (
+                <p className="mt-1.5 text-[10px] font-medium text-rose-500">
+                  Clique em qualquer grifo para apagá-lo individualmente
+                </p>
+              )}
+            </div>
+
+            {/* Conteúdo scrollável — papel pautado */}
+            <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-8 sm:py-6">
+              <div
+                className="mx-auto max-w-2xl relative rounded-[14px] border bg-white p-5 sm:p-7"
+                style={{ borderColor: tone.border, boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}
+              >
+                {/* Margem vermelha */}
+                <div
+                  className="absolute left-12 top-0 bottom-0 w-px"
+                  style={{ background: "#f0a0a088" }}
+                />
+                {/* Linhas pautadas */}
+                <div
+                  className="pointer-events-none absolute inset-0 rounded-[14px] opacity-25"
+                  style={{
+                    backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #c7d0e0 31px, #c7d0e0 32px)",
+                    backgroundPosition: "0 40px",
+                  }}
+                />
+                <div
+                  ref={contentRef}
+                  onClick={handleContentClick}
+                  className="relative pl-8 space-y-5 text-[15px] leading-8 text-slate-700 select-text"
+                  style={{ cursor: eraserMode ? "crosshair" : "text" }}
+                >
+                  {openModal.paragraphs.map((p, i) => (
+                    <p key={i}>{p}</p>
+                  ))}
                 </div>
               </div>
-            </motion.div>
-
-            {/* ── DESKTOP: modal flutuante com lombada ── */}
-            <motion.div
-              key="desktop-modal"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="hidden sm:flex fixed inset-0 z-[90] items-center justify-center bg-slate-950/40 px-4 py-8 backdrop-blur-sm"
-              onClick={() => setOpenModal(null)}
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 24, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 14, scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 340, damping: 28 }}
-                onClick={(e) => e.stopPropagation()}
-                className="relative flex w-full max-w-3xl overflow-hidden rounded-[24px] shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
-              >
-                {/* Binder spine */}
-                <div
-                  className="flex w-10 flex-shrink-0 flex-col items-center justify-center gap-5 py-6"
-                  style={{ background: `linear-gradient(180deg, ${tone.spineLight}, ${tone.spine})` }}
-                >
-                  {[0, 1, 2].map((i) => <RingClip key={i} color="rgba(255,255,255,0.6)" />)}
-                </div>
-
-                {/* Content area */}
-                <div className="flex flex-1 flex-col bg-[#f8f4ee]">
-                  {/* Header bar */}
-                  <div
-                    className="border-b px-6 py-4"
-                    style={{ borderColor: tone.border }}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
-                          {openModal.emoji && <span className="text-base leading-none">{openModal.emoji}</span>}
-                          {openModal.label}
-                        </p>
-                        <h3 className="mt-1 text-xl font-extrabold text-slate-800">{openModal.title}</h3>
-                      </div>
-                      <button
-                        onClick={() => setOpenModal(null)}
-                        className="flex-shrink-0 rounded-full border border-stone-300 bg-white px-4 py-1.5 text-sm font-semibold text-stone-500 shadow-sm transition hover:bg-stone-50"
-                      >
-                        fechar ×
-                      </button>
-                    </div>
-                    {/* Ferramentas de grifo */}
-                    <div className="mt-3 flex items-center gap-2">
-                      <button
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={applyHighlight}
-                        className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold"
-                        style={{ background: "#fef08a", borderColor: "#e8d020", color: "#78620a" }}
-                      >
-                        🖊 Grifar seleção
-                      </button>
-                      {hasHighlights && (
-                        <button
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => clearHighlights(contentDesktopRef)}
-                          className="rounded-full border border-stone-300 bg-white px-3 py-1 text-[11px] font-bold text-stone-500"
-                        >
-                          ✕ Limpar grifos
-                        </button>
-                      )}
-                      <button
-                        onClick={() => printFicha(contentDesktopRef, openModal.title)}
-                        className="ml-auto flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold text-white"
-                        style={{ background: tone.spine }}
-                      >
-                        📄 Salvar PDF
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Scrollable body — lined paper style */}
-                  <div className="max-h-[62vh] overflow-y-auto px-6 py-5">
-                    <div
-                      className="relative rounded-[14px] border bg-white p-5"
-                      style={{ borderColor: tone.border }}
-                    >
-                      <div
-                        className="absolute left-12 top-0 bottom-0 w-px"
-                        style={{ background: "#f0a0a088" }}
-                      />
-                      <div
-                        className="pointer-events-none absolute inset-0 rounded-[14px] opacity-30"
-                        style={{
-                          backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #c7d0e0 31px, #c7d0e0 32px)",
-                          backgroundPosition: "0 40px",
-                        }}
-                      />
-                      <div
-                        ref={contentDesktopRef}
-                        onMouseUp={handleMouseUp}
-                        className="relative pl-8 space-y-5 text-sm leading-8 text-slate-700 select-text"
-                      >
-                        {openModal.paragraphs.map((p, i) => (
-                          <p key={i}>{p}</p>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          </>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
