@@ -476,8 +476,52 @@ export function TTSProvider({ children }: { children: ReactNode }) {
   }, [start]);
 
   const readSelection = useCallback(() => {
-    const sel = window.getSelection()?.toString().trim();
-    if (sel) start(sel);
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
+
+    const range = sel.getRangeAt(0);
+    const fragment = range.cloneContents();
+
+    const SKIP_TAGS = new Set(["script", "style", "svg", "noscript"]);
+    const INTERACTIVE = new Set(["a", "button", "summary"]);
+
+    const parts: string[] = [];
+
+    function walk(node: Node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const t = node.textContent?.trim();
+        if (t) parts.push(t);
+        return;
+      }
+      if (!(node instanceof Element)) return;
+
+      const tag = node.tagName.toLowerCase();
+      if (SKIP_TAGS.has(tag)) return;
+
+      // Prefer aria-label on interactive elements
+      if (INTERACTIVE.has(tag) || node.getAttribute("role") === "button") {
+        const label = node.getAttribute("aria-label");
+        const inner = node.textContent?.replace(/\s+/g, " ").trim();
+        const href = tag === "a" ? (node as HTMLAnchorElement).getAttribute("href") : null;
+        const dest = href ? HREF_DESTINATIONS[href] ?? null : null;
+        const readable = label || inner || "";
+        if (readable) {
+          if (dest) {
+            parts.push(`${tag === "button" ? "Botão" : "Link"}: ${readable} — leva para ${dest}.`);
+          } else {
+            parts.push(`${tag === "button" ? "Botão" : "Link"}: ${readable}.`);
+          }
+        }
+        return;
+      }
+
+      for (const child of node.childNodes) walk(child);
+    }
+
+    walk(fragment);
+
+    const text = parts.join(" ").replace(/\s{2,}/g, " ").trim();
+    if (text) start(text);
   }, [start]);
 
   const pause = useCallback(() => {
