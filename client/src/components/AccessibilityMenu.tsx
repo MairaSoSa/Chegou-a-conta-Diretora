@@ -19,7 +19,7 @@ const HIGH_CONTRAST_KEY = "accessibility-high-contrast";
 const DYSLEXIA_FONT_KEY = "accessibility-dyslexia-font";
 const SCREEN_READER_KEY = "accessibility-screen-reader";
 
-const TAB_W = 26;
+const TAB_W = 28;
 const PANEL_W = 264;
 
 function getStructuredPageChunks(): string[] {
@@ -279,7 +279,7 @@ export function AccessibilityMenu(_props?: { isOpen?: boolean; onToggle?: () => 
   return (
     <div
       className="fixed left-0 z-50 select-none"
-      style={{ top: "50%", transform: "translateY(-50%)" }}
+      style={{ top: 72 }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       aria-label="Menu de acessibilidade"
@@ -289,8 +289,8 @@ export function AccessibilityMenu(_props?: { isOpen?: boolean; onToggle?: () => 
         animate={{ width: isOpen ? TAB_W + PANEL_W : TAB_W }}
         transition={{ type: "spring", stiffness: 340, damping: 32 }}
         style={{
-          borderRadius: "0 16px 16px 0",
-          boxShadow: "2px 2px 12px rgba(0,0,0,0.13)",
+          borderRadius: "0 8px 8px 0",
+          boxShadow: "2px 2px 10px rgba(0,0,0,0.12)",
         }}
       >
         {/* ── Tab (linguinha) — sempre visível ── */}
@@ -307,7 +307,7 @@ export function AccessibilityMenu(_props?: { isOpen?: boolean; onToggle?: () => 
             alignItems: "center",
             justifyContent: "center",
             gap: 0,
-            padding: "10px 0",
+            padding: "7px 0",
             cursor: "pointer",
             border: "none",
             outline: "none",
