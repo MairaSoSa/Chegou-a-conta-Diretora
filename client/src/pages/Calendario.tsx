@@ -312,9 +312,6 @@ export default function CalendarioPage() {
                         style={{ boxShadow: "0 6px 0 rgba(0,0,0,0.04),0 12px 20px rgba(0,0,0,0.05)", transformOrigin: "center" }}
                       >
                         <div className="relative z-10 flex items-center gap-2">
-                          <div className="hidden sm:flex h-7 w-7 items-center justify-center rounded-md border-2 border-[#7b7467] bg-white text-[10px] font-black">
-                            {label.slice(0,1)}
-                          </div>
                           <div className="text-xs font-black tracking-[0.2em] text-[#5e594f]">{label}</div>
                         </div>
                         <div className="mt-3 space-y-1 opacity-70">
