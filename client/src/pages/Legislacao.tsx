@@ -514,7 +514,8 @@ function NormasContent() {
               <span className="ml-2 rounded-full bg-[#fef3c7] px-2 py-0.5 text-xs font-bold text-[#92400e]">{leisFundamentais.length} normas</span>
             </h3>
           </div>
-          <div className="leg-scroll max-h-[480px] overflow-y-auto space-y-4 pr-2">
+          <div className="leg-scroll-wrap border border-[#d9cfc0] rounded-2xl">
+          <div className="leg-scroll max-h-[480px] overflow-y-auto space-y-4 p-2 pr-1">
           {leisFundamentais.map(lei => {
             const catColor = categoriaColors[lei.categoria] || { bg: "#e8f0e0", color: "#5a6e4e" };
             return (
@@ -544,6 +545,7 @@ function NormasContent() {
             );
           })}
           </div>
+          </div>
 
           {/* Separador para demais normas */}
           <div className="flex items-center gap-3 pt-2">
@@ -569,7 +571,8 @@ function NormasContent() {
 
       {/* Lista de normas — novo card design */}
       {normas.length > 0 && (
-        <div className="leg-scroll max-h-[600px] overflow-y-auto space-y-3 pr-2">
+        <div className="leg-scroll-wrap border border-[#d9cfc0] rounded-2xl">
+        <div className="leg-scroll max-h-[600px] overflow-y-auto space-y-3 p-2 pr-1">
           {normas.map((norma: any) => {
             const title = norma.titulo || norma.tituloAto || norma.identificacao || `Ato ${norma.id}`;
             const ementa = norma.ementa || norma.resumo || "";
@@ -628,6 +631,7 @@ function NormasContent() {
               </div>
             );
           })}
+        </div>
         </div>
       )}
 
@@ -1211,7 +1215,7 @@ function AtualizacoesLegislativas() {
       )}
 
       {!isLoading && (
-        <div className="leg-scroll max-h-[520px] overflow-y-auto space-y-8 pr-2">
+        <div className="space-y-8">
           {[
             {
               items: novas,
@@ -1240,7 +1244,8 @@ function AtualizacoesLegislativas() {
                 </span>
                 <span className="text-xs font-semibold text-[#8a9a84]">{group.subtitle(group.items.length)}</span>
               </div>
-              <div className="space-y-3">
+              <div className="leg-scroll-wrap border border-[#d9cfc0] rounded-2xl" style={group.isRevoked ? { borderColor: "#e8c4c1" } : {}}>
+              <div className={`${group.isRevoked ? "leg-scroll-red" : "leg-scroll"} max-h-[320px] overflow-y-auto space-y-3 p-2 pr-1`}>
                 {group.items.map((n: any) => {
                   const title = n.titulo || n.tituloAto || n.identificacao || `Ato ${n.id}`;
                   const ementa = n.ementa || n.resumo || "";
@@ -1287,6 +1292,7 @@ function AtualizacoesLegislativas() {
                     </div>
                   );
                 })}
+              </div>
               </div>
             </div>
           ))}
