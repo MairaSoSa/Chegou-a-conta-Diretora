@@ -6,21 +6,19 @@ import {
   Contrast,
   Type,
   RotateCcw,
+  X,
   Volume2,
   VolumeX,
   Pause,
   Play,
   Square,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const FONT_SIZE_KEY = "accessibility-font-size";
 const HIGH_CONTRAST_KEY = "accessibility-high-contrast";
 const DYSLEXIA_FONT_KEY = "accessibility-dyslexia-font";
 const SCREEN_READER_KEY = "accessibility-screen-reader";
-
-const TAB_W = 28;
-const PANEL_W = 264;
 
 function getStructuredPageChunks(): string[] {
   const root = document.querySelector("main") || document.body;
@@ -117,8 +115,7 @@ function findFeminineVoice(): SpeechSynthesisVoice | null {
   return voices.find((v) => v.lang.startsWith("pt")) || null;
 }
 
-export function AccessibilityMenu(_props?: { isOpen?: boolean; onToggle?: () => void }) {
-  const [isOpen, setIsOpen] = useState(false);
+export function AccessibilityMenu({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) {
   const [fontSize, setFontSize] = useState(100);
   const [highContrast, setHighContrast] = useState(false);
   const [dyslexiaFont, setDyslexiaFont] = useState(false);
@@ -130,9 +127,6 @@ export function AccessibilityMenu(_props?: { isOpen?: boolean; onToggle?: () => 
   const stoppedRef = useRef(false);
   const keepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const speechSupported = typeof window !== "undefined" && "speechSynthesis" in window;
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const anyActive = highContrast || dyslexiaFont || fontSize !== 100 || screenReaderEnabled;
 
   useEffect(() => {
     const savedFontSize = localStorage.getItem(FONT_SIZE_KEY);
@@ -267,244 +261,163 @@ export function AccessibilityMenu(_props?: { isOpen?: boolean; onToggle?: () => 
     );
   };
 
-  const handleMouseEnter = () => {
-    if (closeTimerRef.current) { clearTimeout(closeTimerRef.current); closeTimerRef.current = null; }
-    setIsOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    closeTimerRef.current = setTimeout(() => setIsOpen(false), 200);
-  };
-
   return (
-    <div
-      className="fixed left-0 z-50 select-none"
-      style={{ top: 72 }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      aria-label="Menu de acessibilidade"
-    >
-      <motion.div
-        className="flex flex-row overflow-hidden"
-        animate={{ width: isOpen ? TAB_W + PANEL_W : TAB_W }}
-        transition={{ type: "spring", stiffness: 340, damping: 32 }}
-        style={{
-          borderRadius: "0 8px 8px 0",
-          boxShadow: "2px 2px 10px rgba(0,0,0,0.12)",
-        }}
-      >
-        {/* ── Tab (linguinha) — sempre visível ── */}
-        <button
-          onClick={() => setIsOpen((v) => !v)}
-          aria-label="Ajustes de acessibilidade"
-          data-testid="button-accessibility-menu"
-          style={{
-            width: TAB_W,
-            minWidth: TAB_W,
-            background: anyActive ? "#8e6a5a" : "#c8b4a4",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 0,
-            padding: "7px 0",
-            cursor: "pointer",
-            border: "none",
-            outline: "none",
-            position: "relative",
-          }}
-        >
-          <SlidersHorizontal
-            style={{ width: 12, height: 12, color: anyActive ? "#fff" : "#5a3328", flexShrink: 0 }}
-          />
-          {anyActive && (
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "#f5c56e",
-                position: "absolute",
-                top: 5,
-                right: 4,
-              }}
-            />
-          )}
-        </button>
-
-        {/* ── Painel de controles ── */}
-        <div
-          style={{
-            width: PANEL_W,
-            minWidth: PANEL_W,
-            background: "#faf4ee",
-            borderTop: "1px solid #e0cfc6",
-            borderRight: "1px solid #e0cfc6",
-            borderBottom: "1px solid #e0cfc6",
-            overflowY: "auto",
-            maxHeight: "80vh",
-            padding: "14px 14px 12px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-          }}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -6, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -6, scale: 0.96 }}
+          transition={{ duration: 0.15 }}
+          className="fixed right-4 z-50 rounded-2xl shadow-xl border border-[#ddd0c8] p-4 w-68"
+          style={{ top: "4.2rem", background: "#faf4ee", width: 268 }}
+          role="dialog"
+          aria-label="Ajustes de visualização e leitura"
         >
           {/* Cabeçalho */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-            <SlidersHorizontal style={{ width: 13, height: 13, color: "#8e5c48" }} />
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: "#5a3328" }}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em] text-[#5a3328]">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-[#8e5c48]" />
               Visualização
-            </span>
+            </h3>
+            <button
+              onClick={onToggle}
+              aria-label="Fechar"
+              className="flex h-6 w-6 items-center justify-center rounded-full text-[#a07060] hover:bg-[#f0e4db] transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
 
-          {/* Tamanho do texto */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 11, color: "#8b5a4d", display: "flex", alignItems: "center", gap: 6 }}>
-              <Type style={{ width: 12, height: 12 }} />
-              Tamanho do texto: {fontSize}%
-            </label>
-            <div style={{ display: "flex", gap: 6 }}>
-              <button
-                onClick={() => updateFontSize(fontSize - 10)}
-                disabled={fontSize <= 80}
-                data-testid="button-decrease-font"
-                aria-label="Diminuir texto"
-                style={btnStyle(false, fontSize <= 80)}
-              >
-                <ZoomOut style={{ width: 12, height: 12 }} /> A-
-              </button>
-              <button
-                onClick={() => updateFontSize(fontSize + 10)}
-                disabled={fontSize >= 150}
-                data-testid="button-increase-font"
-                aria-label="Aumentar texto"
-                style={btnStyle(false, fontSize >= 150)}
-              >
-                <ZoomIn style={{ width: 12, height: 12 }} /> A+
-              </button>
-            </div>
-          </div>
-
-          {/* Alto contraste */}
-          <button
-            onClick={toggleHighContrast}
-            aria-pressed={highContrast}
-            data-testid="button-high-contrast"
-            style={btnStyle(highContrast)}
-          >
-            <Contrast style={{ width: 12, height: 12 }} />
-            Alto contraste
-            {highContrast && <span style={activeBadge}>Ativo</span>}
-          </button>
-
-          {/* Fonte dislexia */}
-          <button
-            onClick={toggleDyslexiaFont}
-            aria-pressed={dyslexiaFont}
-            data-testid="button-dyslexia-font"
-            style={btnStyle(dyslexiaFont)}
-          >
-            <Type style={{ width: 12, height: 12 }} />
-            Fonte para dislexia
-            {dyslexiaFont && <span style={activeBadge}>Ativo</span>}
-          </button>
-
-          {/* Leitura em voz */}
-          {speechSupported && (
-            <>
-              <div style={{ height: 1, background: "#e0cfc6", margin: "0 -2px" }} />
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <Volume2 style={{ width: 12, height: 12, color: "#8b5a4d" }} />
-                <span style={{ fontSize: 11, color: "#8b5a4d", textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 700 }}>
-                  Voz
-                </span>
+          <div className="space-y-2">
+            {/* Tamanho do texto */}
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-1.5 text-[11px] text-[#8b5a4d]">
+                <Type className="w-3 h-3" />
+                Tamanho do texto: {fontSize}%
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => updateFontSize(fontSize - 10)}
+                  disabled={fontSize <= 80}
+                  data-testid="button-decrease-font"
+                  aria-label="Diminuir texto"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#d9cec6] bg-[#f5ede7] px-2 py-1.5 text-[12px] text-[#5a3328] hover:bg-[#ede3db] disabled:opacity-40 transition-colors"
+                >
+                  <ZoomOut className="w-3 h-3" /> A-
+                </button>
+                <button
+                  onClick={() => updateFontSize(fontSize + 10)}
+                  disabled={fontSize >= 150}
+                  data-testid="button-increase-font"
+                  aria-label="Aumentar texto"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#d9cec6] bg-[#f5ede7] px-2 py-1.5 text-[12px] text-[#5a3328] hover:bg-[#ede3db] disabled:opacity-40 transition-colors"
+                >
+                  <ZoomIn className="w-3 h-3" /> A+
+                </button>
               </div>
-              <button
-                onClick={toggleScreenReader}
-                aria-pressed={screenReaderEnabled}
-                data-testid="button-screen-reader"
-                style={btnStyle(screenReaderEnabled)}
-              >
-                {screenReaderEnabled
-                  ? <Volume2 style={{ width: 12, height: 12 }} />
-                  : <VolumeX style={{ width: 12, height: 12 }} />}
-                Ouvir a página
-                {screenReaderEnabled && <span style={activeBadge}>Ativo</span>}
-              </button>
+            </div>
 
-              {screenReaderEnabled && (
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button
-                    onClick={isSpeaking ? togglePause : startSpeaking}
-                    data-testid="button-read-page"
-                    aria-label={isSpeaking ? (isPaused ? "Continuar" : "Pausar") : "Ler página"}
-                    style={{ ...btnStyle(isSpeaking && !isPaused), flex: 1 }}
-                  >
-                    {isSpeaking
-                      ? isPaused
-                        ? <><Play style={{ width: 11, height: 11 }} /> Continuar</>
-                        : <><Pause style={{ width: 11, height: 11 }} /> Pausar</>
-                      : <><Play style={{ width: 11, height: 11 }} /> Ler página</>}
-                  </button>
-                  {isSpeaking && (
-                    <button
-                      onClick={stopSpeaking}
-                      data-testid="button-stop-reading"
-                      aria-label="Parar"
-                      style={btnStyle(false)}
-                    >
-                      <Square style={{ width: 10, height: 10 }} />
-                    </button>
-                  )}
+            {/* Alto contraste */}
+            <button
+              onClick={toggleHighContrast}
+              aria-pressed={highContrast}
+              data-testid="button-high-contrast"
+              className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-[12px] font-medium transition-colors ${
+                highContrast
+                  ? "border-[#c5a08a] bg-[#8e2f2f] text-white"
+                  : "border-[#d9cec6] bg-[#f5ede7] text-[#5a3328] hover:bg-[#ede3db]"
+              }`}
+            >
+              <Contrast className="w-3 h-3" />
+              Alto contraste
+              {highContrast && <span className="ml-auto text-[10px] opacity-80">Ativo</span>}
+            </button>
+
+            {/* Fonte dislexia */}
+            <button
+              onClick={toggleDyslexiaFont}
+              aria-pressed={dyslexiaFont}
+              data-testid="button-dyslexia-font"
+              className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-[12px] font-medium transition-colors ${
+                dyslexiaFont
+                  ? "border-[#c5a08a] bg-[#8e2f2f] text-white"
+                  : "border-[#d9cec6] bg-[#f5ede7] text-[#5a3328] hover:bg-[#ede3db]"
+              }`}
+            >
+              <Type className="w-3 h-3" />
+              Fonte para dislexia
+              {dyslexiaFont && <span className="ml-auto text-[10px] opacity-80">Ativo</span>}
+            </button>
+
+            {/* Leitura em voz */}
+            {speechSupported && (
+              <>
+                <div className="h-px bg-[#e8ddd6] my-1" />
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Volume2 className="w-3 h-3 text-[#8b5a4d]" />
+                  <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#8b5a4d]">Voz</span>
                 </div>
-              )}
-            </>
-          )}
+                <button
+                  onClick={toggleScreenReader}
+                  aria-pressed={screenReaderEnabled}
+                  data-testid="button-screen-reader"
+                  className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-[12px] font-medium transition-colors ${
+                    screenReaderEnabled
+                      ? "border-[#c5a08a] bg-[#8e2f2f] text-white"
+                      : "border-[#d9cec6] bg-[#f5ede7] text-[#5a3328] hover:bg-[#ede3db]"
+                  }`}
+                >
+                  {screenReaderEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
+                  Ouvir a página
+                  {screenReaderEnabled && <span className="ml-auto text-[10px] opacity-80">Ativo</span>}
+                </button>
 
-          {/* Reset */}
-          <div style={{ height: 1, background: "#e0cfc6", margin: "0 -2px" }} />
-          <button
-            onClick={resetAll}
-            data-testid="button-reset-accessibility"
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              fontSize: 11, color: "#a07060", background: "transparent",
-              border: "none", cursor: "pointer", padding: "4px 2px",
-            }}
-          >
-            <RotateCcw style={{ width: 11, height: 11 }} />
-            Restaurar padrão
-          </button>
-        </div>
-      </motion.div>
-    </div>
+                {screenReaderEnabled && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={isSpeaking ? togglePause : startSpeaking}
+                      data-testid="button-read-page"
+                      aria-label={isSpeaking ? (isPaused ? "Continuar" : "Pausar") : "Ler página"}
+                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-[12px] transition-colors ${
+                        isSpeaking && !isPaused
+                          ? "border-[#c5a08a] bg-[#8e2f2f] text-white"
+                          : "border-[#d9cec6] bg-[#f5ede7] text-[#5a3328] hover:bg-[#ede3db]"
+                      }`}
+                    >
+                      {isSpeaking
+                        ? isPaused
+                          ? <><Play className="w-3 h-3" /> Continuar</>
+                          : <><Pause className="w-3 h-3" /> Pausar</>
+                        : <><Play className="w-3 h-3" /> Ler página</>}
+                    </button>
+                    {isSpeaking && (
+                      <button
+                        onClick={stopSpeaking}
+                        data-testid="button-stop-reading"
+                        aria-label="Parar"
+                        className="flex items-center justify-center rounded-lg border border-[#d9cec6] bg-[#f5ede7] px-3 py-1.5 text-[#5a3328] hover:bg-[#ede3db] transition-colors"
+                      >
+                        <Square className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="h-px bg-[#e8ddd6] my-1" />
+            <button
+              onClick={resetAll}
+              data-testid="button-reset-accessibility"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] text-[#a07060] hover:bg-[#f0e4db] transition-colors"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Restaurar padrão
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
-
-function btnStyle(active: boolean, disabled = false): React.CSSProperties {
-  return {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    width: "100%",
-    padding: "7px 10px",
-    borderRadius: 8,
-    fontSize: 12,
-    fontWeight: 500,
-    cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.45 : 1,
-    border: `1px solid ${active ? "#c5a08a" : "#d9cec6"}`,
-    background: active ? "#8e2f2f" : "#f5ede7",
-    color: active ? "#fff" : "#5a3328",
-    transition: "all 0.15s ease",
-  };
-}
-
-const activeBadge: React.CSSProperties = {
-  marginLeft: "auto",
-  fontSize: 9,
-  fontWeight: 700,
-  letterSpacing: "0.12em",
-  textTransform: "uppercase",
-  opacity: 0.85,
-};

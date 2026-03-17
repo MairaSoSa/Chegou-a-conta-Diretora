@@ -3,10 +3,11 @@ import { cn } from "@/lib/utils";
 import {
   BarChart3, GraduationCap, MessagesSquare, Wrench,
   BookOpen, Building2, Scale, Calendar,
-  X, Menu,
+  X, Menu, Accessibility,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAccessibility } from "@/App";
 
 const NAV_ITEMS = [
   { href: "/dashboard",   label: "Dados Educacionais", icon: BarChart3,      desc: "Painel do Censo Escolar" },
@@ -26,6 +27,7 @@ const TEXTURE = `repeating-linear-gradient(112deg,rgba(255,255,255,.12) 0px,rgba
 export function Navigation() {
   const [location] = useLocation();
   const [open, setOpen] = useState(false);
+  const { toggle: toggleAccessibility } = useAccessibility();
 
   /* lock body scroll when drawer is open */
   useEffect(() => {
@@ -123,22 +125,41 @@ export function Navigation() {
               </nav>
             )}
 
-            {/* Mobile hamburger */}
-            {isInner && (
+            {/* Accessibility + Mobile hamburger */}
+            <div className="flex items-center gap-2">
               <button
-                className="lg:hidden relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 active:scale-95"
-                aria-label="Abrir menu de navegação"
-                onClick={() => setOpen(true)}
+                onClick={toggleAccessibility}
+                aria-label="Ajustes de acessibilidade"
+                data-testid="button-accessibility-menu"
+                className="flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 active:scale-95"
                 style={{
-                  background: "rgba(255,255,255,.28)",
-                  border: "1.5px solid rgba(255,255,255,.50)",
-                  boxShadow: "0 2px 6px rgba(60,90,50,.18), inset 0 1px 0 rgba(255,255,255,.60)",
-                  color: "#2e4030",
+                  background: "rgba(255,255,255,.22)",
+                  border: "1px solid rgba(255,255,255,.38)",
+                  color: "#3a5030",
+                  opacity: 0.65,
                 }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+                onMouseLeave={e => (e.currentTarget.style.opacity = "0.65")}
               >
-                <Menu className="h-5 w-5" strokeWidth={2.2} />
+                <Accessibility className="h-3.5 w-3.5" />
               </button>
-            )}
+
+              {isInner && (
+                <button
+                  className="lg:hidden relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 active:scale-95"
+                  aria-label="Abrir menu de navegação"
+                  onClick={() => setOpen(true)}
+                  style={{
+                    background: "rgba(255,255,255,.28)",
+                    border: "1.5px solid rgba(255,255,255,.50)",
+                    boxShadow: "0 2px 6px rgba(60,90,50,.18), inset 0 1px 0 rgba(255,255,255,.60)",
+                    color: "#2e4030",
+                  }}
+                >
+                  <Menu className="h-5 w-5" strokeWidth={2.2} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
