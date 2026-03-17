@@ -893,14 +893,46 @@ export default function TrilhaUnidade() {
             ← voltar ao mural
           </button>
 
-          {/* Unit number navigator */}
+          {/* Mobile: anterior / próxima */}
+          <div className="flex gap-2 md:hidden">
+            {prevUnit ? (
+              <button
+                onClick={() => navigate(`/trilha/${prevUnit.unitId}`)}
+                className="rounded-full border px-4 py-2 text-sm font-semibold shadow-sm transition hover:opacity-80"
+                style={{ borderColor: tone.border, color: tone.tabText, background: tone.header }}
+              >
+                ← anterior
+              </button>
+            ) : (
+              <span className="rounded-full border border-stone-200 bg-white/40 px-4 py-2 text-sm font-semibold text-stone-300">
+                ← anterior
+              </span>
+            )}
+            {nextUnit ? (
+              <button
+                onClick={() => navigate(`/trilha/${nextUnit.unitId}`)}
+                className="rounded-full border px-4 py-2 text-sm font-semibold shadow-sm transition hover:opacity-80"
+                style={{ borderColor: tone.border, color: tone.tabText, background: tone.header }}
+              >
+                próxima →
+              </button>
+            ) : (
+              <span className="rounded-full border border-stone-200 bg-white/40 px-4 py-2 text-sm font-semibold text-stone-300">
+                próxima →
+              </span>
+            )}
+          </div>
+
+          {/* Desktop: navegador por número */}
           {allSorted.length > 0 && (
-            <UnitNav
-              units={allSorted}
-              currentId={unitId}
-              tone={tone}
-              onNavigate={(id) => navigate(`/trilha/${id}`)}
-            />
+            <div className="hidden md:flex">
+              <UnitNav
+                units={allSorted}
+                currentId={unitId}
+                tone={tone}
+                onNavigate={(id) => navigate(`/trilha/${id}`)}
+              />
+            </div>
           )}
         </div>
 
