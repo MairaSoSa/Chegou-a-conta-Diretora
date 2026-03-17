@@ -77,8 +77,7 @@ export function Footer() {
               onClick={toggleAccessibility}
               aria-label="Ajustes de acessibilidade"
               data-testid="button-accessibility-menu"
-              title="Acessibilidade"
-              className="flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200 active:scale-95"
+              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium transition-all duration-200 active:scale-95"
               style={{
                 background: "rgba(218,185,60,.18)",
                 border: "1px solid rgba(180,150,30,.28)",
@@ -88,7 +87,8 @@ export function Footer() {
               onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
               onMouseLeave={e => (e.currentTarget.style.opacity = "0.6")}
             >
-              <Accessibility className="h-3 w-3" />
+              <Accessibility className="h-3 w-3 shrink-0" />
+              Acessibilidade
             </button>
 
             <Link
