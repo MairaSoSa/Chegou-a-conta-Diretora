@@ -223,22 +223,21 @@ function FluxoQuadro({
 function UnitNav({
   units,
   currentId,
-  tone,
   onNavigate,
 }: {
   units: TrilhaUnit[];
   currentId: string;
-  tone: (typeof toneMap)[ToneKey];
   onNavigate: (id: string) => void;
 }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
       {units.map((u, idx) => {
         const isCurrent = u.unitId === currentId;
         const isHov = hoveredId === u.unitId;
         const num = idx + 1;
+        const ut = toneMap[getPersonalidade(u.unitId)];
 
         return (
           <div
@@ -248,27 +247,33 @@ function UnitNav({
             onMouseLeave={() => setHoveredId(null)}
           >
             {/* Tooltip */}
-            {isHov && !isCurrent && (
+            {isHov && (
               <div
                 style={{
                   position: "absolute",
-                  bottom: "calc(100% + 8px)",
+                  bottom: "calc(100% + 10px)",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  background: "#1e293b",
-                  color: "#f8fafc",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  padding: "5px 10px",
-                  borderRadius: 8,
+                  background: ut.header,
+                  border: `1.5px solid ${ut.border}`,
+                  color: ut.tabText,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  padding: "7px 13px",
+                  borderRadius: 10,
                   whiteSpace: "nowrap",
                   pointerEvents: "none",
                   zIndex: 50,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+                  boxShadow: `0 6px 20px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08)`,
+                  fontFamily: "'Nunito', sans-serif",
+                  lineHeight: 1.3,
                 }}
               >
+                <span style={{ fontSize: 11, fontWeight: 800, opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.12em", display: "block", marginBottom: 2 }}>
+                  unidade {num}
+                </span>
                 {u.title}
-                {/* Seta do tooltip */}
+                {/* Seta */}
                 <span
                   style={{
                     position: "absolute",
@@ -277,9 +282,22 @@ function UnitNav({
                     transform: "translateX(-50%)",
                     width: 0,
                     height: 0,
+                    borderLeft: "6px solid transparent",
+                    borderRight: "6px solid transparent",
+                    borderTop: `6px solid ${ut.border}`,
+                  }}
+                />
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% - 1px)",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 0,
+                    height: 0,
                     borderLeft: "5px solid transparent",
                     borderRight: "5px solid transparent",
-                    borderTop: "5px solid #1e293b",
+                    borderTop: `5px solid ${ut.header}`,
                   }}
                 />
               </div>
@@ -294,14 +312,14 @@ function UnitNav({
                 height: 32,
                 borderRadius: "50%",
                 border: isCurrent
-                  ? `2px solid ${tone.spine}`
-                  : `1.5px solid ${isHov ? tone.spine : tone.border}`,
+                  ? `2px solid ${ut.spine}`
+                  : `1.5px solid ${isHov ? ut.spine : ut.border}`,
                 background: isCurrent
-                  ? tone.spine
+                  ? ut.spine
                   : isHov
-                  ? tone.tab
+                  ? ut.tab
                   : "rgba(255,255,255,0.85)",
-                color: isCurrent ? "#fff" : isHov ? tone.tabText : "#64748b",
+                color: isCurrent ? "#fff" : isHov ? ut.tabText : "#64748b",
                 fontSize: 11,
                 fontWeight: isCurrent ? 900 : 700,
                 display: "flex",
@@ -309,11 +327,11 @@ function UnitNav({
                 justifyContent: "center",
                 cursor: isCurrent ? "default" : "pointer",
                 transition: "all 0.15s ease",
-                transform: isHov && !isCurrent ? "scale(1.15)" : "scale(1)",
+                transform: isHov && !isCurrent ? "scale(1.18)" : "scale(1)",
                 boxShadow: isCurrent
-                  ? `0 0 0 3px ${tone.tab}, 0 2px 8px rgba(0,0,0,0.15)`
+                  ? `0 0 0 3px ${ut.tab}, 0 2px 8px rgba(0,0,0,0.15)`
                   : isHov
-                  ? "0 2px 8px rgba(0,0,0,0.12)"
+                  ? `0 2px 10px rgba(0,0,0,0.13)`
                   : "none",
                 flexShrink: 0,
               }}
@@ -929,7 +947,6 @@ export default function TrilhaUnidade() {
               <UnitNav
                 units={allSorted}
                 currentId={unitId}
-                tone={tone}
                 onNavigate={(id) => navigate(`/trilha/${id}`)}
               />
             </div>
