@@ -190,7 +190,7 @@
 /* ── Página ── */
 .hl-page {
   position: relative; height: 100%;
-  padding: 24px 32px 8px 60px;
+  padding: 24px 32px 2px 60px;
   background:
     linear-gradient(to right, transparent 0, transparent 34px, rgba(255,139,139,.75) 34px, rgba(255,139,139,.75) 36px, transparent 36px),
     repeating-linear-gradient(to bottom, #fffdf8 0 32px, #dbe9fb 32px 33px);
