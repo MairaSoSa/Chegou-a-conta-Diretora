@@ -3,9 +3,10 @@ import { cn } from "@/lib/utils";
 import {
   BarChart3, GraduationCap, MessagesSquare, Wrench,
   BookOpen, Building2, Scale, Calendar,
-  X, Menu,
+  X, Menu, Accessibility,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAccessibility } from "@/App";
 import { motion, AnimatePresence } from "framer-motion";
 
 const NAV_ITEMS = [
@@ -26,6 +27,7 @@ const TEXTURE = `repeating-linear-gradient(112deg,rgba(255,255,255,.12) 0px,rgba
 export function Navigation() {
   const [location] = useLocation();
   const [open, setOpen] = useState(false);
+  const { toggle: toggleAccessibility } = useAccessibility();
 
   /* lock body scroll when drawer is open */
   useEffect(() => {
@@ -315,6 +317,28 @@ export function Navigation() {
                       <p className="text-[0.70rem] leading-tight mt-0.5" style={{ color: "rgba(46,64,48,.55)" }}>Sobre a plataforma</p>
                     </div>
                   </Link>
+                </motion.div>
+
+                {/* Acessibilidade */}
+                <motion.div
+                  initial={{ opacity: 0, x: -18 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.06 + (NAV_ITEMS.length + 1) * 0.045, duration: 0.32 }}
+                >
+                  <button
+                    onClick={() => { toggleAccessibility(); setOpen(false); }}
+                    className="w-full flex items-center gap-3.5 rounded-2xl px-4 py-3.5 transition-all duration-200 active:scale-[.98]"
+                    style={{ color: "#2e4030" }}
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                      style={{ background: "rgba(218,185,60,.22)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.60)", color: "#6b5208" }}>
+                      <Accessibility className="h-[17px] w-[17px]" strokeWidth={1.9} />
+                    </span>
+                    <div className="min-w-0 text-left">
+                      <p className="text-sm font-semibold leading-tight" style={{ color: "#2e4030" }}>Acessibilidade</p>
+                      <p className="text-[0.70rem] leading-tight mt-0.5" style={{ color: "rgba(46,64,48,.55)" }}>Ajustes de leitura e contraste</p>
+                    </div>
+                  </button>
                 </motion.div>
               </nav>
 
