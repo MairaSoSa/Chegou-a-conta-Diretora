@@ -246,12 +246,12 @@ function UnitNav({
             onMouseEnter={() => setHoveredId(u.unitId)}
             onMouseLeave={() => setHoveredId(null)}
           >
-            {/* Tooltip */}
+            {/* Tooltip — aparece abaixo para não tapar o menu */}
             {isHov && (
               <div
                 style={{
                   position: "absolute",
-                  bottom: "calc(100% + 10px)",
+                  top: "calc(100% + 10px)",
                   left: "50%",
                   transform: "translateX(-50%)",
                   background: ut.header,
@@ -269,37 +269,37 @@ function UnitNav({
                   lineHeight: 1.3,
                 }}
               >
-                <span style={{ fontSize: 11, fontWeight: 800, opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.12em", display: "block", marginBottom: 2 }}>
-                  unidade {num}
-                </span>
-                {u.title}
-                {/* Seta */}
+                {/* Seta apontando para cima */}
                 <span
                   style={{
                     position: "absolute",
-                    top: "100%",
+                    bottom: "100%",
                     left: "50%",
                     transform: "translateX(-50%)",
                     width: 0,
                     height: 0,
                     borderLeft: "6px solid transparent",
                     borderRight: "6px solid transparent",
-                    borderTop: `6px solid ${ut.border}`,
+                    borderBottom: `6px solid ${ut.border}`,
                   }}
                 />
                 <span
                   style={{
                     position: "absolute",
-                    top: "calc(100% - 1px)",
+                    bottom: "calc(100% - 1px)",
                     left: "50%",
                     transform: "translateX(-50%)",
                     width: 0,
                     height: 0,
                     borderLeft: "5px solid transparent",
                     borderRight: "5px solid transparent",
-                    borderTop: `5px solid ${ut.header}`,
+                    borderBottom: `5px solid ${ut.header}`,
                   }}
                 />
+                <span style={{ fontSize: 11, fontWeight: 800, opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.12em", display: "block", marginBottom: 2 }}>
+                  unidade {num}
+                </span>
+                {u.title}
               </div>
             )}
 
