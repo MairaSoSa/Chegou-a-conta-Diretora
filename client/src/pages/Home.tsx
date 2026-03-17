@@ -5,6 +5,7 @@ import {
   Landmark, Wrench, BookOpen, type LucideIcon, Accessibility,
 } from "lucide-react";
 import { useAccessibility } from "@/App";
+import { Navigation } from "@/components/Navigation";
 import type { TrilhaUnit } from "@shared/schema";
 import "./home-landing.css";
 
@@ -85,6 +86,8 @@ export default function Home() {
     .split(",").map(t => t.trim()).filter(Boolean);
 
   return (
+    <>
+    <Navigation />
     <div className="hl-root">
       <div className="hl-doodle-1" />
       <div className="hl-doodle-2" />
@@ -215,5 +218,6 @@ export default function Home() {
 
       </div>
     </div>
+    </>
   );
 }

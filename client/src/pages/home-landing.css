@@ -144,7 +144,7 @@
     radial-gradient(circle at 86% 12%, rgba(246,173,192,.26), transparent 12%),
     radial-gradient(circle at 80% 82%, rgba(115,174,232,.22), transparent 14%),
     linear-gradient(180deg,#fdf8f1 0%,#f7efe3 100%);
-  min-height: 100vh;
+  height: calc(100vh - 66px);
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -174,7 +174,7 @@
 .hl-notebook {
   position: relative; z-index: 1;
   width: min(1380px, calc(100vw - 20px));
-  height: min(760px, calc(100vh - 20px));
+  height: min(700px, calc(100vh - 86px));
   background: #fffdf8;
   border-radius: 28px;
   box-shadow: 0 18px 48px rgba(93,71,46,.14);
@@ -190,7 +190,7 @@
 /* ── Página ── */
 .hl-page {
   position: relative; height: 100%;
-  padding: 24px 32px 2px 60px;
+  padding: 16px 28px 2px 56px;
   background:
     linear-gradient(to right, transparent 0, transparent 34px, rgba(255,139,139,.75) 34px, rgba(255,139,139,.75) 36px, transparent 36px),
     repeating-linear-gradient(to bottom, #fffdf8 0 32px, #dbe9fb 32px 33px);
@@ -249,11 +249,11 @@
 /* ── Layout principal ── */
 .hl-layout {
   display: grid; grid-template-columns: 1.08fr .92fr;
-  gap: 28px; flex: 1; min-height: 0; padding: 0 4px 0 0;
+  gap: 22px; flex: 1; min-height: 0; padding: 0 4px 0 0;
 }
 
 /* ── Coluna esquerda ── */
-.hl-left-col { position: relative; display: flex; flex-direction: column; gap: 28px; min-height: 0; overflow: hidden; }
+.hl-left-col { position: relative; display: flex; flex-direction: column; gap: 16px; min-height: 0; overflow: hidden; }
 
 /* ── Hero note ── */
 .hl-hero-note {
@@ -262,7 +262,7 @@
   background: linear-gradient(180deg,rgba(255,253,248,.97),rgba(255,248,240,.97));
   border: 1px solid #ecdcc6;
   box-shadow: 0 8px 20px rgba(93,71,46,.09);
-  padding: 24px 28px 18px;
+  padding: 16px 24px 14px;
   overflow: visible; flex-shrink: 0;
 }
 .hl-hero-note:hover {
@@ -292,7 +292,7 @@
   margin-right: 14px; flex-shrink: 0;
 }
 .hl-hero-note h2 {
-  margin: 6px 0 0; font-size: 2.3rem; line-height: .9;
+  margin: 4px 0 0; font-size: 2rem; line-height: .92;
   letter-spacing: -.05em; font-weight: 800;
 }
 .hl-accent {
@@ -368,7 +368,7 @@
 }
 .hl-cards-grid {
   display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 16px; flex: 1; min-height: 0;
+  gap: 12px; flex: 1; min-height: 0;
 }
 
 @media (max-width: 1100px) {
@@ -394,8 +394,8 @@
   color: inherit;
   text-decoration: none;
   border-radius: 8px 18px 10px 14px;
-  padding: 20px 14px 16px 14px;
-  min-height: 170px;
+  padding: 16px 12px 12px 12px;
+  min-height: 130px;
   box-shadow:
     0 1px 2px rgba(0,0,0,.06),
     0 3px 8px rgba(60,40,20,.07),
@@ -585,7 +585,7 @@
 /* ── Coluna direita ── */
 .hl-right-col {
   display: flex; flex-direction: column;
-  gap: 28px; padding-top: 6px; min-height: 0;
+  gap: 16px; padding-top: 4px; min-height: 0;
 }
 
 /* ── Dica do dia ── */
@@ -772,7 +772,7 @@
 
 /* ── Tablet (≤ 980px): caderno empilhado ── */
 @media (max-width: 980px) {
-  .hl-root { overflow: auto; }
+  .hl-root { overflow: auto; height: auto; min-height: calc(100vh - 66px); }
   .hl-notebook {
     height: auto;
     min-height: auto;
@@ -823,7 +823,7 @@
     box-shadow: 0 2px 12px rgba(0,0,0,.08);
     overflow-x: hidden;
     overflow-y: visible;
-    min-height: calc(100svh - 24px);
+    min-height: calc(100svh - 90px);
     background: #fffdf8;
   }
 
