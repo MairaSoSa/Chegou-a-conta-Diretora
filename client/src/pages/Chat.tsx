@@ -454,7 +454,7 @@ function PesquisaPanel() {
       >
         {/* Dobra central (crease) */}
         <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 z-10 hidden lg:block"
-          style={{ width: 88, background: "radial-gradient(ellipse at center,rgba(0,0,0,0.38) 0%,rgba(0,0,0,0.14) 45%,transparent 72%)" }} />
+          style={{ width: 40, background: "radial-gradient(ellipse at center,rgba(0,0,0,0.28) 0%,rgba(0,0,0,0.08) 45%,transparent 72%)" }} />
         <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 z-10 hidden lg:block"
           style={{ width: 2, background: "linear-gradient(180deg,rgba(55,10,10,0.75) 0%,rgba(100,28,28,0.38) 50%,rgba(55,10,10,0.75) 100%)" }} />
 
