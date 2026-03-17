@@ -449,25 +449,78 @@ export default function TrilhaUnidade() {
 
   const applyHighlight = useCallback((colorOverride?: string) => {
     clearTimeout(hideToolbarTimer.current);
-    // Tenta seleção ao vivo; se não existir, usa range salvo
+
+    // Obtém range — prioriza seleção ao vivo, fallback no range salvo
     const sel = window.getSelection();
     const liveRange = sel && !sel.isCollapsed && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
     const range = liveRange ?? savedRangeRef.current;
-    if (!range) return;
+    if (!range || range.collapsed) return;
+
     const color = colorOverride ?? highlightColor;
-    try {
+
+    // ── Abordagem robusta via TreeWalker ──
+    // Itera APENAS nós de texto dentro do range e envolve cada um em <mark>.
+    // Funciona em seleções multi-parágrafo e sobre grifos existentes.
+    const wrapTextNode = (textNode: Text, from: number, to: number) => {
+      // Corta o nó: [prefix][target][suffix]
+      if (to < textNode.length) textNode.splitText(to);
+      const target = from > 0 ? textNode.splitText(from) : textNode;
       const mark = document.createElement("mark");
       mark.className = "ficha-grifo";
       mark.style.background = color;
-      range.surroundContents(mark);
-    } catch {
-      const frag = range.extractContents();
-      const mark = document.createElement("mark");
-      mark.className = "ficha-grifo";
-      mark.style.background = color;
-      mark.appendChild(frag);
-      range.insertNode(mark);
+      target.parentNode!.insertBefore(mark, target);
+      mark.appendChild(target);
+    };
+
+    // Resolve containers: se for elemento, encontra o nó de texto correspondente
+    const resolveTextNode = (container: Node, offset: number, isStart: boolean): [Text | null, number] => {
+      if (container.nodeType === Node.TEXT_NODE) return [container as Text, offset];
+      // É um elemento — offset aponta para índice de filho
+      const children = container.childNodes;
+      const childIdx = isStart ? offset : offset - 1;
+      const child = children[childIdx < 0 ? 0 : childIdx];
+      if (!child) return [null, 0];
+      const w = document.createTreeWalker(child, NodeFilter.SHOW_TEXT);
+      if (isStart) {
+        const n = w.nextNode() as Text | null;
+        return n ? [n, 0] : [null, 0];
+      } else {
+        let last: Text | null = null;
+        let n: Node | null;
+        while ((n = w.nextNode())) last = n as Text;
+        return last ? [last, last.length] : [null, 0];
+      }
+    };
+
+    const [startText, startOff] = resolveTextNode(range.startContainer, range.startOffset, true);
+    const [endText,   endOff  ] = resolveTextNode(range.endContainer,   range.endOffset,   false);
+
+    if (!startText || !endText) return;
+
+    if (startText === endText) {
+      // ─ Caso simples: apenas um nó de texto
+      wrapTextNode(startText, startOff, endOff);
+    } else {
+      // ─ Caso multi-nó: caminha por todos os nós de texto no range
+      const ancestor = range.commonAncestorContainer;
+      const walker = document.createTreeWalker(ancestor, NodeFilter.SHOW_TEXT);
+      const toWrap: Array<{ node: Text; from: number; to: number }> = [];
+      let inRange = false;
+      let node: Text | null;
+
+      while ((node = walker.nextNode() as Text | null)) {
+        if (!inRange && node === startText) inRange = true;
+        if (inRange) {
+          const from = node === startText ? startOff : 0;
+          const to   = node === endText   ? endOff   : node.length;
+          if (from < to) toWrap.push({ node, from, to });
+        }
+        if (node === endText) break;
+      }
+
+      toWrap.forEach(({ node: n, from, to }) => wrapTextNode(n, from, to));
     }
+
     sel?.removeAllRanges();
     savedRangeRef.current = null;
     setHasHighlights(true);
