@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import {
   BarChart3, GraduationCap, MessagesSquare, Wrench,
   BookOpen, Building2, Scale, Calendar,
-  X, Menu, Accessibility,
+  X, Menu, Accessibility, BookMarked,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAccessibility } from "@/App";
@@ -59,12 +59,12 @@ export function Navigation() {
           aria-hidden />
 
         <div className="mx-auto max-w-7xl px-4 lg:px-10">
-          <div className="flex h-[60px] items-center justify-between">
+          <div className="flex h-[60px] items-center">
 
-            {/* Logo */}
-            <div className="flex items-center">
+            {/* ── Left: Logo ── */}
+            <div className="flex items-center shrink-0 mr-4">
               <Link href="/" className="flex items-center">
-                <span className="font-bold text-lg md:text-xl tracking-[0.03em]"
+                <span className="font-bold text-base lg:text-[1.05rem] tracking-[0.025em] whitespace-nowrap"
                   style={{ color: "#2e4030", textShadow: "0 1px 0 rgba(255,255,255,.50)" }}>
                   Chegou a Conta,{" "}
                   <span style={{ color: "#b23a2e", textShadow: "0 1px 0 rgba(255,255,255,.40)" }}>
@@ -74,16 +74,16 @@ export function Navigation() {
               </Link>
             </div>
 
-            {/* Desktop nav */}
+            {/* ── Center: Desktop nav (absolutely centered) ── */}
             {isInner && (
-              <nav className="hidden lg:flex items-center gap-0.5 text-sm font-medium">
+              <nav className="hidden lg:flex flex-1 items-center justify-center gap-0 text-xs font-medium">
                 {NAV_ITEMS.map((item) => {
                   const active = location === item.href;
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all duration-200"
+                      className="relative flex items-center gap-1 rounded-lg px-2 py-1.5 whitespace-nowrap transition-all duration-200"
                       style={
                         active
                           ? {
@@ -125,22 +125,41 @@ export function Navigation() {
               </nav>
             )}
 
-            {/* Mobile hamburger */}
-            {isInner && (
-              <button
-                className="lg:hidden relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 active:scale-95"
-                aria-label="Abrir menu de navegação"
-                onClick={() => setOpen(true)}
-                style={{
-                  background: "rgba(255,255,255,.28)",
-                  border: "1.5px solid rgba(255,255,255,.50)",
-                  boxShadow: "0 2px 6px rgba(60,90,50,.18), inset 0 1px 0 rgba(255,255,255,.60)",
-                  color: "#2e4030",
-                }}
-              >
-                <Menu className="h-5 w-5" strokeWidth={2.2} />
-              </button>
-            )}
+            {/* ── Right: Quem Somos (desktop) + hamburger (mobile) ── */}
+            <div className={`flex items-center justify-end gap-2 shrink-0 ${!isInner ? "flex-1" : "ml-2"}`}>
+              {/* Quem Somos — desktop only */}
+              {isInner && (
+                <Link
+                  href="/quem-somos"
+                  className="hidden lg:flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium whitespace-nowrap transition-all duration-200"
+                  style={{
+                    color: location === "/quem-somos" ? "#1e3020" : "#354830",
+                    background: location === "/quem-somos" ? "rgba(255,255,255,.38)" : "transparent",
+                    textShadow: "0 1px 0 rgba(255,255,255,.40)",
+                  }}
+                >
+                  <BookMarked className="h-3.5 w-3.5 shrink-0" style={{ opacity: 0.70 }} />
+                  Quem Somos
+                </Link>
+              )}
+
+              {/* Mobile hamburger */}
+              {isInner && (
+                <button
+                  className="lg:hidden relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 active:scale-95"
+                  aria-label="Abrir menu de navegação"
+                  onClick={() => setOpen(true)}
+                  style={{
+                    background: "rgba(255,255,255,.28)",
+                    border: "1.5px solid rgba(255,255,255,.50)",
+                    boxShadow: "0 2px 6px rgba(60,90,50,.18), inset 0 1px 0 rgba(255,255,255,.60)",
+                    color: "#2e4030",
+                  }}
+                >
+                  <Menu className="h-5 w-5" strokeWidth={2.2} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
