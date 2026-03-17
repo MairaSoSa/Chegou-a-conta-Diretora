@@ -3,9 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   GraduationCap, Scale, CalendarDays,
   Landmark, Wrench, BookOpen, type LucideIcon,
-  SlidersHorizontal,
 } from "lucide-react";
-import { useAccessibility } from "../App";
 import type { TrilhaUnit } from "@shared/schema";
 import "./home-landing.css";
 
@@ -78,7 +76,6 @@ const NOTE_CARDS: NoteCard[] = [
 ];
 
 export default function Home() {
-  const { toggle: toggleA11y } = useAccessibility();
   const { data: trilhaUnits = [] } = useQuery<TrilhaUnit[]>({ queryKey: ["/api/trilha"] });
   const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
 
@@ -186,15 +183,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Botão de acessibilidade flutuante ── */}
-        <button
-          className="hl-a11y-btn"
-          onClick={toggleA11y}
-          aria-label="Abrir menu de acessibilidade"
-          title="Acessibilidade"
-        >
-          <SlidersHorizontal size={18} strokeWidth={1.8} />
-        </button>
       </div>
     </div>
   );

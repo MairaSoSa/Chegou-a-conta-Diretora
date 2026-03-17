@@ -2,12 +2,11 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import {
   BarChart3, GraduationCap, MessagesSquare, Wrench,
-  BookOpen, Building2, SlidersHorizontal, Scale, Calendar,
+  BookOpen, Building2, Scale, Calendar,
   X, Menu,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAccessibility } from "@/App";
 
 const NAV_ITEMS = [
   { href: "/dashboard",   label: "Dados Educacionais", icon: BarChart3,      desc: "Painel do Censo Escolar" },
@@ -27,7 +26,6 @@ const TEXTURE = `repeating-linear-gradient(112deg,rgba(255,255,255,.12) 0px,rgba
 export function Navigation() {
   const [location] = useLocation();
   const [open, setOpen] = useState(false);
-  const { toggle: toggleAccessibility } = useAccessibility();
 
   /* lock body scroll when drawer is open */
   useEffect(() => {
@@ -61,8 +59,8 @@ export function Navigation() {
         <div className="mx-auto max-w-7xl px-4 lg:px-10">
           <div className="flex h-[60px] items-center justify-between">
 
-            {/* Logo + accessibility */}
-            <div className="flex items-center gap-2">
+            {/* Logo */}
+            <div className="flex items-center">
               <Link href="/" className="flex items-center">
                 <span className="font-bold text-lg md:text-xl tracking-[0.03em]"
                   style={{ color: "#2e4030", textShadow: "0 1px 0 rgba(255,255,255,.50)" }}>
@@ -72,20 +70,6 @@ export function Navigation() {
                   </span>
                 </span>
               </Link>
-
-              <button
-                onClick={toggleAccessibility}
-                aria-label="Ajustes de visualização e leitura"
-                data-testid="button-accessibility-menu"
-                className="flex h-6 w-6 items-center justify-center rounded-full transition"
-                style={{
-                  background: "rgba(255,255,255,.35)",
-                  border: "1px solid rgba(80,110,60,.25)",
-                  color: "#3d5035",
-                }}
-              >
-                <SlidersHorizontal className="h-3 w-3" />
-              </button>
             </div>
 
             {/* Desktop nav */}
@@ -334,28 +318,6 @@ export function Navigation() {
                 </motion.div>
               </nav>
 
-              {/* ── Drawer footer ── */}
-              <div className="relative px-5 py-4" style={{ borderTop: "1px solid rgba(255,255,255,.40)" }}>
-                <button
-                  onClick={() => { toggleAccessibility(); setOpen(false); }}
-                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 active:scale-[.98]"
-                  style={{
-                    background: "rgba(255,255,255,.25)",
-                    border: "1.5px solid rgba(255,255,255,.45)",
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,.55)",
-                    color: "#2e4030",
-                  }}
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-                    style={{ background: "rgba(255,255,255,.35)", color: "#3d5035" }}>
-                    <SlidersHorizontal className="h-4 w-4" />
-                  </span>
-                  <div className="text-left">
-                    <p className="text-sm font-semibold" style={{ color: "#2e4030" }}>Acessibilidade</p>
-                    <p className="text-[0.70rem]" style={{ color: "rgba(46,64,48,.55)" }}>Ajustes de visualização</p>
-                  </div>
-                </button>
-              </div>
             </motion.aside>
           </>
         )}
