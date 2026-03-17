@@ -497,7 +497,7 @@ export default function TrilhaUnidade() {
         >
           {/* ── BINDER SPINE ── */}
           <div
-            className="flex w-14 flex-shrink-0 flex-col items-center justify-around py-10"
+            className="hidden sm:flex w-14 flex-shrink-0 flex-col items-center justify-around py-10"
             style={{
               background: `linear-gradient(180deg, ${tone.spineLight} 0%, ${tone.spine} 50%, ${tone.spineLight} 100%)`,
               boxShadow: "inset -3px 0 8px rgba(0,0,0,0.25), inset 3px 0 4px rgba(255,255,255,0.12)",
@@ -526,9 +526,38 @@ export default function TrilhaUnidade() {
 
           {/* ── PAPER AREA ── */}
           <div
-            className="flex-1 space-y-4 p-5 md:p-7"
+            className="flex-1 min-w-0"
             style={{ background: "#f8f4ee" }}
           >
+            {/* Mobile: barra superior (substitui a lombada) */}
+            <div
+              className="flex sm:hidden items-center gap-3 px-4 py-2.5"
+              style={{
+                background: `linear-gradient(90deg, ${tone.spine} 0%, ${tone.spineLight} 100%)`,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+              }}
+            >
+              <div className="flex gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.45)" }} />
+                ))}
+              </div>
+              <span
+                className="text-[9px] font-extrabold uppercase tracking-[0.25em] truncate"
+                style={{ color: "rgba(255,255,255,0.9)" }}
+              >
+                {groupName(personalidade)}
+              </span>
+              <span
+                className="ml-auto shrink-0 rounded px-2 py-0.5 text-[9px] font-extrabold uppercase"
+                style={{ background: "rgba(255,255,255,0.18)", color: "rgba(255,255,255,0.9)" }}
+              >
+                {unitId}
+              </span>
+            </div>
+
+            {/* Content */}
+            <div className="space-y-4 p-4 sm:p-5 md:p-7">
 
             {/* ── CAPA: Title ficha ── */}
             <Ficha tone={tone} label={unitId}>
@@ -747,8 +776,9 @@ export default function TrilhaUnidade() {
               <FichaGrid fichas={FICHAS_APROFUNDAMENTO} tone={tone} onOpen={setOpenModal} />
             </div>
 
-          </div>
-        </div>
+            </div>{/* end content wrapper */}
+          </div>{/* end paper area */}
+        </div>{/* end binder */}
       </main>
 
       {/* Ficha modal */}
