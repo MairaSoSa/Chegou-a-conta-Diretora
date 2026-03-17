@@ -19,7 +19,7 @@ const HIGH_CONTRAST_KEY = "accessibility-high-contrast";
 const DYSLEXIA_FONT_KEY = "accessibility-dyslexia-font";
 const SCREEN_READER_KEY = "accessibility-screen-reader";
 
-const TAB_W = 34;
+const TAB_W = 26;
 const PANEL_W = 264;
 
 function getStructuredPageChunks(): string[] {
@@ -306,8 +306,8 @@ export function AccessibilityMenu(_props?: { isOpen?: boolean; onToggle?: () => 
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: 6,
-            padding: "14px 0",
+            gap: 0,
+            padding: "10px 0",
             cursor: "pointer",
             border: "none",
             outline: "none",
@@ -315,35 +315,21 @@ export function AccessibilityMenu(_props?: { isOpen?: boolean; onToggle?: () => 
           }}
         >
           <SlidersHorizontal
-            style={{ width: 14, height: 14, color: anyActive ? "#fff" : "#5a3328", flexShrink: 0 }}
+            style={{ width: 12, height: 12, color: anyActive ? "#fff" : "#5a3328", flexShrink: 0 }}
           />
           {anyActive && (
             <span
               style={{
-                width: 7,
-                height: 7,
+                width: 6,
+                height: 6,
                 borderRadius: "50%",
                 background: "#f5c56e",
                 position: "absolute",
-                top: 8,
-                right: 6,
+                top: 5,
+                right: 4,
               }}
             />
           )}
-          <span
-            style={{
-              writingMode: "vertical-rl",
-              transform: "rotate(180deg)",
-              fontSize: 8,
-              fontWeight: 700,
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: anyActive ? "#fff" : "#7d5246",
-              lineHeight: 1,
-            }}
-          >
-            Acessib.
-          </span>
         </button>
 
         {/* ── Painel de controles ── */}
