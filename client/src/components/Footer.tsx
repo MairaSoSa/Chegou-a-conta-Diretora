@@ -71,8 +71,8 @@ export function Footer() {
       <div className="relative mx-auto max-w-7xl px-4 py-4 lg:px-10">
         <div className="flex items-center justify-between">
 
-          {/* botão acessibilidade + Quem somos */}
-          <div className="flex items-center gap-2.5">
+          {/* botão acessibilidade + Quem somos (oculto no mobile — já estão no menu) */}
+          <div className="hidden lg:flex items-center gap-2.5">
             <button
               onClick={toggleAccessibility}
               aria-label="Ajustes de acessibilidade"
