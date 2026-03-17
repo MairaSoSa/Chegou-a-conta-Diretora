@@ -1570,3 +1570,33 @@
     width: 100% !important;
   }
 }
+
+/* ── Grifo / highlight ── */
+mark.ficha-grifo {
+  background: #fef08a;
+  border-radius: 3px;
+  padding: 0 2px;
+  color: inherit;
+}
+.grifo-toolbar {
+  position: fixed;
+  z-index: 200;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  background: #1e293b;
+  border-radius: 20px;
+  padding: 6px 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.32);
+  pointer-events: auto;
+}
+.grifo-toolbar button {
+  border: none;
+  border-radius: 14px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: 'Nunito', sans-serif;
+}

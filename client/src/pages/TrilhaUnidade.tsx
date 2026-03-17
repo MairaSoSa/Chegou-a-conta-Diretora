@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -392,6 +392,92 @@ export default function TrilhaUnidade() {
   const unitId = params.unitId || "U01";
   const [, navigate] = useLocation();
   const [openModal, setOpenModal] = useState<ModalData | null>(null);
+
+  // ── Grifo / highlight state ──
+  const contentMobileRef = useRef<HTMLDivElement>(null);
+  const contentDesktopRef = useRef<HTMLDivElement>(null);
+  const [toolbarPos, setToolbarPos] = useState<{ x: number; y: number } | null>(null);
+  const [hasHighlights, setHasHighlights] = useState(false);
+
+  // Reset toolbar when modal closes
+  useEffect(() => {
+    if (!openModal) { setToolbarPos(null); setHasHighlights(false); }
+  }, [openModal]);
+
+  const handleMouseUp = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+      setToolbarPos(null);
+      return;
+    }
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    setToolbarPos({ x: rect.left + rect.width / 2, y: rect.top + window.scrollY - 52 });
+  }, []);
+
+  const applyHighlight = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    try {
+      // Try simple wrap first
+      const mark = document.createElement("mark");
+      mark.className = "ficha-grifo";
+      range.surroundContents(mark);
+    } catch {
+      // Cross-element: extract + wrap fragment
+      const frag = range.extractContents();
+      const mark = document.createElement("mark");
+      mark.className = "ficha-grifo";
+      mark.appendChild(frag);
+      range.insertNode(mark);
+    }
+    sel.removeAllRanges();
+    setToolbarPos(null);
+    setHasHighlights(true);
+  }, []);
+
+  const clearHighlights = useCallback((ref: React.RefObject<HTMLDivElement>) => {
+    if (!ref.current) return;
+    ref.current.querySelectorAll("mark.ficha-grifo").forEach((mark) => {
+      const parent = mark.parentNode!;
+      while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+      parent.removeChild(mark);
+      parent.normalize();
+    });
+    setHasHighlights(false);
+    setToolbarPos(null);
+  }, []);
+
+  const printFicha = useCallback((ref: React.RefObject<HTMLDivElement>, title: string) => {
+    if (!ref.current) return;
+    const printWin = window.open("", "_blank", "width=800,height=900");
+    if (!printWin) return;
+    const content = ref.current.innerHTML;
+    const unitTitle = (document.querySelector("h1.text-2xl, h1.text-3xl") as HTMLElement)?.innerText || "";
+    printWin.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+      <meta charset="UTF-8"/>
+      <title>${unitTitle} — ${title}</title>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+        body { font-family: 'Nunito', sans-serif; margin: 0; padding: 32px; background: #fff; color: #374151; font-size: 15px; line-height: 1.8; }
+        h2 { font-size: 20px; font-weight: 800; color: #1e293b; margin: 0 0 6px; }
+        .label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.22em; color: #64748b; margin-bottom: 4px; }
+        .content { margin-top: 20px; }
+        p { margin: 0 0 20px; }
+        mark.ficha-grifo { background: #fef08a; border-radius: 2px; padding: 0 1px; }
+        .ruled { border-left: 3px solid #e2e8f0; padding-left: 20px; margin-top: 16px; }
+        @media print { body { padding: 16px; } }
+      </style>
+    </head><body>
+      <p class="label">${unitId} · ${title}</p>
+      <h2>${title}</h2>
+      <div class="ruled content">${content}</div>
+    </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 400);
+  }, [unitId]);
 
   const { data: unidade, isLoading } = useQuery<TrilhaUnit>({
     queryKey: ["/api/trilha", unitId],
@@ -817,12 +903,38 @@ export default function TrilhaUnidade() {
                 </div>
               </div>
 
-              {/* Título */}
+              {/* Título + ações */}
               <div
-                className="shrink-0 border-b px-5 py-4"
+                className="shrink-0 border-b px-5 py-3"
                 style={{ borderColor: tone.border, background: tone.header }}
               >
                 <h3 className="text-xl font-extrabold leading-snug text-slate-800">{openModal.title}</h3>
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={applyHighlight}
+                    className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold"
+                    style={{ background: "#fef08a", borderColor: "#e8d020", color: "#78620a" }}
+                  >
+                    🖊 Grifar seleção
+                  </button>
+                  {hasHighlights && (
+                    <button
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => clearHighlights(contentMobileRef)}
+                      className="rounded-full border border-stone-300 bg-white px-3 py-1 text-[11px] font-bold text-stone-500"
+                    >
+                      ✕ Limpar grifos
+                    </button>
+                  )}
+                  <button
+                    onClick={() => printFicha(contentMobileRef, openModal.title)}
+                    className="ml-auto flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold text-white"
+                    style={{ background: tone.spine }}
+                  >
+                    📄 Salvar PDF
+                  </button>
+                </div>
               </div>
 
               {/* Conteúdo scrollável — papel pautado */}
@@ -844,7 +956,12 @@ export default function TrilhaUnidade() {
                       backgroundPosition: "0 40px",
                     }}
                   />
-                  <div className="relative pl-6 space-y-5 text-[15px] leading-8 text-slate-700">
+                  <div
+                    ref={contentMobileRef}
+                    onMouseUp={handleMouseUp}
+                    onTouchEnd={handleMouseUp}
+                    className="relative pl-6 space-y-5 text-[15px] leading-8 text-slate-700 select-text"
+                  >
                     {openModal.paragraphs.map((p, i) => (
                       <p key={i}>{p}</p>
                     ))}
@@ -882,22 +999,51 @@ export default function TrilhaUnidade() {
                 <div className="flex flex-1 flex-col bg-[#f8f4ee]">
                   {/* Header bar */}
                   <div
-                    className="flex items-start justify-between gap-4 border-b px-6 py-4"
+                    className="border-b px-6 py-4"
                     style={{ borderColor: tone.border }}
                   >
-                    <div>
-                      <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
-                        {openModal.emoji && <span className="text-base leading-none">{openModal.emoji}</span>}
-                        {openModal.label}
-                      </p>
-                      <h3 className="mt-1 text-xl font-extrabold text-slate-800">{openModal.title}</h3>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
+                          {openModal.emoji && <span className="text-base leading-none">{openModal.emoji}</span>}
+                          {openModal.label}
+                        </p>
+                        <h3 className="mt-1 text-xl font-extrabold text-slate-800">{openModal.title}</h3>
+                      </div>
+                      <button
+                        onClick={() => setOpenModal(null)}
+                        className="flex-shrink-0 rounded-full border border-stone-300 bg-white px-4 py-1.5 text-sm font-semibold text-stone-500 shadow-sm transition hover:bg-stone-50"
+                      >
+                        fechar ×
+                      </button>
                     </div>
-                    <button
-                      onClick={() => setOpenModal(null)}
-                      className="flex-shrink-0 rounded-full border border-stone-300 bg-white px-4 py-1.5 text-sm font-semibold text-stone-500 shadow-sm transition hover:bg-stone-50"
-                    >
-                      fechar ×
-                    </button>
+                    {/* Ferramentas de grifo */}
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={applyHighlight}
+                        className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold"
+                        style={{ background: "#fef08a", borderColor: "#e8d020", color: "#78620a" }}
+                      >
+                        🖊 Grifar seleção
+                      </button>
+                      {hasHighlights && (
+                        <button
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => clearHighlights(contentDesktopRef)}
+                          className="rounded-full border border-stone-300 bg-white px-3 py-1 text-[11px] font-bold text-stone-500"
+                        >
+                          ✕ Limpar grifos
+                        </button>
+                      )}
+                      <button
+                        onClick={() => printFicha(contentDesktopRef, openModal.title)}
+                        className="ml-auto flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold text-white"
+                        style={{ background: tone.spine }}
+                      >
+                        📄 Salvar PDF
+                      </button>
+                    </div>
                   </div>
 
                   {/* Scrollable body — lined paper style */}
@@ -917,7 +1063,11 @@ export default function TrilhaUnidade() {
                           backgroundPosition: "0 40px",
                         }}
                       />
-                      <div className="relative pl-8 space-y-5 text-sm leading-8 text-slate-700">
+                      <div
+                        ref={contentDesktopRef}
+                        onMouseUp={handleMouseUp}
+                        className="relative pl-8 space-y-5 text-sm leading-8 text-slate-700 select-text"
+                      >
                         {openModal.paragraphs.map((p, i) => (
                           <p key={i}>{p}</p>
                         ))}
