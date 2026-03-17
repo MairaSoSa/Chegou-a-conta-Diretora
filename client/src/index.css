@@ -723,50 +723,21 @@
   font-size: 0.925rem !important;
 }
 
-/* ── Scrollbars da Legislação ── */
+/* ── Scrollbars da Legislação (Firefox) ── */
 .leg-scroll {
   overflow-y: scroll;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: #7f9a70 #d9ebd0;
 }
-.leg-scroll::-webkit-scrollbar {
-  width: 8px;
-  display: block;
-}
-.leg-scroll::-webkit-scrollbar-track {
-  background: #d9ebd0;
-  border-radius: 99px;
-}
-.leg-scroll::-webkit-scrollbar-thumb {
-  background: #7f9a70;
-  border-radius: 99px;
-  min-height: 24px;
-}
-.leg-scroll::-webkit-scrollbar-thumb:hover { background: #5d7452; }
-
 .leg-scroll-red {
   overflow-y: scroll;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: #9b4b45 #f3d2cf;
 }
-.leg-scroll-red::-webkit-scrollbar {
-  width: 8px;
-  display: block;
-}
-.leg-scroll-red::-webkit-scrollbar-track {
-  background: #f3d2cf;
-  border-radius: 99px;
-}
-.leg-scroll-red::-webkit-scrollbar-thumb {
-  background: #9b4b45;
-  border-radius: 99px;
-  min-height: 24px;
-}
-.leg-scroll-red::-webkit-scrollbar-thumb:hover { background: #7a3d3a; }
 
-/* Wrapper com fade inferior — sem overflow:hidden para não cortar a scrollbar */
+/* Wrapper com fade inferior */
 .leg-scroll-wrap {
   position: relative;
   border-radius: 16px;
@@ -776,7 +747,7 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  right: 8px; /* respeita largura da scrollbar */
+  right: 8px;
   height: 36px;
   background: linear-gradient(to top, rgba(0,0,0,0.05) 0%, transparent 100%);
   pointer-events: none;
