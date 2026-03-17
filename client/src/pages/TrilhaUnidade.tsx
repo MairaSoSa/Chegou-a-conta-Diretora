@@ -400,6 +400,7 @@ export default function TrilhaUnidade() {
   const [hasHighlights, setHasHighlights] = useState(false);
   const [highlightColor, setHighlightColor] = useState("#fef08a");
   const [eraserMode, setEraserMode] = useState(false);
+  const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
 
   const HIGHLIGHT_COLORS = [
     { bg: "#fef08a", border: "#ca8a04", label: "Amarelo" },
@@ -410,7 +411,30 @@ export default function TrilhaUnidade() {
   ];
 
   useEffect(() => {
-    if (!openModal) { setHasHighlights(false); setEraserMode(false); }
+    if (!openModal) {
+      setHasHighlights(false);
+      setEraserMode(false);
+      setSelectionRect(null);
+    }
+  }, [openModal]);
+
+  // Toolbar flutuante: rastreia seleção dentro do conteúdo
+  useEffect(() => {
+    if (!openModal) return;
+    const handleSelChange = () => {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+        setSelectionRect(null);
+        return;
+      }
+      if (contentRef.current?.contains(sel.anchorNode)) {
+        setSelectionRect(sel.getRangeAt(0).getBoundingClientRect());
+      } else {
+        setSelectionRect(null);
+      }
+    };
+    document.addEventListener("selectionchange", handleSelChange);
+    return () => document.removeEventListener("selectionchange", handleSelChange);
   }, [openModal]);
 
   const applyHighlight = useCallback((colorOverride?: string) => {
@@ -433,6 +457,7 @@ export default function TrilhaUnidade() {
     }
     sel.removeAllRanges();
     setHasHighlights(true);
+    setSelectionRect(null);
   }, [highlightColor]);
 
   const clearHighlights = useCallback(() => {
@@ -934,6 +959,29 @@ export default function TrilhaUnidade() {
         </div>{/* end binder */}
       </main>
 
+      {/* Toolbar flutuante de grifo — aparece perto da seleção */}
+      {selectionRect && !eraserMode && (
+        <div
+          className="fixed z-[110] flex items-center gap-1.5 rounded-full bg-slate-800/95 px-3 py-2 shadow-2xl backdrop-blur-sm"
+          style={{
+            left: Math.max(8, selectionRect.left + selectionRect.width / 2 - 95),
+            top: Math.max(8, selectionRect.top - 52),
+          }}
+          onPointerDown={(e) => e.preventDefault()}
+        >
+          <span className="text-[9px] font-bold text-slate-400 mr-0.5">Grifar:</span>
+          {HIGHLIGHT_COLORS.map((c) => (
+            <button
+              key={c.bg}
+              title={c.label}
+              onClick={() => { applyHighlight(c.bg); setHighlightColor(c.bg); }}
+              className="h-6 w-6 rounded-full border-2 border-white/30 transition hover:scale-110 active:scale-95"
+              style={{ background: c.bg }}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Ficha modal — tela cheia em todos os tamanhos */}
       <AnimatePresence>
         {openModal && (
@@ -966,90 +1014,34 @@ export default function TrilhaUnidade() {
                   {openModal.label}
                 </p>
               </div>
-              <button
-                onClick={() => printFicha(openModal.title, unidade?.title)}
-                className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-[11px] font-extrabold text-white backdrop-blur-sm"
-              >
-                📄 PDF
-              </button>
             </div>
 
-            {/* Título + ferramentas de grifo */}
+            {/* Título */}
             <div
               className="shrink-0 border-b px-4 pt-3 pb-3"
               style={{ borderColor: tone.border, background: tone.header }}
             >
               <h3 className="text-xl font-extrabold leading-snug text-slate-800">{openModal.title}</h3>
-
-              {/* Toolbar de grifo */}
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                {/* Instrução */}
-                <span className="text-[10px] text-slate-400 font-medium mr-1 hidden sm:inline">Selecione o texto e toque na cor:</span>
-
-                {HIGHLIGHT_COLORS.map((c) => (
-                  <button
-                    key={c.bg}
-                    title={`Grifar em ${c.label}`}
-                    onPointerDown={(e) => e.preventDefault()}
-                    onClick={() => {
-                      setHighlightColor(c.bg);
-                      setEraserMode(false);
-                      applyHighlight(c.bg);
-                    }}
-                    className="h-7 w-7 rounded-full border-2 shadow-sm transition-transform hover:scale-110 active:scale-95"
-                    style={{
-                      background: c.bg,
-                      borderColor: highlightColor === c.bg && !eraserMode ? c.border : "rgba(0,0,0,0.12)",
-                      boxShadow: highlightColor === c.bg && !eraserMode ? `0 0 0 2px ${c.border}` : undefined,
-                    }}
-                  />
-                ))}
-
-                <div className="h-5 w-px bg-slate-300" />
-
-                <button
-                  onPointerDown={(e) => e.preventDefault()}
-                  onClick={() => applyHighlight()}
-                  className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold transition"
-                  style={{ background: highlightColor, borderColor: "rgba(0,0,0,0.15)", color: "#374151" }}
-                >
-                  🖊 Grifar
-                </button>
-
-                <button
-                  onPointerDown={(e) => e.preventDefault()}
-                  onClick={() => setEraserMode((v) => !v)}
-                  className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold transition"
-                  style={{
-                    background: eraserMode ? "#fef2f2" : "#fff",
-                    borderColor: eraserMode ? "#fca5a5" : "#e2e8f0",
-                    color: eraserMode ? "#dc2626" : "#64748b",
-                  }}
-                >
-                  {eraserMode ? "🧹 apagando..." : "🧹 Borracha"}
-                </button>
-
-                {hasHighlights && (
-                  <button
-                    onPointerDown={(e) => e.preventDefault()}
-                    onClick={clearHighlights}
-                    className="rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-bold text-stone-400 transition hover:text-rose-500"
-                  >
-                    ✕ Limpar
-                  </button>
-                )}
-              </div>
-
-              {/* Instruções mobile (abaixo dos botões) */}
-              <p className="mt-1.5 text-[10px] text-slate-400 sm:hidden">
-                {eraserMode
-                  ? "Toque em um grifo para apagá-lo"
-                  : "Selecione o texto e toque em uma cor para grifar"}
-              </p>
-              {eraserMode && (
-                <p className="mt-0.5 text-[10px] font-medium text-rose-500 hidden sm:block">
-                  Clique em qualquer grifo para apagá-lo individualmente
+              {/* Dica de uso — aparece apenas se não há grifos */}
+              {!hasHighlights && !eraserMode && (
+                <p className="mt-1 text-[11px] text-slate-400">
+                  Selecione um trecho e escolha uma cor para grifar
                 </p>
+              )}
+              {/* Banner modo borracha */}
+              {eraserMode && (
+                <div className="mt-1.5 flex items-center gap-2">
+                  <p className="text-[11px] font-semibold text-rose-600">
+                    Toque em um grifo para apagá-lo
+                  </p>
+                  <button
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={() => setEraserMode(false)}
+                    className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-600"
+                  >
+                    ✕ sair
+                  </button>
+                </div>
               )}
             </div>
 
@@ -1083,6 +1075,51 @@ export default function TrilhaUnidade() {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* Rodapé fixo — aviso de não-persistência + ações */}
+            <div
+              className="shrink-0 flex flex-wrap items-center gap-2 border-t px-4 py-2.5"
+              style={{ borderColor: "#e8d5b0", background: "#fffbf0" }}
+            >
+              {/* Aviso */}
+              <p className="flex-1 min-w-0 text-[10px] leading-tight text-amber-700">
+                <span className="mr-1">⚠️</span>
+                <strong>Grifos não ficam salvos</strong> ao fechar.{" "}
+                <span className="hidden sm:inline">Salve em PDF para guardar seu estudo.</span>
+              </p>
+              {/* Borracha — só aparece se houver grifos */}
+              {hasHighlights && (
+                <button
+                  onPointerDown={(e) => e.preventDefault()}
+                  onClick={() => setEraserMode((v) => !v)}
+                  className="rounded-full border px-3 py-1.5 text-[11px] font-bold transition"
+                  style={{
+                    background: eraserMode ? "#fef2f2" : "#fff",
+                    borderColor: eraserMode ? "#fca5a5" : "#e2e8f0",
+                    color: eraserMode ? "#dc2626" : "#64748b",
+                  }}
+                >
+                  {eraserMode ? "🧹 apagando..." : "🧹 Apagar grifo"}
+                </button>
+              )}
+              {hasHighlights && (
+                <button
+                  onPointerDown={(e) => e.preventDefault()}
+                  onClick={clearHighlights}
+                  className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-[11px] font-bold text-stone-400 transition hover:text-rose-500"
+                >
+                  Limpar todos
+                </button>
+              )}
+              {/* PDF — sempre visível, destaque */}
+              <button
+                onClick={() => printFicha(openModal.title, unidade?.title)}
+                className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[12px] font-extrabold text-white shadow-md transition hover:opacity-90"
+                style={{ background: tone.spine }}
+              >
+                📄 Salvar PDF
+              </button>
             </div>
           </motion.div>
         )}
