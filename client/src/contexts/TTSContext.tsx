@@ -44,34 +44,33 @@ function isClickable(el: HTMLElement): boolean {
 }
 
 // Maps a computed rgb() color to a Portuguese color name for audio description.
-// Returns "" for near-white, transparent or unrecognized colors.
+// Thresholds are calibrated against the actual CSS card colors used in the app:
+//   hl-yellow #f9e6a7=rgb(249,230,167) · hl-pink #f7c3d1=rgb(247,195,209)
+//   hl-green  #c7e8d2=rgb(199,232,210) · hl-orange #ffe0b8=rgb(255,224,184)
+//   hl-purple #d3c7f2=rgb(211,199,242) · hl-teal #b3e5de=rgb(179,229,222)
+// Returns "" for near-white, very-light or unrecognized colors.
 function cssColorToName(rgb: string): string {
   const m = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
   if (!m) return "";
   const r = +m[1], g = +m[2], b = +m[3];
-  // Skip near-white, very-light-beige or fully transparent backgrounds
-  if (r > 240 && g > 232 && b > 218) return "";
-  if (r === 0 && g === 0 && b === 0) return "";
-  // Yellow / golden
-  if (r > 220 && g > 195 && b < 140 && r - b > 90) return "amarela";
-  // Peach / salmon
-  if (r > 225 && g > 155 && g < 210 && b < 165 && r - g > 20 && r - b > 60) return "pêssego";
-  // Orange / amber
-  if (r > 225 && g > 120 && g < 175 && b < 100) return "laranja";
-  // Pink / rose
-  if (r > 215 && g > 165 && g < 215 && b > 160 && b < 215 && r - g > 10) return "rosada";
-  // Light red / coral
-  if (r > 220 && g < 150 && b < 150) return "vermelha";
-  // Lilac / purple
-  if (r > 170 && r < 230 && b > 185 && g < r && g < b) return "lilás";
-  // Teal / mint / sage
-  if (g > 170 && b > 165 && r < 180 && g > r && b > r) return "verde-água";
-  // Light green / pistachio
-  if (g > 195 && r > 180 && b < 185 && g - b > 30 && g >= r) return "verde-claro";
-  // Blue
-  if (b > 185 && r < 170 && g < 185 && b - r > 40) return "azul";
-  // Warm brown / tan
-  if (r > 180 && g > 140 && b < 120 && r - b > 70) return "bege-escuro";
+  // Transparent / near-white / black
+  if (r > 248 && g > 248 && b > 248) return "";   // pure white
+  if (r > 240 && g > 238 && b > 230) return "";   // near-white / very light beige
+  if (r < 20  && g < 20  && b < 20)  return "";   // black
+  // Purple / lilac: B is the dominant channel, B > R > G  (e.g. #d3c7f2)
+  if (b > 210 && r > 190 && b > r && b > g && r > g) return "lilás";
+  // Teal / mint / sage: G ≈ B >> R  (e.g. #b3e5de, #c7e8d2)
+  if (g > 190 && b > 175 && r < 210 && g > r && b > r && g - r > 25) return "verde-água";
+  // Pink / rose: R >> G, B > G, R > B  (e.g. #f7c3d1)
+  if (r > 220 && b > g && r > b && r - g > 30) return "rosada";
+  // Yellow: R ≈ G >> B, all warm  (e.g. #f9e6a7)
+  if (r > 220 && g > 200 && b > 130 && b < 200 && r >= g && g - b > 40 && r - b > 60) return "amarela";
+  // Light orange / peach: R >> B, G is high  (e.g. #ffe0b8)
+  if (r > 235 && g > 190 && b > 150 && r > g && g > b && r - b > 50) return "laranja";
+  // Blue: B is clearly dominant
+  if (b > 185 && b > r + 40 && b > g + 20) return "azul";
+  // Deep red / coral
+  if (r > 200 && g < 120 && b < 120) return "vermelha";
   return "";
 }
 
@@ -111,34 +110,37 @@ const HREF_DESTINATIONS: Record<string, string> = {
 };
 
 // Builds a spatial, interpretive description of a colored card — like guiding someone with eyes closed.
-function describeCard(el: HTMLElement): string {
+// hrefOverride: the href of a parent <a> wrapping this card element, when the card itself has no <a>.
+function describeCard(el: HTMLElement, hrefOverride?: string): string {
   const style = window.getComputedStyle(el);
   const colorName = cssColorToName(style.backgroundColor);
 
   const heading = el.querySelector("h1,h2,h3,h4,h5,h6");
   const headText = heading?.textContent?.trim() ?? "";
 
-  // Collect subtitle / body text, excluding the heading itself
-  const bodyNodes = Array.from(el.querySelectorAll("p,span,small"))
+  // Collect subtitle / body text, excluding heading and very short strings
+  const bodyNodes = Array.from(el.querySelectorAll("p,span,small,[class*=remendo],[class*=label]"))
     .map(n => n.textContent?.trim() ?? "")
     .filter(t => t && t !== headText && t.length > 2)
     .filter((t, i, arr) => arr.indexOf(t) === i);
   const bodyText = bodyNodes.slice(0, 2).join(". ");
 
-  // Named button or link inside the card
+  // Named button or link inside the card (explicit <a> or <button>)
   const cta = Array.from(el.querySelectorAll("a,button"))
     .map(n => n.textContent?.trim())
     .filter(t => t && t.length > 1)
     .slice(0, 1)[0];
 
-  // Find where this card leads — try href first, then card title
-  const linkHref = (el.querySelector("a[href]") as HTMLAnchorElement | null)?.getAttribute("href") ?? "";
+  // Find where this card leads — prefer hrefOverride, then inner <a>, then title lookup
+  const linkHref = hrefOverride
+    ?? (el.querySelector("a[href]") as HTMLAnchorElement | null)?.getAttribute("href")
+    ?? "";
   const destination = HREF_DESTINATIONS[linkHref] ?? CARD_DESTINATIONS[headText];
 
   const postIt = colorName ? `No post-it ${colorName}` : "No post-it";
   let desc = `${postIt} está escrito: ${headText}.`;
   if (bodyText) desc += ` ${bodyText}.`;
-  if (cta) desc += ` Tem um botão que diz: "${cta}".`;
+  if (cta && cta !== headText) desc += ` Tem um botão que diz: "${cta}".`;
   if (destination) desc += ` Clicando, você vai para ${destination}.`;
   else desc += " É clicável.";
   return desc;
@@ -214,14 +216,25 @@ function getPageTextDescribed(): string {
     const style = window.getComputedStyle(el);
     if (style.display === "none" || style.visibility === "hidden") return;
 
-    // Detect a group of sibling cards and describe them as a set
+    // Helper: find a card element from a child — handles both direct cards and <a>-wrapped cards
+    function resolveCard(child: HTMLElement): { card: HTMLElement; href: string } | null {
+      if (detectCard(child)) return { card: child, href: "" };
+      if (child.tagName.toLowerCase() === "a") {
+        const inner = Array.from(child.children).find(gc => detectCard(gc as HTMLElement)) as HTMLElement | undefined;
+        if (inner) return { card: inner, href: child.getAttribute("href") ?? "" };
+      }
+      return null;
+    }
+
+    // Detect a group of sibling cards (possibly wrapped in <a> links) and describe them as a set
     if (tag === "div" || tag === "section" || tag === "ul") {
-      const cardChildren = Array.from(el.children).filter(
-        c => detectCard(c as HTMLElement)
-      ) as HTMLElement[];
-      if (cardChildren.length >= 2) {
-        // Mark all card children visited so they won't be re-described
-        cardChildren.forEach(c => visited.add(c));
+      const resolvedCards = Array.from(el.children)
+        .map(c => resolveCard(c as HTMLElement))
+        .filter(Boolean) as { card: HTMLElement; href: string }[];
+
+      if (resolvedCards.length >= 2) {
+        // Mark all cards and their wrappers as visited
+        resolvedCards.forEach(({ card }) => { visited.add(card); visited.add(card.parentElement!); });
         const heading = el.querySelector(":scope > h1,:scope > h2,:scope > h3");
         const groupTitle = heading?.textContent?.trim();
         if (groupTitle) {
@@ -229,21 +242,44 @@ function getPageTextDescribed(): string {
         } else {
           parts.push(`Há um conjunto de post-its coloridos na tela. Cada um leva a uma área diferente do site.`);
         }
-        cardChildren.forEach((card) => parts.push(describeCard(card)));
+        resolvedCards.forEach(({ card, href }) => parts.push(describeCard(card, href || undefined)));
         // Still walk non-card children of this container
         Array.from(el.childNodes).forEach(child => {
-          if (child.nodeType === Node.ELEMENT_NODE && !cardChildren.includes(child as HTMLElement)) {
-            walk(child);
+          if (child.nodeType === Node.ELEMENT_NODE) {
+            const ch = child as HTMLElement;
+            if (!resolvedCards.find(r => r.card === ch || r.card.parentElement === ch)) {
+              walk(child);
+            }
           }
         });
         return;
       }
     }
 
-    // Individual card
+    // Individual card (direct or <a>-wrapped)
     if (detectCard(el)) {
       visited.add(el);
       parts.push(describeCard(el));
+      return;
+    }
+
+    // <a> wrapping a single card
+    if (tag === "a") {
+      const href = el.getAttribute("href") ?? "";
+      const innerCard = Array.from(el.children).find(c => detectCard(c as HTMLElement)) as HTMLElement | undefined;
+      if (innerCard && !visited.has(innerCard)) {
+        visited.add(innerCard);
+        visited.add(el);
+        parts.push(describeCard(innerCard, href));
+        return;
+      }
+      // Plain link — describe it if it has meaningful text and a known destination
+      const label = el.getAttribute("aria-label") || el.textContent?.trim();
+      if (label && label.length > 1 && label.length < 80) {
+        const dest = HREF_DESTINATIONS[href];
+        if (dest) parts.push(`Link para ${dest}: "${label}".`);
+        else parts.push(`Link: ${label}.`);
+      }
       return;
     }
 
@@ -261,14 +297,7 @@ function getPageTextDescribed(): string {
     // Standalone buttons
     if (tag === "button") {
       const label = el.getAttribute("aria-label") || el.textContent?.trim();
-      if (label) parts.push(`Botão "${label}".`);
-      return;
-    }
-
-    // Standalone anchor links (not inside a card)
-    if (tag === "a" && el.getAttribute("href")) {
-      const label = el.getAttribute("aria-label") || el.textContent?.trim();
-      if (label && label.length > 1) parts.push(`Link: ${label}.`);
+      if (label && label.length > 1 && label.length < 60) parts.push(`Botão "${label}".`);
       return;
     }
 
