@@ -673,6 +673,7 @@ function EditorPanel() {
   const [saveStatus, setSaveStatus] = useState("Não salvo");
   const [activeGuideField, setActiveGuideField] = useState("titulo");
   const [isSaving, setIsSaving] = useState(false);
+  const [showTipsMobile, setShowTipsMobile] = useState(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Persist to localStorage
@@ -990,6 +991,12 @@ function EditorPanel() {
             {activeDoc?.title || "Documento"}
           </button>
           <span className="text-[11px] text-[#b07a6a] shrink-0">{saveStatus}</span>
+          {/* Botão Dicas — só aparece no mobile */}
+          <button onClick={() => setShowTipsMobile(true)}
+            className="lg:hidden flex items-center gap-1.5 rounded-lg border border-[#d9bfb5] px-3 py-1.5 text-[12px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors shrink-0"
+          >
+            💡 Dicas
+          </button>
           <button onClick={() => handleSave()} disabled={isSaving}
             className="flex items-center gap-1.5 rounded-lg bg-[#8e2f2f] px-3 py-1.5 text-[12px] text-white hover:bg-[#6e2020] transition-colors disabled:opacity-50 shrink-0"
           >
@@ -1133,6 +1140,64 @@ function EditorPanel() {
           </div>
         </div>
       </aside>
+
+      {/* ── Mobile Dicas bottom sheet ── */}
+      {showTipsMobile && (
+        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setShowTipsMobile(false)}
+          />
+          {/* Sheet */}
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", stiffness: 320, damping: 32 }}
+            className="relative z-10 rounded-t-2xl overflow-hidden flex flex-col"
+            style={{ background: "#faf4ee", maxHeight: "75vh" }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[#e0cfc6]" style={{ background: "#ede5db" }}>
+              <span className="text-[13px] font-bold text-[#5a3328] uppercase tracking-[0.15em]">💡 Dicas do campo</span>
+              <button
+                onClick={() => setShowTipsMobile(false)}
+                className="rounded-full p-1.5 hover:bg-[#d9cec6] text-[#7d5246] transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Tips list */}
+            <div className="overflow-y-auto flex-1 px-4 py-4 space-y-3">
+              {currentTips.map((item, idx) => {
+                const isFilled = !!String(currentData[item.field] || "").trim();
+                const isActive = activeGuideField === item.field;
+                return (
+                  <button
+                    key={item.field}
+                    onClick={() => { setActiveGuideField(item.field); setShowTipsMobile(false); }}
+                    className={`w-full text-left rounded-xl border px-4 py-3 flex flex-col gap-1 transition-all
+                      ${isActive
+                        ? "border-[#c5a08a] bg-white shadow-md"
+                        : "border-[#d9cec6] bg-[#f5ede7] hover:bg-white"}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black"
+                        style={{ background: "#8e2f2f1a", color: "#8e2f2f" }}>
+                        {idx + 1}
+                      </span>
+                      <span className="text-[13px] font-semibold text-[#5a3328]">{item.title}</span>
+                      <span className={`ml-auto h-2.5 w-2.5 rounded-full shrink-0 ${isFilled ? "bg-[#5da56d]" : "bg-[#d18b6c]"}`} />
+                    </div>
+                    <p className="text-[12px] text-[#7d5246] leading-relaxed pl-7">{item.tip}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
