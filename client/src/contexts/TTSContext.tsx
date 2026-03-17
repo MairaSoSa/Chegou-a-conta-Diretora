@@ -1,6 +1,11 @@
 import { createContext, useContext, useRef, useState, useCallback, useEffect } from "react";
 import type { ReactNode } from "react";
 
+function getPageTitle(): string {
+  const h1 = document.querySelector("h1,h2");
+  return h1?.textContent?.trim() ?? document.title ?? "página";
+}
+
 function getPageText(): string {
   const root = document.querySelector("main") ?? document.body;
   const skip = new Set(["script","style","noscript","svg","path","iframe","nav","footer","button"]);
@@ -22,6 +27,109 @@ function getPageText(): string {
   }
 
   walk(root);
+  return parts.join(" ").replace(/\s+/g, " ").trim();
+}
+
+function innerText(el: HTMLElement): string {
+  return (el.textContent ?? "").replace(/\s+/g, " ").trim();
+}
+
+function isClickable(el: HTMLElement): boolean {
+  const tag = el.tagName.toLowerCase();
+  if (tag === "a" || tag === "button") return true;
+  const role = el.getAttribute("role");
+  if (role === "button" || role === "link") return true;
+  const style = window.getComputedStyle(el);
+  return style.cursor === "pointer";
+}
+
+function getPageTextDescribed(): string {
+  const parts: string[] = [];
+  const title = getPageTitle();
+  const path = window.location.pathname;
+  const sectionName = path === "/" ? "Página inicial" :
+    path.startsWith("/dashboard") ? "Painel da Escola" :
+    path.startsWith("/trilha") ? "Trilha da Diretora" :
+    path.startsWith("/legislacao") ? "Legislação" :
+    path.startsWith("/programas") ? "Programas" :
+    path.startsWith("/ferramentas") ? "Ferramentas" :
+    path.startsWith("/chat") ? "Caderno da Diretora" :
+    path.startsWith("/calendario") ? "Calendário" :
+    "esta página";
+
+  parts.push(`Você está em: ${sectionName}. ${title ? `Título da página: ${title}.` : ""}`);
+
+  const skip = new Set(["script","style","noscript","svg","path","iframe"]);
+
+  function walk(node: Node, depth = 0) {
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const el = node as HTMLElement;
+    const tag = el.tagName.toLowerCase();
+    if (skip.has(tag)) return;
+    if (el.getAttribute("aria-hidden") === "true") return;
+    const style = window.getComputedStyle(el);
+    if (style.display === "none" || style.visibility === "hidden") return;
+
+    const ariaLabel = el.getAttribute("aria-label") ?? "";
+    const text = innerText(el);
+    if (!text) return;
+
+    if (tag === "nav") {
+      parts.push("Início da navegação.");
+      for (const child of Array.from(el.childNodes)) walk(child, depth + 1);
+      parts.push("Fim da navegação.");
+      return;
+    }
+
+    if (["h1","h2","h3","h4"].includes(tag)) {
+      const level = tag.charAt(1);
+      parts.push(`Título nível ${level}: ${text}.`);
+      return;
+    }
+
+    if (tag === "a" && el.getAttribute("href")) {
+      const label = ariaLabel || text;
+      parts.push(`Link clicável: ${label}.`);
+      return;
+    }
+
+    if (tag === "button") {
+      const label = ariaLabel || text;
+      parts.push(`Botão: ${label}.`);
+      return;
+    }
+
+    if (isClickable(el) && (tag === "div" || tag === "article" || tag === "li")) {
+      const label = ariaLabel || text.slice(0, 120);
+      parts.push(`Card clicável: ${label}.`);
+      return;
+    }
+
+    if (tag === "section" || tag === "article" || tag === "main") {
+      const regionLabel = ariaLabel || (el.getAttribute("aria-labelledby") ?? "");
+      if (regionLabel) parts.push(`Seção: ${regionLabel}.`);
+      for (const child of Array.from(el.childNodes)) walk(child, depth + 1);
+      return;
+    }
+
+    if (tag === "p" || tag === "span" || tag === "label" || tag === "li" || tag === "td") {
+      if (text.length > 1) parts.push(text);
+      return;
+    }
+
+    for (const child of Array.from(el.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const t = child.textContent?.trim();
+        if (t && t.length > 1) parts.push(t);
+      } else {
+        walk(child, depth + 1);
+      }
+    }
+  }
+
+  const root = document.querySelector("main") ?? document.body;
+  for (const child of Array.from(root.childNodes)) walk(child);
+
   return parts.join(" ").replace(/\s+/g, " ").trim();
 }
 
@@ -57,6 +165,7 @@ interface TTSContextType {
   isPlaying: boolean;
   isPaused: boolean;
   readPage: () => void;
+  readPageDescribed: () => void;
   readSelection: () => void;
   pause: () => void;
   resume: () => void;
@@ -65,7 +174,7 @@ interface TTSContextType {
 
 const TTSContext = createContext<TTSContextType>({
   isActive: false, isPlaying: false, isPaused: false,
-  readPage: () => {}, readSelection: () => {},
+  readPage: () => {}, readPageDescribed: () => {}, readSelection: () => {},
   pause: () => {}, resume: () => {}, stop: () => {},
 });
 
@@ -176,6 +285,11 @@ export function TTSProvider({ children }: { children: ReactNode }) {
     if (text) start(text);
   }, [start]);
 
+  const readPageDescribed = useCallback(() => {
+    const text = getPageTextDescribed();
+    if (text) start(text);
+  }, [start]);
+
   const readSelection = useCallback(() => {
     const sel = window.getSelection()?.toString().trim();
     if (sel) start(sel);
@@ -198,7 +312,7 @@ export function TTSProvider({ children }: { children: ReactNode }) {
   useEffect(() => () => { stop(); }, [stop]);
 
   return (
-    <TTSContext.Provider value={{ isActive, isPlaying, isPaused, readPage, readSelection, pause, resume, stop }}>
+    <TTSContext.Provider value={{ isActive, isPlaying, isPaused, readPage, readPageDescribed, readSelection, pause, resume, stop }}>
       {children}
     </TTSContext.Provider>
   );

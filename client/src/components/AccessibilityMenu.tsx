@@ -22,7 +22,7 @@ export function AccessibilityMenu({ isOpen, onToggle }: { isOpen: boolean; onTog
   const [highContrast, setHighContrast] = useState(false);
   const [dyslexiaFont, setDyslexiaFont] = useState(false);
 
-  const { readPage, readSelection, isActive } = useTTS();
+  const { readPage, readPageDescribed, readSelection, isActive } = useTTS();
 
   useEffect(() => {
     const savedFontSize = localStorage.getItem(FONT_SIZE_KEY);
@@ -72,6 +72,11 @@ export function AccessibilityMenu({ isOpen, onToggle }: { isOpen: boolean; onTog
   const handleReadPage = () => {
     onToggle();
     setTimeout(() => readPage(), 120);
+  };
+
+  const handleReadPageDescribed = () => {
+    onToggle();
+    setTimeout(() => readPageDescribed(), 120);
   };
 
   const handleReadSelection = () => {
@@ -176,13 +181,25 @@ export function AccessibilityMenu({ isOpen, onToggle }: { isOpen: boolean; onTog
               )}
             </div>
 
-            <button
-              onClick={handleReadPage}
-              className="flex w-full items-center gap-2 rounded-lg border border-[#d9cec6] bg-[#f5ede7] px-3 py-2 text-[12px] font-medium text-[#5a3328] hover:bg-[#ede3db] transition-colors"
-            >
-              <Volume2 className="w-3 h-3 text-[#4a7c5c]" />
-              Ler esta página
-            </button>
+            <p className="text-[10px] text-[#a07060] px-0.5">Ler esta página:</p>
+            <div className="flex gap-1.5">
+              <button
+                onClick={handleReadPage}
+                title="Lê o texto corrido da página sem descrever os elementos"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#d9cec6] bg-[#f5ede7] px-2 py-2 text-[11px] font-medium text-[#5a3328] hover:bg-[#ede3db] transition-colors"
+              >
+                <Volume2 className="w-3 h-3 text-[#4a7c5c] shrink-0" />
+                Corrido
+              </button>
+              <button
+                onClick={handleReadPageDescribed}
+                title="Anuncia onde você está no site e descreve cada elemento (link, botão, card)"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#d9cec6] bg-[#f5ede7] px-2 py-2 text-[11px] font-medium text-[#5a3328] hover:bg-[#ede3db] transition-colors"
+              >
+                <SlidersHorizontal className="w-3 h-3 text-[#4a7c5c] shrink-0" />
+                Com descrição
+              </button>
+            </div>
 
             <button
               onClick={handleReadSelection}
