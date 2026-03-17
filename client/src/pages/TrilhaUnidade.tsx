@@ -397,6 +397,8 @@ export default function TrilhaUnidade() {
 
   // ── Grifo / highlight state ──
   const contentRef = useRef<HTMLDivElement>(null);
+  const savedRangeRef = useRef<Range | null>(null);
+  const hideToolbarTimer = useRef<ReturnType<typeof setTimeout>>();
   const [hasHighlights, setHasHighlights] = useState(false);
   const [highlightColor, setHighlightColor] = useState("#fef08a");
   const [eraserMode, setEraserMode] = useState(false);
@@ -424,23 +426,34 @@ export default function TrilhaUnidade() {
     const handleSelChange = () => {
       const sel = window.getSelection();
       if (!sel || sel.isCollapsed || !sel.toString().trim()) {
-        setSelectionRect(null);
+        // Delay para dar tempo do click na toolbar ser processado antes de sumir
+        hideToolbarTimer.current = setTimeout(() => setSelectionRect(null), 200);
         return;
       }
+      clearTimeout(hideToolbarTimer.current);
       if (contentRef.current?.contains(sel.anchorNode)) {
-        setSelectionRect(sel.getRangeAt(0).getBoundingClientRect());
+        const range = sel.getRangeAt(0);
+        savedRangeRef.current = range.cloneRange();
+        setSelectionRect(range.getBoundingClientRect());
       } else {
         setSelectionRect(null);
+        savedRangeRef.current = null;
       }
     };
     document.addEventListener("selectionchange", handleSelChange);
-    return () => document.removeEventListener("selectionchange", handleSelChange);
+    return () => {
+      document.removeEventListener("selectionchange", handleSelChange);
+      clearTimeout(hideToolbarTimer.current);
+    };
   }, [openModal]);
 
   const applyHighlight = useCallback((colorOverride?: string) => {
+    clearTimeout(hideToolbarTimer.current);
+    // Tenta seleção ao vivo; se não existir, usa range salvo
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
-    const range = sel.getRangeAt(0);
+    const liveRange = sel && !sel.isCollapsed && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+    const range = liveRange ?? savedRangeRef.current;
+    if (!range) return;
     const color = colorOverride ?? highlightColor;
     try {
       const mark = document.createElement("mark");
@@ -455,7 +468,8 @@ export default function TrilhaUnidade() {
       mark.appendChild(frag);
       range.insertNode(mark);
     }
-    sel.removeAllRanges();
+    sel?.removeAllRanges();
+    savedRangeRef.current = null;
     setHasHighlights(true);
     setSelectionRect(null);
   }, [highlightColor]);
