@@ -465,6 +465,14 @@ function PesquisaPanel() {
           className="relative flex flex-col border-b lg:border-b-0 lg:border-r border-[#d8c4ae]"
           style={{ height: "clamp(540px, calc(100vh - 250px), 720px)", background: "#fdf5e8" }}
         >
+          {/* ── Curvatura do papel ── */}
+          {/* Topo e fundo escurecem levemente — papel dobra para fora */}
+          <div className="pointer-events-none absolute inset-0 z-[5]"
+            style={{ background: "linear-gradient(to bottom, rgba(140,80,40,0.09) 0%, transparent 22%, transparent 78%, rgba(140,80,40,0.09) 100%)" }} />
+          {/* Lado da dobra (direita no desktop) fica ligeiramente mais escuro */}
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-[5] w-20 hidden lg:block"
+            style={{ background: "linear-gradient(to left, rgba(100,40,20,0.10) 0%, transparent 100%)" }} />
+
           <div className="relative z-10 flex flex-col" style={{ height: "100%" }}>
 
             {/* ── Cabeçalho fixo ── */}
@@ -549,6 +557,12 @@ function PesquisaPanel() {
           className="relative flex flex-col"
           style={{ height: "clamp(540px, calc(100vh - 250px), 720px)", background: "#fffaf2" }}
         >
+          {/* ── Curvatura do papel (espelhada) ── */}
+          <div className="pointer-events-none absolute inset-0 z-[5]"
+            style={{ background: "linear-gradient(to bottom, rgba(140,80,40,0.09) 0%, transparent 22%, transparent 78%, rgba(140,80,40,0.09) 100%)" }} />
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-[5] w-20 hidden lg:block"
+            style={{ background: "linear-gradient(to right, rgba(100,40,20,0.10) 0%, transparent 100%)" }} />
+
           <div className="relative z-10 flex-1 overflow-y-auto p-7 pl-10 lg:pl-14 pb-8">
             {!temMensagens ? (
               /* ── Estado vazio ── */
