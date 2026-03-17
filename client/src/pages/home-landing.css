@@ -253,7 +253,7 @@
 }
 
 /* ── Coluna esquerda ── */
-.hl-left-col { display: flex; flex-direction: column; gap: 28px; min-height: 0; overflow: hidden; }
+.hl-left-col { position: relative; display: flex; flex-direction: column; gap: 28px; min-height: 0; overflow: hidden; }
 
 /* ── Hero note ── */
 .hl-hero-note {
@@ -727,14 +727,15 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* ── Rodapé ── */
+/* ── Rodapé (dentro da coluna esquerda) ── */
 .hl-footer-strip {
-  position: absolute; left: 50px; right: 16px; bottom: 0;
+  position: absolute; left: 0; right: 0; bottom: 0;
   display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 8px;
   color: #758692; font-size: .72rem; font-weight: 800;
   font-family: "Patrick Hand", cursive;
   height: 36px;
   padding: 0 4px;
+  background: linear-gradient(to top, #fffdf8 60%, transparent);
 }
 
 
@@ -789,7 +790,7 @@
   .hl-caderno-box { flex: 1 1 280px; max-height: 380px; }
   .hl-tip-box { width: 100%; transform: none; margin: 0; }
   .hl-cards-grid { grid-template-columns: repeat(2, 1fr); }
-  .hl-footer-strip { position: static; margin-top: 12px; padding-left: 0; height: auto; }
+  .hl-footer-strip { position: static; margin-top: 12px; padding-left: 0; height: auto; background: none; }
 }
 
 /* ── Mobile grande (≤ 640px): redesign completo ── */
@@ -909,16 +910,15 @@
   .hl-trilha-item-title,
   .hl-trilha-item-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-  /* Rodapé estático */
+  /* Rodapé mobile */
   .hl-footer-strip {
     position: static;
     margin-top: 14px;
-    padding: 0;
-    height: auto;
     font-size: .68rem;
     flex-wrap: wrap;
     gap: 6px;
-    justify-content: space-between;
+    height: auto;
+    background: none;
   }
 
   /* Botão acessibilidade */
