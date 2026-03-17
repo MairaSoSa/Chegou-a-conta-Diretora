@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import {
   BarChart3, GraduationCap, MessagesSquare, Wrench,
   BookOpen, Building2, Scale, Calendar,
-  X, Menu, Accessibility, BookMarked,
+  X, Menu, Accessibility,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAccessibility } from "@/App";
@@ -127,22 +127,6 @@ export function Navigation() {
 
             {/* ── Right: Quem Somos (desktop) + hamburger (mobile) ── */}
             <div className={`flex items-center justify-end gap-2 shrink-0 ${!isInner ? "flex-1" : "ml-2"}`}>
-              {/* Quem Somos — desktop only */}
-              {isInner && (
-                <Link
-                  href="/quem-somos"
-                  className="hidden lg:flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium whitespace-nowrap transition-all duration-200"
-                  style={{
-                    color: location === "/quem-somos" ? "#1e3020" : "#354830",
-                    background: location === "/quem-somos" ? "rgba(255,255,255,.38)" : "transparent",
-                    textShadow: "0 1px 0 rgba(255,255,255,.40)",
-                  }}
-                >
-                  <BookMarked className="h-3.5 w-3.5 shrink-0" style={{ opacity: 0.70 }} />
-                  Quem Somos
-                </Link>
-              )}
-
               {/* Mobile hamburger */}
               {isInner && (
                 <button
