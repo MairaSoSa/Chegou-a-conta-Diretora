@@ -733,16 +733,19 @@
 }
 
 /* ── Rodapé ── */
-.hl-footer-mobile { display: none; }   /* oculto no desktop */
+.hl-footer-mobile { display: none !important; }   /* oculto no desktop */
 
 .hl-footer-strip {
-  position: absolute; left: 0; right: 0; bottom: 0;
+  position: relative;
   display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 8px;
   color: #758692; font-size: .72rem; font-weight: 800;
   font-family: "Patrick Hand", cursive;
-  height: 36px;
-  padding: 0 56px 0 56px;
-  background: linear-gradient(to top, #fffdf8 60%, transparent);
+  height: 32px;
+  padding: 0;
+  margin-top: auto;
+  border-top: 1px solid rgba(190,160,115,.2);
+  flex-shrink: 0;
+  background: none;
 }
 
 
