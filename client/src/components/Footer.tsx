@@ -71,8 +71,26 @@ export function Footer() {
       <div className="relative mx-auto max-w-7xl px-4 py-4 lg:px-10">
         <div className="flex items-center justify-between">
 
-          {/* Quem somos + botão acessibilidade */}
+          {/* botão acessibilidade + Quem somos */}
           <div className="flex items-center gap-2.5">
+            <button
+              onClick={toggleAccessibility}
+              aria-label="Ajustes de acessibilidade"
+              data-testid="button-accessibility-menu"
+              title="Acessibilidade"
+              className="flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200 active:scale-95"
+              style={{
+                background: "rgba(218,185,60,.18)",
+                border: "1px solid rgba(180,150,30,.28)",
+                color: "#6b5208",
+                opacity: 0.6,
+              }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+              onMouseLeave={e => (e.currentTarget.style.opacity = "0.6")}
+            >
+              <Accessibility className="h-3 w-3" />
+            </button>
+
             <Link
               href="/quem-somos"
               className="group flex items-center gap-2 text-sm font-medium transition-all"
@@ -97,24 +115,6 @@ export function Footer() {
                 />
               </span>
             </Link>
-
-            <button
-              onClick={toggleAccessibility}
-              aria-label="Ajustes de acessibilidade"
-              data-testid="button-accessibility-menu"
-              title="Acessibilidade"
-              className="flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200 active:scale-95"
-              style={{
-                background: "rgba(218,185,60,.18)",
-                border: "1px solid rgba(180,150,30,.28)",
-                color: "#6b5208",
-                opacity: 0.6,
-              }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
-              onMouseLeave={e => (e.currentTarget.style.opacity = "0.6")}
-            >
-              <Accessibility className="h-3 w-3" />
-            </button>
           </div>
 
           {/* Ícone admin */}
