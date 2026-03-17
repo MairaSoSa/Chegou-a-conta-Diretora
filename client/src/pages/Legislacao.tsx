@@ -515,7 +515,7 @@ function NormasContent() {
             </h3>
           </div>
           <div className="leg-scroll-wrap border border-[#d9cfc0] rounded-2xl">
-          <div className="leg-scroll max-h-[480px] overflow-y-auto space-y-4 p-2 pr-1">
+          <div className="leg-scroll max-h-[480px] overflow-y-scroll space-y-4 p-2 pr-1">
           {leisFundamentais.map(lei => {
             const catColor = categoriaColors[lei.categoria] || { bg: "#e8f0e0", color: "#5a6e4e" };
             return (
@@ -572,7 +572,7 @@ function NormasContent() {
       {/* Lista de normas — novo card design */}
       {normas.length > 0 && (
         <div className="leg-scroll-wrap border border-[#d9cfc0] rounded-2xl">
-        <div className="leg-scroll max-h-[600px] overflow-y-auto space-y-3 p-2 pr-1">
+        <div className="leg-scroll max-h-[600px] overflow-y-scroll space-y-3 p-2 pr-1">
           {normas.map((norma: any) => {
             const title = norma.titulo || norma.tituloAto || norma.identificacao || `Ato ${norma.id}`;
             const ementa = norma.ementa || norma.resumo || "";
@@ -1245,7 +1245,7 @@ function AtualizacoesLegislativas() {
                 <span className="text-xs font-semibold text-[#8a9a84]">{group.subtitle(group.items.length)}</span>
               </div>
               <div className="leg-scroll-wrap border border-[#d9cfc0] rounded-2xl" style={group.isRevoked ? { borderColor: "#e8c4c1" } : {}}>
-              <div className={`${group.isRevoked ? "leg-scroll-red" : "leg-scroll"} max-h-[320px] overflow-y-auto space-y-3 p-2 pr-1`}>
+              <div className={`${group.isRevoked ? "leg-scroll-red" : "leg-scroll"} max-h-[320px] overflow-y-scroll space-y-3 p-2 pr-1`}>
                 {group.items.map((n: any) => {
                   const title = n.titulo || n.tituloAto || n.identificacao || `Ato ${n.id}`;
                   const ementa = n.ementa || n.resumo || "";
