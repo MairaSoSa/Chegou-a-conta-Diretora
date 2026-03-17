@@ -514,6 +514,7 @@ function NormasContent() {
               <span className="ml-2 rounded-full bg-[#fef3c7] px-2 py-0.5 text-xs font-bold text-[#92400e]">{leisFundamentais.length} normas</span>
             </h3>
           </div>
+          <div className="leg-scroll max-h-[480px] overflow-y-auto space-y-4 pr-2">
           {leisFundamentais.map(lei => {
             const catColor = categoriaColors[lei.categoria] || { bg: "#e8f0e0", color: "#5a6e4e" };
             return (
@@ -542,6 +543,7 @@ function NormasContent() {
               </div>
             );
           })}
+          </div>
 
           {/* Separador para demais normas */}
           <div className="flex items-center gap-3 pt-2">
@@ -567,7 +569,7 @@ function NormasContent() {
 
       {/* Lista de normas — novo card design */}
       {normas.length > 0 && (
-        <div className="space-y-3">
+        <div className="leg-scroll max-h-[600px] overflow-y-auto space-y-3 pr-2">
           {normas.map((norma: any) => {
             const title = norma.titulo || norma.tituloAto || norma.identificacao || `Ato ${norma.id}`;
             const ementa = norma.ementa || norma.resumo || "";
@@ -1209,7 +1211,7 @@ function AtualizacoesLegislativas() {
       )}
 
       {!isLoading && (
-        <div className="space-y-8">
+        <div className="leg-scroll max-h-[520px] overflow-y-auto space-y-8 pr-2">
           {[
             {
               items: novas,
