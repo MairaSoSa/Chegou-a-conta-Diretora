@@ -399,8 +399,47 @@ export default function Trilha() {
                     </div>
                   </div>
 
-                  {/* Cards grid — bilhetes de recado no mural */}
-                  <div className="grid gap-x-5 gap-y-10 md:grid-cols-2 xl:grid-cols-3">
+                  {/* Mobile: fichas horizontais compactas */}
+                  <div className="sm:hidden space-y-2 pt-2">
+                    {group.items.map((unit, itemIdx) => {
+                      const memo = memoVariants[itemIdx % memoVariants.length];
+                      return (
+                        <motion.div
+                          key={`m-${unit.unitId}`}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => navigate(`/trilha/${unit.unitId}`)}
+                          className="flex items-stretch overflow-hidden rounded-[14px] border cursor-pointer shadow-sm active:opacity-80"
+                          style={{ borderColor: memo.border }}
+                        >
+                          {/* Colored left stripe */}
+                          <div className="w-[5px] shrink-0" style={{ background: memo.stripe }} />
+                          {/* Body */}
+                          <div className="flex flex-1 items-center gap-3 px-3 py-3" style={{ background: memo.body }}>
+                            {/* Unit badge */}
+                            <span
+                              className="shrink-0 rounded-[8px] px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider"
+                              style={{ background: memo.header, color: memo.stripe }}
+                            >
+                              {unit.unitId}
+                            </span>
+                            {/* Text */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[13px] font-extrabold leading-snug text-slate-800 truncate">{unit.title}</p>
+                              <p className="mt-0.5 text-[11px] leading-snug text-slate-500 line-clamp-1">{unit.subtitle}</p>
+                            </div>
+                            {/* Duration + arrow */}
+                            <div className="shrink-0 flex flex-col items-end gap-0.5">
+                              <span className="text-[10px] font-semibold" style={{ color: memo.stripe }}>⏱ {unit.duration}</span>
+                              <span className="text-[13px] font-bold opacity-50" style={{ color: memo.stripe }}>→</span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Desktop: bilhetes de recado no mural */}
+                  <div className="hidden sm:grid gap-x-5 gap-y-10 md:grid-cols-2 xl:grid-cols-3">
                     {group.items.map((unit, itemIdx) => {
                       const rot = rotations[itemIdx % rotations.length];
                       const memo = memoVariants[itemIdx % memoVariants.length];
