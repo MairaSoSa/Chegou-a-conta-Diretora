@@ -59,7 +59,7 @@ export function Navigation() {
           aria-hidden />
 
         <div className="mx-auto max-w-7xl px-4 lg:px-10">
-          <div className="flex h-[60px] items-center">
+          <div className="flex h-[60px] items-center justify-between">
 
             {/* ── Left: Logo ── */}
             <div className="flex items-center shrink-0 mr-4">
