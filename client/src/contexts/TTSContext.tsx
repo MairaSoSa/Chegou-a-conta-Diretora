@@ -86,6 +86,30 @@ function detectCard(el: HTMLElement): boolean {
   return el.querySelector("h1,h2,h3,h4,h5,h6,strong") !== null;
 }
 
+// Known destinations by card title — what you'll find when you click each card.
+const CARD_DESTINATIONS: Record<string, string> = {
+  "Painel da Escola": "o Painel da Escola, onde você pesquisa sua escola pelo nome ou código INEP e vê dados de matrículas, IDEB, situação financeira e repasses do FNDE",
+  "Legislação": "a Legislação, com leis, resoluções, portarias e instruções normativas do Ministério da Educação, além do Diário Oficial",
+  "Calendário": "o Calendário de Prazos, com as datas de prestação de contas, repasses e obrigações do FNDE ao longo do ano",
+  "Programas": "a seção de Programas, com explicações sobre o PDDE, PNAE, PNATE e as Ações Integradas",
+  "Ferramentas": "as Ferramentas, uma biblioteca com modelos de ofício, planilhas de controle e materiais práticos para download",
+  "Caderno da Diretora": "o Caderno da Diretora, onde você pode conversar com inteligência artificial sobre dúvidas da gestão, anotar e redigir documentos escolares",
+  "Trilha da Diretora": "a Trilha da Diretora, um percurso de aprendizado com etapas explicando como funciona o financiamento da escola pública",
+  "Glossário": "o Glossário, com explicações dos termos técnicos usados na gestão escolar",
+};
+
+// Known destinations by href path.
+const HREF_DESTINATIONS: Record<string, string> = {
+  "/dashboard": CARD_DESTINATIONS["Painel da Escola"],
+  "/legislacao": CARD_DESTINATIONS["Legislação"],
+  "/calendario": CARD_DESTINATIONS["Calendário"],
+  "/programas": CARD_DESTINATIONS["Programas"],
+  "/ferramentas": CARD_DESTINATIONS["Ferramentas"],
+  "/chat": CARD_DESTINATIONS["Caderno da Diretora"],
+  "/trilha": CARD_DESTINATIONS["Trilha da Diretora"],
+  "/glossario": CARD_DESTINATIONS["Glossário"],
+};
+
 // Builds a spatial, interpretive description of a colored card — like guiding someone with eyes closed.
 function describeCard(el: HTMLElement): string {
   const style = window.getComputedStyle(el);
@@ -107,11 +131,16 @@ function describeCard(el: HTMLElement): string {
     .filter(t => t && t.length > 1)
     .slice(0, 1)[0];
 
+  // Find where this card leads — try href first, then card title
+  const linkHref = (el.querySelector("a[href]") as HTMLAnchorElement | null)?.getAttribute("href") ?? "";
+  const destination = HREF_DESTINATIONS[linkHref] ?? CARD_DESTINATIONS[headText];
+
   const postIt = colorName ? `No post-it ${colorName}` : "No post-it";
   let desc = `${postIt} está escrito: ${headText}.`;
   if (bodyText) desc += ` ${bodyText}.`;
-  if (cta) desc += ` Tem um botão que diz: ${cta}.`;
-  desc += " É clicável.";
+  if (cta) desc += ` Tem um botão que diz: "${cta}".`;
+  if (destination) desc += ` Clicando, você vai para ${destination}.`;
+  else desc += " É clicável.";
   return desc;
 }
 
@@ -143,6 +172,23 @@ function getPageTextDescribed(): string {
     : Object.entries(siteIntros).filter(([k]) => k !== "/").find(([k]) => path.startsWith(k))?.[1]
     ?? `Estamos na seção ${sectionName} do site Chegou a Conta, Diretora.`;
   parts.push(intro);
+
+  // Describe the visual design and layout of the current page
+  const pageLayouts: Record<string, string> = {
+    "/": "O design da página imita uma folha de caderno escolar: fundo bege claro com linhas horizontais finas e uma margem rosada na lateral esquerda. No topo da página há uma faixa de cor verde-sálvia escura, que é o cabeçalho com o logo e o menu de navegação. O corpo da página está dividido em duas partes: na esquerda, os atalhos principais do site, apresentados como post-its coloridos em um grid; na direita, um painel lateral mais estreito com a Trilha da Diretora, que lista os temas de aprendizado disponíveis.",
+    "/dashboard": "A página tem fundo branco e estrutura de painel de dados. No topo há um campo de busca para encontrar sua escola. Abaixo, os dados aparecem organizados em blocos e gráficos com fundo claro e bordas suaves, com destaque para informações financeiras em verde e dados educacionais em azul.",
+    "/trilha": "A página tem fundo bege claro e apresenta as etapas da Trilha em formato de lista vertical, como degraus de uma escada de aprendizado. Cada etapa tem um número, título e descrição curta. As etapas concluídas aparecem com indicador visual de progresso.",
+    "/legislacao": "A página tem fundo branco com seções divididas por abas horizontais. À esquerda ficam os filtros por tipo de documento. O conteúdo principal é uma lista de normas com título, tipo e data de publicação.",
+    "/programas": "A página tem fundo bege suave e apresenta os programas em cards organizados verticalmente, cada um com nome, descrição e links para saber mais.",
+    "/ferramentas": "A página tem fundo claro e apresenta as ferramentas em cards com ícones, título e descrição. Cada card tem um botão de download ou acesso.",
+    "/chat": "A página é dividida em duas abas: Folha de Pesquisa, onde você conversa com a inteligência artificial, e Editor de Documentos, onde você redige textos. O visual imita papel branco com bordas suaves, em um layout de caderno digital.",
+    "/calendario": "A página tem fundo claro e apresenta os prazos em ordem cronológica, com destaque visual para as datas mais próximas.",
+  };
+
+  const layoutDesc = pageLayouts["/"] && path === "/"
+    ? pageLayouts["/"]
+    : Object.entries(pageLayouts).filter(([k]) => k !== "/").find(([k]) => path.startsWith(k))?.[1];
+  if (layoutDesc) parts.push(layoutDesc);
 
   // Describe navigation links
   const nav = document.querySelector("nav");
