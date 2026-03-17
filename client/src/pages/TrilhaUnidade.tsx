@@ -413,11 +413,11 @@ export default function TrilhaUnidade() {
     if (!openModal) { setHasHighlights(false); setEraserMode(false); }
   }, [openModal]);
 
-  const applyHighlight = useCallback(() => {
+  const applyHighlight = useCallback((colorOverride?: string) => {
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
-    const color = highlightColor;
+    const color = colorOverride ?? highlightColor;
     try {
       const mark = document.createElement("mark");
       mark.className = "ficha-grifo";
@@ -983,13 +983,20 @@ export default function TrilhaUnidade() {
 
               {/* Toolbar de grifo */}
               <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                {/* Instrução */}
+                <span className="text-[10px] text-slate-400 font-medium mr-1 hidden sm:inline">Selecione o texto e toque na cor:</span>
+
                 {HIGHLIGHT_COLORS.map((c) => (
                   <button
                     key={c.bg}
                     title={`Grifar em ${c.label}`}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => { setHighlightColor(c.bg); setEraserMode(false); }}
-                    className="h-6 w-6 rounded-full border-2 shadow-sm transition-transform hover:scale-110 active:scale-95"
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setHighlightColor(c.bg);
+                      setEraserMode(false);
+                      applyHighlight(c.bg);
+                    }}
+                    className="h-7 w-7 rounded-full border-2 shadow-sm transition-transform hover:scale-110 active:scale-95"
                     style={{
                       background: c.bg,
                       borderColor: highlightColor === c.bg && !eraserMode ? c.border : "rgba(0,0,0,0.12)",
@@ -1001,8 +1008,8 @@ export default function TrilhaUnidade() {
                 <div className="h-5 w-px bg-slate-300" />
 
                 <button
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={applyHighlight}
+                  onPointerDown={(e) => e.preventDefault()}
+                  onClick={() => applyHighlight()}
                   className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold transition"
                   style={{ background: highlightColor, borderColor: "rgba(0,0,0,0.15)", color: "#374151" }}
                 >
@@ -1010,7 +1017,7 @@ export default function TrilhaUnidade() {
                 </button>
 
                 <button
-                  onMouseDown={(e) => e.preventDefault()}
+                  onPointerDown={(e) => e.preventDefault()}
                   onClick={() => setEraserMode((v) => !v)}
                   className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold transition"
                   style={{
@@ -1024,17 +1031,23 @@ export default function TrilhaUnidade() {
 
                 {hasHighlights && (
                   <button
-                    onMouseDown={(e) => e.preventDefault()}
+                    onPointerDown={(e) => e.preventDefault()}
                     onClick={clearHighlights}
                     className="rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-bold text-stone-400 transition hover:text-rose-500"
                   >
-                    ✕ Limpar todos
+                    ✕ Limpar
                   </button>
                 )}
               </div>
 
+              {/* Instruções mobile (abaixo dos botões) */}
+              <p className="mt-1.5 text-[10px] text-slate-400 sm:hidden">
+                {eraserMode
+                  ? "Toque em um grifo para apagá-lo"
+                  : "Selecione o texto e toque em uma cor para grifar"}
+              </p>
               {eraserMode && (
-                <p className="mt-1.5 text-[10px] font-medium text-rose-500">
+                <p className="mt-0.5 text-[10px] font-medium text-rose-500 hidden sm:block">
                   Clique em qualquer grifo para apagá-lo individualmente
                 </p>
               )}
