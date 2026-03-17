@@ -219,6 +219,114 @@ function FluxoQuadro({
   );
 }
 
+// ── Navegador de unidades por número ──
+function UnitNav({
+  units,
+  currentId,
+  tone,
+  onNavigate,
+}: {
+  units: TrilhaUnit[];
+  currentId: string;
+  tone: (typeof toneMap)[ToneKey];
+  onNavigate: (id: string) => void;
+}) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      {units.map((u, idx) => {
+        const isCurrent = u.unitId === currentId;
+        const isHov = hoveredId === u.unitId;
+        const num = idx + 1;
+
+        return (
+          <div
+            key={u.unitId}
+            style={{ position: "relative" }}
+            onMouseEnter={() => setHoveredId(u.unitId)}
+            onMouseLeave={() => setHoveredId(null)}
+          >
+            {/* Tooltip */}
+            {isHov && !isCurrent && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "calc(100% + 8px)",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  background: "#1e293b",
+                  color: "#f8fafc",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "5px 10px",
+                  borderRadius: 8,
+                  whiteSpace: "nowrap",
+                  pointerEvents: "none",
+                  zIndex: 50,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+                }}
+              >
+                {u.title}
+                {/* Seta do tooltip */}
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 0,
+                    height: 0,
+                    borderLeft: "5px solid transparent",
+                    borderRight: "5px solid transparent",
+                    borderTop: "5px solid #1e293b",
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Círculo */}
+            <button
+              type="button"
+              onClick={() => !isCurrent && onNavigate(u.unitId)}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                border: isCurrent
+                  ? `2px solid ${tone.spine}`
+                  : `1.5px solid ${isHov ? tone.spine : tone.border}`,
+                background: isCurrent
+                  ? tone.spine
+                  : isHov
+                  ? tone.tab
+                  : "rgba(255,255,255,0.85)",
+                color: isCurrent ? "#fff" : isHov ? tone.tabText : "#64748b",
+                fontSize: 11,
+                fontWeight: isCurrent ? 900 : 700,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: isCurrent ? "default" : "pointer",
+                transition: "all 0.15s ease",
+                transform: isHov && !isCurrent ? "scale(1.15)" : "scale(1)",
+                boxShadow: isCurrent
+                  ? `0 0 0 3px ${tone.tab}, 0 2px 8px rgba(0,0,0,0.15)`
+                  : isHov
+                  ? "0 2px 8px rgba(0,0,0,0.12)"
+                  : "none",
+                flexShrink: 0,
+              }}
+            >
+              {num}
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Grade de fichas de aprofundamento ──
 function FichaGrid({
   fichas,
@@ -784,34 +892,16 @@ export default function TrilhaUnidade() {
           >
             ← voltar ao mural
           </button>
-          <div className="flex gap-2">
-            {prevUnit ? (
-              <button
-                onClick={() => navigate(`/trilha/${prevUnit.unitId}`)}
-                className="rounded-full border px-4 py-2 text-sm font-semibold shadow-sm transition hover:opacity-80"
-                style={{ borderColor: tone.border, color: tone.tabText, background: tone.header }}
-              >
-                ← anterior
-              </button>
-            ) : (
-              <span className="rounded-full border border-stone-200 bg-white/40 px-4 py-2 text-sm font-semibold text-stone-300">
-                ← anterior
-              </span>
-            )}
-            {nextUnit ? (
-              <button
-                onClick={() => navigate(`/trilha/${nextUnit.unitId}`)}
-                className="rounded-full border px-4 py-2 text-sm font-semibold shadow-sm transition hover:opacity-80"
-                style={{ borderColor: tone.border, color: tone.tabText, background: tone.header }}
-              >
-                próxima →
-              </button>
-            ) : (
-              <span className="rounded-full border border-stone-200 bg-white/40 px-4 py-2 text-sm font-semibold text-stone-300">
-                próxima →
-              </span>
-            )}
-          </div>
+
+          {/* Unit number navigator */}
+          {allSorted.length > 0 && (
+            <UnitNav
+              units={allSorted}
+              currentId={unitId}
+              tone={tone}
+              onNavigate={(id) => navigate(`/trilha/${id}`)}
+            />
+          )}
         </div>
 
         {/* ═══ FICHÁRIO / BINDER ═══ */}
