@@ -84,14 +84,6 @@ function HandDrawnPin({ className = "" }: { className?: string }) {
   );
 }
 
-function HandDrawnStar({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 36 36" className={className} fill="none" aria-hidden="true">
-      <path d="M18 4L21 13L31 13L23 19L26 30L18 23L10 30L13 19L5 13L15 13L18 4Z"
-        stroke="#b97f2b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="#f6dd75" />
-    </svg>
-  );
-}
 
 function ScribbleLoop({ className = "" }: { className?: string }) {
   return (
@@ -452,9 +444,6 @@ export default function CalendarioPage() {
                                       {hasItem && (
                                         <>
                                           <div className={`absolute left-1 right-1 top-1 sm:left-2 sm:right-2 sm:top-2 h-4 sm:h-6 rounded-md opacity-80 ${urgent ? "bg-[#ffd7a8]" : attention ? "bg-[#fff2a8]" : "bg-[#dff2bf]"}`} />
-                                          <div className="absolute right-1 top-1 sm:right-2 sm:top-1.5 z-20">
-                                            {urgent ? <HandDrawnPin className="scale-[0.72]" /> : <HandDrawnStar className="h-5 w-5 rotate-[10deg]" />}
-                                          </div>
                                         </>
                                       )}
                                       <div className="relative z-10 flex items-start justify-between">
