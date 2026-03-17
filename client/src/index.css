@@ -1573,10 +1573,11 @@
 
 /* ── Grifo / highlight ── */
 mark.ficha-grifo {
-  border-radius: 4px;
-  padding: 1px 3px;
+  border-radius: 3px;
+  padding: 2px 0;
+  display: inline;
   color: inherit;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: none;
   cursor: default;
   transition: filter 0.15s ease;
 }

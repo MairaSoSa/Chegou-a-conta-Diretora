@@ -603,7 +603,7 @@ export default function TrilhaUnidade() {
         .pdf-content p { margin: 0 0 18pt; }
 
         /* Grifos — preservar cores */
-        mark.ficha-grifo { border-radius: 3px; padding: 0 2px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        mark.ficha-grifo { border-radius: 3px; padding: 2px 0; display: inline; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
         /* Rodapé de assinatura */
         .pdf-footer {
