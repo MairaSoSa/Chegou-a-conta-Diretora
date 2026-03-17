@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+
 import { useLocation } from "wouter";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
@@ -420,10 +420,13 @@ export default function Trilha() {
                           onMouseLeave={() => setHoveredUnit(null)}
                           onClick={() => navigate(`/trilha/${unit.unitId}`)}
                         >
-                        <motion.div
-                          animate={{ rotate: isHovered ? 0 : rot, zIndex: isHovered ? 20 : 0 }}
-                          transition={{ type: "spring", stiffness: 340, damping: 30 }}
-                          className="relative"
+                        <div
+                          style={{
+                            position: "relative",
+                            transform: `rotate(${isHovered ? 0 : rot}deg)`,
+                            transition: "transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                            zIndex: isHovered ? 20 : 0,
+                          }}
                         >
                           {/* Pin ímã */}
                           <div
@@ -551,7 +554,7 @@ export default function Trilha() {
                               </div>
                             </div>
                           </article>
-                        </motion.div>
+                        </div>
                         </div>
                       );
                     })}
