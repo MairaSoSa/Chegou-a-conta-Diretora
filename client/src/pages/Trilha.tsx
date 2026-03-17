@@ -418,8 +418,8 @@ export default function Trilha() {
                         >
                           {/* Pin ímã — fica fixo, fora do elemento que anima */}
                           <div
-                            className="absolute z-20"
-                            style={{ top: 0, left: pinOffset, transform: "translateX(-50%)" }}
+                            className="absolute"
+                            style={{ top: 0, left: pinOffset, transform: "translateX(-50%)", zIndex: 50 }}
                           >
                             <Pin color={pin.color} dark={pin.dark} size={34} />
                           </div>
@@ -436,7 +436,7 @@ export default function Trilha() {
                               borderStyle: "solid",
                               boxShadow: "0 6px 22px rgba(0,0,0,0.24), 0 2px 5px rgba(0,0,0,0.14)",
                             }}
-                            whileHover={{ rotate: rot * 0.3, zIndex: 20 }}
+                            whileHover={{ rotate: rot * 0.3 }}
                             transition={{ type: "spring", stiffness: 200, damping: 20 }}
                           >
                             {/* Colored stripe on left edge (like message pad) */}
