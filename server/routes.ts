@@ -1491,5 +1491,29 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  app.post("/api/tts", async (req, res) => {
+    try {
+      const text = typeof req.body?.text === "string" ? req.body.text.slice(0, 4000).trim() : "";
+      if (!text) return res.status(400).json({ error: "text obrigatório" });
+      const { default: OpenAI } = await import("openai");
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const mp3 = await openai.audio.speech.create({
+        model: "tts-1",
+        voice: "nova",
+        input: text,
+        response_format: "mp3",
+        speed: 1.0,
+      });
+      const buffer = Buffer.from(await mp3.arrayBuffer());
+      res.setHeader("Content-Type", "audio/mpeg");
+      res.setHeader("Content-Length", buffer.length);
+      res.setHeader("Cache-Control", "no-store");
+      res.send(buffer);
+    } catch (err) {
+      console.error("TTS error:", err);
+      res.status(500).json({ error: "Falha no TTS" });
+    }
+  });
+
   return httpServer;
 }

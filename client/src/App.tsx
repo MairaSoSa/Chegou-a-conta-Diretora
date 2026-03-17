@@ -5,6 +5,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AccessibilityMenu } from "@/components/AccessibilityMenu";
+import { TTSProvider } from "@/contexts/TTSContext";
+import { TTSBubble } from "@/components/TTSBubble";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
@@ -57,11 +59,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AccessibilityContext.Provider value={{ isOpen: accessibilityOpen, toggle: toggleAccessibility }}>
-          <Toaster />
-          <Router />
-          <AccessibilityMenu isOpen={accessibilityOpen} onToggle={toggleAccessibility} />
-        </AccessibilityContext.Provider>
+        <TTSProvider>
+          <AccessibilityContext.Provider value={{ isOpen: accessibilityOpen, toggle: toggleAccessibility }}>
+            <Toaster />
+            <Router />
+            <AccessibilityMenu isOpen={accessibilityOpen} onToggle={toggleAccessibility} />
+            <TTSBubble />
+          </AccessibilityContext.Provider>
+        </TTSProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
