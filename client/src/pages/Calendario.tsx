@@ -140,6 +140,7 @@ export default function CalendarioPage() {
   const [mesSelecionado, setMesSelecionado] = useState<number>(mesAtual);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [mobileDaySheet, setMobileDaySheet] = useState<{ day: number; items: PrazoEducacional[] } | null>(null);
   const calendarPanelRef = useRef<HTMLDivElement | null>(null);
 
   const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
@@ -452,6 +453,7 @@ export default function CalendarioPage() {
                                     <motion.button key={day}
                                       whileHover={{ y: -3, rotate: day % 2 === 0 ? -0.8 : 0.8 }}
                                       whileTap={{ scale: 0.98 }}
+                                      onClick={() => { if (hasItem && window.innerWidth < 640) setMobileDaySheet({ day, items }); }}
                                       className={`group relative min-h-[56px] sm:min-h-[92px] overflow-visible rounded-[14px] sm:rounded-[20px] border p-1 sm:p-2 text-left shadow-sm transition ${
                                         hasItem ? "border-[#dfcfbd] bg-[#fffdf8]" : "border-[#efe4d7] bg-[#fcfaf5]"
                                       }`}
@@ -741,6 +743,118 @@ export default function CalendarioPage() {
           </motion.div>
         </div>
       </div>
+      {/* ── Mobile Day Sheet ── */}
+      <AnimatePresence>
+        {mobileDaySheet && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileDaySheet(null)}
+              className="fixed inset-0 z-40 bg-black/40 sm:hidden"
+            />
+            {/* Sheet */}
+            <motion.div
+              key="sheet"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 26, stiffness: 280 }}
+              className="fixed bottom-0 left-0 right-0 z-50 sm:hidden rounded-t-[28px] border-t border-[#d8cfc0] bg-[#fffdf8] shadow-[0_-12px_40px_rgba(80,60,30,0.14)]"
+              style={{ maxHeight: "82vh", overflowY: "auto" }}
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="h-1 w-10 rounded-full bg-[#d0c8bb]" />
+              </div>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-3 border-b border-[#ece5d8]">
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#9b9388]">
+                    {MONTH_FULL[mesSelecionado - 1]} {ano}
+                  </div>
+                  <div className="text-2xl font-black text-[#3d3a33] mt-0.5">
+                    Dia {mobileDaySheet.day}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setMobileDaySheet(null)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e4dacd] bg-white text-[#6f695f] shadow-sm"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Events list */}
+              <div className="px-4 py-4 space-y-3">
+                {mobileDaySheet.items.map((item, idx) => {
+                  const cat = categoryStyles[item.categoria] || categoryStyles.GERAL;
+                  const CatIcon = cat.icon;
+                  const urgLabel = mapUrgencia(item.urgencia);
+                  const urgStyle = urgencyStyles[urgLabel];
+                  return (
+                    <div
+                      key={idx}
+                      className={`rounded-[20px] border bg-gradient-to-br ${cat.wash} p-4 border-l-4 ${cat.line} border-[#e8dfd2]`}
+                    >
+                      {/* Category + urgency */}
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${cat.tone}`}>
+                          <CatIcon className="h-3 w-3" />
+                          {item.categoria}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${urgStyle}`}>
+                          {urgLabel}
+                        </span>
+                        {item.aConfirmar && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-600">
+                            A confirmar
+                          </span>
+                        )}
+                      </div>
+                      {/* Title */}
+                      <h3 className="text-sm font-black text-[#3d3a33] leading-snug mb-1">
+                        {item.titulo}
+                      </h3>
+                      {/* Description */}
+                      {item.descricao && (
+                        <p className="text-[13px] text-[#6e6a62] leading-5">{item.descricao}</p>
+                      )}
+                      {/* Date range */}
+                      {(item.dataInicio || item.dataFim) && (
+                        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-[#9b9388]">
+                          <CalendarDays className="h-3 w-3 shrink-0" />
+                          {item.dataInicio && <span>{new Date(item.dataInicio + "T12:00:00").toLocaleDateString("pt-BR")}</span>}
+                          {item.dataInicio && item.dataFim && <span>–</span>}
+                          {item.dataFim && <span>{new Date(item.dataFim + "T12:00:00").toLocaleDateString("pt-BR")}</span>}
+                        </div>
+                      )}
+                      {/* Source + link */}
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-[#a09890]">Fonte: {item.fonte}</span>
+                        {item.url && (
+                          <a href={item.url} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-full bg-[#44533d] px-3 py-1 text-[11px] font-bold text-white shadow-sm">
+                            Acessar <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Safe area spacer for phones with home indicator */}
+              <div className="pb-6" />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       <Footer />
     </div>
   );
