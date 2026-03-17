@@ -73,14 +73,6 @@ function extractDay(dataInicio?: string, dataFim?: string): number | null {
   return null;
 }
 
-function Tape({ rotate = "rotate-[-6deg]", className = "" }: { rotate?: string; className?: string }) {
-  return (
-    <div
-      className={`absolute h-8 w-24 ${rotate} rounded-sm border border-white/40 bg-[#efe4b2]/75 backdrop-blur-[1px] shadow-sm ${className}`}
-      style={{ backgroundImage: "repeating-linear-gradient(90deg,rgba(255,255,255,.18) 0px,rgba(255,255,255,.18) 2px,transparent 2px,transparent 6px)" }}
-    />
-  );
-}
 
 function HandDrawnPin({ className = "" }: { className?: string }) {
   return (
@@ -327,7 +319,6 @@ export default function CalendarioPage() {
                         }`}
                         style={{ boxShadow: "0 6px 0 rgba(0,0,0,0.04),0 12px 20px rgba(0,0,0,0.05)", transformOrigin: "center" }}
                       >
-                        {active && <Tape className="left-1/2 top-[-12px] z-10 -translate-x-1/2" rotate="rotate-[3deg]" />}
                         <div className="relative z-10 flex items-center gap-2">
                           <div className="flex h-7 w-7 items-center justify-center rounded-md border-2 border-[#7b7467] bg-white text-[10px] font-black">
                             {label.slice(0,1)}
