@@ -129,7 +129,7 @@ export default function Home() {
                   <Link key={i} href={card.href}>
                     <div className={`hl-note-card ${card.color}`}>
                       <div className="hl-card-icon">
-                        <card.Icon size={18} color={card.iconColor} strokeWidth={1.75} />
+                        <card.Icon size={22} color={card.iconColor} strokeWidth={1.75} />
                       </div>
                       <h3>{card.title}</h3>
                       <p>{card.desc}</p>
