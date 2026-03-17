@@ -302,16 +302,6 @@ export default function Trilha() {
         {/* Trilha sections */}
         <section className="space-y-14">
           {groups.map((group, groupIdx) => {
-            const pinDefs = [
-              { color: "#f4a8a8", dark: "#c07070" },
-              { color: "#a8c8f4", dark: "#6090c8" },
-              { color: "#a8e0b8", dark: "#5aaa78" },
-              { color: "#f5d898", dark: "#c8a040" },
-              { color: "#d4b8f0", dark: "#9a72c8" },
-              { color: "#f5c098", dark: "#c88040" },
-              { color: "#98e0d0", dark: "#44aA90" },
-            ];
-            const rotations = [-3.2, 1.8, -1.5, 2.6, -2.8, 1.2, -0.8, 3.1, -2.2, 1.6];
 
             // Bilhete de recado color schemes
             const memoVariants = [
@@ -400,17 +390,12 @@ export default function Trilha() {
                     </div>
                   </div>
 
-                  {/* Cards grid — bilhetes de recado no mural */}
-                  <div className="grid gap-x-5 gap-y-10 md:grid-cols-2 xl:grid-cols-3">
+                  {/* Cards grid */}
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {group.items.map((unit, itemIdx) => {
-                      const rot = rotations[itemIdx % rotations.length];
-                      const memo = memoVariants[itemIdx % memoVariants.length];
-                      const pin = pinDefs[itemIdx % pinDefs.length];
-
-                      // Slightly off-center pin position for natural look
-                      const pinOffset = itemIdx % 3 === 0 ? "43%" : itemIdx % 3 === 1 ? "50%" : "57%";
-
+                      const card = memoVariants[itemIdx % memoVariants.length];
                       const isHovered = hoveredUnit === unit.unitId;
+                      const unitNum = parseInt(unit.unitId.replace("U", ""), 10);
 
                       return (
                         <div
@@ -419,142 +404,141 @@ export default function Trilha() {
                           onMouseEnter={() => setHoveredUnit(unit.unitId)}
                           onMouseLeave={() => setHoveredUnit(null)}
                           onClick={() => navigate(`/trilha/${unit.unitId}`)}
-                        >
-                        <div
                           style={{
-                            position: "relative",
-                            transform: `rotate(${rot}deg) translateY(${isHovered ? -10 : 0}px)`,
-                            transition: "transform 0.18s ease",
-                            zIndex: isHovered ? 20 : 0,
+                            transform: `translateY(${isHovered ? -8 : 0}px)`,
+                            transition: "transform 0.2s ease, box-shadow 0.2s ease",
                           }}
                         >
-                          {/* Pin ímã */}
-                          <div
-                            className="absolute z-10"
-                            style={{ top: "-18px", left: pinOffset, transform: "translateX(-50%)" }}
-                          >
-                            <Pin color={pin.color} dark={pin.dark} size={34} />
-                          </div>
-
-                          {/* Bilhete de recado */}
                           <article
-                            className="relative overflow-hidden"
                             style={{
-                              borderRadius: "2px 8px 4px 6px",
-                              borderColor: memo.border,
-                              borderWidth: "1px",
-                              borderStyle: "solid",
-                              boxShadow: "0 6px 22px rgba(0,0,0,0.24), 0 2px 5px rgba(0,0,0,0.14)",
+                              borderRadius: "16px",
+                              background: "#fff",
+                              border: `1.5px solid ${card.border}`,
+                              boxShadow: isHovered
+                                ? `0 16px 40px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.10)`
+                                : `0 4px 16px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)`,
+                              transition: "box-shadow 0.2s ease",
+                              overflow: "hidden",
                             }}
                           >
-                            {/* Colored stripe on left edge (like message pad) */}
+                            {/* Colored top band with number */}
                             <div
-                              className="absolute bottom-0 left-0 top-0 w-1"
-                              style={{ background: memo.stripe }}
-                            />
-
-                            {/* Header section — topo colorido do bilhete */}
-                            <div
-                              className="px-4 py-2.5"
-                              style={{ background: memo.header }}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span
-                                  className="text-[9px] font-extrabold uppercase tracking-[0.22em]"
-                                  style={{ color: memo.stripe }}
-                                >
-                                  bilhete de recado
-                                </span>
-                                <span
-                                  className="rounded px-1.5 py-0.5 font-mono text-[10px] font-bold"
-                                  style={{ background: "rgba(0,0,0,0.08)", color: "#6b7280" }}
-                                >
-                                  {unit.unitId}
-                                </span>
-                              </div>
-                              {/* Para / De fields */}
-                              <div className="mt-1.5 grid grid-cols-2 gap-x-2 text-[10px]" style={{ color: memo.stripe }}>
-                                <div>
-                                  <span className="font-extrabold uppercase tracking-wide">Para:</span>{" "}
-                                  <span className="font-medium opacity-80">Diretora</span>
-                                </div>
-                                <div>
-                                  <span className="font-extrabold uppercase tracking-wide">De:</span>{" "}
-                                  <span className="font-medium opacity-80">
-                                    {group.personalidade === "origem" ? "FNDE" : group.personalidade === "estrutura" ? "Secretaria" : group.personalidade === "planejamento" ? "Coordenação" : "TCE"}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Body section — corpo do bilhete */}
-                            <div
-                              className="px-4 py-3 pl-5"
                               style={{
-                                background: memo.lines
-                                  ? `repeating-linear-gradient(to bottom, ${memo.body} 0px, ${memo.body} 23px, ${memo.border}99 24px)`
-                                  : memo.body,
+                                background: `linear-gradient(135deg, ${card.stripe} 0%, ${card.header} 100%)`,
+                                padding: "14px 18px 12px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
                               }}
                             >
-                              {/* Left margin red line on lined paper */}
-                              {memo.lines && (
+                              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                                 <div
-                                  className="absolute bottom-0 left-[38px] top-[52px] w-px"
-                                  style={{ background: "rgba(220,80,80,0.22)" }}
-                                />
-                              )}
-
-                              {/* Emoji + tag */}
-                              <div className="mb-2 flex items-center gap-2">
-                                <span className="text-lg leading-none">{emojiFor(group.personalidade)}</span>
-                                <span
-                                  className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                                  style={{ background: memo.header, color: memo.stripe }}
+                                  style={{
+                                    width: 38,
+                                    height: 38,
+                                    borderRadius: "50%",
+                                    background: "rgba(255,255,255,0.28)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontWeight: 900,
+                                    fontSize: "1rem",
+                                    color: "#fff",
+                                    flexShrink: 0,
+                                    backdropFilter: "blur(4px)",
+                                  }}
                                 >
+                                  {unitNum}
+                                </div>
+                                <span
+                                  style={{
+                                    fontSize: "9px",
+                                    fontWeight: 800,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.18em",
+                                    color: "rgba(255,255,255,0.85)",
+                                  }}
+                                >
+                                  {emojiFor(group.personalidade)}&nbsp;
                                   {group.personalidade === "origem" ? "Fontes" : group.personalidade === "estrutura" ? "Estrutura" : group.personalidade === "planejamento" ? "Planejamento" : "Prestação"}
                                 </span>
                               </div>
-
-                              {/* Assunto label */}
-                              <p
-                                className="mb-1 text-[9px] font-extrabold uppercase tracking-[0.22em]"
-                                style={{ color: memo.stripe }}
+                              <span
+                                style={{
+                                  fontSize: "10px",
+                                  fontWeight: 700,
+                                  color: "rgba(255,255,255,0.75)",
+                                  fontFamily: "monospace",
+                                }}
                               >
-                                Assunto
-                              </p>
+                                {unit.unitId}
+                              </span>
+                            </div>
 
-                              {/* Title */}
+                            {/* Body */}
+                            <div style={{ padding: "16px 18px 14px", background: card.body }}>
                               <h3
-                                className="font-extrabold leading-snug text-slate-800"
-                                style={{ fontSize: "0.98rem", fontFamily: "'Nunito', sans-serif" }}
+                                style={{
+                                  fontFamily: "'Nunito', sans-serif",
+                                  fontWeight: 900,
+                                  fontSize: "1rem",
+                                  lineHeight: 1.3,
+                                  color: "#1e293b",
+                                  marginBottom: 6,
+                                }}
                               >
                                 {unit.title}
                               </h3>
-                              <p className="mt-1 text-[12px] leading-[1.45] text-slate-500">
+                              <p
+                                style={{
+                                  fontSize: "12px",
+                                  lineHeight: 1.5,
+                                  color: "#64748b",
+                                  marginBottom: 14,
+                                }}
+                              >
                                 {unit.subtitle}
                               </p>
 
-                              {/* Dashed separator */}
-                              <div className="my-3 border-t border-dashed" style={{ borderColor: memo.border }} />
-
-                              {/* Footer — assinatura do bilhete */}
-                              <div className="flex items-center justify-between">
+                              {/* Footer */}
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  paddingTop: 10,
+                                  borderTop: `1px solid ${card.border}`,
+                                }}
+                              >
                                 <span
-                                  className="text-[10px] font-semibold"
-                                  style={{ color: memo.stripe, fontFamily: "monospace" }}
+                                  style={{
+                                    fontSize: "11px",
+                                    fontWeight: 600,
+                                    color: card.stripe,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 4,
+                                  }}
                                 >
                                   ⏱ {unit.duration}
                                 </span>
                                 <span
-                                  className="text-[10px] font-bold opacity-60"
-                                  style={{ color: memo.stripe }}
+                                  style={{
+                                    fontSize: "11px",
+                                    fontWeight: 700,
+                                    color: card.stripe,
+                                    opacity: isHovered ? 1 : 0.55,
+                                    transition: "opacity 0.2s",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 3,
+                                  }}
                                 >
-                                  clique para ler →
+                                  ler unidade →
                                 </span>
                               </div>
                             </div>
                           </article>
-                        </div>
                         </div>
                       );
                     })}
