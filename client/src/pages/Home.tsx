@@ -25,7 +25,7 @@ const NOTE_CARDS: NoteCard[] = [
     iconColor: "#b5860a",
     Icon: GraduationCap,
     title: "Nossa Escola",
-    desc: "Censo, IDEB, matrículas e repasses.",
+    desc: "Informações sobre a escola e seu território.",
     small: "",
     href: "/dashboard",
   },
