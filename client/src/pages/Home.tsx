@@ -132,7 +132,7 @@ export default function Home() {
                       <p>{card.desc}</p>
                       <small>{card.small}</small>
                       {card.href === "/dashboard" && (
-                        <div className="hl-remendo">ver minha escola</div>
+                        <div className="hl-remendo">atualizado</div>
                       )}
                     </div>
                   </Link>
