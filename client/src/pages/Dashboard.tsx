@@ -542,30 +542,6 @@ export default function Dashboard() {
         )}
 
         <div className="space-y-6">
-            {/* RESUMO EXECUTIVO */}
-            {!selectedInep && stats && (
-              <section className="section">
-                <div className="summary-grid">
-                  <div className="metric theme-blue">
-                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Escolas</label>
-                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(stats.total_escolas)}</strong>
-                  </div>
-                  <div className="metric theme-yellow">
-                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Matrículas</label>
-                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(stats.total_matriculas)}</strong>
-                  </div>
-                  <div className="metric theme-green">
-                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Docentes</label>
-                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(stats.total_docentes)}</strong>
-                  </div>
-                  <div className="metric theme-purple">
-                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Estados</label>
-                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{Object.keys(stats.por_uf || {}).length}</strong>
-                  </div>
-                </div>
-              </section>
-            )}
-
             {/* BUSCA DE ESCOLA */}
             {!selectedInep && <Card className="card-clay" style={{background:'linear-gradient(135deg,#f0f7ff 0%,#e8f5e9 100%)',border:'1.5px solid #c8dff7',position:'relative',zIndex:20,overflow:'visible',transform:'none'}}>
               <CardContent className="p-5" style={{overflow:'visible'}}>
@@ -689,6 +665,30 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>}
+
+            {/* RESUMO EXECUTIVO */}
+            {!selectedInep && stats && (
+              <section className="section">
+                <div className="summary-grid">
+                  <div className="metric theme-blue">
+                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Escolas</label>
+                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(stats.total_escolas)}</strong>
+                  </div>
+                  <div className="metric theme-yellow">
+                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Matrículas</label>
+                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(stats.total_matriculas)}</strong>
+                  </div>
+                  <div className="metric theme-green">
+                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Docentes</label>
+                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(stats.total_docentes)}</strong>
+                  </div>
+                  <div className="metric theme-purple">
+                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Estados</label>
+                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{Object.keys(stats.por_uf || {}).length}</strong>
+                  </div>
+                </div>
+              </section>
+            )}
 
             {/* BILHETE DA DIRETORA */}
             {!selectedInep && stats && (
