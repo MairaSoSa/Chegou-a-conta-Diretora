@@ -24,7 +24,7 @@ const NOTE_CARDS: NoteCard[] = [
     color: "hl-yellow",
     iconColor: "#b5860a",
     Icon: GraduationCap,
-    title: "Painel da Escola",
+    title: "Nossa Escola",
     desc: "Censo, IDEB, matrículas e repasses.",
     small: "",
     href: "/dashboard",
@@ -147,7 +147,7 @@ export default function Home() {
               <div className="hl-tip-box">
                 <strong>{settings?.home_dica_titulo || "Dica"}</strong>
                 <p>
-                  {settings?.home_dica_texto || "Comece pelo Painel da Escola. Se tiver dúvidas, procure o termo no Glossário ou siga a Trilha da Diretora."}
+                  {settings?.home_dica_texto || "Comece por Nossa Escola. Se tiver dúvidas, procure o termo no Glossário ou siga a Trilha da Diretora."}
                 </p>
               </div>
 

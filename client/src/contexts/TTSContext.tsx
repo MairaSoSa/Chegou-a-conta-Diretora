@@ -87,7 +87,7 @@ function detectCard(el: HTMLElement): boolean {
 
 // Known destinations by card title — what you'll find when you click each card.
 const CARD_DESTINATIONS: Record<string, string> = {
-  "Painel da Escola": "o Painel da Escola, onde você pesquisa sua escola pelo nome ou código INEP e vê dados de matrículas, IDEB, situação financeira e repasses do FNDE",
+  "Nossa Escola": "a Nossa Escola, onde você pesquisa sua escola pelo nome ou código INEP e vê dados de matrículas, IDEB, situação financeira e repasses do FNDE",
   "Legislação": "a Legislação, com leis, resoluções, portarias e instruções normativas do Ministério da Educação, além do Diário Oficial",
   "Calendário": "o Calendário de Prazos, com as datas de prestação de contas, repasses e obrigações do FNDE ao longo do ano",
   "Programas": "a seção de Programas, com explicações sobre o PDDE, PNAE, PNATE e as Ações Integradas",
@@ -99,7 +99,7 @@ const CARD_DESTINATIONS: Record<string, string> = {
 
 // Known destinations by href path.
 const HREF_DESTINATIONS: Record<string, string> = {
-  "/dashboard": CARD_DESTINATIONS["Painel da Escola"],
+  "/dashboard": CARD_DESTINATIONS["Nossa Escola"],
   "/legislacao": CARD_DESTINATIONS["Legislação"],
   "/calendario": CARD_DESTINATIONS["Calendário"],
   "/programas": CARD_DESTINATIONS["Programas"],
@@ -150,7 +150,7 @@ function getPageTextDescribed(): string {
   const parts: string[] = [];
   const path = window.location.pathname;
   const sectionName = path === "/" ? "página inicial" :
-    path.startsWith("/dashboard") ? "Painel da Escola" :
+    path.startsWith("/dashboard") ? "Nossa Escola" :
     path.startsWith("/trilha") ? "Trilha da Diretora" :
     path.startsWith("/legislacao") ? "Legislação" :
     path.startsWith("/programas") ? "Programas" :
@@ -161,7 +161,7 @@ function getPageTextDescribed(): string {
 
   const siteIntros: Record<string, string> = {
     "/": "Estamos na página inicial do site chamado Chegou a Conta, Diretora. É um espaço feito especialmente para diretoras de escola pública aprenderem como funcionam os recursos financeiros e os programas do governo federal para a educação.",
-    "/dashboard": "Estamos no Painel da Escola, a ferramenta principal do site. Aqui você pesquisa qualquer escola pública brasileira pelo nome ou pelo código INEP e acessa os dados completos: número de matrículas, turmas, docentes, indicadores do IDEB e, se a escola tiver UEx cadastrada, os dados financeiros dos programas PDDE, PNAE e outros.",
+    "/dashboard": "Estamos em Nossa Escola, a ferramenta principal do site. Aqui você pesquisa qualquer escola pública brasileira pelo nome ou pelo código INEP e acessa os dados completos: número de matrículas, turmas, docentes, indicadores do IDEB e, se a escola tiver UEx cadastrada, os dados financeiros dos programas PDDE, PNAE e outros.",
     "/trilha": "Estamos na Trilha da Diretora, um percurso de aprendizado em etapas. Cada etapa explica um tema diferente sobre como funciona a gestão financeira das escolas públicas, desde o que é o PDDE até como fazer a prestação de contas. É um caminho progressivo — você pode seguir na ordem ou ir direto ao tema que precisa.",
     "/legislacao": "Estamos na seção de Legislação, o acervo de normas jurídicas da educação. Aqui você encontra as leis e resolução que regem os programas escolares — filtradas por tipo: Portarias, Resoluções, Leis Federais, Editais e mais. Além disso, há integração com o Diário Oficial da União e os Diários Municipais.",
     "/programas": "Estamos na seção de Programas do FNDE. Aqui você encontra explicações detalhadas sobre o PDDE, o PNAE, o PNATE, o FUNDEB e as Ações Integradas — o que cada um financia, quem tem direito, quais são as regras. Também há um glossário com os termos técnicos explicados em linguagem simples.",
@@ -178,7 +178,7 @@ function getPageTextDescribed(): string {
   // Describe the visual design and layout of the current page — rich, spatial, interpretive.
   const pageLayouts: Record<string, string> = {
     "/": "O design da página imita uma folha de caderno escolar com fundo bege creme e linhas horizontais finas em toda a área, como papel pautado. Na lateral esquerda há uma margem rosada, reforçando a metáfora do caderno. No topo da página existe uma faixa horizontal de cor verde-sálvia escura, que contém o logotipo do site e o menu principal de navegação com todas as seções. O corpo da página é dividido em duas colunas: a esquerda, mais larga, apresenta o título de boas-vindas e os seis post-its coloridos com os atalhos principais; a direita, mais estreita, tem um quadro com a Trilha da Diretora, listando os temas de aprendizado disponíveis em sequência numerada. No rodapé, uma faixa bege com links institucionais.",
-    "/dashboard": "A página do Painel da Escola tem fundo branco e estrutura de painel de dados profissional. Bem no topo, após a barra de navegação verde-sálvia, há um campo de busca grande onde você digita o nome ou código INEP da sua escola. Ao selecionar uma escola, a página se transforma: aparece o nome e endereço da escola em destaque, e abaixo surgem múltiplas seções de dados. As informações financeiras do FNDE ficam em blocos verdes com valores monetários. Os gráficos de matrículas e evolução são barras azuis e verdes sobre fundo claro. Os indicadores do IDEB e taxas de rendimento aparecem em cartões com borda colorida. No lado direito há um mapa interativo do Brasil com os estados coloridos em tons pastéis diferentes.",
+    "/dashboard": "A página Nossa Escola tem fundo branco e estrutura de painel de dados profissional. Bem no topo, após a barra de navegação verde-sálvia, há um campo de busca grande onde você digita o nome ou código INEP da sua escola. Ao selecionar uma escola, a página se transforma: aparece o nome e endereço da escola em destaque, e abaixo surgem múltiplas seções de dados. As informações financeiras do FNDE ficam em blocos verdes com valores monetários. Os gráficos de matrículas e evolução são barras azuis e verdes sobre fundo claro. Os indicadores do IDEB e taxas de rendimento aparecem em cartões com borda colorida. No lado direito há um mapa interativo do Brasil com os estados coloridos em tons pastéis diferentes.",
     "/trilha": "A página da Trilha da Diretora tem fundo bege-creme com visual de um mural de aprendizado. Na parte superior há uma seção de destaque com fundo amarelo-bege e bordas arredondadas, onde está o título principal em letras grandes escuras e a descrição da trilha. Os botões de filtro por unidade temática são pílulas arredondadas. Abaixo, as unidades da trilha são apresentadas como fichas ou cartões organizados em grade, cada um com uma cor temática diferente: azul para finanças, âmbar para planejamento, verde-esmeralda para gestão, rosa para legislação. Cada ficha tem número, título, duração estimada e um pequeno resumo.",
     "/legislacao": "A página de Legislação tem fundo bege suave com detalhes terrosos. Na parte superior há uma seção de filtros: botões arredondados para selecionar o tipo de norma — Portarias, Resoluções, Leis, Editais. Ao lado dos filtros está o campo de busca por palavra-chave. Abaixo, o conteúdo é dividido em duas listas principais: 'Normas Fundamentais', com fundo amarelo-âmbar suave e barra dourada na lateral, listando as leis mais importantes para a escola; e 'Normas do FNDE', com barra laranja. Cada norma aparece como um cartão branco com título em verde-escuro, número de referência em cinza, descrição e uma coluna chamada 'Para a diretora' com linguagem prática.",
     "/programas": "A página de Programas tem fundo bege claro com visual de documentos e papéis empilhados. A primeira seção apresenta um Glossário com campo de busca e filtro por letra do alfabeto. Os termos aparecem em fichas com fundo creme e uma dobra decorativa no canto superior direito, como papel dobrado. A seguir, os programas são apresentados em blocos maiores: o PDDE tem um cartão com borda dourada e a marcação 'Direto para a escola' em verde; cada subprograma aparece como uma ficha interna menor. Os outros programas — PNAE, PNATE, FUNDEB — aparecem em seções separadas com suas próprias fichas e cores.",
