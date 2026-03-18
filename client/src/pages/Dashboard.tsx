@@ -137,6 +137,22 @@ export default function Dashboard() {
     setPddeAno(new Date().getFullYear());
   }, [selectedInep]);
 
+  // Read ?q= param from URL on first mount (coming from Home search widget)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q");
+    if (!q) return;
+    if (/^\d{8}$/.test(q.trim())) {
+      selectSchool(q.trim());
+    } else {
+      setSearchQuery(q.trim());
+      setShowDropdown(true);
+    }
+    // Clean the query string so back-navigation doesn't re-trigger
+    const clean = window.location.pathname;
+    window.history.replaceState({}, "", clean);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const selectSchool = (inep: string, name?: string) => {
     const tabId = `school-${inep}`;
     setSchoolTabs(prev => {

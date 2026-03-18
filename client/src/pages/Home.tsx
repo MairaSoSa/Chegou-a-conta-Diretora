@@ -1,8 +1,9 @@
-import { Link } from "wouter";
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
   GraduationCap, Scale, CalendarDays,
-  Landmark, Wrench, BookOpen, type LucideIcon, Accessibility,
+  Landmark, Wrench, BookOpen, type LucideIcon, Accessibility, Search,
 } from "lucide-react";
 import { useAccessibility } from "@/App";
 import type { TrilhaUnit } from "@shared/schema";
@@ -76,10 +77,27 @@ const NOTE_CARDS: NoteCard[] = [
   },
 ];
 
+const DEMO_SCHOOLS = [
+  { label: "EMEF Jardim das Acácias", q: "EMEF Jardim das Acácias" },
+  { label: "EE Prof Maria da Conceição", q: "EE Prof Maria da Conceição" },
+  { label: "EMEF Assis Brasil", q: "EMEF Assis Brasil" },
+];
+
 export default function Home() {
   const { toggle: toggleAccessibility } = useAccessibility();
+  const [, navigate] = useLocation();
+  const [schoolQ, setSchoolQ] = useState("");
   const { data: trilhaUnits = [] } = useQuery<TrilhaUnit[]>({ queryKey: ["/api/trilha"] });
   const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
+
+  const goToSchool = (q: string) => {
+    navigate(`/dashboard?q=${encodeURIComponent(q.trim())}`);
+  };
+
+  const handleSchoolSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (schoolQ.trim()) goToSchool(schoolQ);
+  };
 
   const heroTags = (settings?.home_hero_tags || "PDDE,financiamento,ferramentas,políticas públicas")
     .split(",").map(t => t.trim()).filter(Boolean);
@@ -119,6 +137,44 @@ export default function Home() {
                   {heroTags.map(tag => <span key={tag} className="hl-tag">{tag}</span>)}
                 </div>
               </div>
+
+              {/* ── Busca de escola ── */}
+              <form className="hl-escola-search" onSubmit={handleSchoolSearch} role="search" aria-label="Buscar escola">
+                <div className="hl-escola-search-head">
+                  <span aria-hidden="true">🏫</span>
+                  <strong>Buscar minha escola</strong>
+                </div>
+                <p className="hl-escola-search-sub">
+                  Digite o nome ou o código INEP (8 dígitos) para ver o painel completo
+                </p>
+                <div className="hl-escola-search-row">
+                  <input
+                    className="hl-escola-search-input"
+                    type="text"
+                    value={schoolQ}
+                    onChange={e => setSchoolQ(e.target.value)}
+                    placeholder="Ex: EMEF Jardim das Acácias ou 35000001"
+                    aria-label="Nome ou código INEP da escola"
+                  />
+                  <button className="hl-escola-search-btn" type="submit" aria-label="Buscar escola">
+                    <Search size={14} strokeWidth={2.2} />
+                    Buscar
+                  </button>
+                </div>
+                <div className="hl-escola-examples">
+                  <span>Escolas de exemplo:</span>
+                  {DEMO_SCHOOLS.map(s => (
+                    <button
+                      key={s.q}
+                      type="button"
+                      className="hl-escola-example-pill"
+                      onClick={() => goToSchool(s.q)}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </form>
 
               <p className="hl-mural-label">{settings?.home_por_onde_label || "Por onde começar"}</p>
               <div className="hl-cards-grid">
