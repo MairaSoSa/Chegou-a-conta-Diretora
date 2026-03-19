@@ -2,6 +2,7 @@ const RAILWAY_API = "https://chegou-a-conta-diretora-api-production.up.railway.a
 
 const DEP_MAP: Record<number, string> = { 1: "Federal", 2: "Estadual", 3: "Municipal", 4: "Privada" };
 const LOC_MAP: Record<number, string> = { 1: "Urbana", 2: "Rural" };
+const SIT_MAP: Record<number, string> = { 1: "Em Atividade", 2: "Paralisada", 3: "Extinta", 4: "Extinta", 5: "Extinta" };
 
 async function fetchRailway(path: string, timeout = 6000): Promise<any | null> {
   try {
@@ -73,8 +74,12 @@ function mapIndicadores(h: any): Record<string, any> {
 
   if (h.icg_dados_json) {
     const a = h.icg_dados_json;
+    // ICG usa campo "COMPLEX" com valor "Nível 1"..."Nível 6"
+    const complexStr: string = a.COMPLEX ?? a.NIVEL_CAT_0 ?? a.nivel ?? a.ICG_NIVEL ?? "";
+    const nivelNum = parseInt(String(complexStr).replace(/\D/g, "")) || null;
     ind.icg = {
-      nivel: a.NIVEL_CAT_0 ?? a.nivel ?? a.ICG_NIVEL,
+      nivel: nivelNum,
+      nivel_label: complexStr,
     };
   }
 
@@ -98,24 +103,53 @@ function mapIndicadores(h: any): Record<string, any> {
 
   if (h.tnr_dados_json) {
     const a = h.tnr_dados_json;
+    // TNR usa "4_CAT_FUN" e "4_CAT_MED" como chaves
+    const tnrFund = a["4_CAT_FUN"] ?? a.FUN_CAT_0 ?? a.FUND_CAT_0;
+    const tnrMed  = a["4_CAT_MED"] ?? a.MED_CAT_0;
     ind.taxa_nao_resposta = {
-      taxa_nao_resposta_fund: a.FUN_CAT_0 ?? a.FUND_CAT_0,
-      taxa_nao_resposta_med: a.MED_CAT_0,
-      tnr_fund: a.FUN_CAT_0 ?? a.FUND_CAT_0,
-      tnr_med: a.MED_CAT_0,
+      taxa_nao_resposta_fund: tnrFund,
+      taxa_nao_resposta_med: tnrMed,
+      tnr_fund: tnrFund,
+      tnr_med: tnrMed,
+      // por série Fundamental
+      tnr_fun_ai: a["4_CAT_FUN_AI"],
+      tnr_fun_af: a["4_CAT_FUN_AF"],
+      tnr_fun_01: a["4_CAT_FUN_01"], tnr_fun_02: a["4_CAT_FUN_02"],
+      tnr_fun_03: a["4_CAT_FUN_03"], tnr_fun_04: a["4_CAT_FUN_04"],
+      tnr_fun_05: a["4_CAT_FUN_05"], tnr_fun_06: a["4_CAT_FUN_06"],
+      tnr_fun_07: a["4_CAT_FUN_07"], tnr_fun_08: a["4_CAT_FUN_08"],
+      tnr_fun_09: a["4_CAT_FUN_09"],
     };
   }
 
   if (h.rendimento_dados_json) {
     const a = h.rendimento_dados_json;
+    // Campos nomeados confiáveis do JSON de Rendimento INEP
+    const aprovTotal  = a["Taxa de Aprovação"]  ?? a.APROV_BAS_CAT_0  ?? a.aprovacao_total  ?? null;
+    const abandTotal  = a["Taxa de Abandono"]   ?? a.ABAND_BAS_CAT_0  ?? a.abandono_total   ?? null;
+    const reprovTotal = a["Taxa de Reprovação"] ?? a.REPROV_BAS_CAT_0 ?? a.reprovacao_total  ?? null;
+    // Campos por etapa, quando existem com nomes explícitos
+    const aprovFund  = a.APROV_FUN_CAT_0  ?? null;
+    const abandFund  = a.ABAND_FUN_CAT_0  ?? null;
+    const reprovFund = a.REPROV_FUN_CAT_0 ?? null;
+    const aprovMed   = a.APROV_MED_CAT_0  ?? null;
+    const abandMed   = a.ABAND_MED_CAT_0  ?? null;
+    const reprovMed  = a.REPROV_MED_CAT_0 ?? null;
+    const aprovFunAI = a["Unnamed: 10"] ?? null;
+    const aprovFunAF = a["Unnamed: 16"] ?? null;
     ind.taxas_rendimento = {
-      aprovacao_fund: a.APROV_FUN_CAT_0 ?? a.aprovacao_fund,
-      reprovacao_fund: a.REPROV_FUN_CAT_0 ?? a.reprovacao_fund,
-      abandono_fund: a.ABAND_FUN_CAT_0 ?? a.abandono_fund,
-      aprovacao_med: a.APROV_MED_CAT_0 ?? a.aprovacao_med,
-      reprovacao_med: a.REPROV_MED_CAT_0 ?? a.reprovacao_med,
-      abandono_med: a.ABAND_MED_CAT_0 ?? a.abandono_med,
-      aprovacao_total: a.APROV_BAS_CAT_0 ?? a.aprovacao_total,
+      aprovacao_total:    aprovTotal,
+      abandono_total:     abandTotal,
+      reprovacao_total:   reprovTotal,
+      // fallback: usa total quando não há split fund/med
+      aprovacao_fund:     aprovFund  ?? aprovTotal,
+      abandono_fund:      abandFund  ?? abandTotal,
+      reprovacao_fund:    reprovFund ?? reprovTotal,
+      aprovacao_med:      aprovMed,
+      abandono_med:       abandMed,
+      reprovacao_med:     reprovMed,
+      aprovacao_fund_ai:  aprovFunAI,
+      aprovacao_fund_af:  aprovFunAF,
     };
   } else if (h.taxa_aprovacao_ai != null || h.taxa_aprovacao_af != null) {
     ind.taxas_rendimento = {
@@ -168,12 +202,19 @@ export async function getEscolaEvolucaoRailway(inep: string) {
   const indicadoresByYear: Record<number, Record<string, any>> = {};
 
   for (const h of historico) {
+    // Extrair no_regiao de qualquer _dados_json disponível
+    const anyJson = h.afd_dados_json ?? h.atu_dados_json ?? h.had_dados_json ?? h.tdi_dados_json ?? h.ird_dados_json ?? {};
     censoByYear[h.ano] = {
+      co_entidade: h.co_entidade,
       no_entidade: h.no_entidade,
+      co_municipio: h.co_municipio,
       no_municipio: h.no_municipio,
       sg_uf: h.sg_uf,
+      no_regiao: anyJson.NO_REGIAO ?? null,
       ds_dependencia: DEP_MAP[h.tp_dependencia] ?? String(h.tp_dependencia ?? ""),
       ds_localizacao: LOC_MAP[h.tp_localizacao] ?? String(h.tp_localizacao ?? ""),
+      ds_situacao: SIT_MAP[h.tp_situacao_funcionamento] ?? null,
+      tp_situacao_funcionamento: h.tp_situacao_funcionamento,
     };
     indicadoresByYear[h.ano] = mapIndicadores(h);
   }
@@ -221,15 +262,24 @@ export async function getEscolaEvolucaoRailway(inep: string) {
 
   const latest = historico.length > 0 ? historico[historico.length - 1] : null;
 
+  const latestAnyJson = latest
+    ? (latest.afd_dados_json ?? latest.atu_dados_json ?? latest.had_dados_json ?? latest.tdi_dados_json ?? latest.ird_dados_json ?? {})
+    : {};
+
   return {
     co_entidade: parseInt(inep),
     anos_disponiveis: anos,
     escola: {
+      co_entidade: parseInt(inep),
       no_entidade: latest?.no_entidade,
+      co_municipio: latest?.co_municipio,
       no_municipio: latest?.no_municipio,
       sg_uf: latest?.sg_uf,
+      no_regiao: latestAnyJson.NO_REGIAO ?? null,
       ds_dependencia: DEP_MAP[latest?.tp_dependencia] ?? String(latest?.tp_dependencia ?? ""),
       ds_localizacao: LOC_MAP[latest?.tp_localizacao] ?? String(latest?.tp_localizacao ?? ""),
+      ds_situacao: SIT_MAP[latest?.tp_situacao_funcionamento] ?? null,
+      escola_ativa: latest?.tp_situacao_funcionamento === 1,
     },
     censo_por_ano: censoByYear,
     indicadores_por_ano: indicadoresByYear,
