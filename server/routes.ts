@@ -25,6 +25,10 @@ import {
   listIndicador, getIndicadorDetail, getEscolaCompleta, getApiInfo,
   getMediasNacionais, invalidateStatsCache,
 } from "./importador";
+import {
+  searchEscolasRailway, getEscolaEvolucaoRailway,
+  getEscolaCompletaRailway, getEscolaBasicaRailway,
+} from "./railway-client";
 import { importAllIndicators, getIndicatorImportRunning, getAvailableIndicators, importIdeb, importInse, generateSaebFromIdeb } from "./import-inep-indicators";
 import { 
   localizarPrestacoesPorCnpj,
@@ -200,18 +204,22 @@ export async function registerRoutes(
     res.status(404).json({ message: "Escola não encontrada. Importe os dados pelo painel admin." });
   });
 
-  // === PUBLIC: ESCOLA COMPLETA (100% local) ===
-  app.get("/api/escola-completa/:inep", (req, res) => {
+  // === PUBLIC: ESCOLA COMPLETA (Railway primeiro, local como fallback) ===
+  app.get("/api/escola-completa/:inep", async (req, res) => {
     const inep = getParam(req.params, "inep");
     const ano = parseInt(req.query.ano as string) || new Date().getFullYear();
+    const railwayData = await getEscolaCompletaRailway(inep, ano);
+    if (railwayData) return res.json(railwayData);
     const localData = getEscolaCompletaLocal(inep, ano);
     if (localData) return res.json(localData);
     res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], ano_selecionado: ano });
   });
 
-  // === PUBLIC: ESCOLA EVOLUÇÃO (all years - 100% local) ===
-  app.get("/api/escola-evolucao/:inep", (req, res) => {
+  // === PUBLIC: ESCOLA EVOLUÇÃO (Railway primeiro, local como fallback) ===
+  app.get("/api/escola-evolucao/:inep", async (req, res) => {
     const inep = getParam(req.params, "inep");
+    const railwayData = await getEscolaEvolucaoRailway(inep);
+    if (railwayData) return res.json(railwayData);
     const localData = getEscolaEvolucaoLocal(inep);
     if (localData) return res.json(localData);
     res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], escola: null, censo_por_ano: {}, indicadores_por_ano: {} });
@@ -227,32 +235,39 @@ export async function registerRoutes(
     res.json(getApiInfo());
   });
 
-  // === PUBLIC: ESCOLA BUSCAR + DETALHE (100% local) ===
-  app.get("/api/escola/buscar", (req, res) => {
+  // === PUBLIC: ESCOLA BUSCAR (local DB — busca rápida, dados do Railway no painel) ===
+  app.get("/api/escola/buscar", async (req, res) => {
     const nome = req.query.nome as string;
     const perPage = parseInt(req.query.per_page as string) || 20;
     if (!nome || nome.length < 2) return res.json({ dados: [], total: 0 });
 
     const localResults = searchSchoolsLocal(nome, perPage);
-    res.json({
-      dados: localResults.map(s => ({
-        co_entidade: s.id,
-        no_entidade: s.name,
-        no_municipio: s.city,
-        sg_uf: s.state,
-        ds_dependencia: s.network,
-        ds_localizacao: s.location,
-        qt_matriculas: s.enrollmentCount,
-      })),
-      total: localResults.length,
-    });
+    if (localResults.length > 0) {
+      return res.json({
+        dados: localResults.map(s => ({
+          co_entidade: s.id,
+          no_entidade: s.name,
+          no_municipio: s.city,
+          sg_uf: s.state,
+          ds_dependencia: s.network,
+          ds_localizacao: s.location,
+          qt_matriculas: s.enrollmentCount,
+        })),
+        total: localResults.length,
+      });
+    }
+
+    const railwayResults = await searchEscolasRailway(nome, perPage);
+    res.json(railwayResults);
   });
 
-  app.get("/api/escola/:inep", (req, res) => {
+  app.get("/api/escola/:inep", async (req, res) => {
     const inep = getParam(req.params, "inep");
+    const railwayData = await getEscolaBasicaRailway(inep);
+    if (railwayData) return res.json(railwayData);
     const localData = getEscolaCompleta(inep);
     if (localData) return res.json(localData);
-    res.status(404).json({ erro: "Escola não encontrada. Importe os dados pelo painel admin." });
+    res.status(404).json({ erro: "Escola não encontrada." });
   });
 
   // === PUBLIC: CENSO ESCOLAR ROUTES ===
