@@ -790,106 +790,7 @@ export default function Dashboard() {
                       </CardContent>
                     </Card>
 
-                    {/* Painel de detalhes do estado clicado */}
-                    {clickedUf && (
-                      <Card className="card-clay border-blue-200">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-base flex items-center gap-2">
-                              <MapPin className="w-4 h-4 text-blue-500" />
-                              {UF_NAMES[clickedUf] || clickedUf}
-                              {evolucaoData?.escola?.sg_uf === clickedUf && (
-                                <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">⭐ Estado da sua escola</span>
-                              )}
-                            </CardTitle>
-                            <button onClick={() => setClickedUf(null)} className="text-muted-foreground hover:text-foreground transition-colors">
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          {ufStatsLoading ? (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground py-3">
-                              <Loader2 className="w-4 h-4 animate-spin" /> Carregando dados do estado...
-                            </div>
-                          ) : ufStatsData ? (
-                            <div className="space-y-4">
-                              {/* Números principais */}
-                              <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-blue-50 rounded-xl p-3 text-center">
-                                  <div className="text-2xl font-bold text-blue-700">{ufStatsData.total_escolas?.toLocaleString("pt-BR")}</div>
-                                  <div className="text-xs text-blue-600 mt-0.5">escolas</div>
-                                </div>
-                                <div className="bg-emerald-50 rounded-xl p-3 text-center">
-                                  <div className="text-2xl font-bold text-emerald-700">{ufStatsData.total_matriculas?.toLocaleString("pt-BR")}</div>
-                                  <div className="text-xs text-emerald-600 mt-0.5">matrículas</div>
-                                </div>
-                              </div>
-
-                              {/* Por dependência */}
-                              {ufStatsData.por_dependencia && Object.keys(ufStatsData.por_dependencia).length > 0 && (
-                                <div>
-                                  <div className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Por rede</div>
-                                  <div className="space-y-1.5">
-                                    {Object.entries(ufStatsData.por_dependencia as Record<string, number>)
-                                      .sort(([,a],[,b]) => b - a)
-                                      .map(([dep, n]) => {
-                                        const total = ufStatsData.total_escolas || 1;
-                                        const pct = Math.round((n / total) * 100);
-                                        const colors: Record<string, string> = { Municipal: "#3b82f6", Estadual: "#8b5cf6", Federal: "#f59e0b", Privada: "#10b981" };
-                                        const color = colors[dep] || "#6b7280";
-                                        return (
-                                          <div key={dep}>
-                                            <div className="flex justify-between text-xs mb-0.5">
-                                              <span>{dep}</span>
-                                              <span className="font-medium">{(n as number).toLocaleString("pt-BR")} ({pct}%)</span>
-                                            </div>
-                                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                              <div style={{ width: `${pct}%`, background: color }} className="h-full rounded-full transition-all" />
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Rural vs Urbana */}
-                              {ufStatsData.por_localizacao && (
-                                <div className="flex gap-2">
-                                  {Object.entries(ufStatsData.por_localizacao as Record<string, number>).map(([loc, n]) => (
-                                    <div key={loc} className={`flex-1 rounded-xl p-2 text-center text-xs ${loc === "Rural" ? "bg-green-50" : "bg-sky-50"}`}>
-                                      <div className="font-bold text-sm">{(n as number).toLocaleString("pt-BR")}</div>
-                                      <div className="text-muted-foreground">{loc}</div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-
-                              {/* Top municípios */}
-                              {ufStatsData.top_municipios?.length > 0 && (
-                                <div>
-                                  <div className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Municípios com mais escolas</div>
-                                  <div className="space-y-1">
-                                    {ufStatsData.top_municipios.slice(0, 5).map((m: any, i: number) => (
-                                      <div key={m.municipio} className="flex justify-between items-center text-xs py-0.5">
-                                        <span className="flex items-center gap-1.5">
-                                          <span className="text-muted-foreground w-4 text-right">{i + 1}.</span>
-                                          <span className="font-medium truncate max-w-[120px]">{m.municipio}</span>
-                                        </span>
-                                        <span className="text-muted-foreground">{m.escolas} escolas</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground py-2">Sem dados disponíveis para {clickedUf}.</p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )}
+                    {/* Modal flutuante removido daqui — renderizado no nível da página abaixo */}
 
                   </div>
 
@@ -2463,6 +2364,139 @@ export default function Dashboard() {
             )}
 
         </div>
+
+      {/* ── Modal flutuante: detalhes do estado clicado ── */}
+      {clickedUf && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={() => setClickedUf(null)}
+        >
+          {/* backdrop */}
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)", backdropFilter: "blur(2px)" }} />
+
+          {/* card */}
+          <div
+            style={{
+              position: "relative",
+              background: "#fff",
+              borderRadius: 20,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+              padding: "28px 28px 24px",
+              width: "min(420px, 92vw)",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              animation: "uf-pop .18s cubic-bezier(.34,1.56,.64,1)",
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <style>{`@keyframes uf-pop { from { opacity:0; transform:scale(.85) translateY(24px); } to { opacity:1; transform:scale(1) translateY(0); } }`}</style>
+
+            {/* cabeçalho */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <MapPin style={{ width: 18, height: 18, color: "#3b82f6", flexShrink: 0 }} />
+                  <span style={{ fontSize: 20, fontWeight: 700, color: "#1e293b" }}>{UF_NAMES[clickedUf] || clickedUf}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, background: "#dbeafe", color: "#1d4ed8", borderRadius: 99, padding: "2px 10px" }}>{clickedUf}</span>
+                </div>
+                {evolucaoData?.escola?.sg_uf === clickedUf && (
+                  <span style={{ display: "inline-block", marginTop: 6, fontSize: 12, background: "#fef3c7", color: "#92400e", borderRadius: 99, padding: "2px 10px", fontWeight: 600 }}>⭐ Estado da sua escola</span>
+                )}
+              </div>
+              <button
+                onClick={() => setClickedUf(null)}
+                style={{ background: "#f1f5f9", border: "none", borderRadius: 99, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, marginLeft: 8 }}
+              >
+                <X style={{ width: 16, height: 16, color: "#64748b" }} />
+              </button>
+            </div>
+
+            {ufStatsLoading ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#64748b", fontSize: 14, padding: "16px 0" }}>
+                <Loader2 style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} />
+                Carregando dados do estado...
+              </div>
+            ) : ufStatsData ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+                {/* Números principais */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div style={{ background: "#eff6ff", borderRadius: 14, padding: "14px 12px", textAlign: "center" }}>
+                    <div style={{ fontSize: 26, fontWeight: 800, color: "#1d4ed8" }}>{ufStatsData.total_escolas?.toLocaleString("pt-BR")}</div>
+                    <div style={{ fontSize: 12, color: "#3b82f6", marginTop: 2 }}>🏫 escolas</div>
+                  </div>
+                  <div style={{ background: "#ecfdf5", borderRadius: 14, padding: "14px 12px", textAlign: "center" }}>
+                    <div style={{ fontSize: 26, fontWeight: 800, color: "#065f46" }}>{ufStatsData.total_matriculas?.toLocaleString("pt-BR")}</div>
+                    <div style={{ fontSize: 12, color: "#059669", marginTop: 2 }}>👩‍🎓 matrículas</div>
+                  </div>
+                </div>
+
+                {/* Por rede */}
+                {ufStatsData.por_dependencia && Object.keys(ufStatsData.por_dependencia).length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Por rede</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {Object.entries(ufStatsData.por_dependencia as Record<string, number>)
+                        .sort(([,a],[,b]) => b - a)
+                        .map(([dep, n]) => {
+                          const total = ufStatsData.total_escolas || 1;
+                          const pct = Math.round((n / total) * 100);
+                          const colors: Record<string, string> = { Municipal: "#3b82f6", Estadual: "#8b5cf6", Federal: "#f59e0b", Privada: "#10b981" };
+                          const color = colors[dep] || "#6b7280";
+                          return (
+                            <div key={dep}>
+                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                                <span style={{ color: "#334155" }}>{dep}</span>
+                                <span style={{ fontWeight: 600, color }}>{(n as number).toLocaleString("pt-BR")} <span style={{ fontWeight: 400, color: "#94a3b8" }}>({pct}%)</span></span>
+                              </div>
+                              <div style={{ height: 6, background: "#f1f5f9", borderRadius: 99, overflow: "hidden" }}>
+                                <div style={{ width: `${pct}%`, background: color, height: "100%", borderRadius: 99, transition: "width .4s" }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Rural vs Urbana */}
+                {ufStatsData.por_localizacao && (
+                  <div style={{ display: "flex", gap: 10 }}>
+                    {Object.entries(ufStatsData.por_localizacao as Record<string, number>).map(([loc, n]) => (
+                      <div key={loc} style={{ flex: 1, borderRadius: 14, padding: "10px 8px", textAlign: "center", background: loc === "Rural" ? "#f0fdf4" : "#f0f9ff" }}>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: loc === "Rural" ? "#16a34a" : "#0284c7" }}>{(n as number).toLocaleString("pt-BR")}</div>
+                        <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{loc === "Rural" ? "🌿" : "🏙️"} {loc}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Top municípios */}
+                {ufStatsData.top_municipios?.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Municípios com mais escolas</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                      {ufStatsData.top_municipios.slice(0, 5).map((m: any, i: number) => (
+                        <div key={m.municipio} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: i < 4 ? "1px solid #f1f5f9" : "none" }}>
+                          <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                            <span style={{ color: "#94a3b8", fontWeight: 700, fontSize: 12, minWidth: 18, textAlign: "right" }}>{i + 1}.</span>
+                            <span style={{ color: "#1e293b", fontWeight: 500 }}>{m.municipio}</span>
+                          </span>
+                          <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>{m.escolas.toLocaleString("pt-BR")} escolas</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            ) : (
+              <p style={{ fontSize: 14, color: "#94a3b8", padding: "16px 0" }}>Sem dados disponíveis para {clickedUf}.</p>
+            )}
+          </div>
+        </div>
+      )}
+
       </main>
       <Footer />
     </div>
