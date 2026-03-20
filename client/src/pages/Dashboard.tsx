@@ -1088,7 +1088,7 @@ export default function Dashboard() {
                       </div>
 
                       {/* Botão de escolas similares — sempre visível na ficha */}
-                      <div style={{ marginTop: 16 }}>
+                      <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                         <button
                           onClick={() => { setSimilarMode(true); setSimilarClickedUf(null); }}
                           style={{
@@ -1102,6 +1102,19 @@ export default function Dashboard() {
                           onMouseLeave={e => (e.currentTarget.style.background = "#0d9488")}
                         >
                           🔍 Ver escolas com perfil similar
+                        </button>
+                        <button
+                          onClick={() => window.print()}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 8,
+                            padding: "10px 20px", background: "#fff", color: "#5d4037",
+                            border: "2px solid #d4c5a9", borderRadius: 14, fontWeight: 700, fontSize: 14,
+                            cursor: "pointer", transition: "all .2s",
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "#fdf6ec")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "#fff")}
+                        >
+                          🖨️ Imprimir / PDF
                         </button>
                       </div>
                     </div>
@@ -1383,6 +1396,79 @@ export default function Dashboard() {
                   </section>
                 )}
 
+                {/* ── DESEMPENHO ESCOLAR: SAEB + RENDIMENTO ── */}
+                {(() => {
+                  const ch = evolutionCharts;
+                  const saebLatest = ch?.saeb?.slice().reverse().find((d: any) => d.mt_af != null || d.lp_af != null || d.mt_ai != null || d.mt_em != null);
+                  const rendLatest = ch?.taxasRendimento?.slice().reverse().find((d: any) => d.aprovacao != null);
+                  const allRend = ch?.taxasRendimento?.filter((d: any) => d.aprovacao != null).slice().sort((a: any, b: any) => a.ano - b.ano) || [];
+                  if (!saebLatest && !rendLatest) return null;
+                  const saebMetrics = [
+                    { key: 'mt_ai', label: 'Matemática', sub: 'Anos Iniciais', color: '#2d5a88' },
+                    { key: 'lp_ai', label: 'Língua Port.', sub: 'Anos Iniciais', color: '#9b6a16' },
+                    { key: 'mt_af', label: 'Matemática', sub: 'Anos Finais', color: '#2d5a88' },
+                    { key: 'lp_af', label: 'Língua Port.', sub: 'Anos Finais', color: '#9b6a16' },
+                    { key: 'mt_em', label: 'Matemática', sub: 'Ens. Médio', color: '#2d5a88' },
+                    { key: 'lp_em', label: 'Língua Port.', sub: 'Ens. Médio', color: '#9b6a16' },
+                  ].filter(m => saebLatest && saebLatest[m.key] != null);
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div><h2>Desempenho escolar</h2><p>Notas do SAEB e taxas de aprovação, reprovação e abandono</p></div>
+                        <div className="hint-chip">Fonte: INEP</div>
+                      </div>
+                      <div className="organic-divider" />
+                      {saebLatest && saebMetrics.length > 0 && (
+                        <div style={{ marginBottom: 20 }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: '#5d4037', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            📝 Notas SAEB <span style={{ fontWeight: 400, fontSize: 12, color: '#9e8a75' }}>— {saebLatest.ano}</span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
+                            {saebMetrics.map(m => (
+                              <div key={m.key} className="soft-card" style={{ padding: '14px 16px', borderTop: `3px solid ${m.color}` }}>
+                                <div style={{ fontSize: 11, color: '#9e8a75', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.3 }}>{m.label}</div>
+                                <div style={{ fontSize: 10, color: '#b8a899', marginBottom: 6 }}>{m.sub}</div>
+                                <div style={{ fontSize: 26, fontWeight: 800, color: m.color, letterSpacing: '-0.03em', lineHeight: 1 }}>
+                                  {Number(saebLatest[m.key]).toFixed(1)}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {allRend.length > 0 && (
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: '#5d4037', marginBottom: 10 }}>
+                            📊 Taxas de aprovação, reprovação e abandono (%)
+                          </div>
+                          <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                              <thead>
+                                <tr style={{ background: '#f7f2ea' }}>
+                                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
+                                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#2f7a58', fontSize: 12 }}>✓ Aprovação</th>
+                                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#b74f42', fontSize: 12 }}>✗ Reprovação</th>
+                                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#c47a1f', fontSize: 12 }}>⚠ Abandono</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {allRend.map((d: any, i: number) => (
+                                  <tr key={d.ano} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                    <td style={{ padding: '10px 14px', fontWeight: 700, color: '#5d4037' }}>{d.ano}</td>
+                                    <td style={{ padding: '10px 14px', textAlign: 'right', color: '#2f7a58', fontWeight: 600 }}>{d.aprovacao != null ? `${Number(d.aprovacao).toFixed(1)}%` : '—'}</td>
+                                    <td style={{ padding: '10px 14px', textAlign: 'right', color: '#b74f42', fontWeight: 600 }}>{d.reprovacao != null ? `${Number(d.reprovacao).toFixed(1)}%` : '—'}</td>
+                                    <td style={{ padding: '10px 14px', textAlign: 'right', color: '#c47a1f', fontWeight: 600 }}>{d.abandono != null ? `${Number(d.abandono).toFixed(1)}%` : '—'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  );
+                })()}
+
                 {/* ── GALERIA DE GRÁFICOS ── */}
                 {currentChart && available.length > 0 && (
                   <section className="section">
@@ -1477,6 +1563,82 @@ export default function Dashboard() {
                     </div>
                   </section>
                 )}
+
+                {/* ── EVOLUÇÃO DA INFRAESTRUTURA ── */}
+                {evolucaoData && (() => {
+                  const anos = evolucaoData.anos_disponiveis.slice().sort((a: number, b: number) => a - b);
+                  const censo = evolucaoData.censo_por_ano;
+                  const infraItems = [
+                    { key: 'in_internet', label: 'Internet' },
+                    { key: 'in_banda_larga', label: 'Banda larga' },
+                    { key: 'in_laboratorio_informatica', label: 'Lab. Informática' },
+                    { key: 'in_laboratorio_ciencias', label: 'Lab. Ciências' },
+                    { key: 'in_biblioteca', label: 'Biblioteca' },
+                    { key: 'in_biblioteca_sala_leitura', label: 'Sala de Leitura' },
+                    { key: 'in_quadra_esportes', label: 'Quadra Esportes' },
+                    { key: 'in_quadra_esportes_coberta', label: 'Quadra Coberta' },
+                    { key: 'in_refeitorio', label: 'Refeitório' },
+                    { key: 'in_cozinha', label: 'Cozinha' },
+                    { key: 'in_acessibilidade_rampas', label: 'Rampas Acesso' },
+                    { key: 'in_banheiro_pne', label: 'Banheiro PNE' },
+                    { key: 'in_auditorio', label: 'Auditório' },
+                    { key: 'in_sala_diretoria', label: 'Sala Diretoria' },
+                    { key: 'in_sala_secretaria', label: 'Secretaria' },
+                  ].filter(item => anos.some((a: number) => censo[a]?.[item.key] !== undefined && censo[a]?.[item.key] !== null));
+                  if (infraItems.length === 0) return null;
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div><h2>Evolução da infraestrutura</h2><p>Compare o que a escola ganhou ou perdeu ao longo dos anos</p></div>
+                        <div className="hint-chip">Censo Escolar · {anos[0]}–{anos[anos.length-1]}</div>
+                      </div>
+                      <div className="organic-divider" />
+                      <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 480 }}>
+                          <thead>
+                            <tr style={{ background: '#f7f2ea' }}>
+                              <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 140 }}>Recurso</th>
+                              {anos.map((a: number) => (
+                                <th key={a} style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>{a}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {infraItems.map((item, idx) => {
+                              const vals = anos.map((a: number) => censo[a]?.[item.key]);
+                              return (
+                                <tr key={item.key} style={{ background: idx % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                  <td style={{ padding: '9px 14px', fontWeight: 600, color: '#5d4037' }}>{item.label}</td>
+                                  {vals.map((v: any, vi: number) => {
+                                    const prev = vi > 0 ? vals[vi - 1] : null;
+                                    const gained = prev === 0 && v === 1;
+                                    const lost = prev === 1 && v === 0;
+                                    return (
+                                      <td key={vi} style={{
+                                        padding: '9px 12px', textAlign: 'center',
+                                        background: gained ? '#f0fdf4' : lost ? '#fff5f5' : undefined,
+                                        fontWeight: (gained || lost) ? 700 : 400,
+                                      }}>
+                                        {v === 1 ? <span style={{ color: '#2f7a58', fontSize: 15 }}>✓</span>
+                                          : v === 0 ? <span style={{ color: '#ccc', fontSize: 13 }}>✗</span>
+                                          : <span style={{ color: '#ddd' }}>—</span>}
+                                        {gained && <span style={{ fontSize: 9, color: '#2f7a58', display: 'block', lineHeight: 1 }}>ganhou</span>}
+                                        {lost && <span style={{ fontSize: 9, color: '#b74f42', display: 'block', lineHeight: 1 }}>perdeu</span>}
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div style={{ fontSize: 11, color: '#b8a899', marginTop: 8 }}>
+                        Células destacadas em verde = recurso adquirido naquele ano · vermelho = recurso perdido
+                      </div>
+                    </section>
+                  );
+                })()}
 
                 {/* ── RETRATO DA ESCOLA — TABS ── */}
                 <section className="section">
