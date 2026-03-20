@@ -87,6 +87,7 @@ export default function Dashboard() {
   const selectedInep = activeTabId === "overview" ? null : (schoolTabs.find(t => t.id === activeTabId)?.inep || null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [selectedChart, setSelectedChart] = useState("matriculas");
+  const [showChartDropdown, setShowChartDropdown] = useState(false);
   const [activeSchoolTab, setActiveSchoolTab] = useState<"alunos" | "etapas" | "docentes" | "infra">("alunos");
   const [filterUf, setFilterUf] = useState("");
   const [filterDep, setFilterDep] = useState("");
@@ -1387,61 +1388,91 @@ export default function Dashboard() {
                   <section className="section">
                     <div className="section-title">
                       <div><h2>Galeria de gráficos</h2><p>Evolução dos indicadores ao longo dos anos</p></div>
-                      <div className="hint-chip">Clique na ficha ou no gráfico para trocar</div>
                     </div>
                     <div className="organic-divider" />
-                    <div className="chart-wall">
-                      <div className="chart-menu">
-                        {available.map(c => (
-                          <button
-                            key={c.id}
-                            className={`chart-tab ${selectedChart === c.id ? 'active' : ''}`}
-                            onClick={() => setSelectedChart(c.id)}
-                          >
-                            <span className="chart-tab-icon">{c.icon}</span>
-                            <span className="chart-tab-label">{c.label}</span>
-                          </button>
-                        ))}
-                        <div className="chart-menu-note">
-                          💡 Selecione uma aba para ver a evolução anual do indicador.
+
+                    {/* Dropdown selector */}
+                    <div style={{ position: 'relative', marginBottom: 16 }} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setShowChartDropdown(false); }}>
+                      <button
+                        onClick={() => setShowChartDropdown(v => !v)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '10px 16px', width: '100%', maxWidth: 360,
+                          background: '#fffef8', border: '1.5px solid #e7d9bf',
+                          borderRadius: '16px 20px 14px 18px',
+                          boxShadow: '0 4px 12px rgba(83,72,53,0.07)',
+                          cursor: 'pointer', fontWeight: 700, fontSize: 14,
+                          color: '#3d4450', textAlign: 'left',
+                          transition: 'border-color .15s',
+                        }}
+                      >
+                        <span style={{ fontSize: 18 }}>{currentChart.icon}</span>
+                        <span style={{ flex: 1 }}>{currentChart.label}</span>
+                        <span style={{ fontSize: 11, color: '#a89a82', fontWeight: 400, marginRight: 4 }}>
+                          {available.findIndex(c => c.id === selectedChart) + 1}/{available.length}
+                        </span>
+                        <span style={{ fontSize: 12, color: '#a89a82', transform: showChartDropdown ? 'rotate(180deg)' : 'none', transition: 'transform .2s', display: 'inline-block' }}>▾</span>
+                      </button>
+
+                      {showChartDropdown && (
+                        <div style={{
+                          position: 'absolute', top: 'calc(100% + 6px)', left: 0,
+                          minWidth: 260, maxWidth: 360,
+                          background: '#fffef8', border: '1.5px solid #e7d9bf',
+                          borderRadius: '8px 18px 18px 14px',
+                          boxShadow: '0 8px 28px rgba(83,72,53,0.13)',
+                          zIndex: 200, overflow: 'hidden',
+                          padding: '6px',
+                          display: 'flex', flexDirection: 'column', gap: 2,
+                        }}>
+                          {available.map((c, i) => (
+                            <button
+                              key={c.id}
+                              onClick={() => { setSelectedChart(c.id); setShowChartDropdown(false); }}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 10,
+                                padding: '9px 12px',
+                                background: selectedChart === c.id ? 'linear-gradient(135deg,#dff1ff,#f7fbff)' : 'transparent',
+                                border: 'none',
+                                borderRadius: i === 0 ? '6px 14px 6px 6px' : i === available.length - 1 ? '6px 6px 14px 6px' : '6px',
+                                cursor: 'pointer', fontWeight: selectedChart === c.id ? 700 : 500,
+                                fontSize: 13, color: selectedChart === c.id ? '#2d5a88' : '#5d6470',
+                                textAlign: 'left', transition: 'background .12s',
+                              }}
+                              onMouseEnter={e => { if (selectedChart !== c.id) (e.currentTarget as HTMLElement).style.background = '#f5f0e8'; }}
+                              onMouseLeave={e => { if (selectedChart !== c.id) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                            >
+                              <span style={{ fontSize: 16, minWidth: 20, textAlign: 'center' }}>{c.icon}</span>
+                              <span>{c.label}</span>
+                              {selectedChart === c.id && <span style={{ marginLeft: 'auto', fontSize: 11, color: '#2d5a88' }}>✓</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Chart card — full width */}
+                    <div className="soft-card" style={{ padding: '20px' }}>
+                      <div className="chart-header">
+                        <div>
+                          <h4>{currentChart.icon} {currentChart.label}</h4>
+                          <p>{currentChart.desc}</p>
+                          <div className="chip-row">
+                            {evolucaoData.anos_disponiveis.slice().sort((a:number,b:number)=>a-b).map((a: number) => (
+                              <span key={a} className="mini-chip">{a}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="big-stat">
+                          <strong>{currentChart.data[currentChart.data.length - 1]?.[currentChart.lines[0].key]?.toLocaleString('pt-BR') || '—'}</strong>
+                          <span>{latestAno}</span>
                         </div>
                       </div>
-                      <div className="chart-stage">
-                        <div
-                          className="chart-board active soft-card"
-                          style={{padding:'20px', cursor:'pointer', userSelect:'none'}}
-                          title="Clique para ver o próximo gráfico"
-                          onClick={() => {
-                            const idx = available.findIndex(c => c.id === selectedChart);
-                            const next = available[(idx + 1) % available.length];
-                            setSelectedChart(next.id);
-                          }}
-                        >
-                          <div className="chart-header">
-                            <div>
-                              <h4>{currentChart.icon} {currentChart.label}</h4>
-                              <p>{currentChart.desc}</p>
-                              <div className="chip-row">
-                                {evolucaoData.anos_disponiveis.slice().sort((a:number,b:number)=>a-b).map((a: number) => (
-                                  <span key={a} className="mini-chip">{a}</span>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="big-stat">
-                              <strong>{currentChart.data[currentChart.data.length - 1]?.[currentChart.lines[0].key]?.toLocaleString('pt-BR') || '—'}</strong>
-                              <span>{latestAno}</span>
-                            </div>
-                          </div>
-                          <div style={{height:'260px'}}>
-                            <EvolutionChart data={currentChart.data} lines={currentChart.lines} large />
-                          </div>
-                          <div className="chart-note" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                            <span>📝 Dados do Censo Escolar INEP/MEC · código {selectedInep}</span>
-                            <span style={{fontSize:12, color:'var(--m-muted)', opacity:0.7}}>
-                              {available.findIndex(c => c.id === selectedChart) + 1}/{available.length} · clique para avançar →
-                            </span>
-                          </div>
-                        </div>
+                      <div style={{ height: '280px' }}>
+                        <EvolutionChart data={currentChart.data} lines={currentChart.lines} large />
+                      </div>
+                      <div className="chart-note">
+                        📝 Dados do Censo Escolar INEP/MEC · código {selectedInep}
                       </div>
                     </div>
                   </section>
