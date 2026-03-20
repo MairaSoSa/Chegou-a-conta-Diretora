@@ -328,6 +328,88 @@ export async function registerRoutes(
     res.json(local);
   });
 
+  // === ESCOLAS COM PERFIL SIMILAR ===
+  app.get("/api/escola/:inep/similares", (req, res) => {
+    const inep = req.params.inep;
+    const ano = parseInt(req.query.ano as string) || 2024;
+    try {
+      const escola = sqlite.prepare(
+        `SELECT inep, dependencia, localizacao, CAST(matriculas as INTEGER) as matriculas FROM censo_escolar WHERE inep=? AND ano=? LIMIT 1`
+      ).get(inep, ano) as any;
+      if (!escola) return res.status(404).json({ erro: "Escola não encontrada" });
+
+      const minMat = Math.floor((escola.matriculas || 50) * 0.55);
+      const maxMat = Math.ceil((escola.matriculas || 50) * 1.55);
+      const targetMat = escola.matriculas || 50;
+
+      // 1ª query: leve — apenas campos indexados, sem dados JSON completo
+      const candidatos = sqlite.prepare(`
+        SELECT inep, nome, municipio, uf, dependencia, localizacao,
+          CAST(matriculas as INTEGER) as matriculas
+        FROM censo_escolar
+        WHERE ano=? AND dependencia=? AND localizacao=? AND situacao='Em Atividade' AND inep!=?
+      `).all(ano, escola.dependencia, escola.localizacao, inep) as any[];
+
+      const similares = candidatos
+        .filter(s => { const mat = s.matriculas || 0; return mat >= minMat && mat <= maxMat; })
+        .sort((a, b) => Math.abs((a.matriculas || 0) - targetMat) - Math.abs((b.matriculas || 0) - targetMat))
+        .slice(0, 600);
+
+      // 2ª query: busca contato apenas para os 600 similares selecionados
+      if (similares.length > 0) {
+        const inepList = similares.map(s => s.inep);
+        const placeholders = inepList.map(() => "?").join(",");
+        const contatos = sqlite.prepare(`
+          SELECT inep,
+            json_extract(dados, '$.telefone') as telefone,
+            json_extract(dados, '$.ds_endereco') as ds_endereco,
+            json_extract(dados, '$.no_bairro') as no_bairro,
+            json_extract(dados, '$.co_cep') as co_cep,
+            json_extract(dados, '$.qt_mat_fund') as qt_mat_fund,
+            json_extract(dados, '$.qt_mat_med') as qt_mat_med,
+            json_extract(dados, '$.qt_mat_inf') as qt_mat_inf,
+            json_extract(dados, '$.qt_mat_eja') as qt_mat_eja
+          FROM censo_escolar WHERE ano=? AND inep IN (${placeholders})
+        `).all(ano, ...inepList) as any[];
+        const contatoMap: Record<string, any> = {};
+        for (const c of contatos) contatoMap[c.inep] = c;
+        for (const s of similares) Object.assign(s, contatoMap[s.inep] || {});
+      }
+
+      const porUf: Record<string, number> = {};
+      for (const s of similares) {
+        if (s.uf) porUf[s.uf.toUpperCase()] = (porUf[s.uf.toUpperCase()] || 0) + 1;
+      }
+
+      res.json({
+        escola_base: { inep, dependencia: escola.dependencia, localizacao: escola.localizacao, matriculas: escola.matriculas },
+        total: similares.length,
+        por_uf: porUf,
+        escolas: similares.map(s => ({
+          inep: s.inep,
+          nome: s.nome,
+          municipio: s.municipio,
+          uf: s.uf?.toUpperCase(),
+          dependencia: s.dependencia,
+          localizacao: s.localizacao,
+          matriculas: s.matriculas,
+          telefone: s.telefone || null,
+          ds_endereco: s.ds_endereco || null,
+          no_bairro: s.no_bairro || null,
+          co_cep: s.co_cep || null,
+          modalidades: [
+            s.qt_mat_inf > 0 && "Infantil",
+            s.qt_mat_fund > 0 && "Fundamental",
+            s.qt_mat_med > 0 && "Médio",
+            s.qt_mat_eja > 0 && "EJA",
+          ].filter(Boolean),
+        })),
+      });
+    } catch (e: any) {
+      res.status(500).json({ erro: e.message });
+    }
+  });
+
   // === STATS POR UF ===
   app.get("/api/censo-escolar/:ano/uf/:uf/stats", (req, res) => {
     const ano = parseInt(req.params.ano);

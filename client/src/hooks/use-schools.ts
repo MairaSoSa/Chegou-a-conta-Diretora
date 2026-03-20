@@ -152,3 +152,17 @@ export function useListaEscolas(ano: number, filters: Record<string, string>, pa
     staleTime: 5 * 60 * 1000,
   });
 }
+
+export function useSimilarSchools(inep: string, ano: number, enabled: boolean) {
+  return useQuery({
+    queryKey: ["similar-schools", inep, ano],
+    queryFn: async () => {
+      if (!inep) return null;
+      const res = await fetch(`/api/escola/${inep}/similares?ano=${ano}`);
+      if (!res.ok) throw new Error("Erro ao buscar escolas similares");
+      return res.json();
+    },
+    enabled: !!inep && enabled,
+    staleTime: 10 * 60 * 1000,
+  });
+}

@@ -1,5 +1,5 @@
 
-import { ComposableMap, Geographies, Geography } from "react-simple-maps";
+import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
 import React, { useState } from "react";
 
 const BRAZIL_TOPOJSON = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson";
@@ -17,16 +17,58 @@ const STATE_COLOR_OVERRIDES: Record<string, string> = {
   RO: "#e8a825",
 };
 
+// Approximate center + 2 scatter dots per UF (lon, lat)
+const UF_DOTS: Record<string, [number, number][]> = {
+  AC: [[-70.5, -9.2], [-68.9, -8.1], [-72.1, -10.0]],
+  AL: [[-36.6, -9.7], [-35.7, -9.1], [-37.0, -10.3]],
+  AM: [[-64.7, -3.5], [-60.0, -2.7], [-68.5, -4.5]],
+  AP: [[-51.1, 1.4], [-52.4, 0.4], [-50.0, 2.3]],
+  BA: [[-41.7, -12.5], [-38.5, -13.0], [-44.0, -11.2]],
+  CE: [[-39.6, -5.5], [-38.2, -4.0], [-40.9, -6.5]],
+  DF: [[-47.9, -15.8], [-47.7, -15.6], [-48.1, -16.0]],
+  ES: [[-40.3, -19.6], [-40.8, -18.7], [-39.8, -20.3]],
+  GO: [[-49.6, -16.0], [-48.0, -15.0], [-51.0, -17.8]],
+  MA: [[-45.3, -5.4], [-43.5, -4.0], [-46.8, -6.5]],
+  MG: [[-44.7, -18.0], [-42.5, -16.5], [-47.5, -19.5]],
+  MS: [[-54.8, -20.5], [-52.5, -19.0], [-57.0, -22.0]],
+  MT: [[-56.1, -12.6], [-53.0, -11.0], [-58.5, -14.5]],
+  PA: [[-52.3, -3.9], [-48.5, -2.5], [-55.5, -5.5]],
+  PB: [[-36.8, -7.2], [-35.5, -6.5], [-37.9, -7.8]],
+  PE: [[-37.9, -8.4], [-35.5, -7.8], [-40.5, -9.0]],
+  PI: [[-42.8, -6.6], [-41.0, -5.5], [-44.0, -8.0]],
+  PR: [[-51.4, -24.9], [-49.5, -23.5], [-53.0, -26.0]],
+  RJ: [[-43.1, -22.4], [-42.0, -21.5], [-44.2, -22.9]],
+  RN: [[-36.5, -5.8], [-35.3, -5.2], [-37.6, -6.5]],
+  RO: [[-63.0, -10.8], [-61.0, -9.5], [-64.8, -12.0]],
+  RR: [[-61.3, 1.8], [-60.0, 3.0], [-62.5, 0.8]],
+  RS: [[-53.0, -29.7], [-51.0, -28.5], [-55.0, -31.0]],
+  SC: [[-50.8, -27.4], [-49.2, -26.5], [-52.5, -28.5]],
+  SE: [[-37.4, -10.6], [-36.7, -10.0], [-38.1, -11.2]],
+  SP: [[-48.5, -22.3], [-46.7, -21.5], [-50.5, -23.2]],
+  TO: [[-48.3, -10.2], [-47.0, -9.0], [-49.5, -11.5]],
+};
+
+function getSimilarColor(count: number, max: number): string {
+  if (!count) return "#e2e8f0";
+  const intensity = Math.min(count / Math.max(max, 1), 1);
+  if (intensity > 0.7) return "#0d9488";
+  if (intensity > 0.4) return "#14b8a6";
+  if (intensity > 0.2) return "#5eead4";
+  return "#99f6e4";
+}
+
 type Props = {
   onStateClick?: (uf: string) => void;
   ufStats?: Record<string, { name: string; escolas: number; matriculas?: number; color?: string }>;
   selectedUf?: string | null;
   clickedUf?: string | null;
+  similarMode?: boolean;
+  similarUfCounts?: Record<string, number>;
 };
 
-export function BrazilMap({ onStateClick, ufStats, selectedUf, clickedUf }: Props) {
+export function BrazilMap({ onStateClick, ufStats, selectedUf, clickedUf, similarMode, similarUfCounts }: Props) {
   const [tooltip, setTooltip] = useState<{
-    x: number; y: number; uf: string; escolas: number; matriculas?: number; name: string;
+    x: number; y: number; uf: string; escolas: number; matriculas?: number; name: string; similarCount?: number;
   } | null>(null);
 
   const ufColorMap = React.useMemo(() => {
@@ -40,10 +82,38 @@ export function BrazilMap({ onStateClick, ufStats, selectedUf, clickedUf }: Prop
     return map;
   }, [ufStats]);
 
+  const maxSimilar = React.useMemo(() => {
+    if (!similarUfCounts) return 1;
+    return Math.max(...Object.values(similarUfCounts), 1);
+  }, [similarUfCounts]);
+
+  // Which UFs have dots to show
+  const dotUfs = similarMode && similarUfCounts
+    ? Object.entries(similarUfCounts).filter(([, n]) => n > 0).map(([uf]) => uf)
+    : [];
+
   return (
     <div style={{ width: "100%", maxWidth: 700, margin: "0 auto", position: "relative" }}>
       {/* Legenda */}
-      {selectedUf && (
+      {similarMode ? (
+        <div style={{ display: "flex", gap: 16, alignItems: "center", fontSize: 12, marginBottom: 6, flexWrap: "wrap" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: 3, background: "#0d9488" }} />
+            Muitas escolas similares
+          </span>
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: 3, background: "#99f6e4" }} />
+            Poucas escolas similares
+          </span>
+          {selectedUf && (
+            <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: 3, background: "#f59e0b", border: "2px solid #92400e" }} />
+              Estado da sua escola
+            </span>
+          )}
+          <span style={{ marginLeft: "auto", fontSize: 11, color: "#64748b" }}>🟢 Clique no estado para ver as escolas</span>
+        </div>
+      ) : selectedUf && (
         <div style={{ display: "flex", gap: 16, alignItems: "center", fontSize: 12, marginBottom: 6, flexWrap: "wrap" }}>
           <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: 3, background: "#f59e0b", border: "2px solid #92400e" }} />
@@ -70,11 +140,18 @@ export function BrazilMap({ onStateClick, ufStats, selectedUf, clickedUf }: Prop
               const stat = ufStats?.[uf];
               const isSchoolState = selectedUf && uf === selectedUf;
               const isClickedState = clickedUf && uf === clickedUf && uf !== selectedUf;
-              const baseFill = isSchoolState
-                ? "#f59e0b"
-                : isClickedState
-                ? "#3b82f6"
-                : (ufColorMap[uf] || STATE_COLOR_OVERRIDES[uf] || "#b7e4c7");
+              const similarCount = similarUfCounts?.[uf] || 0;
+
+              let baseFill: string;
+              if (isSchoolState) {
+                baseFill = "#f59e0b";
+              } else if (similarMode) {
+                baseFill = getSimilarColor(similarCount, maxSimilar);
+              } else if (isClickedState) {
+                baseFill = "#3b82f6";
+              } else {
+                baseFill = ufColorMap[uf] || STATE_COLOR_OVERRIDES[uf] || "#b7e4c7";
+              }
 
               return (
                 <Geography
@@ -82,15 +159,15 @@ export function BrazilMap({ onStateClick, ufStats, selectedUf, clickedUf }: Prop
                   geography={geo}
                   onClick={() => onStateClick && onStateClick(uf)}
                   onMouseEnter={e => {
-                    if (!stat) return;
                     const bounds = (e.target as SVGPathElement).getBoundingClientRect();
                     setTooltip({
                       x: bounds.left + bounds.width / 2,
                       y: bounds.top,
                       uf,
-                      escolas: stat.escolas,
-                      matriculas: stat.matriculas,
-                      name: stat.name,
+                      escolas: stat?.escolas || 0,
+                      matriculas: stat?.matriculas,
+                      name: stat?.name || uf,
+                      similarCount: similarMode ? similarCount : undefined,
                     });
                   }}
                   onMouseLeave={() => setTooltip(null)}
@@ -101,8 +178,14 @@ export function BrazilMap({ onStateClick, ufStats, selectedUf, clickedUf }: Prop
                       cursor: "pointer",
                       stroke: isSchoolState ? "#92400e" : isClickedState ? "#1e40af" : "#fff",
                       strokeWidth: isSchoolState || isClickedState ? 2 : 0.5,
+                      opacity: similarMode && !isSchoolState && !similarCount ? 0.45 : 1,
                     },
-                    hover: { fill: isSchoolState ? "#fbbf24" : "#60a5fa", outline: "none", stroke: "#1e3a5f", strokeWidth: 1.5 },
+                    hover: {
+                      fill: isSchoolState ? "#fbbf24" : similarMode ? "#0d9488" : "#60a5fa",
+                      outline: "none",
+                      stroke: "#1e3a5f",
+                      strokeWidth: 1.5,
+                    },
                     pressed: { fill: "#2d6a4f", outline: "none" },
                   }}
                 />
@@ -110,6 +193,25 @@ export function BrazilMap({ onStateClick, ufStats, selectedUf, clickedUf }: Prop
             })
           }
         </Geographies>
+
+        {/* Pontinhos ilustrativos por estado no modo similar */}
+        {dotUfs.map((uf) => {
+          const dots = UF_DOTS[uf] || [];
+          const count = similarUfCounts?.[uf] || 0;
+          const r = count > 20 ? 4 : count > 5 ? 3 : 2.5;
+          return dots.map(([lon, lat], idx) => (
+            <Marker key={`${uf}-${idx}`} coordinates={[lon, lat]}>
+              <circle
+                r={r}
+                fill={uf === selectedUf ? "#92400e" : "#0f766e"}
+                fillOpacity={0.75}
+                stroke="#fff"
+                strokeWidth={0.8}
+                style={{ pointerEvents: "none" }}
+              />
+            </Marker>
+          ));
+        })}
       </ComposableMap>
 
       {tooltip && (
@@ -132,20 +234,33 @@ export function BrazilMap({ onStateClick, ufStats, selectedUf, clickedUf }: Prop
           }}
         >
           <div style={{ fontWeight: 700, marginBottom: 2 }}>{tooltip.name} ({tooltip.uf})</div>
-          <div style={{ color: "#555", fontSize: 12 }}>
-            🏫 {tooltip.escolas?.toLocaleString("pt-BR")} escolas
-          </div>
-          {tooltip.matriculas != null && tooltip.matriculas > 0 && (
-            <div style={{ color: "#555", fontSize: 12 }}>
-              👩‍🎓 {tooltip.matriculas?.toLocaleString("pt-BR")} matrículas
-            </div>
+          {tooltip.similarCount !== undefined ? (
+            <>
+              <div style={{ color: "#0d9488", fontSize: 12, fontWeight: 600 }}>
+                🏫 {tooltip.similarCount} escolas com perfil similar
+              </div>
+              {tooltip.similarCount > 0 && (
+                <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>Clique para ver as escolas</div>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{ color: "#555", fontSize: 12 }}>
+                🏫 {tooltip.escolas?.toLocaleString("pt-BR")} escolas
+              </div>
+              {tooltip.matriculas != null && tooltip.matriculas > 0 && (
+                <div style={{ color: "#555", fontSize: 12 }}>
+                  👩‍🎓 {tooltip.matriculas?.toLocaleString("pt-BR")} matrículas
+                </div>
+              )}
+              {tooltip.uf === selectedUf && (
+                <div style={{ fontSize: 11, color: "#92400e", fontWeight: 600, marginTop: 3 }}>
+                  ⭐ Estado da sua escola
+                </div>
+              )}
+              <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>Clique para ver detalhes</div>
+            </>
           )}
-          {tooltip.uf === selectedUf && (
-            <div style={{ fontSize: 11, color: "#92400e", fontWeight: 600, marginTop: 3 }}>
-              ⭐ Estado da sua escola
-            </div>
-          )}
-          <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>Clique para ver detalhes</div>
         </div>
       )}
     </div>
