@@ -226,16 +226,35 @@ export async function registerRoutes(
   // === PUBLIC: ESCOLA EVOLUÇÃO (Railway primeiro, local como fallback) ===
   app.get("/api/escola-evolucao/:inep", async (req, res) => {
     const inep = getParam(req.params, "inep");
+    const CACHE_KEY = `evolucao_${inep}`;
+    const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+
+    const cached = sqlite.prepare(
+      `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`
+    ).get(CACHE_KEY) as any;
+    if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) {
+      return res.json(JSON.parse(cached.data));
+    }
+
     const [railwayData, localData] = await Promise.all([
       getEscolaEvolucaoRailway(inep),
       Promise.resolve(getEscolaEvolucaoLocal(inep)),
     ]);
 
+    const saveCache = (data: any) => {
+      if (data?.anos_disponiveis?.length > 0) {
+        sqlite.prepare(
+          `INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?)
+           ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`
+        ).run(CACHE_KEY, JSON.stringify(data), Date.now());
+      }
+    };
+
     if (!railwayData && !localData) {
       return res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], escola: null, censo_por_ano: {}, indicadores_por_ano: {} });
     }
-    if (!railwayData) return res.json(localData);
-    if (!localData)   return res.json(railwayData);
+    if (!railwayData) { saveCache(localData); return res.json(localData); }
+    if (!localData)   { saveCache(railwayData); return res.json(railwayData); }
 
     // Mescla: local tem dados quantitativos do censo (qt_mat_bas, docentes, turmas, infra)
     // para todos os anos; Railway tem metadados e indicadores (IDEB, SAEB).
@@ -281,12 +300,15 @@ export async function registerRoutes(
       ...Object.keys(mergedInd).map(Number),
     ]);
 
-    return res.json({
+    const result = {
       ...railwayData,
       anos_disponiveis: [...anosSet].sort((a, b) => a - b),
       censo_por_ano:       mergedCenso,
       indicadores_por_ano: mergedInd,
-    });
+    };
+
+    saveCache(result);
+    return res.json(result);
   });
 
   // === PUBLIC: COMPARATIVO (escola vs município, UF e Brasil) ===
@@ -796,7 +818,12 @@ export async function registerRoutes(
       if (!/^\d{8}$/.test(coEscola)) {
         return res.status(400).json({ ok: false, repasses: [], anosDisponiveis: [], fonte: "indisponivel", error: "Código INEP inválido (deve ter 8 dígitos)" });
       }
+      const CACHE_KEY = `pdde_execfin_${coEscola}`;
+      const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+      const cached = sqlite.prepare(`SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`).get(CACHE_KEY) as any;
+      if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) return res.json(JSON.parse(cached.data));
       const result = await consultarExecFinPdde(coEscola);
+      if (result?.ok) sqlite.prepare(`INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?) ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`).run(CACHE_KEY, JSON.stringify(result), Date.now());
       res.json(result);
     } catch (err: any) {
       console.error("PDDE exec fin error:", err.message);
@@ -810,7 +837,12 @@ export async function registerRoutes(
       if (!/^\d{8}$/.test(coEscola)) {
         return res.status(400).json({ ok: false, saldos: [], anosDisponiveis: [], fonte: "indisponivel", error: "Código INEP inválido (deve ter 8 dígitos)" });
       }
+      const CACHE_KEY = `pdde_saldos_${coEscola}`;
+      const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+      const cached = sqlite.prepare(`SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`).get(CACHE_KEY) as any;
+      if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) return res.json(JSON.parse(cached.data));
       const result = await consultarSaldosPdde(coEscola);
+      if (result?.ok) sqlite.prepare(`INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?) ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`).run(CACHE_KEY, JSON.stringify(result), Date.now());
       res.json(result);
     } catch (err: any) {
       console.error("PDDE saldos error:", err.message);

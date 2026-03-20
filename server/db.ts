@@ -31,6 +31,7 @@ try {
   sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_inep ON censo_escolar(inep)");
   sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_inep_ano ON censo_escolar(inep, ano)");
   sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_dep_loc_sit ON censo_escolar(ano, dependencia, localizacao, situacao)");
+  sqlite.exec("CREATE INDEX IF NOT EXISTS idx_indicadores_inep_tipo ON indicadores_educacionais(inep, tipo)");
 } catch {}
 
 // FTS5 — índice de texto completo para busca rápida por nome de escola
