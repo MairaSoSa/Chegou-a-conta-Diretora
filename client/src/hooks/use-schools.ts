@@ -81,6 +81,21 @@ export function useEscolaComparativo(inep: string) {
   });
 }
 
+export function useEscolaMicroregiao(inep: string) {
+  return useQuery({
+    queryKey: ["escola-microregiao", inep],
+    queryFn: async () => {
+      if (!inep) return null;
+      const res = await fetch(`/api/escola-microregiao/${inep}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!inep,
+    retry: false,
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
 export function useEscolaDiagnostico(inep: string) {
   return useQuery({
     queryKey: ["escola-diagnostico", inep],

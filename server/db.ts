@@ -64,6 +64,42 @@ try {
   console.warn("[db] FTS5 não disponível:", e.message);
 }
 
+// Tabela auxiliar: inep → co_municipio (extração feita uma vez do censo)
+try {
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS escola_municipio (
+      inep TEXT PRIMARY KEY,
+      co_municipio TEXT NOT NULL
+    )
+  `);
+  sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_escola_mun ON escola_municipio(co_municipio)`);
+
+  const count = (sqlite.prepare("SELECT COUNT(*) as n FROM escola_municipio").get() as any)?.n ?? 0;
+  if (count === 0) {
+    setTimeout(() => {
+      try {
+        console.log("[db] Construindo tabela escola_municipio...");
+        const latestAno = (sqlite.prepare("SELECT MAX(ano) as ano FROM censo_escolar").get() as any)?.ano;
+        if (latestAno) {
+          sqlite.exec(`
+            INSERT OR IGNORE INTO escola_municipio(inep, co_municipio)
+            SELECT inep, json_extract(dados,'$.co_municipio')
+            FROM censo_escolar
+            WHERE ano = ${latestAno}
+              AND json_extract(dados,'$.co_municipio') IS NOT NULL
+          `);
+          const inserted = (sqlite.prepare("SELECT COUNT(*) as n FROM escola_municipio").get() as any)?.n ?? 0;
+          console.log(`[db] escola_municipio pronta: ${inserted} escolas`);
+        }
+      } catch (e: any) {
+        console.warn("[db] Falha ao construir escola_municipio:", e.message);
+      }
+    }, 0);
+  }
+} catch (e: any) {
+  console.warn("[db] escola_municipio:", e.message);
+}
+
 export const db = drizzle(sqlite, { schema });
 
 export function ensureCadernoTables(): void {

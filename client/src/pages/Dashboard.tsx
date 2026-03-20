@@ -15,7 +15,7 @@ import {
   Globe, Building2, TreePine, Filter, X, Clock, Heart,
   CheckCircle, CircleAlert
 } from "lucide-react";
-import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico, useUfStats, useSimilarSchools } from "@/hooks/use-schools";
+import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico, useEscolaMicroregiao, useUfStats, useSimilarSchools } from "@/hooks/use-schools";
 import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento } from "@/hooks/use-pdde";
 import { useSigpcLocalizar } from "@/hooks/use-sigpc";
 import { DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon } from "lucide-react";
@@ -107,6 +107,7 @@ export default function Dashboard() {
   const { data: evolucaoData, isLoading: evolucaoLoading } = useEscolaEvolucao(selectedInep || "");
   const { data: mediasNacionais } = useMediasNacionais(selectedAno);
   const { data: comparativoData } = useEscolaComparativo(selectedInep || "");
+  const { data: microregiaoData } = useEscolaMicroregiao(selectedInep || "");
   const { data: diagnosticoData } = useEscolaDiagnostico(selectedInep || "");
   const [pddeAno, setPddeAno] = useState<number>(new Date().getFullYear());
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
@@ -1302,8 +1303,8 @@ export default function Dashboard() {
                 {comparativoData && (
                   <section className="section">
                     <div className="section-title">
-                      <div><h2>Panorama estadual e nacional</h2><p>IDEB da escola comparado ao município, estado e Brasil</p></div>
-                      <div className="hint-chip">Fonte: Railway · {comparativoData.municipio?.nome}/{comparativoData.uf?.sg}</div>
+                      <div><h2>Panorama estadual e nacional</h2><p>IDEB da escola comparado à microrregião, município, estado e Brasil</p></div>
+                      <div className="hint-chip">Fonte: Railway + DB local · {comparativoData.municipio?.nome}/{comparativoData.uf?.sg}</div>
                     </div>
                     <div className="organic-divider" />
                     {(['ai','af','em'] as const).some(etapa => comparativoData.escola[`ideb_${etapa}`] != null) ? (
@@ -1326,11 +1327,13 @@ export default function Dashboard() {
                             if (ref == null || escola == null) return 'var(--m-muted)';
                             return escola >= ref ? '#2f7a58' : '#c0392b';
                           };
+                          const microVal = microregiaoData?.[`ideb_${etapa}`] ?? null;
                           return (
                             <div key={etapa} className="soft-card" style={{padding:'16px 18px'}}>
                               <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'var(--m-text)'}}>{labels[etapa]}</div>
                               <div style={{fontSize:'34px',fontWeight:800,letterSpacing:'-0.04em',color:'var(--m-text)',marginBottom:'12px'}}>{fmt(escola)}</div>
                               {[
+                                ...(microregiaoData ? [{ label: `Microrregião ${microregiaoData.micro_nome}`, val: microVal }] : []),
                                 { label: comparativoData.municipio?.nome || 'Município', val: mun },
                                 { label: comparativoData.uf?.sg || 'Estado', val: uf },
                                 { label: 'Brasil', val: br },

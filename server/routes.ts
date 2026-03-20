@@ -266,6 +266,89 @@ export async function registerRoutes(
     res.json(data);
   });
 
+  // === PUBLIC: MICRORREGIÃO — média IDEB local a partir do banco SQLite ===
+  const microlookup: Record<string, [number, string]> = JSON.parse(
+    readFileSync(join(process.cwd(), "server/municipio-microregiao.json"), "utf8")
+  );
+
+  app.get("/api/escola-microregiao/:inep", (req, res) => {
+    const inep = getParam(req.params, "inep");
+
+    // 1. Buscar co_municipio via tabela auxiliar indexada (muito rápido)
+    const munRow = sqlite.prepare(
+      `SELECT co_municipio FROM escola_municipio WHERE inep=? LIMIT 1`
+    ).get(inep) as any;
+    if (!munRow) return res.json(null);
+    const co_municipio = String(munRow.co_municipio);
+
+    // 2. Descobrir microrregião a partir do lookup em memória
+    const entry = microlookup[co_municipio];
+    if (!entry) return res.json(null);
+    const [micro_cod, micro_nome] = entry;
+
+    // 3. Checar cache por microrregião (resultado é o mesmo para toda escola da região)
+    const CACHE_KEY = `micro_${micro_cod}`;
+    const CACHE_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 dias
+    const cached = sqlite.prepare(
+      `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`
+    ).get(CACHE_KEY) as any;
+    if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) {
+      return res.json(JSON.parse(cached.data));
+    }
+
+    // 4. Cache miss — calcular médias via tabela escola_municipio + indicadores
+    const municsMicro = Object.entries(microlookup)
+      .filter(([, v]) => v[0] === micro_cod)
+      .map(([k]) => k);
+    if (municsMicro.length === 0) return res.json(null);
+
+    // Buscar ineps da microrregião pela tabela indexada (rápido)
+    const ph = municsMicro.map(() => '?').join(',');
+    const inepsRegiao = sqlite.prepare(
+      `SELECT inep FROM escola_municipio WHERE co_municipio IN (${ph})`
+    ).all(...municsMicro) as { inep: string }[];
+
+    if (inepsRegiao.length === 0) return res.json(null);
+
+    // Buscar IDEB em lotes de 900 para respeitar limite SQLite
+    const allIneps = inepsRegiao.map(r => r.inep);
+    const sums: Record<string, number> = { ai: 0, af: 0, em: 0 };
+    const cnts: Record<string, number> = { ai: 0, af: 0, em: 0 };
+    const BATCH = 900;
+    for (let i = 0; i < allIneps.length; i += BATCH) {
+      const batch = allIneps.slice(i, i + BATCH);
+      const ph2 = batch.map(() => '?').join(',');
+      const rows = sqlite.prepare(
+        `SELECT dados FROM indicadores_educacionais WHERE tipo='ideb' AND inep IN (${ph2})`
+      ).all(...batch) as { dados: string }[];
+      for (const row of rows) {
+        const d = JSON.parse(row.dados);
+        for (const etapa of ['ai','af','em'] as const) {
+          const v = d[`ideb_${etapa}`];
+          if (v != null && v > 0) { sums[etapa] += v; cnts[etapa]++; }
+        }
+      }
+    }
+
+    const resultado = {
+      micro_nome,
+      micro_cod,
+      n_escolas: allIneps.length,
+      ideb_ai: cnts.ai > 0 ? Math.round(sums.ai / cnts.ai * 10) / 10 : null,
+      ideb_af: cnts.af > 0 ? Math.round(sums.af / cnts.af * 10) / 10 : null,
+      ideb_em: cnts.em > 0 ? Math.round(sums.em / cnts.em * 10) / 10 : null,
+    };
+
+    // 5. Salvar no cache
+    sqlite.prepare(
+      `INSERT INTO stats_cache(cache_key, data, updated_at)
+       VALUES(?,?,?)
+       ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`
+    ).run(CACHE_KEY, JSON.stringify(resultado), Date.now());
+
+    res.json(resultado);
+  });
+
   // === PUBLIC: DIAGNÓSTICO (pontos fortes, pontos de atenção, leituras) ===
   app.get("/api/escola-diagnostico/:inep", async (req, res) => {
     const inep = getParam(req.params, "inep");
