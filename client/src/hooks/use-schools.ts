@@ -1,16 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
+import { useState, useEffect } from "react";
 
 export function useSchoolSearch(query: string) {
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+
+  useEffect(() => {
+    // INEP codes: fire immediately; name searches: debounce 350ms
+    const delay = /^\d{7,8}$/.test(query.trim()) ? 0 : 350;
+    const t = setTimeout(() => setDebouncedQuery(query), delay);
+    return () => clearTimeout(t);
+  }, [query]);
+
   return useQuery({
-    queryKey: [api.schools.search.path, query],
+    queryKey: [api.schools.search.path, debouncedQuery],
     queryFn: async () => {
-      if (!query || query.length < 2) return { dados: [], total: 0 };
-      const res = await fetch(`/api/escola/buscar?nome=${encodeURIComponent(query)}`);
+      if (!debouncedQuery || debouncedQuery.length < 2) return { dados: [], total: 0 };
+      const res = await fetch(`/api/escola/buscar?nome=${encodeURIComponent(debouncedQuery)}`);
       if (!res.ok) throw new Error("Failed to search schools");
       return res.json();
     },
-    enabled: query.length >= 2,
+    enabled: debouncedQuery.length >= 2,
     staleTime: 1000 * 60 * 5,
     placeholderData: (prev) => prev,
   });
