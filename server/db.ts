@@ -32,6 +32,37 @@ try {
   sqlite.exec("CREATE INDEX IF NOT EXISTS idx_censo_inep_ano ON censo_escolar(inep, ano)");
 } catch {}
 
+// FTS5 — índice de texto completo para busca rápida por nome de escola
+try {
+  sqlite.exec(`
+    CREATE VIRTUAL TABLE IF NOT EXISTS escola_fts USING fts5(
+      inep UNINDEXED,
+      nome,
+      municipio,
+      uf UNINDEXED,
+      dependencia UNINDEXED,
+      localizacao UNINDEXED,
+      matriculas UNINDEXED,
+      tokenize='unicode61 remove_diacritics 1'
+    )
+  `);
+  const ftsCount = (sqlite.prepare("SELECT COUNT(*) as n FROM escola_fts").get() as any)?.n ?? 0;
+  if (ftsCount === 0) {
+    const latestAno = (sqlite.prepare("SELECT MAX(ano) as ano FROM censo_escolar").get() as any)?.ano;
+    if (latestAno) {
+      console.log(`[db] Construindo índice FTS5 para ano ${latestAno}...`);
+      sqlite.exec(`
+        INSERT INTO escola_fts(inep, nome, municipio, uf, dependencia, localizacao, matriculas)
+        SELECT inep, nome, municipio, uf, dependencia, localizacao, matriculas
+        FROM censo_escolar WHERE ano = ${latestAno}
+      `);
+      console.log(`[db] Índice FTS5 pronto (${(sqlite.prepare("SELECT COUNT(*) as n FROM escola_fts").get() as any)?.n} escolas)`);
+    }
+  }
+} catch (e: any) {
+  console.warn("[db] FTS5 não disponível:", e.message);
+}
+
 export const db = drizzle(sqlite, { schema });
 
 export function ensureCadernoTables(): void {

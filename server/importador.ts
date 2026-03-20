@@ -286,13 +286,36 @@ export function searchSchoolsLocal(query: string, limit = 20) {
     return results.map(mapCensoToSchool);
   }
 
+  // Tenta FTS5 primeiro (muito mais rápido que LIKE)
+  try {
+    const ftsReady = (rawDb.prepare("SELECT COUNT(*) as n FROM escola_fts").get() as any)?.n > 0;
+    if (ftsReady) {
+      const words = query.trim().split(/\s+/).filter(Boolean);
+      const matchExpr = words.map(w => w.replace(/['"*]/g, "") + "*").join(" ");
+      const results = rawDb.prepare(
+        `SELECT inep, nome, municipio, uf, dependencia, localizacao, matriculas
+         FROM escola_fts WHERE escola_fts MATCH ? ORDER BY rank LIMIT ?`
+      ).all(matchExpr, limit);
+      return results.map((r: any) => ({
+        id: parseInt(r.inep) || 0,
+        inep: r.inep,
+        name: r.nome || "Sem nome",
+        city: r.municipio || "",
+        state: r.uf || "",
+        network: r.dependencia || "",
+        location: r.localizacao || "",
+        enrollmentCount: r.matriculas || 0,
+        dataStatus: "Local",
+      }));
+    }
+  } catch {}
+
+  // Fallback LIKE (lento, usado apenas se FTS não estiver pronto)
   const upperQuery = query.toUpperCase();
   const latestAno = rawDb.prepare(`SELECT MAX(ano) as max_ano FROM censo_escolar`).get() as any;
   const ano = latestAno?.max_ano || 2024;
   const results = rawDb.prepare(
-    `SELECT * FROM censo_escolar
-     WHERE ano = ? AND upper(nome) LIKE ?
-     LIMIT ?`
+    `SELECT * FROM censo_escolar WHERE ano = ? AND upper(nome) LIKE ? LIMIT ?`
   ).all(ano, '%' + upperQuery + '%', limit);
   return results.map(mapCensoToSchool);
 }
