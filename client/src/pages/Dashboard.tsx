@@ -15,7 +15,7 @@ import {
   Globe, Building2, TreePine, Filter, X, Clock, Heart,
   CheckCircle, CircleAlert
 } from "lucide-react";
-import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico } from "@/hooks/use-schools";
+import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico, useUfStats } from "@/hooks/use-schools";
 import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento } from "@/hooks/use-pdde";
 import { useSigpcLocalizar } from "@/hooks/use-sigpc";
 import { DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon } from "lucide-react";
@@ -91,12 +91,14 @@ export default function Dashboard() {
   const [filterUf, setFilterUf] = useState("");
   const [filterDep, setFilterDep] = useState("");
   const [listPage, setListPage] = useState(1);
+  const [clickedUf, setClickedUf] = useState<string | null>(null);
   const [saldoMesSel, setSaldoMesSel] = useState<string>(() => {
     const d = new Date();
     return `${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
   });
 
   const { data: stats, isLoading: statsLoading } = useEstatisticas(selectedAno);
+  const { data: ufStatsData, isLoading: ufStatsLoading } = useUfStats(clickedUf, selectedAno);
   const { data: searchResults, refetch: refetchSearch, isLoading: searchLoading } = useSchoolSearch(searchQuery);
   const { data: evolucaoData, isLoading: evolucaoLoading } = useEscolaEvolucao(selectedInep || "");
   const { data: mediasNacionais } = useMediasNacionais(selectedAno);
@@ -776,7 +778,10 @@ export default function Dashboard() {
                             };
                             return acc;
                           }, {} as Record<string, { name: string; escolas: number; color: string }>)}
+                          selectedUf={evolucaoData?.escola?.sg_uf ?? null}
+                          clickedUf={clickedUf}
                           onStateClick={(uf) => {
+                            setClickedUf(prev => prev === uf ? null : uf);
                             setFilterUf(uf);
                             setFilterDep("");
                             setListPage(1);
@@ -784,6 +789,107 @@ export default function Dashboard() {
                         />
                       </CardContent>
                     </Card>
+
+                    {/* Painel de detalhes do estado clicado */}
+                    {clickedUf && (
+                      <Card className="card-clay border-blue-200">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <MapPin className="w-4 h-4 text-blue-500" />
+                              {UF_NAMES[clickedUf] || clickedUf}
+                              {evolucaoData?.escola?.sg_uf === clickedUf && (
+                                <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">⭐ Estado da sua escola</span>
+                              )}
+                            </CardTitle>
+                            <button onClick={() => setClickedUf(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {ufStatsLoading ? (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground py-3">
+                              <Loader2 className="w-4 h-4 animate-spin" /> Carregando dados do estado...
+                            </div>
+                          ) : ufStatsData ? (
+                            <div className="space-y-4">
+                              {/* Números principais */}
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-blue-50 rounded-xl p-3 text-center">
+                                  <div className="text-2xl font-bold text-blue-700">{ufStatsData.total_escolas?.toLocaleString("pt-BR")}</div>
+                                  <div className="text-xs text-blue-600 mt-0.5">escolas</div>
+                                </div>
+                                <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                                  <div className="text-2xl font-bold text-emerald-700">{ufStatsData.total_matriculas?.toLocaleString("pt-BR")}</div>
+                                  <div className="text-xs text-emerald-600 mt-0.5">matrículas</div>
+                                </div>
+                              </div>
+
+                              {/* Por dependência */}
+                              {ufStatsData.por_dependencia && Object.keys(ufStatsData.por_dependencia).length > 0 && (
+                                <div>
+                                  <div className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Por rede</div>
+                                  <div className="space-y-1.5">
+                                    {Object.entries(ufStatsData.por_dependencia as Record<string, number>)
+                                      .sort(([,a],[,b]) => b - a)
+                                      .map(([dep, n]) => {
+                                        const total = ufStatsData.total_escolas || 1;
+                                        const pct = Math.round((n / total) * 100);
+                                        const colors: Record<string, string> = { Municipal: "#3b82f6", Estadual: "#8b5cf6", Federal: "#f59e0b", Privada: "#10b981" };
+                                        const color = colors[dep] || "#6b7280";
+                                        return (
+                                          <div key={dep}>
+                                            <div className="flex justify-between text-xs mb-0.5">
+                                              <span>{dep}</span>
+                                              <span className="font-medium">{(n as number).toLocaleString("pt-BR")} ({pct}%)</span>
+                                            </div>
+                                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                              <div style={{ width: `${pct}%`, background: color }} className="h-full rounded-full transition-all" />
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Rural vs Urbana */}
+                              {ufStatsData.por_localizacao && (
+                                <div className="flex gap-2">
+                                  {Object.entries(ufStatsData.por_localizacao as Record<string, number>).map(([loc, n]) => (
+                                    <div key={loc} className={`flex-1 rounded-xl p-2 text-center text-xs ${loc === "Rural" ? "bg-green-50" : "bg-sky-50"}`}>
+                                      <div className="font-bold text-sm">{(n as number).toLocaleString("pt-BR")}</div>
+                                      <div className="text-muted-foreground">{loc}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Top municípios */}
+                              {ufStatsData.top_municipios?.length > 0 && (
+                                <div>
+                                  <div className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Municípios com mais escolas</div>
+                                  <div className="space-y-1">
+                                    {ufStatsData.top_municipios.slice(0, 5).map((m: any, i: number) => (
+                                      <div key={m.municipio} className="flex justify-between items-center text-xs py-0.5">
+                                        <span className="flex items-center gap-1.5">
+                                          <span className="text-muted-foreground w-4 text-right">{i + 1}.</span>
+                                          <span className="font-medium truncate max-w-[120px]">{m.municipio}</span>
+                                        </span>
+                                        <span className="text-muted-foreground">{m.escolas} escolas</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground py-2">Sem dados disponíveis para {clickedUf}.</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
 
                   </div>
 

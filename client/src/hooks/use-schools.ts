@@ -96,6 +96,20 @@ export function useEscolaDiagnostico(inep: string) {
   });
 }
 
+export function useUfStats(uf: string | null, ano = 2024) {
+  return useQuery({
+    queryKey: ["uf-stats", uf, ano],
+    queryFn: async () => {
+      if (!uf) return null;
+      const res = await fetch(`/api/censo-escolar/${ano}/uf/${uf}/stats`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!uf,
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
 export function useEstatisticas(ano: number) {
   return useQuery({
     queryKey: ["estatisticas", ano],

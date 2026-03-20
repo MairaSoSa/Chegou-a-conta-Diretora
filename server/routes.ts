@@ -6,6 +6,7 @@ import Papa from "papaparse";
 import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 import { storage } from "./storage";
+import { sqlite } from "./db";
 import { api } from "@shared/routes";
 import { registerChatRoutes } from "./integrations/chat";
 import { registerCadernoRoutes } from "./caderno-routes";
@@ -325,6 +326,40 @@ export async function registerRoutes(
       return res.json(OFICIAL[ano]);
     }
     res.json(local);
+  });
+
+  // === STATS POR UF ===
+  app.get("/api/censo-escolar/:ano/uf/:uf/stats", (req, res) => {
+    const ano = parseInt(req.params.ano);
+    const uf = (req.params.uf || "").toUpperCase();
+    try {
+      const total = sqlite.prepare(
+        `SELECT COUNT(*) as escolas, SUM(CAST(matriculas as INTEGER)) as matriculas
+         FROM censo_escolar WHERE ano=? AND upper(uf)=?`
+      ).get(ano, uf) as any;
+      const porDep = sqlite.prepare(
+        `SELECT dependencia, COUNT(*) as n FROM censo_escolar WHERE ano=? AND upper(uf)=? GROUP BY dependencia`
+      ).all(ano, uf) as any[];
+      const porLoc = sqlite.prepare(
+        `SELECT localizacao, COUNT(*) as n FROM censo_escolar WHERE ano=? AND upper(uf)=? GROUP BY localizacao`
+      ).all(ano, uf) as any[];
+      const topMun = sqlite.prepare(
+        `SELECT municipio, COUNT(*) as escolas, SUM(CAST(matriculas as INTEGER)) as matriculas
+         FROM censo_escolar WHERE ano=? AND upper(uf)=? AND situacao='Em Atividade'
+         GROUP BY municipio ORDER BY escolas DESC LIMIT 8`
+      ).all(ano, uf) as any[];
+      res.json({
+        uf,
+        ano,
+        total_escolas: total?.escolas || 0,
+        total_matriculas: total?.matriculas || 0,
+        por_dependencia: Object.fromEntries(porDep.map((r: any) => [r.dependencia || "Outro", r.n])),
+        por_localizacao: Object.fromEntries(porLoc.map((r: any) => [r.localizacao || "Outro", r.n])),
+        top_municipios: topMun.map((r: any) => ({ municipio: r.municipio, escolas: r.escolas, matriculas: r.matriculas || 0 })),
+      });
+    } catch (e: any) {
+      res.status(500).json({ erro: e.message });
+    }
   });
 
   app.get("/api/censo-escolar/:ano/escolas/:inep", (req, res) => {
