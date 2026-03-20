@@ -1387,7 +1387,7 @@ export default function Dashboard() {
                   <section className="section">
                     <div className="section-title">
                       <div><h2>Galeria de gráficos</h2><p>Evolução dos indicadores ao longo dos anos</p></div>
-                      <div className="hint-chip">Clique na ficha para trocar</div>
+                      <div className="hint-chip">Clique na ficha ou no gráfico para trocar</div>
                     </div>
                     <div className="organic-divider" />
                     <div className="chart-wall">
@@ -1407,7 +1407,16 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="chart-stage">
-                        <div className="chart-board active soft-card" style={{padding:'20px'}}>
+                        <div
+                          className="chart-board active soft-card"
+                          style={{padding:'20px', cursor:'pointer', userSelect:'none'}}
+                          title="Clique para ver o próximo gráfico"
+                          onClick={() => {
+                            const idx = available.findIndex(c => c.id === selectedChart);
+                            const next = available[(idx + 1) % available.length];
+                            setSelectedChart(next.id);
+                          }}
+                        >
                           <div className="chart-header">
                             <div>
                               <h4>{currentChart.icon} {currentChart.label}</h4>
@@ -1426,8 +1435,11 @@ export default function Dashboard() {
                           <div style={{height:'260px'}}>
                             <EvolutionChart data={currentChart.data} lines={currentChart.lines} large />
                           </div>
-                          <div className="chart-note">
-                            📝 Dados do Censo Escolar INEP/MEC · código {selectedInep}
+                          <div className="chart-note" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                            <span>📝 Dados do Censo Escolar INEP/MEC · código {selectedInep}</span>
+                            <span style={{fontSize:12, color:'var(--m-muted)', opacity:0.7}}>
+                              {available.findIndex(c => c.id === selectedChart) + 1}/{available.length} · clique para avançar →
+                            </span>
                           </div>
                         </div>
                       </div>
