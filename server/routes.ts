@@ -393,7 +393,19 @@ export async function registerRoutes(
         return true;
       });
 
-      // 3ª query: json_extract apenas nos prefiltrados (modalidades + contato)
+      // Haversine por município usando centroide real (5.570 municípios)
+      const haversineKm = (coMun1: number, coMun2: number): number => {
+        const c1 = MUNICIPIO_CENTROIDES[coMun1];
+        const c2 = MUNICIPIO_CENTROIDES[coMun2];
+        if (!c1 || !c2) return 9999;
+        const R = 6371;
+        const dLat = (c2[0] - c1[0]) * Math.PI / 180;
+        const dLon = (c2[1] - c1[1]) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(c1[0]*Math.PI/180)*Math.cos(c2[0]*Math.PI/180)*Math.sin(dLon/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      };
+      const coMunBase = escola.co_municipio || 0;
+
       let similares: any[] = [];
       if (prefiltrados.length > 0) {
         const prefIneps = prefiltrados.map(s => s.inep);
@@ -416,19 +428,6 @@ export async function registerRoutes(
         const detalheMap: Record<string, any> = {};
         for (const d of detalhes) detalheMap[d.inep] = d;
 
-        // Haversine por município usando centroide real (5.570 municípios)
-        const haversineKm = (coMun1: number, coMun2: number): number => {
-          const c1 = MUNICIPIO_CENTROIDES[coMun1];
-          const c2 = MUNICIPIO_CENTROIDES[coMun2];
-          if (!c1 || !c2) return 9999;
-          const R = 6371;
-          const dLat = (c2[0] - c1[0]) * Math.PI / 180;
-          const dLon = (c2[1] - c1[1]) * Math.PI / 180;
-          const a = Math.sin(dLat/2)**2 + Math.cos(c1[0]*Math.PI/180)*Math.cos(c2[0]*Math.PI/180)*Math.sin(dLon/2)**2;
-          return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        };
-        const coMunBase = escola.co_municipio || 0;
-
         // Filtro por modalidade (fingerprint exato) + merge + ordenação por distância real por município
         similares = prefiltrados
           .map(s => ({ ...s, ...(detalheMap[s.inep] || {}) }))
@@ -436,8 +435,8 @@ export async function registerRoutes(
           .sort((a, b) => {
             const da = haversineKm(coMunBase, a.co_municipio || 0);
             const db = haversineKm(coMunBase, b.co_municipio || 0);
-            if (Math.abs(da - db) > 5) return da - db; // diferença > 5km: ordena por distância
-            return Math.abs((a.matriculas||0) - targetMat) - Math.abs((b.matriculas||0) - targetMat); // mesmo município: ordena por tamanho
+            if (Math.abs(da - db) > 5) return da - db;
+            return Math.abs((a.matriculas||0) - targetMat) - Math.abs((b.matriculas||0) - targetMat);
           })
           .slice(0, 200);
       }
