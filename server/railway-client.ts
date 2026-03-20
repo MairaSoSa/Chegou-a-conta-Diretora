@@ -4,6 +4,19 @@ const DEP_MAP: Record<number, string> = { 1: "Federal", 2: "Estadual", 3: "Munic
 const LOC_MAP: Record<number, string> = { 1: "Urbana", 2: "Rural" };
 const SIT_MAP: Record<number, string> = { 1: "Em Atividade", 2: "Paralisada", 3: "Extinta", 4: "Extinta", 5: "Extinta" };
 
+const serverCache = new Map<string, { data: any; ts: number }>();
+const CACHE_TTL_MS = 30 * 60 * 1000;
+
+function cacheGet(key: string) {
+  const e = serverCache.get(key);
+  if (!e) return null;
+  if (Date.now() - e.ts > CACHE_TTL_MS) { serverCache.delete(key); return null; }
+  return e.data;
+}
+function cacheSet(key: string, data: any) {
+  serverCache.set(key, { data, ts: Date.now() });
+}
+
 async function fetchRailway(path: string, timeout = 8000): Promise<any | null> {
   try {
     const res = await fetch(`${RAILWAY_API}${path}`, {
@@ -482,6 +495,77 @@ export async function getEscolaCompletaRailway(inep: string, ano?: number) {
     tdi: ind.tdi ?? null,
     ied: ind.ied ?? null,
   };
+}
+
+export async function getComparativoRailway(inep: string) {
+  const cacheKey = `comparativo:${inep}`;
+  const cached = cacheGet(cacheKey);
+  if (cached) return cached;
+
+  const data = await fetchRailway(`/comparar/escola/${inep}`, 15000);
+  if (!data?.encontrada) return null;
+  const escola = data.escola ?? {};
+  const comp = data.comparacao ?? {};
+  const result = {
+    co_entidade: parseInt(inep),
+    escola: {
+      inse: escola.inse ?? null,
+      ideb_ai: escola.ideb_ai ?? null,
+      ideb_af: escola.ideb_af ?? null,
+      ideb_em: escola.ideb_em ?? null,
+    },
+    municipio: {
+      nome: escola.no_municipio ?? null,
+      inse: comp.municipio?.inse ?? null,
+      ideb_ai: comp.municipio?.ideb_ai ?? null,
+      ideb_af: comp.municipio?.ideb_af ?? null,
+      ideb_em: comp.municipio?.ideb_em ?? null,
+    },
+    uf: {
+      sg: escola.sg_uf ?? null,
+      inse: comp.uf?.inse ?? null,
+      ideb_ai: comp.uf?.ideb_ai ?? null,
+      ideb_af: comp.uf?.ideb_af ?? null,
+      ideb_em: comp.uf?.ideb_em ?? null,
+    },
+    brasil: {
+      inse: comp.brasil?.inse ?? null,
+      ideb_ai: comp.brasil?.ideb_ai ?? null,
+      ideb_af: comp.brasil?.ideb_af ?? null,
+      ideb_em: comp.brasil?.ideb_em ?? null,
+    },
+  };
+  cacheSet(cacheKey, result);
+  return result;
+}
+
+export async function getDiagnosticoRailway(inep: string) {
+  const cacheKey = `diagnostico:${inep}`;
+  const cached = cacheGet(cacheKey);
+  if (cached) return cached;
+
+  const data = await fetchRailway(`/diagnostico/escola/${inep}`, 15000);
+  if (!data?.encontrada) return null;
+  const result = {
+    co_entidade: parseInt(inep),
+    resumo_geral: data.resumo_geral ?? null,
+    leituras: data.leituras ?? [],
+    pontos_fortes: data.pontos_fortes ?? [],
+    pontos_atencao: data.pontos_atencao ?? [],
+    indicadores_recentes: {
+      inse_valor: data.indicadores_recentes?.inse_valor ?? null,
+      inse_grupo: data.indicadores_recentes?.inse_grupo ?? null,
+      ideb_ai: data.indicadores_recentes?.ideb_ai_recente ?? null,
+      ideb_af: data.indicadores_recentes?.ideb_af_recente ?? null,
+      ideb_em: data.indicadores_recentes?.ideb_em_recente ?? null,
+    },
+    comparativos: {
+      municipio: data.comparativos?.municipio ?? null,
+      uf: data.comparativos?.uf ?? null,
+    },
+  };
+  cacheSet(cacheKey, result);
+  return result;
 }
 
 export async function getEscolaBasicaRailway(inep: string) {

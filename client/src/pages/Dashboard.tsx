@@ -15,7 +15,7 @@ import {
   Globe, Building2, TreePine, Filter, X, Clock, Heart,
   CheckCircle, CircleAlert
 } from "lucide-react";
-import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais } from "@/hooks/use-schools";
+import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico } from "@/hooks/use-schools";
 import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento } from "@/hooks/use-pdde";
 import { useSigpcLocalizar } from "@/hooks/use-sigpc";
 import { DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon } from "lucide-react";
@@ -100,6 +100,8 @@ export default function Dashboard() {
   const { data: searchResults, refetch: refetchSearch, isLoading: searchLoading } = useSchoolSearch(searchQuery);
   const { data: evolucaoData, isLoading: evolucaoLoading } = useEscolaEvolucao(selectedInep || "");
   const { data: mediasNacionais } = useMediasNacionais(selectedAno);
+  const { data: comparativoData } = useEscolaComparativo(selectedInep || "");
+  const { data: diagnosticoData } = useEscolaDiagnostico(selectedInep || "");
   const [pddeAno, setPddeAno] = useState<number>(new Date().getFullYear());
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
   const pddeCnpj = pddeData?.uex?.cnpj || null;
@@ -1256,6 +1258,105 @@ export default function Dashboard() {
                     </div>
                     <div className="organic-divider" />
                     <IndicatorPanel indicadores={indicadoresLatest} mediasNacionais={mediasNacionais} />
+                  </section>
+                )}
+
+                {/* ── COMPARATIVO IDEB (escola vs município / UF / Brasil) ── */}
+                {comparativoData && (
+                  <section className="section">
+                    <div className="section-title">
+                      <div><h2>Posição no ranking</h2><p>IDEB da escola comparado ao município, estado e Brasil</p></div>
+                      <div className="hint-chip">Fonte: Railway · {comparativoData.municipio?.nome}/{comparativoData.uf?.sg}</div>
+                    </div>
+                    <div className="organic-divider" />
+                    {(['ai','af','em'] as const).some(etapa => comparativoData.escola[`ideb_${etapa}`] != null) ? (
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:'14px'}}>
+                        {(['ai','af','em'] as const).map(etapa => {
+                          const labels: Record<string,string> = { ai:'Anos Iniciais', af:'Anos Finais', em:'Ensino Médio' };
+                          const key = `ideb_${etapa}` as const;
+                          const escola = comparativoData.escola[key];
+                          if (escola == null) return null;
+                          const mun = comparativoData.municipio[key];
+                          const uf = comparativoData.uf[key];
+                          const br = comparativoData.brasil[key];
+                          const fmt = (v: number | null) => v != null ? Number(v).toFixed(1) : '—';
+                          const diff = (ref: number | null) => {
+                            if (ref == null || escola == null) return null;
+                            const d = escola - ref;
+                            return d >= 0 ? `+${d.toFixed(1)}` : d.toFixed(1);
+                          };
+                          const color = (ref: number | null) => {
+                            if (ref == null || escola == null) return 'var(--m-muted)';
+                            return escola >= ref ? '#2f7a58' : '#c0392b';
+                          };
+                          return (
+                            <div key={etapa} className="soft-card" style={{padding:'16px 18px'}}>
+                              <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'var(--m-text)'}}>{labels[etapa]}</div>
+                              <div style={{fontSize:'34px',fontWeight:800,letterSpacing:'-0.04em',color:'var(--m-text)',marginBottom:'12px'}}>{fmt(escola)}</div>
+                              {[
+                                { label: comparativoData.municipio?.nome || 'Município', val: mun },
+                                { label: comparativoData.uf?.sg || 'Estado', val: uf },
+                                { label: 'Brasil', val: br },
+                              ].map(row => (
+                                <div key={row.label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:'12px',marginBottom:'5px'}}>
+                                  <span style={{color:'var(--m-muted)'}}>{row.label}</span>
+                                  <span style={{fontWeight:600}}>
+                                    {fmt(row.val)}
+                                    {row.val != null && escola != null && (
+                                      <span style={{marginLeft:'5px',color:color(row.val),fontSize:'11px'}}>{diff(row.val)}</span>
+                                    )}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p style={{color:'var(--m-muted)',fontSize:'13px'}}>Dados de IDEB não disponíveis para comparativo.</p>
+                    )}
+                  </section>
+                )}
+
+                {/* ── DIAGNÓSTICO DA ESCOLA ── */}
+                {diagnosticoData && (diagnosticoData.pontos_fortes.length > 0 || diagnosticoData.pontos_atencao.length > 0 || diagnosticoData.leituras.length > 0) && (
+                  <section className="section">
+                    <div className="section-title">
+                      <div><h2>Diagnóstico da escola</h2><p>Pontos fortes e de atenção identificados automaticamente</p></div>
+                    </div>
+                    <div className="organic-divider" />
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:'14px'}}>
+                      {diagnosticoData.pontos_fortes.length > 0 && (
+                        <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #2f7a58'}}>
+                          <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2f7a58'}}>✅ Pontos fortes</div>
+                          <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
+                            {diagnosticoData.pontos_fortes.map((p: string, i: number) => (
+                              <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {diagnosticoData.pontos_atencao.length > 0 && (
+                        <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #c0392b'}}>
+                          <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#c0392b'}}>⚠️ Pontos de atenção</div>
+                          <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
+                            {diagnosticoData.pontos_atencao.map((p: string, i: number) => (
+                              <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {diagnosticoData.leituras.length > 0 && (
+                        <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #2d5a88'}}>
+                          <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2d5a88'}}>📊 Leituras dos dados</div>
+                          <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
+                            {diagnosticoData.leituras.map((p: string, i: number) => (
+                              <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </section>
                 )}
 

@@ -66,6 +66,36 @@ export function useEscolaEvolucao(inep: string) {
   });
 }
 
+export function useEscolaComparativo(inep: string) {
+  return useQuery({
+    queryKey: ["escola-comparativo", inep],
+    queryFn: async () => {
+      if (!inep) return null;
+      const res = await fetch(`/api/escola-comparativo/${inep}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!inep,
+    retry: false,
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+export function useEscolaDiagnostico(inep: string) {
+  return useQuery({
+    queryKey: ["escola-diagnostico", inep],
+    queryFn: async () => {
+      if (!inep) return null;
+      const res = await fetch(`/api/escola-diagnostico/${inep}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!inep,
+    retry: false,
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
 export function useEstatisticas(ano: number) {
   return useQuery({
     queryKey: ["estatisticas", ano],

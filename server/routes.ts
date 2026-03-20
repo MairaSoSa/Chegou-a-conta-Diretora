@@ -28,6 +28,7 @@ import {
 import {
   searchEscolasRailway, getEscolaEvolucaoRailway,
   getEscolaCompletaRailway, getEscolaBasicaRailway,
+  getComparativoRailway, getDiagnosticoRailway,
 } from "./railway-client";
 import { importAllIndicators, getIndicatorImportRunning, getAvailableIndicators, importIdeb, importInse, generateSaebFromIdeb } from "./import-inep-indicators";
 import { 
@@ -223,6 +224,22 @@ export async function registerRoutes(
     const localData = getEscolaEvolucaoLocal(inep);
     if (localData) return res.json(localData);
     res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], escola: null, censo_por_ano: {}, indicadores_por_ano: {} });
+  });
+
+  // === PUBLIC: COMPARATIVO (escola vs município, UF e Brasil) ===
+  app.get("/api/escola-comparativo/:inep", async (req, res) => {
+    const inep = getParam(req.params, "inep");
+    const data = await getComparativoRailway(inep);
+    if (!data) return res.json(null);
+    res.json(data);
+  });
+
+  // === PUBLIC: DIAGNÓSTICO (pontos fortes, pontos de atenção, leituras) ===
+  app.get("/api/escola-diagnostico/:inep", async (req, res) => {
+    const inep = getParam(req.params, "inep");
+    const data = await getDiagnosticoRailway(inep);
+    if (!data) return res.json(null);
+    res.json(data);
   });
 
   app.get("/api/medias-nacionais", (req, res) => {
