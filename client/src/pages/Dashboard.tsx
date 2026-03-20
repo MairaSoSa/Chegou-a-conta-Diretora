@@ -2528,12 +2528,7 @@ export default function Dashboard() {
 
       {/* ── Modal flutuante: escolas similares ── */}
       {similarMode && (() => {
-        const activeUf = similarClickedUf;
-        const escolasFiltradas = activeUf
-          ? (similarData?.escolas || []).filter((e: any) => e.uf === activeUf)
-          : (similarData?.escolas || []);
-        const ufsSorted = Object.entries((similarData?.por_uf || {}) as Record<string, number>)
-          .sort(([,a],[,b]) => b - a);
+        const escolasFiltradas = (similarData?.escolas || []);
 
         return (
           <div
@@ -2570,6 +2565,11 @@ export default function Dashboard() {
                           📚 {similarData.escola_base.modalidades}
                         </span>
                       )}
+                      {similarData.escola_base?.icg_nivel != null && (
+                        <span style={{ fontSize: 12, background: "#fff7ed", color: "#c2410c", borderRadius: 99, padding: "2px 10px" }}>
+                          ICG Nível {similarData.escola_base.icg_nivel}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2588,35 +2588,6 @@ export default function Dashboard() {
                 </div>
               ) : similarData ? (
                 <>
-                  {/* Filtro por estado */}
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14, flexShrink: 0 }}>
-                    <button
-                      onClick={() => setSimilarClickedUf(null)}
-                      style={{
-                        padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: "pointer",
-                        background: !activeUf ? "#0d9488" : "#f1f5f9",
-                        color: !activeUf ? "#fff" : "#475569",
-                        border: "none",
-                      }}
-                    >
-                      Todos ({similarData.total})
-                    </button>
-                    {ufsSorted.map(([uf, n]) => (
-                      <button
-                        key={uf}
-                        onClick={() => setSimilarClickedUf(prev => prev === uf ? null : uf)}
-                        style={{
-                          padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                          background: activeUf === uf ? "#0d9488" : "#f0fdfa",
-                          color: activeUf === uf ? "#fff" : "#0d9488",
-                          border: "1px solid #99f6e4",
-                        }}
-                      >
-                        {uf} ({n})
-                      </button>
-                    ))}
-                  </div>
-
                   {/* Lista */}
                   <div style={{ overflowY: "auto", flex: 1, paddingBottom: 24 }}>
                     {escolasFiltradas.length === 0 ? (
@@ -2629,6 +2600,9 @@ export default function Dashboard() {
                             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
                               <span style={{ fontSize: 12, background: "#dbeafe", color: "#1d4ed8", borderRadius: 99, padding: "2px 8px" }}>📍 {escola.municipio}/{escola.uf}</span>
                               <span style={{ fontSize: 12, background: "#fef3c7", color: "#92400e", borderRadius: 99, padding: "2px 8px" }}>👩‍🎓 {escola.matriculas?.toLocaleString("pt-BR") || "—"} alunos</span>
+                              {escola.icg_nivel != null && (
+                                <span style={{ fontSize: 11, background: "#fff7ed", color: "#c2410c", borderRadius: 99, padding: "2px 8px" }}>ICG {escola.icg_nivel}</span>
+                              )}
                               {escola.modalidades?.map((m: string) => (
                                 <span key={m} style={{ fontSize: 11, background: "#f1f5f9", color: "#64748b", borderRadius: 99, padding: "2px 8px" }}>{m}</span>
                               ))}

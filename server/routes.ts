@@ -367,30 +367,26 @@ export async function registerRoutes(
       ].filter(Boolean).sort().join("+") || "EF";
       const fingerprintBase = toFingerprint(escola);
 
-      // Mapeamento UF → macro-região para filtro geográfico
-      const UF_REGIAO: Record<string, string> = {
-        AC:"N",AM:"N",AP:"N",PA:"N",RO:"N",RR:"N",TO:"N",
-        AL:"NE",BA:"NE",CE:"NE",MA:"NE",PB:"NE",PE:"NE",PI:"NE",RN:"NE",SE:"NE",
-        DF:"CO",GO:"CO",MS:"CO",MT:"CO",
-        ES:"SE",MG:"SE",RJ:"SE",SP:"SE",
-        PR:"S",RS:"S",SC:"S",
-      };
-      const regiaoBase = UF_REGIAO[escola.uf?.toUpperCase() || ""] || null;
+      // ICG da escola base
+      const icgBase = (sqlite.prepare(`
+        SELECT json_extract(dados, '$.nivel') as nivel
+        FROM indicadores_educacionais WHERE inep=? AND ano=? AND tipo='icg' LIMIT 1
+      `).get(inep, ano) as any)?.nivel ?? null;
 
-      // 2ª query: leve — apenas campos indexados, sem JSON
+      const ufBase = escola.uf?.toUpperCase() || "";
+
+      // 2ª query: leve — campos indexados, mesmo estado
       const candidatos = sqlite.prepare(`
         SELECT inep, nome, municipio, uf, dependencia, localizacao,
           CAST(matriculas as INTEGER) as matriculas
         FROM censo_escolar
-        WHERE ano=? AND dependencia=? AND localizacao=? AND situacao='Em Atividade' AND inep!=?
-      `).all(ano, escola.dependencia, escola.localizacao, inep) as any[];
+        WHERE ano=? AND dependencia=? AND localizacao=? AND uf=? AND situacao='Em Atividade' AND inep!=?
+      `).all(ano, escola.dependencia, escola.localizacao, ufBase, inep) as any[];
 
-      // Filtro leve: matrícula + região (sem JSON ainda)
+      // Filtro leve: faixa de matrículas (sem JSON ainda)
       const prefiltrados = candidatos.filter(s => {
         const mat = s.matriculas || 0;
-        if (mat < minMat || mat > maxMat) return false;
-        if (regiaoBase && UF_REGIAO[s.uf?.toUpperCase() || ""] !== regiaoBase) return false;
-        return true;
+        return mat >= minMat && mat <= maxMat;
       });
 
       // Haversine por município usando centroide real (5.570 municípios)
@@ -411,27 +407,35 @@ export async function registerRoutes(
         const prefIneps = prefiltrados.map(s => s.inep);
         const placeholders = prefIneps.map(() => "?").join(",");
         const detalhes = sqlite.prepare(`
-          SELECT inep,
-            json_extract(dados, '$.telefone')    as telefone,
-            json_extract(dados, '$.ds_endereco') as ds_endereco,
-            json_extract(dados, '$.no_bairro')   as no_bairro,
-            json_extract(dados, '$.co_cep')      as co_cep,
-            CAST(COALESCE(json_extract(dados, '$.co_municipio'), 0) as INTEGER) as co_municipio,
-            CAST(COALESCE(json_extract(dados, '$.qt_mat_inf'),  0) as INTEGER) as qt_mat_inf,
-            CAST(COALESCE(json_extract(dados, '$.qt_mat_fund'), 0) as INTEGER) as qt_mat_fund,
-            CAST(COALESCE(json_extract(dados, '$.qt_mat_med'),  0) as INTEGER) as qt_mat_med,
-            CAST(COALESCE(json_extract(dados, '$.qt_mat_eja'),  0) as INTEGER) as qt_mat_eja,
-            CAST(COALESCE(json_extract(dados, '$.qt_mat_prof'), 0) as INTEGER) as qt_mat_prof
-          FROM censo_escolar WHERE ano=? AND inep IN (${placeholders})
-        `).all(ano, ...prefIneps) as any[];
+          SELECT c.inep,
+            json_extract(c.dados, '$.telefone')    as telefone,
+            json_extract(c.dados, '$.ds_endereco') as ds_endereco,
+            json_extract(c.dados, '$.no_bairro')   as no_bairro,
+            json_extract(c.dados, '$.co_cep')      as co_cep,
+            CAST(COALESCE(json_extract(c.dados, '$.co_municipio'), 0) as INTEGER) as co_municipio,
+            CAST(COALESCE(json_extract(c.dados, '$.qt_mat_inf'),  0) as INTEGER) as qt_mat_inf,
+            CAST(COALESCE(json_extract(c.dados, '$.qt_mat_fund'), 0) as INTEGER) as qt_mat_fund,
+            CAST(COALESCE(json_extract(c.dados, '$.qt_mat_med'),  0) as INTEGER) as qt_mat_med,
+            CAST(COALESCE(json_extract(c.dados, '$.qt_mat_eja'),  0) as INTEGER) as qt_mat_eja,
+            CAST(COALESCE(json_extract(c.dados, '$.qt_mat_prof'), 0) as INTEGER) as qt_mat_prof,
+            CAST(json_extract(ie.dados, '$.nivel') as INTEGER) as icg_nivel
+          FROM censo_escolar c
+          LEFT JOIN indicadores_educacionais ie
+            ON ie.inep = c.inep AND ie.ano = ? AND ie.tipo = 'icg'
+          WHERE c.ano=? AND c.inep IN (${placeholders})
+        `).all(ano, ano, ...prefIneps) as any[];
 
         const detalheMap: Record<string, any> = {};
         for (const d of detalhes) detalheMap[d.inep] = d;
 
-        // Filtro por modalidade (fingerprint exato) + merge + ordenação por distância real por município
+        // Filtro por modalidade (fingerprint exato) + ICG + merge + ordenação por distância
         similares = prefiltrados
           .map(s => ({ ...s, ...(detalheMap[s.inep] || {}) }))
-          .filter(s => toFingerprint(s) === fingerprintBase)
+          .filter(s => {
+            if (toFingerprint(s) !== fingerprintBase) return false;
+            if (icgBase !== null && s.icg_nivel !== null && s.icg_nivel !== icgBase) return false;
+            return true;
+          })
           .sort((a, b) => {
             const da = haversineKm(coMunBase, a.co_municipio || 0);
             const db = haversineKm(coMunBase, b.co_municipio || 0);
@@ -449,8 +453,9 @@ export async function registerRoutes(
       res.json({
         escola_base: {
           inep, dependencia: escola.dependencia, localizacao: escola.localizacao,
-          matriculas: escola.matriculas, regiao: regiaoBase,
+          matriculas: escola.matriculas, uf: ufBase,
           modalidades: fingerprintBase,
+          icg_nivel: icgBase,
         },
         total: similares.length,
         por_uf: porUf,
@@ -467,6 +472,7 @@ export async function registerRoutes(
           ds_endereco: s.ds_endereco || null,
           no_bairro: s.no_bairro || null,
           co_cep: s.co_cep || null,
+          icg_nivel: s.icg_nivel ?? null,
           modalidades: [
             s.qt_mat_inf  > 0 && "Infantil",
             s.qt_mat_fund > 0 && "Fundamental",
