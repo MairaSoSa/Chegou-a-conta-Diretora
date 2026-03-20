@@ -561,15 +561,19 @@ export async function registerRoutes(
       const maxMat = Math.ceil((escola.matriculas || 50) * 1.30);
       const targetMat = escola.matriculas || 50;
 
-      // Fingerprint de modalidade da escola base (ex: "EF+EM" ou "EI" ou "EF+EJA")
-      const toFingerprint = (r: any) => [
-        r.qt_mat_inf  > 0 ? "EI"  : null,
-        r.qt_mat_fund > 0 ? "EF"  : null,
-        r.qt_mat_med  > 0 ? "EM"  : null,
-        r.qt_mat_eja  > 0 ? "EJA" : null,
-        r.qt_mat_prof > 0 ? "EP"  : null,
-      ].filter(Boolean).sort().join("+") || "EF";
-      const fingerprintBase = toFingerprint(escola);
+      // Modalidades da escola base (ex: Set {"EM","EJA"})
+      const toModalidades = (r: any): Set<string> => {
+        const s = new Set<string>();
+        if (r.qt_mat_inf  > 0) s.add("EI");
+        if (r.qt_mat_fund > 0) s.add("EF");
+        if (r.qt_mat_med  > 0) s.add("EM");
+        if (r.qt_mat_eja  > 0) s.add("EJA");
+        if (r.qt_mat_prof > 0) s.add("EP");
+        if (s.size === 0) s.add("EF");
+        return s;
+      };
+      const modalidadesBase = toModalidades(escola);
+      const fingerprintBase = [...modalidadesBase].sort().join("+");
 
       // ICG da escola base
       const icgBase = (sqlite.prepare(`
@@ -632,11 +636,20 @@ export async function registerRoutes(
         const detalheMap: Record<string, any> = {};
         for (const d of detalhes) detalheMap[d.inep] = d;
 
-        // Filtro por modalidade (fingerprint exato) + ICG + merge + ordenação por distância
+        // Filtro: candidata deve ter PELO MENOS as modalidades da base (superset OK)
+        // Ex: base={"EM","EJA"} → candidata com {"EF","EM","EJA"} é aceita
+        const contemBase = (s: any): boolean => {
+          const mods = toModalidades(s);
+          for (const m of modalidadesBase) {
+            if (!mods.has(m)) return false;
+          }
+          return true;
+        };
+
         similares = prefiltrados
           .map(s => ({ ...s, ...(detalheMap[s.inep] || {}) }))
           .filter(s => {
-            if (toFingerprint(s) !== fingerprintBase) return false;
+            if (!contemBase(s)) return false;
             if (icgBase !== null && s.icg_nivel !== null && s.icg_nivel !== icgBase) return false;
             return true;
           })
