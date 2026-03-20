@@ -171,7 +171,9 @@ export default function Dashboard() {
 
   const censoLatest = useMemo(() => {
     if (!evolucaoData || !latestAno) return null;
-    return evolucaoData.censo_por_ano?.[latestAno] || null;
+    return evolucaoData.censo_por_ano?.[latestAno] ||
+           evolucaoData.censo_por_ano?.[String(latestAno)] ||
+           {} as Record<string, any>;
   }, [evolucaoData, latestAno]);
 
   const censoPrev = useMemo(() => {
@@ -590,9 +592,16 @@ export default function Dashboard() {
                         >
                           {/* Loading */}
                           {searchLoading && (
-                            <div className="flex items-center gap-2.5 px-4 py-3.5 text-sm text-muted-foreground">
-                              <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-                              <span>Buscando escolas...</span>
+                            <div className="px-4 py-3.5">
+                              <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                                <Loader2 className="w-4 h-4 animate-spin text-blue-400 shrink-0" />
+                                <span>Consultando API...</span>
+                              </div>
+                              {!/^\d{7,8}$/.test(searchQuery.trim()) && (
+                                <p className="text-xs text-muted-foreground/70 mt-1.5 pl-6">
+                                  Busca por nome pode levar até 30 s. Para resultado imediato, use o código INEP (8 dígitos).
+                                </p>
+                              )}
                             </div>
                           )}
 
@@ -643,7 +652,10 @@ export default function Dashboard() {
                           {!searchLoading && searchResults?.dados && searchResults.dados.length === 0 && (
                             <div className="px-4 py-5 text-center text-sm text-muted-foreground">
                               <Search className="w-6 h-6 mx-auto mb-1.5 opacity-30" />
-                              Nenhuma escola encontrada para "<strong>{searchQuery}</strong>"
+                              <p>Nenhuma escola encontrada para "<strong>{searchQuery}</strong>"</p>
+                              {!/^\d{7,8}$/.test(searchQuery.trim()) && (
+                                <p className="text-xs mt-1.5 opacity-70">Tente buscar pelo código INEP da escola (8 dígitos) para resultado instantâneo.</p>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1013,7 +1025,7 @@ export default function Dashboard() {
                   <p className="text-muted-foreground">Carregando dados da escola...</p>
                 </CardContent>
               </Card>
-            ) : evolucaoData && censoLatest ? (
+            ) : evolucaoData?.escola ? (
               (() => {
                 const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
                 const criticals = alertasPreocupantes.filter(a => a.tipo === 'critical');
