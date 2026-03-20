@@ -2,9 +2,9 @@ node_modules/
 *.db
 *.db-wal
 *.db-shm
-attached_assets/
-scripts/
 .local/
 .git/
+.cache/
 *.log
 tmp/
+dist/
