@@ -165,43 +165,120 @@ function mapIndicadores(h: any): Record<string, any> {
   return ind;
 }
 
-// Extrai dados de censo do campo "raw" do /completo
-function mapCensoRaw(raw: any, baseInfo: any): any {
-  if (!raw) return baseInfo;
+function n(v: any): number | null { return v != null ? Number(v) : null; }
+function b(v: any): number | null { return v != null ? Number(v) : null; }
+
+// Extrai dados completos de censo + infraestrutura dos objetos estruturados do /completo
+function mapCensoRaw(escolaData: any, baseInfo: any): any {
+  const raw  = escolaData?.raw                    ?? {};
+  const dep  = escolaData?.dependencias           ?? {};
+  const inf  = escolaData?.infraestrutura_saneamento ?? {};
+  const tec  = escolaData?.tecnologia_conectividade  ?? {};
+  const ace  = escolaData?.acessibilidade            ?? {};
+  const ali  = escolaData?.alimentacao_servicos      ?? {};
+  const str  = escolaData?.estrutura                 ?? {};
+  const mat  = str.matriculas                        ?? {};
+  const doc  = str.docentes                          ?? {};
+  const tur  = str.turmas                            ?? {};
+  const cap  = escolaData?.capacidade_fisica         ?? {};
+
   return {
     ...baseInfo,
-    // Matrículas
-    qt_mat_bas:  raw.qt_mat_bas  != null ? Number(raw.qt_mat_bas)  : null,
-    qt_mat_inf:  raw.qt_mat_inf  != null ? Number(raw.qt_mat_inf)  : null,
-    qt_mat_fund: raw.qt_mat_fund != null ? Number(raw.qt_mat_fund) : null,
-    qt_mat_med:  raw.qt_mat_med  != null ? Number(raw.qt_mat_med)  : null,
-    qt_mat_eja:  raw.qt_mat_eja  != null ? Number(raw.qt_mat_eja)  : null,
-    // Docentes
-    qt_doc_bas:  raw.qt_doc_bas  != null ? Number(raw.qt_doc_bas)  : null,
-    qt_doc_inf:  raw.qt_doc_inf  != null ? Number(raw.qt_doc_inf)  : null,
-    qt_doc_fund: raw.qt_doc_fund != null ? Number(raw.qt_doc_fund) : null,
-    qt_doc_med:  raw.qt_doc_med  != null ? Number(raw.qt_doc_med)  : null,
-    // Turmas
-    qt_tur_bas:  raw.qt_tur_bas  != null ? Number(raw.qt_tur_bas)  : null,
-    qt_tur_inf:  raw.qt_tur_inf  != null ? Number(raw.qt_tur_inf)  : null,
-    qt_tur_fund: raw.qt_tur_fund != null ? Number(raw.qt_tur_fund) : null,
-    qt_tur_med:  raw.qt_tur_med  != null ? Number(raw.qt_tur_med)  : null,
-    // Salas
-    qt_salas_utilizadas:        raw.qt_salas_utilizadas        != null ? Number(raw.qt_salas_utilizadas)        : null,
-    qt_salas_utilizadas_dentro: raw.qt_salas_utilizadas_dentro != null ? Number(raw.qt_salas_utilizadas_dentro) : null,
-    qt_salas_utilizadas_fora:   raw.qt_salas_utilizadas_fora   != null ? Number(raw.qt_salas_utilizadas_fora)   : null,
-    // Infraestrutura básica
-    in_agua_potavel:        raw.in_agua_potavel,
-    in_energia_rede_publica: raw.in_energia_rede_publica,
-    in_esgoto_rede_publica:  raw.in_esgoto_rede_publica,
-    in_internet:             raw.in_internet,
-    in_banda_larga:          raw.in_banda_larga,
-    // Dependências
-    in_laboratorio_informatica: raw.in_laboratorio_informatica,
-    in_biblioteca:              raw.in_biblioteca,
-    in_quadra_esportes:         raw.in_quadra_esportes,
-    in_alimentacao:             raw.in_alimentacao,
-    // Ano do raw
+    // ── Matrículas ──────────────────────────────────────────────────────────
+    qt_mat_bas:  n(raw.qt_mat_bas  ?? mat.qt_mat_bas),
+    qt_mat_inf:  n(raw.qt_mat_inf  ?? mat.qt_mat_inf),
+    qt_mat_fund: n(raw.qt_mat_fund ?? mat.qt_mat_fund),
+    qt_mat_med:  n(raw.qt_mat_med  ?? mat.qt_mat_med),
+    qt_mat_eja:  n(raw.qt_mat_eja  ?? mat.qt_mat_eja),
+    // ── Docentes ────────────────────────────────────────────────────────────
+    qt_doc_bas:  n(raw.qt_doc_bas  ?? doc.qt_doc_bas),
+    qt_doc_inf:  n(raw.qt_doc_inf  ?? doc.qt_doc_inf),
+    qt_doc_fund: n(raw.qt_doc_fund ?? doc.qt_doc_fund),
+    qt_doc_med:  n(raw.qt_doc_med  ?? doc.qt_doc_med),
+    // ── Turmas ──────────────────────────────────────────────────────────────
+    qt_tur_bas:  n(raw.qt_tur_bas  ?? tur.qt_tur_bas),
+    qt_tur_inf:  n(raw.qt_tur_inf  ?? tur.qt_tur_inf),
+    qt_tur_fund: n(raw.qt_tur_fund ?? tur.qt_tur_fund),
+    qt_tur_med:  n(raw.qt_tur_med  ?? tur.qt_tur_med),
+    // ── Salas ───────────────────────────────────────────────────────────────
+    qt_salas_utilizadas:        n(raw.qt_salas_utilizadas        ?? cap.qt_salas_utilizadas),
+    qt_salas_utilizadas_dentro: n(raw.qt_salas_utilizadas_dentro ?? cap.qt_salas_utilizadas_dentro),
+    qt_salas_utilizadas_fora:   n(raw.qt_salas_utilizadas_fora   ?? cap.qt_salas_utilizadas_fora),
+    // ── Saneamento / Água ───────────────────────────────────────────────────
+    in_agua_potavel:          b(raw.in_agua_potavel        ?? inf.agua_potavel),
+    in_agua_rede_publica:     b(raw.in_agua_rede_publica   ?? inf.agua_rede_publica),
+    in_agua_poco_artesiano:   b(inf.agua_poco_artesiano),
+    in_agua_cacimba:          b(inf.agua_cacimba),
+    in_agua_fonte_rio:        b(inf.agua_fonte_rio),
+    in_agua_carro_pipa:       b(inf.agua_carro_pipa),
+    in_agua_inexistente:      b(inf.agua_inexistente),
+    // ── Energia ─────────────────────────────────────────────────────────────
+    in_energia_rede_publica:  b(raw.in_energia_rede_publica ?? inf.energia_rede_publica),
+    in_energia_gerador_fossil: b(inf.energia_gerador_fossil),
+    in_energia_renovavel:     b(inf.energia_renovavel),
+    in_energia_inexistente:   b(inf.energia_inexistente),
+    // ── Esgoto ──────────────────────────────────────────────────────────────
+    in_esgoto_rede_publica:   b(raw.in_esgoto_rede_publica ?? inf.esgoto_rede_publica),
+    in_esgoto_fossa_septica:  b(inf.esgoto_fossa_septica),
+    in_esgoto_fossa_comum:    b(inf.esgoto_fossa_comum),
+    in_esgoto_fossa:          b(inf.esgoto_fossa),
+    in_esgoto_inexistente:    b(inf.esgoto_inexistente),
+    // ── Lixo ────────────────────────────────────────────────────────────────
+    in_lixo_coleta_publica:       b(inf.lixo_coleta_publica),
+    in_lixo_servico_coleta:       b(inf.lixo_coleta_publica),  // alias nome antigo
+    in_lixo_queima:               b(inf.lixo_queima),
+    in_lixo_enterra:              b(inf.lixo_enterra),
+    in_lixo_destino_publico:      b(inf.lixo_destino_publico),
+    in_tratamento_lixo_separacao: b(inf.tratamento_lixo_separacao),
+    in_tratamento_lixo_reutiliza: b(inf.tratamento_lixo_reutiliza),
+    in_tratamento_lixo_reciclagem: b(inf.tratamento_lixo_reciclagem),
+    // ── Dependências / Espaços ───────────────────────────────────────────────
+    in_biblioteca:              b(raw.in_biblioteca    ?? dep.biblioteca),
+    in_biblioteca_sala_leitura: b(dep.biblioteca_sala_leitura),
+    in_laboratorio_informatica: b(raw.in_laboratorio_informatica ?? dep.laboratorio_informatica),
+    in_laboratorio_ciencias:    b(dep.laboratorio_ciencias),
+    in_quadra_esportes:         b(raw.in_quadra_esportes ?? dep.quadra_esportes),
+    in_quadra_esportes_coberta:   b(dep.quadra_esportes_coberta),
+    in_quadra_esportes_descoberta: b(dep.quadra_esportes ?? dep.quadra_esportes_descoberta),
+    in_sala_diretoria:          b(dep.sala_diretoria),
+    in_sala_professor:          b(dep.sala_professor),
+    in_cozinha:                 b(dep.cozinha),
+    in_refeitorio:              b(dep.refeitorio),
+    in_almoxarifado:            b(dep.almoxarifado),
+    in_auditorio:               b(dep.auditorio),
+    in_patio_coberto:           b(dep.patio_coberto),
+    in_patio_descoberto:        b(dep.patio_descoberto),
+    in_parque_infantil:         b(dep.parque_infantil),
+    in_banheiro:                b(dep.banheiro),
+    in_banheiro_ei:             b(dep.banheiro_ei),
+    in_banheiro_pne:            b(dep.banheiro_pne),
+    in_banheiro_funcionarios:   b(dep.banheiro_funcionarios),
+    in_dormitorio_aluno:        b(dep.dormitorio_aluno),
+    in_dormitorio_professor:    b(dep.dormitorio_professor),
+    // ── Internet / Tecnologia ───────────────────────────────────────────────
+    in_internet:                b(raw.in_internet  ?? tec.internet),
+    in_banda_larga:             b(raw.in_banda_larga ?? tec.banda_larga),
+    in_internet_alunos:         b(tec.internet_alunos),
+    in_internet_administrativo: b(tec.internet_administrativo),
+    in_internet_aprendizagem:   b(tec.internet_aprendizagem),
+    qt_computadores:            n(tec.computadores),
+    in_tablet_aluno:            b(tec.tablet_aluno),
+    in_equip_tv:                b(tec.equip_tv),
+    in_equip_multimidia:        b(tec.equip_multimidia),
+    in_impressora:              b(tec.impressora),
+    // ── Acessibilidade ───────────────────────────────────────────────────────
+    in_corrimao:                b(ace.corrimao),
+    in_elevador:                b(ace.elevador),
+    in_pisos_tateis:            b(ace.pisos_tateis),
+    in_rampas:                  b(ace.rampas),
+    in_sinal_visual:            b(ace.sinal_visual),
+    in_acessibilidade_inexistente: b(ace.acessibilidade_inexistente),
+    // ── Alimentação e Serviços ───────────────────────────────────────────────
+    in_alimentacao:             b(raw.in_alimentacao ?? ali.alimentacao_escolar),
+    in_alimentacao_escolar:     b(ali.alimentacao_escolar),
+    in_atendimento_aee:         b(ali.atendimento_aee),
+    in_atividade_complementar:  b(ali.atividade_complementar),
+    // Ano do censo
     ano_raw: raw.ano ?? null,
   };
 }
@@ -285,17 +362,17 @@ export async function getEscolaEvolucaoRailway(inep: string) {
       tp_situacao_funcionamento: h.tp_situacao_funcionamento,
     };
 
-    // Sobrescreve ano do raw com dados de censo completos
-    if (anoRaw && ano === anoRaw && rawCenso) {
-      censoByYear[ano] = mapCensoRaw(rawCenso, censoByYear[ano]);
+    // Sobrescreve o ano do raw com dados de censo + infraestrutura completos
+    if (anoRaw && ano === anoRaw) {
+      censoByYear[ano] = mapCensoRaw(escolaData, censoByYear[ano]);
     }
 
     indicadoresByYear[ano] = mapIndicadores(h);
   }
 
   // Se o ano do raw não estava no historico, adiciona como entrada de censo
-  if (anoRaw && !censoByYear[anoRaw] && rawCenso) {
-    censoByYear[anoRaw] = mapCensoRaw(rawCenso, { ...baseInfo });
+  if (anoRaw && !censoByYear[anoRaw]) {
+    censoByYear[anoRaw] = mapCensoRaw(escolaData, { ...baseInfo });
   }
 
   // Merge IDEB do array separado (quando vem do /completo)
