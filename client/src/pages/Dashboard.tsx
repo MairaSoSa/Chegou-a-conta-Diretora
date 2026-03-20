@@ -1564,92 +1564,16 @@ export default function Dashboard() {
                   </section>
                 )}
 
-                {/* ── EVOLUÇÃO DA INFRAESTRUTURA ── */}
-                {evolucaoData && (() => {
-                  const anos = evolucaoData.anos_disponiveis.slice().sort((a: number, b: number) => a - b);
-                  const censo = evolucaoData.censo_por_ano;
-                  const infraItems = [
-                    { key: 'in_internet', label: 'Internet' },
-                    { key: 'in_banda_larga', label: 'Banda larga' },
-                    { key: 'in_laboratorio_informatica', label: 'Lab. Informática' },
-                    { key: 'in_laboratorio_ciencias', label: 'Lab. Ciências' },
-                    { key: 'in_biblioteca', label: 'Biblioteca' },
-                    { key: 'in_biblioteca_sala_leitura', label: 'Sala de Leitura' },
-                    { key: 'in_quadra_esportes', label: 'Quadra Esportes' },
-                    { key: 'in_quadra_esportes_coberta', label: 'Quadra Coberta' },
-                    { key: 'in_refeitorio', label: 'Refeitório' },
-                    { key: 'in_cozinha', label: 'Cozinha' },
-                    { key: 'in_acessibilidade_rampas', label: 'Rampas Acesso' },
-                    { key: 'in_banheiro_pne', label: 'Banheiro PNE' },
-                    { key: 'in_auditorio', label: 'Auditório' },
-                    { key: 'in_sala_diretoria', label: 'Sala Diretoria' },
-                    { key: 'in_sala_secretaria', label: 'Secretaria' },
-                  ].filter(item => anos.some((a: number) => censo[a]?.[item.key] !== undefined && censo[a]?.[item.key] !== null));
-                  if (infraItems.length === 0) return null;
-                  return (
-                    <section className="section">
-                      <div className="section-title">
-                        <div><h2>Evolução da infraestrutura</h2><p>Compare o que a escola ganhou ou perdeu ao longo dos anos</p></div>
-                        <div className="hint-chip">Censo Escolar · {anos[0]}–{anos[anos.length-1]}</div>
-                      </div>
-                      <div className="organic-divider" />
-                      <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 480 }}>
-                          <thead>
-                            <tr style={{ background: '#f7f2ea' }}>
-                              <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 140 }}>Recurso</th>
-                              {anos.map((a: number) => (
-                                <th key={a} style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>{a}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {infraItems.map((item, idx) => {
-                              const vals = anos.map((a: number) => censo[a]?.[item.key]);
-                              return (
-                                <tr key={item.key} style={{ background: idx % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
-                                  <td style={{ padding: '9px 14px', fontWeight: 600, color: '#5d4037' }}>{item.label}</td>
-                                  {vals.map((v: any, vi: number) => {
-                                    const prev = vi > 0 ? vals[vi - 1] : null;
-                                    const gained = prev === 0 && v === 1;
-                                    const lost = prev === 1 && v === 0;
-                                    return (
-                                      <td key={vi} style={{
-                                        padding: '9px 12px', textAlign: 'center',
-                                        background: gained ? '#f0fdf4' : lost ? '#fff5f5' : undefined,
-                                        fontWeight: (gained || lost) ? 700 : 400,
-                                      }}>
-                                        {v === 1 ? <span style={{ color: '#2f7a58', fontSize: 15 }}>✓</span>
-                                          : v === 0 ? <span style={{ color: '#ccc', fontSize: 13 }}>✗</span>
-                                          : <span style={{ color: '#ddd' }}>—</span>}
-                                        {gained && <span style={{ fontSize: 9, color: '#2f7a58', display: 'block', lineHeight: 1 }}>ganhou</span>}
-                                        {lost && <span style={{ fontSize: 9, color: '#b74f42', display: 'block', lineHeight: 1 }}>perdeu</span>}
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                      <div style={{ fontSize: 11, color: '#b8a899', marginTop: 8 }}>
-                        Células destacadas em verde = recurso adquirido naquele ano · vermelho = recurso perdido
-                      </div>
-                    </section>
-                  );
-                })()}
-
                 {/* ── RETRATO DA ESCOLA — TABS ── */}
                 <section className="section">
                   <div className="section-title">
-                    <div><h2>Retrato da escola</h2><p>Dados detalhados do Censo Escolar {latestAno} por tema</p></div>
+                    <div><h2>Retrato da escola</h2><p>Evolução dos dados do Censo Escolar ao longo dos anos</p></div>
                   </div>
                   <div className="organic-divider" />
                   <div className="soft-card" style={{padding:0,overflow:'hidden'}}>
                     <div className="tab-head">
-                      <h3 style={{margin:'0 0 4px',fontSize:'18px',letterSpacing:'-0.03em'}}>Dados do Censo Escolar {latestAno}</h3>
-                      <p style={{margin:0,color:'var(--m-muted)',fontSize:'13px'}}>Navegue pelas abas para explorar diferentes dimensões</p>
+                      <h3 style={{margin:'0 0 4px',fontSize:'18px',letterSpacing:'-0.03em'}}>Evolução do Censo Escolar</h3>
+                      <p style={{margin:0,color:'var(--m-muted)',fontSize:'13px'}}>Compare os dados de cada ano — células verdes/vermelhas indicam mudanças</p>
                     </div>
                     <div className="tab-buttons-v6">
                       {(['alunos', 'etapas', 'docentes', 'infra'] as const).map(tab => (
@@ -1662,336 +1586,314 @@ export default function Dashboard() {
                         </button>
                       ))}
                     </div>
-                    {activeSchoolTab === 'alunos' && (
-                      <div className="tab-panel-v6 active">
-                        <div className="two-col">
-                          <div className="space-y-3">
-                            <div className="list-card">
-                              <h4>Por Turno</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                <div className="row-item"><span>Diurno</span><strong>{censoLatest.qt_mat_bas_d ?? '—'}</strong></div>
-                                <div className="row-item"><span>Noturno</span><strong>{censoLatest.qt_mat_bas_n ?? '—'}</strong></div>
-                                <div className="row-item"><span>EAD</span><strong>{censoLatest.qt_mat_bas_ead ?? '—'}</strong></div>
-                              </div>
-                            </div>
-                            <div className="list-card">
-                              <h4>Por Sexo</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                <div className="row-item"><span>Feminino</span><strong>{censoLatest.qt_mat_bas_fem ?? '—'}</strong></div>
-                                <div className="row-item"><span>Masculino</span><strong>{censoLatest.qt_mat_bas_masc ?? '—'}</strong></div>
-                                <div className="row-item"><span>Não declarado</span><strong>{censoLatest.qt_mat_bas_nd ?? '—'}</strong></div>
-                              </div>
-                            </div>
-                            <div className="list-card">
-                              <h4>Por Cor/Raça</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                <div className="row-item"><span>Branca</span><strong>{censoLatest.qt_mat_bas_branca ?? '—'}</strong></div>
-                                <div className="row-item"><span>Preta</span><strong>{censoLatest.qt_mat_bas_preta ?? '—'}</strong></div>
-                                <div className="row-item"><span>Parda</span><strong>{censoLatest.qt_mat_bas_parda ?? '—'}</strong></div>
-                                <div className="row-item"><span>Amarela</span><strong>{censoLatest.qt_mat_bas_amarela ?? '—'}</strong></div>
-                                <div className="row-item"><span>Indígena</span><strong>{censoLatest.qt_mat_bas_indigena ?? '—'}</strong></div>
-                              </div>
-                            </div>
-                            <div className="list-card">
-                              <h4>Transporte &amp; Zona</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                <div className="row-item"><span>Zona Urbana</span><strong>{censoLatest.qt_mat_zr_urb ?? '—'}</strong></div>
-                                <div className="row-item"><span>Zona Rural</span><strong>{censoLatest.qt_mat_zr_rur ?? '—'}</strong></div>
-                                <div className="row-item"><span>Transporte Público</span><strong>{censoLatest.qt_transp_publico ?? '—'}</strong></div>
-                                <div className="row-item"><span>Resp. Estadual</span><strong>{censoLatest.qt_transp_resp_est ?? '—'}</strong></div>
-                                <div className="row-item"><span>Resp. Municipal</span><strong>{censoLatest.qt_transp_resp_mun ?? '—'}</strong></div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="space-y-3">
-                            <div className="mini-grid-3">
-                              {[
-                                { label: '0 a 3 anos', val: censoLatest.qt_mat_bas_0_3, icon: '🍼' },
-                                { label: '4 a 5 anos', val: censoLatest.qt_mat_bas_4_5, icon: '🧸' },
-                                { label: '6 a 10 anos', val: censoLatest.qt_mat_bas_6_10, icon: '📏' },
-                                { label: '11 a 14 anos', val: censoLatest.qt_mat_bas_11_14, icon: '📐' },
-                                { label: '15 a 17 anos', val: censoLatest.qt_mat_bas_15_17, icon: '📘' },
-                                { label: '18+ anos', val: censoLatest.qt_mat_bas_18_mais, icon: '🎓' },
-                              ].map((f, i) => (
-                                <div key={i} className="fact">
-                                  <label>{f.icon} {f.label}</label>
-                                  <strong>{f.val != null ? f.val.toLocaleString('pt-BR') : '—'}</strong>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="list-card">
-                              <h4>Educação Especial</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                <div className="row-item"><span>Total Matrículas</span><strong>{censoLatest.qt_mat_esp ?? '—'}</strong></div>
-                                <div className="row-item"><span>Classes Comuns</span><strong>{censoLatest.qt_mat_esp_cc ?? '—'}</strong></div>
-                                <div className="row-item"><span>Classes Exclusivas</span><strong>{censoLatest.qt_mat_esp_ce ?? '—'}</strong></div>
-                              </div>
-                            </div>
-                            <div className="list-card">
-                              <h4>Tempo integral</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                <div className="row-item"><span>Infantil Integral</span><strong>{censoLatest.qt_mat_inf_int ?? '—'}</strong></div>
-                                <div className="row-item"><span>Fund. AI Integral</span><strong>{censoLatest.qt_mat_fund_ai_int ?? '—'}</strong></div>
-                                <div className="row-item"><span>Fund. AF Integral</span><strong>{censoLatest.qt_mat_fund_af_int ?? '—'}</strong></div>
-                                <div className="row-item"><span>Médio Integral</span><strong>{censoLatest.qt_mat_med_int ?? '—'}</strong></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {activeSchoolTab === 'etapas' && (
-                      <div className="tab-panel-v6 active">
-                        <div className="two-col">
-                          <div className="space-y-3">
-                            <div className="list-card">
-                              <h4>Educação Infantil</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                <div className="row-item"><span>Creche</span><strong>{censoLatest.qt_mat_inf_cre ?? '—'}</strong></div>
-                                <div className="row-item"><span>Pré-escola</span><strong>{censoLatest.qt_mat_inf_pre ?? '—'}</strong></div>
-                                <div className="row-item"><span>Integral</span><strong>{censoLatest.qt_mat_inf_int ?? '—'}</strong></div>
-                              </div>
-                            </div>
-                            <div className="list-card">
-                              <h4>Ensino Fundamental</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                <div className="row-item"><span>Anos Iniciais</span><strong>{censoLatest.qt_mat_fund_ai ?? '—'}</strong></div>
-                                <div className="row-item"><span>1º ano</span><strong>{censoLatest.qt_mat_fund_ai_1 ?? '—'}</strong></div>
-                                <div className="row-item"><span>2º ano</span><strong>{censoLatest.qt_mat_fund_ai_2 ?? '—'}</strong></div>
-                                <div className="row-item"><span>3º ano</span><strong>{censoLatest.qt_mat_fund_ai_3 ?? '—'}</strong></div>
-                                <div className="row-item"><span>4º ano</span><strong>{censoLatest.qt_mat_fund_ai_4 ?? '—'}</strong></div>
-                                <div className="row-item"><span>5º ano</span><strong>{censoLatest.qt_mat_fund_ai_5 ?? '—'}</strong></div>
-                                <div className="row-item"><span>Anos Finais</span><strong>{censoLatest.qt_mat_fund_af ?? '—'}</strong></div>
-                                <div className="row-item"><span>6º ano</span><strong>{censoLatest.qt_mat_fund_af_6 ?? '—'}</strong></div>
-                                <div className="row-item"><span>7º ano</span><strong>{censoLatest.qt_mat_fund_af_7 ?? '—'}</strong></div>
-                                <div className="row-item"><span>8º ano</span><strong>{censoLatest.qt_mat_fund_af_8 ?? '—'}</strong></div>
-                                <div className="row-item"><span>9º ano</span><strong>{censoLatest.qt_mat_fund_af_9 ?? '—'}</strong></div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="space-y-3">
-                            <div className="list-card">
-                              <h4>Ensino Médio, EJA e Profissional</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                <div className="row-item"><span>Ensino Médio</span><strong>{censoLatest.qt_mat_med ?? '—'}</strong></div>
-                                <div className="row-item"><span>1ª série</span><strong>{censoLatest.qt_mat_med_prop_1 ?? '—'}</strong></div>
-                                <div className="row-item"><span>2ª série</span><strong>{censoLatest.qt_mat_med_prop_2 ?? '—'}</strong></div>
-                                <div className="row-item"><span>3ª série</span><strong>{censoLatest.qt_mat_med_prop_3 ?? '—'}</strong></div>
-                                <div className="row-item"><span>Médio Integral</span><strong>{censoLatest.qt_mat_med_int ?? '—'}</strong></div>
-                                <div className="row-item"><span>Ed. Profissional</span><strong>{censoLatest.qt_mat_prof ?? '—'}</strong></div>
-                                <div className="row-item"><span>EJA Fund.</span><strong>{censoLatest.qt_mat_eja_fund ?? '—'}</strong></div>
-                                <div className="row-item"><span>EJA Médio</span><strong>{censoLatest.qt_mat_eja_med ?? '—'}</strong></div>
-                              </div>
-                            </div>
-                            <div className="list-card">
-                              <h4>Etapas oferecidas</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                {[
-                                  ['Ed. Infantil', censoLatest.in_inf],
-                                  ['Creche', censoLatest.in_inf_cre],
-                                  ['Pré-escola', censoLatest.in_inf_pre],
-                                  ['Ensino Fund.', censoLatest.in_fund],
-                                  ['Fund. AI', censoLatest.in_fund_ai],
-                                  ['Fund. AF', censoLatest.in_fund_af],
-                                  ['Ensino Médio', censoLatest.in_med],
-                                  ['Ed. Profissional', censoLatest.in_prof],
-                                  ['EJA', censoLatest.in_eja],
-                                  ['Ed. Especial', censoLatest.in_esp],
-                                ].filter(([,v]) => v != null).map(([k, v], i) => (
-                                  <div key={i} className="row-item">
-                                    <span>{String(k)}</span>
-                                    <strong style={{color: v === 1 ? '#2f7a58' : '#b74f42'}}>{v === 1 ? '✅ Sim' : '✗ Não'}</strong>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
+                    {activeSchoolTab === 'alunos' && (() => {
+                      const anos = evolucaoData.anos_disponiveis.slice().sort((a: number, b: number) => a - b);
+                      const c = evolucaoData.censo_por_ano;
+                      type NRow = { label: string; key: string; header?: boolean };
+                      const rows: NRow[] = [
+                        { label: 'Matrículas por turno', key: '', header: true },
+                        { label: 'Total Básica', key: 'qt_mat_bas' },
+                        { label: 'Diurno', key: 'qt_mat_bas_d' },
+                        { label: 'Noturno', key: 'qt_mat_bas_n' },
+                        { label: 'EAD', key: 'qt_mat_bas_ead' },
+                        { label: 'Por Sexo', key: '', header: true },
+                        { label: 'Feminino', key: 'qt_mat_bas_fem' },
+                        { label: 'Masculino', key: 'qt_mat_bas_masc' },
+                        { label: 'Por Cor/Raça', key: '', header: true },
+                        { label: 'Branca', key: 'qt_mat_bas_branca' },
+                        { label: 'Preta', key: 'qt_mat_bas_preta' },
+                        { label: 'Parda', key: 'qt_mat_bas_parda' },
+                        { label: 'Amarela', key: 'qt_mat_bas_amarela' },
+                        { label: 'Indígena', key: 'qt_mat_bas_indigena' },
+                        { label: 'Por Faixa Etária', key: '', header: true },
+                        { label: '0 a 3 anos', key: 'qt_mat_bas_0_3' },
+                        { label: '4 a 5 anos', key: 'qt_mat_bas_4_5' },
+                        { label: '6 a 10 anos', key: 'qt_mat_bas_6_10' },
+                        { label: '11 a 14 anos', key: 'qt_mat_bas_11_14' },
+                        { label: '15 a 17 anos', key: 'qt_mat_bas_15_17' },
+                        { label: '18 e mais', key: 'qt_mat_bas_18_mais' },
+                        { label: 'Educação Especial', key: '', header: true },
+                        { label: 'Total Ed. Especial', key: 'qt_mat_esp' },
+                        { label: 'Classes Comuns', key: 'qt_mat_esp_cc' },
+                        { label: 'Classes Exclusivas', key: 'qt_mat_esp_ce' },
+                        { label: 'Tempo Integral', key: '', header: true },
+                        { label: 'Infantil Integral', key: 'qt_mat_inf_int' },
+                        { label: 'Fund. AI Integral', key: 'qt_mat_fund_ai_int' },
+                        { label: 'Fund. AF Integral', key: 'qt_mat_fund_af_int' },
+                        { label: 'Médio Integral', key: 'qt_mat_med_int' },
+                        { label: 'Zona & Transporte', key: '', header: true },
+                        { label: 'Zona Urbana', key: 'qt_mat_zr_urb' },
+                        { label: 'Zona Rural', key: 'qt_mat_zr_rur' },
+                        { label: 'Transp. Público', key: 'qt_transp_publico' },
+                      ];
+                      return (
+                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                              <thead>
+                                <tr style={{ background: '#f7f2ea', position: 'sticky', top: 0 }}>
+                                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 160 }}>Indicador</th>
+                                  {anos.map((a: number) => <th key={a} style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 60 }}>{a}</th>)}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {rows.map((row, idx) => {
+                                  if (row.header) return (
+                                    <tr key={idx}><td colSpan={anos.length + 1} style={{ padding: '7px 14px', background: '#ede8df', fontWeight: 700, fontSize: 11, color: '#7a5c3a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{row.label}</td></tr>
+                                  );
+                                  const vals = anos.map((a: number) => c[a]?.[row.key] ?? null);
+                                  if (vals.every((v: any) => v == null || v === 0)) return null;
+                                  return (
+                                    <tr key={idx} style={{ borderTop: '1px solid #f0e8d8', background: idx % 2 === 0 ? '#fff' : '#fdf8f2' }}>
+                                      <td style={{ padding: '8px 14px', color: '#5d4037', fontWeight: 500 }}>{row.label}</td>
+                                      {vals.map((v: any, vi: number) => {
+                                        const prev = vi > 0 ? vals[vi - 1] : null;
+                                        const delta = v != null && prev != null ? v - prev : null;
+                                        return (
+                                          <td key={vi} style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, color: '#2c3e50', verticalAlign: 'top' }}>
+                                            {v != null ? v.toLocaleString('pt-BR') : <span style={{ color: '#ccc' }}>—</span>}
+                                            {delta != null && delta !== 0 && <div style={{ fontSize: 9, lineHeight: 1.2, color: delta > 0 ? '#2f7a58' : '#b74f42', fontWeight: 700 }}>{delta > 0 ? '▲' : '▼'}{Math.abs(delta).toLocaleString('pt-BR')}</div>}
+                                          </td>
+                                        );
+                                      })}
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
-                      </div>
-                    )}
-                    {activeSchoolTab === 'docentes' && (
-                      <div className="tab-panel-v6 active">
-                        <div className="two-col">
-                          <div className="space-y-3">
-                            <div className="list-card">
-                              <h4>Docentes por nível</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                <div className="row-item"><span>Total</span><strong>{censoLatest.qt_doc_bas ?? '—'}</strong></div>
-                                <div className="row-item"><span>Ed. Infantil</span><strong>{censoLatest.qt_doc_inf ?? '—'}</strong></div>
-                                <div className="row-item"><span>Inf. Creche</span><strong>{censoLatest.qt_doc_inf_cre ?? '—'}</strong></div>
-                                <div className="row-item"><span>Inf. Pré</span><strong>{censoLatest.qt_doc_inf_pre ?? '—'}</strong></div>
-                                <div className="row-item"><span>Fundamental</span><strong>{censoLatest.qt_doc_fund ?? '—'}</strong></div>
-                                <div className="row-item"><span>Fund. AI</span><strong>{censoLatest.qt_doc_fund_ai ?? '—'}</strong></div>
-                                <div className="row-item"><span>Fund. AF</span><strong>{censoLatest.qt_doc_fund_af ?? '—'}</strong></div>
-                                <div className="row-item"><span>Ensino Médio</span><strong>{censoLatest.qt_doc_med ?? '—'}</strong></div>
-                                <div className="row-item"><span>Ed. Profissional</span><strong>{censoLatest.qt_doc_prof ?? '—'}</strong></div>
-                                <div className="row-item"><span>EJA</span><strong>{censoLatest.qt_doc_eja ?? '—'}</strong></div>
-                                <div className="row-item"><span>Ed. Especial</span><strong>{censoLatest.qt_doc_esp ?? '—'}</strong></div>
-                              </div>
-                            </div>
-                            <div className="list-card">
-                              <h4>Turmas por nível</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                <div className="row-item"><span>Total</span><strong>{censoLatest.qt_tur_bas ?? '—'}</strong></div>
-                                <div className="row-item"><span>Ed. Infantil</span><strong>{censoLatest.qt_tur_inf ?? '—'}</strong></div>
-                                <div className="row-item"><span>Fundamental</span><strong>{censoLatest.qt_tur_fund ?? '—'}</strong></div>
-                                <div className="row-item"><span>Fund. AI</span><strong>{censoLatest.qt_tur_fund_ai ?? '—'}</strong></div>
-                                <div className="row-item"><span>Fund. AF</span><strong>{censoLatest.qt_tur_fund_af ?? '—'}</strong></div>
-                                <div className="row-item"><span>Ensino Médio</span><strong>{censoLatest.qt_tur_med ?? '—'}</strong></div>
-                                <div className="row-item"><span>EJA</span><strong>{censoLatest.qt_tur_eja ?? '—'}</strong></div>
-                                <div className="row-item"><span>Diurnas</span><strong>{censoLatest.qt_tur_bas_d ?? '—'}</strong></div>
-                                <div className="row-item"><span>Noturnas</span><strong>{censoLatest.qt_tur_bas_n ?? '—'}</strong></div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="space-y-3">
-                            <div className="list-card">
-                              <h4>Profissionais não docentes</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                {[
-                                  ['Administrativos', censoLatest.qt_prof_administrativos],
-                                  ['Serviços Gerais', censoLatest.qt_prof_servicos_gerais],
-                                  ['Bibliotecários', censoLatest.qt_prof_bibliotecario],
-                                  ['Saúde', censoLatest.qt_prof_saude],
-                                  ['Coordenadores', censoLatest.qt_prof_coordenador],
-                                  ['Nutricionistas', censoLatest.qt_prof_nutricionista],
-                                  ['Psicólogos', censoLatest.qt_prof_psicologo],
-                                  ['Fonoaudiólogos', censoLatest.qt_prof_fonaudiologo],
-                                  ['Secretários', censoLatest.qt_prof_secretario],
-                                  ['Segurança', censoLatest.qt_prof_seguranca],
-                                  ['Monitores', censoLatest.qt_prof_monitores],
-                                  ['Gestão', censoLatest.qt_prof_gestao],
-                                  ['Assistentes Sociais', censoLatest.qt_prof_assist_social],
-                                  ['Trad. Libras', censoLatest.qt_prof_trad_libras],
-                                ].filter(([,v]) => v != null).map(([k, v], i) => (
-                                  <div key={i} className="row-item">
-                                    <span>{String(k)}</span>
-                                    <strong>{String(v)}</strong>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="list-card">
-                              <h4>Materiais pedagógicos</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                {[
-                                  ['Multimídia', censoLatest.in_material_ped_multimidia],
-                                  ['Infantil', censoLatest.in_material_ped_infantil],
-                                  ['Científico', censoLatest.in_material_ped_cientifico],
-                                  ['Musical', censoLatest.in_material_ped_musical],
-                                  ['Jogos', censoLatest.in_material_ped_jogos],
-                                  ['Artísticas', censoLatest.in_material_ped_artisticas],
-                                  ['Desportiva', censoLatest.in_material_ped_desportiva],
-                                  ['Ed. Especial', censoLatest.in_material_ped_edu_esp],
-                                ].filter(([,v]) => v != null).map(([k, v], i) => (
-                                  <div key={i} className="row-item">
-                                    <span>{String(k)}</span>
-                                    <strong style={{color:v===1?'#2f7a58':'#b74f42'}}>{v===1?'✅':'✗'}</strong>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
+                      );
+                    })()}
+                    {(['etapas', 'docentes', 'infra'] as const).includes(activeSchoolTab as any) && (() => {
+                      const anos = evolucaoData.anos_disponiveis.slice().sort((a: number, b: number) => a - b);
+                      const c = evolucaoData.censo_por_ano;
+                      type NRow = { label: string; key: string; header?: boolean };
+                      type BRow = { label: string; key: string; header?: boolean };
+
+                      const NumTable = ({ rows }: { rows: NRow[] }) => (
+                        <div style={{ overflowX: 'auto', borderBottom: '1px solid #f0e8d8' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                            <thead>
+                              <tr style={{ background: '#f7f2ea' }}>
+                                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 170 }}>Indicador</th>
+                                {anos.map((a: number) => <th key={a} style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 60 }}>{a}</th>)}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {rows.map((row, idx) => {
+                                if (row.header) return (
+                                  <tr key={idx}><td colSpan={anos.length + 1} style={{ padding: '7px 14px', background: '#ede8df', fontWeight: 700, fontSize: 11, color: '#7a5c3a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{row.label}</td></tr>
+                                );
+                                const vals = anos.map((a: number) => c[a]?.[row.key] ?? null);
+                                if (vals.every((v: any) => v == null || v === 0)) return null;
+                                return (
+                                  <tr key={idx} style={{ borderTop: '1px solid #f0e8d8', background: idx % 2 === 0 ? '#fff' : '#fdf8f2' }}>
+                                    <td style={{ padding: '8px 14px', color: '#5d4037', fontWeight: 500 }}>{row.label}</td>
+                                    {vals.map((v: any, vi: number) => {
+                                      const prev = vi > 0 ? vals[vi - 1] : null;
+                                      const delta = v != null && prev != null ? v - prev : null;
+                                      return (
+                                        <td key={vi} style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, color: '#2c3e50', verticalAlign: 'top' }}>
+                                          {v != null ? v.toLocaleString('pt-BR') : <span style={{ color: '#ccc' }}>—</span>}
+                                          {delta != null && delta !== 0 && <div style={{ fontSize: 9, lineHeight: 1.2, color: delta > 0 ? '#2f7a58' : '#b74f42', fontWeight: 700 }}>{delta > 0 ? '▲' : '▼'}{Math.abs(delta).toLocaleString('pt-BR')}</div>}
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
-                      </div>
-                    )}
-                    {activeSchoolTab === 'infra' && (
-                      <div className="tab-panel-v6 active">
-                        <div className="two-col">
-                          <div className="space-y-3">
-                            <div className="list-card">
-                              <h4>Salas e Tecnologia</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                <div className="row-item"><span>Salas utilizadas</span><strong>{censoLatest.qt_salas_utilizadas ?? '—'}</strong></div>
-                                <div className="row-item"><span>Dentro</span><strong>{censoLatest.qt_salas_utilizadas_dentro ?? '—'}</strong></div>
-                                <div className="row-item"><span>Fora</span><strong>{censoLatest.qt_salas_utilizadas_fora ?? '—'}</strong></div>
-                                <div className="row-item"><span>Climatizadas</span><strong>{censoLatest.qt_salas_utiliza_climatizadas ?? '—'}</strong></div>
-                                <div className="row-item"><span>Acessíveis</span><strong>{censoLatest.qt_salas_utilizadas_acessiveis ?? '—'}</strong></div>
-                                <div className="row-item"><span>Desktops alunos</span><strong>{censoLatest.qt_desktop_aluno ?? '—'}</strong></div>
-                                <div className="row-item"><span>Notebooks alunos</span><strong>{censoLatest.qt_comp_portatil_aluno ?? '—'}</strong></div>
-                                <div className="row-item"><span>Tablets alunos</span><strong>{censoLatest.qt_tablet_aluno ?? '—'}</strong></div>
-                                <div className="row-item"><span>TVs</span><strong>{censoLatest.qt_equip_tv ?? '—'}</strong></div>
-                                <div className="row-item"><span>Projetores</span><strong>{censoLatest.qt_equip_multimidia ?? '—'}</strong></div>
-                                <div className="row-item"><span>Lousas digitais</span><strong>{censoLatest.qt_equip_lousa_digital ?? '—'}</strong></div>
-                              </div>
-                            </div>
-                            <div className="list-card">
-                              <h4>Água, Energia e Saneamento</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                {[
-                                  ['Água Potável', censoLatest.in_agua_potavel],
-                                  ['Rede Pública Água', censoLatest.in_agua_rede_publica],
-                                  ['Poço Artesiano', censoLatest.in_agua_poco_artesiano],
-                                  ['Esgoto Rede Pública', censoLatest.in_esgoto_rede_publica],
-                                  ['Fossa Séptica', censoLatest.in_esgoto_fossa_septica],
-                                  ['Energia Rede Pública', censoLatest.in_energia_rede_publica],
-                                  ['Energia Renovável', censoLatest.in_energia_renovavel],
-                                  ['Coleta de Lixo', censoLatest.in_lixo_servico_coleta],
-                                  ['Reciclagem', censoLatest.in_tratamento_lixo_reciclagem],
-                                ].filter(([,v]) => v != null).map(([k, v], i) => (
-                                  <div key={i} className="row-item">
-                                    <span>{String(k)}</span>
-                                    <strong style={{color:v===1?'#2f7a58':'#b74f42'}}>{v===1?'✅':'✗'}</strong>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="space-y-3">
-                            <div className="list-card">
-                              <h4>Dependências</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                {[
-                                  ['Biblioteca', censoLatest.in_biblioteca],
-                                  ['Sala de Leitura', censoLatest.in_biblioteca_sala_leitura],
-                                  ['Lab. Informática', censoLatest.in_laboratorio_informatica],
-                                  ['Lab. Ciências', censoLatest.in_laboratorio_ciencias],
-                                  ['Quadra Coberta', censoLatest.in_quadra_esportes_coberta],
-                                  ['Quadra Descoberta', censoLatest.in_quadra_esportes_descoberta],
-                                  ['Cozinha', censoLatest.in_cozinha],
-                                  ['Refeitório', censoLatest.in_refeitorio],
-                                  ['Pátio Coberto', censoLatest.in_patio_coberto],
-                                  ['Pátio Descoberto', censoLatest.in_patio_descoberto],
-                                  ['Parque Infantil', censoLatest.in_parque_infantil],
-                                  ['Auditório', censoLatest.in_auditorio],
-                                  ['Área Verde', censoLatest.in_area_verde],
-                                  ['Sala Diretoria', censoLatest.in_sala_diretoria],
-                                  ['Sala Professores', censoLatest.in_sala_professor],
-                                  ['Secretaria', censoLatest.in_secretaria],
-                                ].filter(([,v]) => v != null).map(([k, v], i) => (
-                                  <div key={i} className="row-item">
-                                    <span>{String(k)}</span>
-                                    <strong style={{color:v===1?'#2f7a58':'#b74f42'}}>{v===1?'✅':'✗'}</strong>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="list-card">
-                              <h4>Acessibilidade</h4>
-                              <div className="row-list" style={{padding:'10px 14px'}}>
-                                {[
-                                  ['Rampas', censoLatest.in_acessibilidade_rampas],
-                                  ['Corrimão', censoLatest.in_acessibilidade_corrimao],
-                                  ['Elevador', censoLatest.in_acessibilidade_elevador],
-                                  ['Pisos Táteis', censoLatest.in_acessibilidade_pisos_tateis],
-                                  ['Vão Livre', censoLatest.in_acessibilidade_vao_livre],
-                                  ['Sinal Sonoro', censoLatest.in_acessibilidade_sinal_sonoro],
-                                  ['Sinal Tátil', censoLatest.in_acessibilidade_sinal_tatil],
-                                  ['Sinal Visual', censoLatest.in_acessibilidade_sinal_visual],
-                                  ['Banheiro PNE', censoLatest.in_banheiro_pne],
-                                  ['Banheiro Ed. Infantil', censoLatest.in_banheiro_ei],
-                                ].filter(([,v]) => v != null).map(([k, v], i) => (
-                                  <div key={i} className="row-item">
-                                    <span>{String(k)}</span>
-                                    <strong style={{color:v===1?'#2f7a58':'#b74f42'}}>{v===1?'✅':'✗'}</strong>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
+                      );
+
+                      const BinTable = ({ rows, title }: { rows: BRow[]; title?: string }) => (
+                        <div style={{ overflowX: 'auto' }}>
+                          {title && <div style={{ padding: '10px 14px 6px', fontWeight: 700, fontSize: 12, color: '#5d4037' }}>{title}</div>}
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                            <thead>
+                              <tr style={{ background: '#f7f2ea' }}>
+                                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 170 }}>Recurso</th>
+                                {anos.map((a: number) => <th key={a} style={{ padding: '10px 10px', textAlign: 'center', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 60 }}>{a}</th>)}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {rows.map((row, idx) => {
+                                if (row.header) return (
+                                  <tr key={idx}><td colSpan={anos.length + 1} style={{ padding: '7px 14px', background: '#ede8df', fontWeight: 700, fontSize: 11, color: '#7a5c3a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{row.label}</td></tr>
+                                );
+                                const vals = anos.map((a: number) => c[a]?.[row.key] ?? null);
+                                if (vals.every((v: any) => v == null)) return null;
+                                return (
+                                  <tr key={idx} style={{ borderTop: '1px solid #f0e8d8', background: idx % 2 === 0 ? '#fff' : '#fdf8f2' }}>
+                                    <td style={{ padding: '8px 14px', color: '#5d4037', fontWeight: 500 }}>{row.label}</td>
+                                    {vals.map((v: any, vi: number) => {
+                                      const prev = vi > 0 ? vals[vi - 1] : null;
+                                      const gained = prev === 0 && v === 1;
+                                      const lost = prev === 1 && v === 0;
+                                      return (
+                                        <td key={vi} style={{ padding: '8px 10px', textAlign: 'center', background: gained ? '#f0fdf4' : lost ? '#fff5f5' : undefined, verticalAlign: 'top' }}>
+                                          {v === 1 ? <span style={{ color: '#2f7a58', fontSize: 14 }}>✓</span> : v === 0 ? <span style={{ color: '#d0ccc5', fontSize: 12 }}>✗</span> : <span style={{ color: '#e0dbd3' }}>—</span>}
+                                          {gained && <div style={{ fontSize: 9, color: '#2f7a58', lineHeight: 1.1, fontWeight: 700 }}>ganhou</div>}
+                                          {lost && <div style={{ fontSize: 9, color: '#b74f42', lineHeight: 1.1, fontWeight: 700 }}>perdeu</div>}
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
-                      </div>
-                    )}
+                      );
+
+                      if (activeSchoolTab === 'etapas') return (
+                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
+                          <NumTable rows={[
+                            { label: 'Educação Infantil', key: '', header: true },
+                            { label: 'Creche', key: 'qt_mat_inf_cre' },
+                            { label: 'Pré-escola', key: 'qt_mat_inf_pre' },
+                            { label: 'Infantil Integral', key: 'qt_mat_inf_int' },
+                            { label: 'Ensino Fundamental', key: '', header: true },
+                            { label: 'Anos Iniciais (total)', key: 'qt_mat_fund_ai' },
+                            { label: '1º ano', key: 'qt_mat_fund_ai_1' },
+                            { label: '2º ano', key: 'qt_mat_fund_ai_2' },
+                            { label: '3º ano', key: 'qt_mat_fund_ai_3' },
+                            { label: '4º ano', key: 'qt_mat_fund_ai_4' },
+                            { label: '5º ano', key: 'qt_mat_fund_ai_5' },
+                            { label: 'Anos Finais (total)', key: 'qt_mat_fund_af' },
+                            { label: '6º ano', key: 'qt_mat_fund_af_6' },
+                            { label: '7º ano', key: 'qt_mat_fund_af_7' },
+                            { label: '8º ano', key: 'qt_mat_fund_af_8' },
+                            { label: '9º ano', key: 'qt_mat_fund_af_9' },
+                            { label: 'Ensino Médio, EJA e Profissional', key: '', header: true },
+                            { label: 'Ensino Médio (total)', key: 'qt_mat_med' },
+                            { label: '1ª série', key: 'qt_mat_med_prop_1' },
+                            { label: '2ª série', key: 'qt_mat_med_prop_2' },
+                            { label: '3ª série', key: 'qt_mat_med_prop_3' },
+                            { label: 'Médio Integral', key: 'qt_mat_med_int' },
+                            { label: 'Ed. Profissional', key: 'qt_mat_prof' },
+                            { label: 'EJA Fundamental', key: 'qt_mat_eja_fund' },
+                            { label: 'EJA Médio', key: 'qt_mat_eja_med' },
+                          ]} />
+                          <BinTable title="Etapas oferecidas" rows={[
+                            { label: 'Ed. Infantil', key: 'in_inf' },
+                            { label: 'Creche', key: 'in_inf_cre' },
+                            { label: 'Pré-escola', key: 'in_inf_pre' },
+                            { label: 'Ens. Fundamental', key: 'in_fund' },
+                            { label: 'Fund. Anos Iniciais', key: 'in_fund_ai' },
+                            { label: 'Fund. Anos Finais', key: 'in_fund_af' },
+                            { label: 'Ensino Médio', key: 'in_med' },
+                            { label: 'Ed. Profissional', key: 'in_prof' },
+                            { label: 'EJA', key: 'in_eja' },
+                            { label: 'Ed. Especial', key: 'in_esp' },
+                          ]} />
+                        </div>
+                      );
+
+                      if (activeSchoolTab === 'docentes') return (
+                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
+                          <NumTable rows={[
+                            { label: 'Docentes por etapa', key: '', header: true },
+                            { label: 'Total Docentes', key: 'qt_doc_bas' },
+                            { label: 'Ed. Infantil', key: 'qt_doc_inf' },
+                            { label: 'Fund. AI', key: 'qt_doc_fund_ai' },
+                            { label: 'Fund. AF', key: 'qt_doc_fund_af' },
+                            { label: 'Ensino Médio', key: 'qt_doc_med' },
+                            { label: 'EJA', key: 'qt_doc_eja' },
+                            { label: 'Ed. Especial', key: 'qt_doc_esp' },
+                            { label: 'Turmas por etapa', key: '', header: true },
+                            { label: 'Total Turmas', key: 'qt_tur_bas' },
+                            { label: 'Ed. Infantil', key: 'qt_tur_inf' },
+                            { label: 'Fund. AI', key: 'qt_tur_fund_ai' },
+                            { label: 'Fund. AF', key: 'qt_tur_fund_af' },
+                            { label: 'Ensino Médio', key: 'qt_tur_med' },
+                            { label: 'EJA', key: 'qt_tur_eja' },
+                            { label: 'Diurnas', key: 'qt_tur_bas_d' },
+                            { label: 'Noturnas', key: 'qt_tur_bas_n' },
+                            { label: 'Profissionais não docentes', key: '', header: true },
+                            { label: 'Administrativos', key: 'qt_prof_administrativos' },
+                            { label: 'Serviços Gerais', key: 'qt_prof_servicos_gerais' },
+                            { label: 'Coordenadores', key: 'qt_prof_coordenador' },
+                            { label: 'Secretários', key: 'qt_prof_secretario' },
+                            { label: 'Segurança', key: 'qt_prof_seguranca' },
+                            { label: 'Monitores', key: 'qt_prof_monitores' },
+                            { label: 'Bibliotecários', key: 'qt_prof_bibliotecario' },
+                            { label: 'Psicólogos', key: 'qt_prof_psicologo' },
+                            { label: 'Assistentes Sociais', key: 'qt_prof_assist_social' },
+                            { label: 'Nutricionistas', key: 'qt_prof_nutricionista' },
+                          ]} />
+                          <BinTable title="Materiais pedagógicos" rows={[
+                            { label: 'Multimídia', key: 'in_material_ped_multimidia' },
+                            { label: 'Infantil', key: 'in_material_ped_infantil' },
+                            { label: 'Científico', key: 'in_material_ped_cientifico' },
+                            { label: 'Musical', key: 'in_material_ped_musical' },
+                            { label: 'Jogos', key: 'in_material_ped_jogos' },
+                            { label: 'Artístico', key: 'in_material_ped_artisticas' },
+                            { label: 'Desportivo', key: 'in_material_ped_desportiva' },
+                            { label: 'Ed. Especial', key: 'in_material_ped_edu_esp' },
+                          ]} />
+                        </div>
+                      );
+
+                      if (activeSchoolTab === 'infra') return (
+                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
+                          <NumTable rows={[
+                            { label: 'Salas de Aula', key: '', header: true },
+                            { label: 'Salas utilizadas', key: 'qt_salas_utilizadas' },
+                            { label: 'Climatizadas', key: 'qt_salas_utiliza_climatizadas' },
+                            { label: 'Acessíveis', key: 'qt_salas_utilizadas_acessiveis' },
+                            { label: 'Equipamentos', key: '', header: true },
+                            { label: 'Desktops (alunos)', key: 'qt_desktop_aluno' },
+                            { label: 'Notebooks (alunos)', key: 'qt_comp_portatil_aluno' },
+                            { label: 'Tablets (alunos)', key: 'qt_tablet_aluno' },
+                            { label: 'TVs', key: 'qt_equip_tv' },
+                            { label: 'Projetores', key: 'qt_equip_multimidia' },
+                            { label: 'Lousas digitais', key: 'qt_equip_lousa_digital' },
+                          ]} />
+                          <BinTable rows={[
+                            { label: 'Conectividade', key: '', header: true },
+                            { label: 'Internet', key: 'in_internet' },
+                            { label: 'Banda Larga', key: 'in_banda_larga' },
+                            { label: 'Dependências', key: '', header: true },
+                            { label: 'Biblioteca', key: 'in_biblioteca' },
+                            { label: 'Sala de Leitura', key: 'in_biblioteca_sala_leitura' },
+                            { label: 'Lab. Informática', key: 'in_laboratorio_informatica' },
+                            { label: 'Lab. Ciências', key: 'in_laboratorio_ciencias' },
+                            { label: 'Quadra Coberta', key: 'in_quadra_esportes_coberta' },
+                            { label: 'Quadra Descoberta', key: 'in_quadra_esportes_descoberta' },
+                            { label: 'Cozinha', key: 'in_cozinha' },
+                            { label: 'Refeitório', key: 'in_refeitorio' },
+                            { label: 'Pátio Coberto', key: 'in_patio_coberto' },
+                            { label: 'Auditório', key: 'in_auditorio' },
+                            { label: 'Área Verde', key: 'in_area_verde' },
+                            { label: 'Sala Diretoria', key: 'in_sala_diretoria' },
+                            { label: 'Sala Professores', key: 'in_sala_professor' },
+                            { label: 'Água, Energia e Saneamento', key: '', header: true },
+                            { label: 'Água Potável', key: 'in_agua_potavel' },
+                            { label: 'Rede Pública de Água', key: 'in_agua_rede_publica' },
+                            { label: 'Poço Artesiano', key: 'in_agua_poco_artesiano' },
+                            { label: 'Esgoto Rede Pública', key: 'in_esgoto_rede_publica' },
+                            { label: 'Fossa Séptica', key: 'in_esgoto_fossa_septica' },
+                            { label: 'Energia Rede Pública', key: 'in_energia_rede_publica' },
+                            { label: 'Energia Renovável', key: 'in_energia_renovavel' },
+                            { label: 'Coleta de Lixo', key: 'in_lixo_servico_coleta' },
+                            { label: 'Reciclagem', key: 'in_tratamento_lixo_reciclagem' },
+                            { label: 'Acessibilidade', key: '', header: true },
+                            { label: 'Rampas', key: 'in_acessibilidade_rampas' },
+                            { label: 'Corrimão', key: 'in_acessibilidade_corrimao' },
+                            { label: 'Elevador', key: 'in_acessibilidade_elevador' },
+                            { label: 'Pisos Táteis', key: 'in_acessibilidade_pisos_tateis' },
+                            { label: 'Sinal Sonoro', key: 'in_acessibilidade_sinal_sonoro' },
+                            { label: 'Banheiro PNE', key: 'in_banheiro_pne' },
+                            { label: 'Banheiro Ed. Infantil', key: 'in_banheiro_ei' },
+                          ]} />
+                        </div>
+                      );
+
+                      return null;
+                    })()}
                   </div>
                 </section>
 
