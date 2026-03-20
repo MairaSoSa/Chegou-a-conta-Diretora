@@ -613,28 +613,33 @@ export async function registerRoutes(
       let similares: any[] = [];
       if (prefiltrados.length > 0) {
         const prefIneps = prefiltrados.map(s => s.inep);
-        const placeholders = prefIneps.map(() => "?").join(",");
-        const detalhes = sqlite.prepare(`
-          SELECT c.inep,
-            json_extract(c.dados, '$.telefone')    as telefone,
-            json_extract(c.dados, '$.ds_endereco') as ds_endereco,
-            json_extract(c.dados, '$.no_bairro')   as no_bairro,
-            json_extract(c.dados, '$.co_cep')      as co_cep,
-            CAST(COALESCE(json_extract(c.dados, '$.co_municipio'), 0) as INTEGER) as co_municipio,
-            CAST(COALESCE(json_extract(c.dados, '$.qt_mat_inf'),  0) as INTEGER) as qt_mat_inf,
-            CAST(COALESCE(json_extract(c.dados, '$.qt_mat_fund'), 0) as INTEGER) as qt_mat_fund,
-            CAST(COALESCE(json_extract(c.dados, '$.qt_mat_med'),  0) as INTEGER) as qt_mat_med,
-            CAST(COALESCE(json_extract(c.dados, '$.qt_mat_eja'),  0) as INTEGER) as qt_mat_eja,
-            CAST(COALESCE(json_extract(c.dados, '$.qt_mat_prof'), 0) as INTEGER) as qt_mat_prof,
-            CAST(json_extract(ie.dados, '$.nivel') as INTEGER) as icg_nivel
-          FROM censo_escolar c
-          LEFT JOIN indicadores_educacionais ie
-            ON ie.inep = c.inep AND ie.ano = ? AND ie.tipo = 'icg'
-          WHERE c.ano=? AND c.inep IN (${placeholders})
-        `).all(ano, ano, ...prefIneps) as any[];
 
+        // Processa em lotes de 500 para respeitar o limite de variáveis do SQLite (999)
+        const BATCH = 500;
         const detalheMap: Record<string, any> = {};
-        for (const d of detalhes) detalheMap[d.inep] = d;
+        for (let i = 0; i < prefIneps.length; i += BATCH) {
+          const batch = prefIneps.slice(i, i + BATCH);
+          const placeholders = batch.map(() => "?").join(",");
+          const detalhes = sqlite.prepare(`
+            SELECT c.inep,
+              json_extract(c.dados, '$.telefone')    as telefone,
+              json_extract(c.dados, '$.ds_endereco') as ds_endereco,
+              json_extract(c.dados, '$.no_bairro')   as no_bairro,
+              json_extract(c.dados, '$.co_cep')      as co_cep,
+              CAST(COALESCE(json_extract(c.dados, '$.co_municipio'), 0) as INTEGER) as co_municipio,
+              CAST(COALESCE(json_extract(c.dados, '$.qt_mat_inf'),  0) as INTEGER) as qt_mat_inf,
+              CAST(COALESCE(json_extract(c.dados, '$.qt_mat_fund'), 0) as INTEGER) as qt_mat_fund,
+              CAST(COALESCE(json_extract(c.dados, '$.qt_mat_med'),  0) as INTEGER) as qt_mat_med,
+              CAST(COALESCE(json_extract(c.dados, '$.qt_mat_eja'),  0) as INTEGER) as qt_mat_eja,
+              CAST(COALESCE(json_extract(c.dados, '$.qt_mat_prof'), 0) as INTEGER) as qt_mat_prof,
+              CAST(json_extract(ie.dados, '$.nivel') as INTEGER) as icg_nivel
+            FROM censo_escolar c
+            LEFT JOIN indicadores_educacionais ie
+              ON ie.inep = c.inep AND ie.ano = ? AND ie.tipo = 'icg'
+            WHERE c.ano=? AND c.inep IN (${placeholders})
+          `).all(ano, ano, ...batch) as any[];
+          for (const d of detalhes) detalheMap[d.inep] = d;
+        }
 
         // Filtro: candidata deve ter ao menos 1 modalidade em comum com a base
         // Prioridade geográfica (haversine) traz cidades vizinhas antes de capitais
@@ -663,7 +668,7 @@ export async function registerRoutes(
             if (overlapA !== overlapB) return overlapB - overlapA;
             return Math.abs((a.matriculas||0) - targetMat) - Math.abs((b.matriculas||0) - targetMat);
           })
-          .slice(0, 200);
+          .slice(0, 50);
       }
 
       const porUf: Record<string, number> = {};
