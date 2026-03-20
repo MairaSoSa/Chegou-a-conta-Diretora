@@ -1105,16 +1105,17 @@ export default function Dashboard() {
                         </button>
                         <button
                           onClick={() => window.print()}
+                          title="Imprimir / Salvar PDF"
                           style={{
-                            display: "inline-flex", alignItems: "center", gap: 8,
-                            padding: "10px 20px", background: "#fff", color: "#5d4037",
-                            border: "2px solid #d4c5a9", borderRadius: 14, fontWeight: 700, fontSize: 14,
+                            display: "inline-flex", alignItems: "center", gap: 5,
+                            padding: "6px 12px", background: "transparent", color: "#b8a899",
+                            border: "1px solid #e0d5c0", borderRadius: 10, fontWeight: 500, fontSize: 12,
                             cursor: "pointer", transition: "all .2s",
                           }}
-                          onMouseEnter={e => (e.currentTarget.style.background = "#fdf6ec")}
-                          onMouseLeave={e => (e.currentTarget.style.background = "#fff")}
+                          onMouseEnter={e => { e.currentTarget.style.color = "#5d4037"; e.currentTarget.style.borderColor = '#c4b49e'; }}
+                          onMouseLeave={e => { e.currentTarget.style.color = "#b8a899"; e.currentTarget.style.borderColor = '#e0d5c0'; }}
                         >
-                          🖨️ Imprimir / PDF
+                          🖨️ imprimir
                         </button>
                       </div>
                     </div>
@@ -1301,7 +1302,7 @@ export default function Dashboard() {
                 {comparativoData && (
                   <section className="section">
                     <div className="section-title">
-                      <div><h2>Posição no ranking</h2><p>IDEB da escola comparado ao município, estado e Brasil</p></div>
+                      <div><h2>Panorama estadual e nacional</h2><p>IDEB da escola comparado ao município, estado e Brasil</p></div>
                       <div className="hint-chip">Fonte: Railway · {comparativoData.municipio?.nome}/{comparativoData.uf?.sg}</div>
                     </div>
                     <div className="organic-divider" />
