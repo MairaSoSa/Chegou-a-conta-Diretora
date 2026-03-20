@@ -557,8 +557,8 @@ export async function registerRoutes(
       `).get(inep, ano) as any;
       if (!escola) return res.status(404).json({ erro: "Escola não encontrada" });
 
-      const minMat = Math.floor((escola.matriculas || 50) * 0.70);
-      const maxMat = Math.ceil((escola.matriculas || 50) * 1.30);
+      const minMat = Math.floor((escola.matriculas || 50) * 0.50);
+      const maxMat = Math.ceil((escola.matriculas || 50) * 1.50);
       const targetMat = escola.matriculas || 50;
 
       // Modalidades da escola base (ex: Set {"EM","EJA"})
@@ -636,14 +636,14 @@ export async function registerRoutes(
         const detalheMap: Record<string, any> = {};
         for (const d of detalhes) detalheMap[d.inep] = d;
 
-        // Filtro: candidata deve ter PELO MENOS as modalidades da base (superset OK)
-        // Ex: base={"EM","EJA"} → candidata com {"EF","EM","EJA"} é aceita
+        // Filtro: candidata deve ter ao menos 1 modalidade em comum com a base
+        // Prioridade geográfica (haversine) traz cidades vizinhas antes de capitais
         const contemBase = (s: any): boolean => {
           const mods = toModalidades(s);
           for (const m of modalidadesBase) {
-            if (!mods.has(m)) return false;
+            if (mods.has(m)) return true;
           }
-          return true;
+          return false;
         };
 
         similares = prefiltrados
@@ -656,7 +656,11 @@ export async function registerRoutes(
           .sort((a, b) => {
             const da = haversineKm(coMunBase, a.co_municipio || 0);
             const db = haversineKm(coMunBase, b.co_municipio || 0);
-            if (Math.abs(da - db) > 5) return da - db;
+            if (Math.abs(da - db) > 15) return da - db;
+            // dentro da mesma faixa de distância: prefere maior sobreposição de modalidade
+            const overlapA = [...modalidadesBase].filter(m => toModalidades(a).has(m)).length;
+            const overlapB = [...modalidadesBase].filter(m => toModalidades(b).has(m)).length;
+            if (overlapA !== overlapB) return overlapB - overlapA;
             return Math.abs((a.matriculas||0) - targetMat) - Math.abs((b.matriculas||0) - targetMat);
           })
           .slice(0, 200);
