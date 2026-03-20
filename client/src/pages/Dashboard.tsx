@@ -488,15 +488,6 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-foreground">Painel de Dados Educacionais</h1>
             <p className="text-sm text-muted-foreground mt-1">Censo Escolar {selectedAno} - Fonte: INEP/MEC</p>
           </div>
-          <div className="flex items-center gap-2">
-            <select
-              value={selectedAno}
-              onChange={(e) => setSelectedAno(Number(e.target.value))}
-              className="text-sm bg-background border border-border/50 rounded-lg px-3 py-2"
-            >
-              {[2024, 2023, 2022, 2021, 2020].map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
-          </div>
         </div>
 
         {/* ABAS ESTILO CHROME */}
