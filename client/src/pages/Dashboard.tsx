@@ -857,86 +857,7 @@ export default function Dashboard() {
                       </CardContent>
                     </Card>
 
-                    {/* Card: Escolas com perfil similar — aparece apenas quando escola está selecionada */}
-                    {selectedInep && (
-                      <Card className="card-clay border-2" style={{ borderColor: similarMode ? "#0d9488" : "#e2e8f0", transition: "border-color .2s" }}>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <span style={{ fontSize: 18 }}>🔍</span>
-                            Escolas com perfil similar
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {!similarMode ? (
-                            <div>
-                              <p style={{ fontSize: 13, color: "#64748b", marginBottom: 12, lineHeight: 1.5 }}>
-                                Veja outras escolas com a mesma rede, localização e quantidade parecida de alunos — e pegue o contato delas.
-                              </p>
-                              <button
-                                onClick={() => { setSimilarMode(true); setSimilarClickedUf(null); }}
-                                style={{
-                                  width: "100%", padding: "10px 0", background: "#0d9488", color: "#fff",
-                                  border: "none", borderRadius: 12, fontWeight: 700, fontSize: 14,
-                                  cursor: "pointer", transition: "background .2s",
-                                }}
-                                onMouseEnter={e => (e.currentTarget.style.background = "#0f766e")}
-                                onMouseLeave={e => (e.currentTarget.style.background = "#0d9488")}
-                              >
-                                Ver no mapa →
-                              </button>
-                            </div>
-                          ) : (
-                            <div>
-                              {similarLoading ? (
-                                <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#64748b", fontSize: 13, padding: "8px 0" }}>
-                                  <Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} />
-                                  Buscando escolas similares…
-                                </div>
-                              ) : similarData ? (
-                                <div>
-                                  <p style={{ fontSize: 13, color: "#0d9488", fontWeight: 600, marginBottom: 4 }}>
-                                    ✅ {similarData.total} escolas similares encontradas
-                                  </p>
-                                  <p style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>
-                                    Clique em um estado no mapa para ver a lista completa com endereço e telefone.
-                                  </p>
-                                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-                                    {Object.entries(similarData.por_uf as Record<string, number>)
-                                      .sort(([,a],[,b]) => b - a)
-                                      .slice(0, 8)
-                                      .map(([uf, n]) => (
-                                        <button
-                                          key={uf}
-                                          onClick={() => setSimilarClickedUf(uf)}
-                                          style={{
-                                            padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 600,
-                                            background: similarClickedUf === uf ? "#0d9488" : "#f0fdfa",
-                                            color: similarClickedUf === uf ? "#fff" : "#0d9488",
-                                            border: "1px solid #99f6e4", cursor: "pointer",
-                                          }}
-                                        >
-                                          {uf} <span style={{ opacity: .7 }}>({n})</span>
-                                        </button>
-                                      ))
-                                    }
-                                  </div>
-                                </div>
-                              ) : null}
-                              <button
-                                onClick={() => { setSimilarMode(false); setSimilarClickedUf(null); }}
-                                style={{
-                                  width: "100%", padding: "8px 0", background: "#f1f5f9", color: "#475569",
-                                  border: "none", borderRadius: 12, fontWeight: 600, fontSize: 13,
-                                  cursor: "pointer",
-                                }}
-                              >
-                                ✕ Sair do modo similar
-                              </button>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )}
+                    {/* card de similares movido para ficha da escola */}
                   </div>
                 </div>
 
@@ -1163,6 +1084,24 @@ export default function Dashboard() {
                         {evolucaoData.anos_disponiveis.length > 0 && (
                           <div className="meta-chip">📅 {Math.min(...evolucaoData.anos_disponiveis)}–{Math.max(...evolucaoData.anos_disponiveis)}</div>
                         )}
+                      </div>
+
+                      {/* Botão de escolas similares — sempre visível na ficha */}
+                      <div style={{ marginTop: 16 }}>
+                        <button
+                          onClick={() => { setSimilarMode(true); setSimilarClickedUf(null); }}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 8,
+                            padding: "10px 20px", background: "#0d9488", color: "#fff",
+                            border: "none", borderRadius: 14, fontWeight: 700, fontSize: 14,
+                            cursor: "pointer", boxShadow: "0 2px 8px rgba(13,148,136,0.3)",
+                            transition: "all .2s",
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "#0f766e")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "#0d9488")}
+                        >
+                          🔍 Ver escolas com perfil similar
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -2587,93 +2526,126 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Modal flutuante: escolas similares no estado clicado ── */}
-      {similarMode && similarClickedUf && (() => {
-        const uf = similarClickedUf;
-        const UF_NAMES_LOCAL: Record<string, string> = {
-          AC:"Acre",AL:"Alagoas",AM:"Amazonas",AP:"Amapá",BA:"Bahia",CE:"Ceará",
-          DF:"Distrito Federal",ES:"Espírito Santo",GO:"Goiás",MA:"Maranhão",
-          MG:"Minas Gerais",MS:"Mato Grosso do Sul",MT:"Mato Grosso",PA:"Pará",
-          PB:"Paraíba",PE:"Pernambuco",PI:"Piauí",PR:"Paraná",RJ:"Rio de Janeiro",
-          RN:"Rio Grande do Norte",RO:"Rondônia",RR:"Roraima",RS:"Rio Grande do Sul",
-          SC:"Santa Catarina",SE:"Sergipe",SP:"São Paulo",TO:"Tocantins",
-        };
-        const escolasNoUf = (similarData?.escolas || []).filter((e: any) => e.uf === uf);
+      {/* ── Modal flutuante: escolas similares ── */}
+      {similarMode && (() => {
+        const activeUf = similarClickedUf;
+        const escolasFiltradas = activeUf
+          ? (similarData?.escolas || []).filter((e: any) => e.uf === activeUf)
+          : (similarData?.escolas || []);
+        const ufsSorted = Object.entries((similarData?.por_uf || {}) as Record<string, number>)
+          .sort(([,a],[,b]) => b - a);
+
         return (
           <div
             style={{ position: "fixed", inset: 0, zIndex: 9100, display: "flex", alignItems: "center", justifyContent: "center" }}
-            onClick={() => setSimilarClickedUf(null)}
+            onClick={() => { setSimilarMode(false); setSimilarClickedUf(null); }}
           >
             <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(2px)" }} />
             <div
               style={{
                 position: "relative", background: "#fff", borderRadius: 20,
-                boxShadow: "0 20px 60px rgba(0,0,0,0.25)", padding: "28px 28px 0",
-                width: "min(520px, 94vw)", maxHeight: "88vh", display: "flex", flexDirection: "column",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.25)", padding: "24px 24px 0",
+                width: "min(560px, 96vw)", maxHeight: "90vh", display: "flex", flexDirection: "column",
                 animation: "uf-pop .18s cubic-bezier(.34,1.56,.64,1)",
               }}
               onClick={e => e.stopPropagation()}
             >
               {/* Cabeçalho */}
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16, flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14, flexShrink: 0 }}>
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 20, fontWeight: 700, color: "#0f766e" }}>🔍 {UF_NAMES_LOCAL[uf] || uf}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, background: "#ccfbf1", color: "#0d9488", borderRadius: 99, padding: "2px 10px" }}>{uf}</span>
-                  </div>
-                  <p style={{ margin: "4px 0 0", fontSize: 13, color: "#64748b" }}>
-                    {escolasNoUf.length} escola{escolasNoUf.length !== 1 ? "s" : ""} com perfil similar · {similarData?.escola_base?.dependencia} · {similarData?.escola_base?.localizacao}
-                  </p>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#0f766e" }}>🔍 Escolas com perfil similar</div>
+                  {similarData && (
+                    <p style={{ margin: "4px 0 0", fontSize: 13, color: "#64748b" }}>
+                      {similarData.total} escolas · {similarData.escola_base?.dependencia} · {similarData.escola_base?.localizacao}
+                    </p>
+                  )}
                 </div>
                 <button
-                  onClick={() => setSimilarClickedUf(null)}
+                  onClick={() => { setSimilarMode(false); setSimilarClickedUf(null); }}
                   style={{ background: "#f1f5f9", border: "none", borderRadius: 99, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, marginLeft: 8 }}
                 >
                   <X style={{ width: 16, height: 16, color: "#64748b" }} />
                 </button>
               </div>
 
-              {/* Lista de escolas */}
-              <div style={{ overflowY: "auto", flex: 1, paddingBottom: 24 }}>
-                {escolasNoUf.length === 0 ? (
-                  <p style={{ color: "#94a3b8", fontSize: 14, padding: "16px 0" }}>Nenhuma escola similar encontrada neste estado.</p>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    {escolasNoUf.map((escola: any) => (
-                      <div key={escola.inep} style={{ background: "#f8fafc", borderRadius: 14, padding: "14px 16px", border: "1px solid #e2e8f0" }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a", marginBottom: 4 }}>{escola.nome}</div>
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-                          <span style={{ fontSize: 12, background: "#dbeafe", color: "#1d4ed8", borderRadius: 99, padding: "2px 8px" }}>📍 {escola.municipio}/{escola.uf}</span>
-                          <span style={{ fontSize: 12, background: "#fef3c7", color: "#92400e", borderRadius: 99, padding: "2px 8px" }}>👩‍🎓 {escola.matriculas?.toLocaleString("pt-BR") || "—"} alunos</span>
-                          {escola.localizacao && (
-                            <span style={{ fontSize: 12, background: "#f0fdf4", color: "#16a34a", borderRadius: 99, padding: "2px 8px" }}>{escola.localizacao === "Rural" ? "🌿" : "🏙️"} {escola.localizacao}</span>
-                          )}
-                          {escola.modalidades?.map((m: string) => (
-                            <span key={m} style={{ fontSize: 11, background: "#f1f5f9", color: "#64748b", borderRadius: 99, padding: "2px 8px" }}>{m}</span>
-                          ))}
-                        </div>
-                        <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.6 }}>
-                          {escola.ds_endereco && <div>📬 {escola.ds_endereco}{escola.no_bairro ? `, ${escola.no_bairro}` : ""}{escola.co_cep ? ` — CEP ${escola.co_cep}` : ""}</div>}
-                          {escola.telefone ? (
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                              <span>📞 {escola.telefone}</span>
-                              <button
-                                onClick={() => { navigator.clipboard.writeText(escola.telefone); }}
-                                style={{ fontSize: 11, padding: "2px 8px", background: "#0d9488", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer" }}
-                              >
-                                copiar
-                              </button>
-                            </div>
-                          ) : (
-                            <div style={{ color: "#94a3b8", marginTop: 2 }}>📞 Telefone não disponível no Censo</div>
-                          )}
-                          <div style={{ marginTop: 4, color: "#94a3b8", fontSize: 11 }}>INEP: {escola.inep}</div>
-                        </div>
-                      </div>
+              {similarLoading ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#64748b", fontSize: 14, padding: "32px 0", justifyContent: "center" }}>
+                  <Loader2 style={{ width: 20, height: 20, animation: "spin 1s linear infinite" }} />
+                  Buscando escolas similares…
+                </div>
+              ) : similarData ? (
+                <>
+                  {/* Filtro por estado */}
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14, flexShrink: 0 }}>
+                    <button
+                      onClick={() => setSimilarClickedUf(null)}
+                      style={{
+                        padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                        background: !activeUf ? "#0d9488" : "#f1f5f9",
+                        color: !activeUf ? "#fff" : "#475569",
+                        border: "none",
+                      }}
+                    >
+                      Todos ({similarData.total})
+                    </button>
+                    {ufsSorted.map(([uf, n]) => (
+                      <button
+                        key={uf}
+                        onClick={() => setSimilarClickedUf(prev => prev === uf ? null : uf)}
+                        style={{
+                          padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                          background: activeUf === uf ? "#0d9488" : "#f0fdfa",
+                          color: activeUf === uf ? "#fff" : "#0d9488",
+                          border: "1px solid #99f6e4",
+                        }}
+                      >
+                        {uf} ({n})
+                      </button>
                     ))}
                   </div>
-                )}
-              </div>
+
+                  {/* Lista */}
+                  <div style={{ overflowY: "auto", flex: 1, paddingBottom: 24 }}>
+                    {escolasFiltradas.length === 0 ? (
+                      <p style={{ color: "#94a3b8", fontSize: 14, padding: "16px 0" }}>Nenhuma escola encontrada.</p>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        {escolasFiltradas.map((escola: any) => (
+                          <div key={escola.inep} style={{ background: "#f8fafc", borderRadius: 14, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
+                            <div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a", marginBottom: 4 }}>{escola.nome}</div>
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+                              <span style={{ fontSize: 12, background: "#dbeafe", color: "#1d4ed8", borderRadius: 99, padding: "2px 8px" }}>📍 {escola.municipio}/{escola.uf}</span>
+                              <span style={{ fontSize: 12, background: "#fef3c7", color: "#92400e", borderRadius: 99, padding: "2px 8px" }}>👩‍🎓 {escola.matriculas?.toLocaleString("pt-BR") || "—"} alunos</span>
+                              {escola.modalidades?.map((m: string) => (
+                                <span key={m} style={{ fontSize: 11, background: "#f1f5f9", color: "#64748b", borderRadius: 99, padding: "2px 8px" }}>{m}</span>
+                              ))}
+                            </div>
+                            <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.6 }}>
+                              {escola.ds_endereco && (
+                                <div>📬 {escola.ds_endereco}{escola.no_bairro ? `, ${escola.no_bairro}` : ""}{escola.co_cep ? ` · CEP ${escola.co_cep}` : ""}</div>
+                              )}
+                              {escola.telefone ? (
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3 }}>
+                                  <span>📞 {escola.telefone}</span>
+                                  <button
+                                    onClick={() => navigator.clipboard.writeText(escola.telefone)}
+                                    style={{ fontSize: 11, padding: "2px 8px", background: "#0d9488", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer" }}
+                                  >
+                                    copiar
+                                  </button>
+                                </div>
+                              ) : (
+                                <div style={{ color: "#94a3b8", marginTop: 2, fontSize: 11 }}>📞 Telefone não disponível no Censo</div>
+                              )}
+                              <div style={{ color: "#cbd5e1", fontSize: 11, marginTop: 2 }}>INEP: {escola.inep}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : null}
             </div>
           </div>
         );
