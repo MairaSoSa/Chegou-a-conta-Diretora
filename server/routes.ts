@@ -19,10 +19,18 @@ import {
 } from "./scraper/pdde";
 import { searchDOU, searchDOUForNorma } from "./scraper/dou";
 import {
+  searchSchoolsLocal, getEscolaCompletaLocal, getEscolaEvolucaoLocal,
+  importFromExternalApi, getImportStatus, getLocalSchoolCount, getLocalStats,
+  listCensoEscolar, getCensoEscolarDetail, getCensoEstatisticas,
+  listIndicador, getIndicadorDetail, getEscolaCompleta, getApiInfo,
+  getMediasNacionais, invalidateStatsCache,
+} from "./importador";
+import {
   searchEscolasRailway, getEscolaEvolucaoRailway,
   getEscolaCompletaRailway, getEscolaBasicaRailway,
   getComparativoRailway, getDiagnosticoRailway,
 } from "./railway-client";
+import { importAllIndicators, getIndicatorImportRunning, getAvailableIndicators, importIdeb, importInse, generateSaebFromIdeb } from "./import-inep-indicators";
 import { 
   localizarPrestacoesPorCnpj,
   localizarPrestacoesPorUf,
@@ -183,44 +191,38 @@ export async function registerRoutes(
     }
   );
 
-  // === PUBLIC: SCHOOLS (Railway only) ===
-  app.get(api.schools.search.path, async (req, res) => {
+  // === PUBLIC: SCHOOLS (100% local) ===
+  app.get(api.schools.search.path, (req, res) => {
     const query = req.query.q as string | undefined;
     if (!query || query.length < 2) return res.json([]);
-    const results = await searchEscolasRailway(query, 20);
-    const dados = results?.dados || [];
-    res.json(dados.map((s: any) => ({
-      id: s.co_entidade,
-      name: s.no_entidade,
-      city: s.no_municipio,
-      state: s.sg_uf,
-      network: s.ds_dependencia,
-      location: s.ds_localizacao,
-      enrollmentCount: s.qt_matriculas,
-    })));
+    res.json(searchSchoolsLocal(query));
   });
 
-  app.get(api.schools.get.path, async (req, res) => {
+  app.get(api.schools.get.path, (req, res) => {
     const inep = getParam(req.params, "inep");
-    const railwayData = await getEscolaBasicaRailway(inep);
-    if (railwayData) return res.json(railwayData);
-    res.status(404).json({ message: "Escola não encontrada." });
+    const localResults = searchSchoolsLocal(inep);
+    if (localResults.length > 0) return res.json(localResults[0]);
+    res.status(404).json({ message: "Escola não encontrada. Importe os dados pelo painel admin." });
   });
 
-  // === PUBLIC: ESCOLA COMPLETA (Railway) ===
+  // === PUBLIC: ESCOLA COMPLETA (Railway primeiro, local como fallback) ===
   app.get("/api/escola-completa/:inep", async (req, res) => {
     const inep = getParam(req.params, "inep");
     const ano = parseInt(req.query.ano as string) || new Date().getFullYear();
     const railwayData = await getEscolaCompletaRailway(inep, ano);
     if (railwayData) return res.json(railwayData);
+    const localData = getEscolaCompletaLocal(inep, ano);
+    if (localData) return res.json(localData);
     res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], ano_selecionado: ano });
   });
 
-  // === PUBLIC: ESCOLA EVOLUÇÃO (Railway) ===
+  // === PUBLIC: ESCOLA EVOLUÇÃO (Railway primeiro, local como fallback) ===
   app.get("/api/escola-evolucao/:inep", async (req, res) => {
     const inep = getParam(req.params, "inep");
     const railwayData = await getEscolaEvolucaoRailway(inep);
     if (railwayData) return res.json(railwayData);
+    const localData = getEscolaEvolucaoLocal(inep);
+    if (localData) return res.json(localData);
     res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], escola: null, censo_por_ano: {}, indicadores_por_ano: {} });
   });
 
@@ -240,25 +242,38 @@ export async function registerRoutes(
     res.json(data);
   });
 
-  app.get("/api/medias-nacionais", (_req, res) => {
-    res.json({});
+  app.get("/api/medias-nacionais", (req, res) => {
+    const ano = req.query.ano ? parseInt(req.query.ano as string) : undefined;
+    res.json(getMediasNacionais(ano));
   });
 
-  // === PUBLIC: API INFO ===
+  // === PUBLIC: API INFO (mirrors api-escolas root) ===
   app.get("/api/info", (_req, res) => {
-    res.json({
-      name: "chegou-a-conta-diretora",
-      version: "3.0.0",
-      description: "Plataforma de gestão escolar — dados via Railway API",
-      fonte: "https://chegou-a-conta-diretora-api-production.up.railway.app",
-    });
+    res.json(getApiInfo());
   });
 
-  // === PUBLIC: ESCOLA BUSCAR (Railway) ===
+  // === PUBLIC: ESCOLA BUSCAR (local DB — busca rápida, dados do Railway no painel) ===
   app.get("/api/escola/buscar", async (req, res) => {
     const nome = req.query.nome as string;
     const perPage = parseInt(req.query.per_page as string) || 20;
     if (!nome || nome.length < 2) return res.json({ dados: [], total: 0 });
+
+    const localResults = searchSchoolsLocal(nome, perPage);
+    if (localResults.length > 0) {
+      return res.json({
+        dados: localResults.map(s => ({
+          co_entidade: s.id,
+          no_entidade: s.name,
+          no_municipio: s.city,
+          sg_uf: s.state,
+          ds_dependencia: s.network,
+          ds_localizacao: s.location,
+          qt_matriculas: s.enrollmentCount,
+        })),
+        total: localResults.length,
+      });
+    }
+
     const railwayResults = await searchEscolasRailway(nome, perPage);
     res.json(railwayResults);
   });
@@ -267,12 +282,18 @@ export async function registerRoutes(
     const inep = getParam(req.params, "inep");
     const railwayData = await getEscolaBasicaRailway(inep);
     if (railwayData) return res.json(railwayData);
+    const localData = getEscolaCompleta(inep);
+    if (localData) return res.json(localData);
     res.status(404).json({ erro: "Escola não encontrada." });
   });
 
-  // === PUBLIC: CENSO ESCOLAR ROUTES (dados oficiais INEP) ===
+  // === PUBLIC: CENSO ESCOLAR ROUTES ===
   app.get("/api/censo-escolar/:ano/escolas/estatisticas", (req, res) => {
     const ano = parseInt(req.params.ano);
+    const local = getCensoEstatisticas(ano);
+
+    // Se o banco local tem muito poucos dados (ambiente sem carga completa),
+    // retorna os dados oficiais do Censo Escolar INEP/MEC como fallback.
     const OFICIAL: Record<number, any> = {
       2024: {
         ano: 2024,
@@ -299,37 +320,77 @@ export async function registerRoutes(
         _fonte: 'oficial_inep_2023',
       },
     };
-    res.json(OFICIAL[ano] || { ano, total_escolas: 0, _fonte: 'nao_disponivel' });
+
+    if (local.total_escolas < 10000 && OFICIAL[ano]) {
+      return res.json(OFICIAL[ano]);
+    }
+    res.json(local);
   });
 
-  app.get("/api/censo-escolar/:ano/escolas/:inep", async (req, res) => {
+  app.get("/api/censo-escolar/:ano/escolas/:inep", (req, res) => {
+    const ano = parseInt(req.params.ano);
     const inep = getParam(req.params, "inep");
-    const data = await getEscolaBasicaRailway(inep);
+    const data = getCensoEscolarDetail(ano, inep);
     if (!data) return res.status(404).json({ erro: "Escola não encontrada" });
     res.json(data);
   });
 
-  app.get("/api/censo-escolar/:ano/escolas", (_req, res) => {
-    res.json({ dados: [], total: 0, _info: "Use /api/escola/buscar para pesquisar escolas" });
+  app.get("/api/censo-escolar/:ano/escolas", (req, res) => {
+    const ano = parseInt(req.params.ano);
+    const page = parseInt(req.query.pagina as string) || 1;
+    const perPage = parseInt(req.query.per_page as string) || 20;
+    const filters: Record<string, string> = {};
+    for (const key of ["uf", "municipio", "nome", "tp_dependencia", "tp_localizacao", "tp_situacao"]) {
+      if (req.query[key]) filters[key] = req.query[key] as string;
+    }
+    res.json(listCensoEscolar(ano, filters, page, perPage));
   });
 
-  // === PUBLIC: INDICATOR ROUTES (dados via Railway no painel da escola) ===
-  for (const apiPath of ["ideb","icg","inse","tdi","ird","taxa-rendimento","saeb","atu","had","dsu","afd","ied","taxa-nao-resposta"]) {
-    app.get(`/api/${apiPath}/:ano/escolas/:inep`, async (req, res) => {
+  // === PUBLIC: INDICATOR ROUTES (local-first) ===
+  const INDICATOR_TIPO_MAP: Record<string, string> = {
+    "ideb": "ideb",
+    "icg": "icg",
+    "inse": "inse",
+    "tdi": "tdi",
+    "ird": "ird",
+    "taxa-rendimento": "taxas_rendimento",
+
+    "saeb": "saeb",
+    "atu": "atu",
+    "had": "had",
+    "dsu": "dsu",
+    "afd": "afd",
+    "ied": "ied",
+    "taxa-nao-resposta": "taxa_nao_resposta",
+  };
+
+  for (const [apiPath, tipoDb] of Object.entries(INDICATOR_TIPO_MAP)) {
+    app.get(`/api/${apiPath}/:ano/escolas/:inep`, (req, res) => {
+      const ano = parseInt(req.params.ano);
       const inep = getParam(req.params, "inep");
-      const data = await getEscolaBasicaRailway(inep);
+      const data = getIndicadorDetail(tipoDb, ano, inep);
       if (!data) return res.status(404).json({ erro: "Não encontrado" });
       res.json(data);
     });
 
-    app.get(`/api/${apiPath}/:ano/escolas`, (_req, res) => {
-      res.json({ dados: [], total: 0, _info: "Use /api/escola/buscar para pesquisar escolas" });
+    app.get(`/api/${apiPath}/:ano/escolas`, (req, res) => {
+      const ano = parseInt(req.params.ano);
+      const page = parseInt(req.query.pagina as string) || 1;
+      const perPage = parseInt(req.query.per_page as string) || 20;
+      const filters: Record<string, string> = {};
+      for (const key of ["uf", "municipio", "nome", "etapa", "rede"]) {
+        if (req.query[key]) filters[key] = req.query[key] as string;
+      }
+      res.json(listIndicador(tipoDb, ano, filters, page, perPage));
     });
+  }
 
-    // Keep legacy route too
-    app.get(`/api/indicador/${apiPath}/:ano/escolas/:inep`, async (req, res) => {
+  // === LEGACY: /api/indicador/* routes (backward compat) ===
+  for (const [apiPath, tipoDb] of Object.entries(INDICATOR_TIPO_MAP)) {
+    app.get(`/api/indicador/${apiPath}/:ano/escolas/:inep`, (req, res) => {
+      const ano = parseInt(req.params.ano);
       const inep = getParam(req.params, "inep");
-      const data = await getEscolaBasicaRailway(inep);
+      const data = getIndicadorDetail(tipoDb, ano, inep);
       if (!data) return res.status(404).json({ erro: "Não encontrado" });
       res.json(data);
     });
@@ -800,41 +861,110 @@ export async function registerRoutes(
     res.json(dataset);
   });
 
-  // === ADMIN: STATUS (Railway-only, sem importação local) ===
+  // === ADMIN: DATA IMPORT (from external API) ===
   app.post("/api/admin/cache/invalidar", adminAuth, (_req, res) => {
-    res.json({ mensagem: "Dados vêm direto da Railway API — sem cache local a invalidar." });
+    invalidateStatsCache();
+    res.json({ mensagem: "Cache de estatísticas limpo com sucesso" });
   });
 
-  app.post("/api/admin/importar", adminAuth, (_req, res) => {
-    res.json({ mensagem: "Importação local desativada. Dados vêm direto da Railway API.", fonte: "https://chegou-a-conta-diretora-api-production.up.railway.app" });
+  app.post("/api/admin/importar", adminAuth, async (req, res) => {
+    const tipos = req.body.tipos as string[] | undefined;
+    const anos = req.body.anos as number[] | undefined;
+    importFromExternalApi(tipos, anos).then(result => {
+      invalidateStatsCache();
+      console.log("[Import] Finished:", JSON.stringify(result.errors?.length || 0), "errors");
+    });
+    res.json({ mensagem: "Importação iniciada em background", status: getImportStatus() });
   });
 
-  app.get("/api/admin/importar-status", adminAuth, (_req, res) => {
-    res.json({ running: false, fonte: "railway", _info: "Sem banco local de escolas — dados via Railway API" });
+  app.get("/api/admin/importar-status", adminAuth, async (_req, res) => {
+    res.json({ ...getImportStatus(), stats: getLocalStats() });
   });
 
-  app.get("/api/importar-status", (_req, res) => {
-    res.json({ running: false, fonte: "railway", _info: "Sem banco local de escolas — dados via Railway API" });
+  app.get("/api/importar-status", async (_req, res) => {
+    res.json({ ...getImportStatus(), stats: getLocalStats() });
   });
 
-  app.post("/api/admin/importar-indicadores", adminAuth, (_req, res) => {
-    res.json({ mensagem: "Importação local desativada. Indicadores via Railway API." });
+  app.post("/api/admin/importar-indicadores", adminAuth, async (req, res) => {
+    if (getIndicatorImportRunning()) {
+      return res.status(409).json({ error: "Importação de indicadores já em andamento" });
+    }
+    const tipos = req.body.tipos as string[] | undefined;
+    const anos = req.body.anos as number[] | undefined;
+    importAllIndicators(tipos, anos).then(result => {
+      invalidateStatsCache();
+      console.log("[INEP] Indicator import finished:", JSON.stringify(result.errors?.length || 0), "errors");
+    });
+    res.json({ mensagem: "Importação de indicadores INEP iniciada em background", disponíveis: getAvailableIndicators() });
   });
 
-  app.post("/api/admin/importar-ideb", adminAuth, (_req, res) => {
-    res.json({ mensagem: "Importação local desativada. IDEB via Railway API." });
+  app.post("/api/admin/importar-ideb", adminAuth, async (req, res) => {
+    if (getIndicatorImportRunning()) {
+      return res.status(409).json({ error: "Importação já em andamento" });
+    }
+    const anos = req.body.anos as number[] | undefined;
+    importIdeb(anos).then(result => {
+      invalidateStatsCache();
+      console.log("[INEP] IDEB import finished:", JSON.stringify(result.errors?.length || 0), "errors");
+    });
+    res.json({ mensagem: "Importação de IDEB iniciada em background" });
   });
 
-  app.post("/api/admin/importar-inse", adminAuth, (_req, res) => {
-    res.json({ mensagem: "Importação local desativada. INSE via Railway API." });
+  app.post("/api/admin/importar-inse", adminAuth, async (req, res) => {
+    if (getIndicatorImportRunning()) {
+      return res.status(409).json({ error: "Importação já em andamento" });
+    }
+    const anos = req.body.anos as number[] | undefined;
+    importInse(anos).then(result => {
+      invalidateStatsCache();
+      console.log("[INEP] INSE import finished:", JSON.stringify(result.errors?.length || 0), "errors");
+    });
+    res.json({ mensagem: "Importação de INSE iniciada em background" });
   });
 
-  app.post("/api/:tipo/importar", adminAuth, (_req, res) => {
-    res.json({ mensagem: "Importação local desativada. Dados via Railway API." });
+  app.post("/api/:tipo/importar", adminAuth, async (req, res) => {
+    const tipo = req.params.tipo;
+    const tipoMap: Record<string, string> = {
+      "censo-escolar": "censo_escolar",
+      "ideb": "ideb", "icg": "icg", "inse": "inse",
+      "tdi": "tdi", "ird": "ird",
+      "taxa-rendimento": "taxas_rendimento",
+      "atu": "atu", "had": "had", "dsu": "dsu", "afd": "afd",
+      "ied": "ied", "taxa-nao-resposta": "taxa_nao_resposta",
+      "saeb": "saeb",
+    };
+    const dbTipo = tipoMap[tipo as string];
+    if (!dbTipo) return res.status(404).json({ erro: "Tipo de indicador não encontrado" });
+
+    const ano = parseInt(req.query.ano as string) || 2024;
+
+    if (dbTipo === "ideb") {
+      if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
+      importIdeb([ano]).then(r => { invalidateStatsCache(); console.log("[INEP] IDEB import done:", r.errors?.length || 0, "errors"); });
+      return res.json({ mensagem: `Importação de IDEB ${ano} iniciada` });
+    }
+    if (dbTipo === "inse") {
+      if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
+      importInse([ano]).then(r => { invalidateStatsCache(); console.log("[INEP] INSE import done:", r.errors?.length || 0, "errors"); });
+      return res.json({ mensagem: `Importação de INSE ${ano} iniciada` });
+    }
+    if (dbTipo === "saeb") {
+      if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
+      generateSaebFromIdeb().then(r => { invalidateStatsCache(); console.log("[INEP] SAEB generation done:", JSON.stringify(r)); });
+      return res.json({ mensagem: "Geração de SAEB a partir de IDEB iniciada" });
+    }
+
+    if (getIndicatorImportRunning()) return res.status(409).json({ error: "Importação já em andamento" });
+    importAllIndicators([dbTipo], [ano]).then(r => {
+      invalidateStatsCache();
+      console.log(`[INEP] ${dbTipo} import done:`, r.errors?.length || 0, "errors");
+    });
+    res.json({ mensagem: `Importação de ${tipo} ${ano} iniciada` });
   });
 
-  app.get("/api/admin/indicadores-status", adminAuth, (_req, res) => {
-    res.json({ running: false, disponíveis: [], _info: "Sem banco local — dados via Railway API" });
+  app.get("/api/admin/indicadores-status", adminAuth, async (_req, res) => {
+    const stats = getLocalStats();
+    res.json({ running: getIndicatorImportRunning(), disponíveis: getAvailableIndicators(), stats });
   });
 
   // === ADMIN: DASHBOARD CSV UPLOAD ===

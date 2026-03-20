@@ -296,46 +296,11 @@ function mapCensoRaw(escolaData: any, baseInfo: any): any {
   };
 }
 
-const searchCache = new Map<string, { data: any; ts: number }>();
-const SEARCH_CACHE_TTL = 60 * 60 * 1000; // 1 hora
-
 export async function searchEscolasRailway(nome: string, limit = 50) {
-  const cacheKey = `search:${nome.toLowerCase().trim()}`;
-  const cached = searchCache.get(cacheKey);
-  if (cached && Date.now() - cached.ts < SEARCH_CACHE_TTL) return cached.data;
+  const data = await fetchRailway(`/buscar/escolas?nome=${encodeURIComponent(nome)}&limite=${limit}`);
+  if (!data?.escolas) return { dados: [], total: 0 };
 
-  // Busca por INEP direto (8 dígitos) — muito mais rápido que busca por nome
-  if (/^\d{7,8}$/.test(nome.trim())) {
-    const inep = nome.trim().padStart(8, "0");
-    const resp = await fetchRailway(`/escolas/${inep}`, 10000);
-    // resposta: { encontrada, escola: { co_entidade, no_entidade, ... } }
-    const e = resp?.escola ?? (resp?.encontrada ? resp : null);
-    if (e && resp?.encontrada !== false) {
-      const result = {
-        dados: [{
-          co_entidade: e.co_entidade ?? parseInt(inep),
-          no_entidade: e.no_entidade ?? e.nome ?? "",
-          no_municipio: e.no_municipio ?? e.municipio ?? "",
-          sg_uf: e.sg_uf ?? e.uf ?? "",
-          ds_dependencia: DEP_MAP[e.tp_dependencia] ?? e.dependencia ?? "",
-          ds_localizacao: LOC_MAP[e.tp_localizacao] ?? e.localizacao ?? "",
-          qt_matriculas: e.qt_mat_bas ?? 0,
-        }],
-        total: 1,
-      };
-      searchCache.set(cacheKey, { data: result, ts: Date.now() });
-      return result;
-    }
-  }
-
-  // Busca por nome — usa timeout maior pois a view pode ser lenta
-  const data = await fetchRailway(`/buscar/escolas?nome=${encodeURIComponent(nome)}&limite=${limit}`, 25000);
-  if (!data?.escolas) {
-    const emptyResult = { dados: [], total: 0 };
-    return emptyResult;
-  }
-
-  const result = {
+  return {
     dados: data.escolas.map((e: any) => ({
       co_entidade: e.co_entidade,
       no_entidade: e.no_entidade,
@@ -343,12 +308,10 @@ export async function searchEscolasRailway(nome: string, limit = 50) {
       sg_uf: e.sg_uf,
       ds_dependencia: DEP_MAP[e.tp_dependencia] ?? String(e.tp_dependencia ?? ""),
       ds_localizacao: LOC_MAP[e.tp_localizacao] ?? String(e.tp_localizacao ?? ""),
-      qt_matriculas: e.qt_mat_bas ?? 0,
+      qt_matriculas: 0,
     })),
     total: data.quantidade ?? data.escolas.length,
   };
-  searchCache.set(cacheKey, { data: result, ts: Date.now() });
-  return result;
 }
 
 export async function getEscolaEvolucaoRailway(inep: string) {
