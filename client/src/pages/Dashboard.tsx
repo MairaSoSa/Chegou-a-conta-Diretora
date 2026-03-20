@@ -558,7 +558,7 @@ export default function Dashboard() {
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                           <input
                             className="w-full pl-9 pr-3 h-10 rounded-xl text-sm border border-border/50 bg-white outline-none focus:ring-2 focus:ring-blue-200"
-                            placeholder="Ex: EMEF Jardim das Acácias ou 35000001"
+                            placeholder="Ex: 28 de Julho EMEF ou 35298372"
                             value={searchQuery}
                             autoComplete="off"
                             onChange={e => { setSearchQuery(e.target.value); setShowDropdown(true); }}
@@ -651,11 +651,10 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div className="hidden sm:flex flex-col gap-1.5 text-xs text-muted-foreground shrink-0">
-                    <span className="font-medium text-foreground/70">Escolas de exemplo:</span>
+                    <span className="font-medium text-foreground/70">Exemplos reais:</span>
                     {[
-                      { nome: 'EMEF Jardim das Acácias', inep: '35000001' },
-                      { nome: 'EE Prof Maria da Conceição', inep: '31000002' },
-                      { nome: 'EMEF Assis Brasil', inep: '43000003' },
+                      { nome: '28 de Julho EMEF · São Caetano do Sul/SP', inep: '35298372' },
+                      { nome: 'EE Dom Mário de Miranda · Bujaru/PA', inep: '15044327' },
                     ].map(e => (
                       <button key={e.inep} onClick={() => selectSchool(e.inep, e.nome)}
                         className="text-left hover:text-blue-600 hover:underline transition-colors"
