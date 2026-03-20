@@ -1064,10 +1064,6 @@ export default function Dashboard() {
                       <p style={{margin:0,color:'var(--m-muted)',fontSize:'14px',lineHeight:'1.6'}}>
                         Explore matrículas, docentes, infraestrutura, indicadores e recursos financeiros da sua escola.
                       </p>
-                      <div style={{marginTop:'12px',display:'flex',gap:'8px',flexWrap:'wrap'}}>
-                        <div className="tag-label">dados INEP/MEC</div>
-                        <div className="tag-label scribble">raio-x educacional</div>
-                      </div>
                       <div className="school-meta">
                         <div className="meta-chip">📍 {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}</div>
                         <div className="meta-chip">🏷 INEP {selectedInep}</div>
