@@ -1295,7 +1295,7 @@ export default function Dashboard() {
                   <section className="section">
                     <div className="section-title">
                       <div><h2>Panorama estadual e nacional</h2><p>IDEB da escola comparado à microrregião, município, estado e Brasil</p></div>
-                      <div className="hint-chip">Fonte: Railway + DB local · {comparativoData.municipio?.nome}/{comparativoData.uf?.sg}</div>
+                      <div className="hint-chip">{comparativoData.municipio?.nome}/{comparativoData.uf?.sg}</div>
                     </div>
                     <div className="organic-divider" />
                     {(['ai','af','em'] as const).some(etapa => comparativoData.escola[`ideb_${etapa}`] != null) ? (
@@ -1424,7 +1424,7 @@ export default function Dashboard() {
                                 <div style={{ fontSize: 11, color: '#9e8a75', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.3 }}>{m.label}</div>
                                 <div style={{ fontSize: 10, color: '#b8a899', marginBottom: 6 }}>{m.sub}</div>
                                 <div style={{ fontSize: 26, fontWeight: 800, color: m.color, letterSpacing: '-0.03em', lineHeight: 1 }}>
-                                  {Number(saebLatest[m.key]).toFixed(1)}
+                                  {saebLatest[m.key] != null ? Number(saebLatest[m.key]).toFixed(1) : '—'}
                                 </div>
                               </div>
                             ))}
