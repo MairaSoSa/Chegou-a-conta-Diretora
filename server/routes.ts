@@ -234,18 +234,61 @@ export async function registerRoutes(
   });
 
   // === PUBLIC: COMPARATIVO (escola vs município, UF e Brasil) ===
+  // Usa Railway com cache persistente no banco (survives server restarts)
   app.get("/api/escola-comparativo/:inep", async (req, res) => {
     const inep = getParam(req.params, "inep");
+    const CACHE_KEY = `comparativo_${inep}`;
+    const CACHE_TTL_DAYS = 7;
+
+    // 1. Checar cache persistente no banco
+    const cached = sqlite.prepare(
+      `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`
+    ).get(CACHE_KEY) as any;
+
+    if (cached) {
+      const ageMs = Date.now() - cached.updated_at;
+      if (ageMs < CACHE_TTL_DAYS * 24 * 60 * 60 * 1000) {
+        return res.json(JSON.parse(cached.data));
+      }
+    }
+
+    // 2. Cache miss — buscar no Railway
     const data = await getComparativoRailway(inep);
     if (!data) return res.json(null);
+
+    // 3. Salvar no cache persistente
+    sqlite.prepare(
+      `INSERT INTO stats_cache (cache_key, data, updated_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`
+    ).run(CACHE_KEY, JSON.stringify(data), Date.now());
+
     res.json(data);
   });
 
   // === PUBLIC: DIAGNÓSTICO (pontos fortes, pontos de atenção, leituras) ===
   app.get("/api/escola-diagnostico/:inep", async (req, res) => {
     const inep = getParam(req.params, "inep");
+    const CACHE_KEY = `diagnostico_${inep}`;
+    const CACHE_TTL_DAYS = 7;
+
+    const cached = sqlite.prepare(
+      `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`
+    ).get(CACHE_KEY) as any;
+
+    if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_DAYS * 86400000) {
+      return res.json(JSON.parse(cached.data));
+    }
+
     const data = await getDiagnosticoRailway(inep);
     if (!data) return res.json(null);
+
+    sqlite.prepare(
+      `INSERT INTO stats_cache (cache_key, data, updated_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`
+    ).run(CACHE_KEY, JSON.stringify(data), Date.now());
+
     res.json(data);
   });
 
