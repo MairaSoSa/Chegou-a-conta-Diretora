@@ -2555,9 +2555,22 @@ export default function Dashboard() {
                 <div>
                   <div style={{ fontSize: 18, fontWeight: 800, color: "#0f766e" }}>🔍 Escolas com perfil similar</div>
                   {similarData && (
-                    <p style={{ margin: "4px 0 0", fontSize: 13, color: "#64748b" }}>
-                      {similarData.total} escolas · {similarData.escola_base?.dependencia} · {similarData.escola_base?.localizacao}
-                    </p>
+                    <div style={{ margin: "6px 0 0", display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 12, background: "#f0fdf4", color: "#15803d", borderRadius: 99, padding: "2px 10px", fontWeight: 600 }}>
+                        {similarData.total} escolas encontradas
+                      </span>
+                      <span style={{ fontSize: 12, background: "#eff6ff", color: "#1d4ed8", borderRadius: 99, padding: "2px 10px" }}>
+                        🏢 {similarData.escola_base?.dependencia}
+                      </span>
+                      <span style={{ fontSize: 12, background: "#fef9c3", color: "#854d0e", borderRadius: 99, padding: "2px 10px" }}>
+                        {similarData.escola_base?.localizacao === "Rural" ? "🌿 Rural" : "🏙️ Urbana"}
+                      </span>
+                      {similarData.escola_base?.modalidades && (
+                        <span style={{ fontSize: 12, background: "#fdf4ff", color: "#7e22ce", borderRadius: 99, padding: "2px 10px" }}>
+                          📚 {similarData.escola_base.modalidades}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
                 <button

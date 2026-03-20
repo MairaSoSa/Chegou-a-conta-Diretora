@@ -333,14 +333,32 @@ export async function registerRoutes(
     const inep = req.params.inep;
     const ano = parseInt(req.query.ano as string) || 2024;
     try {
-      const escola = sqlite.prepare(
-        `SELECT inep, uf, dependencia, localizacao, CAST(matriculas as INTEGER) as matriculas FROM censo_escolar WHERE inep=? AND ano=? LIMIT 1`
-      ).get(inep, ano) as any;
+      // 1ª query: escola base com modalidades (json_extract em 1 linha — rápido)
+      const escola = sqlite.prepare(`
+        SELECT inep, uf, dependencia, localizacao,
+          CAST(matriculas as INTEGER) as matriculas,
+          CAST(COALESCE(json_extract(dados, '$.qt_mat_inf'),  0) as INTEGER) as qt_mat_inf,
+          CAST(COALESCE(json_extract(dados, '$.qt_mat_fund'), 0) as INTEGER) as qt_mat_fund,
+          CAST(COALESCE(json_extract(dados, '$.qt_mat_med'),  0) as INTEGER) as qt_mat_med,
+          CAST(COALESCE(json_extract(dados, '$.qt_mat_eja'),  0) as INTEGER) as qt_mat_eja,
+          CAST(COALESCE(json_extract(dados, '$.qt_mat_prof'), 0) as INTEGER) as qt_mat_prof
+        FROM censo_escolar WHERE inep=? AND ano=? LIMIT 1
+      `).get(inep, ano) as any;
       if (!escola) return res.status(404).json({ erro: "Escola não encontrada" });
 
       const minMat = Math.floor((escola.matriculas || 50) * 0.70);
       const maxMat = Math.ceil((escola.matriculas || 50) * 1.30);
       const targetMat = escola.matriculas || 50;
+
+      // Fingerprint de modalidade da escola base (ex: "EF+EM" ou "EI" ou "EF+EJA")
+      const toFingerprint = (r: any) => [
+        r.qt_mat_inf  > 0 ? "EI"  : null,
+        r.qt_mat_fund > 0 ? "EF"  : null,
+        r.qt_mat_med  > 0 ? "EM"  : null,
+        r.qt_mat_eja  > 0 ? "EJA" : null,
+        r.qt_mat_prof > 0 ? "EP"  : null,
+      ].filter(Boolean).sort().join("+") || "EF";
+      const fingerprintBase = toFingerprint(escola);
 
       // Mapeamento UF → macro-região para filtro geográfico
       const UF_REGIAO: Record<string, string> = {
@@ -352,7 +370,7 @@ export async function registerRoutes(
       };
       const regiaoBase = UF_REGIAO[escola.uf?.toUpperCase() || ""] || null;
 
-      // 1ª query: leve — apenas campos indexados, sem dados JSON completo
+      // 2ª query: leve — apenas campos indexados, sem JSON
       const candidatos = sqlite.prepare(`
         SELECT inep, nome, municipio, uf, dependencia, localizacao,
           CAST(matriculas as INTEGER) as matriculas
@@ -360,35 +378,42 @@ export async function registerRoutes(
         WHERE ano=? AND dependencia=? AND localizacao=? AND situacao='Em Atividade' AND inep!=?
       `).all(ano, escola.dependencia, escola.localizacao, inep) as any[];
 
-      const similares = candidatos
-        .filter(s => {
-          const mat = s.matriculas || 0;
-          if (mat < minMat || mat > maxMat) return false;
-          if (regiaoBase && UF_REGIAO[s.uf?.toUpperCase() || ""] !== regiaoBase) return false;
-          return true;
-        })
-        .sort((a, b) => Math.abs((a.matriculas || 0) - targetMat) - Math.abs((b.matriculas || 0) - targetMat))
-        .slice(0, 200);
+      // Filtro leve: matrícula + região (sem JSON ainda)
+      const prefiltrados = candidatos.filter(s => {
+        const mat = s.matriculas || 0;
+        if (mat < minMat || mat > maxMat) return false;
+        if (regiaoBase && UF_REGIAO[s.uf?.toUpperCase() || ""] !== regiaoBase) return false;
+        return true;
+      });
 
-      // 2ª query: busca contato apenas para os 600 similares selecionados
-      if (similares.length > 0) {
-        const inepList = similares.map(s => s.inep);
-        const placeholders = inepList.map(() => "?").join(",");
-        const contatos = sqlite.prepare(`
+      // 3ª query: json_extract apenas nos prefiltrados (modalidades + contato)
+      let similares: any[] = [];
+      if (prefiltrados.length > 0) {
+        const prefIneps = prefiltrados.map(s => s.inep);
+        const placeholders = prefIneps.map(() => "?").join(",");
+        const detalhes = sqlite.prepare(`
           SELECT inep,
-            json_extract(dados, '$.telefone') as telefone,
+            json_extract(dados, '$.telefone')    as telefone,
             json_extract(dados, '$.ds_endereco') as ds_endereco,
-            json_extract(dados, '$.no_bairro') as no_bairro,
-            json_extract(dados, '$.co_cep') as co_cep,
-            json_extract(dados, '$.qt_mat_fund') as qt_mat_fund,
-            json_extract(dados, '$.qt_mat_med') as qt_mat_med,
-            json_extract(dados, '$.qt_mat_inf') as qt_mat_inf,
-            json_extract(dados, '$.qt_mat_eja') as qt_mat_eja
+            json_extract(dados, '$.no_bairro')   as no_bairro,
+            json_extract(dados, '$.co_cep')      as co_cep,
+            CAST(COALESCE(json_extract(dados, '$.qt_mat_inf'),  0) as INTEGER) as qt_mat_inf,
+            CAST(COALESCE(json_extract(dados, '$.qt_mat_fund'), 0) as INTEGER) as qt_mat_fund,
+            CAST(COALESCE(json_extract(dados, '$.qt_mat_med'),  0) as INTEGER) as qt_mat_med,
+            CAST(COALESCE(json_extract(dados, '$.qt_mat_eja'),  0) as INTEGER) as qt_mat_eja,
+            CAST(COALESCE(json_extract(dados, '$.qt_mat_prof'), 0) as INTEGER) as qt_mat_prof
           FROM censo_escolar WHERE ano=? AND inep IN (${placeholders})
-        `).all(ano, ...inepList) as any[];
-        const contatoMap: Record<string, any> = {};
-        for (const c of contatos) contatoMap[c.inep] = c;
-        for (const s of similares) Object.assign(s, contatoMap[s.inep] || {});
+        `).all(ano, ...prefIneps) as any[];
+
+        const detalheMap: Record<string, any> = {};
+        for (const d of detalhes) detalheMap[d.inep] = d;
+
+        // Filtro por modalidade (fingerprint exato) + merge de dados
+        similares = prefiltrados
+          .map(s => ({ ...s, ...(detalheMap[s.inep] || {}) }))
+          .filter(s => toFingerprint(s) === fingerprintBase)
+          .sort((a, b) => Math.abs((a.matriculas || 0) - targetMat) - Math.abs((b.matriculas || 0) - targetMat))
+          .slice(0, 200);
       }
 
       const porUf: Record<string, number> = {};
@@ -397,7 +422,11 @@ export async function registerRoutes(
       }
 
       res.json({
-        escola_base: { inep, dependencia: escola.dependencia, localizacao: escola.localizacao, matriculas: escola.matriculas, regiao: regiaoBase },
+        escola_base: {
+          inep, dependencia: escola.dependencia, localizacao: escola.localizacao,
+          matriculas: escola.matriculas, regiao: regiaoBase,
+          modalidades: fingerprintBase,
+        },
         total: similares.length,
         por_uf: porUf,
         escolas: similares.map(s => ({
@@ -413,10 +442,11 @@ export async function registerRoutes(
           no_bairro: s.no_bairro || null,
           co_cep: s.co_cep || null,
           modalidades: [
-            s.qt_mat_inf > 0 && "Infantil",
+            s.qt_mat_inf  > 0 && "Infantil",
             s.qt_mat_fund > 0 && "Fundamental",
-            s.qt_mat_med > 0 && "Médio",
-            s.qt_mat_eja > 0 && "EJA",
+            s.qt_mat_med  > 0 && "Médio",
+            s.qt_mat_eja  > 0 && "EJA",
+            s.qt_mat_prof > 0 && "Prof.",
           ].filter(Boolean),
         })),
       });
