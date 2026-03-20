@@ -1,6 +1,8 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import type { Server } from "http";
 import crypto from "crypto";
+import { readFileSync } from "fs";
+import { join } from "path";
 import express from "express";
 import Papa from "papaparse";
 import { PDFParse } from "pdf-parse";
@@ -46,6 +48,10 @@ import {
   insertProgramSchema, insertProgramDetailSchema,
   insertAiDocumentSchema
 } from "@shared/schema";
+
+const MUNICIPIO_CENTROIDES: Record<number, [number, number]> = JSON.parse(
+  readFileSync(join(process.cwd(), "server", "municipio-centroides.json"), "utf-8")
+);
 
 const settingsEntrySchema = z.object({
   key: z.string().min(1),
@@ -333,10 +339,11 @@ export async function registerRoutes(
     const inep = req.params.inep;
     const ano = parseInt(req.query.ano as string) || 2024;
     try {
-      // 1ª query: escola base com modalidades (json_extract em 1 linha — rápido)
+      // 1ª query: escola base com modalidades + municipio (json_extract em 1 linha — rápido)
       const escola = sqlite.prepare(`
         SELECT inep, uf, dependencia, localizacao,
           CAST(matriculas as INTEGER) as matriculas,
+          CAST(COALESCE(json_extract(dados, '$.co_municipio'), 0) as INTEGER) as co_municipio,
           CAST(COALESCE(json_extract(dados, '$.qt_mat_inf'),  0) as INTEGER) as qt_mat_inf,
           CAST(COALESCE(json_extract(dados, '$.qt_mat_fund'), 0) as INTEGER) as qt_mat_fund,
           CAST(COALESCE(json_extract(dados, '$.qt_mat_med'),  0) as INTEGER) as qt_mat_med,
@@ -397,6 +404,7 @@ export async function registerRoutes(
             json_extract(dados, '$.ds_endereco') as ds_endereco,
             json_extract(dados, '$.no_bairro')   as no_bairro,
             json_extract(dados, '$.co_cep')      as co_cep,
+            CAST(COALESCE(json_extract(dados, '$.co_municipio'), 0) as INTEGER) as co_municipio,
             CAST(COALESCE(json_extract(dados, '$.qt_mat_inf'),  0) as INTEGER) as qt_mat_inf,
             CAST(COALESCE(json_extract(dados, '$.qt_mat_fund'), 0) as INTEGER) as qt_mat_fund,
             CAST(COALESCE(json_extract(dados, '$.qt_mat_med'),  0) as INTEGER) as qt_mat_med,
@@ -408,19 +416,10 @@ export async function registerRoutes(
         const detalheMap: Record<string, any> = {};
         for (const d of detalhes) detalheMap[d.inep] = d;
 
-        // Centroides geográficos por UF (lat, lng) — para ordenar por distância aproximada
-        const UF_CENTROID: Record<string, [number, number]> = {
-          AC:[-9.02,-70.81], AL:[-9.57,-36.78], AM:[-4.34,-65.34], AP:[1.41,-51.77],
-          BA:[-12.97,-41.73], CE:[-5.5,-39.32], DF:[-15.78,-47.93], ES:[-19.57,-40.67],
-          GO:[-15.82,-49.94], MA:[-5.43,-44.39], MG:[-18.51,-44.55], MS:[-20.77,-54.79],
-          MT:[-12.96,-55.67], PA:[-4.38,-52.58], PB:[-7.24,-36.78], PE:[-8.38,-37.86],
-          PI:[-7.72,-42.73], PR:[-24.89,-51.55], RJ:[-22.41,-42.97], RN:[-5.81,-36.59],
-          RO:[-11.22,-62.8], RR:[2.19,-61.25], RS:[-30.03,-53.27], SC:[-27.45,-50.95],
-          SE:[-10.58,-37.45], SP:[-22.27,-48.75], TO:[-10.18,-48.33],
-        };
-        const haversine = (uf1: string, uf2: string): number => {
-          const c1 = UF_CENTROID[uf1.toUpperCase()];
-          const c2 = UF_CENTROID[uf2.toUpperCase()];
+        // Haversine por município usando centroide real (5.570 municípios)
+        const haversineKm = (coMun1: number, coMun2: number): number => {
+          const c1 = MUNICIPIO_CENTROIDES[coMun1];
+          const c2 = MUNICIPIO_CENTROIDES[coMun2];
           if (!c1 || !c2) return 9999;
           const R = 6371;
           const dLat = (c2[0] - c1[0]) * Math.PI / 180;
@@ -428,16 +427,17 @@ export async function registerRoutes(
           const a = Math.sin(dLat/2)**2 + Math.cos(c1[0]*Math.PI/180)*Math.cos(c2[0]*Math.PI/180)*Math.sin(dLon/2)**2;
           return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         };
+        const coMunBase = escola.co_municipio || 0;
 
-        // Filtro por modalidade (fingerprint exato) + merge de dados + ordenação por distância
+        // Filtro por modalidade (fingerprint exato) + merge + ordenação por distância real por município
         similares = prefiltrados
           .map(s => ({ ...s, ...(detalheMap[s.inep] || {}) }))
           .filter(s => toFingerprint(s) === fingerprintBase)
           .sort((a, b) => {
-            const da = haversine(escola.uf || "", a.uf || "");
-            const db = haversine(escola.uf || "", b.uf || "");
-            if (Math.abs(da - db) > 50) return da - db;           // diferença > 50km: prioriza mais próximo
-            return Math.abs((a.matriculas||0) - targetMat) - Math.abs((b.matriculas||0) - targetMat); // dentro do mesmo estado: mais parecido em tamanho
+            const da = haversineKm(coMunBase, a.co_municipio || 0);
+            const db = haversineKm(coMunBase, b.co_municipio || 0);
+            if (Math.abs(da - db) > 5) return da - db; // diferença > 5km: ordena por distância
+            return Math.abs((a.matriculas||0) - targetMat) - Math.abs((b.matriculas||0) - targetMat); // mesmo município: ordena por tamanho
           })
           .slice(0, 200);
       }
@@ -463,6 +463,7 @@ export async function registerRoutes(
           dependencia: s.dependencia,
           localizacao: s.localizacao,
           matriculas: s.matriculas,
+          distancia_km: coMunBase && s.co_municipio ? Math.round(haversineKm(coMunBase, s.co_municipio)) : null,
           telefone: s.telefone || null,
           ds_endereco: s.ds_endereco || null,
           no_bairro: s.no_bairro || null,

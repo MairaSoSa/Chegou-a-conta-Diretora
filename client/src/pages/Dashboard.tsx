@@ -2628,6 +2628,11 @@ export default function Dashboard() {
                             <div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a", marginBottom: 4 }}>{escola.nome}</div>
                             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
                               <span style={{ fontSize: 12, background: "#dbeafe", color: "#1d4ed8", borderRadius: 99, padding: "2px 8px" }}>📍 {escola.municipio}/{escola.uf}</span>
+                              {escola.distancia_km != null && (
+                                <span style={{ fontSize: 12, background: escola.distancia_km === 0 ? "#f0fdf4" : "#f8fafc", color: escola.distancia_km === 0 ? "#15803d" : "#64748b", borderRadius: 99, padding: "2px 8px", fontWeight: escola.distancia_km === 0 ? 700 : 400 }}>
+                                  📏 {escola.distancia_km === 0 ? "mesmo município" : `${escola.distancia_km.toLocaleString("pt-BR")} km`}
+                                </span>
+                              )}
                               <span style={{ fontSize: 12, background: "#fef3c7", color: "#92400e", borderRadius: 99, padding: "2px 8px" }}>👩‍🎓 {escola.matriculas?.toLocaleString("pt-BR") || "—"} alunos</span>
                               {escola.modalidades?.map((m: string) => (
                                 <span key={m} style={{ fontSize: 11, background: "#f1f5f9", color: "#64748b", borderRadius: 99, padding: "2px 8px" }}>{m}</span>
