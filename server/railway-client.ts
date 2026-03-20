@@ -296,97 +296,59 @@ function mapCensoRaw(escolaData: any, baseInfo: any): any {
   };
 }
 
-// ── Índice em memória de escolas (cresce a cada consulta por INEP) ──────────
-interface SchoolEntry {
-  co_entidade: number;
-  no_entidade: string;
-  no_municipio: string;
-  sg_uf: string;
-  ds_dependencia: string;
-  ds_localizacao: string;
-  qt_matriculas: number;
-}
-const schoolIndex = new Map<number, SchoolEntry>();
+const searchCache = new Map<string, { data: any; ts: number }>();
+const SEARCH_CACHE_TTL = 60 * 60 * 1000; // 1 hora
 
-function addToSchoolIndex(e: SchoolEntry) {
-  if (e?.co_entidade && e?.no_entidade) {
-    schoolIndex.set(e.co_entidade, e);
-  }
-}
+export async function searchEscolasRailway(nome: string, limit = 50) {
+  const cacheKey = `search:${nome.toLowerCase().trim()}`;
+  const cached = searchCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < SEARCH_CACHE_TTL) return cached.data;
 
-function searchSchoolIndex(query: string, limit = 20): SchoolEntry[] {
-  if (schoolIndex.size === 0) return [];
-  const words = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/\s+/).filter(Boolean);
-  const results: SchoolEntry[] = [];
-  for (const e of schoolIndex.values()) {
-    const name = e.no_entidade.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const city = e.no_municipio.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    if (words.every(w => name.includes(w) || city.includes(w) || e.sg_uf.toLowerCase() === w)) {
-      results.push(e);
-      if (results.length >= limit) break;
-    }
-  }
-  return results.sort((a, b) => a.no_entidade.localeCompare(b.no_entidade));
-}
-
-function schoolToEntry(e: any, inep?: string): SchoolEntry | null {
-  const co = e?.co_entidade ?? (inep ? parseInt(inep) : null);
-  if (!co || !e?.no_entidade) return null;
-  return {
-    co_entidade: co,
-    no_entidade: e.no_entidade ?? "",
-    no_municipio: e.no_municipio ?? "",
-    sg_uf: e.sg_uf ?? "",
-    ds_dependencia: DEP_MAP[e.tp_dependencia] ?? e.ds_dependencia ?? "",
-    ds_localizacao: LOC_MAP[e.tp_localizacao] ?? e.ds_localizacao ?? "",
-    qt_matriculas: e.qt_mat_bas ?? e.qt_matriculas ?? 0,
-  };
-}
-
-export function getSchoolIndexSize() { return schoolIndex.size; }
-
-export async function searchEscolasRailway(nome: string, limit = 20) {
-  const trimmed = nome.trim();
-
-  // 1. Busca por INEP direto (7-8 dígitos) — resposta em ~3-4 s
-  if (/^\d{7,8}$/.test(trimmed)) {
-    const inep = trimmed.padStart(8, "0");
-
-    // Checa índice primeiro (pode já estar indexado)
-    const indexed = schoolIndex.get(parseInt(inep));
-    if (indexed) return { dados: [indexed], total: 1, _fonte: "cache" };
-
+  // Busca por INEP direto (8 dígitos) — muito mais rápido que busca por nome
+  if (/^\d{7,8}$/.test(nome.trim())) {
+    const inep = nome.trim().padStart(8, "0");
     const resp = await fetchRailway(`/escolas/${inep}`, 10000);
-    const raw = resp?.escola ?? (resp?.encontrada ? resp : null);
-    if (raw && resp?.encontrada !== false) {
-      const entry = schoolToEntry(raw, inep) ?? {
-        co_entidade: parseInt(inep),
-        no_entidade: raw.no_entidade ?? raw.nome ?? inep,
-        no_municipio: raw.no_municipio ?? "",
-        sg_uf: raw.sg_uf ?? "",
-        ds_dependencia: DEP_MAP[raw.tp_dependencia] ?? "",
-        ds_localizacao: LOC_MAP[raw.tp_localizacao] ?? "",
-        qt_matriculas: raw.qt_mat_bas ?? 0,
+    // resposta: { encontrada, escola: { co_entidade, no_entidade, ... } }
+    const e = resp?.escola ?? (resp?.encontrada ? resp : null);
+    if (e && resp?.encontrada !== false) {
+      const result = {
+        dados: [{
+          co_entidade: e.co_entidade ?? parseInt(inep),
+          no_entidade: e.no_entidade ?? e.nome ?? "",
+          no_municipio: e.no_municipio ?? e.municipio ?? "",
+          sg_uf: e.sg_uf ?? e.uf ?? "",
+          ds_dependencia: DEP_MAP[e.tp_dependencia] ?? e.dependencia ?? "",
+          ds_localizacao: LOC_MAP[e.tp_localizacao] ?? e.localizacao ?? "",
+          qt_matriculas: e.qt_mat_bas ?? 0,
+        }],
+        total: 1,
       };
-      addToSchoolIndex(entry);
-      return { dados: [entry], total: 1, _fonte: "railway_inep" };
+      searchCache.set(cacheKey, { data: result, ts: Date.now() });
+      return result;
     }
-    return { dados: [], total: 0 };
   }
 
-  // 2. Busca por nome no índice em memória (instantâneo)
-  if (schoolIndex.size > 0) {
-    const hits = searchSchoolIndex(trimmed, limit);
-    if (hits.length > 0) return { dados: hits, total: hits.length, _fonte: "cache" };
+  // Busca por nome — usa timeout maior pois a view pode ser lenta
+  const data = await fetchRailway(`/buscar/escolas?nome=${encodeURIComponent(nome)}&limite=${limit}`, 25000);
+  if (!data?.escolas) {
+    const emptyResult = { dados: [], total: 0 };
+    return emptyResult;
   }
 
-  // 3. Índice vazio / sem resultados → informa ao usuário
-  return {
-    dados: [],
-    total: 0,
-    _info: "index_empty",
-    mensagem: "Índice local vazio. Use o código INEP (8 dígitos) para busca direta.",
+  const result = {
+    dados: data.escolas.map((e: any) => ({
+      co_entidade: e.co_entidade,
+      no_entidade: e.no_entidade,
+      no_municipio: e.no_municipio,
+      sg_uf: e.sg_uf,
+      ds_dependencia: DEP_MAP[e.tp_dependencia] ?? String(e.tp_dependencia ?? ""),
+      ds_localizacao: LOC_MAP[e.tp_localizacao] ?? String(e.tp_localizacao ?? ""),
+      qt_matriculas: e.qt_mat_bas ?? 0,
+    })),
+    total: data.quantidade ?? data.escolas.length,
   };
+  searchCache.set(cacheKey, { data: result, ts: Date.now() });
+  return result;
 }
 
 export async function getEscolaEvolucaoRailway(inep: string) {
@@ -507,24 +469,12 @@ export async function getEscolaEvolucaoRailway(inep: string) {
   ]);
   const anos = [...anosSet].sort((a, b) => a - b);
 
-  // Adiciona ao índice de busca para pesquisas futuras por nome
-  if (baseInfo.no_entidade) {
-    addToSchoolIndex({
-      co_entidade:    parseInt(inep),
-      no_entidade:    baseInfo.no_entidade,
-      no_municipio:   baseInfo.no_municipio ?? "",
-      sg_uf:          baseInfo.sg_uf ?? "",
-      ds_dependencia: baseInfo.ds_dependencia ?? "",
-      ds_localizacao: baseInfo.ds_localizacao ?? "",
-      qt_matriculas:  0,
-    });
-  }
-
   return {
     co_entidade: parseInt(inep),
     anos_disponiveis: anos,
     escola: {
       ...baseInfo,
+      // Resumo IDEB da capa (do indicadores_recentes)
       ideb_ai_recente: idebRecentes.anos_iniciais?.valor ?? null,
       ideb_af_recente: idebRecentes.anos_finais?.valor  ?? null,
       ideb_em_recente: idebRecentes.ensino_medio?.valor ?? null,

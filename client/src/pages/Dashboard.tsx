@@ -560,7 +560,7 @@ export default function Dashboard() {
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                           <input
                             className="w-full pl-9 pr-3 h-10 rounded-xl text-sm border border-border/50 bg-white outline-none focus:ring-2 focus:ring-blue-200"
-                            placeholder="Código INEP (8 dígitos) ou nome da escola"
+                            placeholder="Nome da escola ou código INEP (8 dígitos)"
                             value={searchQuery}
                             autoComplete="off"
                             onChange={e => { setSearchQuery(e.target.value); setShowDropdown(true); }}
@@ -595,8 +595,13 @@ export default function Dashboard() {
                             <div className="px-4 py-3.5">
                               <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
                                 <Loader2 className="w-4 h-4 animate-spin text-blue-400 shrink-0" />
-                                <span>{/^\d{7,8}$/.test(searchQuery.trim()) ? "Consultando API pelo código INEP..." : "Buscando no índice..."}</span>
+                                <span>Consultando API...</span>
                               </div>
+                              {!/^\d{7,8}$/.test(searchQuery.trim()) && (
+                                <p className="text-xs text-muted-foreground/70 mt-1.5 pl-6">
+                                  Busca por nome pode levar até 30 s. Para resultado imediato, use o código INEP (8 dígitos).
+                                </p>
+                              )}
                             </div>
                           )}
 
@@ -645,28 +650,12 @@ export default function Dashboard() {
 
                           {/* Sem resultados */}
                           {!searchLoading && searchResults?.dados && searchResults.dados.length === 0 && (
-                            <div className="px-4 py-5 text-sm text-muted-foreground">
-                              <div className="flex items-start gap-2.5">
-                                <Search className="w-4 h-4 shrink-0 mt-0.5 opacity-40" />
-                                <div>
-                                  {/^\d{7,8}$/.test(searchQuery.trim()) ? (
-                                    <p>Código INEP <strong>{searchQuery}</strong> não encontrado na API.</p>
-                                  ) : (searchResults as any)?._info === "index_empty" ? (
-                                    <>
-                                      <p className="font-medium text-foreground/80">Como buscar minha escola?</p>
-                                      <p className="text-xs mt-1 leading-relaxed">
-                                        Digite o <strong>código INEP</strong> (8 dígitos) da sua escola para busca direta e rápida.<br />
-                                        O INEP está no documento de identidade da escola, no site do <a href="https://emec.mec.gov.br" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">e-MEC</a> ou no Censo Escolar.
-                                      </p>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <p>Nenhuma escola encontrada para "<strong>{searchQuery}</strong>"</p>
-                                      <p className="text-xs mt-1 opacity-70">Tente o código INEP (8 dígitos) para resultado instantâneo.</p>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
+                            <div className="px-4 py-5 text-center text-sm text-muted-foreground">
+                              <Search className="w-6 h-6 mx-auto mb-1.5 opacity-30" />
+                              <p>Nenhuma escola encontrada para "<strong>{searchQuery}</strong>"</p>
+                              {!/^\d{7,8}$/.test(searchQuery.trim()) && (
+                                <p className="text-xs mt-1.5 opacity-70">Tente buscar pelo código INEP da escola (8 dígitos) para resultado instantâneo.</p>
+                              )}
                             </div>
                           )}
                         </div>
@@ -904,7 +893,7 @@ export default function Dashboard() {
                       <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
-                          placeholder="Código INEP (8 dígitos) ou nome da escola..."
+                          placeholder="Busque por nome ou código INEP (8 dígitos)..."
                           className="pl-10 bg-background border-border/50 h-11 rounded-xl"
                           value={searchQuery}
                           autoFocus
