@@ -226,11 +226,67 @@ export async function registerRoutes(
   // === PUBLIC: ESCOLA EVOLUÇÃO (Railway primeiro, local como fallback) ===
   app.get("/api/escola-evolucao/:inep", async (req, res) => {
     const inep = getParam(req.params, "inep");
-    const railwayData = await getEscolaEvolucaoRailway(inep);
-    if (railwayData) return res.json(railwayData);
-    const localData = getEscolaEvolucaoLocal(inep);
-    if (localData) return res.json(localData);
-    res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], escola: null, censo_por_ano: {}, indicadores_por_ano: {} });
+    const [railwayData, localData] = await Promise.all([
+      getEscolaEvolucaoRailway(inep),
+      Promise.resolve(getEscolaEvolucaoLocal(inep)),
+    ]);
+
+    if (!railwayData && !localData) {
+      return res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], escola: null, censo_por_ano: {}, indicadores_por_ano: {} });
+    }
+    if (!railwayData) return res.json(localData);
+    if (!localData)   return res.json(railwayData);
+
+    // Mescla: local tem dados quantitativos do censo (qt_mat_bas, docentes, turmas, infra)
+    // para todos os anos; Railway tem metadados e indicadores (IDEB, SAEB).
+    // Estratégia: local como base de cada ano, Railway sobrescreve os campos que tem.
+    const localCenso = localData.censo_por_ano as Record<number, any>;
+    const mergedCenso: Record<number, any> = {};
+    const allAnosCenso = new Set<number>([
+      ...Object.keys(railwayData.censo_por_ano).map(Number),
+      ...Object.keys(localCenso).map(Number),
+    ]);
+    for (const ano of allAnosCenso) {
+      const loc  = localCenso[ano]  ?? {};
+      const rail = (railwayData.censo_por_ano as Record<number, any>)[ano] ?? {};
+      mergedCenso[ano] = { ...loc, ...rail };
+      // Garante que campos quantitativos locais não sejam apagados pelo Railway
+      for (const field of ['qt_mat_bas','qt_doc_bas','qt_tur_bas','qt_salas_utilizadas',
+                           'qt_mat_fund','qt_mat_fund_ai','qt_mat_fund_af','qt_mat_med',
+                           'qt_mat_eja','qt_mat_esp','qt_mat_bas_fem','qt_mat_bas_masc',
+                           'in_agua_potavel','in_energia_rede_publica','in_esgoto_rede_publica',
+                           'in_biblioteca','in_laboratorio_informatica','in_quadra_esportes',
+                           'in_internet','in_banda_larga','in_alimentacao']) {
+        if ((rail[field] == null || rail[field] === undefined) && loc[field] != null) {
+          mergedCenso[ano][field] = loc[field];
+        }
+      }
+    }
+
+    // Mescla indicadores: local como base, Railway adiciona/sobrescreve
+    const localInd = localData.indicadores_por_ano as Record<number, any>;
+    const mergedInd: Record<number, any> = {};
+    const allAnosInd = new Set<number>([
+      ...Object.keys(railwayData.indicadores_por_ano).map(Number),
+      ...Object.keys(localInd).map(Number),
+    ]);
+    for (const ano of allAnosInd) {
+      const loc  = localInd[ano]  ?? {};
+      const rail = (railwayData.indicadores_por_ano as Record<number, any>)[ano] ?? {};
+      mergedInd[ano] = { ...loc, ...rail };
+    }
+
+    const anosSet = new Set<number>([
+      ...Object.keys(mergedCenso).map(Number),
+      ...Object.keys(mergedInd).map(Number),
+    ]);
+
+    return res.json({
+      ...railwayData,
+      anos_disponiveis: [...anosSet].sort((a, b) => a - b),
+      censo_por_ano:       mergedCenso,
+      indicadores_por_ano: mergedInd,
+    });
   });
 
   // === PUBLIC: COMPARATIVO (escola vs município, UF e Brasil) ===
