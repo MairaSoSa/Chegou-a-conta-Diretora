@@ -1056,7 +1056,7 @@ export default function Dashboard() {
                   <div className="hero-inner">
                     <div>
                       <div className="eyebrow">
-                        <span className="scribble">📘 Censo Escolar {latestAno} · INEP/MEC</span>
+                        <span className="scribble">Ficha Completa</span>
                       </div>
                       <h1 style={{margin:'12px 0 8px',fontSize:'clamp(20px,3vw,34px)',lineHeight:'1.06',letterSpacing:'-0.04em'}}>
                         {evolucaoData.escola.no_entidade}
