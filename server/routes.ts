@@ -334,13 +334,23 @@ export async function registerRoutes(
     const ano = parseInt(req.query.ano as string) || 2024;
     try {
       const escola = sqlite.prepare(
-        `SELECT inep, dependencia, localizacao, CAST(matriculas as INTEGER) as matriculas FROM censo_escolar WHERE inep=? AND ano=? LIMIT 1`
+        `SELECT inep, uf, dependencia, localizacao, CAST(matriculas as INTEGER) as matriculas FROM censo_escolar WHERE inep=? AND ano=? LIMIT 1`
       ).get(inep, ano) as any;
       if (!escola) return res.status(404).json({ erro: "Escola não encontrada" });
 
-      const minMat = Math.floor((escola.matriculas || 50) * 0.55);
-      const maxMat = Math.ceil((escola.matriculas || 50) * 1.55);
+      const minMat = Math.floor((escola.matriculas || 50) * 0.70);
+      const maxMat = Math.ceil((escola.matriculas || 50) * 1.30);
       const targetMat = escola.matriculas || 50;
+
+      // Mapeamento UF → macro-região para filtro geográfico
+      const UF_REGIAO: Record<string, string> = {
+        AC:"N",AM:"N",AP:"N",PA:"N",RO:"N",RR:"N",TO:"N",
+        AL:"NE",BA:"NE",CE:"NE",MA:"NE",PB:"NE",PE:"NE",PI:"NE",RN:"NE",SE:"NE",
+        DF:"CO",GO:"CO",MS:"CO",MT:"CO",
+        ES:"SE",MG:"SE",RJ:"SE",SP:"SE",
+        PR:"S",RS:"S",SC:"S",
+      };
+      const regiaoBase = UF_REGIAO[escola.uf?.toUpperCase() || ""] || null;
 
       // 1ª query: leve — apenas campos indexados, sem dados JSON completo
       const candidatos = sqlite.prepare(`
@@ -351,9 +361,14 @@ export async function registerRoutes(
       `).all(ano, escola.dependencia, escola.localizacao, inep) as any[];
 
       const similares = candidatos
-        .filter(s => { const mat = s.matriculas || 0; return mat >= minMat && mat <= maxMat; })
+        .filter(s => {
+          const mat = s.matriculas || 0;
+          if (mat < minMat || mat > maxMat) return false;
+          if (regiaoBase && UF_REGIAO[s.uf?.toUpperCase() || ""] !== regiaoBase) return false;
+          return true;
+        })
         .sort((a, b) => Math.abs((a.matriculas || 0) - targetMat) - Math.abs((b.matriculas || 0) - targetMat))
-        .slice(0, 600);
+        .slice(0, 200);
 
       // 2ª query: busca contato apenas para os 600 similares selecionados
       if (similares.length > 0) {
@@ -382,7 +397,7 @@ export async function registerRoutes(
       }
 
       res.json({
-        escola_base: { inep, dependencia: escola.dependencia, localizacao: escola.localizacao, matriculas: escola.matriculas },
+        escola_base: { inep, dependencia: escola.dependencia, localizacao: escola.localizacao, matriculas: escola.matriculas, regiao: regiaoBase },
         total: similares.length,
         por_uf: porUf,
         escolas: similares.map(s => ({
