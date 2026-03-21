@@ -33,6 +33,9 @@ import {
   getEscolaCompletaRailway, getEscolaBasicaRailway,
   getComparativoRailway, getDiagnosticoRailway,
 } from "./railway-client";
+import {
+  buildLocalMaps, getComparativoLocal, getDiagnosticoLocal,
+} from "./local-analytics";
 import { importAllIndicators, getIndicatorImportRunning, getAvailableIndicators, importIdeb, importInse, generateSaebFromIdeb } from "./import-inep-indicators";
 import { 
   localizarPrestacoesPorCnpj,
@@ -52,6 +55,18 @@ import {
 const MUNICIPIO_CENTROIDES: Record<number, [number, number]> = JSON.parse(
   readFileSync(join(process.cwd(), "server", "municipio-centroides.json"), "utf-8")
 );
+
+// Helper: grava no cache sem travar a rota se o DB for somente-leitura (produção)
+function safeCacheWrite(key: string, data: any) {
+  try {
+    sqlite.prepare(
+      `INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?)
+       ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`
+    ).run(key, JSON.stringify(data), Date.now());
+  } catch {
+    // DB somente-leitura em produção — ignora, continua servindo os dados
+  }
+}
 
 const settingsEntrySchema = z.object({
   key: z.string().min(1),
@@ -137,6 +152,9 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  // Pré-computa médias IDEB locais (municipio/UF/Brasil) em background
+  setTimeout(() => buildLocalMaps(), 0);
 
   registerChatRoutes(app);
   registerCadernoRoutes(app);
@@ -229,6 +247,7 @@ export async function registerRoutes(
     const CACHE_KEY = `evolucao_${inep}`;
     const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
 
+    // 1. Cache persistente (se disponível e fresco)
     const cached = sqlite.prepare(
       `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`
     ).get(CACHE_KEY) as any;
@@ -236,79 +255,67 @@ export async function registerRoutes(
       return res.json(JSON.parse(cached.data));
     }
 
-    const [railwayData, localData] = await Promise.all([
-      getEscolaEvolucaoRailway(inep),
-      Promise.resolve(getEscolaEvolucaoLocal(inep)),
-    ]);
-
-    const saveCache = (data: any) => {
-      if (data?.anos_disponiveis?.length > 0) {
-        sqlite.prepare(
-          `INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?)
-           ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`
-        ).run(CACHE_KEY, JSON.stringify(data), Date.now());
-      }
-    };
-
-    if (!railwayData && !localData) {
+    // 2. Dados locais servidos imediatamente (sem esperar Railway)
+    const localData = getEscolaEvolucaoLocal(inep);
+    if (!localData) {
       return res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], escola: null, censo_por_ano: {}, indicadores_por_ano: {} });
     }
-    if (!railwayData) { saveCache(localData); return res.json(localData); }
-    if (!localData)   { saveCache(railwayData); return res.json(railwayData); }
 
-    // Mescla: local tem dados quantitativos do censo (qt_mat_bas, docentes, turmas, infra)
-    // para todos os anos; Railway tem metadados e indicadores (IDEB, SAEB).
-    // Estratégia: local como base de cada ano, Railway sobrescreve os campos que tem.
-    const localCenso = localData.censo_por_ano as Record<number, any>;
-    const mergedCenso: Record<number, any> = {};
-    const allAnosCenso = new Set<number>([
-      ...Object.keys(railwayData.censo_por_ano).map(Number),
-      ...Object.keys(localCenso).map(Number),
-    ]);
-    for (const ano of allAnosCenso) {
-      const loc  = localCenso[ano]  ?? {};
-      const rail = (railwayData.censo_por_ano as Record<number, any>)[ano] ?? {};
-      mergedCenso[ano] = { ...loc, ...rail };
-      // Garante que campos quantitativos locais não sejam apagados pelo Railway
-      for (const field of ['qt_mat_bas','qt_doc_bas','qt_tur_bas','qt_salas_utilizadas',
-                           'qt_mat_fund','qt_mat_fund_ai','qt_mat_fund_af','qt_mat_med',
-                           'qt_mat_eja','qt_mat_esp','qt_mat_bas_fem','qt_mat_bas_masc',
-                           'in_agua_potavel','in_energia_rede_publica','in_esgoto_rede_publica',
-                           'in_biblioteca','in_laboratorio_informatica','in_quadra_esportes',
-                           'in_internet','in_banda_larga','in_alimentacao']) {
-        if ((rail[field] == null || rail[field] === undefined) && loc[field] != null) {
-          mergedCenso[ano][field] = loc[field];
+    // 3. Retorna local imediatamente
+    res.json(localData);
+
+    // 4. Em background, tenta enriquecer com Railway e atualiza o cache
+    (async () => {
+      try {
+        const railwayData = await getEscolaEvolucaoRailway(inep);
+        if (!railwayData) { safeCacheWrite(CACHE_KEY, localData); return; }
+
+        // Mescla: local como base, Railway enriquece com IDEB/SAEB/metadados
+        const localCenso = localData.censo_por_ano as Record<number, any>;
+        const mergedCenso: Record<number, any> = {};
+        const allAnosCenso = new Set<number>([
+          ...Object.keys(railwayData.censo_por_ano).map(Number),
+          ...Object.keys(localCenso).map(Number),
+        ]);
+        for (const ano of allAnosCenso) {
+          const loc  = localCenso[ano]  ?? {};
+          const rail = (railwayData.censo_por_ano as Record<number, any>)[ano] ?? {};
+          mergedCenso[ano] = { ...loc, ...rail };
+          for (const field of ['qt_mat_bas','qt_doc_bas','qt_tur_bas','qt_salas_utilizadas',
+                               'qt_mat_fund','qt_mat_fund_ai','qt_mat_fund_af','qt_mat_med',
+                               'qt_mat_eja','qt_mat_esp','qt_mat_bas_fem','qt_mat_bas_masc',
+                               'in_agua_potavel','in_energia_rede_publica','in_esgoto_rede_publica',
+                               'in_biblioteca','in_laboratorio_informatica','in_quadra_esportes',
+                               'in_internet','in_banda_larga','in_alimentacao']) {
+            if ((rail[field] == null || rail[field] === undefined) && loc[field] != null) {
+              mergedCenso[ano][field] = loc[field];
+            }
+          }
         }
+        const localInd = localData.indicadores_por_ano as Record<number, any>;
+        const mergedInd: Record<number, any> = {};
+        const allAnosInd = new Set<number>([
+          ...Object.keys(railwayData.indicadores_por_ano).map(Number),
+          ...Object.keys(localInd).map(Number),
+        ]);
+        for (const ano of allAnosInd) {
+          mergedInd[ano] = { ...(localInd[ano] ?? {}), ...(railwayData.indicadores_por_ano as Record<number, any>)[ano] ?? {} };
+        }
+        const anosSet = new Set<number>([
+          ...Object.keys(mergedCenso).map(Number),
+          ...Object.keys(mergedInd).map(Number),
+        ]);
+        const merged = {
+          ...railwayData,
+          anos_disponiveis: [...anosSet].sort((a, b) => a - b),
+          censo_por_ano: mergedCenso,
+          indicadores_por_ano: mergedInd,
+        };
+        if (merged.anos_disponiveis.length > 0) safeCacheWrite(CACHE_KEY, merged);
+      } catch {
+        safeCacheWrite(CACHE_KEY, localData);
       }
-    }
-
-    // Mescla indicadores: local como base, Railway adiciona/sobrescreve
-    const localInd = localData.indicadores_por_ano as Record<number, any>;
-    const mergedInd: Record<number, any> = {};
-    const allAnosInd = new Set<number>([
-      ...Object.keys(railwayData.indicadores_por_ano).map(Number),
-      ...Object.keys(localInd).map(Number),
-    ]);
-    for (const ano of allAnosInd) {
-      const loc  = localInd[ano]  ?? {};
-      const rail = (railwayData.indicadores_por_ano as Record<number, any>)[ano] ?? {};
-      mergedInd[ano] = { ...loc, ...rail };
-    }
-
-    const anosSet = new Set<number>([
-      ...Object.keys(mergedCenso).map(Number),
-      ...Object.keys(mergedInd).map(Number),
-    ]);
-
-    const result = {
-      ...railwayData,
-      anos_disponiveis: [...anosSet].sort((a, b) => a - b),
-      censo_por_ano:       mergedCenso,
-      indicadores_por_ano: mergedInd,
-    };
-
-    saveCache(result);
-    return res.json(result);
+    })();
   });
 
   // === PUBLIC: COMPARATIVO (escola vs município, UF e Brasil) ===
@@ -330,18 +337,16 @@ export async function registerRoutes(
       }
     }
 
-    // 2. Cache miss — buscar no Railway
-    const data = await getComparativoRailway(inep);
-    if (!data) return res.json(null);
-
-    // 3. Salvar no cache persistente
-    sqlite.prepare(
-      `INSERT INTO stats_cache (cache_key, data, updated_at)
-       VALUES (?, ?, ?)
-       ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`
-    ).run(CACHE_KEY, JSON.stringify(data), Date.now());
-
-    res.json(data);
+    // 2. Cache miss — buscar local primeiro (Railway como fallback)
+    const localData = getComparativoLocal(inep);
+    if (localData) {
+      safeCacheWrite(CACHE_KEY, localData);
+      return res.json(localData);
+    }
+    const railwayData = await getComparativoRailway(inep);
+    if (!railwayData) return res.json(null);
+    safeCacheWrite(CACHE_KEY, railwayData);
+    res.json(railwayData);
   });
 
   // === PUBLIC: MICRORREGIÃO — média IDEB local a partir do banco SQLite ===
@@ -418,12 +423,7 @@ export async function registerRoutes(
     };
 
     // 5. Salvar no cache
-    sqlite.prepare(
-      `INSERT INTO stats_cache(cache_key, data, updated_at)
-       VALUES(?,?,?)
-       ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`
-    ).run(CACHE_KEY, JSON.stringify(resultado), Date.now());
-
+    safeCacheWrite(CACHE_KEY, resultado);
     res.json(resultado);
   });
 
@@ -441,16 +441,15 @@ export async function registerRoutes(
       return res.json(JSON.parse(cached.data));
     }
 
-    const data = await getDiagnosticoRailway(inep);
-    if (!data) return res.json(null);
-
-    sqlite.prepare(
-      `INSERT INTO stats_cache (cache_key, data, updated_at)
-       VALUES (?, ?, ?)
-       ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`
-    ).run(CACHE_KEY, JSON.stringify(data), Date.now());
-
-    res.json(data);
+    const localDiag = getDiagnosticoLocal(inep);
+    if (localDiag) {
+      safeCacheWrite(CACHE_KEY, localDiag);
+      return res.json(localDiag);
+    }
+    const railwayDiag = await getDiagnosticoRailway(inep);
+    if (!railwayDiag) return res.json(null);
+    safeCacheWrite(CACHE_KEY, railwayDiag);
+    res.json(railwayDiag);
   });
 
   app.get("/api/medias-nacionais", (req, res) => {
@@ -845,7 +844,7 @@ export async function registerRoutes(
       const cached = sqlite.prepare(`SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`).get(CACHE_KEY) as any;
       if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) return res.json(JSON.parse(cached.data));
       const result = await consultarExecFinPdde(coEscola);
-      if (result?.ok) sqlite.prepare(`INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?) ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`).run(CACHE_KEY, JSON.stringify(result), Date.now());
+      if (result?.ok) safeCacheWrite(CACHE_KEY, result);
       res.json(result);
     } catch (err: any) {
       console.error("PDDE exec fin error:", err.message);
@@ -864,7 +863,7 @@ export async function registerRoutes(
       const cached = sqlite.prepare(`SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`).get(CACHE_KEY) as any;
       if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) return res.json(JSON.parse(cached.data));
       const result = await consultarSaldosPdde(coEscola);
-      if (result?.ok) sqlite.prepare(`INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?) ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`).run(CACHE_KEY, JSON.stringify(result), Date.now());
+      if (result?.ok) safeCacheWrite(CACHE_KEY, result);
       res.json(result);
     } catch (err: any) {
       console.error("PDDE saldos error:", err.message);
