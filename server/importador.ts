@@ -313,7 +313,7 @@ export function searchSchoolsLocal(query: string, limit = 20) {
   // Fallback LIKE (lento, usado apenas se FTS não estiver pronto)
   const upperQuery = query.toUpperCase();
   const latestAno = rawDb.prepare(`SELECT MAX(ano) as max_ano FROM censo_escolar`).get() as any;
-  const ano = latestAno?.max_ano || 2024;
+  const ano = latestAno?.max_ano || 2025;
   const results = rawDb.prepare(
     `SELECT * FROM censo_escolar WHERE ano = ? AND upper(nome) LIKE ? LIMIT ?`
   ).all(ano, '%' + upperQuery + '%', limit);

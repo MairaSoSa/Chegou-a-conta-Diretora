@@ -552,7 +552,7 @@ export async function registerRoutes(
   // === ESCOLAS COM PERFIL SIMILAR ===
   app.get("/api/escola/:inep/similares", (req, res) => {
     const inep = req.params.inep;
-    const ano = parseInt(req.query.ano as string) || 2024;
+    const ano = parseInt(req.query.ano as string) || 2025;
     try {
       // 1ª query: escola base com modalidades + municipio (json_extract em 1 linha — rápido)
       const escola = sqlite.prepare(`
