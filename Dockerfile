@@ -22,8 +22,6 @@ RUN npm prune --production
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-EXPOSE 5000
-
 ENV NODE_ENV=production
 
 CMD ["/start.sh"]
