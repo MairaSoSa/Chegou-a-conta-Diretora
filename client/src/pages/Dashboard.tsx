@@ -681,11 +681,11 @@ export default function Dashboard() {
               <section className="section postit-row" style={{
                 display: 'flex',
                 flexDirection: 'row',
-                justifyContent: 'flex-start',
-                alignItems: 'flex-start',
+                justifyContent: 'center',
+                alignItems: 'stretch',
                 gap: '32px',
-                margin: '48px 0 24px 0',
-                maxWidth: '740px',
+                margin: '48px auto 24px auto',
+                maxWidth: '860px',
                 width: '100%',
               }}>
                 {/* Post-it Bilhete da Diretora */}
@@ -696,12 +696,15 @@ export default function Dashboard() {
                     border: '2.5px solid #ffe066',
                     borderRadius: '22px',
                     boxShadow: '0 4px 18px 0 #ffe06655, 0 1.5px 0 #ffe066 inset',
+                    flex: '1 1 0',
                     minWidth: 260,
-                    maxWidth: 340,
-                    padding: '22px 22px 18px 22px',
+                    maxWidth: 420,
+                    padding: '22px 24px 20px 24px',
                     position: 'relative',
                     fontFamily: 'inherit',
-                    margin: '0 auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
                   }}
                 >
                   <div style={{marginBottom:'10px',textAlign:'center'}}>
@@ -723,20 +726,22 @@ export default function Dashboard() {
                     border: '2.5px solid #4dd0e1',
                     borderRadius: '22px',
                     boxShadow: '0 4px 18px 0 #4dd0e155, 0 1.5px 0 #b2ebf2 inset',
+                    flex: '1 1 0',
                     minWidth: 260,
-                    maxWidth: 340,
-                    padding: '22px 22px 18px 22px',
+                    maxWidth: 420,
+                    padding: '22px 24px 20px 24px',
                     position: 'relative',
                     fontFamily: 'inherit',
-                    margin: '0 auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
                   }}
                 >
                   <div style={{marginBottom:'10px',textAlign:'center'}}>
                     <span className="scribble" style={{fontSize:'15px',color:'#00838f',background:'#e0f7fa',padding:'2px 10px',borderRadius:'10px'}}>Situação das Escolas</span>
                   </div>
                   <div style={{fontSize:'15px',color:'#006064',lineHeight:1.6,textAlign:'center'}}>
-                    <strong style={{fontSize:'17px',color:'#006064'}}>Situação das Escolas</strong>
-                    <p style={{margin:'8px 0 0',fontSize:'14px',color:'#006064'}}>
+                    <p style={{margin:'0',fontSize:'14px',color:'#006064'}}>
                       Nem todas as escolas são iguais. Muitas escolas rurais possuem poucos alunos, enquanto escolas urbanas costumam ter mais matrículas. Por isso, ao comparar escolas, é importante observar também o tamanho da escola, a localização (urbana ou rural) e a rede de ensino. Os dados apresentados aqui ajudam a entender o contexto educacional e não devem ser usados isoladamente para avaliar a qualidade de uma escola.
                     </p>
                   </div>
