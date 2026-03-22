@@ -2701,7 +2701,9 @@ export default function Dashboard() {
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                         {grupos.map(grupo => {
-                          const escolas = todasEscolas.filter((e: any) => grupo.test(e.distancia_km ?? 9999));
+                          const escolas = todasEscolas
+                            .filter((e: any) => grupo.test(e.distancia_km ?? 9999))
+                            .sort((a: any, b: any) => (a.distancia_km ?? 9999) - (b.distancia_km ?? 9999));
                           if (escolas.length === 0) return null;
                           return (
                             <div key={grupo.label}>
