@@ -373,26 +373,43 @@ export function getEscolaCompletaLocal(inep: string, ano: number) {
 
   if (censo) {
     const censoFull = censo.dados ? JSON.parse(censo.dados) : {};
+    // Suporte aos dois formatos: antigo (campos aninhados) e novo 2025 (campos planos)
     result.censo_escolar = {
       ...censoFull,
       no_entidade: censo.nome || censoFull.no_entidade,
-      qt_mat_bas: censo.matriculas || censoFull.quantidades?.qt_matriculas || censoFull.qt_matriculas,
-      qt_mat_inf: censoFull.matriculas_por_etapa?.infantil,
-      qt_mat_fund_ai: censoFull.matriculas_por_etapa?.fundamental,
-      qt_mat_fund_af: censoFull.matriculas_por_etapa?.fundamental,
-      qt_mat_med: censoFull.matriculas_por_etapa?.medio,
-      qt_mat_eja: censoFull.matriculas_por_etapa?.eja,
-      qt_mat_esp: censoFull.matriculas_por_etapa?.especial,
-      qt_docentes: censo.docentes || censoFull.quantidades?.qt_docentes,
-      qt_turmas: censo.turmas || censoFull.quantidades?.qt_turmas,
-      qt_salas: censoFull.quantidades?.qt_salas_utilizadas,
+      qt_mat_bas: censo.matriculas || censoFull.qt_mat_bas || censoFull.quantidades?.qt_matriculas || censoFull.qt_matriculas,
+      qt_mat_inf: censoFull.qt_mat_inf ?? censoFull.matriculas_por_etapa?.infantil,
+      qt_mat_inf_cre: censoFull.qt_mat_inf_cre,
+      qt_mat_inf_pre: censoFull.qt_mat_inf_pre,
+      qt_mat_fund: censoFull.qt_mat_fund,
+      qt_mat_fund_ai: censoFull.qt_mat_fund_ai ?? censoFull.matriculas_por_etapa?.fundamental_ai,
+      qt_mat_fund_af: censoFull.qt_mat_fund_af ?? censoFull.matriculas_por_etapa?.fundamental_af,
+      qt_mat_med: censoFull.qt_mat_med ?? censoFull.matriculas_por_etapa?.medio,
+      qt_mat_eja: censoFull.qt_mat_eja ?? censoFull.matriculas_por_etapa?.eja,
+      qt_mat_esp: censoFull.qt_mat_esp ?? censoFull.matriculas_por_etapa?.especial,
+      qt_mat_bas_fem: censoFull.qt_mat_bas_fem,
+      qt_mat_bas_masc: censoFull.qt_mat_bas_masc,
+      qt_doc_bas: censo.docentes || censoFull.qt_doc_bas,
+      qt_docentes: censo.docentes || censoFull.qt_doc_bas || censoFull.quantidades?.qt_docentes,
+      qt_tur_bas: censo.turmas || censoFull.qt_tur_bas,
+      qt_turmas: censo.turmas || censoFull.qt_tur_bas || censoFull.quantidades?.qt_turmas,
+      qt_salas_utilizadas: censoFull.qt_salas_utilizadas ?? censoFull.quantidades?.qt_salas_utilizadas,
+      qt_salas_utiliza_climatizadas: censoFull.qt_salas_utiliza_climatizadas,
+      qt_salas_utilizadas_acessiveis: censoFull.qt_salas_utilizadas_acessiveis,
       tp_dependencia_texto: censo.dependencia || censoFull.caracteristicas?.ds_dependencia,
       tp_localizacao_texto: censo.localizacao || censoFull.caracteristicas?.ds_localizacao,
       tp_situacao_texto: censo.situacao || censoFull.caracteristicas?.ds_situacao,
-      in_internet: censoFull.infraestrutura?.in_internet,
+      // Internet — formato plano (2025) ou aninhado (legado)
+      in_internet: censoFull.in_internet ?? censoFull.infraestrutura?.in_internet,
+      in_internet_alunos: censoFull.in_internet_alunos,
+      in_banda_larga: censoFull.in_banda_larga,
+      // Infraestrutura — formato plano (2025) sobrescreve infraestrutura aninhada
+      infraestrutura: censoFull.infraestrutura || null,
       no_municipio: censo.municipio || censoFull.localizacao?.no_municipio,
       sg_uf: censo.uf || censoFull.localizacao?.sg_uf,
-      infraestrutura: censoFull.infraestrutura,
+      ds_endereco: censoFull.ds_endereco,
+      co_cep: censoFull.co_cep,
+      telefone: censoFull.telefone,
       tempo_integral: censoFull.tempo_integral,
     };
   }
@@ -427,13 +444,24 @@ export function getEscolaEvolucaoLocal(inep: string) {
     censoByYear[c.ano] = {
       ...dados,
       no_entidade: c.nome || dados.no_entidade,
-      qt_docentes: c.docentes || dados.qt_docentes,
+      // Totais — colunas diretas têm prioridade (mais confiáveis que o JSON)
+      qt_mat_bas: c.matriculas || dados.qt_mat_bas,
+      qt_doc_bas: c.docentes || dados.qt_doc_bas,
+      qt_docentes: c.docentes || dados.qt_doc_bas || dados.qt_docentes,
+      qt_tur_bas: c.turmas || dados.qt_tur_bas,
+      qt_turmas: c.turmas || dados.qt_tur_bas || dados.qt_turmas,
       qt_salas_utilizadas: dados.qt_salas_utilizadas,
+      qt_salas_utiliza_climatizadas: dados.qt_salas_utiliza_climatizadas,
+      qt_salas_utilizadas_acessiveis: dados.qt_salas_utilizadas_acessiveis,
+      // Internet — plano (2025) ou aninhado (legado)
+      in_internet: dados.in_internet ?? dados.infraestrutura?.in_internet,
       tp_dependencia_texto: c.dependencia,
       tp_localizacao_texto: c.localizacao,
       tp_situacao_texto: c.situacao,
       no_municipio: c.municipio,
       sg_uf: c.uf,
+      ds_endereco: dados.ds_endereco,
+      telefone: dados.telefone,
     };
   }
 
