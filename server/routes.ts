@@ -568,8 +568,8 @@ export async function registerRoutes(
       `).get(inep, ano) as any;
       if (!escola) return res.status(404).json({ erro: "Escola não encontrada" });
 
-      const minMat = Math.floor((escola.matriculas || 50) * 0.50);
-      const maxMat = Math.ceil((escola.matriculas || 50) * 1.50);
+      const minMat = Math.floor((escola.matriculas || 50) * 0.33);
+      const maxMat = Math.ceil((escola.matriculas || 50) * 3.00);
       const targetMat = escola.matriculas || 50;
 
       // Modalidades da escola base (ex: Set {"EM","EJA"})
@@ -670,10 +670,12 @@ export async function registerRoutes(
             return true;
           })
           .sort((a, b) => {
+            // Ordena por distância haversine (distância em linha reta) para pré-selecionar os 50 mais próximos.
+            // Mantemos o comparador simples e transitivo para evitar instabilidades no sort.
             const da = haversineKm(coMunBase, a.co_municipio || 0);
             const db = haversineKm(coMunBase, b.co_municipio || 0);
-            if (Math.abs(da - db) > 15) return da - db;
-            // dentro da mesma faixa de distância: prefere maior sobreposição de modalidade
+            if (da !== db) return da - db;
+            // Desempate por município igual: prefere maior sobreposição de modalidade
             const overlapA = [...modalidadesBase].filter(m => toModalidades(a).has(m)).length;
             const overlapB = [...modalidadesBase].filter(m => toModalidades(b).has(m)).length;
             if (overlapA !== overlapB) return overlapB - overlapA;
@@ -702,11 +704,13 @@ export async function registerRoutes(
           // 2. Chama OSRM apenas para municípios não cacheados
           const uncached = destMuns.filter(m => munToRoadKm[m] === undefined);
           if (uncached.length > 0) {
-            const destCoords = uncached
-              .map(mun => { const c = MUNICIPIO_CENTROIDES[mun]; return c ? `${c[1]},${c[0]}` : null; })
-              .filter(Boolean) as string[];
+            // Manter alinhamento: apenas municípios COM centroide, na mesma ordem
+            const uncachedWithCoord = uncached
+              .map(mun => { const c = MUNICIPIO_CENTROIDES[mun]; return c ? { mun, coord: `${c[1]},${c[0]}` } : null; })
+              .filter(Boolean) as { mun: number; coord: string }[];
 
-            if (destCoords.length > 0) {
+            if (uncachedWithCoord.length > 0) {
+              const destCoords = uncachedWithCoord.map(x => x.coord);
               const allCoords = [`${baseCentroid[1]},${baseCentroid[0]}`, ...destCoords].join(";");
               const osrmUrl = `http://router.project-osrm.org/table/v1/driving/${allCoords}?sources=0&annotations=distance`;
               const osrmRes = await fetch(osrmUrl, { signal: AbortSignal.timeout(8000) });
@@ -717,14 +721,15 @@ export async function registerRoutes(
                   const insertStmt = sqlite.prepare(
                     `INSERT OR REPLACE INTO mun_road_dist (co_mun_orig, co_mun_dest, km) VALUES (?, ?, ?)`
                   );
-                  for (let i = 0; i < uncached.length; i++) {
+                  // Usar uncachedWithCoord (alinhado com destCoords) — evita deslocamento de índice
+                  for (let i = 0; i < uncachedWithCoord.length; i++) {
                     const meters = row[i + 1];
                     if (meters != null && isFinite(meters)) {
                       const km = Math.round(meters / 1000);
-                      munToRoadKm[uncached[i]] = km;
-                      insertStmt.run(coMunBase, uncached[i], km);
+                      munToRoadKm[uncachedWithCoord[i].mun] = km;
+                      insertStmt.run(coMunBase, uncachedWithCoord[i].mun, km);
                       // Cache bidirecional
-                      insertStmt.run(uncached[i], coMunBase, km);
+                      insertStmt.run(uncachedWithCoord[i].mun, coMunBase, km);
                     }
                   }
                 }
