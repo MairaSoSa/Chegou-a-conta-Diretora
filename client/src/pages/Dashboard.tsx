@@ -708,9 +708,9 @@ export default function Dashboard() {
                     <span className="scribble" style={{fontSize:'15px',color:'#b59f3b',background:'#fffbe7',padding:'2px 10px',borderRadius:'10px'}}>Bilhete da Diretora</span>
                   </div>
                   <div style={{fontSize:'15px',color:'#4f4126',lineHeight:1.6,textAlign:'center'}}>
-                    <strong style={{fontSize:'17px',color:'#4f4126'}}>Diretora, aqui está o raio-x nacional da educação!</strong>
+                    <strong style={{fontSize:'17px',color:'#4f4126'}}>Diretora, este painel utiliza os dados do Censo Escolar {selectedAno}, realizado pelo INEP/MEC.</strong>
                     <p style={{margin:'8px 0 0',fontSize:'14px',color:'#3d4d5a'}}>
-                      Dados do Censo Escolar <strong>{selectedAno}</strong> — abrangendo {Object.keys(stats.por_uf || {}).length} estados, <strong>{formatNumber(stats.total_escolas)}</strong> escolas, <strong>{formatNumber(stats.total_matriculas)}</strong> matrículas e <strong>{formatNumber(stats.total_docentes)}</strong> docentes.
+                      É o principal levantamento sobre a educação básica no Brasil. Os números apresentados aqui representam o retrato mais atualizado da educação brasileira e podem ser usados como referência para comparar a realidade da sua escola com o município, o estado e o Brasil.
                     </p>
                   </div>
                   {/* desenho removido */}
@@ -735,10 +735,9 @@ export default function Dashboard() {
                     <span className="scribble" style={{fontSize:'15px',color:'#00838f',background:'#e0f7fa',padding:'2px 10px',borderRadius:'10px'}}>Situação das Escolas</span>
                   </div>
                   <div style={{fontSize:'15px',color:'#006064',lineHeight:1.6,textAlign:'center'}}>
-                    <strong style={{fontSize:'17px',color:'#006064'}}>Total de escolas: {formatNumber(stats.total_escolas)}</strong>
+                    <strong style={{fontSize:'17px',color:'#006064'}}>Situação das Escolas</strong>
                     <p style={{margin:'8px 0 0',fontSize:'14px',color:'#006064'}}>
-                      Matrículas: <strong>{formatNumber(stats.total_matriculas)}</strong><br/>
-                      Docentes: <strong>{formatNumber(stats.total_docentes)}</strong>
+                      Nem todas as escolas são iguais. Muitas escolas rurais possuem poucos alunos, enquanto escolas urbanas costumam ter mais matrículas. Por isso, ao comparar escolas, é importante observar também o tamanho da escola, a localização (urbana ou rural) e a rede de ensino. Os dados apresentados aqui ajudam a entender o contexto educacional e não devem ser usados isoladamente para avaliar a qualidade de uma escola.
                     </p>
                   </div>
                   {/* desenho removido */}
