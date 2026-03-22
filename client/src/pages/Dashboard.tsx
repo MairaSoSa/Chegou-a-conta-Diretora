@@ -483,11 +483,9 @@ export default function Dashboard() {
       <Navigation />
 
       <main className="flex-1 container mx-auto px-4 py-6 space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Painel de Dados Educacionais</h1>
-            <p className="text-sm text-muted-foreground mt-1">Fonte: INEP/MEC, FNDE e Banco do Brasil</p>
-          </div>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground">Painel de Dados Educacionais</h1>
+          <p className="text-sm text-muted-foreground mt-1">Fonte: INEP/MEC, FNDE e Banco do Brasil</p>
         </div>
 
         {/* ABAS ESTILO CHROME */}
@@ -655,7 +653,7 @@ export default function Dashboard() {
             {/* RESUMO EXECUTIVO */}
             {!selectedInep && stats && (
               <section className="section">
-                <div className="summary-grid">
+                <div className="summary-grid" style={{gridTemplateColumns: 'repeat(4, 1fr)'}}>
                   <div className="metric theme-blue">
                     <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Escolas</label>
                     <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(stats.total_escolas)}</strong>
@@ -684,8 +682,6 @@ export default function Dashboard() {
                 justifyContent: 'center',
                 alignItems: 'stretch',
                 gap: '32px',
-                margin: '48px auto 24px auto',
-                maxWidth: '860px',
                 width: '100%',
               }}>
                 {/* Post-it Bilhete da Diretora */}
@@ -698,8 +694,8 @@ export default function Dashboard() {
                     boxShadow: '0 4px 18px 0 #ffe06655, 0 1.5px 0 #ffe066 inset',
                     flex: '1 1 0',
                     minWidth: 260,
-                    maxWidth: 420,
-                    padding: '22px 24px 20px 24px',
+                    maxWidth: 560,
+                    padding: '24px 28px 22px 28px',
                     position: 'relative',
                     fontFamily: 'inherit',
                     display: 'flex',
@@ -728,8 +724,8 @@ export default function Dashboard() {
                     boxShadow: '0 4px 18px 0 #4dd0e155, 0 1.5px 0 #b2ebf2 inset',
                     flex: '1 1 0',
                     minWidth: 260,
-                    maxWidth: 420,
-                    padding: '22px 24px 20px 24px',
+                    maxWidth: 560,
+                    padding: '24px 28px 22px 28px',
                     position: 'relative',
                     fontFamily: 'inherit',
                     display: 'flex',
