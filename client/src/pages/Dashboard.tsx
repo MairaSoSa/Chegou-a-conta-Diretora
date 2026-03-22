@@ -1063,7 +1063,7 @@ export default function Dashboard() {
                         {evolucaoData.escola.no_entidade}
                       </h1>
                       <p style={{margin:0,color:'var(--m-muted)',fontSize:'14px',lineHeight:'1.6'}}>
-                        Explore matrículas, docentes, infraestrutura, indicadores e recursos financeiros da sua escola.
+                        Aqui você encontra dados públicos da sua escola e o histórico desde 2020, permitindo acompanhar a evolução das matrículas, docentes, infraestrutura, indicadores educacionais e recursos financeiros.
                       </p>
                       <div className="school-meta">
                         <div className="meta-chip">📍 {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}</div>
