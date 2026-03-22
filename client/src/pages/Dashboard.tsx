@@ -482,8 +482,9 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
 
-      <main className="flex-1 container mx-auto px-4 py-6 space-y-6">
-        <div className="text-center">
+      <main className="flex-1 container mx-auto px-4 py-6">
+        <div className="relative overflow-hidden rounded-[34px] border border-[#d9ceb8] bg-[#fbf7ee] shadow-[0_20px_60px_rgba(90,80,50,0.10)] p-6 space-y-6">
+        <div>
           <h1 className="text-2xl font-bold text-foreground">Painel de Dados Educacionais</h1>
           <p className="text-sm text-muted-foreground mt-1">Fonte: INEP/MEC, FNDE e Banco do Brasil</p>
         </div>
@@ -2736,6 +2737,7 @@ export default function Dashboard() {
         );
       })()}
 
+        </div>{/* fim card grandão */}
       </main>
       <Footer />
     </div>
