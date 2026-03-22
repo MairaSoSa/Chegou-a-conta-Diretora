@@ -13,7 +13,7 @@ import {
   School, Loader2, BarChart3, TrendingUp,
   BookOpen, Award, ChevronDown, ChevronUp,
   Globe, Building2, TreePine, Filter, X, Clock, Heart,
-  CheckCircle, CircleAlert
+  CheckCircle, CircleAlert, Hash, CalendarDays
 } from "lucide-react";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico, useEscolaMicroregiao, useUfStats, useSimilarSchools } from "@/hooks/use-schools";
 import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento } from "@/hooks/use-pdde";
@@ -1066,13 +1066,13 @@ export default function Dashboard() {
                         Aqui você encontra dados públicos da sua escola e o histórico desde 2020, permitindo acompanhar a evolução das matrículas, docentes, infraestrutura, indicadores educacionais e recursos financeiros.
                       </p>
                       <div className="school-meta">
-                        <div className="meta-chip">📍 {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}</div>
-                        <div className="meta-chip">🏷 INEP {selectedInep}</div>
-                        <div className="meta-chip">🏢 {evolucaoData.escola.ds_dependencia}</div>
-                        <div className="meta-chip">{evolucaoData.escola.ds_localizacao}</div>
-                        <div className="meta-chip">✅ {evolucaoData.escola.ds_situacao}</div>
+                        <div className="meta-chip" style={{display:'inline-flex',alignItems:'center',gap:5}}><MapPin className="w-3.5 h-3.5" style={{flexShrink:0}} /> {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}</div>
+                        <div className="meta-chip" style={{display:'inline-flex',alignItems:'center',gap:5}}><Hash className="w-3.5 h-3.5" style={{flexShrink:0}} /> INEP {selectedInep}</div>
+                        <div className="meta-chip" style={{display:'inline-flex',alignItems:'center',gap:5}}><Building2 className="w-3.5 h-3.5" style={{flexShrink:0}} /> {evolucaoData.escola.ds_dependencia}</div>
+                        <div className="meta-chip" style={{display:'inline-flex',alignItems:'center',gap:5}}>{evolucaoData.escola.ds_localizacao === 'Rural' ? <TreePine className="w-3.5 h-3.5" style={{flexShrink:0}} /> : <Globe className="w-3.5 h-3.5" style={{flexShrink:0}} />} {evolucaoData.escola.ds_localizacao}</div>
+                        <div className="meta-chip" style={{display:'inline-flex',alignItems:'center',gap:5}}><CheckCircle className="w-3.5 h-3.5" style={{flexShrink:0}} /> {evolucaoData.escola.ds_situacao}</div>
                         {evolucaoData.anos_disponiveis.length > 0 && (
-                          <div className="meta-chip">📅 {Math.min(...evolucaoData.anos_disponiveis)}–{Math.max(...evolucaoData.anos_disponiveis)}</div>
+                          <div className="meta-chip" style={{display:'inline-flex',alignItems:'center',gap:5}}><CalendarDays className="w-3.5 h-3.5" style={{flexShrink:0}} /> {Math.min(...evolucaoData.anos_disponiveis)}–{Math.max(...evolucaoData.anos_disponiveis)}</div>
                         )}
                       </div>
 
