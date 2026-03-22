@@ -111,7 +111,7 @@ export function useEscolaDiagnostico(inep: string) {
   });
 }
 
-export function useUfStats(uf: string | null, ano = 2024) {
+export function useUfStats(uf: string | null, ano = 2025) {
   return useQuery({
     queryKey: ["uf-stats", uf, ano],
     queryFn: async () => {
