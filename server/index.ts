@@ -122,7 +122,7 @@ app.use((req, res, next) => {
         try {
           getLocalStats();
           log("  local stats cached");
-          for (const ano of [2024, 2023, 2022, 2021, 2020]) {
+          for (const ano of [2025, 2024, 2023, 2022, 2021, 2020]) {
             await new Promise(r => setTimeout(r, 100));
             getCensoEstatisticas(ano);
             log(`  censo ${ano} cached`);
