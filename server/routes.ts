@@ -505,6 +505,18 @@ export async function registerRoutes(
     // Se o banco local tem muito poucos dados (ambiente sem carga completa),
     // retorna os dados oficiais do Censo Escolar INEP/MEC como fallback.
     const OFICIAL: Record<number, any> = {
+      2025: {
+        ano: 2025,
+        total_escolas: 180540,
+        total_matriculas: 46018380,
+        total_docentes: 2992045,
+        total_turmas: 2233976,
+        por_dependencia: { Federal: 716, Estadual: 29998, Municipal: 107372, Privada: 42454 },
+        por_localizacao: { Urbana: 129777, Rural: 50763 },
+        por_uf: { AC:1524, AL:2882, AM:5562, AP:875, BA:16106, CE:7716, DF:1332, ES:3046, GO:4752, MA:11219, MG:15910, MS:1859, MT:2710, PA:10530, PB:4636, PE:7992, PI:4017, PR:9576, RJ:11647, RN:3416, RO:1220, RR:915, RS:9946, SC:6750, SE:2004, SP:30817, TO:1581 },
+        por_situacao: { 'Em Atividade': 180540, 'Paralisada': 29780, 'Extinta': 3872 },
+        _fonte: 'censo_escolar_2025',
+      },
       2024: {
         ano: 2024,
         total_escolas: 215548,

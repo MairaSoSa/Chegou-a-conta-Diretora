@@ -83,7 +83,7 @@ export default function Dashboard() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const [schoolTabs, setSchoolTabs] = useState<Array<{id: string, label: string, inep: string}>>([]);
   const [activeTabId, setActiveTabId] = useState<string>("overview");
-  const [selectedAno, setSelectedAno] = useState(2024);
+  const [selectedAno, setSelectedAno] = useState(2025);
   const selectedInep = activeTabId === "overview" ? null : (schoolTabs.find(t => t.id === activeTabId)?.inep || null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [selectedChart, setSelectedChart] = useState("matriculas");
