@@ -550,7 +550,7 @@ export async function registerRoutes(
   });
 
   // === ESCOLAS COM PERFIL SIMILAR ===
-  app.get("/api/escola/:inep/similares", (req, res) => {
+  app.get("/api/escola/:inep/similares", async (req, res) => {
     const inep = req.params.inep;
     const ano = parseInt(req.query.ano as string) || 2025;
     try {
@@ -682,6 +682,73 @@ export async function registerRoutes(
           .slice(0, 50);
       }
 
+      // === Distância rodoviária via OSRM (OpenStreetMap) com cache SQLite ===
+      let distanciaRodoviaria = false;
+      const munToRoadKm: Record<number, number> = {};
+      const baseCentroid = MUNICIPIO_CENTROIDES[coMunBase];
+      if (baseCentroid && similares.length > 0 && coMunBase) {
+        try {
+          const destMuns = [...new Set(similares.map((s: any) => s.co_municipio).filter(Boolean))] as number[];
+
+          // 1. Busca do cache SQLite (instant)
+          if (destMuns.length > 0) {
+            const placeholders = destMuns.map(() => "?").join(",");
+            const cached = sqlite.prepare(
+              `SELECT co_mun_dest, km FROM mun_road_dist WHERE co_mun_orig=? AND co_mun_dest IN (${placeholders})`
+            ).all(coMunBase, ...destMuns) as { co_mun_dest: number; km: number }[];
+            for (const row of cached) munToRoadKm[row.co_mun_dest] = row.km;
+          }
+
+          // 2. Chama OSRM apenas para municípios não cacheados
+          const uncached = destMuns.filter(m => munToRoadKm[m] === undefined);
+          if (uncached.length > 0) {
+            const destCoords = uncached
+              .map(mun => { const c = MUNICIPIO_CENTROIDES[mun]; return c ? `${c[1]},${c[0]}` : null; })
+              .filter(Boolean) as string[];
+
+            if (destCoords.length > 0) {
+              const allCoords = [`${baseCentroid[1]},${baseCentroid[0]}`, ...destCoords].join(";");
+              const osrmUrl = `http://router.project-osrm.org/table/v1/driving/${allCoords}?sources=0&annotations=distance`;
+              const osrmRes = await fetch(osrmUrl, { signal: AbortSignal.timeout(8000) });
+              if (osrmRes.ok) {
+                const osrmData = await osrmRes.json() as any;
+                if (osrmData.code === "Ok" && Array.isArray(osrmData.distances?.[0])) {
+                  const row = osrmData.distances[0] as (number | null)[];
+                  const insertStmt = sqlite.prepare(
+                    `INSERT OR REPLACE INTO mun_road_dist (co_mun_orig, co_mun_dest, km) VALUES (?, ?, ?)`
+                  );
+                  for (let i = 0; i < uncached.length; i++) {
+                    const meters = row[i + 1];
+                    if (meters != null && isFinite(meters)) {
+                      const km = Math.round(meters / 1000);
+                      munToRoadKm[uncached[i]] = km;
+                      insertStmt.run(coMunBase, uncached[i], km);
+                      // Cache bidirecional
+                      insertStmt.run(uncached[i], coMunBase, km);
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if (destMuns.some(m => munToRoadKm[m] !== undefined)) {
+            distanciaRodoviaria = true;
+          }
+        } catch {
+          // fallback silencioso para haversine
+        }
+      }
+
+      // Re-ordenar por distância rodoviária se obtida
+      if (distanciaRodoviaria) {
+        similares.sort((a, b) => {
+          const da = munToRoadKm[a.co_municipio] ?? haversineKm(coMunBase, a.co_municipio || 0);
+          const db = munToRoadKm[b.co_municipio] ?? haversineKm(coMunBase, b.co_municipio || 0);
+          return da - db;
+        });
+      }
+
       const porUf: Record<string, number> = {};
       for (const s of similares) {
         if (s.uf) porUf[s.uf.toUpperCase()] = (porUf[s.uf.toUpperCase()] || 0) + 1;
@@ -696,6 +763,7 @@ export async function registerRoutes(
         },
         total: similares.length,
         por_uf: porUf,
+        distancia_tipo: distanciaRodoviaria ? "rodoviária" : "linha reta",
         escolas: similares.map(s => ({
           inep: s.inep,
           nome: s.nome,
@@ -704,7 +772,9 @@ export async function registerRoutes(
           dependencia: s.dependencia,
           localizacao: s.localizacao,
           matriculas: s.matriculas,
-          distancia_km: coMunBase && s.co_municipio ? Math.round(haversineKm(coMunBase, s.co_municipio)) : null,
+          distancia_km: coMunBase && s.co_municipio
+            ? (munToRoadKm[s.co_municipio] ?? Math.round(haversineKm(coMunBase, s.co_municipio)))
+            : null,
           telefone: s.telefone || null,
           ds_endereco: s.ds_endereco || null,
           no_bairro: s.no_bairro || null,

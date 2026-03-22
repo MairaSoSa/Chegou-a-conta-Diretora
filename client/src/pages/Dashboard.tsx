@@ -2676,6 +2676,9 @@ export default function Dashboard() {
                           ICG Nível {similarData.escola_base.icg_nivel}
                         </span>
                       )}
+                      <span style={{ fontSize: 11, background: similarData.distancia_tipo === "rodoviária" ? "#ecfdf5" : "#f1f5f9", color: similarData.distancia_tipo === "rodoviária" ? "#065f46" : "#475569", borderRadius: 99, padding: "2px 10px" }}>
+                        {similarData.distancia_tipo === "rodoviária" ? "🛣️ km por estrada" : "📐 km em linha reta"}
+                      </span>
                     </div>
                   )}
                 </div>
