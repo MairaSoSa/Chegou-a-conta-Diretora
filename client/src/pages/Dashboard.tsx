@@ -371,6 +371,24 @@ export default function Dashboard() {
           aprovacao_med: tr.aprovacao_med ?? null,
           reprovacao_med: tr.reprovacao_med ?? null,
           abandono_med: tr.abandono_med ?? null,
+          // Por série — Anos Finais (6º–9º)
+          aprov_f06: tr.aprovacao_fun_06 ?? null, aprov_f07: tr.aprovacao_fun_07 ?? null,
+          aprov_f08: tr.aprovacao_fun_08 ?? null, aprov_f09: tr.aprovacao_fun_09 ?? null,
+          reprov_f06: tr.reprovacao_fun_06 ?? null, reprov_f07: tr.reprovacao_fun_07 ?? null,
+          reprov_f08: tr.reprovacao_fun_08 ?? null, reprov_f09: tr.reprovacao_fun_09 ?? null,
+          aband_f06: tr.abandono_fun_06 ?? null, aband_f07: tr.abandono_fun_07 ?? null,
+          aband_f08: tr.abandono_fun_08 ?? null, aband_f09: tr.abandono_fun_09 ?? null,
+          // Por série — Anos Iniciais (1º–5º)
+          aprov_f01: tr.aprovacao_fun_01 ?? null, aprov_f02: tr.aprovacao_fun_02 ?? null,
+          aprov_f03: tr.aprovacao_fun_03 ?? null, aprov_f04: tr.aprovacao_fun_04 ?? null, aprov_f05: tr.aprovacao_fun_05 ?? null,
+          reprov_f01: tr.reprovacao_fun_01 ?? null, reprov_f02: tr.reprovacao_fun_02 ?? null,
+          reprov_f03: tr.reprovacao_fun_03 ?? null, reprov_f04: tr.reprovacao_fun_04 ?? null, reprov_f05: tr.reprovacao_fun_05 ?? null,
+          aband_f01: tr.abandono_fun_01 ?? null, aband_f02: tr.abandono_fun_02 ?? null,
+          aband_f03: tr.abandono_fun_03 ?? null, aband_f04: tr.abandono_fun_04 ?? null, aband_f05: tr.abandono_fun_05 ?? null,
+          // Por série — Ensino Médio (1ª–3ª)
+          aprov_m01: tr.aprovacao_med_01 ?? null, aprov_m02: tr.aprovacao_med_02 ?? null, aprov_m03: tr.aprovacao_med_03 ?? null,
+          reprov_m01: tr.reprovacao_med_01 ?? null, reprov_m02: tr.reprovacao_med_02 ?? null, reprov_m03: tr.reprovacao_med_03 ?? null,
+          aband_m01: tr.abandono_med_01 ?? null, aband_m02: tr.abandono_med_02 ?? null, aband_m03: tr.abandono_med_03 ?? null,
         };
       }),
       tdi: anos.map((a: number) => {
@@ -1508,40 +1526,99 @@ export default function Dashboard() {
                             const seg = rendSegmento ? rendSegmentos.find(s => s.key === rendSegmento) : null;
                             const rows = allRend.filter((d: any) => seg ? d[seg.aprov] != null : d.aprovacao != null);
                             if (rows.length === 0) return null;
+
+                            // Grades por segmento (dados por série do Railway)
+                            const gradesBySeg: Record<string, {label: string, aprov: string, reprov: string, aband: string}[]> = {
+                              ai: [
+                                { label: '1º ano', aprov: 'aprov_f01', reprov: 'reprov_f01', aband: 'aband_f01' },
+                                { label: '2º ano', aprov: 'aprov_f02', reprov: 'reprov_f02', aband: 'aband_f02' },
+                                { label: '3º ano', aprov: 'aprov_f03', reprov: 'reprov_f03', aband: 'aband_f03' },
+                                { label: '4º ano', aprov: 'aprov_f04', reprov: 'reprov_f04', aband: 'aband_f04' },
+                                { label: '5º ano', aprov: 'aprov_f05', reprov: 'reprov_f05', aband: 'aband_f05' },
+                              ],
+                              af: [
+                                { label: '6º ano', aprov: 'aprov_f06', reprov: 'reprov_f06', aband: 'aband_f06' },
+                                { label: '7º ano', aprov: 'aprov_f07', reprov: 'reprov_f07', aband: 'aband_f07' },
+                                { label: '8º ano', aprov: 'aprov_f08', reprov: 'reprov_f08', aband: 'aband_f08' },
+                                { label: '9º ano', aprov: 'aprov_f09', reprov: 'reprov_f09', aband: 'aband_f09' },
+                              ],
+                              med: [
+                                { label: '1ª série', aprov: 'aprov_m01', reprov: 'reprov_m01', aband: 'aband_m01' },
+                                { label: '2ª série', aprov: 'aprov_m02', reprov: 'reprov_m02', aband: 'aband_m02' },
+                                { label: '3ª série', aprov: 'aprov_m03', reprov: 'reprov_m03', aband: 'aband_m03' },
+                              ],
+                            };
+                            const grades = seg ? gradesBySeg[seg.key] : null;
+                            const latestRow = rows[rows.length - 1];
+                            const hasGrades = grades && latestRow && grades.some(g => latestRow[g.aprov] != null);
+
                             return (
-                              <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
-                                {seg && (
-                                  <div style={{ padding: '9px 14px', background: seg.color, color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <span>📌 {seg.label} — {seg.sub}</span>
-                                    <button onClick={() => setRendSegmento(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 13, opacity: 0.8 }}>✕ ver geral</button>
+                              <>
+                                <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
+                                  {seg && (
+                                    <div style={{ padding: '9px 14px', background: seg.color, color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                      <span>📌 {seg.label} — {seg.sub} — evolução por ano</span>
+                                      <button onClick={() => setRendSegmento(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 13, opacity: 0.8 }}>✕ ver geral</button>
+                                    </div>
+                                  )}
+                                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                    <thead>
+                                      <tr style={{ background: '#f7f2ea' }}>
+                                        <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
+                                        <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#2f7a58', fontSize: 12 }}>✓ Aprovação</th>
+                                        <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#b74f42', fontSize: 12 }}>✗ Reprovação</th>
+                                        <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#c47a1f', fontSize: 12 }}>⚠ Abandono</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {rows.map((d: any, i: number) => {
+                                        const aprov = seg ? d[seg.aprov] : d.aprovacao;
+                                        const reprov = seg ? d[seg.reprov] : d.reprovacao;
+                                        const aband = seg ? d[seg.aband] : d.abandono;
+                                        return (
+                                          <tr key={d.ano} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                            <td style={{ padding: '10px 14px', fontWeight: 700, color: '#5d4037' }}>{d.ano}</td>
+                                            <td style={{ padding: '10px 14px', textAlign: 'right', color: '#2f7a58', fontWeight: 600 }}>{aprov != null ? `${Number(aprov).toFixed(1)}%` : '—'}</td>
+                                            <td style={{ padding: '10px 14px', textAlign: 'right', color: '#b74f42', fontWeight: 600 }}>{reprov != null ? `${Number(reprov).toFixed(1)}%` : '—'}</td>
+                                            <td style={{ padding: '10px 14px', textAlign: 'right', color: '#c47a1f', fontWeight: 600 }}>{aband != null ? `${Number(aband).toFixed(1)}%` : '—'}</td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+
+                                {/* ── Por série (último ano disponível) ── */}
+                                {hasGrades && seg && (
+                                  <div style={{ marginTop: 12 }}>
+                                    <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 8 }}>
+                                      📋 Por série — {latestRow.ano}
+                                    </div>
+                                    <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
+                                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                        <thead>
+                                          <tr style={{ background: seg.color + '22' }}>
+                                            <th style={{ padding: '8px 14px', textAlign: 'left', fontWeight: 700, color: seg.color, fontSize: 12 }}>Série</th>
+                                            <th style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 700, color: '#2f7a58', fontSize: 12 }}>✓ Aprov.</th>
+                                            <th style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 700, color: '#b74f42', fontSize: 12 }}>✗ Reprov.</th>
+                                            <th style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 700, color: '#c47a1f', fontSize: 12 }}>⚠ Aband.</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {grades!.filter(g => latestRow[g.aprov] != null || latestRow[g.reprov] != null).map((g, i) => (
+                                            <tr key={g.label} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                              <td style={{ padding: '9px 14px', fontWeight: 700, color: '#5d4037' }}>{g.label}</td>
+                                              <td style={{ padding: '9px 14px', textAlign: 'right', color: '#2f7a58', fontWeight: 600 }}>{latestRow[g.aprov] != null ? `${Number(latestRow[g.aprov]).toFixed(1)}%` : '—'}</td>
+                                              <td style={{ padding: '9px 14px', textAlign: 'right', color: '#b74f42', fontWeight: 600 }}>{latestRow[g.reprov] != null ? `${Number(latestRow[g.reprov]).toFixed(1)}%` : '—'}</td>
+                                              <td style={{ padding: '9px 14px', textAlign: 'right', color: '#c47a1f', fontWeight: 600 }}>{latestRow[g.aband] != null ? `${Number(latestRow[g.aband]).toFixed(1)}%` : '—'}</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
                                   </div>
                                 )}
-                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                                  <thead>
-                                    <tr style={{ background: '#f7f2ea' }}>
-                                      <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
-                                      <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#2f7a58', fontSize: 12 }}>✓ Aprovação</th>
-                                      <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#b74f42', fontSize: 12 }}>✗ Reprovação</th>
-                                      <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#c47a1f', fontSize: 12 }}>⚠ Abandono</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {rows.map((d: any, i: number) => {
-                                      const aprov = seg ? d[seg.aprov] : d.aprovacao;
-                                      const reprov = seg ? d[seg.reprov] : d.reprovacao;
-                                      const aband = seg ? d[seg.aband] : d.abandono;
-                                      return (
-                                        <tr key={d.ano} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
-                                          <td style={{ padding: '10px 14px', fontWeight: 700, color: '#5d4037' }}>{d.ano}</td>
-                                          <td style={{ padding: '10px 14px', textAlign: 'right', color: '#2f7a58', fontWeight: 600 }}>{aprov != null ? `${Number(aprov).toFixed(1)}%` : '—'}</td>
-                                          <td style={{ padding: '10px 14px', textAlign: 'right', color: '#b74f42', fontWeight: 600 }}>{reprov != null ? `${Number(reprov).toFixed(1)}%` : '—'}</td>
-                                          <td style={{ padding: '10px 14px', textAlign: 'right', color: '#c47a1f', fontWeight: 600 }}>{aband != null ? `${Number(aband).toFixed(1)}%` : '—'}</td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              </div>
+                              </>
                             );
                           })()}
                         </div>

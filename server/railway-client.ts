@@ -113,36 +113,46 @@ function mapIndicadores(h: any): Record<string, any> {
 
   if (h.tnr_dados_json) {
     const a = h.tnr_dados_json;
-    const tnrFund = a["4_CAT_FUN"] ?? a.FUN_CAT_0 ?? a.FUND_CAT_0;
-    const tnrMed  = a["4_CAT_MED"] ?? a.MED_CAT_0;
+    // Dois formatos: 2020 usa FUN_01_CAT4, 2021+ usa 4_CAT_FUN_01
+    const f = (new4: string, old4: string) => a[new4] ?? a[old4] ?? null;
+    const tnrFund = a["4_CAT_FUN"] ?? a.FUN_CAT_0 ?? a.FUND_CAT_0 ?? null;
+    const tnrMed  = a["4_CAT_MED"] ?? a.MED_CAT_0 ?? null;
     ind.taxa_nao_resposta = {
       taxa_nao_resposta_fund: tnrFund,
       taxa_nao_resposta_med: tnrMed,
+      taxa_nao_resposta_fund_ai: a["4_CAT_FUN_AI"] ?? a.FUN_AI_CAT4 ?? null,
+      taxa_nao_resposta_fund_af: a["4_CAT_FUN_AF"] ?? a.FUN_AF_CAT4 ?? null,
       tnr_fund: tnrFund,
       tnr_med: tnrMed,
-      tnr_fun_ai: a["4_CAT_FUN_AI"],
-      tnr_fun_af: a["4_CAT_FUN_AF"],
-      tnr_fun_01: a["4_CAT_FUN_01"], tnr_fun_02: a["4_CAT_FUN_02"],
-      tnr_fun_03: a["4_CAT_FUN_03"], tnr_fun_04: a["4_CAT_FUN_04"],
-      tnr_fun_05: a["4_CAT_FUN_05"], tnr_fun_06: a["4_CAT_FUN_06"],
-      tnr_fun_07: a["4_CAT_FUN_07"], tnr_fun_08: a["4_CAT_FUN_08"],
-      tnr_fun_09: a["4_CAT_FUN_09"],
+      tnr_fun_01: f("4_CAT_FUN_01","FUN_01_CAT4"), tnr_fun_02: f("4_CAT_FUN_02","FUN_02_CAT4"),
+      tnr_fun_03: f("4_CAT_FUN_03","FUN_03_CAT4"), tnr_fun_04: f("4_CAT_FUN_04","FUN_04_CAT4"),
+      tnr_fun_05: f("4_CAT_FUN_05","FUN_05_CAT4"), tnr_fun_06: f("4_CAT_FUN_06","FUN_06_CAT4"),
+      tnr_fun_07: f("4_CAT_FUN_07","FUN_07_CAT4"), tnr_fun_08: f("4_CAT_FUN_08","FUN_08_CAT4"),
+      tnr_fun_09: f("4_CAT_FUN_09","FUN_09_CAT4"),
+      tnr_med_01: a["4_CAT_MED_01"] ?? a.MED_01_CAT4 ?? null,
+      tnr_med_02: a["4_CAT_MED_02"] ?? a.MED_02_CAT4 ?? null,
+      tnr_med_03: a["4_CAT_MED_03"] ?? a.MED_03_CAT4 ?? null,
+      tnr_med_04: a["4_CAT_MED_04"] ?? a.MED_04_CAT4 ?? null,
     };
   }
 
   if (h.rendimento_dados_json) {
     const a = h.rendimento_dados_json;
+    // Helper: pega valor numérico de coluna Unnamed ou null se "--"/ausente
+    const u = (idx: number) => { const v = a[`Unnamed: ${idx}`]; return (v != null && v !== '--') ? Number(v) : null; };
     const aprovTotal  = a["Taxa de Aprovação"]  ?? a.APROV_BAS_CAT_0  ?? a.aprovacao_total  ?? null;
     const abandTotal  = a["Taxa de Abandono"]   ?? a.ABAND_BAS_CAT_0  ?? a.abandono_total   ?? null;
     const reprovTotal = a["Taxa de Reprovação"] ?? a.REPROV_BAS_CAT_0 ?? a.reprovacao_total  ?? null;
     const aprovFund  = a.APROV_FUN_CAT_0  ?? null;
     const abandFund  = a.ABAND_FUN_CAT_0  ?? null;
     const reprovFund = a.REPROV_FUN_CAT_0 ?? null;
-    const aprovMed   = a.APROV_MED_CAT_0  ?? null;
-    const abandMed   = a.ABAND_MED_CAT_0  ?? null;
-    const reprovMed  = a.REPROV_MED_CAT_0 ?? null;
-    const aprovFunAI = a["Unnamed: 10"] ?? null;
-    const aprovFunAF = a["Unnamed: 16"] ?? null;
+    const aprovMed   = a.APROV_MED_CAT_0  ?? u(21) ?? null;
+    const abandMed   = a.ABAND_MED_CAT_0  ?? u(57) ?? null;
+    const reprovMed  = a.REPROV_MED_CAT_0 ?? u(39) ?? null;
+    // Unnamed column mapping (INEP sheet structure):
+    // Aprovação:  AI=10, AF=11, 1o-5o=12-16, 6o-9o=17-20, EM=21, 1a-3a=22-24
+    // Reprovação: +18 de aprovação
+    // Abandono:   +36 de aprovação
     ind.taxas_rendimento = {
       aprovacao_total:    aprovTotal,
       abandono_total:     abandTotal,
@@ -153,8 +163,24 @@ function mapIndicadores(h: any): Record<string, any> {
       aprovacao_med:      aprovMed,
       abandono_med:       abandMed,
       reprovacao_med:     reprovMed,
-      aprovacao_fund_ai:  aprovFunAI,
-      aprovacao_fund_af:  aprovFunAF,
+      aprovacao_fund_ai:  u(10),
+      aprovacao_fund_af:  u(11),
+      reprovacao_fund_ai: u(28),
+      reprovacao_fund_af: u(29),
+      abandono_fund_ai:   u(46),
+      abandono_fund_af:   u(47),
+      // Por série — Fundamental Anos Iniciais (1º–5º)
+      aprovacao_fun_01: u(12), aprovacao_fun_02: u(13), aprovacao_fun_03: u(14), aprovacao_fun_04: u(15), aprovacao_fun_05: u(16),
+      reprovacao_fun_01: u(30), reprovacao_fun_02: u(31), reprovacao_fun_03: u(32), reprovacao_fun_04: u(33), reprovacao_fun_05: u(34),
+      abandono_fun_01: u(48), abandono_fun_02: u(49), abandono_fun_03: u(50), abandono_fun_04: u(51), abandono_fun_05: u(52),
+      // Por série — Fundamental Anos Finais (6º–9º)
+      aprovacao_fun_06: u(17), aprovacao_fun_07: u(18), aprovacao_fun_08: u(19), aprovacao_fun_09: u(20),
+      reprovacao_fun_06: u(35), reprovacao_fun_07: u(36), reprovacao_fun_08: u(37), reprovacao_fun_09: u(38),
+      abandono_fun_06: u(53), abandono_fun_07: u(54), abandono_fun_08: u(55), abandono_fun_09: u(56),
+      // Por série — Ensino Médio (1ª–3ª)
+      aprovacao_med_01: u(22), aprovacao_med_02: u(23), aprovacao_med_03: u(24),
+      reprovacao_med_01: u(40), reprovacao_med_02: u(41), reprovacao_med_03: u(42),
+      abandono_med_01: u(58), abandono_med_02: u(59), abandono_med_03: u(60),
     };
   } else if (h.taxa_aprovacao_ai != null || h.taxa_aprovacao_af != null) {
     ind.taxas_rendimento = {
@@ -315,43 +341,29 @@ export async function searchEscolasRailway(nome: string, limit = 50) {
 }
 
 export async function getEscolaEvolucaoRailway(inep: string) {
-  // Usa /completo — uma única chamada com tudo: censo, infraestrutura, indicadores, IDEB
-  const data = await fetchRailway(`/escolas/${inep}/completo`, 12000);
-  if (!data?.encontrada) return null;
+  // Usa /historico — retorna todos os anos com indicadores por série
+  const data = await fetchRailway(`/escolas/${inep}/historico`, 15000);
+  if (!data?.historico) return null;
 
-  const escolaData    = data.escola ?? {};
-  const identificacao = escolaData.identificacao  ?? {};
-  const regionalizacao = escolaData.regionalizacao ?? {};
-  const funcionamento = escolaData.funcionamento   ?? {};
-  const rawCenso      = escolaData.raw             ?? null;
-  const historico: any[] = escolaData.historico ?? data.historico ?? [];
-  const idebArray: any[] = data.ideb ?? [];
+  const historico: any[] = data.historico ?? [];
+  if (!historico.length) return null;
 
-  // Dados da escola — tp_situacao_funcionamento vem como string em "funcionamento"
-  const noRegiao    = regionalizacao.no_regiao ?? null;
-  const dsDep       = DEP_MAP[identificacao.tp_dependencia] ?? String(identificacao.tp_dependencia ?? "");
-  const dsLoc       = LOC_MAP[identificacao.tp_localizacao] ?? String(identificacao.tp_localizacao ?? "");
-  const sitFuncNum  = parseInt(String(funcionamento.tp_situacao_funcionamento ?? "")) || null;
-  const dsSit       = sitFuncNum ? (SIT_MAP[sitFuncNum] ?? null) : null;
-  const escolaAtiva = funcionamento.in_escola_ativa === true || sitFuncNum === 1;
-
-  // Ano do censo raw (último disponível)
-  const anoRaw = rawCenso?.ano ?? null;
+  // Info da escola vem em cada item do historico
+  const latest = historico[historico.length - 1] ?? {};
+  const dsDep = DEP_MAP[latest.tp_dependencia] ?? String(latest.tp_dependencia ?? "");
+  const dsLoc = LOC_MAP[latest.tp_localizacao] ?? String(latest.tp_localizacao ?? "");
+  const dsSit = SIT_MAP[latest.tp_situacao_funcionamento] ?? null;
 
   const baseInfo = {
-    co_entidade:    identificacao.co_entidade  ?? parseInt(inep),
-    no_entidade:    identificacao.no_entidade  ?? null,
-    co_municipio:   identificacao.co_municipio ?? null,
-    no_municipio:   identificacao.no_municipio ?? null,
-    sg_uf:          identificacao.sg_uf        ?? null,
-    no_uf:          identificacao.no_uf        ?? null,
-    no_regiao:      noRegiao,
-    no_mesorregiao: regionalizacao.no_mesorregiao ?? null,
-    no_microrregiao: regionalizacao.no_microrregiao ?? null,
+    co_entidade:    latest.co_entidade  ?? parseInt(inep),
+    no_entidade:    latest.no_entidade  ?? null,
+    co_municipio:   latest.co_municipio ?? null,
+    no_municipio:   latest.no_municipio ?? null,
+    sg_uf:          latest.sg_uf        ?? null,
     ds_dependencia: dsDep,
     ds_localizacao: dsLoc,
     ds_situacao:    dsSit,
-    escola_ativa:   escolaAtiva,
+    escola_ativa:   latest.tp_situacao_funcionamento === 1,
   };
 
   const censoByYear: Record<number, any> = {};
@@ -359,91 +371,46 @@ export async function getEscolaEvolucaoRailway(inep: string) {
 
   for (const h of historico) {
     const ano = h.ano;
-    const anyJson = h.afd_dados_json ?? h.atu_dados_json ?? h.had_dados_json ?? h.tdi_dados_json ?? h.ird_dados_json ?? {};
-    const regFromJson = anyJson.NO_REGIAO ?? noRegiao;
-
     censoByYear[ano] = {
-      co_entidade:    h.co_entidade    ?? identificacao.co_entidade,
-      no_entidade:    h.no_entidade    ?? identificacao.no_entidade,
-      co_municipio:   h.co_municipio   ?? identificacao.co_municipio,
-      no_municipio:   h.no_municipio   ?? identificacao.no_municipio,
-      sg_uf:          h.sg_uf          ?? identificacao.sg_uf,
-      no_regiao:      regFromJson,
+      co_entidade:    h.co_entidade    ?? latest.co_entidade,
+      no_entidade:    h.no_entidade    ?? latest.no_entidade,
+      co_municipio:   h.co_municipio   ?? latest.co_municipio,
+      no_municipio:   h.no_municipio   ?? latest.no_municipio,
+      sg_uf:          h.sg_uf          ?? latest.sg_uf,
       ds_dependencia: DEP_MAP[h.tp_dependencia] ?? dsDep,
       ds_localizacao: LOC_MAP[h.tp_localizacao] ?? dsLoc,
       ds_situacao:    SIT_MAP[h.tp_situacao_funcionamento] ?? dsSit,
       tp_situacao_funcionamento: h.tp_situacao_funcionamento,
     };
 
-    // Sobrescreve o ano do raw com dados de censo + infraestrutura completos
-    if (anoRaw && ano === anoRaw) {
-      censoByYear[ano] = mapCensoRaw(escolaData, censoByYear[ano]);
+    const ind = mapIndicadores(h);
+
+    // IDEB e SAEB vêm diretamente nos campos do historico
+    if (h.ideb_ai != null || h.ideb_af != null || h.ideb_em != null) {
+      if (!ind.ideb) ind.ideb = {};
+      ind.ideb.ideb_ai = h.ideb_ai ?? ind.ideb.ideb_ai ?? null;
+      ind.ideb.ideb_af = h.ideb_af ?? ind.ideb.ideb_af ?? null;
+      ind.ideb.ideb_em = h.ideb_em ?? ind.ideb.ideb_em ?? null;
+    }
+    if (h.nota_saeb_ai != null || h.nota_saeb_af != null || h.nota_saeb_em != null) {
+      if (!ind.saeb) ind.saeb = {};
+      ind.saeb.nota_mt_ai = h.nota_saeb_ai ?? ind.saeb.nota_mt_ai ?? null;
+      ind.saeb.nota_lp_ai = h.nota_saeb_ai ?? ind.saeb.nota_lp_ai ?? null;
+      ind.saeb.nota_mt_af = h.nota_saeb_af ?? ind.saeb.nota_mt_af ?? null;
+      ind.saeb.nota_lp_af = h.nota_saeb_af ?? ind.saeb.nota_lp_af ?? null;
+      ind.saeb.nota_mt_em = h.nota_saeb_em ?? ind.saeb.nota_mt_em ?? null;
+      ind.saeb.nota_lp_em = h.nota_saeb_em ?? ind.saeb.nota_lp_em ?? null;
     }
 
-    indicadoresByYear[ano] = mapIndicadores(h);
+    indicadoresByYear[ano] = ind;
   }
 
-  // Se o ano do raw não estava no historico, adiciona como entrada de censo
-  if (anoRaw && !censoByYear[anoRaw]) {
-    censoByYear[anoRaw] = mapCensoRaw(escolaData, { ...baseInfo });
-  }
-
-  // Merge IDEB do array separado (quando vem do /completo)
-  const idebByYear: Record<number, any> = {};
-  for (const item of idebArray) {
-    if (!idebByYear[item.ano]) idebByYear[item.ano] = {};
-    const etapa = item.etapa;
-    if (etapa === "anos_iniciais") {
-      idebByYear[item.ano].ideb_ai = item.ideb;
-      idebByYear[item.ano].nota_mt_ai = item.dados_json?.nota_mt ?? item.nota_saeb;
-      idebByYear[item.ano].nota_lp_ai = item.dados_json?.nota_lp ?? item.nota_saeb;
-    } else if (etapa === "anos_finais") {
-      idebByYear[item.ano].ideb_af = item.ideb;
-      idebByYear[item.ano].nota_mt_af = item.dados_json?.nota_mt ?? item.nota_saeb;
-      idebByYear[item.ano].nota_lp_af = item.dados_json?.nota_lp ?? item.nota_saeb;
-    } else if (etapa === "ensino_medio") {
-      idebByYear[item.ano].ideb_em = item.ideb;
-      idebByYear[item.ano].nota_mt_em = item.dados_json?.nota_mt ?? item.nota_saeb;
-      idebByYear[item.ano].nota_lp_em = item.dados_json?.nota_lp ?? item.nota_saeb;
-    }
-  }
-
-  for (const [anoStr, idebData] of Object.entries(idebByYear)) {
-    const ano = parseInt(anoStr);
-    if (!indicadoresByYear[ano]) indicadoresByYear[ano] = {};
-    if (!indicadoresByYear[ano].ideb) indicadoresByYear[ano].ideb = idebData;
-    if (!indicadoresByYear[ano].saeb) {
-      indicadoresByYear[ano].saeb = {
-        nota_mt_ai: idebData.nota_mt_ai, nota_lp_ai: idebData.nota_lp_ai,
-        nota_mt_af: idebData.nota_mt_af, nota_lp_af: idebData.nota_lp_af,
-        nota_mt_em: idebData.nota_mt_em, nota_lp_em: idebData.nota_lp_em,
-      };
-    }
-  }
-
-  // Ano do raio-x (indicadores_recentes do /completo, para IDEB da capa)
-  const indRecentes = escolaData.indicadores_recentes ?? {};
-  const idebRecentes = indRecentes.ideb ?? {};
-
-  const anosSet = new Set<number>([
-    ...historico.map((h: any) => h.ano),
-    ...Object.keys(idebByYear).map(Number),
-    ...(anoRaw ? [anoRaw] : []),
-  ]);
-  const anos = [...anosSet].sort((a, b) => a - b);
+  const anos = historico.map((h: any) => h.ano).sort((a: number, b: number) => a - b);
 
   return {
     co_entidade: parseInt(inep),
     anos_disponiveis: anos,
-    escola: {
-      ...baseInfo,
-      // Resumo IDEB da capa (do indicadores_recentes)
-      ideb_ai_recente: idebRecentes.anos_iniciais?.valor ?? null,
-      ideb_af_recente: idebRecentes.anos_finais?.valor  ?? null,
-      ideb_em_recente: idebRecentes.ensino_medio?.valor ?? null,
-      ideb_ai_ano:     idebRecentes.anos_iniciais?.ano  ?? null,
-      ideb_af_ano:     idebRecentes.anos_finais?.ano    ?? null,
-    },
+    escola: baseInfo,
     censo_por_ano: censoByYear,
     indicadores_por_ano: indicadoresByYear,
   };
