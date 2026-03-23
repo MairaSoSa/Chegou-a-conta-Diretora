@@ -111,6 +111,7 @@ export default function Dashboard() {
   const { data: diagnosticoData } = useEscolaDiagnostico(selectedInep || "");
   const [pddeAno, setPddeAno] = useState<number>(new Date().getFullYear());
   const [rendSegmento, setRendSegmento] = useState<'ai' | 'af' | 'med' | null>(null);
+  const [tnrSegmento, setTnrSegmento] = useState<string | null>(null);
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
   const pddeCnpj = pddeData?.uex?.cnpj || null;
   const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
@@ -1650,17 +1651,42 @@ export default function Dashboard() {
                   if (allTnr.length === 0) return null;
                   const latest = allTnr[allTnr.length - 1];
                   const pct = (v: any) => v != null ? `${Number(v).toFixed(1)}%` : '—';
-                  // Por série — último ano disponível
-                  const gradesFund: { label: string; key: string }[] = [
-                    { label: '1º ano', key: 'f01' }, { label: '2º ano', key: 'f02' }, { label: '3º ano', key: 'f03' },
-                    { label: '4º ano', key: 'f04' }, { label: '5º ano', key: 'f05' },
-                    { label: '6º ano', key: 'f06' }, { label: '7º ano', key: 'f07' },
-                    { label: '8º ano', key: 'f08' }, { label: '9º ano', key: 'f09' },
-                  ].filter(g => latest[g.key] != null);
-                  const gradesMed: { label: string; key: string }[] = [
-                    { label: '1ª série', key: 'm01' }, { label: '2ª série', key: 'm02' },
-                    { label: '3ª série', key: 'm03' }, { label: '4ª série', key: 'm04' },
-                  ].filter(g => latest[g.key] != null);
+                  const tnrColor = (v: any) => Number(v) > 20 ? '#b74f42' : Number(v) > 10 ? '#c47a1f' : null;
+
+                  // Segmentos disponíveis (igual ao padrão de Rendimento)
+                  const tnrSegmentos = [
+                    { key: 'fund',    label: 'Fundamental',  sub: 'Total',          valKey: 'fund',    color: '#2d5a88',
+                      grades: [
+                        { label: '1º ano', key: 'f01' }, { label: '2º ano', key: 'f02' }, { label: '3º ano', key: 'f03' },
+                        { label: '4º ano', key: 'f04' }, { label: '5º ano', key: 'f05' },
+                        { label: '6º ano', key: 'f06' }, { label: '7º ano', key: 'f07' },
+                        { label: '8º ano', key: 'f08' }, { label: '9º ano', key: 'f09' },
+                      ],
+                    },
+                    { key: 'fund_ai', label: 'Anos Iniciais', sub: 'Fund. 1º–5º',   valKey: 'fund_ai', color: '#2d6a4f',
+                      grades: [
+                        { label: '1º ano', key: 'f01' }, { label: '2º ano', key: 'f02' }, { label: '3º ano', key: 'f03' },
+                        { label: '4º ano', key: 'f04' }, { label: '5º ano', key: 'f05' },
+                      ],
+                    },
+                    { key: 'fund_af', label: 'Anos Finais',   sub: 'Fund. 6º–9º',   valKey: 'fund_af', color: '#1d3557',
+                      grades: [
+                        { label: '6º ano', key: 'f06' }, { label: '7º ano', key: 'f07' },
+                        { label: '8º ano', key: 'f08' }, { label: '9º ano', key: 'f09' },
+                      ],
+                    },
+                    { key: 'med',     label: 'Ensino Médio', sub: 'Total',           valKey: 'med',     color: '#6b2d6b',
+                      grades: [
+                        { label: '1ª série', key: 'm01' }, { label: '2ª série', key: 'm02' },
+                        { label: '3ª série', key: 'm03' }, { label: '4ª série', key: 'm04' },
+                      ],
+                    },
+                  ].filter(s => latest[s.valKey] != null);
+
+                  const seg = tnrSegmento ? tnrSegmentos.find(s => s.key === tnrSegmento) : null;
+                  const tnrRows = allTnr.filter((d: any) => seg ? d[seg.valKey] != null : d.fund != null);
+                  const gradesDisponiveis = seg ? seg.grades.filter(g => latest[g.key] != null) : [];
+
                   return (
                     <section className="section">
                       <div className="section-title">
@@ -1672,92 +1698,105 @@ export default function Dashboard() {
                       </div>
                       <div className="organic-divider" />
 
-                      {/* Cartões resumo */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 16 }}>
-                        {[
-                          { label: 'Fundamental', sub: 'total', value: latest.fund, color: '#2d5a88' },
-                          { label: 'Anos Iniciais', sub: 'Fund. 1º–5º', value: latest.fund_ai, color: '#2d6a4f' },
-                          { label: 'Anos Finais', sub: 'Fund. 6º–9º', value: latest.fund_af, color: '#1d3557' },
-                          { label: 'Ensino Médio', sub: 'total', value: latest.med, color: '#6b2d6b' },
-                        ].filter(c => c.value != null).map(c => (
-                          <div key={c.label} className="soft-card" style={{ textAlign: 'center', padding: '14px 10px' }}>
-                            <div style={{ fontSize: 22, fontWeight: 800, color: Number(c.value) > 20 ? '#b74f42' : Number(c.value) > 10 ? '#c47a1f' : c.color }}>
-                              {pct(c.value)}
-                            </div>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: '#5d4037', marginTop: 2 }}>{c.label}</div>
-                            <div style={{ fontSize: 10, color: '#a89a82' }}>{c.sub} — {latest.ano}</div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Tabela de evolução */}
-                      <div className="soft-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
-                        <div style={{ padding: '9px 14px', background: '#4a4a6a', color: '#fff', fontSize: 12, fontWeight: 700 }}>
-                          🚫 Evolução da taxa de não resposta por ano
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: '#5d4037', marginBottom: 10 }}>
+                          🚫 Taxa de não resposta ao SAEB/Prova Brasil (%)
                         </div>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                          <thead>
-                            <tr style={{ background: '#f7f2ea' }}>
-                              <th style={{ padding: '9px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
-                              <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: '#2d5a88', fontSize: 12 }}>Fundamental</th>
-                              {allTnr.some((d: any) => d.fund_ai != null) && <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: '#2d6a4f', fontSize: 12 }}>Anos Iniciais</th>}
-                              {allTnr.some((d: any) => d.fund_af != null) && <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: '#1d3557', fontSize: 12 }}>Anos Finais</th>}
-                              <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: '#6b2d6b', fontSize: 12 }}>Ensino Médio</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {allTnr.map((d: any, i: number) => (
-                              <tr key={d.ano} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
-                                <td style={{ padding: '9px 14px', fontWeight: 700, color: '#5d4037' }}>{d.ano}</td>
-                                <td style={{ padding: '9px 14px', textAlign: 'right', color: Number(d.fund) > 20 ? '#b74f42' : '#2d5a88', fontWeight: 600 }}>{pct(d.fund)}</td>
-                                {allTnr.some((x: any) => x.fund_ai != null) && <td style={{ padding: '9px 14px', textAlign: 'right', color: '#2d6a4f', fontWeight: 600 }}>{pct(d.fund_ai)}</td>}
-                                {allTnr.some((x: any) => x.fund_af != null) && <td style={{ padding: '9px 14px', textAlign: 'right', color: '#1d3557', fontWeight: 600 }}>{pct(d.fund_af)}</td>}
-                                <td style={{ padding: '9px 14px', textAlign: 'right', color: Number(d.med) > 20 ? '#b74f42' : '#6b2d6b', fontWeight: 600 }}>{pct(d.med)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
 
-                      {/* Por série — último ano */}
-                      {(gradesFund.length > 0 || gradesMed.length > 0) && (
-                        <div style={{ display: 'grid', gridTemplateColumns: gradesFund.length > 0 && gradesMed.length > 0 ? '1fr 1fr' : '1fr', gap: 12 }}>
-                          {gradesFund.length > 0 && (
-                            <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
-                              <div style={{ padding: '8px 14px', background: '#2d5a8822', fontSize: 11, fontWeight: 700, color: '#2d5a88' }}>
-                                📋 Por ano — Fundamental ({latest.ano})
+                        {/* Cartões de segmento clicáveis — igual ao Rendimento */}
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+                          {tnrSegmentos.map(s => {
+                            const isActive = tnrSegmento === s.key;
+                            const val = latest[s.valKey];
+                            const valColor = tnrColor(val);
+                            return (
+                              <button
+                                key={s.key}
+                                onClick={() => setTnrSegmento(isActive ? null : s.key)}
+                                style={{
+                                  flex: '1 1 130px', minWidth: 120,
+                                  padding: '12px 14px',
+                                  border: `2px solid ${isActive ? s.color : '#e7d9bf'}`,
+                                  borderRadius: '14px 16px 12px 15px',
+                                  background: isActive ? s.color : '#fffef8',
+                                  color: isActive ? '#fff' : '#3d4450',
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                  boxShadow: isActive ? `0 4px 14px ${s.color}44` : '0 2px 8px rgba(83,72,53,0.07)',
+                                  transition: 'all .18s',
+                                }}
+                              >
+                                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', opacity: isActive ? 0.85 : 0.6, marginBottom: 2 }}>{s.sub}</div>
+                                <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>{s.label}</div>
+                                {val != null && (
+                                  <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1, letterSpacing: '-0.03em', color: isActive ? '#fff' : (valColor ?? s.color) }}>
+                                    {Number(val).toFixed(1)}<span style={{ fontSize: 13, fontWeight: 600 }}>%</span>
+                                  </div>
+                                )}
+                                <div style={{ fontSize: 10, marginTop: 3, opacity: 0.7 }}>{isActive ? '▼ clique p/ fechar' : 'não resposta · clique'}</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Tabela e detalhe — só aparece quando um segmento está selecionado */}
+                        {seg && tnrRows.length > 0 && (
+                          <>
+                            <div className="soft-card" style={{ padding: 0, overflow: 'hidden', marginBottom: gradesDisponiveis.length > 0 ? 12 : 0 }}>
+                              <div style={{ padding: '9px 14px', background: seg.color, color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span>📌 {seg.label} — {seg.sub} — evolução por ano</span>
+                                <button onClick={() => setTnrSegmento(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 13, opacity: 0.8 }}>✕ fechar</button>
                               </div>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                <thead>
+                                  <tr style={{ background: '#f7f2ea' }}>
+                                    <th style={{ padding: '9px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
+                                    <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: seg.color, fontSize: 12 }}>🚫 Taxa de Não Resposta</th>
+                                  </tr>
+                                </thead>
                                 <tbody>
-                                  {gradesFund.map((g, i) => (
-                                    <tr key={g.key} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
-                                      <td style={{ padding: '8px 14px', fontWeight: 700, color: '#5d4037' }}>{g.label}</td>
-                                      <td style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 600, color: Number(latest[g.key]) > 20 ? '#b74f42' : '#2d5a88' }}>{pct(latest[g.key])}</td>
-                                    </tr>
-                                  ))}
+                                  {tnrRows.map((d: any, i: number) => {
+                                    const v = d[seg.valKey];
+                                    return (
+                                      <tr key={d.ano} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                        <td style={{ padding: '9px 14px', fontWeight: 700, color: '#5d4037' }}>{d.ano}</td>
+                                        <td style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 600, color: tnrColor(v) ?? seg.color }}>{pct(v)}</td>
+                                      </tr>
+                                    );
+                                  })}
                                 </tbody>
                               </table>
                             </div>
-                          )}
-                          {gradesMed.length > 0 && (
-                            <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
-                              <div style={{ padding: '8px 14px', background: '#6b2d6b22', fontSize: 11, fontWeight: 700, color: '#6b2d6b' }}>
-                                📋 Por série — Ensino Médio ({latest.ano})
+
+                            {/* Por série — último ano (se houver dados por série) */}
+                            {gradesDisponiveis.length > 0 && (
+                              <div style={{ marginTop: 0 }}>
+                                <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 8 }}>
+                                  📋 Por série — {latest.ano}
+                                </div>
+                                <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
+                                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                    <thead>
+                                      <tr style={{ background: seg.color + '22' }}>
+                                        <th style={{ padding: '8px 14px', textAlign: 'left', fontWeight: 700, color: seg.color, fontSize: 12 }}>Série / Ano</th>
+                                        <th style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 700, color: seg.color, fontSize: 12 }}>🚫 Não Resposta</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {gradesDisponiveis.map((g, i) => (
+                                        <tr key={g.key} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                          <td style={{ padding: '9px 14px', fontWeight: 700, color: '#5d4037' }}>{g.label}</td>
+                                          <td style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 600, color: tnrColor(latest[g.key]) ?? seg.color }}>{pct(latest[g.key])}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
                               </div>
-                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                                <tbody>
-                                  {gradesMed.map((g, i) => (
-                                    <tr key={g.key} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
-                                      <td style={{ padding: '8px 14px', fontWeight: 700, color: '#5d4037' }}>{g.label}</td>
-                                      <td style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 600, color: Number(latest[g.key]) > 20 ? '#b74f42' : '#6b2d6b' }}>{pct(latest[g.key])}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                            )}
+                          </>
+                        )}
+                      </div>
                     </section>
                   );
                 })()}
