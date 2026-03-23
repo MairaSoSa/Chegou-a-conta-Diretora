@@ -112,6 +112,10 @@ export default function Dashboard() {
   const { data: microregiaoData } = useEscolaMicroregiao(selectedInep || "");
   const { data: diagnosticoData } = useEscolaDiagnostico(selectedInep || "");
   const [pddeAno, setPddeAno] = useState<number>(new Date().getFullYear());
+  const [showEquipamentos, setShowEquipamentos] = useState(false);
+  const [showSuporteInstitucional, setShowSuporteInstitucional] = useState(false);
+  const [equipamentosData, setEquipamentosData] = useState<any>(null);
+  const [equipamentosLoading, setEquipamentosLoading] = useState(false);
   const [rendSegmento, setRendSegmento] = useState<'ai' | 'af' | 'med' | null>(null);
   const [tnrSegmento, setTnrSegmento] = useState<string | null>(null);
   const [tdiSegmento, setTdiSegmento] = useState<string | null>(null);
@@ -1420,6 +1424,155 @@ export default function Dashboard() {
                           </div>
                         );
                       })}
+                    </div>
+                  );
+                })()}
+
+                {/* ── PAINÉIS DE CONTEXTO: EQUIPAMENTOS PÚBLICOS + SUPORTE INSTITUCIONAL ── */}
+                {(() => {
+                  const coMunicipio = censoLatest?.co_municipio || evolucaoData?.escola?.co_municipio;
+                  const nomeMunicipio = evolucaoData?.escola?.no_municipio || '—';
+
+                  const handleToggleEquipamentos = () => {
+                    const next = !showEquipamentos;
+                    setShowEquipamentos(next);
+                    if (next && coMunicipio && !equipamentosData && !equipamentosLoading) {
+                      setEquipamentosLoading(true);
+                      fetch(`/api/equipamentos-publicos/${coMunicipio}`)
+                        .then(r => r.json())
+                        .then(d => { setEquipamentosData(d); setEquipamentosLoading(false); })
+                        .catch(() => { setEquipamentosData({ ok: false, error: 'Erro ao carregar' }); setEquipamentosLoading(false); });
+                    }
+                  };
+
+                  const SUAS_ICONS: Record<string, string> = {
+                    cras: '🏘️', creas: '🛡️', centro_pop: '🏕️', abrigos: '🏠',
+                  };
+                  const SUAS_COLORS: Record<string, { bg: string; border: string; txt: string }> = {
+                    cras:       { bg: '#e8f5ee', border: '#b8dfc8', txt: '#1f6b45' },
+                    creas:      { bg: '#e6eef8', border: '#b8cfe8', txt: '#1e4a78' },
+                    centro_pop: { bg: '#fdf3e0', border: '#f0ddb5', txt: '#7a4a10' },
+                    abrigos:    { bg: '#f3eeff', border: '#d4c4f5', txt: '#5b3fa8' },
+                  };
+
+                  return (
+                    <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {/* Botão 1: Equipamentos Públicos */}
+                      <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1.5px solid #b8dfc8', background: '#f4fbf7' }}>
+                        <button
+                          onClick={handleToggleEquipamentos}
+                          style={{
+                            width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
+                            padding: '14px 18px', background: 'transparent', border: 'none', cursor: 'pointer',
+                            textAlign: 'left',
+                          }}
+                        >
+                          <div style={{ width: 38, height: 38, borderRadius: 12, background: '#d2f0e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🏛️</div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontWeight: 700, fontSize: '13px', color: '#1f6b45', margin: 0 }}>Equipamentos Públicos do Município</p>
+                            <p style={{ fontSize: '11px', color: '#4a8a65', margin: 0 }}>CRAS, CREAS, Centro POP, abrigos e rede de proteção social — {nomeMunicipio}</p>
+                          </div>
+                          <span style={{ fontSize: '16px', color: '#4a8a65', transform: showEquipamentos ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
+                        </button>
+
+                        {showEquipamentos && (
+                          <div style={{ padding: '0 18px 16px', borderTop: '1px solid #d2f0e0' }}>
+                            {equipamentosLoading && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 0', color: '#4a8a65', fontSize: 13 }}>
+                                <span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⟳</span> Consultando IBGE...
+                              </div>
+                            )}
+
+                            {!equipamentosLoading && equipamentosData?.ok && (
+                              <>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px', marginTop: '14px', marginBottom: '12px' }}>
+                                  {Object.entries(equipamentosData.suas || {}).map(([key, val]: [string, any]) => {
+                                    const c = SUAS_COLORS[key] || { bg: '#f4f4f4', border: '#ddd', txt: '#333' };
+                                    return (
+                                      <div key={key} style={{ background: c.bg, border: `1.5px solid ${c.border}`, borderRadius: 12, padding: '12px 14px' }}>
+                                        <div style={{ fontSize: 20, marginBottom: 4 }}>{SUAS_ICONS[key] || '📍'}</div>
+                                        <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: c.txt, margin: '0 0 2px' }}>{val.label}</p>
+                                        <p style={{ fontSize: 24, fontWeight: 800, color: c.txt, margin: '0 0 2px', lineHeight: 1 }}>{val.total ?? '—'}</p>
+                                        <p style={{ fontSize: 10, color: c.txt, opacity: 0.7, margin: 0 }}>{val.descricao}</p>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <p style={{ fontSize: '10px', color: '#6b8a74', marginBottom: '10px' }}>
+                                  Fonte: {equipamentosData.fonte} · Os dados refletem o levantamento IBGE de {equipamentosData.ano} — consulte as fontes abaixo para informações atualizadas.
+                                </p>
+                              </>
+                            )}
+
+                            {!equipamentosLoading && equipamentosData && !equipamentosData.ok && (
+                              <p style={{ fontSize: 12, color: '#888', padding: '12px 0' }}>
+                                Não foi possível carregar os dados automaticamente. Consulte diretamente nas fontes abaixo.
+                              </p>
+                            )}
+
+                            {!equipamentosLoading && !coMunicipio && (
+                              <p style={{ fontSize: 12, color: '#888', padding: '12px 0' }}>Código IBGE do município não disponível para esta escola.</p>
+                            )}
+
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+                              {(equipamentosData?.links || [
+                                { nome: 'Mapa SUAS (MDS)', url: 'https://mapas.mds.gov.br/mapas/app/painel-suas/' },
+                                { nome: 'Dados abertos SUAS', url: 'https://dados.gov.br/dataset/unidades-de-atendimento-da-assistencia-social' },
+                                { nome: 'Vigilância Socioassistencial', url: 'https://aplicacoes.mds.gov.br/sagi/vis/dash/index.php' },
+                                { nome: 'CadSUAS', url: 'https://cadsuas.mds.gov.br/' },
+                              ]).map((link: any, i: number) => (
+                                <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
+                                  style={{ fontSize: 11, fontWeight: 600, color: '#1f6b45', background: '#d2f0e0', borderRadius: 20, padding: '4px 10px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  {link.nome} ↗
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Botão 2: Suporte Institucional */}
+                      <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1.5px solid #d4c4f5', background: '#f9f6ff' }}>
+                        <button
+                          onClick={() => setShowSuporteInstitucional(v => !v)}
+                          style={{
+                            width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
+                            padding: '14px 18px', background: 'transparent', border: 'none', cursor: 'pointer',
+                            textAlign: 'left',
+                          }}
+                        >
+                          <div style={{ width: 38, height: 38, borderRadius: 12, background: '#e8deff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🤝</div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontWeight: 700, fontSize: '13px', color: '#5b3fa8', margin: 0 }}>Suporte Institucional para Gestão</p>
+                            <p style={{ fontSize: '11px', color: '#7c5cbf', margin: 0 }}>Programas, recursos e canais de apoio à diretora escolar</p>
+                          </div>
+                          <span style={{ fontSize: '16px', color: '#7c5cbf', transform: showSuporteInstitucional ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
+                        </button>
+
+                        {showSuporteInstitucional && (
+                          <div style={{ padding: '0 18px 16px', borderTop: '1px solid #e8deff' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '10px', marginTop: '14px' }}>
+                              {[
+                                { icon: '📚', titulo: 'PDDE Interativo', desc: 'Planejamento e gestão financeira escolar pelo MEC', url: 'https://pddeinterativo.mec.gov.br', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+                                { icon: '🎓', titulo: 'ProGestão', desc: 'Programa de capacitação para gestores escolares', url: 'https://progestao.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                                { icon: '🏛️', titulo: 'UNDIME', desc: 'União Nacional dos Dirigentes Municipais de Educação', url: 'https://undime.org.br', cor: '#7a4a10', bg: '#fdf3e0', bd: '#f0ddb5' },
+                                { icon: '📊', titulo: 'QEdu', desc: 'Plataforma de dados educacionais para gestão baseada em evidências', url: 'https://qedu.org.br', cor: '#5b3fa8', bg: '#f3eeff', bd: '#d4c4f5' },
+                                { icon: '💰', titulo: 'Portal FNDE', desc: 'Programas de financiamento da educação básica', url: 'https://www.fnde.gov.br', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+                                { icon: '📋', titulo: 'SIMEC/PAR', desc: 'Sistema de monitoramento do Plano de Ações Articuladas', url: 'https://simec.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                              ].map((item, i) => (
+                                <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
+                                  style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px', borderRadius: 12, background: item.bg, border: `1.5px solid ${item.bd}`, textDecoration: 'none' }}>
+                                  <span style={{ fontSize: 18, flexShrink: 0 }}>{item.icon}</span>
+                                  <div>
+                                    <p style={{ fontSize: 12, fontWeight: 700, color: item.cor, margin: '0 0 2px' }}>{item.titulo} ↗</p>
+                                    <p style={{ fontSize: 11, color: item.cor, opacity: 0.8, margin: 0, lineHeight: 1.4 }}>{item.desc}</p>
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })()}
