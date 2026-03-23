@@ -1052,6 +1052,23 @@ export default function Dashboard() {
                 const currentChart = available.find(c => c.id === selectedChart) || available[0];
                 return (
               <>
+                {/* ── CABEÇALHO APENAS PARA IMPRESSÃO ── */}
+                <div className="print-only-header">
+                  <div className="print-brand">
+                    <span className="print-brand-logo">Chegou a Conta,</span>
+                    <span className="print-brand-highlight"> Diretora!</span>
+                  </div>
+                  <div className="print-school-name">{evolucaoData.escola.no_entidade}</div>
+                  <div className="print-meta-row">
+                    <span>📍 {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}</span>
+                    <span>INEP {selectedInep}</span>
+                    <span>{evolucaoData.escola.ds_dependencia}</span>
+                    <span>{evolucaoData.escola.ds_localizacao}</span>
+                    <span>{evolucaoData.escola.ds_situacao}</span>
+                  </div>
+                  <div className="print-divider" />
+                </div>
+
                 {/* ── HERO ── */}
                 <section className="hero">
                   <div className="hero-inner">

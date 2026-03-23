@@ -1680,17 +1680,273 @@ mark.ficha-grifo:hover {
 }
 
 /* ── IMPRESSÃO / PDF ── */
-@page { margin: 1.5cm; }
+
+/* Cabeçalho exclusivo para impressão — invisível na tela */
+.print-only-header { display: none; }
+
+@page {
+  size: A4;
+  margin: 1.8cm 2cm 2.2cm 2cm;
+  @bottom-center {
+    content: "chegouaconta.com.br  •  Fonte: INEP/FNDE  •  Página " counter(page) " de " counter(pages);
+    font-size: 7pt;
+    color: #aaa;
+    font-family: 'Nunito', Arial, sans-serif;
+  }
+}
+
+@page :first {
+  margin-top: 1.2cm;
+}
+
 @media print {
-  body { background: #fff !important; font-size: 12px !important; }
+  /* ── Base ── */
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html, body {
+    background: #fff !important;
+    font-family: 'Nunito', 'Segoe UI', Arial, sans-serif !important;
+    font-size: 11px !important;
+    color: #1a1a1a !important;
+    line-height: 1.5 !important;
+  }
+
+  /* ── Ocultar elementos interativos ── */
   .top-bar, .tab-bar, .search-section, .overview-hero,
-  .sidebar, nav, header, footer,
-  button { display: none !important; }
-  .main-content, .school-content { padding: 0 !important; margin: 0 !important; }
-  .section { break-inside: avoid; page-break-inside: avoid; margin-bottom: 20px !important; }
-  .soft-card { box-shadow: none !important; border: 1px solid #ddd !important; }
-  .organic-divider { display: none !important; }
-  .hint-chip { font-size: 10px !important; }
-  h2 { font-size: 15px !important; }
-  h3 { font-size: 13px !important; }
+  .sidebar, nav, header, footer, button,
+  .hero-side-graphic, .organic-divider,
+  .postit-row, .chart-section,
+  .eyebrow, .scribble,
+  [role="tablist"], [role="tab"],
+  .recharts-wrapper, .recharts-surface,
+  .hint-chip, .tts-controls, .tts-bubble,
+  .accessibility-menu,
+  .similar-modal, .similar-overlay,
+  .print-btn { display: none !important; }
+
+  /* ── Layout ── */
+  .main-content, .school-content {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* ── Cabeçalho de impressão ── */
+  .print-only-header {
+    display: block !important;
+    margin-bottom: 18pt;
+    padding-bottom: 12pt;
+  }
+
+  .print-brand {
+    font-size: 9pt;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #8b7355;
+    margin-bottom: 4pt;
+  }
+
+  .print-brand-highlight {
+    color: #c2622b;
+  }
+
+  .print-school-name {
+    font-size: 17pt;
+    font-weight: 900;
+    color: #1a2b1a;
+    line-height: 1.15;
+    margin-bottom: 6pt;
+    letter-spacing: -0.02em;
+  }
+
+  .print-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6pt 14pt;
+    font-size: 8.5pt;
+    color: #555;
+    font-weight: 600;
+  }
+
+  .print-meta-row span {
+    display: inline-block;
+  }
+
+  .print-divider {
+    height: 2px;
+    background: linear-gradient(90deg, #c2622b 0%, #e8a44a 60%, #f5e8d0 100%);
+    margin-top: 10pt;
+    border-radius: 2px;
+  }
+
+  /* ── Hero: ocultar no print (já temos o print-only-header) ── */
+  section.hero { display: none !important; }
+
+  /* ── Sections ── */
+  .section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 14pt !important;
+    padding: 0 !important;
+  }
+
+  .section-title {
+    margin-bottom: 8pt !important;
+    padding-bottom: 4pt !important;
+    border-bottom: 1.5px solid #e8ddd0 !important;
+  }
+
+  .section-title h2 {
+    font-size: 12pt !important;
+    font-weight: 800 !important;
+    color: #2d3a2d !important;
+    margin: 0 !important;
+  }
+
+  .section-title p {
+    font-size: 8pt !important;
+    color: #7a7a7a !important;
+    margin: 2pt 0 0 !important;
+  }
+
+  /* ── Summary grid ── */
+  .summary-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6pt !important;
+  }
+
+  .metric {
+    border: 1px solid #e0d8cc !important;
+    border-radius: 8pt !important;
+    padding: 8pt !important;
+    box-shadow: none !important;
+    break-inside: avoid !important;
+  }
+
+  .metric label {
+    font-size: 7pt !important;
+    color: #666 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+  }
+
+  .metric strong {
+    font-size: 16pt !important;
+    font-weight: 900 !important;
+    display: block !important;
+    margin-top: 2pt !important;
+  }
+
+  /* ── Soft cards ── */
+  .soft-card {
+    box-shadow: none !important;
+    border: 1px solid #e0d8cc !important;
+    border-radius: 8pt !important;
+    padding: 10pt !important;
+    break-inside: avoid !important;
+    margin-bottom: 6pt !important;
+  }
+
+  .soft-card .attention-head {
+    font-size: 9pt !important;
+    font-weight: 800 !important;
+    margin-bottom: 6pt !important;
+  }
+
+  /* ── Two-col ── */
+  .two-col {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8pt !important;
+  }
+
+  /* ── Row list ── */
+  .row-list {
+    font-size: 8.5pt !important;
+  }
+
+  .row-list > div, .row-list > li {
+    padding: 3pt 0 !important;
+    border-bottom: 0.5px solid #f0ece4 !important;
+  }
+
+  /* ── Meta chips ── */
+  .meta-chip, .school-meta .meta-chip {
+    display: inline-block !important;
+    border: 0.5px solid #ccc !important;
+    border-radius: 4pt !important;
+    padding: 1pt 5pt !important;
+    font-size: 7.5pt !important;
+    margin: 1pt 2pt !important;
+    background: #faf8f4 !important;
+    color: #444 !important;
+  }
+
+  /* ── Badges ── */
+  .badge-good {
+    background: #e8f5ec !important;
+    color: #2d6e47 !important;
+    border: 0.5px solid #a8d5b8 !important;
+    padding: 1pt 5pt !important;
+    border-radius: 4pt !important;
+    font-size: 7.5pt !important;
+  }
+
+  .badge-attn {
+    background: #fff4e6 !important;
+    color: #8a4a00 !important;
+    border: 0.5px solid #f5c988 !important;
+    padding: 1pt 5pt !important;
+    border-radius: 4pt !important;
+    font-size: 7.5pt !important;
+  }
+
+  /* ── Headings ── */
+  h1 { font-size: 14pt !important; }
+  h2 { font-size: 11pt !important; }
+  h3 { font-size: 10pt !important; }
+  h4 { font-size: 9pt !important; }
+  p  { font-size: 8.5pt !important; }
+
+
+  /* ── Tabelas PDDE ── */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 8pt !important;
+  }
+
+  th {
+    background: #f5f0e8 !important;
+    color: #3a3020 !important;
+    padding: 3pt 6pt !important;
+    border: 0.5px solid #ddd !important;
+    font-weight: 700 !important;
+    text-align: left !important;
+  }
+
+  td {
+    padding: 3pt 6pt !important;
+    border: 0.5px solid #e8e0d4 !important;
+    vertical-align: top !important;
+  }
+
+  tr:nth-child(even) td {
+    background: #fbf8f4 !important;
+  }
+
+  /* ── Gráficos: ocultar ── */
+  svg.recharts-surface,
+  .recharts-responsive-container,
+  div[class*="recharts"] { display: none !important; }
+
+  /* ── School meta no hero (mostrar bonito) ── */
+  .school-meta {
+    display: none !important;
+  }
 }
