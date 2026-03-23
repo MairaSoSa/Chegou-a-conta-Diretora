@@ -8,6 +8,8 @@ vite.config.ts.*
 dev.db
 dev.db-shm
 dev.db-wal
+dev_trimmed.db-shm
+dev_trimmed.db-wal
 *.log
 .replit
 replit.nix
@@ -15,3 +17,5 @@ replit.nix
 .cache/
 .local/
 .upm/
+Dados/
+attached_assets/
