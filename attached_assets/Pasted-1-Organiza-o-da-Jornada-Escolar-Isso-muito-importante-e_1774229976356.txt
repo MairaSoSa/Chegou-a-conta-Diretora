@@ -1,0 +1,147 @@
+1. Organização da Jornada Escolar
+
+Isso é muito importante e pouca gente usa.
+
+Campos importantes:
+
+Escola de tempo integral
+Turnos de funcionamento (manhã, tarde, noite)
+Duração da aula
+Dias letivos
+Horas semanais
+Atendimento integral parcial
+Atividades complementares
+Educação integral
+
+Isso permite analisar:
+
+Escolas de tempo integral
+Escolas noturnas
+Oferta de jornada ampliada
+Políticas de educação integral
+
+Isso é indicador de qualidade e equidade.
+
+2. Transporte Escolar
+
+Muito importante para escolas rurais e equidade territorial.
+
+Campos:
+
+Transporte escolar
+Transporte público
+Transporte próprio
+Transporte terceirizado
+Transporte para alunos com deficiência
+Transporte rural
+
+Isso mostra:
+
+Se os alunos conseguem chegar na escola.
+
+Isso é indicador de acesso à educação.
+
+3. Alimentação Escolar (detalhar mais)
+
+Você já colocou alimentação, mas pode detalhar:
+
+Alimentação escolar
+Cozinha
+Refeitório
+Despensa
+Nutricionista
+Agricultura familiar
+Alimentação diferenciada (indígena, quilombola)
+Número de refeições
+
+Isso vira indicador de segurança alimentar.
+
+4. Participação e Comunidade Escolar
+
+Isso é MUITO importante para gestão democrática.
+
+Campos:
+
+Conselho escolar
+Associação de pais e mestres
+Grêmio estudantil
+Participação da comunidade
+Projeto político pedagógico
+Plano de gestão
+Avaliação institucional
+Formação continuada de professores
+Reuniões pedagógicas
+Uso de dados para planejamento
+
+Isso vira indicador de governança escolar.
+
+5. Segurança e Ambiente Escolar
+
+Pouca gente usa, mas é muito relevante.
+
+Campos:
+
+Segurança patrimonial
+Controle de acesso
+Monitoramento por câmeras
+Brigada de incêndio
+Plano de evacuação
+Iluminação externa
+Área murada
+Violência escolar (em alguns anos do censo)
+Ocorrências registradas
+
+Isso vira indicador de ambiente escolar seguro.
+
+6. Sustentabilidade e Meio Ambiente
+
+Isso é muito moderno e pode ser diferencial do seu sistema.
+
+Campos:
+
+Coleta seletiva
+Horta escolar
+Área verde
+Uso de energia solar
+Reuso de água
+Educação ambiental
+Projetos ambientais
+Compostagem
+
+Isso permite criar:
+
+Índice de sustentabilidade da escola.
+
+7. Materiais Pedagógicos e Recursos
+
+Também é importante.
+
+Campos:
+
+Material pedagógico infantil
+Material pedagógico científico
+Material esportivo
+Material cultural e artístico
+Material multimídia
+Jogos educativos
+Laboratórios
+Kits pedagógicos
+Livros didáticos
+Biblioteca
+Sala de leitura
+
+Isso vira indicador de recursos pedagógicos.
+
+8. Docentes (se quiser aprofundar)
+
+Você pode puxar dados de professores:
+
+Formação dos docentes
+Licenciatura
+Pós-graduação
+Tempo de experiência
+Regime de trabalho
+Professores temporários
+Professores efetivos
+Professores por disciplina
+Professores por etapa

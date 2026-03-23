@@ -88,7 +88,7 @@ export default function Dashboard() {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [selectedChart, setSelectedChart] = useState("matriculas");
   const [showChartDropdown, setShowChartDropdown] = useState(false);
-  const [activeSchoolTab, setActiveSchoolTab] = useState<"alunos" | "etapas" | "docentes" | "infra" | "transp" | "gestao">("alunos");
+  const [activeSchoolTab, setActiveSchoolTab] = useState<"porte" | "infra" | "tecnologia" | "inclusao" | "perfil" | "equipe" | "jornada">("porte");
   const [filterUf, setFilterUf] = useState("");
   const [filterDep, setFilterDep] = useState("");
   const [listPage, setListPage] = useState(1);
@@ -2076,122 +2076,34 @@ export default function Dashboard() {
                       <p style={{margin:0,color:'var(--m-muted)',fontSize:'13px'}}>Compare os dados de cada ano — células verdes/vermelhas indicam mudanças</p>
                     </div>
                     <div className="tab-buttons-v6">
-                      {(['alunos', 'etapas', 'docentes', 'infra', 'transp', 'gestao'] as const).map(tab => (
+                      {([
+                        { key: 'porte',     label: '📊 Porte & Oferta' },
+                        { key: 'infra',     label: '🏫 Infraestrutura' },
+                        { key: 'tecnologia',label: '💻 Tecnologia' },
+                        { key: 'inclusao',  label: '♿ Inclusão' },
+                        { key: 'perfil',    label: '👤 Perfil' },
+                        { key: 'equipe',    label: '👥 Equipe & Gestão' },
+                        { key: 'jornada',   label: '🌱 Jornada & +' },
+                      ] as const).map(({ key, label }) => (
                         <button
-                          key={tab}
-                          className={`tab-button ${activeSchoolTab === tab ? 'active' : ''}`}
-                          onClick={() => setActiveSchoolTab(tab)}
-                        >
-                          {tab === 'alunos' ? '👩‍🎓 Alunos' : tab === 'etapas' ? '📚 Etapas' : tab === 'docentes' ? '🧑‍🏫 Docentes' : tab === 'infra' ? '🏫 Infraestrutura' : tab === 'transp' ? '🚌 Transporte' : '📋 Gestão'}
-                        </button>
+                          key={key}
+                          className={`tab-button ${activeSchoolTab === key ? 'active' : ''}`}
+                          onClick={() => setActiveSchoolTab(key)}
+                        >{label}</button>
                       ))}
                     </div>
-                    {activeSchoolTab === 'alunos' && (() => {
+                    {(() => {
                       const anos = evolucaoData.anos_disponiveis.slice().sort((a: number, b: number) => a - b);
                       const c = evolucaoData.censo_por_ano;
-                      type NRow = { label: string; key: string; header?: boolean };
-                      const rows: NRow[] = [
-                        { label: 'Totais por Etapa', key: '', header: true },
-                        { label: 'Total Educação Básica', key: 'qt_mat_bas' },
-                        { label: 'Ed. Infantil (total)', key: 'qt_mat_inf' },
-                        { label: 'Creche', key: 'qt_mat_inf_cre' },
-                        { label: 'Pré-escola', key: 'qt_mat_inf_pre' },
-                        { label: 'Ens. Fundamental (total)', key: 'qt_mat_fund' },
-                        { label: 'Fund. Anos Iniciais', key: 'qt_mat_fund_ai' },
-                        { label: 'Fund. Anos Finais', key: 'qt_mat_fund_af' },
-                        { label: 'Ensino Médio', key: 'qt_mat_med' },
-                        { label: 'Ed. Profissional', key: 'qt_mat_prof' },
-                        { label: 'Ed. Prof. Técnica', key: 'qt_mat_prof_tec' },
-                        { label: 'EJA (total)', key: 'qt_mat_eja' },
-                        { label: 'EJA Fundamental', key: 'qt_mat_eja_fund' },
-                        { label: 'EJA Médio', key: 'qt_mat_eja_med' },
-                        { label: 'Matrículas por turno', key: '', header: true },
-                        { label: 'Diurno', key: 'qt_mat_bas_d' },
-                        { label: 'Noturno', key: 'qt_mat_bas_n' },
-                        { label: 'EAD', key: 'qt_mat_bas_ead' },
-                        { label: 'Por Sexo', key: '', header: true },
-                        { label: 'Feminino', key: 'qt_mat_bas_fem' },
-                        { label: 'Masculino', key: 'qt_mat_bas_masc' },
-                        { label: 'Por Cor/Raça', key: '', header: true },
-                        { label: 'Branca', key: 'qt_mat_bas_branca' },
-                        { label: 'Preta', key: 'qt_mat_bas_preta' },
-                        { label: 'Parda', key: 'qt_mat_bas_parda' },
-                        { label: 'Amarela', key: 'qt_mat_bas_amarela' },
-                        { label: 'Indígena', key: 'qt_mat_bas_indigena' },
-                        { label: 'Não Declarada', key: 'qt_mat_bas_nd' },
-                        { label: 'Por Faixa Etária', key: '', header: true },
-                        { label: '0 a 3 anos', key: 'qt_mat_bas_0_3' },
-                        { label: '4 a 5 anos', key: 'qt_mat_bas_4_5' },
-                        { label: '6 a 10 anos', key: 'qt_mat_bas_6_10' },
-                        { label: '11 a 14 anos', key: 'qt_mat_bas_11_14' },
-                        { label: '15 a 17 anos', key: 'qt_mat_bas_15_17' },
-                        { label: '18 e mais', key: 'qt_mat_bas_18_mais' },
-                        { label: 'Educação Especial', key: '', header: true },
-                        { label: 'Total Ed. Especial', key: 'qt_mat_esp' },
-                        { label: 'Classes Comuns (inclusão)', key: 'qt_mat_esp_cc' },
-                        { label: 'Classes Exclusivas', key: 'qt_mat_esp_ce' },
-                        { label: 'Tempo Integral', key: '', header: true },
-                        { label: 'Infantil Integral', key: 'qt_mat_inf_int' },
-                        { label: 'Fund. AI Integral', key: 'qt_mat_fund_ai_int' },
-                        { label: 'Fund. AF Integral', key: 'qt_mat_fund_af_int' },
-                        { label: 'Médio Integral', key: 'qt_mat_med_int' },
-                        { label: 'Zona de Residência', key: '', header: true },
-                        { label: 'Zona Urbana', key: 'qt_mat_zr_urb' },
-                        { label: 'Zona Rural', key: 'qt_mat_zr_rur' },
-                        { label: 'Não Aplicável', key: 'qt_mat_zr_na' },
-                      ];
-                      return (
-                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                              <thead>
-                                <tr style={{ background: '#f7f2ea', position: 'sticky', top: 0 }}>
-                                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 160 }}>Indicador</th>
-                                  {anos.map((a: number) => <th key={a} style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 60 }}>{a}</th>)}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {rows.map((row, idx) => {
-                                  if (row.header) return (
-                                    <tr key={idx}><td colSpan={anos.length + 1} style={{ padding: '7px 14px', background: '#ede8df', fontWeight: 700, fontSize: 11, color: '#7a5c3a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{row.label}</td></tr>
-                                  );
-                                  const vals = anos.map((a: number) => c[a]?.[row.key] ?? null);
-                                  if (vals.every((v: any) => v == null || v === 0)) return null;
-                                  return (
-                                    <tr key={idx} style={{ borderTop: '1px solid #f0e8d8', background: idx % 2 === 0 ? '#fff' : '#fdf8f2' }}>
-                                      <td style={{ padding: '8px 14px', color: '#5d4037', fontWeight: 500 }}>{row.label}</td>
-                                      {vals.map((v: any, vi: number) => {
-                                        const prev = vi > 0 ? vals[vi - 1] : null;
-                                        const delta = v != null && prev != null ? v - prev : null;
-                                        return (
-                                          <td key={vi} style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, color: '#2c3e50', verticalAlign: 'top' }}>
-                                            {v != null ? v.toLocaleString('pt-BR') : <span style={{ color: '#ccc' }}>—</span>}
-                                            {delta != null && delta !== 0 && <div style={{ fontSize: 9, lineHeight: 1.2, color: delta > 0 ? '#2f7a58' : '#b74f42', fontWeight: 700 }}>{delta > 0 ? '▲' : '▼'}{Math.abs(delta).toLocaleString('pt-BR')}</div>}
-                                          </td>
-                                        );
-                                      })}
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                    {(['etapas', 'docentes', 'infra', 'transp', 'gestao'] as const).includes(activeSchoolTab as any) && (() => {
-                      const anos = evolucaoData.anos_disponiveis.slice().sort((a: number, b: number) => a - b);
-                      const c = evolucaoData.censo_por_ano;
-                      type NRow = { label: string; key: string; header?: boolean };
-                      type BRow = { label: string; key: string; header?: boolean };
+                      type Row = { label: string; key: string; header?: boolean };
 
-                      const NumTable = ({ rows }: { rows: NRow[] }) => (
+                      const NumTable = ({ rows }: { rows: Row[] }) => (
                         <div style={{ overflowX: 'auto', borderBottom: '1px solid #f0e8d8' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                             <thead>
                               <tr style={{ background: '#f7f2ea' }}>
-                                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 170 }}>Indicador</th>
-                                {anos.map((a: number) => <th key={a} style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 60 }}>{a}</th>)}
+                                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 200 }}>Indicador</th>
+                                {anos.map((a: number) => <th key={a} style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 62 }}>{a}</th>)}
                               </tr>
                             </thead>
                             <tbody>
@@ -2222,14 +2134,14 @@ export default function Dashboard() {
                         </div>
                       );
 
-                      const BinTable = ({ rows, title }: { rows: BRow[]; title?: string }) => (
+                      const BinTable = ({ rows, title }: { rows: Row[]; title?: string }) => (
                         <div style={{ overflowX: 'auto' }}>
-                          {title && <div style={{ padding: '10px 14px 6px', fontWeight: 700, fontSize: 12, color: '#5d4037' }}>{title}</div>}
+                          {title && <div style={{ padding: '10px 14px 4px', fontWeight: 700, fontSize: 12, color: '#5d4037' }}>{title}</div>}
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                             <thead>
                               <tr style={{ background: '#f7f2ea' }}>
-                                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 170 }}>Recurso</th>
-                                {anos.map((a: number) => <th key={a} style={{ padding: '10px 10px', textAlign: 'center', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 60 }}>{a}</th>)}
+                                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 200 }}>Indicador</th>
+                                {anos.map((a: number) => <th key={a} style={{ padding: '10px 10px', textAlign: 'center', fontWeight: 700, color: '#5d4037', fontSize: 12, minWidth: 62 }}>{a}</th>)}
                               </tr>
                             </thead>
                             <tbody>
@@ -2262,273 +2174,72 @@ export default function Dashboard() {
                         </div>
                       );
 
-                      if (activeSchoolTab === 'etapas') return (
+                      // ── 1. PORTE & OFERTA EDUCACIONAL ──
+                      if (activeSchoolTab === 'porte') return (
                         <div className="tab-panel-v6 active" style={{ padding: 0 }}>
                           <NumTable rows={[
-                            { label: 'Educação Infantil', key: '', header: true },
-                            { label: 'Creche', key: 'qt_mat_inf_cre' },
-                            { label: 'Pré-escola', key: 'qt_mat_inf_pre' },
-                            { label: 'Infantil Integral', key: 'qt_mat_inf_int' },
-                            { label: 'Ensino Fundamental', key: '', header: true },
-                            { label: 'Anos Iniciais (total)', key: 'qt_mat_fund_ai' },
-                            { label: '1º ano', key: 'qt_mat_fund_ai_1' },
-                            { label: '2º ano', key: 'qt_mat_fund_ai_2' },
-                            { label: '3º ano', key: 'qt_mat_fund_ai_3' },
-                            { label: '4º ano', key: 'qt_mat_fund_ai_4' },
-                            { label: '5º ano', key: 'qt_mat_fund_ai_5' },
-                            { label: 'Anos Finais (total)', key: 'qt_mat_fund_af' },
-                            { label: '6º ano', key: 'qt_mat_fund_af_6' },
-                            { label: '7º ano', key: 'qt_mat_fund_af_7' },
-                            { label: '8º ano', key: 'qt_mat_fund_af_8' },
-                            { label: '9º ano', key: 'qt_mat_fund_af_9' },
-                            { label: 'Ensino Médio, EJA e Profissional', key: '', header: true },
-                            { label: 'Ensino Médio (total)', key: 'qt_mat_med' },
-                            { label: '1ª série', key: 'qt_mat_med_prop_1' },
-                            { label: '2ª série', key: 'qt_mat_med_prop_2' },
-                            { label: '3ª série', key: 'qt_mat_med_prop_3' },
-                            { label: 'Médio Integral', key: 'qt_mat_med_int' },
+                            { label: 'Matrículas totais', key: '', header: true },
+                            { label: 'Total Ed. Básica', key: 'qt_mat_bas' },
+                            { label: 'Ed. Infantil', key: 'qt_mat_inf' },
+                            { label: '— Creche', key: 'qt_mat_inf_cre' },
+                            { label: '— Pré-escola', key: 'qt_mat_inf_pre' },
+                            { label: 'Ens. Fundamental', key: 'qt_mat_fund' },
+                            { label: '— Anos Iniciais (1º–5º)', key: 'qt_mat_fund_ai' },
+                            { label: '    1º ano', key: 'qt_mat_fund_ai_1' },
+                            { label: '    2º ano', key: 'qt_mat_fund_ai_2' },
+                            { label: '    3º ano', key: 'qt_mat_fund_ai_3' },
+                            { label: '    4º ano', key: 'qt_mat_fund_ai_4' },
+                            { label: '    5º ano', key: 'qt_mat_fund_ai_5' },
+                            { label: '— Anos Finais (6º–9º)', key: 'qt_mat_fund_af' },
+                            { label: '    6º ano', key: 'qt_mat_fund_af_6' },
+                            { label: '    7º ano', key: 'qt_mat_fund_af_7' },
+                            { label: '    8º ano', key: 'qt_mat_fund_af_8' },
+                            { label: '    9º ano', key: 'qt_mat_fund_af_9' },
+                            { label: 'Ensino Médio', key: 'qt_mat_med' },
+                            { label: '— 1ª série', key: 'qt_mat_med_prop_1' },
+                            { label: '— 2ª série', key: 'qt_mat_med_prop_2' },
+                            { label: '— 3ª série', key: 'qt_mat_med_prop_3' },
+                            { label: '— Médio integrado', key: 'qt_mat_med_int' },
+                            { label: 'EJA', key: 'qt_mat_eja' },
+                            { label: '— EJA Fundamental', key: 'qt_mat_eja_fund' },
+                            { label: '— EJA Médio', key: 'qt_mat_eja_med' },
                             { label: 'Ed. Profissional', key: 'qt_mat_prof' },
-                            { label: 'EJA Fundamental', key: 'qt_mat_eja_fund' },
-                            { label: 'EJA Médio', key: 'qt_mat_eja_med' },
-                          ]} />
-                          <BinTable title="Etapas oferecidas" rows={[
-                            { label: 'Ed. Infantil', key: 'in_inf' },
-                            { label: 'Creche', key: 'in_inf_cre' },
-                            { label: 'Pré-escola', key: 'in_inf_pre' },
-                            { label: 'Ens. Fundamental', key: 'in_fund' },
-                            { label: 'Fund. Anos Iniciais', key: 'in_fund_ai' },
-                            { label: 'Fund. Anos Finais', key: 'in_fund_af' },
-                            { label: 'Ensino Médio', key: 'in_med' },
-                            { label: 'Ed. Profissional', key: 'in_prof' },
-                            { label: 'EJA', key: 'in_eja' },
-                            { label: 'Ed. Especial', key: 'in_esp' },
-                          ]} />
-                        </div>
-                      );
-
-                      if (activeSchoolTab === 'docentes') return (
-                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <NumTable rows={[
-                            { label: 'Docentes por etapa', key: '', header: true },
-                            { label: 'Total Docentes Ed. Básica', key: 'qt_doc_bas' },
-                            { label: 'Ed. Infantil (total)', key: 'qt_doc_inf' },
-                            { label: 'Infantil — Creche', key: 'qt_doc_inf_cre' },
-                            { label: 'Infantil — Pré-escola', key: 'qt_doc_inf_pre' },
-                            { label: 'Ens. Fundamental (total)', key: 'qt_doc_fund' },
-                            { label: 'Fund. — Anos Iniciais', key: 'qt_doc_fund_ai' },
-                            { label: 'Fund. — Anos Finais', key: 'qt_doc_fund_af' },
-                            { label: 'Ensino Médio', key: 'qt_doc_med' },
-                            { label: 'Ed. Profissional', key: 'qt_doc_prof' },
-                            { label: 'Ed. Prof. Técnica', key: 'qt_doc_prof_tec' },
-                            { label: 'EJA (total)', key: 'qt_doc_eja' },
-                            { label: 'EJA — Fundamental', key: 'qt_doc_eja_fund' },
-                            { label: 'EJA — Médio', key: 'qt_doc_eja_med' },
-                            { label: 'Ed. Especial (total)', key: 'qt_doc_esp' },
-                            { label: 'Ed. Especial — Cl. Comuns', key: 'qt_doc_esp_cc' },
-                            { label: 'Ed. Especial — Cl. Exclusivas', key: 'qt_doc_esp_ce' },
-                            { label: 'Gestores', key: '', header: true },
+                            { label: '— Ed. Prof. Técnica', key: 'qt_mat_prof_tec' },
+                            { label: 'Ed. Especial', key: 'qt_mat_esp' },
+                            { label: '— Classes comuns (inclusão)', key: 'qt_mat_esp_cc' },
+                            { label: '— Classes exclusivas', key: 'qt_mat_esp_ce' },
+                            { label: 'Docentes', key: '', header: true },
+                            { label: 'Total docentes', key: 'qt_doc_bas' },
+                            { label: '— Ed. Infantil', key: 'qt_doc_inf' },
+                            { label: '    Creche', key: 'qt_doc_inf_cre' },
+                            { label: '    Pré-escola', key: 'qt_doc_inf_pre' },
+                            { label: '— Fundamental', key: 'qt_doc_fund' },
+                            { label: '    Anos Iniciais', key: 'qt_doc_fund_ai' },
+                            { label: '    Anos Finais', key: 'qt_doc_fund_af' },
+                            { label: '— Ensino Médio', key: 'qt_doc_med' },
+                            { label: '— EJA', key: 'qt_doc_eja' },
+                            { label: '    EJA Fundamental', key: 'qt_doc_eja_fund' },
+                            { label: '    EJA Médio', key: 'qt_doc_eja_med' },
+                            { label: '— Ed. Profissional', key: 'qt_doc_prof' },
+                            { label: '— Ed. Especial', key: 'qt_doc_esp' },
                             { label: 'Gestores Ed. Básica', key: 'qt_gest_bas' },
-                            { label: 'Turmas por etapa', key: '', header: true },
-                            { label: 'Total Turmas Ed. Básica', key: 'qt_tur_bas' },
-                            { label: 'Ed. Infantil (total)', key: 'qt_tur_inf' },
-                            { label: 'Infantil — Creche', key: 'qt_tur_inf_cre' },
-                            { label: 'Infantil — Pré-escola', key: 'qt_tur_inf_pre' },
-                            { label: 'Ens. Fundamental (total)', key: 'qt_tur_fund' },
-                            { label: 'Fund. — Anos Iniciais', key: 'qt_tur_fund_ai' },
-                            { label: 'Fund. — Anos Finais', key: 'qt_tur_fund_af' },
-                            { label: 'Ensino Médio', key: 'qt_tur_med' },
-                            { label: 'Ed. Profissional', key: 'qt_tur_prof' },
-                            { label: 'Ed. Prof. Técnica', key: 'qt_tur_prof_tec' },
-                            { label: 'EJA (total)', key: 'qt_tur_eja' },
-                            { label: 'EJA — Fundamental', key: 'qt_tur_eja_fund' },
-                            { label: 'EJA — Médio', key: 'qt_tur_eja_med' },
-                            { label: 'Ed. Especial (total)', key: 'qt_tur_esp' },
-                            { label: 'Ed. Especial — Cl. Comuns', key: 'qt_tur_esp_cc' },
-                            { label: 'Ed. Especial — Cl. Exclusivas', key: 'qt_tur_esp_ce' },
-                            { label: 'Turmas por turno', key: '', header: true },
-                            { label: 'Diurnas', key: 'qt_tur_bas_d' },
-                            { label: 'Noturnas', key: 'qt_tur_bas_n' },
-                            { label: 'EAD', key: 'qt_tur_bas_ead' },
-                            { label: 'Turmas Integrais', key: '', header: true },
-                            { label: 'Infantil Integral', key: 'qt_tur_inf_int' },
-                            { label: 'Infantil Creche Integral', key: 'qt_tur_inf_cre_int' },
-                            { label: 'Infantil Pré-escola Integral', key: 'qt_tur_inf_pre_int' },
-                            { label: 'Fundamental Integral', key: 'qt_tur_fund_int' },
-                            { label: 'Fund. AI Integral', key: 'qt_tur_fund_ai_int' },
-                            { label: 'Fund. AF Integral', key: 'qt_tur_fund_af_int' },
-                            { label: 'Médio Integral', key: 'qt_tur_med_int' },
-                            { label: 'Profissionais não docentes', key: '', header: true },
-                            { label: 'Administrativos', key: 'qt_prof_administrativos' },
-                            { label: 'Serviços Gerais', key: 'qt_prof_servicos_gerais' },
-                            { label: 'Coordenadores', key: 'qt_prof_coordenador' },
-                            { label: 'Secretários', key: 'qt_prof_secretario' },
-                            { label: 'Segurança', key: 'qt_prof_seguranca' },
-                            { label: 'Monitores', key: 'qt_prof_monitores' },
-                            { label: 'Bibliotecários', key: 'qt_prof_bibliotecario' },
-                            { label: 'Psicólogos', key: 'qt_prof_psicologo' },
-                            { label: 'Assistentes Sociais', key: 'qt_prof_assist_social' },
-                            { label: 'Nutricionistas', key: 'qt_prof_nutricionista' },
-                          ]} />
-                          <BinTable title="Materiais pedagógicos" rows={[
-                            { label: 'Multimídia', key: 'in_material_ped_multimidia' },
-                            { label: 'Infantil', key: 'in_material_ped_infantil' },
-                            { label: 'Científico', key: 'in_material_ped_cientifico' },
-                            { label: 'Musical', key: 'in_material_ped_musical' },
-                            { label: 'Jogos', key: 'in_material_ped_jogos' },
-                            { label: 'Artístico', key: 'in_material_ped_artisticas' },
-                            { label: 'Desportivo', key: 'in_material_ped_desportiva' },
-                            { label: 'Ed. Especial', key: 'in_material_ped_edu_esp' },
-                          ]} />
-                        </div>
-                      );
-
-                      if (activeSchoolTab === 'infra') return (
-                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <NumTable rows={[
-                            { label: 'Salas de Aula', key: '', header: true },
-                            { label: 'Salas utilizadas', key: 'qt_salas_utilizadas' },
-                            { label: 'Climatizadas', key: 'qt_salas_utiliza_climatizadas' },
-                            { label: 'Acessíveis', key: 'qt_salas_utilizadas_acessiveis' },
-                            { label: 'Equipamentos de TIC', key: '', header: true },
-                            { label: 'Desktops (alunos)', key: 'qt_desktop_aluno' },
-                            { label: 'Notebooks (alunos)', key: 'qt_comp_portatil_aluno' },
-                            { label: 'Tablets (alunos)', key: 'qt_tablet_aluno' },
-                            { label: 'Desktops (adm.)', key: 'qt_desktop_adm' },
-                            { label: 'Notebooks (adm.)', key: 'qt_comp_portatil_adm' },
-                            { label: 'TVs', key: 'qt_equip_tv' },
-                            { label: 'Projetores/Multimídia', key: 'qt_equip_multimidia' },
-                            { label: 'Lousas digitais', key: 'qt_equip_lousa_digital' },
-                            { label: 'Impressoras', key: 'qt_equip_impressora' },
-                            { label: 'Impressoras multifuncionais', key: 'qt_equip_impressora_mult' },
-                            { label: 'Copiadora', key: 'qt_equip_copiadora' },
-                            { label: 'Aparelhos de som', key: 'qt_equip_som' },
-                          ]} />
-                          <BinTable rows={[
-                            { label: 'Conectividade', key: '', header: true },
-                            { label: 'Internet (qualquer)', key: 'in_internet' },
-                            { label: 'Internet p/ uso administrativo', key: 'in_internet_administrativo' },
-                            { label: 'Internet p/ uso dos alunos', key: 'in_internet_alunos' },
-                            { label: 'Banda Larga', key: 'in_banda_larga' },
-                            { label: 'Dependências e Espaços', key: '', header: true },
-                            { label: 'Biblioteca', key: 'in_biblioteca' },
-                            { label: 'Sala de Leitura', key: 'in_biblioteca_sala_leitura' },
-                            { label: 'Lab. Informática', key: 'in_laboratorio_informatica' },
-                            { label: 'Lab. Ciências', key: 'in_laboratorio_ciencias' },
-                            { label: 'Lab. Ed. Profissional', key: 'in_laboratorio_educ_prof' },
-                            { label: 'Quadra Esportes (geral)', key: 'in_quadra_esportes' },
-                            { label: 'Quadra Coberta', key: 'in_quadra_esportes_coberta' },
-                            { label: 'Quadra Descoberta', key: 'in_quadra_esportes_descoberta' },
-                            { label: 'Piscina', key: 'in_piscina' },
-                            { label: 'Parque Infantil', key: 'in_parque_infantil' },
-                            { label: 'Pátio Coberto', key: 'in_patio_coberto' },
-                            { label: 'Pátio Descoberto', key: 'in_patio_descoberto' },
-                            { label: 'Auditório', key: 'in_auditorio' },
-                            { label: 'Área Verde', key: 'in_area_verde' },
-                            { label: 'Área para Plantio', key: 'in_area_plantio' },
-                            { label: 'Terreirão/Pátio de Terra', key: 'in_terreirao' },
-                            { label: 'Viveiro', key: 'in_viveiro' },
-                            { label: 'Cozinha', key: 'in_cozinha' },
-                            { label: 'Despensa', key: 'in_despensa' },
-                            { label: 'Refeitório', key: 'in_refeitorio' },
-                            { label: 'Almoxarifado', key: 'in_almoxarifado' },
-                            { label: 'Sala Diretoria', key: 'in_sala_diretoria' },
-                            { label: 'Sala dos Professores', key: 'in_sala_professor' },
-                            { label: 'Secretaria', key: 'in_secretaria' },
-                            { label: 'Sala de Atendimento Especial', key: 'in_sala_atendimento_especial' },
-                            { label: 'Sala Multiuso', key: 'in_sala_multiuso' },
-                            { label: 'Ateliê de Artes', key: 'in_sala_atelie_artes' },
-                            { label: 'Sala de Música/Coral', key: 'in_sala_musica_coral' },
-                            { label: 'Estúdio de Dança', key: 'in_sala_estudio_danca' },
-                            { label: 'Estúdio de Gravação', key: 'in_sala_estudio_gravacao' },
-                            { label: 'Oficinas Ed. Profissional', key: 'in_sala_oficinas_educ_prof' },
-                            { label: 'Dormitório de Alunos', key: 'in_dormitorio_aluno' },
-                            { label: 'Dormitório de Professores', key: 'in_dormitorio_professor' },
-                            { label: 'Repouso de Alunos', key: 'in_sala_repouso_aluno' },
-                            { label: 'Dependências Outras', key: 'in_dependencias_outras' },
-                            { label: 'Alimentação Escolar', key: 'in_alimentacao' },
-                            { label: 'Banheiro (geral)', key: 'in_banheiro' },
-                            { label: 'Banheiro Ed. Infantil', key: 'in_banheiro_ei' },
-                            { label: 'Banheiro para Funcionários', key: 'in_banheiro_funcionarios' },
-                            { label: 'Banheiro c/ Chuveiro', key: 'in_banheiro_chuveiro' },
-                            { label: 'Banheiro PNE', key: 'in_banheiro_pne' },
-                            { label: 'Água, Energia e Saneamento', key: '', header: true },
-                            { label: 'Água Potável (qualquer fonte)', key: 'in_agua_potavel' },
-                            { label: 'Água — Rede Pública', key: 'in_agua_rede_publica' },
-                            { label: 'Água — Poço Artesiano', key: 'in_agua_poco_artesiano' },
-                            { label: 'Água — Cisterna/Cacimba', key: 'in_agua_cacimba' },
-                            { label: 'Água — Rio/Fonte/Igarapé', key: 'in_agua_fonte_rio' },
-                            { label: 'Água — Carro Pipa', key: 'in_agua_carro_pipa' },
-                            { label: 'Água — Inexistente', key: 'in_agua_inexistente' },
-                            { label: 'Energia — Rede Pública', key: 'in_energia_rede_publica' },
-                            { label: 'Energia — Gerador a Diesel', key: 'in_energia_gerador_fossil' },
-                            { label: 'Energia — Renovável (solar etc)', key: 'in_energia_renovavel' },
-                            { label: 'Energia — Inexistente', key: 'in_energia_inexistente' },
-                            { label: 'Esgoto — Rede Pública', key: 'in_esgoto_rede_publica' },
-                            { label: 'Esgoto — Fossa Séptica', key: 'in_esgoto_fossa_septica' },
-                            { label: 'Esgoto — Fossa Comum', key: 'in_esgoto_fossa_comum' },
-                            { label: 'Esgoto — Fossa (qualquer)', key: 'in_esgoto_fossa' },
-                            { label: 'Esgoto — Inexistente', key: 'in_esgoto_inexistente' },
-                            { label: 'Lixo — Coleta Pública', key: 'in_lixo_servico_coleta' },
-                            { label: 'Lixo — Queima', key: 'in_lixo_queima' },
-                            { label: 'Lixo — Enterra', key: 'in_lixo_enterra' },
-                            { label: 'Lixo — Descarta Área Pública', key: 'in_lixo_destino_final_publico' },
-                            { label: 'Lixo — Descarta Outra Área', key: 'in_lixo_descarta_outra_area' },
-                            { label: 'Tratamento — Separação', key: 'in_tratamento_lixo_separacao' },
-                            { label: 'Tratamento — Reutilização', key: 'in_tratamento_lixo_reutiliza' },
-                            { label: 'Tratamento — Reciclagem', key: 'in_tratamento_lixo_reciclagem' },
-                            { label: 'Tratamento — Inexistente', key: 'in_tratamento_lixo_inexistente' },
-                            { label: 'Acessibilidade', key: '', header: true },
-                            { label: 'Corrimão', key: 'in_acessibilidade_corrimao' },
-                            { label: 'Elevador', key: 'in_acessibilidade_elevador' },
-                            { label: 'Pisos Táteis', key: 'in_acessibilidade_pisos_tateis' },
-                            { label: 'Rampas', key: 'in_acessibilidade_rampas' },
-                            { label: 'Sinal Sonoro', key: 'in_acessibilidade_sinal_sonoro' },
-                            { label: 'Sinal Visual', key: 'in_acessibilidade_sinal_visual' },
-                            { label: 'Telas/Leitores para Cegos', key: 'in_acessibilidade_telas_leitoras' },
-                            { label: 'Prédio Compartilhado', key: 'in_predio_compartilhado' },
-                          ]} />
-                        </div>
-                      );
-
-                      if (activeSchoolTab === 'transp') return (
-                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <NumTable rows={[
-                            { label: 'Alunos transportados', key: '', header: true },
-                            { label: 'Transp. Público (total)', key: 'qt_transp_publico' },
-                            { label: 'Custeado pelo Estado', key: 'qt_transp_resp_est' },
-                            { label: 'Custeado pelo Município', key: 'qt_transp_resp_mun' },
-                          ]} />
-                          <BinTable title="Tipo de veículo utilizado" rows={[
-                            { label: 'Van / Veículo Leve', key: 'in_equip_transpor_vans_micro' },
-                            { label: 'Micro-ônibus', key: 'in_equip_transpor_micro_onibus' },
-                            { label: 'Ônibus', key: 'in_equip_transpor_onibus' },
-                            { label: 'Bicicleta', key: 'in_equip_transpor_bicicleta' },
-                            { label: 'Tração Animal', key: 'in_equip_transpor_tracao_animal' },
-                            { label: 'Rodoviário (outros)', key: 'in_equip_transpor_rodoviario' },
-                            { label: 'Aquaviário (barco/canoa)', key: 'in_equip_transpor_aquaviario' },
-                            { label: 'Ferroviário (trem)', key: 'in_equip_transpor_ferroviario' },
-                          ]} />
-                        </div>
-                      );
-
-                      if (activeSchoolTab === 'gestao') return (
-                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <BinTable title="Vínculos institucionais" rows={[
-                            { label: 'Vínculo — Secretaria de Educação', key: 'in_vinculo_secretaria_educacao' },
-                            { label: 'Vínculo — Segurança Pública', key: 'in_vinculo_seguranca_publica' },
-                            { label: 'Vínculo — Secretaria de Saúde', key: 'in_vinculo_secretaria_saude' },
-                            { label: 'Vínculo — Outro Órgão', key: 'in_vinculo_outro_orgao' },
-                            { label: 'Parceria Poder Público', key: 'in_poder_publico_parceria' },
-                          ]} />
-                          <BinTable title="Localização" rows={[
-                            { label: 'Prédio Escolar Próprio', key: 'in_local_func_predio_escolar' },
-                            { label: 'Local Socioeducativo', key: 'in_local_func_socioeducativo' },
-                            { label: 'Unidade Prisional', key: 'in_local_func_unid_prisional' },
-                            { label: 'Prisional + Socioeducativo', key: 'in_local_func_prisional_socio' },
-                            { label: 'Galpão / Rancho', key: 'in_local_func_galpao' },
-                            { label: 'Salas em Outra Escola', key: 'in_local_func_salas_outra_esc' },
-                            { label: 'Outros locais', key: 'in_local_func_outros' },
-                            { label: 'Prédio Compartilhado', key: 'in_predio_compartilhado' },
+                            { label: 'Turmas', key: '', header: true },
+                            { label: 'Total turmas', key: 'qt_tur_bas' },
+                            { label: '— Ed. Infantil', key: 'qt_tur_inf' },
+                            { label: '    Creche', key: 'qt_tur_inf_cre' },
+                            { label: '    Pré-escola', key: 'qt_tur_inf_pre' },
+                            { label: '— Fundamental', key: 'qt_tur_fund' },
+                            { label: '    Anos Iniciais', key: 'qt_tur_fund_ai' },
+                            { label: '    Anos Finais', key: 'qt_tur_fund_af' },
+                            { label: '— Ensino Médio', key: 'qt_tur_med' },
+                            { label: '— EJA', key: 'qt_tur_eja' },
+                            { label: '    EJA Fundamental', key: 'qt_tur_eja_fund' },
+                            { label: '    EJA Médio', key: 'qt_tur_eja_med' },
+                            { label: '— Ed. Profissional', key: 'qt_tur_prof' },
+                            { label: '— Ed. Especial', key: 'qt_tur_esp' },
+                            { label: 'Turmas diurnas', key: 'qt_tur_bas_d' },
+                            { label: 'Turmas noturnas', key: 'qt_tur_bas_n' },
+                            { label: 'Turmas EAD', key: 'qt_tur_bas_ead' },
                           ]} />
                           <BinTable title="Etapas e modalidades oferecidas" rows={[
                             { label: 'Ed. Infantil', key: 'in_inf' },
@@ -2542,12 +2253,315 @@ export default function Dashboard() {
                             { label: 'EJA', key: 'in_eja' },
                             { label: 'Ed. Especial', key: 'in_esp' },
                             { label: 'Tempo Integral', key: 'in_tempo_integral' },
+                            { label: 'Ed. Indígena', key: 'in_educacao_indigena' },
+                            { label: 'Ed. Quilombola', key: 'in_educacao_quilombola' },
+                            { label: 'Ed. do Campo', key: 'in_educacao_campo' },
+                            { label: 'Ed. Ambiental', key: 'in_educacao_ambiental' },
+                          ]} />
+                        </div>
+                      );
+
+                      // ── 2. INFRAESTRUTURA ESCOLAR ──
+                      if (activeSchoolTab === 'infra') return (
+                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
+                          <NumTable rows={[
+                            { label: 'Salas de Aula', key: '', header: true },
+                            { label: 'Salas utilizadas (total)', key: 'qt_salas_utilizadas' },
+                            { label: 'Salas climatizadas', key: 'qt_salas_utiliza_climatizadas' },
+                            { label: 'Salas acessíveis (PNE)', key: 'qt_salas_utilizadas_acessiveis' },
+                          ]} />
+                          <BinTable title="Infraestrutura básica" rows={[
+                            { label: 'Água potável', key: 'in_agua_potavel' },
+                            { label: 'Energia elétrica (rede pública)', key: 'in_energia_rede_publica' },
+                            { label: 'Esgoto (rede pública)', key: 'in_esgoto_rede_publica' },
+                            { label: 'Fossa séptica', key: 'in_esgoto_fossa_septica' },
+                            { label: 'Fossa comum', key: 'in_esgoto_fossa_comum' },
+                            { label: 'Coleta de lixo', key: 'in_lixo_servico_coleta' },
+                            { label: 'Banheiro', key: 'in_banheiro' },
+                            { label: 'Banheiro fora do prédio', key: 'in_local_func_outros' },
+                            { label: 'Banheiro com chuveiro', key: 'in_banheiro_chuveiro' },
+                            { label: 'Banheiro para funcionários', key: 'in_banheiro_funcionarios' },
+                            { label: 'Cozinha', key: 'in_cozinha' },
+                            { label: 'Refeitório', key: 'in_refeitorio' },
+                            { label: 'Despensa', key: 'in_despensa' },
+                            { label: 'Almoxarifado', key: 'in_almoxarifado' },
+                            { label: 'Pátio coberto', key: 'in_patio_coberto' },
+                            { label: 'Pátio descoberto', key: 'in_patio_descoberto' },
+                            { label: 'Quadra de esportes', key: 'in_quadra_esportes' },
+                            { label: 'Quadra coberta', key: 'in_quadra_esportes_coberta' },
+                            { label: 'Quadra descoberta', key: 'in_quadra_esportes_descoberta' },
+                            { label: 'Área verde', key: 'in_area_verde' },
+                            { label: 'Área para plantio', key: 'in_area_plantio' },
+                            { label: 'Parque infantil', key: 'in_parque_infantil' },
+                            { label: 'Auditório', key: 'in_auditorio' },
+                            { label: 'Dormitório de alunos', key: 'in_dormitorio_aluno' },
+                            { label: 'Dormitório de professores', key: 'in_dormitorio_professor' },
+                            { label: 'Piscina', key: 'in_piscina' },
+                            { label: 'Terreião', key: 'in_terreirao' },
+                            { label: 'Viveiro', key: 'in_viveiro' },
+                          ]} />
+                          <BinTable title="Infraestrutura pedagógica" rows={[
+                            { label: 'Biblioteca', key: 'in_biblioteca' },
+                            { label: 'Sala de leitura', key: 'in_biblioteca_sala_leitura' },
+                            { label: 'Lab. de informática', key: 'in_laboratorio_informatica' },
+                            { label: 'Lab. de ciências', key: 'in_laboratorio_ciencias' },
+                            { label: 'Lab. Ed. Profissional', key: 'in_laboratorio_educ_prof' },
+                            { label: 'Sala dos professores', key: 'in_sala_professor' },
+                            { label: 'Sala de diretoria', key: 'in_sala_diretoria' },
+                            { label: 'Secretaria', key: 'in_secretaria' },
+                            { label: 'Sala de atendimento especial (AEE)', key: 'in_sala_atendimento_especial' },
+                            { label: 'Sala multiuso', key: 'in_sala_multiuso' },
+                            { label: 'Ateliê de artes', key: 'in_sala_atelie_artes' },
+                            { label: 'Sala de música/coral', key: 'in_sala_musica_coral' },
+                            { label: 'Estúdio de dança', key: 'in_sala_estudio_danca' },
+                            { label: 'Estúdio de gravação', key: 'in_sala_estudio_gravacao' },
+                            { label: 'Oficinas Ed. Profissional', key: 'in_sala_oficinas_educ_prof' },
+                            { label: 'Sala de repouso de alunos', key: 'in_sala_repouso_aluno' },
+                          ]} />
+                          <BinTable title="Água, Energia e Saneamento" rows={[
+                            { label: 'Água — Rede pública', key: 'in_agua_rede_publica' },
+                            { label: 'Água — Poço artesiano', key: 'in_agua_poco_artesiano' },
+                            { label: 'Água — Cacimba/cisterna', key: 'in_agua_cacimba' },
+                            { label: 'Água — Rio/fonte/igarapé', key: 'in_agua_fonte_rio' },
+                            { label: 'Água — Carro pipa', key: 'in_agua_carro_pipa' },
+                            { label: 'Água — Inexistente', key: 'in_agua_inexistente' },
+                            { label: 'Energia — Rede pública', key: 'in_energia_rede_publica' },
+                            { label: 'Energia — Gerador a diesel', key: 'in_energia_gerador_fossil' },
+                            { label: 'Energia — Renovável (solar etc.)', key: 'in_energia_renovavel' },
+                            { label: 'Energia — Inexistente', key: 'in_energia_inexistente' },
+                            { label: 'Esgoto — Rede pública', key: 'in_esgoto_rede_publica' },
+                            { label: 'Esgoto — Fossa séptica', key: 'in_esgoto_fossa_septica' },
+                            { label: 'Esgoto — Fossa comum', key: 'in_esgoto_fossa_comum' },
+                            { label: 'Esgoto — Inexistente', key: 'in_esgoto_inexistente' },
+                            { label: 'Lixo — Coleta pública', key: 'in_lixo_servico_coleta' },
+                            { label: 'Lixo — Queima', key: 'in_lixo_queima' },
+                            { label: 'Lixo — Enterra', key: 'in_lixo_enterra' },
+                            { label: 'Lixo — Descarta em área pública', key: 'in_lixo_destino_final_publico' },
+                            { label: 'Lixo — Descarta em outra área', key: 'in_lixo_descarta_outra_area' },
+                            { label: 'Tratamento — Separação', key: 'in_tratamento_lixo_separacao' },
+                            { label: 'Tratamento — Reutilização', key: 'in_tratamento_lixo_reutiliza' },
+                            { label: 'Tratamento — Reciclagem', key: 'in_tratamento_lixo_reciclagem' },
+                            { label: 'Tratamento — Inexistente', key: 'in_tratamento_lixo_inexistente' },
+                          ]} />
+                        </div>
+                      );
+
+                      // ── 3. TECNOLOGIA E CONECTIVIDADE ──
+                      if (activeSchoolTab === 'tecnologia') return (
+                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
+                          <NumTable rows={[
+                            { label: 'Computadores para alunos', key: '', header: true },
+                            { label: 'Desktops (alunos)', key: 'qt_desktop_aluno' },
+                            { label: 'Notebooks (alunos)', key: 'qt_comp_portatil_aluno' },
+                            { label: 'Tablets (alunos)', key: 'qt_tablet_aluno' },
+                            { label: 'Computadores administrativos', key: '', header: true },
+                            { label: 'Desktops (adm.)', key: 'qt_desktop_adm' },
+                            { label: 'Notebooks (adm.)', key: 'qt_comp_portatil_adm' },
+                            { label: 'Equipamentos multimídia', key: '', header: true },
+                            { label: 'TVs', key: 'qt_equip_tv' },
+                            { label: 'Projetor/Multimídia', key: 'qt_equip_multimidia' },
+                            { label: 'Lousa digital', key: 'qt_equip_lousa_digital' },
+                            { label: 'Impressoras', key: 'qt_equip_impressora' },
+                            { label: 'Impressoras multifuncionais', key: 'qt_equip_impressora_mult' },
+                            { label: 'Copiadoras', key: 'qt_equip_copiadora' },
+                            { label: 'Aparelhos de som', key: 'qt_equip_som' },
+                          ]} />
+                          <BinTable title="Conectividade" rows={[
+                            { label: 'Internet (qualquer)', key: 'in_internet' },
+                            { label: 'Internet para uso administrativo', key: 'in_internet_administrativo' },
+                            { label: 'Internet para uso dos alunos', key: 'in_internet_alunos' },
+                            { label: 'Banda larga', key: 'in_banda_larga' },
+                            { label: 'Rede local (intranet)', key: 'in_rede_local' },
+                            { label: 'Wi-Fi', key: 'in_wifi' },
+                          ]} />
+                          <BinTable title="Materiais pedagógicos" rows={[
+                            { label: 'Material multimídia', key: 'in_material_ped_multimidia' },
+                            { label: 'Material Ed. Infantil', key: 'in_material_ped_infantil' },
+                            { label: 'Material científico', key: 'in_material_ped_cientifico' },
+                            { label: 'Material musical', key: 'in_material_ped_musical' },
+                            { label: 'Jogos educativos', key: 'in_material_ped_jogos' },
+                            { label: 'Material artístico', key: 'in_material_ped_artisticas' },
+                            { label: 'Material esportivo', key: 'in_material_ped_desportiva' },
+                            { label: 'Material Ed. Especial', key: 'in_material_ped_edu_esp' },
+                          ]} />
+                        </div>
+                      );
+
+                      // ── 4. ACESSIBILIDADE E INCLUSÃO ──
+                      if (activeSchoolTab === 'inclusao') return (
+                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
+                          <BinTable title="Acessibilidade física" rows={[
+                            { label: 'Rampas', key: 'in_acessibilidade_rampas' },
+                            { label: 'Corrimão', key: 'in_acessibilidade_corrimao' },
+                            { label: 'Elevador', key: 'in_acessibilidade_elevador' },
+                            { label: 'Piso tátil', key: 'in_acessibilidade_pisos_tateis' },
+                            { label: 'Sinalização visual', key: 'in_acessibilidade_sinal_visual' },
+                            { label: 'Sinalização sonora', key: 'in_acessibilidade_sinal_sonoro' },
+                            { label: 'Telas/leitores (cegos)', key: 'in_acessibilidade_telas_leitoras' },
+                            { label: 'Banheiro PNE (acessível)', key: 'in_banheiro_pne' },
+                            { label: 'Banheiro Ed. Infantil', key: 'in_banheiro_ei' },
+                            { label: 'Dependências acessíveis', key: 'in_dependencias_pne' },
+                          ]} />
+                          <NumTable rows={[
+                            { label: 'Educação Especial — Matrículas', key: '', header: true },
+                            { label: 'Total Ed. Especial', key: 'qt_mat_esp' },
+                            { label: 'Classes comuns (inclusão)', key: 'qt_mat_esp_cc' },
+                            { label: 'Classes exclusivas', key: 'qt_mat_esp_ce' },
+                            { label: 'Educação Especial — Docentes', key: '', header: true },
+                            { label: 'Docentes Ed. Especial', key: 'qt_doc_esp' },
+                            { label: 'Doc. Ed. Esp. — Cl. Comuns', key: 'qt_doc_esp_cc' },
+                            { label: 'Doc. Ed. Esp. — Cl. Exclusivas', key: 'qt_doc_esp_ce' },
+                            { label: 'Educação Especial — Turmas', key: '', header: true },
+                            { label: 'Turmas Ed. Especial', key: 'qt_tur_esp' },
+                            { label: 'Turmas — Cl. Comuns', key: 'qt_tur_esp_cc' },
+                            { label: 'Turmas — Cl. Exclusivas', key: 'qt_tur_esp_ce' },
+                          ]} />
+                          <BinTable title="Recursos de inclusão" rows={[
+                            { label: 'Sala AEE (Atend. Ed. Especializado)', key: 'in_sala_atendimento_especial' },
+                            { label: 'Libras', key: 'in_esp_libras' },
+                            { label: 'Braille', key: 'in_esp_braille' },
+                            { label: 'Comunicação alternativa', key: 'in_esp_comunicacao_alternativa' },
+                            { label: 'Orientação e mobilidade', key: 'in_esp_orient_mobilidade' },
+                            { label: 'Enriquecimento curricular', key: 'in_esp_enriquecimento_curricular' },
+                            { label: 'Intérprete de Libras', key: 'in_prof_interprete_libras' },
+                            { label: 'Profissional de apoio', key: 'in_prof_apoio' },
+                          ]} />
+                        </div>
+                      );
+
+                      // ── 5. PERFIL DOS ESTUDANTES ──
+                      if (activeSchoolTab === 'perfil') return (
+                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
+                          <NumTable rows={[
+                            { label: 'Por Sexo', key: '', header: true },
+                            { label: 'Feminino', key: 'qt_mat_bas_fem' },
+                            { label: 'Masculino', key: 'qt_mat_bas_masc' },
+                            { label: 'Por Cor/Raça', key: '', header: true },
+                            { label: 'Branca', key: 'qt_mat_bas_branca' },
+                            { label: 'Preta', key: 'qt_mat_bas_preta' },
+                            { label: 'Parda', key: 'qt_mat_bas_parda' },
+                            { label: 'Amarela', key: 'qt_mat_bas_amarela' },
+                            { label: 'Indígena', key: 'qt_mat_bas_indigena' },
+                            { label: 'Não declarada', key: 'qt_mat_bas_nd' },
+                            { label: 'Por Faixa Etária', key: '', header: true },
+                            { label: '0 a 3 anos', key: 'qt_mat_bas_0_3' },
+                            { label: '4 a 5 anos', key: 'qt_mat_bas_4_5' },
+                            { label: '6 a 10 anos', key: 'qt_mat_bas_6_10' },
+                            { label: '11 a 14 anos', key: 'qt_mat_bas_11_14' },
+                            { label: '15 a 17 anos', key: 'qt_mat_bas_15_17' },
+                            { label: '18 anos ou mais', key: 'qt_mat_bas_18_mais' },
+                            { label: 'Zona de Residência', key: '', header: true },
+                            { label: 'Zona urbana', key: 'qt_mat_zr_urb' },
+                            { label: 'Zona rural', key: 'qt_mat_zr_rur' },
+                            { label: 'Não aplicável', key: 'qt_mat_zr_na' },
+                            { label: 'Turno', key: '', header: true },
+                            { label: 'Diurno', key: 'qt_mat_bas_d' },
+                            { label: 'Noturno', key: 'qt_mat_bas_n' },
+                            { label: 'EAD', key: 'qt_mat_bas_ead' },
+                          ]} />
+                        </div>
+                      );
+
+                      // ── 6. EQUIPE ESCOLAR E GESTÃO ──
+                      if (activeSchoolTab === 'equipe') return (
+                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
+                          <NumTable rows={[
+                            { label: 'Profissionais não docentes', key: '', header: true },
+                            { label: 'Coordenadores pedagógicos', key: 'qt_prof_coordenador' },
+                            { label: 'Secretários escolares', key: 'qt_prof_secretario' },
+                            { label: 'Administrativos', key: 'qt_prof_administrativos' },
+                            { label: 'Serviços gerais', key: 'qt_prof_servicos_gerais' },
+                            { label: 'Segurança', key: 'qt_prof_seguranca' },
+                            { label: 'Monitores/Auxiliares', key: 'qt_prof_monitores' },
+                            { label: 'Bibliotecários', key: 'qt_prof_bibliotecario' },
+                            { label: 'Psicólogos', key: 'qt_prof_psicologo' },
+                            { label: 'Assistentes sociais', key: 'qt_prof_assist_social' },
+                            { label: 'Nutricionistas', key: 'qt_prof_nutricionista' },
+                          ]} />
+                          <BinTable title="Idiomas ofertados" rows={[
+                            { label: 'Inglês', key: 'in_lingua_ingles' },
+                            { label: 'Espanhol', key: 'in_lingua_espanhol' },
+                            { label: 'Francês', key: 'in_lingua_frances' },
+                            { label: 'Libras', key: 'in_lingua_libras' },
+                            { label: 'Língua indígena', key: 'in_lingua_indigena' },
+                            { label: 'Outro idioma estrangeiro', key: 'in_lingua_outra_estrang' },
+                          ]} />
+                          <BinTable title="Gestão democrática" rows={[
+                            { label: 'Conselho escolar', key: 'in_conselho_escolar' },
+                            { label: 'Associação de pais e mestres', key: 'in_org_estudantil_apm' },
+                            { label: 'Grêmio estudantil', key: 'in_org_estudantil_gremio' },
+                            { label: 'Projeto Político-Pedagógico', key: 'in_ppp' },
+                          ]} />
+                          <BinTable title="Localização e vínculo" rows={[
+                            { label: 'Vínculo — Secretaria de Educação', key: 'in_vinculo_secretaria_educacao' },
+                            { label: 'Vínculo — Segurança Pública', key: 'in_vinculo_seguranca_publica' },
+                            { label: 'Vínculo — Secretaria de Saúde', key: 'in_vinculo_secretaria_saude' },
+                            { label: 'Vínculo — Outro órgão', key: 'in_vinculo_outro_orgao' },
+                            { label: 'Parceria com Poder Público', key: 'in_poder_publico_parceria' },
+                            { label: 'Prédio escolar próprio', key: 'in_local_func_predio_escolar' },
+                            { label: 'Local socioeducativo', key: 'in_local_func_socioeducativo' },
+                            { label: 'Unidade prisional', key: 'in_local_func_unid_prisional' },
+                            { label: 'Galpão/rancho', key: 'in_local_func_galpao' },
+                            { label: 'Prédio compartilhado', key: 'in_predio_compartilhado' },
+                          ]} />
+                        </div>
+                      );
+
+                      // ── 7. JORNADA, TRANSPORTE E ALIMENTAÇÃO ──
+                      if (activeSchoolTab === 'jornada') return (
+                        <div className="tab-panel-v6 active" style={{ padding: 0 }}>
+                          <NumTable rows={[
+                            { label: 'Tempo Integral — Matrículas', key: '', header: true },
+                            { label: 'Ed. Infantil integral', key: 'qt_mat_inf_int' },
+                            { label: 'Infantil Creche integral', key: 'qt_mat_inf_cre_int' },
+                            { label: 'Infantil Pré-escola integral', key: 'qt_mat_inf_pre_int' },
+                            { label: 'Fundamental integral', key: 'qt_mat_fund_int' },
+                            { label: 'Fund. AI integral', key: 'qt_mat_fund_ai_int' },
+                            { label: 'Fund. AF integral', key: 'qt_mat_fund_af_int' },
+                            { label: 'Ensino Médio integral', key: 'qt_mat_med_int' },
+                            { label: 'Tempo Integral — Turmas', key: '', header: true },
+                            { label: 'Turmas Infantil integral', key: 'qt_tur_inf_int' },
+                            { label: 'Turmas Fund. AI integral', key: 'qt_tur_fund_ai_int' },
+                            { label: 'Turmas Fund. AF integral', key: 'qt_tur_fund_af_int' },
+                            { label: 'Turmas Médio integral', key: 'qt_tur_med_int' },
+                            { label: 'Transporte Escolar', key: '', header: true },
+                            { label: 'Alunos com transporte público', key: 'qt_transp_publico' },
+                            { label: 'Custeado pelo Estado', key: 'qt_transp_resp_est' },
+                            { label: 'Custeado pelo Município', key: 'qt_transp_resp_mun' },
+                          ]} />
+                          <BinTable title="Tipo de transporte" rows={[
+                            { label: 'Van / Veículo leve', key: 'in_equip_transpor_vans_micro' },
+                            { label: 'Micro-ônibus', key: 'in_equip_transpor_micro_onibus' },
+                            { label: 'Ônibus', key: 'in_equip_transpor_onibus' },
+                            { label: 'Bicicleta', key: 'in_equip_transpor_bicicleta' },
+                            { label: 'Tração animal', key: 'in_equip_transpor_tracao_animal' },
+                            { label: 'Rodoviário (outros)', key: 'in_equip_transpor_rodoviario' },
+                            { label: 'Aquaviário (barco/canoa)', key: 'in_equip_transpor_aquaviario' },
+                            { label: 'Ferroviário (trem)', key: 'in_equip_transpor_ferroviario' },
+                          ]} />
+                          <BinTable title="Alimentação e segurança alimentar" rows={[
+                            { label: 'Alimentação escolar', key: 'in_alimentacao' },
+                            { label: 'Cozinha', key: 'in_cozinha' },
+                            { label: 'Refeitório', key: 'in_refeitorio' },
+                            { label: 'Despensa', key: 'in_despensa' },
+                            { label: 'Horta escolar', key: 'in_horta' },
+                            { label: 'Compostagem', key: 'in_compostagem' },
+                          ]} />
+                          <BinTable title="Sustentabilidade e meio ambiente" rows={[
+                            { label: 'Energia renovável (solar etc.)', key: 'in_energia_renovavel' },
+                            { label: 'Área verde', key: 'in_area_verde' },
+                            { label: 'Área para plantio', key: 'in_area_plantio' },
+                            { label: 'Reciclagem de lixo', key: 'in_tratamento_lixo_reciclagem' },
+                            { label: 'Reutilização de materiais', key: 'in_tratamento_lixo_reutiliza' },
+                            { label: 'Separação de lixo', key: 'in_tratamento_lixo_separacao' },
+                            { label: 'Viveiro', key: 'in_viveiro' },
                           ]} />
                         </div>
                       );
 
                       return null;
                     })()}
+
                   </div>
                 </section>
 
