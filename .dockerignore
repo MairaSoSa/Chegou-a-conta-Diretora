@@ -1,5 +1,4 @@
 node_modules/
-dist/
 *.db
 *.db-wal
 *.db-shm
@@ -10,3 +9,15 @@ dist/
 tmp/
 Dados/
 attached_assets/
+server/
+client/
+shared/
+script/
+scripts/
+vite.config.ts
+tsconfig.json
+tsconfig.node.json
+drizzle.config.ts
+package.json
+package-lock.json
+postcss.config.*

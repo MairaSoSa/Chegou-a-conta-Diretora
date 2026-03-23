@@ -58,3 +58,34 @@ NPM scripts:
     -   MEC Normas API (`mecnormas.mec.gov.br`)
     -   Imprensa Nacional API (`in.gov.br`) for DOU Federal
     -   Querido Diário API (`queridodiario.ok.org.br`) for Diários Municipais
+
+## Deployment
+
+**Autoscale** deployment (Replit). Target: ~3.5MB total container.
+
+### Strategy
+- `dist/` is pre-compiled locally and committed to the Replit workspace (not git-tracked, but persists in the Replit filesystem)
+- `.dockerignore` excludes source files, `node_modules/`, `.git/`, `.local/` — only `dist/` and `start.sh` are uploaded
+- No build step in deployment config (Replit just runs `bash start.sh`)
+- `start.sh` downloads the SQLite DB from Google Drive (`SQLITE_DB_DOWNLOAD_URL` secret), then runs `node dist/bootstrap.cjs`
+- `dist/bootstrap.cjs` extracts `dist/better_sqlite3.gz` → `/tmp/better_sqlite3.node`, patches `Module._load` to redirect native addon loading to `/tmp`, then decompresses and executes `dist/index.cjs.gz`
+
+### Before publishing
+Run this script to prepare `dist/` with the latest code:
+```bash
+bash scripts/prepare-deploy.sh
+```
+This builds client + server, gzips all assets and the server bundle, embeds the SQLite native binary, and generates the bootstrap launcher. Then publish via the Replit Publish button.
+
+### Container layout (after deployment upload)
+| File | Size |
+|------|------|
+| `dist/index.cjs.gz` | ~1.9 MB |
+| `dist/better_sqlite3.gz` | ~1.1 MB |
+| `dist/public/assets/*.gz` | ~0.6 MB |
+| `dist/bootstrap.cjs` | ~2 KB |
+| `start.sh`, `.replit`, etc. | ~10 KB |
+| **TOTAL** | **~3.6 MB** |
+
+### Required secrets for production
+- `SQLITE_DB_DOWNLOAD_URL` — Google Drive URL for the SQLite database (~2.7 GB)
