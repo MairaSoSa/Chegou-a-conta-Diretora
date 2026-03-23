@@ -196,9 +196,22 @@ const INDICATORS: IndicatorDef[] = [
       };
       const data: Record<string, any> = {};
       for (const h of headers) {
-        if (h.startsWith("FUN_") || h.startsWith("MED_") || h.startsWith("EF_") || h.startsWith("EM_")) {
+        if (
+          h.startsWith("INF_") || h.startsWith("FUN_") || h.startsWith("MED_") ||
+          h.startsWith("EF_")  || h.startsWith("EM_")  ||
+          h.startsWith("EJA_FUN_") || h.startsWith("EJA_MED_")
+        ) {
           const v = get(h);
           if (v !== undefined) data[h.toLowerCase()] = v;
+        }
+      }
+      // Normaliza EJA — pode vir como EJA_FUN_CAT_* ou EF_CAT_* dependendo do ano
+      for (const h of headers) {
+        if (h.startsWith("EF_CAT_")) {
+          const v = get(h); if (v !== undefined) data[`eja_fun_cat_${h.split('_').pop()?.toLowerCase()}`] = v;
+        }
+        if (h.startsWith("EM_CAT_")) {
+          const v = get(h); if (v !== undefined) data[`eja_med_cat_${h.split('_').pop()?.toLowerCase()}`] = v;
         }
       }
       return Object.keys(data).length > 0 ? data : null;

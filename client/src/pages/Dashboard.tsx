@@ -114,6 +114,7 @@ export default function Dashboard() {
   const [tnrSegmento, setTnrSegmento] = useState<string | null>(null);
   const [tdiSegmento, setTdiSegmento] = useState<string | null>(null);
   const [iedAno, setIedAno] = useState<number | null>(null);
+  const [afdAno, setAfdAno] = useState<number | null>(null);
   const [atuAno, setAtuAno] = useState<number | null>(null);
   const [hadAno, setHadAno] = useState<number | null>(null);
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
@@ -573,6 +574,28 @@ export default function Dashboard() {
           // por série — Ensino Médio
           m01: t.tnr_med_01 ?? null, m02: t.tnr_med_02 ?? null,
           m03: t.tnr_med_03 ?? null, m04: t.tnr_med_04 ?? null,
+        };
+      }),
+      afd: anos.map((a: number) => {
+        const af = indicadores[a]?.afd;
+        if (!af) return { ano: a };
+        const g = (base: string, n: number) => af[`${base}_cat_${n}`] ?? null;
+        return {
+          ano: a,
+          // Ed. Infantil (INF_)
+          inf_g1: g('inf', 1), inf_g2: g('inf', 2), inf_g3: g('inf', 3), inf_g4: g('inf', 4), inf_g5: g('inf', 5),
+          // Fundamental Total (FUN_)
+          fun_g1: g('fun', 1), fun_g2: g('fun', 2), fun_g3: g('fun', 3), fun_g4: g('fun', 4), fun_g5: g('fun', 5),
+          // Fundamental AI (FUN_AI_)
+          fun_ai_g1: g('fun_ai', 1), fun_ai_g2: g('fun_ai', 2), fun_ai_g3: g('fun_ai', 3), fun_ai_g4: g('fun_ai', 4), fun_ai_g5: g('fun_ai', 5),
+          // Fundamental AF (FUN_AF_)
+          fun_af_g1: g('fun_af', 1), fun_af_g2: g('fun_af', 2), fun_af_g3: g('fun_af', 3), fun_af_g4: g('fun_af', 4), fun_af_g5: g('fun_af', 5),
+          // Ensino Médio (MED_)
+          med_g1: g('med', 1), med_g2: g('med', 2), med_g3: g('med', 3), med_g4: g('med', 4), med_g5: g('med', 5),
+          // EJA Fundamental
+          eja_fun_g1: g('eja_fun', 1), eja_fun_g2: g('eja_fun', 2), eja_fun_g3: g('eja_fun', 3), eja_fun_g4: g('eja_fun', 4), eja_fun_g5: g('eja_fun', 5),
+          // EJA Médio
+          eja_med_g1: g('eja_med', 1), eja_med_g2: g('eja_med', 2), eja_med_g3: g('eja_med', 3), eja_med_g4: g('eja_med', 4), eja_med_g5: g('eja_med', 5),
         };
       }),
     };
@@ -2238,6 +2261,191 @@ export default function Dashboard() {
                                       </tr>
                                     );
                                   })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </section>
+                  );
+                })()}
+
+                {/* ── ADEQUAÇÃO DA FORMAÇÃO DOCENTE (AFD) ── */}
+                {(() => {
+                  const ch = evolutionCharts;
+                  const allAfd = (ch?.afd ?? [])
+                    .filter((d: any) => d.fun_g1 != null || d.fun_g2 != null || d.med_g1 != null)
+                    .sort((a: any, b: any) => a.ano - b.ano);
+                  if (allAfd.length === 0) return null;
+
+                  const afdAnos = allAfd.map((d: any) => d.ano);
+                  const selAno  = afdAno && afdAnos.includes(afdAno) ? afdAno : afdAnos[afdAnos.length - 1];
+                  const row     = allAfd.find((d: any) => d.ano === selAno) ?? allAfd[allAfd.length - 1];
+
+                  const pct = (v: any) => v != null ? `${Number(v).toFixed(1)}%` : '—';
+
+                  // Grupos como colunas (1=melhor, 5=pior)
+                  const grupos = [
+                    { n: 1, label: 'Grupo 1', color: '#2d6a4f', desc: 'Licenciatura na disciplina' },
+                    { n: 2, label: 'Grupo 2', color: '#40916c', desc: 'Bacharelado na disciplina' },
+                    { n: 3, label: 'Grupo 3', color: '#e9a82b', desc: 'Licenciatura em outra área' },
+                    { n: 4, label: 'Grupo 4', color: '#d46b2a', desc: 'Outra formação superior' },
+                    { n: 5, label: 'Grupo 5', color: '#b71c1c', desc: 'Sem formação superior adequada' },
+                  ];
+
+                  // Etapas como linhas
+                  type AfdEtapa = { key: string; label: string; color: string; hasData: boolean };
+                  const etapas: AfdEtapa[] = [
+                    { key: 'inf',     label: 'Educação Infantil',          color: '#7b5ea7', hasData: allAfd.some((d: any) => d.inf_g1 != null) },
+                    { key: 'fun',     label: 'Ensino Fundamental (Total)', color: '#2d5a88', hasData: allAfd.some((d: any) => d.fun_g1 != null) },
+                    { key: 'fun_ai',  label: '↳ Anos Iniciais',            color: '#3a7bd5', hasData: allAfd.some((d: any) => d.fun_ai_g1 != null) },
+                    { key: 'fun_af',  label: '↳ Anos Finais',              color: '#1d3557', hasData: allAfd.some((d: any) => d.fun_af_g1 != null) },
+                    { key: 'med',     label: 'Ensino Médio',               color: '#6b2d6b', hasData: allAfd.some((d: any) => d.med_g1 != null) },
+                    { key: 'eja_fun', label: 'EJA — Fundamental',          color: '#795548', hasData: allAfd.some((d: any) => d.eja_fun_g1 != null) },
+                    { key: 'eja_med', label: 'EJA — Médio',                color: '#4e342e', hasData: allAfd.some((d: any) => d.eja_med_g1 != null) },
+                  ].filter(e => e.hasData);
+
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div>
+                          <h2>Adequação da Formação Docente (AFD)</h2>
+                          <p>Percentual de docentes por grupo de adequação à disciplina e etapa de ensino</p>
+                        </div>
+                        <div className="hint-chip">Fonte: INEP</div>
+                      </div>
+                      <div className="organic-divider" />
+
+                      {/* Legenda dos grupos */}
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+                        {grupos.map(g => (
+                          <div key={g.n} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
+                            <span style={{ width: 12, height: 12, borderRadius: 3, background: g.color, display: 'inline-block' }} />
+                            <span style={{ fontWeight: 700, color: g.color }}>{g.label}:</span>
+                            <span style={{ color: '#5d4037' }}>{g.desc}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Seletor de ano */}
+                      {afdAnos.length > 1 && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+                          {afdAnos.map(a => (
+                            <button key={a} onClick={() => setAfdAno(a)}
+                              style={{
+                                padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                border: `2px solid ${a === selAno ? '#5d4037' : '#e7d9bf'}`,
+                                background: a === selAno ? '#5d4037' : '#fffef8',
+                                color: a === selAno ? '#fff' : '#5d4037',
+                              }}>
+                              {a}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Tabela Etapas × Grupos */}
+                      <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
+                        📊 % de docentes por grupo de adequação — {selAno}
+                      </div>
+                      <div className="soft-card" style={{ padding: 0, overflow: 'auto', marginBottom: 16 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                          <thead>
+                            <tr style={{ background: '#f7f2ea' }}>
+                              <th style={{ padding: '8px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12, whiteSpace: 'nowrap' }}>
+                                Etapa / Modalidade
+                              </th>
+                              {grupos.map(g => (
+                                <th key={g.n} style={{
+                                  padding: '8px 10px', textAlign: 'center', fontWeight: 800,
+                                  color: '#fff', background: g.color, fontSize: 11, whiteSpace: 'nowrap',
+                                  borderLeft: '2px solid #fff',
+                                }}>
+                                  {g.label}
+                                </th>
+                              ))}
+                              <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700, color: '#888', fontSize: 11, borderLeft: '1px solid #e0d8cc' }}>
+                                Total
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {etapas.map((e, i) => {
+                              const vals = grupos.map(g => row[`${e.key}_g${g.n}`] as number | null);
+                              const total = vals.every(v => v == null) ? null : vals.reduce((s, v) => (s ?? 0) + (v ?? 0), 0 as number | null);
+                              return (
+                                <tr key={e.key} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                  <td style={{ padding: '9px 14px', fontWeight: 700, color: e.color, whiteSpace: 'nowrap', fontSize: 12 }}>
+                                    {e.label}
+                                  </td>
+                                  {grupos.map((g, gi) => {
+                                    const v = vals[gi];
+                                    const isG1 = g.n === 1;
+                                    const isG5 = g.n === 5;
+                                    const alert5 = isG5 && v != null && Number(v) > 20;
+                                    const good1  = isG1 && v != null && Number(v) > 70;
+                                    return (
+                                      <td key={g.n} style={{
+                                        padding: '9px 10px', textAlign: 'center', fontWeight: v != null ? 700 : 400,
+                                        color: alert5 ? '#b71c1c' : good1 ? '#2d6a4f' : v != null ? g.color : '#bbb',
+                                        borderLeft: '1px solid #f0e8d8',
+                                        background: alert5 ? '#fff5f5' : good1 ? '#f0faf4' : undefined,
+                                      }}>
+                                        {pct(v)}{alert5 ? ' ⚠️' : good1 ? ' ✓' : ''}
+                                      </td>
+                                    );
+                                  })}
+                                  <td style={{ padding: '9px 10px', textAlign: 'center', fontWeight: 600, color: '#888', borderLeft: '1px solid #e0d8cc', fontSize: 12 }}>
+                                    {total != null ? `${total.toFixed(1)}%` : '—'}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Evolução de Grupo 1 por etapa */}
+                      {allAfd.length > 1 && (() => {
+                        const evoEtapas = etapas.filter(e => allAfd.some((d: any) => d[`${e.key}_g1`] != null));
+                        if (evoEtapas.length === 0) return null;
+                        return (
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
+                              📅 Evolução do Grupo 1 (formação adequada) por etapa
+                            </div>
+                            <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                <thead>
+                                  <tr style={{ background: '#f7f2ea' }}>
+                                    <th style={{ padding: '8px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
+                                    {evoEtapas.map(e => (
+                                      <th key={e.key} style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700, color: e.color, fontSize: 12, whiteSpace: 'nowrap' }}>
+                                        {e.label.replace('↳ ', '')}
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {allAfd.map((d: any, i: number) => (
+                                    <tr key={d.ano} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                      <td style={{ padding: '8px 14px', fontWeight: 700, color: d.ano === selAno ? '#2d5a88' : '#5d4037' }}>
+                                        {d.ano === selAno ? `▶ ${d.ano}` : d.ano}
+                                      </td>
+                                      {evoEtapas.map(e => {
+                                        const v = d[`${e.key}_g1`];
+                                        return (
+                                          <td key={e.key} style={{
+                                            padding: '8px 10px', textAlign: 'center', fontWeight: 600,
+                                            color: v != null ? (Number(v) > 70 ? '#2d6a4f' : Number(v) > 50 ? e.color : '#d46b2a') : '#ccc',
+                                          }}>
+                                            {pct(v)}
+                                          </td>
+                                        );
+                                      })}
+                                    </tr>
+                                  ))}
                                 </tbody>
                               </table>
                             </div>
