@@ -1460,18 +1460,24 @@ export default function Dashboard() {
                   const fetchOsmData = (coMun: string) => {
                     if (!coMun || osmUnidades !== null || osmLoading) return;
                     setOsmLoading(true);
-                    const query = `[out:json][timeout:15];
-area["ref:IBGE"="${coMun}"]["admin_level"="8"]->.mun;
+                    const query = `[out:json][timeout:25];
 (
-  node(area.mun)[amenity~"^(clinic|hospital|doctors|health_centre)$"];
+  rel["ref:IBGE"="${coMun}"]["boundary"="administrative"];
+)->.r;
+map_to_area(.r)->.mun;
+(
+  node(area.mun)[amenity~"^(clinic|hospital|doctors|health_centre|social_facility)$"];
   node(area.mun)[healthcare~"^(hospital|clinic|centre|doctor)$"];
-  node(area.mun)[name~"conselho tutelar|CRAS|CREAS|centro pop|pronto socorro|UBS|UPA|posto de saude|centro de saude|unidade de saude|PSF|USF|ESF",i];
-  way(area.mun)[amenity~"^(clinic|hospital)$"];
-  way(area.mun)[name~"conselho tutelar|CRAS|CREAS|pronto socorro|UBS|UPA|posto de saude|PSF",i];
+  node(area.mun)[social_facility~"^(shelter|emergency|outreach)$"];
+  node(area.mun)[office="government"][name~"conselho tutelar|CRAS|CREAS|centro pop",i];
+  node(area.mun)[name~"conselho tutelar|CRAS|CREAS|centro pop|pronto socorro|UBS|UPA|posto de sa[uú]de|centro de sa[uú]de|unidade de sa[uú]de|unidade b[áa]sica|PSF|USF|ESF|abrigo|casa lar|albergue",i];
+  way(area.mun)[amenity~"^(clinic|hospital|social_facility)$"];
+  way(area.mun)[healthcare~"^(hospital|clinic|centre)$"];
+  way(area.mun)[name~"conselho tutelar|CRAS|CREAS|pronto socorro|UBS|UPA|posto de sa[uú]de|PSF|abrigo",i];
 );
-out center body 50;`;
+out center tags 100;`;
                     const ctrl = new AbortController();
-                    const timer = setTimeout(() => ctrl.abort(), 20000);
+                    const timer = setTimeout(() => ctrl.abort(), 30000);
                     fetch('https://overpass-api.de/api/interpreter', {
                       method: 'POST',
                       body: new URLSearchParams({ data: query }),
@@ -1492,17 +1498,24 @@ out center body 50;`;
                           const cat = classifyOsmElement(el.tags || {});
                           if (cat && cats[cat]) {
                             const t = el.tags || {};
-                            const parts = [t['addr:street'], t['addr:housenumber']].filter(Boolean);
-                            const bairro = t['addr:suburb'] || t['addr:neighbourhood'] || '';
+                            const lat = el.lat ?? el.center?.lat ?? null;
+                            const lon = el.lon ?? el.center?.lon ?? null;
+                            const street = t['addr:street'] || t['addr:place'] || '';
+                            const num = t['addr:housenumber'] || '';
+                            const bairro = t['addr:suburb'] || t['addr:neighbourhood'] || t['addr:district'] || '';
                             const cep = t['addr:postcode'] || '';
-                            const endStr = [parts.join(', '), bairro, cep].filter(Boolean).join(' — ');
+                            const city = t['addr:city'] || '';
+                            const streetPart = [street, num].filter(Boolean).join(', ');
+                            const endStr = [streetPart, bairro, city, cep].filter(Boolean).join(' — ');
                             cats[cat].push({
-                              nome: t.name || null,
+                              nome: t.name || t['name:pt'] || null,
                               endereco: endStr || null,
-                              telefone: t.phone || t['contact:phone'] || null,
+                              telefone: t.phone || t['contact:phone'] || t['contact:mobile'] || null,
                               horario: t.opening_hours || null,
-                              lat: el.lat ?? el.center?.lat ?? null,
-                              lon: el.lon ?? el.center?.lon ?? null,
+                              website: t.website || t['contact:website'] || null,
+                              lat,
+                              lon,
+                              mapsUrl: (lat && lon) ? `https://www.google.com/maps?q=${lat},${lon}` : null,
                             });
                           }
                         }
@@ -1544,12 +1557,27 @@ out center body 50;`;
 
                   const UnitCard = ({ u, cat }: { u: any; cat: string }) => {
                     const m = CAT_META[cat] || CAT_META.ubs;
+                    const mapsUrl = u.mapsUrl || (u.lat && u.lon ? `https://www.google.com/maps?q=${u.lat},${u.lon}` : null);
+                    const mapsSearchUrl = u.nome ? `https://www.google.com/maps/search/${encodeURIComponent(u.nome)}` : null;
                     return (
                       <div style={{ background: '#fff', border: `1.5px solid ${m.border}`, borderRadius: 12, padding: '12px 14px', borderLeft: `4px solid ${m.dot}` }}>
-                        <p style={{ fontWeight: 700, fontSize: 12, color: m.txt, margin: '0 0 6px', lineHeight: 1.3 }}>{u.nome || m.label}</p>
-                        {u.endereco && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6, marginBottom: 6 }}>
+                          <p style={{ fontWeight: 700, fontSize: 12, color: m.txt, margin: 0, lineHeight: 1.3 }}>{u.nome || m.label}</p>
+                          {(mapsUrl || mapsSearchUrl) && (
+                            <a href={mapsUrl || mapsSearchUrl!} target="_blank" rel="noopener noreferrer"
+                              style={{ fontSize: 10, color: '#1a73e8', textDecoration: 'none', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="#1a73e8"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                              Maps
+                            </a>
+                          )}
+                        </div>
+                        {u.endereco ? (
                           <p style={{ fontSize: 11, color: '#555', margin: '0 0 3px', display: 'flex', alignItems: 'flex-start', gap: 4 }}>
                             <span style={{ flexShrink: 0 }}>📍</span> {u.endereco}
+                          </p>
+                        ) : (
+                          <p style={{ fontSize: 11, color: '#999', margin: '0 0 3px', fontStyle: 'italic' }}>
+                            Endereço não disponível no mapa colaborativo
                           </p>
                         )}
                         {u.telefone && (
@@ -1558,16 +1586,16 @@ out center body 50;`;
                             <a href={`tel:${u.telefone.replace(/\D/g,'')}`} style={{ color: m.txt, textDecoration: 'none', fontWeight: 600 }}>{u.telefone}</a>
                           </p>
                         )}
+                        {u.website && (
+                          <p style={{ fontSize: 11, color: '#555', margin: '0 0 3px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span>🌐</span>
+                            <a href={u.website} target="_blank" rel="noopener noreferrer" style={{ color: m.txt, textDecoration: 'underline' }}>Site oficial</a>
+                          </p>
+                        )}
                         {u.horario && (
                           <p style={{ fontSize: 10, color: '#888', margin: '3px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
                             <span>🕐</span> {u.horario}
                           </p>
-                        )}
-                        {u.lat && u.lon && (
-                          <a href={`https://www.google.com/maps?q=${u.lat},${u.lon}`} target="_blank" rel="noopener noreferrer"
-                            style={{ fontSize: 10, color: m.txt, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 4, fontWeight: 600 }}>
-                            Ver no mapa ↗
-                          </a>
                         )}
                       </div>
                     );
