@@ -344,12 +344,6 @@ export default function Dashboard() {
       }
     }
 
-    if (ind.icg) {
-      const nivel = Number(ind.icg.nivel);
-      if (nivel === 5 || nivel === 6) {
-        alertas.push({ tipo: 'warning', titulo: `Alta complexidade de gestão: Nível ${nivel}`, descricao: `A escola possui nível elevado de complexidade de gestão, o que demanda maior suporte administrativo e pedagógico.`, indicador: 'icg' });
-      }
-    }
 
     if (ind.ird) {
       const media = Number(ind.ird.media_ird ?? ind.ird.media);
