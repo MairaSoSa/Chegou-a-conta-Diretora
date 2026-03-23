@@ -2273,52 +2273,50 @@ export async function registerRoutes(
   }, 3000);
 
   // ── EQUIPAMENTOS PÚBLICOS (SUAS / IBGE MUNIC) ──
+  // OSM/Overpass query runs client-side to avoid server rate limits
   app.get("/api/equipamentos-publicos/:coMunicipio", async (req, res) => {
     const { coMunicipio } = req.params;
+
     if (!coMunicipio || !/^\d{6,7}$/.test(coMunicipio)) {
       return res.status(400).json({ ok: false, error: "Código de município inválido" });
     }
-    // IBGE MUNIC Suplemento Assistência Social 2013 — indicadores SUAS
-    // 72814 = CRAS total, 72837 = CREAS total, 72839 = Centro POP total, 72858 = Abrigo/Casa lar total
+
     const ibgeMunicipio = coMunicipio.length === 7 ? coMunicipio.slice(0, 6) : coMunicipio;
     const SUAS_INDICATORS = "72814|72837|72839|72858";
+
     try {
       const url = `https://servicodados.ibge.gov.br/api/v1/pesquisas/10079/periodos/2013/indicadores/${SUAS_INDICATORS}/resultados/${ibgeMunicipio}`;
-      const resp = await fetch(url, { headers: { "User-Agent": "ChegoAContaDiretora/1.0" } });
-      if (!resp.ok) throw new Error(`IBGE HTTP ${resp.status}`);
-      const data: any[] = await resp.json();
-
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000), headers: { "User-Agent": "ChegoAContaDiretora/1.0" } });
+      if (!r.ok) throw new Error(`IBGE HTTP ${r.status}`);
+      const data: any[] = await r.json();
       const byId: Record<number, string | null> = {};
-      for (const ind of data) {
-        const val = ind?.res?.[0]?.res?.["2013"] ?? null;
-        byId[ind.id] = val;
-      }
-
+      for (const ind of data) { byId[ind.id] = ind?.res?.[0]?.res?.["2013"] ?? null; }
       return res.json({
         ok: true,
-        fonte: "IBGE MUNIC Assistência Social 2013",
-        ano: 2013,
         co_municipio: coMunicipio,
-        suas: {
-          cras:       { total: byId[72814] ?? null, label: "CRAS", descricao: "Centro de Referência da Assistência Social" },
-          creas:      { total: byId[72837] ?? null, label: "CREAS", descricao: "Centro de Referência Especializado de Assistência Social" },
-          centro_pop: { total: byId[72839] ?? null, label: "Centro POP", descricao: "Centro de Referência para População em Situação de Rua" },
+        ibge_fonte: "IBGE MUNIC Assistência Social 2013",
+        suas_counts: {
+          cras:       { total: byId[72814] ?? null, label: "CRAS",             descricao: "Centro de Referência da Assistência Social" },
+          creas:      { total: byId[72837] ?? null, label: "CREAS",            descricao: "Centro de Referência Especializado de Assistência Social" },
+          centro_pop: { total: byId[72839] ?? null, label: "Centro POP",       descricao: "Centro de Referência para Pop. em Situação de Rua" },
           abrigos:    { total: byId[72858] ?? null, label: "Abrigos / Casa Lar", descricao: "Serviços de acolhimento institucional" },
         },
         links: [
           { nome: "Mapa SUAS (MDS)", url: "https://mapas.mds.gov.br/mapas/app/painel-suas/" },
+          { nome: "CNES (saúde)", url: "https://cnes.datasus.gov.br/" },
           { nome: "Dados abertos SUAS", url: "https://dados.gov.br/dataset/unidades-de-atendimento-da-assistencia-social" },
-          { nome: "Vigilância Socioassistencial", url: "https://aplicacoes.mds.gov.br/sagi/vis/dash/index.php" },
-          { nome: "CadSUAS (consulta pública)", url: "https://cadsuas.mds.gov.br/cadsuas/xmlSuas.do?tipoRelatorio=1" },
+          { nome: "CadSUAS", url: "https://cadsuas.mds.gov.br/" },
         ],
       });
     } catch (e: any) {
       return res.json({
         ok: false,
+        co_municipio: coMunicipio,
         error: e.message,
+        suas_counts: {},
         links: [
           { nome: "Mapa SUAS (MDS)", url: "https://mapas.mds.gov.br/mapas/app/painel-suas/" },
-          { nome: "Dados abertos SUAS", url: "https://dados.gov.br/dataset/unidades-de-atendimento-da-assistencia-social" },
+          { nome: "CNES (saúde)", url: "https://cnes.datasus.gov.br/" },
         ],
       });
     }

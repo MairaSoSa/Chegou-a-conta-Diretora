@@ -116,6 +116,8 @@ export default function Dashboard() {
   const [showSuporteInstitucional, setShowSuporteInstitucional] = useState(false);
   const [equipamentosData, setEquipamentosData] = useState<any>(null);
   const [equipamentosLoading, setEquipamentosLoading] = useState(false);
+  const [osmUnidades, setOsmUnidades] = useState<Record<string, any[]> | null>(null);
+  const [osmLoading, setOsmLoading] = useState(false);
   const [rendSegmento, setRendSegmento] = useState<'ai' | 'af' | 'med' | null>(null);
   const [tnrSegmento, setTnrSegmento] = useState<string | null>(null);
   const [tdiSegmento, setTdiSegmento] = useState<string | null>(null);
@@ -175,6 +177,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     setPddeAno(new Date().getFullYear());
+    setEquipamentosData(null);
+    setEquipamentosLoading(false);
+    setOsmUnidades(null);
+    setOsmLoading(false);
+    setShowEquipamentos(false);
   }, [selectedInep]);
 
   useEffect(() => {
@@ -1431,28 +1438,137 @@ export default function Dashboard() {
                 {/* ── PAINÉIS DE CONTEXTO: EQUIPAMENTOS PÚBLICOS + SUPORTE INSTITUCIONAL ── */}
                 {(() => {
                   const coMunicipio = censoLatest?.co_municipio || evolucaoData?.escola?.co_municipio;
-                  const nomeMunicipio = evolucaoData?.escola?.no_municipio || '—';
+                  const nomeMunicipio = evolucaoData?.escola?.no_municipio || '';
+                  const sgUf = evolucaoData?.escola?.sg_uf || '';
+
+                  const classifyOsmElement = (tags: Record<string, string>): string | null => {
+                    const name = (tags.name || '').toLowerCase();
+                    const amenity = (tags.amenity || '').toLowerCase();
+                    const healthcare = (tags.healthcare || '').toLowerCase();
+                    if (/conselho\s+tutelar/.test(name)) return 'conselho_tutelar';
+                    if (/\bcras\b/.test(name)) return 'cras';
+                    if (/\bcreas\b/.test(name)) return 'creas';
+                    if (/centro\s+pop/.test(name)) return 'centro_pop';
+                    if (/pronto\s+socorro|pronto-socorro|upa\b/.test(name)) return 'pronto_socorro';
+                    if (amenity === 'hospital' || healthcare === 'hospital') return 'hospital';
+                    if (/\bubs\b|unidade\s+b[áa]sica|centro\s+de\s+sa[úu]de|posto\s+de\s+sa[úu]de|psf\b|usf\b|esf\b|unidade\s+de\s+sa[úu]de/.test(name)) return 'ubs';
+                    if (amenity === 'clinic' || amenity === 'health_centre' || healthcare === 'clinic' || healthcare === 'centre') return 'ubs';
+                    if (amenity === 'doctors' || healthcare === 'doctor') return 'ubs';
+                    return null;
+                  };
+
+                  const fetchOsmData = (nome: string, uf: string) => {
+                    if (!nome || osmUnidades !== null || osmLoading) return;
+                    setOsmLoading(true);
+                    const ufFilter = uf ? `["ISO3166-2"~"BR-${uf}"]["admin_level"="4"]` : `["admin_level"="4"]`;
+                    const query = `[out:json][timeout:18];
+area${ufFilter}->.estado;
+area["name"="${nome}"]["admin_level"="8"](area.estado)->.mun;
+(
+  node(area.mun)[amenity~"^(clinic|hospital|doctors|health_centre)$"];
+  node(area.mun)[healthcare~"^(hospital|clinic|centre|doctor)$"];
+  node(area.mun)[name~"conselho tutelar|CRAS|CREAS|centro pop|pronto socorro|UBS|UPA|posto de saude|centro de saude|unidade de saude|PSF|USF|ESF",i];
+  way(area.mun)[amenity~"^(clinic|hospital)$"];
+  way(area.mun)[name~"conselho tutelar|CRAS|CREAS|pronto socorro|UBS|UPA|posto de saude|PSF",i];
+);
+out center body 50;`;
+                    fetch('https://overpass-api.de/api/interpreter', {
+                      method: 'POST',
+                      body: new URLSearchParams({ data: query }),
+                      headers: { 'User-Agent': 'ChegoAContaDiretora/1.0' },
+                    })
+                      .then(r => r.json())
+                      .then((json: any) => {
+                        const elements: any[] = json.elements || [];
+                        const cats: Record<string, any[]> = {
+                          conselho_tutelar: [], cras: [], creas: [], centro_pop: [],
+                          ubs: [], hospital: [], pronto_socorro: [],
+                        };
+                        const seen = new Set<number>();
+                        for (const el of elements) {
+                          if (seen.has(el.id)) continue;
+                          seen.add(el.id);
+                          const cat = classifyOsmElement(el.tags || {});
+                          if (cat && cats[cat]) {
+                            const t = el.tags || {};
+                            const parts = [t['addr:street'], t['addr:housenumber']].filter(Boolean);
+                            const bairro = t['addr:suburb'] || t['addr:neighbourhood'] || '';
+                            const cep = t['addr:postcode'] || '';
+                            const endStr = [parts.join(', '), bairro, cep].filter(Boolean).join(' — ');
+                            cats[cat].push({
+                              nome: t.name || null,
+                              endereco: endStr || null,
+                              telefone: t.phone || t['contact:phone'] || null,
+                              horario: t.opening_hours || null,
+                              lat: el.lat ?? el.center?.lat ?? null,
+                              lon: el.lon ?? el.center?.lon ?? null,
+                            });
+                          }
+                        }
+                        setOsmUnidades(cats);
+                        setOsmLoading(false);
+                      })
+                      .catch(() => {
+                        setOsmUnidades({});
+                        setOsmLoading(false);
+                      });
+                  };
 
                   const handleToggleEquipamentos = () => {
                     const next = !showEquipamentos;
                     setShowEquipamentos(next);
-                    if (next && coMunicipio && !equipamentosData && !equipamentosLoading) {
-                      setEquipamentosLoading(true);
-                      fetch(`/api/equipamentos-publicos/${coMunicipio}`)
-                        .then(r => r.json())
-                        .then(d => { setEquipamentosData(d); setEquipamentosLoading(false); })
-                        .catch(() => { setEquipamentosData({ ok: false, error: 'Erro ao carregar' }); setEquipamentosLoading(false); });
+                    if (next && coMunicipio) {
+                      if (!equipamentosData && !equipamentosLoading) {
+                        setEquipamentosLoading(true);
+                        fetch(`/api/equipamentos-publicos/${coMunicipio}`)
+                          .then(r => r.json())
+                          .then(d => { setEquipamentosData(d); setEquipamentosLoading(false); })
+                          .catch(() => { setEquipamentosData({ ok: false }); setEquipamentosLoading(false); });
+                      }
+                      if (nomeMunicipio) fetchOsmData(nomeMunicipio, sgUf);
                     }
                   };
 
-                  const SUAS_ICONS: Record<string, string> = {
-                    cras: '🏘️', creas: '🛡️', centro_pop: '🏕️', abrigos: '🏠',
+                  const CAT_META: Record<string, { icon: string; label: string; bg: string; border: string; txt: string; dot: string }> = {
+                    conselho_tutelar: { icon: '⚖️', label: 'Conselho Tutelar',    bg: '#fff3e0', border: '#ffd180', txt: '#7a3f00', dot: '#ff8f00' },
+                    cras:             { icon: '🏘️', label: 'CRAS',                bg: '#e8f5ee', border: '#b8dfc8', txt: '#1f6b45', dot: '#2f7a58' },
+                    creas:            { icon: '🛡️', label: 'CREAS',               bg: '#e6eef8', border: '#b8cfe8', txt: '#1e4a78', dot: '#2d5a88' },
+                    centro_pop:       { icon: '🏕️', label: 'Centro POP',          bg: '#fdf3e0', border: '#f0ddb5', txt: '#7a4a10', dot: '#d4870a' },
+                    ubs:              { icon: '🏥', label: 'UBS / Posto de Saúde', bg: '#e3f2fd', border: '#90caf9', txt: '#0d47a1', dot: '#1565c0' },
+                    hospital:         { icon: '🏨', label: 'Hospital',             bg: '#fce4ec', border: '#f48fb1', txt: '#880e4f', dot: '#c2185b' },
+                    pronto_socorro:   { icon: '🚨', label: 'Pronto Socorro / UPA', bg: '#ffebee', border: '#ef9a9a', txt: '#b71c1c', dot: '#d32f2f' },
+                    abrigos:          { icon: '🏠', label: 'Abrigos / Casa Lar',   bg: '#f3eeff', border: '#d4c4f5', txt: '#5b3fa8', dot: '#7c4dff' },
                   };
-                  const SUAS_COLORS: Record<string, { bg: string; border: string; txt: string }> = {
-                    cras:       { bg: '#e8f5ee', border: '#b8dfc8', txt: '#1f6b45' },
-                    creas:      { bg: '#e6eef8', border: '#b8cfe8', txt: '#1e4a78' },
-                    centro_pop: { bg: '#fdf3e0', border: '#f0ddb5', txt: '#7a4a10' },
-                    abrigos:    { bg: '#f3eeff', border: '#d4c4f5', txt: '#5b3fa8' },
+
+                  const UnitCard = ({ u, cat }: { u: any; cat: string }) => {
+                    const m = CAT_META[cat] || CAT_META.ubs;
+                    return (
+                      <div style={{ background: '#fff', border: `1.5px solid ${m.border}`, borderRadius: 12, padding: '12px 14px', borderLeft: `4px solid ${m.dot}` }}>
+                        <p style={{ fontWeight: 700, fontSize: 12, color: m.txt, margin: '0 0 6px', lineHeight: 1.3 }}>{u.nome || m.label}</p>
+                        {u.endereco && (
+                          <p style={{ fontSize: 11, color: '#555', margin: '0 0 3px', display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+                            <span style={{ flexShrink: 0 }}>📍</span> {u.endereco}
+                          </p>
+                        )}
+                        {u.telefone && (
+                          <p style={{ fontSize: 11, color: '#555', margin: '0 0 3px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span>📞</span>
+                            <a href={`tel:${u.telefone.replace(/\D/g,'')}`} style={{ color: m.txt, textDecoration: 'none', fontWeight: 600 }}>{u.telefone}</a>
+                          </p>
+                        )}
+                        {u.horario && (
+                          <p style={{ fontSize: 10, color: '#888', margin: '3px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span>🕐</span> {u.horario}
+                          </p>
+                        )}
+                        {u.lat && u.lon && (
+                          <a href={`https://www.google.com/maps?q=${u.lat},${u.lon}`} target="_blank" rel="noopener noreferrer"
+                            style={{ fontSize: 10, color: m.txt, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 4, fontWeight: 600 }}>
+                            Ver no mapa ↗
+                          </a>
+                        )}
+                      </div>
+                    );
                   };
 
                   return (
@@ -1461,16 +1577,12 @@ export default function Dashboard() {
                       <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1.5px solid #b8dfc8', background: '#f4fbf7' }}>
                         <button
                           onClick={handleToggleEquipamentos}
-                          style={{
-                            width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
-                            padding: '14px 18px', background: 'transparent', border: 'none', cursor: 'pointer',
-                            textAlign: 'left',
-                          }}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 18px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                         >
                           <div style={{ width: 38, height: 38, borderRadius: 12, background: '#d2f0e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🏛️</div>
                           <div style={{ flex: 1 }}>
                             <p style={{ fontWeight: 700, fontSize: '13px', color: '#1f6b45', margin: 0 }}>Equipamentos Públicos do Município</p>
-                            <p style={{ fontSize: '11px', color: '#4a8a65', margin: 0 }}>CRAS, CREAS, Centro POP, abrigos e rede de proteção social — {nomeMunicipio}</p>
+                            <p style={{ fontSize: '11px', color: '#4a8a65', margin: 0 }}>CRAS, CREAS, UBS, Pronto Socorro, Conselho Tutelar — {nomeMunicipio || '—'}</p>
                           </div>
                           <span style={{ fontSize: '16px', color: '#4a8a65', transform: showEquipamentos ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
                         </button>
@@ -1479,50 +1591,85 @@ export default function Dashboard() {
                           <div style={{ padding: '0 18px 16px', borderTop: '1px solid #d2f0e0' }}>
                             {equipamentosLoading && (
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 0', color: '#4a8a65', fontSize: 13 }}>
-                                <span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⟳</span> Consultando IBGE...
+                                <Loader2 className="w-4 h-4 animate-spin" /> Consultando IBGE e mapa de equipamentos...
                               </div>
                             )}
 
-                            {!equipamentosLoading && equipamentosData?.ok && (
-                              <>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px', marginTop: '14px', marginBottom: '12px' }}>
-                                  {Object.entries(equipamentosData.suas || {}).map(([key, val]: [string, any]) => {
-                                    const c = SUAS_COLORS[key] || { bg: '#f4f4f4', border: '#ddd', txt: '#333' };
-                                    return (
-                                      <div key={key} style={{ background: c.bg, border: `1.5px solid ${c.border}`, borderRadius: 12, padding: '12px 14px' }}>
-                                        <div style={{ fontSize: 20, marginBottom: 4 }}>{SUAS_ICONS[key] || '📍'}</div>
-                                        <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: c.txt, margin: '0 0 2px' }}>{val.label}</p>
-                                        <p style={{ fontSize: 24, fontWeight: 800, color: c.txt, margin: '0 0 2px', lineHeight: 1 }}>{val.total ?? '—'}</p>
-                                        <p style={{ fontSize: 10, color: c.txt, opacity: 0.7, margin: 0 }}>{val.descricao}</p>
+                            {!equipamentosLoading && equipamentosData && (() => {
+                              const counts = equipamentosData.suas_counts || {};
+                              const totalOsm = osmUnidades ? Object.values(osmUnidades).reduce((s: number, arr: any) => s + arr.length, 0) : 0;
+                              return (
+                                <>
+                                  {/* Contagens SUAS (IBGE) */}
+                                  {Object.keys(counts).length > 0 && (
+                                    <div style={{ marginTop: 14, marginBottom: 12 }}>
+                                      <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#4a8a65', marginBottom: 8 }}>Rede SUAS no município (IBGE 2013)</p>
+                                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
+                                        {Object.entries(counts).map(([key, val]: [string, any]) => {
+                                          const m = CAT_META[key] || CAT_META.cras;
+                                          return (
+                                            <div key={key} style={{ background: m.bg, border: `1.5px solid ${m.border}`, borderRadius: 10, padding: '10px 12px' }}>
+                                              <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: m.txt, margin: '0 0 2px' }}>{m.icon} {val.label}</p>
+                                              <p style={{ fontSize: 22, fontWeight: 800, color: m.txt, margin: 0, lineHeight: 1 }}>{val.total ?? '—'}</p>
+                                            </div>
+                                          );
+                                        })}
                                       </div>
-                                    );
-                                  })}
-                                </div>
-                                <p style={{ fontSize: '10px', color: '#6b8a74', marginBottom: '10px' }}>
-                                  Fonte: {equipamentosData.fonte} · Os dados refletem o levantamento IBGE de {equipamentosData.ano} — consulte as fontes abaixo para informações atualizadas.
-                                </p>
-                              </>
-                            )}
+                                    </div>
+                                  )}
 
-                            {!equipamentosLoading && equipamentosData && !equipamentosData.ok && (
-                              <p style={{ fontSize: 12, color: '#888', padding: '12px 0' }}>
-                                Não foi possível carregar os dados automaticamente. Consulte diretamente nas fontes abaixo.
-                              </p>
-                            )}
+                                  {/* Unidades individuais (OSM) */}
+                                  {osmLoading && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0', color: '#4a8a65', fontSize: 12 }}>
+                                      <Loader2 className="w-3 h-3 animate-spin" /> Localizando unidades com endereço...
+                                    </div>
+                                  )}
+                                  {!osmLoading && osmUnidades && (totalOsm > 0 ? (
+                                    <div style={{ marginTop: 6 }}>
+                                      <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#4a8a65', marginBottom: 8 }}>Unidades localizadas com endereço (OpenStreetMap)</p>
+                                      {Object.entries(CAT_META).map(([cat, meta]) => {
+                                        const items: any[] = osmUnidades[cat] || [];
+                                        if (items.length === 0) return null;
+                                        return (
+                                          <div key={cat} style={{ marginBottom: 12 }}>
+                                            <p style={{ fontSize: 11, fontWeight: 700, color: meta.txt, background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 10px', marginBottom: 6 }}>
+                                              {meta.icon} {meta.label} <span style={{ opacity: 0.7 }}>({items.length})</span>
+                                            </p>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8 }}>
+                                              {items.map((u: any, i: number) => <UnitCard key={i} u={u} cat={cat} />)}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  ) : (
+                                    <div style={{ marginTop: 8, padding: '10px 14px', background: '#f8f8f8', borderRadius: 10, fontSize: 12, color: '#666' }}>
+                                      Nenhuma unidade com endereço encontrada no OpenStreetMap para {nomeMunicipio}. Consulte as fontes abaixo para informações detalhadas.
+                                    </div>
+                                  ))}
+
+                                  <p style={{ fontSize: '10px', color: '#6b8a74', marginTop: 10, marginBottom: 6 }}>
+                                    {equipamentosData.ibge_fonte && <span>Contagens: {equipamentosData.ibge_fonte}. </span>}
+                                    {osmUnidades && totalOsm > 0 && <span>Endereços: OpenStreetMap (colaborativo). </span>}
+                                    Dados podem estar desatualizados.
+                                  </p>
+                                </>
+                              );
+                            })()}
 
                             {!equipamentosLoading && !coMunicipio && (
                               <p style={{ fontSize: 12, color: '#888', padding: '12px 0' }}>Código IBGE do município não disponível para esta escola.</p>
                             )}
 
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
                               {(equipamentosData?.links || [
-                                { nome: 'Mapa SUAS (MDS)', url: 'https://mapas.mds.gov.br/mapas/app/painel-suas/' },
-                                { nome: 'Dados abertos SUAS', url: 'https://dados.gov.br/dataset/unidades-de-atendimento-da-assistencia-social' },
-                                { nome: 'Vigilância Socioassistencial', url: 'https://aplicacoes.mds.gov.br/sagi/vis/dash/index.php' },
+                                { nome: 'Mapa SUAS', url: 'https://mapas.mds.gov.br/mapas/app/painel-suas/' },
+                                { nome: 'CNES (saúde)', url: 'https://cnes.datasus.gov.br/' },
+                                { nome: 'Dados SUAS', url: 'https://dados.gov.br/dataset/unidades-de-atendimento-da-assistencia-social' },
                                 { nome: 'CadSUAS', url: 'https://cadsuas.mds.gov.br/' },
                               ]).map((link: any, i: number) => (
                                 <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-                                  style={{ fontSize: 11, fontWeight: 600, color: '#1f6b45', background: '#d2f0e0', borderRadius: 20, padding: '4px 10px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  style={{ fontSize: 11, fontWeight: 600, color: '#1f6b45', background: '#d2f0e0', borderRadius: 20, padding: '4px 10px', textDecoration: 'none' }}>
                                   {link.nome} ↗
                                 </a>
                               ))}
