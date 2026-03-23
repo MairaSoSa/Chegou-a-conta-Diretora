@@ -1292,8 +1292,8 @@ function AiDocsManager({ token }: { token: string }) {
 
       const extractPdfText = async (sourceFile: File): Promise<string> => {
         const pdfjsLib = await import("pdfjs-dist");
-        const workerUrl = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
-        pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs";
 
         const data = new Uint8Array(await sourceFile.arrayBuffer());
         const loadingTask = pdfjsLib.getDocument({ data });
