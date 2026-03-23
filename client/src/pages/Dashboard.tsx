@@ -1058,68 +1058,62 @@ export default function Dashboard() {
                   const diminuiu = todos.filter(c => c.diff_pp < 0).sort((a, b) => a.diff_pp - b.diff_pp).slice(0, 5);
                   if (!aumentou.length && !diminuiu.length) return null;
 
-                  const InsightCard = ({ cam }: { cam: any }) => {
+                  const MiniCard = ({ cam }: { cam: any }) => {
                     const ganhou = cam.diff_pp > 0;
                     const abs = Math.abs(cam.diff_pp);
                     const deltaN = Math.round(cam.total_2025 - cam.total_2024);
                     return (
                       <div style={{
                         background: ganhou ? "#f0fdf4" : "#fff5f5",
-                        borderRadius: 12, padding: "12px 14px",
+                        borderRadius: 10,
+                        padding: "10px 11px",
                         border: `1px solid ${ganhou ? "#bbf7d0" : "#fecaca"}`,
-                        display: "flex", flexDirection: "column", gap: 6,
+                        display: "flex", flexDirection: "column", gap: 4,
+                        flex: "1 1 0", minWidth: 0,
                       }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", lineHeight: 1.3, flex: 1 }}>{cam.label}</span>
-                          <span style={{ fontSize: 15, fontWeight: 900, color: ganhou ? "#16a34a" : "#dc2626", flexShrink: 0 }}>
-                            {ganhou ? "▲" : "▼"} {abs.toFixed(1)} p.p.
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#1e293b", lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                          {cam.label}
+                        </span>
+                        <div style={{ marginTop: 2 }}>
+                          <span style={{ fontSize: 16, fontWeight: 900, color: ganhou ? "#16a34a" : "#dc2626", display: "block", lineHeight: 1 }}>
+                            {ganhou ? "▲" : "▼"} {abs.toFixed(1)}<span style={{ fontSize: 10, fontWeight: 600 }}>p.p.</span>
+                          </span>
+                          <span style={{ fontSize: 10, color: "#64748b" }}>
+                            {cam.pct_2024}% → <strong style={{ color: "#334155" }}>{cam.pct_2025}%</strong>
                           </span>
                         </div>
-                        <div style={{ fontSize: 11, color: "#64748b" }}>
-                          <span style={{ fontWeight: 600 }}>{cam.pct_2024}%</span>
-                          <span style={{ margin: "0 5px", color: "#cbd5e1" }}>→</span>
-                          <span style={{ fontWeight: 800, color: "#334155" }}>{cam.pct_2025}%</span>
-                        </div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: ganhou ? "#15803d" : "#b91c1c" }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: ganhou ? "#15803d" : "#b91c1c" }}>
                           {ganhou ? "+" : ""}{deltaN.toLocaleString("pt-BR")} escolas
-                        </div>
+                        </span>
                       </div>
                     );
                   };
 
                   return (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {aumentou.length > 0 && (
-                        <Card className="card-clay" style={{ border: "1.5px solid #bbf7d0" }}>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base flex items-center gap-2" style={{ color: "#15803d" }}>
-                              📈 O que aumentou — 2024 → 2025
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                              {aumentou.map((cam: any) => <InsightCard key={cam.key} cam={cam} />)}
-                            </div>
-                          </CardContent>
-                        </Card>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#15803d", marginBottom: 7, display: "flex", alignItems: "center", gap: 5 }}>
+                            📈 O que aumentou — 2024 → 2025
+                          </div>
+                          <div style={{ display: "flex", gap: 7 }}>
+                            {aumentou.map((cam: any) => <MiniCard key={cam.key} cam={cam} />)}
+                          </div>
+                        </div>
                       )}
                       {diminuiu.length > 0 && (
-                        <Card className="card-clay" style={{ border: "1.5px solid #fecaca" }}>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base flex items-center gap-2" style={{ color: "#b91c1c" }}>
-                              📉 O que diminuiu — 2024 → 2025
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                              {diminuiu.map((cam: any) => <InsightCard key={cam.key} cam={cam} />)}
-                            </div>
-                            <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 10 }}>
-                              Fonte: Censo Escolar INEP/MEC. p.p. = pontos percentuais.
-                            </p>
-                          </CardContent>
-                        </Card>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#b91c1c", marginBottom: 7, display: "flex", alignItems: "center", gap: 5 }}>
+                            📉 O que diminuiu — 2024 → 2025
+                          </div>
+                          <div style={{ display: "flex", gap: 7 }}>
+                            {diminuiu.map((cam: any) => <MiniCard key={cam.key} cam={cam} />)}
+                          </div>
+                        </div>
                       )}
+                      <p style={{ fontSize: 10, color: "#94a3b8", margin: 0 }}>
+                        Fonte: Censo Escolar INEP/MEC. p.p. = pontos percentuais.
+                      </p>
                     </div>
                   );
                 })()}
