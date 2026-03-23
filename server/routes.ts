@@ -855,14 +855,21 @@ export async function registerRoutes(
       }
     } catch {}
 
-    // Apenas 6 campos — mais rápido e mais interessante
     const CAMPOS = [
-      { key: "in_internet",              label: "Acesso à internet" },
-      { key: "in_banda_larga",           label: "Banda larga" },
-      { key: "in_biblioteca",            label: "Biblioteca" },
-      { key: "in_energia_renovavel",     label: "Energia renovável" },
-      { key: "in_tempo_integral",        label: "Tempo integral" },
-      { key: "in_acessibilidade_rampas", label: "Rampas de acessibilidade" },
+      { key: "in_internet",                label: "Acesso à internet" },
+      { key: "in_banda_larga",             label: "Banda larga" },
+      { key: "in_wifi",                    label: "Wi-Fi" },
+      { key: "in_biblioteca",              label: "Biblioteca" },
+      { key: "in_laboratorio_informatica", label: "Lab. de informática" },
+      { key: "in_energia_renovavel",       label: "Energia renovável" },
+      { key: "in_quadra_esportes_coberta", label: "Quadra coberta" },
+      { key: "in_refeitorio",              label: "Refeitório" },
+      { key: "in_cozinha",                 label: "Cozinha" },
+      { key: "in_horta",                   label: "Horta escolar" },
+      { key: "in_educacao_indigena",       label: "Ed. Indígena" },
+      { key: "in_educacao_quilombola",     label: "Ed. Quilombola" },
+      { key: "in_educacao_campo",          label: "Ed. do Campo" },
+      { key: "in_ppp",                     label: "Projeto Político-Pedagógico" },
     ];
 
     try {
@@ -2214,14 +2221,24 @@ export async function registerRoutes(
 
   // Pré-aquece o cache de insights nacionais em background (query pesada, só precisa rodar uma vez)
   setTimeout(() => {
-    const CAMPOS = [
-      { key: "in_internet" },
-      { key: "in_banda_larga" },
-      { key: "in_biblioteca" },
-      { key: "in_energia_renovavel" },
-      { key: "in_tempo_integral" },
-      { key: "in_acessibilidade_rampas" },
+    const PREWARM_CAMPOS = [
+      { key: "in_internet",                label: "Acesso à internet" },
+      { key: "in_banda_larga",             label: "Banda larga" },
+      { key: "in_wifi",                    label: "Wi-Fi" },
+      { key: "in_biblioteca",              label: "Biblioteca" },
+      { key: "in_laboratorio_informatica", label: "Lab. de informática" },
+      { key: "in_energia_renovavel",       label: "Energia renovável" },
+      { key: "in_quadra_esportes_coberta", label: "Quadra coberta" },
+      { key: "in_refeitorio",              label: "Refeitório" },
+      { key: "in_cozinha",                 label: "Cozinha" },
+      { key: "in_horta",                   label: "Horta escolar" },
+      { key: "in_educacao_indigena",       label: "Ed. Indígena" },
+      { key: "in_educacao_quilombola",     label: "Ed. Quilombola" },
+      { key: "in_educacao_campo",          label: "Ed. do Campo" },
+      { key: "in_ppp",                     label: "Projeto Político-Pedagógico" },
     ];
+    // Invalida cache antigo (campos mudaram)
+    try { sqlite.prepare(`DELETE FROM stats_cache WHERE cache_key='censo_insights_BR'`).run(); } catch {}
     for (const scope of ["BR"]) {
       const CACHE_KEY = `censo_insights_${scope}`;
       try {
@@ -2235,17 +2252,16 @@ export async function registerRoutes(
       try {
         const result: Record<string, any> = {};
         for (const ano of [2024, 2025]) {
-          const selectParts = [`COUNT(*) as total`, ...CAMPOS.map(c => `SUM(CAST(COALESCE(json_extract(dados,'$.${c.key}'),0) as INTEGER)) as ${c.key}`)].join(', ');
+          const selectParts = [`COUNT(*) as total`, ...PREWARM_CAMPOS.map(c => `SUM(CAST(COALESCE(json_extract(dados,'$.${c.key}'),0) as INTEGER)) as ${c.key}`)].join(', ');
           result[ano] = sqlite.prepare(`SELECT ${selectParts} FROM censo_escolar WHERE ano=? AND situacao='Em Atividade'`).get(ano) as any;
         }
-        const LABELS: Record<string, string> = { in_internet: "Acesso à internet", in_banda_larga: "Banda larga", in_biblioteca: "Biblioteca", in_energia_renovavel: "Energia renovável", in_tempo_integral: "Tempo integral", in_acessibilidade_rampas: "Rampas de acessibilidade" };
-        const campos_resultado = CAMPOS.map(c => {
+        const campos_resultado = PREWARM_CAMPOS.map(c => {
           const v24 = result[2024] as any;
           const v25 = result[2025] as any;
           if (!v24?.total || !v25?.total) return null;
           const pct24 = v24[c.key] / v24.total;
           const pct25 = v25[c.key] / v25.total;
-          return { key: c.key, label: LABELS[c.key] || c.key, pct_2024: Math.round(pct24 * 1000) / 10, pct_2025: Math.round(pct25 * 1000) / 10, diff_pp: Math.round((pct25 - pct24) * 1000) / 10, total_2024: v24[c.key], total_2025: v25[c.key], escolas_2024: v24.total, escolas_2025: v25.total };
+          return { key: c.key, label: c.label, pct_2024: Math.round(pct24 * 1000) / 10, pct_2025: Math.round(pct25 * 1000) / 10, diff_pp: Math.round((pct25 - pct24) * 1000) / 10, total_2024: v24[c.key], total_2025: v25[c.key], escolas_2024: v24.total, escolas_2025: v25.total };
         }).filter(Boolean);
         const payload = JSON.stringify({ scope, campos: campos_resultado });
         sqlite.prepare(`INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?) ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at`).run(CACHE_KEY, payload, new Date().toISOString());
