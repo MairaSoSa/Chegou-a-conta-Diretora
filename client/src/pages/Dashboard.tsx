@@ -1457,10 +1457,66 @@ export default function Dashboard() {
                     return null;
                   };
 
+                  const classifyCnes = (est: any): string | null => {
+                    const tp = (est.descricao_tipo_unidade || '').toLowerCase();
+                    const nm = ((est.nome_fantasia || est.nome_razao_social) || '').toLowerCase();
+                    const full = nm + ' ' + tp;
+                    if (/pronto[- ]socorro|upa\b|upas\b|urgência|urgencia|upa -/.test(full)) return 'pronto_socorro';
+                    if (/hospital\b/.test(full)) return 'hospital';
+                    if (/cras\b|centro de referência da assist|centro de refer.ncia da assist/.test(full)) return 'cras';
+                    if (/creas\b|centro de referência especializ|centro de refer.ncia especializ/.test(full)) return 'creas';
+                    if (/centro pop\b|pop de rua/.test(full)) return 'centro_pop';
+                    if (/conselho tutelar/.test(full)) return 'conselho_tutelar';
+                    if (/abrigo|casa lar|albergue/.test(full)) return 'abrigos';
+                    if (/posto de sa[uú]de|unidade b[áa]sica|centro de sa[uú]de|unidade de sa[uú]de|policl[íi]nica|usf\b|psf\b|esf\b|ubsf?\b|ubds\b|unidade mista/.test(full)) return 'ubs';
+                    if (/sa[uú]de da fam[íi]lia|saúde da família|estratégia/.test(full)) return 'ubs';
+                    return null;
+                  };
+
                   const fetchOsmData = (coMun: string) => {
                     if (!coMun || osmUnidades !== null || osmLoading) return;
                     setOsmLoading(true);
-                    const query = `[out:json][timeout:25];
+
+                    const coMunSeis = String(coMun).length === 7 ? String(coMun).slice(0, 6) : String(coMun);
+
+                    const cats: Record<string, any[]> = {
+                      conselho_tutelar: [], cras: [], creas: [], centro_pop: [],
+                      ubs: [], hospital: [], pronto_socorro: [], abrigos: [],
+                    };
+
+                    const ctrl = new AbortController();
+                    const timer = setTimeout(() => ctrl.abort(), 32000);
+
+                    // ── 1. CNES (Ministério da Saúde) — endereços oficiais ──
+                    const cnesPromise = fetch(
+                      `https://apidadosabertos.saude.gov.br/cnes/estabelecimentos?codigo_municipio=${coMunSeis}&limit=300`,
+                      { signal: ctrl.signal }
+                    )
+                      .then(r => r.ok ? r.json() : null)
+                      .then((data: any) => {
+                        if (!data?.estabelecimentos) return;
+                        for (const est of data.estabelecimentos) {
+                          const cat = classifyCnes(est);
+                          if (cat && cats[cat]) {
+                            const lat = est.latitude ? parseFloat(est.latitude) : null;
+                            const lon = est.longitude ? parseFloat(est.longitude) : null;
+                            const logr = [est.logradouro, est.numero].filter(Boolean).join(', ');
+                            const endStr = [logr, est.bairro, est.municipio, est.cep ? `CEP ${est.cep}` : ''].filter(Boolean).join(' — ');
+                            cats[cat].push({
+                              source: 'cnes',
+                              nome: est.nome_fantasia || est.nome_razao_social || null,
+                              endereco: endStr || null,
+                              telefone: est.telefone || null,
+                              lat, lon,
+                              mapsUrl: (lat && lon) ? `https://www.google.com/maps?q=${lat},${lon}` : null,
+                            });
+                          }
+                        }
+                      })
+                      .catch(() => {});
+
+                    // ── 2. Overpass/OSM — complementa com equipamentos sociais ──
+                    const overpassQuery = `[out:json][timeout:25];
 (
   rel["ref:IBGE"="${coMun}"]["boundary"="administrative"];
 )->.r;
@@ -1470,27 +1526,20 @@ map_to_area(.r)->.mun;
   node(area.mun)[healthcare~"^(hospital|clinic|centre|doctor)$"];
   node(area.mun)[social_facility~"^(shelter|emergency|outreach)$"];
   node(area.mun)[office="government"][name~"conselho tutelar|CRAS|CREAS|centro pop",i];
-  node(area.mun)[name~"conselho tutelar|CRAS|CREAS|centro pop|pronto socorro|UBS|UPA|posto de sa[uú]de|centro de sa[uú]de|unidade de sa[uú]de|unidade b[áa]sica|PSF|USF|ESF|abrigo|casa lar|albergue",i];
+  node(area.mun)[name~"conselho tutelar|CRAS|CREAS|centro pop|pronto socorro|UBS|UPA|posto de saude|centro de saude|unidade de saude|unidade basica|PSF|USF|ESF|abrigo|casa lar|albergue",i];
   way(area.mun)[amenity~"^(clinic|hospital|social_facility)$"];
   way(area.mun)[healthcare~"^(hospital|clinic|centre)$"];
-  way(area.mun)[name~"conselho tutelar|CRAS|CREAS|pronto socorro|UBS|UPA|posto de sa[uú]de|PSF|abrigo",i];
+  way(area.mun)[name~"conselho tutelar|CRAS|CREAS|pronto socorro|UBS|UPA|posto de saude|PSF|abrigo",i];
 );
 out center tags 100;`;
-                    const ctrl = new AbortController();
-                    const timer = setTimeout(() => ctrl.abort(), 30000);
-                    fetch('https://overpass-api.de/api/interpreter', {
+                    const overpassPromise = fetch('https://overpass-api.de/api/interpreter', {
                       method: 'POST',
-                      body: new URLSearchParams({ data: query }),
+                      body: new URLSearchParams({ data: overpassQuery }),
                       signal: ctrl.signal,
                     })
                       .then(r => r.json())
                       .then((json: any) => {
-                        clearTimeout(timer);
                         const elements: any[] = json.elements || [];
-                        const cats: Record<string, any[]> = {
-                          conselho_tutelar: [], cras: [], creas: [], centro_pop: [],
-                          ubs: [], hospital: [], pronto_socorro: [],
-                        };
                         const seen = new Set<number>();
                         for (const el of elements) {
                           if (seen.has(el.id)) continue;
@@ -1508,25 +1557,35 @@ out center tags 100;`;
                             const streetPart = [street, num].filter(Boolean).join(', ');
                             const endStr = [streetPart, bairro, city, cep].filter(Boolean).join(' — ');
                             cats[cat].push({
+                              source: 'osm',
                               nome: t.name || t['name:pt'] || null,
                               endereco: endStr || null,
                               telefone: t.phone || t['contact:phone'] || t['contact:mobile'] || null,
                               horario: t.opening_hours || null,
                               website: t.website || t['contact:website'] || null,
-                              lat,
-                              lon,
+                              lat, lon,
                               mapsUrl: (lat && lon) ? `https://www.google.com/maps?q=${lat},${lon}` : null,
                             });
                           }
                         }
-                        setOsmUnidades(cats);
-                        setOsmLoading(false);
                       })
-                      .catch(() => {
-                        clearTimeout(timer);
-                        setOsmUnidades({});
-                        setOsmLoading(false);
-                      });
+                      .catch(() => {});
+
+                    Promise.allSettled([cnesPromise, overpassPromise]).then(() => {
+                      clearTimeout(timer);
+                      // dedup: remove OSM duplicates se CNES já cobriu a categoria com nome similar
+                      for (const cat of Object.keys(cats)) {
+                        const cnesNames = new Set(
+                          cats[cat].filter((u: any) => u.source === 'cnes').map((u: any) => (u.nome || '').toLowerCase().slice(0, 20))
+                        );
+                        cats[cat] = cats[cat].filter((u: any) =>
+                          u.source === 'cnes' || !cnesNames.has((u.nome || '').toLowerCase().slice(0, 20))
+                        );
+                      }
+                      setOsmUnidades({ ...cats });
+                      setOsmLoading(false);
+                    });
+
                   };
 
                   const handleToggleEquipamentos = () => {
@@ -1666,7 +1725,7 @@ out center tags 100;`;
                                   )}
                                   {!osmLoading && osmUnidades && (totalOsm > 0 ? (
                                     <div style={{ marginTop: 6 }}>
-                                      <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#4a8a65', marginBottom: 8 }}>Unidades localizadas com endereço (OpenStreetMap)</p>
+                                      <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#4a8a65', marginBottom: 8 }}>Unidades localizadas — CNES / Mapa colaborativo</p>
                                       {Object.entries(CAT_META).map(([cat, meta]) => {
                                         const items: any[] = osmUnidades[cat] || [];
                                         if (items.length === 0) return null;
@@ -1684,8 +1743,8 @@ out center tags 100;`;
                                     </div>
                                   ) : (
                                     <div style={{ marginTop: 8, padding: '12px 14px', background: '#fffdf5', border: '1px solid #f0ddb5', borderRadius: 10, fontSize: 12, color: '#7a4a10' }}>
-                                      <p style={{ margin: '0 0 8px', fontWeight: 600 }}>📍 Endereços não localizados no mapa colaborativo para {nomeMunicipio}</p>
-                                      <p style={{ margin: '0 0 8px', color: '#555', fontSize: 11 }}>Os equipamentos existem segundo o IBGE, mas ainda não foram georreferenciados. Consulte os sistemas oficiais abaixo para encontrar o endereço:</p>
+                                      <p style={{ margin: '0 0 8px', fontWeight: 600 }}>📍 Unidades não localizadas no CNES ou no mapa colaborativo para {nomeMunicipio}</p>
+                                      <p style={{ margin: '0 0 8px', color: '#555', fontSize: 11 }}>Os equipamentos existem segundo o IBGE, mas não foram encontrados no CNES (Ministério da Saúde) nem no OpenStreetMap. Consulte diretamente nos sistemas oficiais:</p>
                                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                                         <a href={`https://cadsuas.mds.gov.br/`} target="_blank" rel="noopener noreferrer"
                                           style={{ fontSize: 11, fontWeight: 600, color: '#1f6b45', background: '#d2f0e0', borderRadius: 20, padding: '3px 9px', textDecoration: 'none' }}>
@@ -1709,7 +1768,7 @@ out center tags 100;`;
 
                                   <p style={{ fontSize: '10px', color: '#6b8a74', marginTop: 10, marginBottom: 6 }}>
                                     {equipamentosData.ibge_fonte && <span>Contagens: {equipamentosData.ibge_fonte}. </span>}
-                                    {osmUnidades && totalOsm > 0 && <span>Endereços: OpenStreetMap (colaborativo). </span>}
+                                    {osmUnidades && totalOsm > 0 && <span>Endereços: CNES/Min. Saúde e OpenStreetMap. </span>}
                                     Dados podem estar desatualizados.
                                   </p>
                                 </>
