@@ -110,6 +110,7 @@ export default function Dashboard() {
   const { data: microregiaoData } = useEscolaMicroregiao(selectedInep || "");
   const { data: diagnosticoData } = useEscolaDiagnostico(selectedInep || "");
   const [pddeAno, setPddeAno] = useState<number>(new Date().getFullYear());
+  const [rendSegmento, setRendSegmento] = useState<'ai' | 'af' | 'med' | null>(null);
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
   const pddeCnpj = pddeData?.uex?.cnpj || null;
   const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
@@ -361,6 +362,15 @@ export default function Dashboard() {
           aprovacao: tr.aprovacao_fund ?? tr.aprovacao_total ?? null,
           reprovacao: tr.reprovacao_fund ?? tr.reprovacao_total ?? null,
           abandono: tr.abandono_fund ?? tr.abandono_total ?? null,
+          aprovacao_ai: tr.aprovacao_fund_ai ?? null,
+          reprovacao_ai: tr.reprovacao_fund_ai ?? null,
+          abandono_ai: tr.abandono_fund_ai ?? null,
+          aprovacao_af: tr.aprovacao_fund_af ?? null,
+          reprovacao_af: tr.reprovacao_fund_af ?? null,
+          abandono_af: tr.abandono_fund_af ?? null,
+          aprovacao_med: tr.aprovacao_med ?? null,
+          reprovacao_med: tr.reprovacao_med ?? null,
+          abandono_med: tr.abandono_med ?? null,
         };
       }),
       tdi: anos.map((a: number) => {
@@ -1409,8 +1419,13 @@ export default function Dashboard() {
                 {(() => {
                   const ch = evolutionCharts;
                   const saebLatest = ch?.saeb?.slice().reverse().find((d: any) => d.mt_af != null || d.lp_af != null || d.mt_ai != null || d.mt_em != null);
-                  const rendLatest = ch?.taxasRendimento?.slice().reverse().find((d: any) => d.aprovacao != null);
-                  const allRend = ch?.taxasRendimento?.filter((d: any) => d.aprovacao != null).slice().sort((a: any, b: any) => a.ano - b.ano) || [];
+                  const rendLatest = ch?.taxasRendimento?.slice().reverse().find((d: any) => d.aprovacao != null || d.aprovacao_ai != null || d.aprovacao_af != null || d.aprovacao_med != null);
+                  const allRend = ch?.taxasRendimento?.filter((d: any) => d.aprovacao != null || d.aprovacao_ai != null || d.aprovacao_af != null || d.aprovacao_med != null).slice().sort((a: any, b: any) => a.ano - b.ano) || [];
+                  const rendSegmentos = [
+                    { key: 'ai', label: 'Anos Iniciais', sub: 'Fund. 1º–5º ano', aprov: 'aprovacao_ai', reprov: 'reprovacao_ai', aband: 'abandono_ai', color: '#2d6a4f' },
+                    { key: 'af', label: 'Anos Finais', sub: 'Fund. 6º–9º ano', aprov: 'aprovacao_af', reprov: 'reprovacao_af', aband: 'abandono_af', color: '#1d3557' },
+                    { key: 'med', label: 'Ensino Médio', sub: '1ª–3ª série', aprov: 'aprovacao_med', reprov: 'reprovacao_med', aband: 'abandono_med', color: '#6b2d6b' },
+                  ].filter(s => rendLatest && rendLatest[s.aprov] != null);
                   if (!saebLatest && !rendLatest) return null;
                   const saebMetrics = [
                     { key: 'mt_ai', label: 'Matemática', sub: 'Anos Iniciais', color: '#2d5a88' },
@@ -1450,28 +1465,85 @@ export default function Dashboard() {
                           <div style={{ fontWeight: 700, fontSize: 13, color: '#5d4037', marginBottom: 10 }}>
                             📊 Taxas de aprovação, reprovação e abandono (%)
                           </div>
-                          <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                              <thead>
-                                <tr style={{ background: '#f7f2ea' }}>
-                                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
-                                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#2f7a58', fontSize: 12 }}>✓ Aprovação</th>
-                                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#b74f42', fontSize: 12 }}>✗ Reprovação</th>
-                                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#c47a1f', fontSize: 12 }}>⚠ Abandono</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {allRend.map((d: any, i: number) => (
-                                  <tr key={d.ano} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
-                                    <td style={{ padding: '10px 14px', fontWeight: 700, color: '#5d4037' }}>{d.ano}</td>
-                                    <td style={{ padding: '10px 14px', textAlign: 'right', color: '#2f7a58', fontWeight: 600 }}>{d.aprovacao != null ? `${Number(d.aprovacao).toFixed(1)}%` : '—'}</td>
-                                    <td style={{ padding: '10px 14px', textAlign: 'right', color: '#b74f42', fontWeight: 600 }}>{d.reprovacao != null ? `${Number(d.reprovacao).toFixed(1)}%` : '—'}</td>
-                                    <td style={{ padding: '10px 14px', textAlign: 'right', color: '#c47a1f', fontWeight: 600 }}>{d.abandono != null ? `${Number(d.abandono).toFixed(1)}%` : '—'}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
+
+                          {/* ── Cartões de segmento clicáveis ── */}
+                          {rendSegmentos.length > 0 && (
+                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+                              {rendSegmentos.map(s => {
+                                const isActive = rendSegmento === s.key;
+                                const latestAprov = rendLatest?.[s.aprov];
+                                return (
+                                  <button
+                                    key={s.key}
+                                    onClick={() => setRendSegmento(isActive ? null : s.key as any)}
+                                    style={{
+                                      flex: '1 1 130px', minWidth: 120,
+                                      padding: '12px 14px',
+                                      border: `2px solid ${isActive ? s.color : '#e7d9bf'}`,
+                                      borderRadius: '14px 16px 12px 15px',
+                                      background: isActive ? s.color : '#fffef8',
+                                      color: isActive ? '#fff' : '#3d4450',
+                                      cursor: 'pointer',
+                                      textAlign: 'left',
+                                      boxShadow: isActive ? `0 4px 14px ${s.color}44` : '0 2px 8px rgba(83,72,53,0.07)',
+                                      transition: 'all .18s',
+                                    }}
+                                  >
+                                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', opacity: isActive ? 0.85 : 0.6, marginBottom: 2 }}>{s.sub}</div>
+                                    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>{s.label}</div>
+                                    {latestAprov != null && (
+                                      <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1, letterSpacing: '-0.03em' }}>
+                                        {Number(latestAprov).toFixed(1)}<span style={{ fontSize: 13, fontWeight: 600 }}>%</span>
+                                      </div>
+                                    )}
+                                    <div style={{ fontSize: 10, marginTop: 3, opacity: 0.7 }}>{isActive ? '▼ clique p/ fechar' : 'aprovação · clique'}</div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* ── Tabela: visão geral ou drill-down por segmento ── */}
+                          {(() => {
+                            const seg = rendSegmento ? rendSegmentos.find(s => s.key === rendSegmento) : null;
+                            const rows = allRend.filter((d: any) => seg ? d[seg.aprov] != null : d.aprovacao != null);
+                            if (rows.length === 0) return null;
+                            return (
+                              <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
+                                {seg && (
+                                  <div style={{ padding: '9px 14px', background: seg.color, color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <span>📌 {seg.label} — {seg.sub}</span>
+                                    <button onClick={() => setRendSegmento(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 13, opacity: 0.8 }}>✕ ver geral</button>
+                                  </div>
+                                )}
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                  <thead>
+                                    <tr style={{ background: '#f7f2ea' }}>
+                                      <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
+                                      <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#2f7a58', fontSize: 12 }}>✓ Aprovação</th>
+                                      <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#b74f42', fontSize: 12 }}>✗ Reprovação</th>
+                                      <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#c47a1f', fontSize: 12 }}>⚠ Abandono</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {rows.map((d: any, i: number) => {
+                                      const aprov = seg ? d[seg.aprov] : d.aprovacao;
+                                      const reprov = seg ? d[seg.reprov] : d.reprovacao;
+                                      const aband = seg ? d[seg.aband] : d.abandono;
+                                      return (
+                                        <tr key={d.ano} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                          <td style={{ padding: '10px 14px', fontWeight: 700, color: '#5d4037' }}>{d.ano}</td>
+                                          <td style={{ padding: '10px 14px', textAlign: 'right', color: '#2f7a58', fontWeight: 600 }}>{aprov != null ? `${Number(aprov).toFixed(1)}%` : '—'}</td>
+                                          <td style={{ padding: '10px 14px', textAlign: 'right', color: '#b74f42', fontWeight: 600 }}>{reprov != null ? `${Number(reprov).toFixed(1)}%` : '—'}</td>
+                                          <td style={{ padding: '10px 14px', textAlign: 'right', color: '#c47a1f', fontWeight: 600 }}>{aband != null ? `${Number(aband).toFixed(1)}%` : '—'}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </section>
