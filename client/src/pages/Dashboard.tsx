@@ -1647,7 +1647,13 @@ out center tags 100;`;
                         </div>
                         {u.endereco ? (
                           <p style={{ fontSize: 11, color: '#555', margin: '0 0 3px', display: 'flex', alignItems: 'flex-start', gap: 4 }}>
-                            <span style={{ flexShrink: 0 }}>📍</span> {u.endereco}
+                            <span style={{ flexShrink: 0 }}>📍</span>
+                            <span>
+                              {u.endereco}
+                              {u.endereco_verificado && (
+                                <span style={{ marginLeft: 5, fontSize: 9, fontWeight: 700, color: '#2f7a58', background: '#d2f0e0', borderRadius: 8, padding: '1px 5px', verticalAlign: 'middle' }}>✓ mapa</span>
+                              )}
+                            </span>
                           </p>
                         ) : (
                           <p style={{ fontSize: 11, color: '#999', margin: '0 0 3px', fontStyle: 'italic' }}>

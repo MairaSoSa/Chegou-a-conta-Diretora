@@ -2323,6 +2323,10 @@ export async function registerRoutes(
   });
 
   // ── BUSCA CRAS/CREAS por município (cadunicobrasil.com.br scraper) ──
+  // Cache: avoid re-geocoding the same municipality within the server process lifetime
+  const crasCacheStore: Record<string, { data: any; at: number }> = {};
+  const CRAS_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+
   app.get("/api/busca-cras", async (req, res) => {
     const { municipio, uf, tipo = "CRAS" } = req.query as Record<string, string>;
     if (!municipio || !uf) return res.status(400).json({ ok: false, error: "municipio e uf obrigatórios" });
@@ -2333,6 +2337,11 @@ export async function registerRoutes(
 
     const tipoSlug = tipo.toLowerCase() === "creas" ? "creas" : "cras";
     const munSlug = toSlug(municipio);
+    const cacheKey = `${tipoSlug}:${munSlug}`;
+    const cached = crasCacheStore[cacheKey];
+    if (cached && Date.now() - cached.at < CRAS_CACHE_TTL_MS) {
+      return res.json(cached.data);
+    }
     const pageUrl = `https://cadunicobrasil.com.br/${tipoSlug}-${munSlug}/`;
 
     const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -2350,7 +2359,9 @@ export async function registerRoutes(
       const canonicalM = html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i);
       const canonical = canonicalM ? canonicalM[1] : "";
       if (!canonical.includes(`/${tipoSlug}-${munSlug}/`)) {
-        return res.json({ ok: true, municipio, uf, tipo: tipoSlug.toUpperCase(), units: [], source: pageUrl, nota: "Sem página específica" });
+        const noPageResult = { ok: true, municipio, uf, tipo: tipoSlug.toUpperCase(), units: [], source: pageUrl, nota: "Sem página específica" };
+        crasCacheStore[cacheKey] = { data: noPageResult, at: Date.now() };
+        return res.json(noPageResult);
       }
 
       // Find "locais-de-atendimento" section or any section with address data
@@ -2429,11 +2440,69 @@ export async function registerRoutes(
         const { endereco, telefone } = parsed[i];
         const nome = parsed[i - 1].trailingName || `${tipoSlug.toUpperCase()} ${municipio} ${i}`;
         if (endereco.length > 5) {
-          units.push({ nome, endereco, telefone, fonte_url: pageUrl });
+          units.push({ nome, endereco, telefone, fonte_url: pageUrl, endereco_verificado: false });
         }
       }
 
-      return res.json({ ok: true, municipio, uf, tipo: tipoSlug.toUpperCase(), units, source: pageUrl });
+      // ── Validação de endereço via Nominatim (OpenStreetMap Geocoding) ──
+      // Geocodifica o endereço scraped para obter coordenadas e CEP confirmados.
+      // Respeita o limite de 1 req/s da política de uso gratuito do Nominatim.
+      const nominatimBase = "https://nominatim.openstreetmap.org/search";
+      const nominatimUA = "chegoua-conta-diretora/1.0 (educacao publica br)";
+
+      // Build a clean geocoding query from scraped address:
+      // Use main street/avenue name only (first comma-segment, strip lot/apt codes)
+      const toGeoQuery = (endereco: string, mun: string, ufStr: string): string => {
+        // Take only first segment (before first comma or em-dash)
+        const firstSeg = endereco.split(/[,;]|[-–](?=\s)/)[0].trim();
+        // Remove lot / apartment / block suffixes: Lote, APM, QI, nº, s/n, etc.
+        const road = firstSeg
+          .replace(/\b(Lote|Lts?|APM|QI|Apto?|nº|n\.|s\/n|sn|Bloco|Bl\.?|Lt\.?)\s*[\d\w]*/gi, "")
+          .replace(/\s+/g, " ").trim();
+        return `${road} ${mun}`;
+      };
+
+      for (let ui = 0; ui < units.length; ui++) {
+        const u = units[ui];
+        try {
+          // Wait 1.1 s between requests (Nominatim usage policy)
+          if (ui > 0) await new Promise(r => setTimeout(r, 1100));
+          const geoQ = encodeURIComponent(toGeoQuery(u.endereco, municipio, uf));
+          const nmResp = await fetch(`${nominatimBase}?q=${geoQ}&format=json&limit=1&addressdetails=1&countrycodes=br`, {
+            signal: AbortSignal.timeout(6000),
+            headers: { "User-Agent": nominatimUA, "Accept-Language": "pt-BR,pt;q=0.9" },
+          });
+          if (!nmResp.ok) continue;
+          const nmData: any[] = await nmResp.json();
+          if (!nmData.length) continue;
+          const hit = nmData[0];
+          const addr = hit.address || {};
+          // Build clean address from structured Nominatim components
+          const road = addr.road || addr.pedestrian || addr.footway || addr.path || addr.street || "";
+          const num = addr.house_number && addr.house_number !== "sn" ? `nº ${addr.house_number}` : "";
+          const bairro = addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district || "";
+          const cep = addr.postcode ? `CEP ${addr.postcode}` : "";
+          const parts_addr = [road, num, bairro, cep].map(s => s.trim()).filter(Boolean);
+          if (parts_addr.length >= 2 && road) {
+            // Keep original scraped address but annotate with coords + CEP
+            u.cep = addr.postcode || null;
+            u.endereco_verificado = true;
+            u.lat = parseFloat(hit.lat);
+            u.lon = parseFloat(hit.lon);
+            u.mapsUrl = `https://www.google.com/maps?q=${hit.lat},${hit.lon}`;
+            // Append CEP to original address if not already present
+            if (addr.postcode && !u.endereco.includes(addr.postcode)) {
+              u.endereco = `${u.endereco} — CEP ${addr.postcode}`;
+            }
+          }
+        } catch {
+          // Nominatim timeout or error — keep original address
+        }
+      }
+
+      const result = { ok: true, municipio, uf, tipo: tipoSlug.toUpperCase(), units, source: pageUrl };
+      crasCacheStore[cacheKey] = { data: result, at: Date.now() };
+      return res.json(result);
     } catch (e: any) {
       return res.json({ ok: false, municipio, uf, tipo: tipoSlug.toUpperCase(), units: [], error: e.message });
     }
