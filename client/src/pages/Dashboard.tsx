@@ -87,6 +87,7 @@ export default function Dashboard() {
   const selectedInep = activeTabId === "overview" ? null : (schoolTabs.find(t => t.id === activeTabId)?.inep || null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [selectedChart, setSelectedChart] = useState("matriculas");
+  const [chartEtapa, setChartEtapa] = useState<string>('total');
   const [showChartDropdown, setShowChartDropdown] = useState(false);
   const [activeSchoolTab, setActiveSchoolTab] = useState<"dim1"|"dim2"|"dim3"|"dim4"|"dim5"|"dim6"|"dim7"|"dim8"|"dim9"|"dim10">("dim1");
   const [filterUf, setFilterUf] = useState("");
@@ -1272,9 +1273,9 @@ export default function Dashboard() {
                 const cleanTitle = (titulo: string) => titulo.replace(/:\s*[\d,\.]+\s*(?:%|alunos\/turma|h\/dia|h)?\s*$/, '').replace(/:\s*Nível\s*\d+\s*$/, '');
                 const ch = evolutionCharts;
                 const available = [
-                  { id: 'matriculas', label: 'Matrículas', icon: '👩‍🎓', data: evolucaoData.anos_disponiveis.slice().sort((a:number,b:number)=>a-b).map((a: number) => ({ ano: String(a), Matrículas: evolucaoData.censo_por_ano[a]?.qt_mat_bas || 0 })), lines: [{ key: 'Matrículas', color: '#2d5a88', name: 'Matrículas' }], desc: 'Total de alunos matriculados em todos os níveis de ensino.' },
-                  { id: 'docentes', label: 'Docentes', icon: '🧑‍🏫', data: evolucaoData.anos_disponiveis.slice().sort((a:number,b:number)=>a-b).map((a: number) => ({ ano: String(a), Docentes: evolucaoData.censo_por_ano[a]?.qt_doc_bas || evolucaoData.censo_por_ano[a]?.qt_docentes || 0 })), lines: [{ key: 'Docentes', color: '#9b6a16', name: 'Docentes' }], desc: 'Número de professores atuando na educação básica.' },
-                  { id: 'turmas', label: 'Turmas', icon: '🏫', data: evolucaoData.anos_disponiveis.slice().sort((a:number,b:number)=>a-b).map((a: number) => ({ ano: String(a), Turmas: evolucaoData.censo_por_ano[a]?.qt_tur_bas || evolucaoData.censo_por_ano[a]?.qt_turmas || 0 })), lines: [{ key: 'Turmas', color: '#2f7a58', name: 'Turmas' }], desc: 'Total de turmas da educação básica.' },
+                  { id: 'matriculas', label: 'Matrículas', icon: '👩‍🎓', etapas: true, data: evolucaoData.anos_disponiveis.slice().sort((a:number,b:number)=>a-b).map((a: number) => { const c = evolucaoData.censo_por_ano[a]; return { ano: String(a), 'Total': c?.qt_mat_bas || null, 'E. Infantil': c?.qt_mat_inf || null, 'Fundamental': c?.qt_mat_fund || null, 'Médio': c?.qt_mat_med || null, 'EJA': c?.qt_mat_eja || null }; }), lines: [{ key: 'Total', color: '#2d5a88', name: 'Total', etapa: 'total' }, { key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }, { key: 'Fundamental', color: '#2f7a58', name: 'Fundamental', etapa: 'fund' }, { key: 'Médio', color: '#9b6a16', name: 'Médio', etapa: 'med' }, { key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }], desc: 'Total de alunos matriculados por etapa de ensino.' },
+                  { id: 'docentes', label: 'Docentes', icon: '🧑‍🏫', etapas: true, data: evolucaoData.anos_disponiveis.slice().sort((a:number,b:number)=>a-b).map((a: number) => { const c = evolucaoData.censo_por_ano[a]; return { ano: String(a), 'Total': c?.qt_doc_bas || c?.qt_docentes || null, 'E. Infantil': c?.qt_doc_inf || null, 'Fundamental': c?.qt_doc_fund || null, 'Médio': c?.qt_doc_med || null }; }), lines: [{ key: 'Total', color: '#9b6a16', name: 'Total', etapa: 'total' }, { key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }, { key: 'Fundamental', color: '#2f7a58', name: 'Fundamental', etapa: 'fund' }, { key: 'Médio', color: '#c47a1f', name: 'Médio', etapa: 'med' }], desc: 'Número de docentes atuando por etapa de ensino.' },
+                  { id: 'turmas', label: 'Turmas', icon: '🏫', etapas: true, data: evolucaoData.anos_disponiveis.slice().sort((a:number,b:number)=>a-b).map((a: number) => { const c = evolucaoData.censo_por_ano[a]; return { ano: String(a), 'Total': c?.qt_tur_bas || c?.qt_turmas || null, 'E. Infantil': c?.qt_tur_inf || null, 'Fundamental': c?.qt_tur_fund || null, 'Médio': c?.qt_tur_med || null }; }), lines: [{ key: 'Total', color: '#2f7a58', name: 'Total', etapa: 'total' }, { key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }, { key: 'Fundamental', color: '#2d5a88', name: 'Fundamental', etapa: 'fund' }, { key: 'Médio', color: '#9b6a16', name: 'Médio', etapa: 'med' }], desc: 'Total de turmas por etapa de ensino.' },
                   ...(ch?.ideb ? [{ id: 'ideb', label: 'IDEB', icon: '⭐', data: ch.ideb.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'AI': d.ideb_ai, 'AF': d.ideb_af, 'Médio': d.ideb_em })), lines: [{ key: 'AI', color: '#2d5a88', name: 'Anos Iniciais' },{ key: 'AF', color: '#9b6a16', name: 'Anos Finais' },{ key: 'Médio', color: '#2f7a58', name: 'Ensino Médio' }], desc: 'IDEB por etapa de ensino (escala 0–10, meta ≥ 6,0).' }] : []),
                   ...(ch?.taxasRendimento ? [{ id: 'rendimento', label: 'Rendimento', icon: '📊', data: ch.taxasRendimento.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Aprovação': d.aprovacao, 'Reprovação': d.reprovacao, 'Abandono': d.abandono })), lines: [{ key: 'Aprovação', color: '#2f7a58', name: 'Aprovação' },{ key: 'Reprovação', color: '#b74f42', name: 'Reprovação' },{ key: 'Abandono', color: '#c47a1f', name: 'Abandono' }], desc: 'Taxas de aprovação, reprovação e abandono escolar (%).' }] : []),
                   ...(ch?.tdi ? [{ id: 'tdi', label: 'Dist. Idade', icon: '📅', data: ch.tdi.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Fundamental': d.fund_total, 'Médio': d.medio })), lines: [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental' },{ key: 'Médio', color: '#9b6a16', name: 'Médio' }], desc: 'TDI — % de alunos com 2 ou mais anos de defasagem idade-série.' }] : []),
@@ -3273,7 +3274,7 @@ export default function Dashboard() {
                           {available.map((c, i) => (
                             <button
                               key={c.id}
-                              onClick={() => { setSelectedChart(c.id); setShowChartDropdown(false); }}
+                              onClick={() => { setSelectedChart(c.id); setChartEtapa('total'); setShowChartDropdown(false); }}
                               style={{
                                 display: 'flex', alignItems: 'center', gap: 10,
                                 padding: '9px 12px',
@@ -3297,29 +3298,68 @@ export default function Dashboard() {
                     </div>
 
                     {/* Chart card — full width */}
-                    <div className="soft-card" style={{ padding: '20px' }}>
-                      <div className="chart-header">
-                        <div>
-                          <h4>{currentChart.icon} {currentChart.label}</h4>
-                          <p>{currentChart.desc}</p>
-                          <div className="chip-row">
-                            {evolucaoData.anos_disponiveis.slice().sort((a:number,b:number)=>a-b).map((a: number) => (
-                              <span key={a} className="mini-chip">{a}</span>
-                            ))}
+                    {(() => {
+                      const hasEtapas = !!(currentChart as any).etapas;
+                      // Linhas filtradas pela etapa selecionada
+                      const filteredLines = hasEtapas
+                        ? currentChart.lines.filter((l: any) => chartEtapa === 'total' ? l.etapa === 'total' : l.etapa === chartEtapa)
+                        : currentChart.lines;
+                      // Anos com dados reais para a(s) linha(s) ativa(s)
+                      const activeKeys = new Set(filteredLines.map((l: any) => l.key));
+                      const yearsWithData = currentChart.data.filter((d: Record<string,any>) =>
+                        Object.entries(d).some(([k, v]) => k !== 'ano' && activeKeys.has(k) && v != null && Number(v) > 0)
+                      );
+                      // Valor do último ponto com dado
+                      const lastPoint = [...yearsWithData].reverse()[0];
+                      const bigVal = lastPoint ? lastPoint[filteredLines[0]?.key] : null;
+                      const bigAno = lastPoint ? lastPoint.ano : latestAno;
+                      // Etapas disponíveis neste gráfico (com pelo menos 1 ano com dado > 0)
+                      const availableEtapas = hasEtapas ? currentChart.lines.filter((l: any) =>
+                        currentChart.data.some((d: Record<string,any>) => d[l.key] != null && Number(d[l.key]) > 0)
+                      ) : [];
+                      return (
+                        <div className="soft-card" style={{ padding: '20px' }}>
+                          {/* Filtro de etapa — só quando suportado e há múltiplas etapas */}
+                          {availableEtapas.length > 1 && (
+                            <div style={{display:'flex',flexWrap:'wrap',gap:'6px',marginBottom:'16px',alignItems:'center'}}>
+                              <span style={{fontSize:'11px',fontWeight:600,color:'#888',marginRight:'4px',textTransform:'uppercase',letterSpacing:'0.04em'}}>Etapa:</span>
+                              {availableEtapas.map((l: any) => (
+                                <button key={l.etapa} onClick={() => setChartEtapa(l.etapa)} style={{
+                                  padding:'4px 12px',borderRadius:'20px',fontSize:'12px',fontWeight:600,
+                                  cursor:'pointer',transition:'all .15s',border:'none',
+                                  background: chartEtapa === l.etapa ? l.color : '#f0f4f8',
+                                  color: chartEtapa === l.etapa ? '#fff' : '#555',
+                                  boxShadow: chartEtapa === l.etapa ? `0 2px 8px ${l.color}55` : 'none',
+                                }}>
+                                  {l.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <div className="chart-header">
+                            <div>
+                              <h4>{currentChart.icon} {currentChart.label}{hasEtapas && chartEtapa !== 'total' ? ` — ${filteredLines[0]?.name}` : ''}</h4>
+                              <p>{currentChart.desc}</p>
+                              <div className="chip-row">
+                                {yearsWithData.map((d: Record<string,any>) => (
+                                  <span key={d.ano} className="mini-chip">{d.ano}</span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="big-stat">
+                              <strong>{bigVal != null ? Number(bigVal).toLocaleString('pt-BR') : '—'}</strong>
+                              <span>{bigAno}</span>
+                            </div>
+                          </div>
+                          <div style={{ height: '280px' }}>
+                            <EvolutionChart data={currentChart.data} lines={filteredLines} large />
+                          </div>
+                          <div className="chart-note">
+                            📝 Dados do Censo Escolar INEP/MEC · código {selectedInep}
                           </div>
                         </div>
-                        <div className="big-stat">
-                          <strong>{currentChart.data[currentChart.data.length - 1]?.[currentChart.lines[0].key]?.toLocaleString('pt-BR') || '—'}</strong>
-                          <span>{latestAno}</span>
-                        </div>
-                      </div>
-                      <div style={{ height: '280px' }}>
-                        <EvolutionChart data={currentChart.data} lines={currentChart.lines} large />
-                      </div>
-                      <div className="chart-note">
-                        📝 Dados do Censo Escolar INEP/MEC · código {selectedInep}
-                      </div>
-                    </div>
+                      );
+                    })()}
                   </section>
                 )}
 
