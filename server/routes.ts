@@ -2322,5 +2322,122 @@ export async function registerRoutes(
     }
   });
 
+  // ── BUSCA CRAS/CREAS por município (cadunicobrasil.com.br scraper) ──
+  app.get("/api/busca-cras", async (req, res) => {
+    const { municipio, uf, tipo = "CRAS" } = req.query as Record<string, string>;
+    if (!municipio || !uf) return res.status(400).json({ ok: false, error: "municipio e uf obrigatórios" });
+
+    const toSlug = (s: string) =>
+      s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+    const tipoSlug = tipo.toLowerCase() === "creas" ? "creas" : "cras";
+    const munSlug = toSlug(municipio);
+    const pageUrl = `https://cadunicobrasil.com.br/${tipoSlug}-${munSlug}/`;
+
+    const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+    try {
+      const resp = await fetch(pageUrl, {
+        signal: AbortSignal.timeout(12000),
+        headers: { "User-Agent": UA, "Accept": "text/html,application/xhtml+xml", "Accept-Language": "pt-BR,pt;q=0.9" },
+        redirect: "follow",
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const html = await resp.text();
+
+      // Check if we got a real municipality page (canonical must match our URL)
+      const canonicalM = html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i);
+      const canonical = canonicalM ? canonicalM[1] : "";
+      if (!canonical.includes(`/${tipoSlug}-${munSlug}/`)) {
+        return res.json({ ok: true, municipio, uf, tipo: tipoSlug.toUpperCase(), units: [], source: pageUrl, nota: "Sem página específica" });
+      }
+
+      // Find "locais-de-atendimento" section or any section with address data
+      const sectionIds = ["locais-de-atendimento", "atendimento", "unidades", "enderecos", "onde-fica"];
+      let sectionText = "";
+      for (const sid of sectionIds) {
+        const m = html.match(new RegExp(`id=["']${sid}["'][^>]*>(.*?)(?=<h[23]|</article)`, "si"));
+        if (m) { sectionText = m[1]; break; }
+      }
+
+      // Fallback: scan full content for "Endereço:" patterns
+      if (!sectionText) {
+        const bodyM = html.match(/<article[^>]*>(.*?)<\/article>/si) || html.match(/<main[^>]*>(.*?)<\/main>/si);
+        sectionText = bodyM ? bodyM[1] : html;
+      }
+
+      // Clean HTML to plain text
+      let text = sectionText
+        .replace(/<script[^>]*>.*?<\/script>/gsi, " ")
+        .replace(/<style[^>]*>.*?<\/style>/gsi, " ")
+        .replace(/&#8220;|&#8221;/g, '"')
+        .replace(/&#160;/g, " ")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\(adsbygoogle[^)]*\)[^;]*;/g, " ")
+        .replace(/\s+/g, " ").trim();
+
+      // Parse units: split on "Endereço:" — names appear at END of each part (after phone/email)
+      const junkRe = /\(adsbygoogle[^)]*\)\s*\.?\s*push\s*\([^)]*\)\s*;?|\[email[^\]]*\]/gi;
+      const parts = text.split(/\s+Endere[çc]o:\s*/i);
+      const units: any[] = [];
+
+      // For each part, extract: address, phone, and trailing name (for next unit)
+      const parsed = parts.map((part) => {
+        const clean = part.replace(junkRe, " ").replace(/\s+/g, " ").trim();
+
+        const telIdx = clean.search(/\s+Telefone:/i);
+        const emailIdx = clean.search(/\s+Email:/i);
+
+        // Address ends at first of Telefone/Email
+        const addrEnd = [telIdx, emailIdx].filter(x => x > 0).reduce((a, b) => Math.min(a, b), clean.length);
+        const endereco = clean.slice(0, addrEnd).trim();
+
+        // Phone
+        const telM = clean.match(/Telefone:\s*([\d\s().\-]{6,20}\d)/i);
+        const telefone = telM ? telM[1].replace(/\s+/g, " ").trim() : "";
+
+        // Trailing name: strip phone+email fields, leftover at end = next CRAS unit name
+        const stripFields = (s: string) => s
+          .replace(/Telefone:\s*[\d\s().\-]{4,20}\d/gi, "")   // phone field+value
+          .replace(/(?:Telefone|Email):\s*/gi, "")              // any leftover label
+          .replace(/\s+/g, " ").trim()
+          .replace(/^\W+/, "").trim();
+
+        let trailingName = "";
+        if (addrEnd < clean.length) {
+          const sliced = clean.slice(addrEnd);
+          trailingName = stripFields(sliced);
+        } else {
+          // Part 0 (intro): no phone/email markers — grab trailing capitalized word group
+          // E.g. "...Plano Diretor Norte 407 Norte" → "407 Norte"
+          const m = clean.match(/\b([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ\d][A-Za-záéíóúâêîôûãõçÁÉÍÓÚÂÊÎÔÛÃÕÇ\d\s()–\-]{2,70})$/);
+          if (m) {
+            // strip leading lowercase words and punctuation
+            trailingName = m[1].trim().replace(/^[a-záéíóúâêîôûãõç\s,;–\-]+/, "").trim();
+          }
+        }
+        // Sanity check: reject if purely numeric or leftover label text
+        if (trailingName.length > 80 || /^[\d\s]+$/.test(trailingName) || /^(?:Telefone|Email)/i.test(trailingName)) {
+          trailingName = trailingName.replace(/^.*?([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][\w\sáéíóúâêîôûãõçÁÉÍÓÚÂÊÎÔÛÃÕÇ()–\-]{2,60})$/, "$1").trim().slice(0, 60);
+        }
+
+        return { endereco, telefone, trailingName };
+      });
+
+      for (let i = 1; i < parts.length; i++) {
+        const { endereco, telefone } = parsed[i];
+        const nome = parsed[i - 1].trailingName || `${tipoSlug.toUpperCase()} ${municipio} ${i}`;
+        if (endereco.length > 5) {
+          units.push({ nome, endereco, telefone, fonte_url: pageUrl });
+        }
+      }
+
+      return res.json({ ok: true, municipio, uf, tipo: tipoSlug.toUpperCase(), units, source: pageUrl });
+    } catch (e: any) {
+      return res.json({ ok: false, municipio, uf, tipo: tipoSlug.toUpperCase(), units: [], error: e.message });
+    }
+  });
+
   return httpServer;
 }

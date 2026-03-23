@@ -118,6 +118,8 @@ export default function Dashboard() {
   const [equipamentosLoading, setEquipamentosLoading] = useState(false);
   const [osmUnidades, setOsmUnidades] = useState<Record<string, any[]> | null>(null);
   const [osmLoading, setOsmLoading] = useState(false);
+  const [crasData, setCrasData] = useState<any>(null);
+  const [crasLoading, setCrasLoading] = useState(false);
   const [rendSegmento, setRendSegmento] = useState<'ai' | 'af' | 'med' | null>(null);
   const [tnrSegmento, setTnrSegmento] = useState<string | null>(null);
   const [tdiSegmento, setTdiSegmento] = useState<string | null>(null);
@@ -181,6 +183,8 @@ export default function Dashboard() {
     setEquipamentosLoading(false);
     setOsmUnidades(null);
     setOsmLoading(false);
+    setCrasData(null);
+    setCrasLoading(false);
     setShowEquipamentos(false);
   }, [selectedInep]);
 
@@ -1600,6 +1604,17 @@ out center tags 100;`;
                           .catch(() => { setEquipamentosData({ ok: false }); setEquipamentosLoading(false); });
                       }
                       if (coMunicipio) fetchOsmData(String(coMunicipio));
+                      // Busca CRAS/CREAS via cadunicobrasil.com.br
+                      if (nomeMunicipio && sgUf && !crasData && !crasLoading) {
+                        setCrasLoading(true);
+                        Promise.all([
+                          fetch(`/api/busca-cras?municipio=${encodeURIComponent(nomeMunicipio)}&uf=${sgUf}&tipo=cras`).then(r => r.json()).catch(() => ({ ok: false, units: [] })),
+                          fetch(`/api/busca-cras?municipio=${encodeURIComponent(nomeMunicipio)}&uf=${sgUf}&tipo=creas`).then(r => r.json()).catch(() => ({ ok: false, units: [] })),
+                        ]).then(([crasd, creasd]) => {
+                          setCrasData({ cras: crasd.units || [], creas: creasd.units || [], ok: crasd.ok || creasd.ok });
+                          setCrasLoading(false);
+                        });
+                      }
                     }
                   };
 
@@ -1766,9 +1781,48 @@ out center tags 100;`;
                                     </div>
                                   ))}
 
+                                  {/* Seção cadunicobrasil.com.br — CRAS e CREAS com endereço e telefone */}
+                                  {crasLoading && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', color: '#4a8a65', fontSize: 12 }}>
+                                      <Loader2 className="w-3 h-3 animate-spin" /> Consultando relação de CRAS e CREAS...
+                                    </div>
+                                  )}
+                                  {!crasLoading && crasData && ((crasData.cras?.length > 0 || crasData.creas?.length > 0)) && (() => {
+                                    const cadu_cras: any[] = (crasData.cras || []).map((u: any) => ({ ...u, source: 'cadunico', mapsUrl: `https://www.google.com/maps/search/${encodeURIComponent(u.nome + ' ' + u.endereco + ' ' + nomeMunicipio)}` }));
+                                    const cadu_creas: any[] = (crasData.creas || []).map((u: any) => ({ ...u, source: 'cadunico', mapsUrl: `https://www.google.com/maps/search/${encodeURIComponent(u.nome + ' ' + u.endereco + ' ' + nomeMunicipio)}` }));
+                                    return (
+                                      <div style={{ marginTop: 12 }}>
+                                        <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#4a8a65', marginBottom: 8 }}>
+                                          Unidades da Assistência Social — CadUnico Brasil
+                                        </p>
+                                        {cadu_cras.length > 0 && (
+                                          <div style={{ marginBottom: 10 }}>
+                                            <p style={{ fontSize: 11, fontWeight: 700, color: CAT_META.cras.txt, background: CAT_META.cras.bg, border: `1px solid ${CAT_META.cras.border}`, borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 10px', marginBottom: 6 }}>
+                                              {CAT_META.cras.icon} {CAT_META.cras.label} <span style={{ opacity: 0.7 }}>({cadu_cras.length})</span>
+                                            </p>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8 }}>
+                                              {cadu_cras.map((u: any, i: number) => <UnitCard key={i} u={u} cat="cras" />)}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {cadu_creas.length > 0 && (
+                                          <div style={{ marginBottom: 10 }}>
+                                            <p style={{ fontSize: 11, fontWeight: 700, color: CAT_META.creas.txt, background: CAT_META.creas.bg, border: `1px solid ${CAT_META.creas.border}`, borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 10px', marginBottom: 6 }}>
+                                              {CAT_META.creas.icon} {CAT_META.creas.label} <span style={{ opacity: 0.7 }}>({cadu_creas.length})</span>
+                                            </p>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8 }}>
+                                              {cadu_creas.map((u: any, i: number) => <UnitCard key={i} u={u} cat="creas" />)}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+
                                   <p style={{ fontSize: '10px', color: '#6b8a74', marginTop: 10, marginBottom: 6 }}>
                                     {equipamentosData.ibge_fonte && <span>Contagens: {equipamentosData.ibge_fonte}. </span>}
                                     {osmUnidades && totalOsm > 0 && <span>Endereços: CNES/Min. Saúde e OpenStreetMap. </span>}
+                                    {crasData && (crasData.cras?.length > 0 || crasData.creas?.length > 0) && <span>CRAS/CREAS: CadUnico Brasil. </span>}
                                     Dados podem estar desatualizados.
                                   </p>
                                 </>
