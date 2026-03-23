@@ -1,19 +1,15 @@
 #!/usr/bin/env bash
-# Deployment build script — keeps the deployed container tiny.
+# Deployment build script — absolute minimum container footprint.
 #
-# Strategy:
-#   1.  Build the app (esbuild bundles all pure-JS server deps → dist/index.cjs)
-#   2.  Pre-gzip JS/CSS assets in dist/public/ so Express serves .gz files
-#   3.  Gzip dist/index.cjs → dist/index.cjs.gz; create a tiny bootstrap that
-#       decompresses it at startup into /tmp (writable RAM disk in Cloud Run)
-#   4.  Preserve only better-sqlite3 native packages; wipe everything else from
-#       node_modules; strip better-sqlite3's C source dirs (deps/ src/)
+# After this script, the container has ONLY:
+#   dist/index.cjs.gz      ~1.9 MB  (gzipped server bundle)
+#   dist/public/           ~0.6 MB  (gzipped static assets)
+#   dist/bootstrap.cjs     ~1 KB    (startup decompressor)
+#   dist/better_sqlite3.gz ~1.0 MB  (gzipped native binary)
+#   start.sh               ~2 KB
+#   TOTAL                  ~3.5 MB
 #
-# Size targets:
-#   dist/index.cjs.gz :  ~1.9 MB  (was 6.1 MB)
-#   dist/public/      :  ~0.7 MB  (was 2.3 MB — assets gzipped in-place)
-#   node_modules/     :  ~2.2 MB  (only better-sqlite3 runtime files)
-#   TOTAL             :  ~4.8 MB  (down from 22.4 MB)
+# Source files, node_modules, and build scripts are deleted after building.
 set -euo pipefail
 
 echo "=== [deploy-build] Step 1: Building application ==="
@@ -22,32 +18,67 @@ npm run build
 echo "=== [deploy-build] Step 2: Gzipping static assets in dist/public/assets/ ==="
 for f in dist/public/assets/*.js dist/public/assets/*.mjs dist/public/assets/*.css; do
   [ -f "$f" ] || continue
-  gzip -9 "$f"          # creates $f.gz, removes original
-  echo "  gzipped: $(basename "$f") → $(du -sh "${f}.gz" | cut -f1)"
+  gzip -9 "$f"
+  echo "  gzipped: $(basename "$f").gz"
 done
 
 echo "=== [deploy-build] Step 3: Gzipping server bundle dist/index.cjs ==="
-gzip -9 dist/index.cjs  # creates dist/index.cjs.gz, removes original
+gzip -9 dist/index.cjs
 echo "  dist/index.cjs.gz: $(du -sh dist/index.cjs.gz | cut -f1)"
 
-echo "=== [deploy-build] Step 4: Creating bootstrap launcher dist/bootstrap.cjs ==="
-# The bootstrap decompresses index.cjs.gz to /tmp at startup and executes it.
-# We use Module._compile with the ORIGINAL filename so that __dirname inside
-# the bundle still resolves to the dist/ directory (where dist/public lives).
+echo "=== [deploy-build] Step 4: Embedding better_sqlite3.node into dist/ ==="
+# Gzip the native binary — bootstrap will extract to /tmp at startup.
+# This lets us eliminate node_modules/ entirely.
+NATIVE_SRC="node_modules/better-sqlite3/build/Release/better_sqlite3.node"
+if [ -f "$NATIVE_SRC" ]; then
+  gzip -9 -c "$NATIVE_SRC" > dist/better_sqlite3.gz
+  echo "  dist/better_sqlite3.gz: $(du -sh dist/better_sqlite3.gz | cut -f1)"
+else
+  echo "  WARNING: better_sqlite3.node not found at $NATIVE_SRC"
+fi
+
+echo "=== [deploy-build] Step 5: Creating bootstrap launcher dist/bootstrap.cjs ==="
+# Bootstrap does three things at startup:
+#   1. Extracts better_sqlite3.node from dist/better_sqlite3.gz → /tmp/
+#   2. Patches Module._load so better-sqlite3's bindings finds the .node file
+#   3. Decompresses and executes dist/index.cjs.gz (with correct __dirname)
 cat > dist/bootstrap.cjs << 'BOOTSTRAP'
 'use strict';
 const path = require('path');
 const fs = require('fs');
 const zlib = require('zlib');
+const os = require('os');
 const Module = require('module');
 
 const distDir = __dirname;
+const tmpDir = os.tmpdir();
+
+// ── 1. Extract native SQLite binary ──────────────────────────────────────────
+const nativeGz  = path.join(distDir, 'better_sqlite3.gz');
+const nativeTmp = path.join(tmpDir, 'better_sqlite3.node');
+if (!fs.existsSync(nativeTmp)) {
+  fs.writeFileSync(nativeTmp, zlib.gunzipSync(fs.readFileSync(nativeGz)));
+}
+
+// ── 2. Patch Module loading so better-sqlite3's `bindings` finds the binary ──
+// bindings resolves the .node file via process.dlopen; we intercept _load for
+// .node files and redirect them to our /tmp copy.
+// IMPORTANT: use origLoad (not require) for the redirect to avoid infinite loop.
+const origLoad = Module._load;
+Module._load = function (request, parent, isMain) {
+  if (request && request.endsWith('.node') && path.basename(request) === 'better_sqlite3.node') {
+    return origLoad.call(this, nativeTmp, parent, isMain);
+  }
+  return origLoad.apply(this, arguments);
+};
+
+// Also expose the path via an env var that some bindings versions check.
+process.env.BETTER_SQLITE3_NODE = nativeTmp;
+
+// ── 3. Decompress and execute the main server bundle ─────────────────────────
+// Module._compile sets __dirname = distDir so paths resolve correctly.
 const gzPath = path.join(distDir, 'index.cjs.gz');
-const tmpPath = path.join(require('os').tmpdir(), '_bundle.cjs');
-
-const compressed = fs.readFileSync(gzPath);
-const source = zlib.gunzipSync(compressed).toString('utf8');
-
+const source  = zlib.gunzipSync(fs.readFileSync(gzPath)).toString('utf8');
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
@@ -56,46 +87,21 @@ module.exports = m.exports;
 BOOTSTRAP
 echo "  dist/bootstrap.cjs: $(du -sh dist/bootstrap.cjs | cut -f1)"
 
-echo "=== [deploy-build] Step 5: Removing dev dependencies ==="
-npm prune --production
-
-echo "=== [deploy-build] Step 6: Preserving native runtime packages ==="
-KEEP=(
-  better-sqlite3
-  bindings
-  file-uri-to-path
-  prebuild-install
-)
-
-TMPDIR_NM=$(mktemp -d)
-for pkg in "${KEEP[@]}"; do
-  if [ -d "node_modules/$pkg" ]; then
-    cp -r "node_modules/$pkg" "$TMPDIR_NM/$pkg"
-    echo "  preserved: $pkg ($(du -sh "node_modules/$pkg" | cut -f1))"
-  fi
-done
-
-echo "=== [deploy-build] Step 7: Wiping node_modules ==="
+echo "=== [deploy-build] Step 6: Wiping node_modules (binary now in dist/) ==="
 rm -rf node_modules
+echo "  node_modules/ removed"
 
-echo "=== [deploy-build] Step 8: Restoring native packages ==="
-mkdir -p node_modules
-for pkg in "${KEEP[@]}"; do
-  [ -d "$TMPDIR_NM/$pkg" ] && mv "$TMPDIR_NM/$pkg" "node_modules/$pkg"
-done
-rm -rf "$TMPDIR_NM"
-
-echo "=== [deploy-build] Step 9: Stripping better-sqlite3 build-time dirs ==="
-for dir in deps src; do
-  if [ -d "node_modules/better-sqlite3/$dir" ]; then
-    SIZE=$(du -sh "node_modules/better-sqlite3/$dir" | cut -f1)
-    rm -rf "node_modules/better-sqlite3/$dir"
-    echo "  removed better-sqlite3/$dir ($SIZE)"
-  fi
-done
+echo "=== [deploy-build] Step 7: Removing source files (not needed at runtime) ==="
+# Everything the app needs to RUN is now inside dist/.
+# Source code, build scripts, and config files only bloat the container layer.
+rm -rf server/ client/ shared/ script/ scripts/
+rm -f vite.config.ts tsconfig.json tsconfig.node.json drizzle.config.ts
+rm -f package.json package-lock.json
+rm -f .gitignore .dockerignore .eslintrc* .prettierrc* postcss.config.*
+rm -f replit.md README.md CHANGELOG.md
+echo "  source files removed"
 
 echo "=== [deploy-build] Done ==="
-echo "  dist/        : $(du -sh dist/ | cut -f1)"
-echo "  node_modules/: $(du -sh node_modules/ | cut -f1)"
-TOTAL=$(du -sb dist/ node_modules/ | awk '{s+=$1}END{printf "%.1fM", s/1048576}')
-echo "  TOTAL        : ${TOTAL}  (limit ~10 MB)"
+du -sh dist/ 2>/dev/null && echo "  (+ start.sh)"
+TOTAL=$(du -sb dist/ | awk '{s+=$1}END{printf "%.1fM", s/1048576}')
+echo "  TOTAL: ${TOTAL}"

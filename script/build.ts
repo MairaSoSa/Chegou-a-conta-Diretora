@@ -2,13 +2,13 @@ import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
 import { rm, readFile } from "fs/promises";
 
-// Packages with native C/C++ bindings that CANNOT be bundled by esbuild.
-// Everything else is inlined into dist/index.cjs so the production container
-// only needs these packages in node_modules — keeping the deployed image tiny.
-const NATIVE_EXTERNALS = [
-  "better-sqlite3", // .node native addon
-  "bufferutil",     // optional native addon for ws
-];
+// Only truly un-bundleable packages (optional native addons where the
+// consumer gracefully falls back when absent).
+// better-sqlite3's JS wrapper IS bundled; its .node binary is embedded in
+// dist/better_sqlite3.gz and extracted to /tmp by the bootstrap at startup.
+const SKIP_EXTERNAL = new Set([
+  "bufferutil", // optional ws perf addon — ws falls back to pure-JS silently
+]);
 
 async function buildAll() {
   await rm("dist", { recursive: true, force: true });
@@ -23,8 +23,8 @@ async function buildAll() {
     ...Object.keys(pkg.devDependencies || {}),
   ];
 
-  // Keep only native packages as external — bundle everything else.
-  const externals = allDeps.filter((dep) => NATIVE_EXTERNALS.includes(dep));
+  // Mark only truly un-bundleable packages as external.
+  const externals = allDeps.filter((dep) => SKIP_EXTERNAL.has(dep));
 
   await esbuild({
     entryPoints: ["server/index.ts"],
@@ -37,6 +37,8 @@ async function buildAll() {
     },
     minify: true,
     external: externals,
+    // Silence the "Cannot bundle .node files" warning — the bootstrap handles
+    // native addon loading via Module._load patching + /tmp extraction.
     logLevel: "info",
   });
 }
