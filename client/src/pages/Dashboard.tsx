@@ -135,6 +135,23 @@ export default function Dashboard() {
     setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const [censoInsightsUF, setCensoInsightsUF] = useState<any>(null);
+  const [censoInsightsUFLoading, setCensoInsightsUFLoading] = useState(false);
+  const [censoInsightsNacional, setCensoInsightsNacional] = useState<any>(null);
+
+  useEffect(() => {
+    if (!clickedUf) { setCensoInsightsUF(null); return; }
+    setCensoInsightsUFLoading(true);
+    fetch(`/api/censo-escolar/insights/${clickedUf}`)
+      .then(r => r.json()).then(d => { setCensoInsightsUF(d); setCensoInsightsUFLoading(false); })
+      .catch(() => setCensoInsightsUFLoading(false));
+  }, [clickedUf]);
+
+  useEffect(() => {
+    fetch('/api/censo-escolar/insights/BR')
+      .then(r => r.json()).then(setCensoInsightsNacional).catch(() => {});
+  }, []);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
@@ -931,6 +948,50 @@ export default function Dashboard() {
                         );
                       })}
                     </div>
+
+                    {/* ── Insights nacionais do Censo 2024→2025 ── */}
+                    {censoInsightsNacional?.campos?.length > 0 && (() => {
+                      const campos = censoInsightsNacional.campos as any[];
+                      const destaques = campos
+                        .filter(c => c.diff_pp !== 0 && c.pct_2025 > 0)
+                        .sort((a, b) => Math.abs(b.diff_pp) - Math.abs(a.diff_pp))
+                        .slice(0, 6);
+                      if (!destaques.length) return null;
+                      return (
+                        <div style={{ marginTop: 20, borderTop: "1px solid #e2e8f0", paddingTop: 16 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
+                            🇧🇷 Brasil — o que mudou de 2024 para 2025
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
+                            {destaques.map((cam: any) => {
+                              const ganhou = cam.diff_pp > 0;
+                              const abs = Math.abs(cam.diff_pp);
+                              return (
+                                <div key={cam.key} style={{ background: ganhou ? "#f0fdf4" : "#fff5f5", borderRadius: 12, padding: "12px 14px", border: `1px solid ${ganhou ? "#bbf7d0" : "#fecaca"}` }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", lineHeight: 1.3 }}>{cam.label}</span>
+                                    <span style={{ fontSize: 14, fontWeight: 800, color: ganhou ? "#16a34a" : "#dc2626", flexShrink: 0 }}>
+                                      {ganhou ? "▲" : "▼"}{abs.toFixed(1)} p.p.
+                                    </span>
+                                  </div>
+                                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>
+                                    <span style={{ fontWeight: 500 }}>{cam.pct_2024}%</span>
+                                    <span style={{ margin: "0 4px", color: "#cbd5e1" }}>→</span>
+                                    <span style={{ fontWeight: 700, color: "#334155" }}>{cam.pct_2025}%</span>
+                                    <span style={{ color: ganhou ? "#16a34a" : "#dc2626", marginLeft: 6 }}>
+                                      ({ganhou ? "+" : ""}{(cam.total_2025 - cam.total_2024).toLocaleString("pt-BR")} escolas)
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 10 }}>
+                            Fonte: Censo Escolar INEP/MEC. Escolas em atividade com dados disponíveis. Pontos percentuais (p.p.) relativos ao total de escolas com dados para cada campo.
+                          </p>
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
 
@@ -2141,7 +2202,7 @@ export default function Dashboard() {
                       })}
                     </div>
                     {(() => {
-                      const anos = evolucaoData.anos_disponiveis.slice().sort((a: number, b: number) => a - b);
+                      const anos = evolucaoData.anos_disponiveis.slice().sort((a: number, b: number) => a - b).filter((a: number) => a >= 2020);
                       const c = evolucaoData.censo_por_ano;
                       type Row = { label: string; key: string; header?: boolean };
 
@@ -3421,6 +3482,49 @@ export default function Dashboard() {
                     </div>
                   </div>
                 )}
+
+                {/* Observações do Censo 2024→2025 */}
+                {censoInsightsUFLoading && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#94a3b8", padding: "12px 0" }}>
+                    <Loader2 style={{ width: 14, height: 14, animation: "spin 1s linear infinite" }} /> Carregando observações do Censo...
+                  </div>
+                )}
+                {!censoInsightsUFLoading && censoInsightsUF?.campos?.length > 0 && (() => {
+                  const destaques = censoInsightsUF.campos
+                    .filter((c: any) => c.diff_pp !== 0 && c.pct_2025 > 0)
+                    .sort((a: any, b: any) => Math.abs(b.diff_pp) - Math.abs(a.diff_pp))
+                    .slice(0, 5);
+                  if (!destaques.length) return null;
+                  return (
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
+                        📊 Censo Escolar — mudanças 2024→2025
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+                        {destaques.map((cam: any) => {
+                          const ganhou = cam.diff_pp > 0;
+                          const abs = Math.abs(cam.diff_pp);
+                          return (
+                            <div key={cam.key} style={{ background: ganhou ? "#f0fdf4" : "#fff5f5", borderRadius: 12, padding: "10px 12px" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{cam.label}</span>
+                                <span style={{ fontSize: 13, fontWeight: 800, color: ganhou ? "#16a34a" : "#dc2626", flexShrink: 0, marginLeft: 8 }}>
+                                  {ganhou ? "▲" : "▼"} {abs.toFixed(1)} p.p.
+                                </span>
+                              </div>
+                              <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+                                {cam.pct_2024}% em 2024 → <strong style={{ color: "#334155" }}>{cam.pct_2025}%</strong> em 2025
+                                {ganhou
+                                  ? <span style={{ color: "#16a34a", marginLeft: 6 }}>+{Math.round((cam.total_2025 - cam.total_2024))} escolas</span>
+                                  : <span style={{ color: "#dc2626", marginLeft: 6 }}>{Math.round(cam.total_2025 - cam.total_2024)} escolas</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
 
               </div>
             ) : (

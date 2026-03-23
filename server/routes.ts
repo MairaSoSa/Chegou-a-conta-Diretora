@@ -834,6 +834,87 @@ export async function registerRoutes(
     }
   });
 
+  // === INSIGHTS CENSO: comparativo 2024→2025 por campo binário (por UF ou nacional) ===
+  // Resultado é cacheado por 24h na stats_cache para evitar queries pesadas repetidas.
+  app.get("/api/censo-escolar/insights/:scope", (req, res) => {
+    const scope = (req.params.scope || "BR").toUpperCase();
+    const isBR = scope === "BR";
+    const CACHE_KEY = `censo_insights_${scope}`;
+    const CACHE_TTL_H = 24;
+
+    // Verifica cache primeiro
+    try {
+      const cached = sqlite.prepare(
+        `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`
+      ).get(CACHE_KEY) as any;
+      if (cached) {
+        const ageH = (Date.now() - new Date(cached.updated_at).getTime()) / 3600000;
+        if (ageH < CACHE_TTL_H) {
+          return res.json(JSON.parse(cached.data));
+        }
+      }
+    } catch {}
+
+    // Apenas 6 campos — mais rápido e mais interessante
+    const CAMPOS = [
+      { key: "in_internet",              label: "Acesso à internet" },
+      { key: "in_banda_larga",           label: "Banda larga" },
+      { key: "in_biblioteca",            label: "Biblioteca" },
+      { key: "in_energia_renovavel",     label: "Energia renovável" },
+      { key: "in_tempo_integral",        label: "Tempo integral" },
+      { key: "in_acessibilidade_rampas", label: "Rampas de acessibilidade" },
+    ];
+
+    try {
+      const result: Record<string, any> = { scope };
+      for (const ano of [2024, 2025]) {
+        const whereClause = isBR
+          ? `ano=? AND situacao='Em Atividade'`
+          : `ano=? AND upper(uf)=? AND situacao='Em Atividade'`;
+        const params: any[] = isBR ? [ano] : [ano, scope];
+        const selectParts = [
+          `COUNT(*) as total`,
+          ...CAMPOS.map(c => `SUM(CAST(COALESCE(json_extract(dados,'$.${c.key}'),0) as INTEGER)) as ${c.key}`)
+        ].join(', ');
+        result[ano] = sqlite.prepare(
+          `SELECT ${selectParts} FROM censo_escolar WHERE ${whereClause}`
+        ).get(...params) as any;
+      }
+
+      const campos_resultado = CAMPOS.map(c => {
+        const v24 = result[2024] as any;
+        const v25 = result[2025] as any;
+        if (!v24?.total || !v25?.total) return null;
+        const pct24 = v24[c.key] / v24.total;
+        const pct25 = v25[c.key] / v25.total;
+        return {
+          key: c.key,
+          label: c.label,
+          pct_2024: Math.round(pct24 * 1000) / 10,
+          pct_2025: Math.round(pct25 * 1000) / 10,
+          diff_pp: Math.round((pct25 - pct24) * 1000) / 10,
+          total_2024: v24[c.key],
+          total_2025: v25[c.key],
+          escolas_2024: v24.total,
+          escolas_2025: v25.total,
+        };
+      }).filter(Boolean);
+
+      const payload = { scope, campos: campos_resultado };
+
+      // Salva no cache
+      try {
+        sqlite.prepare(
+          `INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?) ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at`
+        ).run(CACHE_KEY, JSON.stringify(payload), new Date().toISOString());
+      } catch {}
+
+      res.json(payload);
+    } catch (e: any) {
+      res.status(500).json({ erro: e.message });
+    }
+  });
+
   app.get("/api/censo-escolar/:ano/escolas/:inep", (req, res) => {
     const ano = parseInt(req.params.ano);
     const inep = getParam(req.params, "inep");
@@ -2130,6 +2211,50 @@ export async function registerRoutes(
       res.status(500).json({ error: "Falha no TTS" });
     }
   });
+
+  // Pré-aquece o cache de insights nacionais em background (query pesada, só precisa rodar uma vez)
+  setTimeout(() => {
+    const CAMPOS = [
+      { key: "in_internet" },
+      { key: "in_banda_larga" },
+      { key: "in_biblioteca" },
+      { key: "in_energia_renovavel" },
+      { key: "in_tempo_integral" },
+      { key: "in_acessibilidade_rampas" },
+    ];
+    for (const scope of ["BR"]) {
+      const CACHE_KEY = `censo_insights_${scope}`;
+      try {
+        const existing = sqlite.prepare(`SELECT updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`).get(CACHE_KEY) as any;
+        if (existing) {
+          const ageH = (Date.now() - new Date(existing.updated_at).getTime()) / 3600000;
+          if (ageH < 24) { continue; }
+        }
+      } catch {}
+      console.log(`[censo-insights] Pré-aquecendo cache para ${scope}...`);
+      try {
+        const result: Record<string, any> = {};
+        for (const ano of [2024, 2025]) {
+          const selectParts = [`COUNT(*) as total`, ...CAMPOS.map(c => `SUM(CAST(COALESCE(json_extract(dados,'$.${c.key}'),0) as INTEGER)) as ${c.key}`)].join(', ');
+          result[ano] = sqlite.prepare(`SELECT ${selectParts} FROM censo_escolar WHERE ano=? AND situacao='Em Atividade'`).get(ano) as any;
+        }
+        const LABELS: Record<string, string> = { in_internet: "Acesso à internet", in_banda_larga: "Banda larga", in_biblioteca: "Biblioteca", in_energia_renovavel: "Energia renovável", in_tempo_integral: "Tempo integral", in_acessibilidade_rampas: "Rampas de acessibilidade" };
+        const campos_resultado = CAMPOS.map(c => {
+          const v24 = result[2024] as any;
+          const v25 = result[2025] as any;
+          if (!v24?.total || !v25?.total) return null;
+          const pct24 = v24[c.key] / v24.total;
+          const pct25 = v25[c.key] / v25.total;
+          return { key: c.key, label: LABELS[c.key] || c.key, pct_2024: Math.round(pct24 * 1000) / 10, pct_2025: Math.round(pct25 * 1000) / 10, diff_pp: Math.round((pct25 - pct24) * 1000) / 10, total_2024: v24[c.key], total_2025: v25[c.key], escolas_2024: v24.total, escolas_2025: v25.total };
+        }).filter(Boolean);
+        const payload = JSON.stringify({ scope, campos: campos_resultado });
+        sqlite.prepare(`INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?) ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at`).run(CACHE_KEY, payload, new Date().toISOString());
+        console.log(`[censo-insights] Cache ${scope} salvo (${campos_resultado.length} campos).`);
+      } catch (e: any) {
+        console.error(`[censo-insights] Erro ao pré-aquecer ${scope}:`, e.message);
+      }
+    }
+  }, 3000);
 
   return httpServer;
 }
