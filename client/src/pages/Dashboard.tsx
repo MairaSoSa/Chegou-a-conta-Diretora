@@ -4028,6 +4028,59 @@ export default function Dashboard() {
                     </div>
                   )}
 
+                  {/* ── RESUMO RÁPIDO ── */}
+                  {(() => {
+                    const totalRepasses = atendimentoData?.ok
+                      ? atendimentoData.itens.reduce((s: number, r: any) => s + (r.vl_repasse_custeio || 0) + (r.vl_repasse_capital || 0), 0)
+                      : pddeExecFinData?.ok
+                        ? pddeExecFinData.repasses.reduce((s: number, r: any) => s + (r.vl_pago_total || 0), 0)
+                        : null;
+                    const totalSaldo = pddeUexSaldoData?.ok
+                      ? pddeUexSaldoData.total_saldo_geral
+                      : pddeSaldosData?.ok
+                        ? pddeSaldosData.saldos.reduce((s: number, r: any) => s + (r.saldo_acumulado || 0), 0)
+                        : pddeData?.contas
+                          ? pddeData.contas.reduce((s: number, c: any) => s + (c.saldo || 0), 0)
+                          : null;
+                    const hasAny = totalRepasses != null || totalSaldo != null;
+                    if (!hasAny) return null;
+                    return (
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:'10px',marginBottom:'20px'}}>
+                        {totalRepasses != null && totalRepasses > 0 && (
+                          <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #2f7a58',display:'flex',flexDirection:'column',gap:'4px'}}>
+                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#2f7a58'}}>Total Recebido</span>
+                            <span style={{fontSize:'20px',fontWeight:800,color:'#2f7a58',fontVariantNumeric:'tabular-nums'}}>{brl(totalRepasses)}</span>
+                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>repasses {atendimentoData?.itens?.[0]?.ano || pddeAno}</span>
+                          </div>
+                        )}
+                        {totalSaldo != null && (
+                          <div className="soft-card" style={{padding:'16px',borderLeft:`3px solid ${totalSaldo > 0 ? '#2d5a88' : '#b74f42'}`,display:'flex',flexDirection:'column',gap:'4px'}}>
+                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:totalSaldo > 0 ? '#2d5a88' : '#b74f42'}}>Saldo Atual</span>
+                            <span style={{fontSize:'20px',fontWeight:800,color:totalSaldo > 0 ? '#2d5a88' : '#b74f42',fontVariantNumeric:'tabular-nums'}}>{brl(totalSaldo)}</span>
+                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>
+                              {pddeUexSaldoData?.ok ? `posição ${pddeUexSaldoData.mes}` : 'saldo acumulado'}
+                            </span>
+                          </div>
+                        )}
+                        {pddeData?.ok && pddeData.matriculas_total != null && (
+                          <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #9b6a16',display:'flex',flexDirection:'column',gap:'4px'}}>
+                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#9b6a16'}}>Alunos (PDDE)</span>
+                            <span style={{fontSize:'20px',fontWeight:800,color:'#9b6a16',fontVariantNumeric:'tabular-nums'}}>{Number(pddeData.matriculas_total).toLocaleString('pt-BR')}</span>
+                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>base de cálculo {pddeData.ano}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── GRUPO: QUEM GERENCIA ── */}
+                  {(pddeData?.ok || cadastralData?.ok) && (
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'4px'}}>
+                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#7c5cbf',background:'#f3eeff',padding:'3px 10px',borderRadius:'20px'}}>Quem gerencia</span>
+                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#e8e0f5,transparent)'}} />
+                    </div>
+                  )}
+
                   {/* ── 1. IDENTIDADE DA UEx ── */}
                   {(pddeData?.ok || cadastralData?.ok) && (() => {
                     const uexNome = pddeData?.uex?.executora || cadastralData?.itens?.[0]?.razao_social || null;
@@ -4102,6 +4155,14 @@ export default function Dashboard() {
                     );
                   })()}
 
+                  {/* ── GRUPO: CONTAS E SALDOS ── */}
+                  {((pddeData?.contas?.length ?? 0) > 0 || pddeUexSaldoData?.ok || pddeSaldosData?.ok) && (
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
+                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#2d5a88',background:'#e6eef8',padding:'3px 10px',borderRadius:'20px'}}>Contas e saldos</span>
+                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#b8cfe8,transparent)'}} />
+                    </div>
+                  )}
+
                   {/* ── 2. CONTAS BANCÁRIAS ── */}
                   {pddeData?.ok && pddeData.contas && pddeData.contas.length > 0 && (
                     <div style={{marginBottom:'16px'}}>
@@ -4141,29 +4202,6 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  {/* ── 2b. MATRÍCULAS POR NÍVEL (PDDE) ── */}
-                  {pddeData?.ok && pddeData.matriculas_por_nivel && Object.keys(pddeData.matriculas_por_nivel).length > 0 && (
-                    <div style={{marginBottom:'16px'}}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <GraduationCap className="w-3.5 h-3.5" /> Matrículas por nível — PDDE {pddeData.ano}
-                      </p>
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:'8px'}}>
-                        {Object.entries(pddeData.matriculas_por_nivel).map(([nivel, qtd]: [string, any], i: number) => (
-                          <div key={i} className="soft-card" style={{padding:'12px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                            <span className="text-xs font-medium" style={{textTransform:'capitalize'}}>{nivel.toLowerCase()}</span>
-                            <strong style={{fontSize:'15px',color:'#2d5a88'}}>{Number(qtd).toLocaleString('pt-BR')}</strong>
-                          </div>
-                        ))}
-                        {pddeData.matriculas_total != null && (
-                          <div className="soft-card" style={{padding:'12px',display:'flex',justifyContent:'space-between',alignItems:'center',borderLeft:'3px solid var(--m-blue)'}}>
-                            <span className="text-xs font-semibold">Total</span>
-                            <strong style={{fontSize:'15px',color:'#2d5a88'}}>{Number(pddeData.matriculas_total).toLocaleString('pt-BR')}</strong>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
                   {/* ── 2c. SITUAÇÃO DA EEx ── */}
                   {pddeData?.ok && pddeData.situacao_eex && (pddeData.situacao_eex.adesao || pddeData.situacao_eex.prestacao_contas) && (
                     <div style={{marginBottom:'16px'}}>
@@ -4184,6 +4222,14 @@ export default function Dashboard() {
                           </div>
                         )}
                       </div>
+                    </div>
+                  )}
+
+                  {/* ── GRUPO: PRESTAÇÃO DE CONTAS ── */}
+                  {(prestacaoContaData?.ok || sigpcData?.ok) && (
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
+                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#9b6a16',background:'#fdf3e0',padding:'3px 10px',borderRadius:'20px'}}>Prestação de contas</span>
+                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#f0ddb5,transparent)'}} />
                     </div>
                   )}
 
@@ -4234,6 +4280,14 @@ export default function Dashboard() {
                     </div>
                   )}
 
+                  {/* ── GRUPO: REPASSES E EXECUÇÃO ── */}
+                  {(atendimentoData?.ok || pddeExecFinData?.ok || (pddeData?.destinacoes?.length ?? 0) > 0) && (
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
+                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#2f7a58',background:'#e8f5ee',padding:'3px 10px',borderRadius:'20px'}}>Repasses e execução</span>
+                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#b8e0cc,transparent)'}} />
+                    </div>
+                  )}
+
                   {/* ── 4. REPASSES POR PROGRAMA ── */}
                   {atendimentoData?.ok && atendimentoData.itens.length > 0 && (
                     <div style={{marginBottom:'16px'}}>
@@ -4274,45 +4328,40 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  {/* ── 4b. DESTINAÇÕES (VALORES DEVIDOS × PAGOS) ── */}
+                  {/* ── 4b. DESTINAÇÕES (CARDS) ── */}
                   {pddeData?.ok && pddeData.destinacoes && pddeData.destinacoes.length > 0 && (
                     <div style={{marginBottom:'16px'}}>
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <DollarSign className="w-3.5 h-3.5" /> Destinações — Valores Devidos e Pagos ({pddeData.ano})
+                        <DollarSign className="w-3.5 h-3.5" /> Destinações por tipo — {pddeData.ano}
                       </p>
-                      <div className="table-card" style={{overflowX:'auto'}}>
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Destinação</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Dev. Custeio</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Dev. Capital</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Ajuste Total</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Final Devido</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Custeio</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Capital</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total Pago</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Pgto.</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {pddeData.destinacoes.map((d: any, i: number) => {
-                              return (
-                                <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                  <td className="py-2 px-3 text-xs font-medium">{d.destinacao || '—'}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono">{d.devido_custeio != null ? brl(d.devido_custeio) : '—'}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono">{d.devido_capital != null ? brl(d.devido_capital) : '—'}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono">{d.ajuste_total != null ? brl(d.ajuste_total) : '—'}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono font-semibold">{d.final_devido_total != null ? brl(d.final_devido_total) : '—'}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono">{d.pago_custeio != null ? brl(d.pago_custeio) : '—'}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono">{d.pago_capital != null ? brl(d.pago_capital) : '—'}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{d.pago_total != null ? brl(d.pago_total) : '—'}</td>
-                                  <td className="py-2 px-3 text-xs text-muted-foreground">{d.data_ordem_pgto || '—'}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',gap:'10px'}}>
+                        {pddeData.destinacoes.map((d: any, i: number) => {
+                          const devido = d.final_devido_total ?? ((d.devido_custeio || 0) + (d.devido_capital || 0));
+                          const pago = d.pago_total ?? ((d.pago_custeio || 0) + (d.pago_capital || 0));
+                          const pct = devido > 0 ? Math.min(100, Math.round((pago / devido) * 100)) : null;
+                          return (
+                            <div key={i} className="soft-card" style={{padding:'14px',borderLeft:'3px solid #2f7a58'}}>
+                              <p style={{fontWeight:700,fontSize:'12px',textTransform:'uppercase',letterSpacing:'0.04em',color:'#2f7a58',marginBottom:'10px'}}>{d.destinacao || 'Destinação'}</p>
+                              <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'4px'}}>
+                                <span style={{fontSize:'11px',color:'var(--m-muted)'}}>Devido</span>
+                                <span style={{fontSize:'12px',fontWeight:600,fontFamily:'monospace'}}>{devido != null ? brl(devido) : '—'}</span>
+                              </div>
+                              <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'8px'}}>
+                                <span style={{fontSize:'11px',color:'var(--m-muted)'}}>Pago</span>
+                                <span style={{fontSize:'14px',fontWeight:800,color:pago > 0 ? '#16a34a' : 'var(--m-muted)',fontFamily:'monospace'}}>{pago != null ? brl(pago) : '—'}</span>
+                              </div>
+                              {pct !== null && (
+                                <>
+                                  <div style={{height:'5px',borderRadius:'3px',background:'#e8f5ee',overflow:'hidden'}}>
+                                    <div style={{height:'100%',width:`${pct}%`,background: pct >= 100 ? '#16a34a' : '#2f7a58',borderRadius:'3px',transition:'width .4s'}} />
+                                  </div>
+                                  <p style={{fontSize:'10px',color:'var(--m-muted)',marginTop:'4px',textAlign:'right'}}>{pct}% executado</p>
+                                </>
+                              )}
+                              {d.data_ordem_pgto && <p style={{fontSize:'10px',color:'var(--m-muted)',marginTop:'4px'}}>Pgto: {d.data_ordem_pgto}</p>}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -4451,29 +4500,23 @@ export default function Dashboard() {
                         <table className="w-full text-sm">
                           <thead>
                             <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Processo</th>
                               <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
                               <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. UEx (OPC)</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Fase UEx</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Vl. Pago UEx</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. UEx</th>
                               <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. EEx</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Fase EEx</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Vl. Pago EEx</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Valor</th>
                               <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp.</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Med. Exceção</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Exceção</th>
                             </tr>
                           </thead>
                           <tbody>
                             {sigpcData.prestacoes.map((p: any, i: number) => {
                               const isAdimpl = p.situacaoNome?.toLowerCase().includes('adimpl');
                               const isAdimplEex = p.situacaoPcEex?.toLowerCase().includes('adimpl');
-                              const hasSusp = p.efeitoSuspensivo && p.efeitoSuspensivo !== 'NÃO' && p.efeitoSuspensivo !== 'Não' && p.efeitoSuspensivo.trim() !== '';
-                              const hasSuspEex = p.efeitoSuspensivoEex && p.efeitoSuspensivoEex !== 'NÃO' && p.efeitoSuspensivoEex !== 'Não' && p.efeitoSuspensivoEex.trim() !== '';
-                              const hasMedExc = p.medidaExcecao && p.medidaExcecao !== 'NÃO' && p.medidaExcecao !== 'Não' && p.medidaExcecao.trim() !== '';
+                              const hasSusp = (p.efeitoSuspensivo && !['NÃO','Não',''].includes(String(p.efeitoSuspensivo).trim())) || (p.efeitoSuspensivoEex && !['NÃO','Não',''].includes(String(p.efeitoSuspensivoEex).trim()));
+                              const hasMedExc = p.medidaExcecao && !['NÃO','Não',''].includes(String(p.medidaExcecao).trim());
                               return (
                                 <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                  <td className="py-2 px-3 text-xs font-mono">{p.processoNumero || '—'}</td>
                                   <td className="py-2 px-3 text-xs font-medium">{p.programaNome || '—'}</td>
                                   <td className="py-2 px-3 text-xs">{p.anoConcessao || '—'}</td>
                                   <td className="py-2 px-3">
@@ -4481,28 +4524,19 @@ export default function Dashboard() {
                                       ? <span className={`badge ${isAdimpl ? 'badge-good' : 'badge-attn'}`}>{p.situacaoNome}</span>
                                       : <span className="text-muted-foreground text-xs">—</span>}
                                   </td>
-                                  <td className="py-2 px-3 text-xs">{p.faseNome || '—'}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">
-                                    {p.valorConcessao ? brl(p.valorConcessao) : '—'}
-                                  </td>
                                   <td className="py-2 px-3">
                                     {p.situacaoPcEex
                                       ? <span className={`badge ${isAdimplEex ? 'badge-good' : 'badge-attn'}`}>{p.situacaoPcEex}</span>
                                       : <span className="text-muted-foreground text-xs">—</span>}
                                   </td>
-                                  <td className="py-2 px-3 text-xs">{p.fasePcEex || '—'}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono">
-                                    {p.valorPagoEex ? brl(parseFloat(String(p.valorPagoEex).replace(/\./g,'').replace(',','.'))) : '—'}
+                                  <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">
+                                    {p.valorConcessao ? brl(p.valorConcessao) : '—'}
                                   </td>
                                   <td className="py-2 px-3 text-xs">
-                                    {(hasSusp || hasSuspEex)
-                                      ? <span className="badge badge-critical">Sim</span>
-                                      : <span className="text-muted-foreground">Não</span>}
+                                    {hasSusp ? <span className="badge badge-critical">Sim</span> : <span className="text-muted-foreground">—</span>}
                                   </td>
                                   <td className="py-2 px-3 text-xs">
-                                    {hasMedExc
-                                      ? <span className="badge badge-attn">{p.medidaExcecao}</span>
-                                      : <span className="text-muted-foreground">—</span>}
+                                    {hasMedExc ? <span className="badge badge-attn">{p.medidaExcecao}</span> : <span className="text-muted-foreground">—</span>}
                                   </td>
                                 </tr>
                               );
