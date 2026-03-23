@@ -599,8 +599,8 @@ export async function registerRoutes(
         SELECT inep, nome, municipio, uf, dependencia, localizacao,
           CAST(matriculas as INTEGER) as matriculas
         FROM censo_escolar
-        WHERE ano=? AND dependencia=? AND localizacao=? AND uf=? AND situacao='Em Atividade' AND inep!=?
-      `).all(ano, escola.dependencia, escola.localizacao, ufBase, inep) as any[];
+        WHERE ano=? AND dependencia=? AND uf=? AND situacao='Em Atividade' AND inep!=?
+      `).all(ano, escola.dependencia, ufBase, inep) as any[];
 
       // Filtro leve: faixa de matrículas (sem JSON ainda)
       const prefiltrados = candidatos.filter(s => {
