@@ -104,10 +104,20 @@ function mapIndicadores(h: any): Record<string, any> {
   if (h.tdi_dados_json) {
     const a = h.tdi_dados_json;
     ind.tdi = {
-      fundamental_total: a.FUN_CAT_0,
-      medio_total: a.MED_CAT_0,
-      fundamental_ai: a.FUN_AI_CAT_0,
-      fundamental_af: a.FUN_AF_CAT_0,
+      fundamental_total: a.FUN_CAT_0  ?? null,
+      medio_total:       a.MED_CAT_0  ?? null,
+      fundamental_ai:    a.FUN_AI_CAT_0 ?? null,
+      fundamental_af:    a.FUN_AF_CAT_0 ?? null,
+      // Por série — Fundamental Anos Iniciais (1º–5º)
+      fun_01: a.FUN_01_CAT_0 ?? null, fun_02: a.FUN_02_CAT_0 ?? null,
+      fun_03: a.FUN_03_CAT_0 ?? null, fun_04: a.FUN_04_CAT_0 ?? null,
+      fun_05: a.FUN_05_CAT_0 ?? null,
+      // Por série — Fundamental Anos Finais (6º–9º)
+      fun_06: a.FUN_06_CAT_0 ?? null, fun_07: a.FUN_07_CAT_0 ?? null,
+      fun_08: a.FUN_08_CAT_0 ?? null, fun_09: a.FUN_09_CAT_0 ?? null,
+      // Por série — Ensino Médio (1ª–4ª)
+      med_01: a.MED_01_CAT_0 ?? null, med_02: a.MED_02_CAT_0 ?? null,
+      med_03: a.MED_03_CAT_0 ?? null, med_04: a.MED_04_CAT_0 ?? null,
     };
   }
 

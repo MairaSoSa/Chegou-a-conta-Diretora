@@ -112,6 +112,7 @@ export default function Dashboard() {
   const [pddeAno, setPddeAno] = useState<number>(new Date().getFullYear());
   const [rendSegmento, setRendSegmento] = useState<'ai' | 'af' | 'med' | null>(null);
   const [tnrSegmento, setTnrSegmento] = useState<string | null>(null);
+  const [tdiSegmento, setTdiSegmento] = useState<string | null>(null);
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
   const pddeCnpj = pddeData?.uex?.cnpj || null;
   const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
@@ -398,8 +399,18 @@ export default function Dashboard() {
         return {
           ano: a,
           fund_total: t.fundamental_total ?? null,
-          fund_af: t.fundamental_af ?? null,
-          medio: t.medio_total ?? null,
+          fund_ai:    t.fundamental_ai   ?? null,
+          fund_af:    t.fundamental_af   ?? null,
+          medio:      t.medio_total      ?? null,
+          // Por série — Fundamental Anos Iniciais
+          f01: t.fun_01 ?? null, f02: t.fun_02 ?? null, f03: t.fun_03 ?? null,
+          f04: t.fun_04 ?? null, f05: t.fun_05 ?? null,
+          // Por série — Fundamental Anos Finais
+          f06: t.fun_06 ?? null, f07: t.fun_07 ?? null,
+          f08: t.fun_08 ?? null, f09: t.fun_09 ?? null,
+          // Por série — Ensino Médio
+          m01: t.med_01 ?? null, m02: t.med_02 ?? null,
+          m03: t.med_03 ?? null, m04: t.med_04 ?? null,
         };
       }),
       atu: anos.map((a: number) => {
@@ -1787,6 +1798,163 @@ export default function Dashboard() {
                                         <tr key={g.key} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
                                           <td style={{ padding: '9px 14px', fontWeight: 700, color: '#5d4037' }}>{g.label}</td>
                                           <td style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 600, color: tnrColor(latest[g.key]) ?? seg.color }}>{pct(latest[g.key])}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </section>
+                  );
+                })()}
+
+                {/* ── DISTORÇÃO IDADE-SÉRIE (TDI) ── */}
+                {(() => {
+                  const ch = evolutionCharts;
+                  const allTdi = ch?.tdi?.filter((d: any) => d.fund_total != null || d.fund_ai != null || d.fund_af != null || d.medio != null).slice().sort((a: any, b: any) => a.ano - b.ano) || [];
+                  if (allTdi.length === 0) return null;
+                  const latest = allTdi[allTdi.length - 1];
+                  const pct = (v: any) => v != null ? `${Number(v).toFixed(1)}%` : '—';
+                  // Vermelho > 30%, laranja > 20%
+                  const tdiColor = (v: any) => Number(v) > 30 ? '#b74f42' : Number(v) > 20 ? '#c47a1f' : null;
+
+                  const tdiSegmentos = [
+                    { key: 'fund',    label: 'Fundamental',  sub: 'Total',         valKey: 'fund_total', color: '#2d5a88',
+                      grades: [
+                        { label: '1º ano', key: 'f01' }, { label: '2º ano', key: 'f02' }, { label: '3º ano', key: 'f03' },
+                        { label: '4º ano', key: 'f04' }, { label: '5º ano', key: 'f05' },
+                        { label: '6º ano', key: 'f06' }, { label: '7º ano', key: 'f07' },
+                        { label: '8º ano', key: 'f08' }, { label: '9º ano', key: 'f09' },
+                      ],
+                    },
+                    { key: 'fund_ai', label: 'Anos Iniciais', sub: 'Fund. 1º–5º',  valKey: 'fund_ai',    color: '#2d6a4f',
+                      grades: [
+                        { label: '1º ano', key: 'f01' }, { label: '2º ano', key: 'f02' }, { label: '3º ano', key: 'f03' },
+                        { label: '4º ano', key: 'f04' }, { label: '5º ano', key: 'f05' },
+                      ],
+                    },
+                    { key: 'fund_af', label: 'Anos Finais',   sub: 'Fund. 6º–9º',  valKey: 'fund_af',    color: '#1d3557',
+                      grades: [
+                        { label: '6º ano', key: 'f06' }, { label: '7º ano', key: 'f07' },
+                        { label: '8º ano', key: 'f08' }, { label: '9º ano', key: 'f09' },
+                      ],
+                    },
+                    { key: 'med',     label: 'Ensino Médio', sub: 'Total',          valKey: 'medio',      color: '#6b2d6b',
+                      grades: [
+                        { label: '1ª série', key: 'm01' }, { label: '2ª série', key: 'm02' },
+                        { label: '3ª série', key: 'm03' }, { label: '4ª série', key: 'm04' },
+                      ],
+                    },
+                  ].filter(s => latest[s.valKey] != null);
+
+                  const seg = tdiSegmento ? tdiSegmentos.find(s => s.key === tdiSegmento) : null;
+                  const tdiRows = allTdi.filter((d: any) => seg ? d[seg.valKey] != null : d.fund_total != null || d.medio != null);
+                  const gradesDisponiveis = seg ? seg.grades.filter(g => latest[g.key] != null) : [];
+
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div>
+                          <h2>Distorção Idade-Série</h2>
+                          <p>% de alunos com 2 ou mais anos de defasagem em relação à série esperada para a idade</p>
+                        </div>
+                        <div className="hint-chip">Fonte: INEP / Railway</div>
+                      </div>
+                      <div className="organic-divider" />
+
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: '#5d4037', marginBottom: 10 }}>
+                          📅 Taxa de Distorção Idade-Série (TDI)
+                        </div>
+
+                        {/* Cartões de segmento clicáveis */}
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+                          {tdiSegmentos.map(s => {
+                            const isActive = tdiSegmento === s.key;
+                            const val = latest[s.valKey];
+                            const valColor = tdiColor(val);
+                            return (
+                              <button
+                                key={s.key}
+                                onClick={() => setTdiSegmento(isActive ? null : s.key)}
+                                style={{
+                                  flex: '1 1 130px', minWidth: 120,
+                                  padding: '12px 14px',
+                                  border: `2px solid ${isActive ? s.color : '#e7d9bf'}`,
+                                  borderRadius: '14px 16px 12px 15px',
+                                  background: isActive ? s.color : '#fffef8',
+                                  color: isActive ? '#fff' : '#3d4450',
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                  boxShadow: isActive ? `0 4px 14px ${s.color}44` : '0 2px 8px rgba(83,72,53,0.07)',
+                                  transition: 'all .18s',
+                                }}
+                              >
+                                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', opacity: isActive ? 0.85 : 0.6, marginBottom: 2 }}>{s.sub}</div>
+                                <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>{s.label}</div>
+                                {val != null && (
+                                  <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1, letterSpacing: '-0.03em', color: isActive ? '#fff' : (valColor ?? s.color) }}>
+                                    {Number(val).toFixed(1)}<span style={{ fontSize: 13, fontWeight: 600 }}>%</span>
+                                  </div>
+                                )}
+                                <div style={{ fontSize: 10, marginTop: 3, opacity: 0.7 }}>{isActive ? '▼ clique p/ fechar' : 'distorção · clique'}</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Tabela de evolução — aparece só quando um segmento está selecionado */}
+                        {seg && tdiRows.length > 0 && (
+                          <>
+                            <div className="soft-card" style={{ padding: 0, overflow: 'hidden', marginBottom: gradesDisponiveis.length > 0 ? 12 : 0 }}>
+                              <div style={{ padding: '9px 14px', background: seg.color, color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span>📌 {seg.label} — {seg.sub} — evolução por ano</span>
+                                <button onClick={() => setTdiSegmento(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 13, opacity: 0.8 }}>✕ fechar</button>
+                              </div>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                <thead>
+                                  <tr style={{ background: '#f7f2ea' }}>
+                                    <th style={{ padding: '9px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
+                                    <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: seg.color, fontSize: 12 }}>📅 Distorção Idade-Série</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {tdiRows.map((d: any, i: number) => {
+                                    const v = d[seg.valKey];
+                                    return (
+                                      <tr key={d.ano} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                        <td style={{ padding: '9px 14px', fontWeight: 700, color: '#5d4037' }}>{d.ano}</td>
+                                        <td style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 600, color: tdiColor(v) ?? seg.color }}>{pct(v)}</td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            {/* Por série — último ano */}
+                            {gradesDisponiveis.length > 0 && (
+                              <div>
+                                <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 8 }}>
+                                  📋 Por série / ano escolar — {latest.ano}
+                                </div>
+                                <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
+                                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                    <thead>
+                                      <tr style={{ background: seg.color + '22' }}>
+                                        <th style={{ padding: '8px 14px', textAlign: 'left', fontWeight: 700, color: seg.color, fontSize: 12 }}>Série / Ano</th>
+                                        <th style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 700, color: seg.color, fontSize: 12 }}>📅 Distorção</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {gradesDisponiveis.map((g, i) => (
+                                        <tr key={g.key} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                          <td style={{ padding: '9px 14px', fontWeight: 700, color: '#5d4037' }}>{g.label}</td>
+                                          <td style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 600, color: tdiColor(latest[g.key]) ?? seg.color }}>{pct(latest[g.key])}</td>
                                         </tr>
                                       ))}
                                     </tbody>
