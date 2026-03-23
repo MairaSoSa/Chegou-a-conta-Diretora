@@ -1042,42 +1042,70 @@ export default function Dashboard() {
                     {/* ── Insights nacionais do Censo 2024→2025 ── */}
                     {censoInsightsNacional?.campos?.length > 0 && (() => {
                       const campos = censoInsightsNacional.campos as any[];
-                      const destaques = campos
-                        .filter(c => c.diff_pp !== 0 && c.pct_2025 > 0)
-                        .sort((a, b) => Math.abs(b.diff_pp) - Math.abs(a.diff_pp))
-                        .slice(0, 6);
-                      if (!destaques.length) return null;
+                      const todos = campos.filter(c => c.diff_pp !== 0 && c.pct_2025 > 0);
+                      const aumentou = todos.filter(c => c.diff_pp > 0).sort((a, b) => b.diff_pp - a.diff_pp).slice(0, 5);
+                      const diminuiu = todos.filter(c => c.diff_pp < 0).sort((a, b) => a.diff_pp - b.diff_pp).slice(0, 5);
+                      if (!aumentou.length && !diminuiu.length) return null;
+
+                      const Card = ({ cam }: { cam: any }) => {
+                        const ganhou = cam.diff_pp > 0;
+                        const abs = Math.abs(cam.diff_pp);
+                        const deltaN = Math.round(cam.total_2025 - cam.total_2024);
+                        return (
+                          <div style={{
+                            background: ganhou ? "#f0fdf4" : "#fff5f5",
+                            borderRadius: 12, padding: "12px 14px",
+                            border: `1px solid ${ganhou ? "#bbf7d0" : "#fecaca"}`,
+                            display: "flex", flexDirection: "column", gap: 6,
+                          }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", lineHeight: 1.3, flex: 1 }}>{cam.label}</span>
+                              <span style={{ fontSize: 15, fontWeight: 900, color: ganhou ? "#16a34a" : "#dc2626", flexShrink: 0 }}>
+                                {ganhou ? "▲" : "▼"} {abs.toFixed(1)} p.p.
+                              </span>
+                            </div>
+                            <div style={{ fontSize: 11, color: "#64748b" }}>
+                              <span style={{ fontWeight: 600 }}>{cam.pct_2024}%</span>
+                              <span style={{ margin: "0 5px", color: "#cbd5e1" }}>→</span>
+                              <span style={{ fontWeight: 800, color: "#334155" }}>{cam.pct_2025}%</span>
+                            </div>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: ganhou ? "#15803d" : "#b91c1c" }}>
+                              {ganhou ? "+" : ""}{deltaN.toLocaleString("pt-BR")} escolas
+                            </div>
+                          </div>
+                        );
+                      };
+
                       return (
                         <div style={{ marginTop: 20, borderTop: "1px solid #e2e8f0", paddingTop: 16 }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>
                             🇧🇷 Brasil — o que mudou de 2024 para 2025
                           </div>
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
-                            {destaques.map((cam: any) => {
-                              const ganhou = cam.diff_pp > 0;
-                              const abs = Math.abs(cam.diff_pp);
-                              return (
-                                <div key={cam.key} style={{ background: ganhou ? "#f0fdf4" : "#fff5f5", borderRadius: 12, padding: "12px 14px", border: `1px solid ${ganhou ? "#bbf7d0" : "#fecaca"}` }}>
-                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
-                                    <span style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", lineHeight: 1.3 }}>{cam.label}</span>
-                                    <span style={{ fontSize: 14, fontWeight: 800, color: ganhou ? "#16a34a" : "#dc2626", flexShrink: 0 }}>
-                                      {ganhou ? "▲" : "▼"}{abs.toFixed(1)} p.p.
-                                    </span>
-                                  </div>
-                                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>
-                                    <span style={{ fontWeight: 500 }}>{cam.pct_2024}%</span>
-                                    <span style={{ margin: "0 4px", color: "#cbd5e1" }}>→</span>
-                                    <span style={{ fontWeight: 700, color: "#334155" }}>{cam.pct_2025}%</span>
-                                    <span style={{ color: ganhou ? "#16a34a" : "#dc2626", marginLeft: 6 }}>
-                                      ({ganhou ? "+" : ""}{(cam.total_2025 - cam.total_2024).toLocaleString("pt-BR")} escolas)
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 10 }}>
-                            Fonte: Censo Escolar INEP/MEC. Escolas em atividade com dados disponíveis. Pontos percentuais (p.p.) relativos ao total de escolas com dados para cada campo.
+
+                          {aumentou.length > 0 && (
+                            <>
+                              <div style={{ fontSize: 11, fontWeight: 800, color: "#15803d", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+                                📈 O que aumentou
+                              </div>
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8, marginBottom: 14 }}>
+                                {aumentou.map((cam: any) => <Card key={cam.key} cam={cam} />)}
+                              </div>
+                            </>
+                          )}
+
+                          {diminuiu.length > 0 && (
+                            <>
+                              <div style={{ fontSize: 11, fontWeight: 800, color: "#b91c1c", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+                                📉 O que diminuiu
+                              </div>
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8, marginBottom: 10 }}>
+                                {diminuiu.map((cam: any) => <Card key={cam.key} cam={cam} />)}
+                              </div>
+                            </>
+                          )}
+
+                          <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 6 }}>
+                            Fonte: Censo Escolar INEP/MEC. Escolas em atividade. p.p. = pontos percentuais em relação ao total de escolas com dados.
                           </p>
                         </div>
                       );
