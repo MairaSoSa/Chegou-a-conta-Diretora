@@ -1,4 +1,5 @@
 node_modules/
+dist/
 *.db
 *.db-wal
 *.db-shm
@@ -7,3 +8,5 @@ node_modules/
 .cache/
 *.log
 tmp/
+Dados/
+attached_assets/
