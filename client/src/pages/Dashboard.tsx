@@ -1461,7 +1461,7 @@ export default function Dashboard() {
                     if (!nome || osmUnidades !== null || osmLoading) return;
                     setOsmLoading(true);
                     const ufFilter = uf ? `["ISO3166-2"~"BR-${uf}"]["admin_level"="4"]` : `["admin_level"="4"]`;
-                    const query = `[out:json][timeout:18];
+                    const query = `[out:json][timeout:15];
 area${ufFilter}->.estado;
 area["name"="${nome}"]["admin_level"="8"](area.estado)->.mun;
 (
@@ -1472,13 +1472,16 @@ area["name"="${nome}"]["admin_level"="8"](area.estado)->.mun;
   way(area.mun)[name~"conselho tutelar|CRAS|CREAS|pronto socorro|UBS|UPA|posto de saude|PSF",i];
 );
 out center body 50;`;
+                    const ctrl = new AbortController();
+                    const timer = setTimeout(() => ctrl.abort(), 20000);
                     fetch('https://overpass-api.de/api/interpreter', {
                       method: 'POST',
                       body: new URLSearchParams({ data: query }),
-                      headers: { 'User-Agent': 'ChegoAContaDiretora/1.0' },
+                      signal: ctrl.signal,
                     })
                       .then(r => r.json())
                       .then((json: any) => {
+                        clearTimeout(timer);
                         const elements: any[] = json.elements || [];
                         const cats: Record<string, any[]> = {
                           conselho_tutelar: [], cras: [], creas: [], centro_pop: [],
@@ -1509,6 +1512,7 @@ out center body 50;`;
                         setOsmLoading(false);
                       })
                       .catch(() => {
+                        clearTimeout(timer);
                         setOsmUnidades({});
                         setOsmLoading(false);
                       });
@@ -1601,22 +1605,32 @@ out center body 50;`;
                               return (
                                 <>
                                   {/* Contagens SUAS (IBGE) */}
-                                  {Object.keys(counts).length > 0 && (
-                                    <div style={{ marginTop: 14, marginBottom: 12 }}>
-                                      <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#4a8a65', marginBottom: 8 }}>Rede SUAS no município (IBGE 2013)</p>
-                                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
-                                        {Object.entries(counts).map(([key, val]: [string, any]) => {
-                                          const m = CAT_META[key] || CAT_META.cras;
-                                          return (
-                                            <div key={key} style={{ background: m.bg, border: `1.5px solid ${m.border}`, borderRadius: 10, padding: '10px 12px' }}>
-                                              <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: m.txt, margin: '0 0 2px' }}>{m.icon} {val.label}</p>
-                                              <p style={{ fontSize: 22, fontWeight: 800, color: m.txt, margin: 0, lineHeight: 1 }}>{val.total ?? '—'}</p>
-                                            </div>
-                                          );
-                                        })}
+                                  {Object.keys(counts).length > 0 && (() => {
+                                    const suasList = Object.entries(counts)
+                                      .filter(([, val]: [string, any]) => val.total && val.total !== 'Não aplicável' && val.total !== '0');
+                                    const suasSummary = suasList.map(([, val]: [string, any]) => `${val.total} ${val.label}`).join(', ');
+                                    return (
+                                      <div style={{ marginTop: 14, marginBottom: 12 }}>
+                                        <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#4a8a65', marginBottom: 4 }}>Rede SUAS no município (IBGE 2013)</p>
+                                        {suasSummary && <p style={{ fontSize: 12, color: '#2f7a58', marginBottom: 8, fontWeight: 600 }}>
+                                          {nomeMunicipio} tem: {suasSummary}
+                                        </p>}
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
+                                          {Object.entries(counts).map(([key, val]: [string, any]) => {
+                                            const m = CAT_META[key] || CAT_META.cras;
+                                            const isNA = !val.total || val.total === 'Não aplicável' || val.total === '0';
+                                            return (
+                                              <div key={key} style={{ background: isNA ? '#f5f5f5' : m.bg, border: `1.5px solid ${isNA ? '#ddd' : m.border}`, borderRadius: 10, padding: '10px 12px', opacity: isNA ? 0.6 : 1 }}>
+                                                <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: isNA ? '#999' : m.txt, margin: '0 0 2px' }}>{m.icon} {val.label}</p>
+                                                <p style={{ fontSize: 22, fontWeight: 800, color: isNA ? '#bbb' : m.txt, margin: '0 0 2px', lineHeight: 1 }}>{val.total ?? '—'}</p>
+                                                {val.descricao && <p style={{ fontSize: 9, color: isNA ? '#aaa' : m.txt, margin: 0, opacity: 0.75, lineHeight: 1.3 }}>{val.descricao}</p>}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
                                       </div>
-                                    </div>
-                                  )}
+                                    );
+                                  })()}
 
                                   {/* Unidades individuais (OSM) */}
                                   {osmLoading && (
@@ -1643,8 +1657,27 @@ out center body 50;`;
                                       })}
                                     </div>
                                   ) : (
-                                    <div style={{ marginTop: 8, padding: '10px 14px', background: '#f8f8f8', borderRadius: 10, fontSize: 12, color: '#666' }}>
-                                      Nenhuma unidade com endereço encontrada no OpenStreetMap para {nomeMunicipio}. Consulte as fontes abaixo para informações detalhadas.
+                                    <div style={{ marginTop: 8, padding: '12px 14px', background: '#fffdf5', border: '1px solid #f0ddb5', borderRadius: 10, fontSize: 12, color: '#7a4a10' }}>
+                                      <p style={{ margin: '0 0 8px', fontWeight: 600 }}>📍 Endereços não localizados no mapa colaborativo para {nomeMunicipio}</p>
+                                      <p style={{ margin: '0 0 8px', color: '#555', fontSize: 11 }}>Os equipamentos existem segundo o IBGE, mas ainda não foram georreferenciados. Consulte os sistemas oficiais abaixo para encontrar o endereço:</p>
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                        <a href={`https://cadsuas.mds.gov.br/`} target="_blank" rel="noopener noreferrer"
+                                          style={{ fontSize: 11, fontWeight: 600, color: '#1f6b45', background: '#d2f0e0', borderRadius: 20, padding: '3px 9px', textDecoration: 'none' }}>
+                                          🏘️ CRAS/CREAS no CadSUAS ↗
+                                        </a>
+                                        <a href={`https://www.google.com/maps/search/CRAS+${encodeURIComponent(nomeMunicipio)}+${sgUf}`} target="_blank" rel="noopener noreferrer"
+                                          style={{ fontSize: 11, fontWeight: 600, color: '#1e4a78', background: '#e6eef8', borderRadius: 20, padding: '3px 9px', textDecoration: 'none' }}>
+                                          🗺️ CRAS no Maps ↗
+                                        </a>
+                                        <a href={`https://www.google.com/maps/search/CREAS+${encodeURIComponent(nomeMunicipio)}+${sgUf}`} target="_blank" rel="noopener noreferrer"
+                                          style={{ fontSize: 11, fontWeight: 600, color: '#5b3fa8', background: '#f3eeff', borderRadius: 20, padding: '3px 9px', textDecoration: 'none' }}>
+                                          🗺️ CREAS no Maps ↗
+                                        </a>
+                                        <a href={`https://cnes.datasus.gov.br/pages/estabelecimentos/consulta.jsp`} target="_blank" rel="noopener noreferrer"
+                                          style={{ fontSize: 11, fontWeight: 600, color: '#0d47a1', background: '#e3f2fd', borderRadius: 20, padding: '3px 9px', textDecoration: 'none' }}>
+                                          🏥 UBS/Hospital no CNES ↗
+                                        </a>
+                                      </div>
                                     </div>
                                   ))}
 
