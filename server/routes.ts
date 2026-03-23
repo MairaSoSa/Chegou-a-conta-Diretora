@@ -154,6 +154,11 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
 
+  // Health check — must be the very first route (responds before DB is ready)
+  app.get("/api/health", (_req, res) => {
+    res.status(200).json({ ok: true, ts: Date.now() });
+  });
+
   // Pré-computa médias IDEB locais (municipio/UF/Brasil) em background
   setTimeout(() => buildLocalMaps(), 0);
 

@@ -45,6 +45,6 @@ externalPort = 3000
 SQLITE_DATABASE_URL = "file:dev.db"
 
 [deployment]
-deploymentTarget = "vm"
-run = ["node", "dist/index.cjs"]
-build = ["npm", "run", "build"]
+deploymentTarget = "autoscale"
+run = ["bash", "start.sh"]
+build = ["bash", "-c", "npm ci && npm run build"]
