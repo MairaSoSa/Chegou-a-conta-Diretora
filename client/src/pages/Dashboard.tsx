@@ -1463,6 +1463,185 @@ export default function Dashboard() {
                   </div>
                 </section>
 
+                {/* ── ESTRUTURA E RECURSOS ── */}
+                {(() => {
+                  const turEI  = censoLatest.qt_tur_inf  ?? null;
+                  const turEF  = censoLatest.qt_tur_fund ?? null;
+                  const turEM  = censoLatest.qt_tur_med  ?? null;
+                  const turTot = censoLatest.qt_tur_bas  ?? censoLatest.qt_turmas ?? null;
+                  const docEI  = censoLatest.qt_doc_inf  ?? null;
+                  const docEF  = censoLatest.qt_doc_fund ?? null;
+                  const docEM  = censoLatest.qt_doc_med  ?? null;
+                  const docTot = censoLatest.qt_doc_bas  ?? censoLatest.qt_docentes ?? null;
+                  const salTot    = censoLatest.qt_salas_utilizadas        ?? null;
+                  const salDentro = censoLatest.qt_salas_utilizadas_dentro ?? null;
+                  const salFora   = censoLatest.qt_salas_utilizadas_fora   ?? null;
+                  const hasTur = [turEI,turEF,turEM,turTot].some(v => v != null && v > 0);
+                  const hasDoc = [docEI,docEF,docEM,docTot].some(v => v != null && v > 0);
+                  const hasSal = salTot != null && salTot > 0;
+                  if (!hasTur && !hasDoc && !hasSal) return null;
+                  const etapaRow = (label: string, val: number | null, tot: number | null) => {
+                    const pct = (val != null && tot != null && tot > 0) ? Math.round(val / tot * 100) : null;
+                    return (
+                      <div key={label} style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'8px'}}>
+                        <span style={{minWidth:'90px',fontSize:'12px',color:'var(--m-muted)',fontWeight:600}}>{label}</span>
+                        <div style={{flex:1,height:'8px',borderRadius:'4px',background:'#e9ecef',overflow:'hidden'}}>
+                          {pct != null && <div style={{height:'100%',width:`${pct}%`,borderRadius:'4px',background:'var(--m-primary)',transition:'width 0.4s'}} />}
+                        </div>
+                        <span style={{minWidth:'40px',fontSize:'13px',fontWeight:700,textAlign:'right'}}>{val != null ? val.toLocaleString('pt-BR') : '—'}</span>
+                        {pct != null && <span style={{minWidth:'32px',fontSize:'11px',color:'var(--m-muted)',textAlign:'right'}}>{pct}%</span>}
+                      </div>
+                    );
+                  };
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div><h2>Estrutura e recursos</h2><p>Turmas, equipe docente e espaços físicos por etapa</p></div>
+                      </div>
+                      <div className="organic-divider" />
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'14px'}}>
+                        {hasTur && (
+                          <div className="soft-card">
+                            <div className="attention-head"><span>🏫</span><strong>Turmas por etapa</strong></div>
+                            <div style={{marginTop:'14px'}}>
+                              {etapaRow('Infantil',  turEI,  turTot)}
+                              {etapaRow('Fundamental', turEF, turTot)}
+                              {etapaRow('Médio',     turEM,  turTot)}
+                              <div style={{borderTop:'1px solid #eee',marginTop:'6px',paddingTop:'8px',display:'flex',justifyContent:'space-between',fontSize:'12px'}}>
+                                <span style={{color:'var(--m-muted)',fontWeight:600}}>Total</span>
+                                <strong>{turTot != null ? turTot.toLocaleString('pt-BR') : '—'} turmas</strong>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {hasDoc && (
+                          <div className="soft-card">
+                            <div className="attention-head"><span>🧑‍🏫</span><strong>Docentes por etapa</strong></div>
+                            <div style={{marginTop:'14px'}}>
+                              {etapaRow('Infantil',  docEI,  docTot)}
+                              {etapaRow('Fundamental', docEF, docTot)}
+                              {etapaRow('Médio',     docEM,  docTot)}
+                              <div style={{borderTop:'1px solid #eee',marginTop:'6px',paddingTop:'8px',display:'flex',justifyContent:'space-between',fontSize:'12px'}}>
+                                <span style={{color:'var(--m-muted)',fontWeight:600}}>Total</span>
+                                <strong>{docTot != null ? docTot.toLocaleString('pt-BR') : '—'} docentes</strong>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {hasSal && (
+                          <div className="soft-card">
+                            <div className="attention-head"><span>🚪</span><strong>Salas de aula</strong></div>
+                            <div style={{marginTop:'14px'}}>
+                              <div style={{textAlign:'center',marginBottom:'10px'}}>
+                                <strong style={{fontSize:'42px',letterSpacing:'-0.04em',lineHeight:1}}>{salTot?.toLocaleString('pt-BR')}</strong>
+                                <div style={{fontSize:'12px',color:'var(--m-muted)',marginTop:'2px'}}>salas utilizadas</div>
+                              </div>
+                              {(salDentro != null || salFora != null) && (
+                                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginTop:'8px'}}>
+                                  {salDentro != null && (
+                                    <div style={{textAlign:'center',padding:'8px',borderRadius:'8px',background:'#f0f4f8'}}>
+                                      <strong style={{fontSize:'20px'}}>{salDentro}</strong>
+                                      <div style={{fontSize:'11px',color:'var(--m-muted)'}}>dentro do prédio</div>
+                                    </div>
+                                  )}
+                                  {salFora != null && (
+                                    <div style={{textAlign:'center',padding:'8px',borderRadius:'8px',background:'#f0f4f8'}}>
+                                      <strong style={{fontSize:'20px'}}>{salFora}</strong>
+                                      <div style={{fontSize:'11px',color:'var(--m-muted)'}}>fora do prédio</div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  );
+                })()}
+
+                {/* ── INFRAESTRUTURA E SANEAMENTO ── */}
+                {(() => {
+                  const cl = censoLatest;
+                  const infChips = (items: { label: string; val: number | null | undefined; ok?: boolean }[]) =>
+                    items.filter(i => i.val != null).map((it, idx) => (
+                      <span key={idx} style={{
+                        display:'inline-flex',alignItems:'center',gap:'5px',
+                        padding:'4px 10px',borderRadius:'20px',fontSize:'12px',fontWeight:600,
+                        background: it.val === 1 ? '#eef7f1' : it.val === 0 ? '#fff3f3' : '#f0f4f8',
+                        color:      it.val === 1 ? '#2f7a58' : it.val === 0 ? '#c0392b' : '#555',
+                        border:     it.val === 1 ? '1px solid #c7e8d6' : it.val === 0 ? '1px solid #f5c6cb' : '1px solid #ddd',
+                        marginRight:'6px',marginBottom:'6px',
+                      }}>
+                        {it.val === 1 ? '✓' : it.val === 0 ? '✗' : '·'} {it.label}
+                      </span>
+                    ));
+
+                  const aguaItems = [
+                    { label: 'Rede pública',   val: cl.in_agua_rede_publica },
+                    { label: 'Poço artesiano', val: cl.in_agua_poco_artesiano },
+                    { label: 'Cacimba/cisterna', val: cl.in_agua_cacimba },
+                    { label: 'Fonte/rio',      val: cl.in_agua_fonte_rio },
+                    { label: 'Carro-pipa',     val: cl.in_agua_carro_pipa },
+                    { label: 'Inexistente',    val: cl.in_agua_inexistente },
+                  ].filter(i => i.val != null);
+                  const esgotoItems = [
+                    { label: 'Rede pública',   val: cl.in_esgoto_rede_publica },
+                    { label: 'Fossa séptica',  val: cl.in_esgoto_fossa_septica },
+                    { label: 'Fossa comum',    val: cl.in_esgoto_fossa_comum },
+                    { label: 'Inexistente',    val: cl.in_esgoto_inexistente },
+                  ].filter(i => i.val != null);
+                  const energiaItems = [
+                    { label: 'Rede pública',   val: cl.in_energia_rede_publica },
+                    { label: 'Gerador a fóssil', val: cl.in_energia_gerador_fossil },
+                    { label: 'Energia renovável', val: cl.in_energia_renovavel },
+                    { label: 'Inexistente',    val: cl.in_energia_inexistente },
+                  ].filter(i => i.val != null);
+                  const lixoItems = [
+                    { label: 'Coleta pública',   val: cl.in_lixo_coleta_publica },
+                    { label: 'Queima',           val: cl.in_lixo_queima },
+                    { label: 'Enterra',          val: cl.in_lixo_enterra },
+                    { label: 'Separação',        val: cl.in_tratamento_lixo_separacao },
+                    { label: 'Reciclagem',       val: cl.in_tratamento_lixo_reciclagem },
+                    { label: 'Reutiliza',        val: cl.in_tratamento_lixo_reutiliza },
+                  ].filter(i => i.val != null);
+                  const banhItems = [
+                    { label: 'Banheiro alunos',      val: cl.in_banheiro },
+                    { label: 'Banheiro Ed. Infantil', val: cl.in_banheiro_ei },
+                    { label: 'Banheiro PNE',         val: cl.in_banheiro_pne },
+                    { label: 'Banheiro funcionários', val: cl.in_banheiro_funcionarios },
+                  ].filter(i => i.val != null);
+
+                  const hasAnySanit = aguaItems.length + esgotoItems.length + energiaItems.length + lixoItems.length + banhItems.length > 0;
+                  if (!hasAnySanit) return null;
+
+                  const subCard = (icon: string, title: string, items: { label: string; val: number | null | undefined }[]) => (
+                    <div className="soft-card" style={{padding:'16px 18px'}}>
+                      <div className="attention-head" style={{marginBottom:'10px'}}><span>{icon}</span><strong>{title}</strong></div>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:'0'}}>
+                        {infChips(items)}
+                      </div>
+                      {items.length === 0 && <span style={{fontSize:'12px',color:'var(--m-muted)'}}>Sem dados disponíveis</span>}
+                    </div>
+                  );
+
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div><h2>Infraestrutura e saneamento</h2><p>Água, esgoto, energia, coleta de lixo e instalações sanitárias</p></div>
+                      </div>
+                      <div className="organic-divider" />
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'14px'}}>
+                        {aguaItems.length > 0   && subCard('💧', 'Abastecimento de água', aguaItems)}
+                        {esgotoItems.length > 0 && subCard('🚿', 'Esgotamento sanitário', esgotoItems)}
+                        {energiaItems.length > 0 && subCard('⚡', 'Fornecimento de energia', energiaItems)}
+                        {lixoItems.length > 0   && subCard('♻️', 'Coleta e tratamento de lixo', lixoItems)}
+                        {banhItems.length > 0   && subCard('🚽', 'Banheiros e sanitários', banhItems)}
+                      </div>
+                    </section>
+                  );
+                })()}
+
                 {/* ── PONTOS DE ATENÇÃO ── */}
                 <section className="section">
                   <div className="priority-layout">
