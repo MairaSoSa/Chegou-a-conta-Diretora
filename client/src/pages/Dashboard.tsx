@@ -113,6 +113,7 @@ export default function Dashboard() {
   const [rendSegmento, setRendSegmento] = useState<'ai' | 'af' | 'med' | null>(null);
   const [tnrSegmento, setTnrSegmento] = useState<string | null>(null);
   const [tdiSegmento, setTdiSegmento] = useState<string | null>(null);
+  const [iedAno, setIedAno] = useState<number | null>(null);
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
   const pddeCnpj = pddeData?.uex?.cnpj || null;
   const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
@@ -496,7 +497,20 @@ export default function Dashboard() {
       ied: anos.map((a: number) => {
         const ie = indicadores[a]?.ied;
         if (!ie) return { ano: a };
-        return { ano: a, nivel_1: ie.nivel_1 ?? null, nivel_2: ie.nivel_2 ?? null, nivel_3: ie.nivel_3 ?? null, nivel_4: ie.nivel_4 ?? null, nivel_5: ie.nivel_5 ?? null, nivel_6: ie.nivel_6 ?? null };
+        return {
+          ano: a,
+          nivel_1: ie.nivel_1 ?? null, nivel_2: ie.nivel_2 ?? null, nivel_3: ie.nivel_3 ?? null,
+          nivel_4: ie.nivel_4 ?? null, nivel_5: ie.nivel_5 ?? null, nivel_6: ie.nivel_6 ?? null,
+          fund_ai_nivel_1: ie.fund_ai_nivel_1 ?? null, fund_ai_nivel_2: ie.fund_ai_nivel_2 ?? null,
+          fund_ai_nivel_3: ie.fund_ai_nivel_3 ?? null, fund_ai_nivel_4: ie.fund_ai_nivel_4 ?? null,
+          fund_ai_nivel_5: ie.fund_ai_nivel_5 ?? null, fund_ai_nivel_6: ie.fund_ai_nivel_6 ?? null,
+          fund_af_nivel_1: ie.fund_af_nivel_1 ?? null, fund_af_nivel_2: ie.fund_af_nivel_2 ?? null,
+          fund_af_nivel_3: ie.fund_af_nivel_3 ?? null, fund_af_nivel_4: ie.fund_af_nivel_4 ?? null,
+          fund_af_nivel_5: ie.fund_af_nivel_5 ?? null, fund_af_nivel_6: ie.fund_af_nivel_6 ?? null,
+          med_nivel_1: ie.med_nivel_1 ?? null, med_nivel_2: ie.med_nivel_2 ?? null,
+          med_nivel_3: ie.med_nivel_3 ?? null, med_nivel_4: ie.med_nivel_4 ?? null,
+          med_nivel_5: ie.med_nivel_5 ?? null, med_nivel_6: ie.med_nivel_6 ?? null,
+        };
       }),
       tnr: anos.map((a: number) => {
         const t = indicadores[a]?.taxa_nao_resposta;
@@ -2026,6 +2040,167 @@ export default function Dashboard() {
                           </>
                         )}
                       </div>
+                    </section>
+                  );
+                })()}
+
+                {/* ── ESFORÇO DOCENTE (IED) ── */}
+                {(() => {
+                  const ch = evolutionCharts;
+                  const allIed = (ch?.ied ?? []).filter((d: any) =>
+                    [1,2,3,4,5,6].some(n => d[`nivel_${n}`] != null)
+                  ).sort((a: any, b: any) => a.ano - b.ano);
+                  if (allIed.length === 0) return null;
+
+                  const anos = allIed.map((d: any) => d.ano);
+                  const selectedAno = iedAno && anos.includes(iedAno) ? iedAno : anos[anos.length - 1];
+                  const row = allIed.find((d: any) => d.ano === selectedAno) ?? allIed[allIed.length - 1];
+
+                  const etapas = [
+                    { key: 'nivel',   label: 'Total',        prefix: 'nivel_',        color: '#4a5568' },
+                    { key: 'fund_ai', label: 'Fund. AI',      prefix: 'fund_ai_nivel_', color: '#2d6a4f' },
+                    { key: 'fund_af', label: 'Fund. AF',      prefix: 'fund_af_nivel_', color: '#1d3557' },
+                    { key: 'med',     label: 'Ens. Médio',    prefix: 'med_nivel_',    color: '#6b2d6b' },
+                  ].filter(e => [1,2,3,4,5,6].some(n => row[`${e.prefix}${n}`] != null));
+
+                  const niveis = [
+                    { n: 1, desc: '1 escola · 1 ou 2 turmas · 1 turno' },
+                    { n: 2, desc: '1 escola · 3–4 turmas · 1 ou 2 turnos' },
+                    { n: 3, desc: '1 escola · 5+ turmas · 1 ou 2 turnos' },
+                    { n: 4, desc: '2 escolas · até 4 turmas · 2 turnos' },
+                    { n: 5, desc: '2 escolas · 5+ turmas · 2 ou 3 turnos' },
+                    { n: 6, desc: '3+ escolas · 3 turnos · maior esforço' },
+                  ];
+
+                  const nivelColor = (n: number) =>
+                    n >= 6 ? '#b74f42' : n >= 5 ? '#c47a1f' : n >= 4 ? '#8a6e3b' : null;
+
+                  const pct = (v: any) => v != null ? `${Number(v).toFixed(1)}%` : '—';
+
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div>
+                          <h2>Esforço Docente (IED)</h2>
+                          <p>Percentual de docentes por nível de esforço e etapa de ensino — quanto maior o nível, maior a sobrecarga</p>
+                        </div>
+                        <div className="hint-chip">Fonte: INEP</div>
+                      </div>
+                      <div className="organic-divider" />
+
+                      {/* Seletor de ano */}
+                      {anos.length > 1 && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+                          {anos.map(a => (
+                            <button key={a} onClick={() => setIedAno(a)}
+                              style={{
+                                padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                border: `2px solid ${a === selectedAno ? '#5d4037' : '#e7d9bf'}`,
+                                background: a === selectedAno ? '#5d4037' : '#fffef8',
+                                color: a === selectedAno ? '#fff' : '#5d4037',
+                              }}>
+                              {a}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Legenda de níveis */}
+                      <div style={{ marginBottom: 14 }}>
+                        <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
+                          👩‍🏫 Percentual de docentes por nível de esforço — {selectedAno}
+                        </div>
+                        <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 400 }}>
+                            <thead>
+                              <tr style={{ background: '#f7f2ea' }}>
+                                <th style={{ padding: '9px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12, whiteSpace: 'nowrap' }}>
+                                  Nível de esforço
+                                </th>
+                                {etapas.map(e => (
+                                  <th key={e.key} style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: e.color, fontSize: 12, whiteSpace: 'nowrap' }}>
+                                    {e.label}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {niveis.map(({ n, desc }, i) => {
+                                const cor = nivelColor(n);
+                                return (
+                                  <tr key={n} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                    <td style={{ padding: '9px 14px' }}>
+                                      <span style={{
+                                        display: 'inline-block', width: 24, height: 24, lineHeight: '24px', textAlign: 'center',
+                                        borderRadius: '50%', fontWeight: 800, fontSize: 12, marginRight: 8,
+                                        background: cor ?? '#e8dfd0', color: cor ? '#fff' : '#5d4037',
+                                      }}>{n}</span>
+                                      <span style={{ fontSize: 12, color: '#7a6651' }}>{desc}</span>
+                                    </td>
+                                    {etapas.map(e => {
+                                      const val = row[`${e.prefix}${n}`];
+                                      return (
+                                        <td key={e.key} style={{
+                                          padding: '9px 12px', textAlign: 'right', fontWeight: 700,
+                                          color: val != null ? (cor ?? e.color) : '#bbb',
+                                          fontSize: 13,
+                                        }}>
+                                          {pct(val)}
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div style={{ fontSize: 11, color: '#999', marginTop: 6 }}>
+                          * Níveis 5 e 6 indicam sobrecarga docente: atuação em múltiplas escolas e turnos.
+                        </div>
+                      </div>
+
+                      {/* Mini evolução N5+N6 se houver múltiplos anos */}
+                      {allIed.length > 1 && (() => {
+                        const evoRows = allIed.filter((d: any) => d.nivel_5 != null || d.nivel_6 != null);
+                        if (evoRows.length < 2) return null;
+                        return (
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 12, color: '#b74f42', marginBottom: 6 }}>
+                              ⚠️ Evolução da sobrecarga docente (Níveis 5 e 6) — Total
+                            </div>
+                            <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                <thead>
+                                  <tr style={{ background: '#fdf2f2' }}>
+                                    <th style={{ padding: '8px 14px', textAlign: 'left', fontWeight: 700, color: '#b74f42', fontSize: 12 }}>Ano</th>
+                                    <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#c47a1f', fontSize: 12 }}>Nível 5</th>
+                                    <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#b74f42', fontSize: 12 }}>Nível 6</th>
+                                    <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#b74f42', fontSize: 12 }}>N5 + N6</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {evoRows.map((d: any, i: number) => {
+                                    const n5 = d.nivel_5 != null ? Number(d.nivel_5) : null;
+                                    const n6 = d.nivel_6 != null ? Number(d.nivel_6) : null;
+                                    const soma = n5 != null && n6 != null ? n5 + n6 : (n5 ?? n6);
+                                    return (
+                                      <tr key={d.ano} style={{ background: i % 2 === 0 ? '#fff' : '#fff8f8', borderTop: '1px solid #f0e8e8' }}>
+                                        <td style={{ padding: '8px 14px', fontWeight: 700, color: '#5d4037' }}>{d.ano}</td>
+                                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#c47a1f', fontWeight: 600 }}>{n5 != null ? `${n5.toFixed(1)}%` : '—'}</td>
+                                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#b74f42', fontWeight: 600 }}>{n6 != null ? `${n6.toFixed(1)}%` : '—'}</td>
+                                        <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800, color: soma != null && soma > 50 ? '#b74f42' : '#5d4037' }}>
+                                          {soma != null ? `${soma.toFixed(1)}%` : '—'}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </section>
                   );
                 })()}
