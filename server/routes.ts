@@ -28,6 +28,7 @@ import {
   listIndicador, getIndicadorDetail, getEscolaCompleta, getApiInfo,
   getMediasNacionais, invalidateStatsCache,
 } from "./importador";
+import { importAllDriveYears, importDriveYear, importProgress as driveProgress } from "./importador-drive";
 import {
   searchEscolasRailway, getEscolaEvolucaoRailway,
   getEscolaCompletaRailway, getEscolaBasicaRailway,
@@ -1436,6 +1437,39 @@ export async function registerRoutes(
       console.log("[INEP] INSE import finished:", JSON.stringify(result.errors?.length || 0), "errors");
     });
     res.json({ mensagem: "Importação de INSE iniciada em background" });
+  });
+
+  // === ADMIN: IMPORTAR MICRODADOS DO DRIVE (2020-2024) ===
+  app.post("/api/admin/importar-drive", adminAuth, async (req, res) => {
+    if (driveProgress.running) {
+      return res.status(409).json({ error: "Importação do Drive já em andamento" });
+    }
+    const anos: number[] = req.body.anos ?? [2020, 2021, 2022, 2023, 2024];
+    importAllDriveYears(anos).then(() => {
+      invalidateStatsCache();
+      console.log("[drive-import] All years done, cache invalidated");
+    }).catch(err => {
+      console.error("[drive-import] Fatal error:", err);
+    });
+    res.json({ mensagem: "Importação do Google Drive iniciada em background", anos });
+  });
+
+  app.post("/api/admin/importar-drive-ano", adminAuth, async (req, res) => {
+    if (driveProgress.running) {
+      return res.status(409).json({ error: "Importação do Drive já em andamento" });
+    }
+    const ano: number = req.body.ano;
+    if (!ano) return res.status(400).json({ error: "ano obrigatório" });
+    importDriveYear(ano).then(() => {
+      invalidateStatsCache();
+    }).catch(err => {
+      console.error("[drive-import] Error:", err);
+    });
+    res.json({ mensagem: `Importação do Google Drive para ${ano} iniciada`, ano });
+  });
+
+  app.get("/api/admin/importar-drive-status", adminAuth, (_req, res) => {
+    res.json(driveProgress);
   });
 
   app.post("/api/:tipo/importar", adminAuth, async (req, res) => {

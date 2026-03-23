@@ -1828,6 +1828,128 @@ function UnansweredQuestionsManager({ token }: { token: string }) {
   );
 }
 
+function DriveImportPanel({ token }: { token: string }) {
+  const { toast } = useToast();
+  const [selectedAnos, setSelectedAnos] = useState<number[]>([2020, 2021, 2022, 2023, 2024]);
+
+  const statusQuery = useQuery({
+    queryKey: ["/api/admin/importar-drive-status"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/importar-drive-status", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.json();
+    },
+    refetchInterval: 2000,
+  });
+
+  const importMutation = useMutation({
+    mutationFn: async (anos: number[]) => {
+      const res = await fetch("/api/admin/importar-drive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ anos }),
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.error) {
+        toast({ title: "Erro", description: data.error, variant: "destructive" });
+      } else {
+        toast({ title: "Importação do Google Drive iniciada!", description: `Anos: ${selectedAnos.join(", ")}` });
+      }
+      statusQuery.refetch();
+    },
+  });
+
+  const status = statusQuery.data as any;
+  const isRunning = status?.running;
+  const isDone = status?.done;
+
+  const toggleAno = (ano: number) => {
+    setSelectedAnos(prev => prev.includes(ano) ? prev.filter(a => a !== ano) : [...prev, ano]);
+  };
+
+  return (
+    <Card className="border-2 border-amber-200 bg-amber-50">
+      <CardContent className="p-6">
+        <h2 className="text-lg font-bold mb-1 text-amber-900">📂 Importar Microdados do Google Drive (2020–2024)</h2>
+        <p className="text-sm text-amber-700 mb-4">
+          Importa os arquivos completos do Censo Escolar (385 colunas) diretamente do seu Google Drive,
+          enriquecendo os registros 2020–2024 com dados de infraestrutura, matrículas por raça/sexo/faixa etária,
+          turmas, docentes por etapa e muito mais.
+        </p>
+
+        {isRunning && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+              <span className="font-medium text-blue-800">Importando do Drive...</span>
+            </div>
+            <p className="text-sm text-blue-700">Ano atual: <strong>{status?.ano}</strong></p>
+            <p className="text-sm text-blue-700">Etapa: {status?.stage}</p>
+            <p className="text-sm text-blue-700">Escolas processadas: {status?.processed?.toLocaleString("pt-BR")}</p>
+            {status?.errors?.length > 0 && (
+              <p className="text-xs text-red-600 mt-1">Erros: {status.errors.join("; ")}</p>
+            )}
+          </div>
+        )}
+
+        {isDone && !isRunning && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <p className="font-medium text-green-800">✅ Importação concluída!</p>
+            {status?.summary && Object.entries(status.summary).map(([ano, s]: [string, any]) => (
+              <p key={ano} className="text-sm text-green-700">
+                {ano}: {s.processed?.toLocaleString("pt-BR")} escolas processadas, {s.upserted?.toLocaleString("pt-BR")} atualizadas
+              </p>
+            ))}
+            {status?.errors?.length > 0 && (
+              <p className="text-sm text-red-600 mt-1">Erros: {status.errors.join("; ")}</p>
+            )}
+          </div>
+        )}
+
+        <div className="mb-4">
+          <p className="text-sm font-medium text-amber-800 mb-2">Selecionar anos para importar:</p>
+          <div className="flex gap-2 flex-wrap">
+            {[2020, 2021, 2022, 2023, 2024].map(ano => (
+              <button
+                key={ano}
+                onClick={() => toggleAno(ano)}
+                className={`px-3 py-1 rounded-full text-sm font-semibold border transition-colors ${
+                  selectedAnos.includes(ano)
+                    ? "bg-amber-600 text-white border-amber-600"
+                    : "bg-white text-amber-700 border-amber-300"
+                }`}
+              >
+                {ano}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-amber-100 rounded p-3 text-xs text-amber-800 mb-4">
+          <strong>Arquivos no Drive:</strong> microdados_ed_basica_2020–2024.csv (~200MB cada)<br/>
+          <strong>Tempo estimado:</strong> 5–10 min por ano (download + processamento de ~200k escolas)<br/>
+          <strong>O que melhora:</strong> infra (água, energia, internet), matrículas por raça/sexo/idade, turmas e docentes por etapa, equipamentos, acessibilidade e muito mais
+        </div>
+
+        <Button
+          onClick={() => importMutation.mutate(selectedAnos)}
+          disabled={isRunning || importMutation.isPending || selectedAnos.length === 0}
+          className="bg-amber-600 hover:bg-amber-700 text-white"
+        >
+          {isRunning || importMutation.isPending ? (
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Importando...</>
+          ) : (
+            <><Download className="w-4 h-4 mr-2" /> Importar {selectedAnos.length} ano{selectedAnos.length !== 1 ? "s" : ""} do Drive</>
+          )}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ImportManager({ token }: { token: string }) {
   const { toast } = useToast();
 
@@ -1970,6 +2092,8 @@ function ImportManager({ token }: { token: string }) {
           </div>
         </CardContent>
       </Card>
+
+      <DriveImportPanel token={token} />
 
       {stats.importHistory?.length > 0 && (
         <Card>
