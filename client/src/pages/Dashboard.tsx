@@ -114,6 +114,7 @@ export default function Dashboard() {
   const [tnrSegmento, setTnrSegmento] = useState<string | null>(null);
   const [tdiSegmento, setTdiSegmento] = useState<string | null>(null);
   const [iedAno, setIedAno] = useState<number | null>(null);
+  const [hadAno, setHadAno] = useState<number | null>(null);
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
   const pddeCnpj = pddeData?.uex?.cnpj || null;
   const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
@@ -447,10 +448,30 @@ export default function Dashboard() {
         if (!h) return { ano: a };
         return {
           ano: a,
-          fund: h.media_fund ?? null,
-          fund_ai: h.media_fund_ai ?? null,
-          fund_af: h.media_fund_af ?? null,
-          medio: h.media_med ?? null,
+          // Educação Infantil
+          inf_total:   h.inf_cat_0       ?? null,
+          inf_cre:     h.inf_cre_cat_0   ?? null,
+          inf_pre:     h.inf_pre_cat_0   ?? null,
+          // Ensino Fundamental
+          fund:        h.fun_cat_0       ?? h.media_fund    ?? null,
+          fund_ai:     h.fun_ai_cat_0    ?? h.media_fund_ai ?? null,
+          fund_af:     h.fun_af_cat_0    ?? h.media_fund_af ?? null,
+          fun_01:      h.fun_01_cat_0    ?? null,
+          fun_02:      h.fun_02_cat_0    ?? null,
+          fun_03:      h.fun_03_cat_0    ?? null,
+          fun_04:      h.fun_04_cat_0    ?? null,
+          fun_05:      h.fun_05_cat_0    ?? null,
+          fun_06:      h.fun_06_cat_0    ?? null,
+          fun_07:      h.fun_07_cat_0    ?? null,
+          fun_08:      h.fun_08_cat_0    ?? null,
+          fun_09:      h.fun_09_cat_0    ?? null,
+          // Ensino Médio
+          medio:       h.med_cat_0       ?? h.media_med     ?? null,
+          med_01:      h.med_01_cat_0    ?? null,
+          med_02:      h.med_02_cat_0    ?? null,
+          med_03:      h.med_03_cat_0    ?? null,
+          med_04:      h.med_04_cat_0    ?? null,
+          med_ns:      h.med_ns_cat_0    ?? null,
         };
       }),
       dsu: anos.map((a: number) => {
@@ -2195,6 +2216,200 @@ export default function Dashboard() {
                                       </tr>
                                     );
                                   })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </section>
+                  );
+                })()}
+
+                {/* ── HORAS-AULA DIÁRIAS (HAD) ── */}
+                {(() => {
+                  const ch = evolutionCharts;
+                  const allHad = (ch?.had ?? [])
+                    .filter((d: any) => d.fund != null || d.fund_ai != null || d.fund_af != null || d.medio != null || d.inf_total != null)
+                    .sort((a: any, b: any) => a.ano - b.ano);
+                  if (allHad.length === 0) return null;
+
+                  const hadAnos = allHad.map((d: any) => d.ano);
+                  const selAno = hadAno && hadAnos.includes(hadAno) ? hadAno : hadAnos[hadAnos.length - 1];
+                  const row = allHad.find((d: any) => d.ano === selAno) ?? allHad[allHad.length - 1];
+
+                  const hr = (v: any) => v != null ? `${Number(v).toFixed(1)}h` : '—';
+
+                  // Define grupos e colunas — mostra coluna só se ALGUM ano tem dado
+                  const hasAnyInf = allHad.some((d: any) => d.inf_total != null || d.inf_cre != null || d.inf_pre != null);
+                  const hasSeries = allHad.some((d: any) => d.fun_01 != null);
+                  const hasMedSeries = allHad.some((d: any) => d.med_01 != null);
+
+                  type HadCol = { key: string; label: string };
+                  type HadGroup = { label: string; color: string; cols: HadCol[] };
+                  const grupos: HadGroup[] = [
+                    ...(hasAnyInf ? [{
+                      label: 'Educação Infantil', color: '#7b5ea7',
+                      cols: [
+                        { key: 'inf_total', label: 'Total' },
+                        { key: 'inf_cre',   label: 'Creche' },
+                        { key: 'inf_pre',   label: 'Pré-Escola' },
+                      ] as HadCol[],
+                    }] : []),
+                    {
+                      label: 'Ensino Fundamental', color: '#2d5a88',
+                      cols: [
+                        { key: 'fund',    label: 'Total' },
+                        { key: 'fund_ai', label: 'Anos Iniciais' },
+                        { key: 'fund_af', label: 'Anos Finais' },
+                        ...(hasSeries ? [
+                          { key: 'fun_01', label: '1º Ano' }, { key: 'fun_02', label: '2º Ano' },
+                          { key: 'fun_03', label: '3º Ano' }, { key: 'fun_04', label: '4º Ano' },
+                          { key: 'fun_05', label: '5º Ano' }, { key: 'fun_06', label: '6º Ano' },
+                          { key: 'fun_07', label: '7º Ano' }, { key: 'fun_08', label: '8º Ano' },
+                          { key: 'fun_09', label: '9º Ano' },
+                        ] as HadCol[] : []),
+                      ] as HadCol[],
+                    },
+                    {
+                      label: 'Ensino Médio', color: '#6b2d6b',
+                      cols: [
+                        { key: 'medio',  label: 'Total' },
+                        ...(hasMedSeries ? [
+                          { key: 'med_01', label: '1ª Série' }, { key: 'med_02', label: '2ª Série' },
+                          { key: 'med_03', label: '3ª Série' }, { key: 'med_04', label: '4ª Série' },
+                          { key: 'med_ns', label: 'Não-Seriado' },
+                        ] as HadCol[] : []),
+                      ] as HadCol[],
+                    },
+                  ].filter(g => g.cols.some(c => row[c.key] != null || allHad.some((d: any) => d[c.key] != null)));
+
+                  const allCols = grupos.flatMap(g => g.cols);
+
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div>
+                          <h2>Horas-Aula Diárias (HAD)</h2>
+                          <p>Média de horas-aula diárias por etapa de ensino e ano escolar</p>
+                        </div>
+                        <div className="hint-chip">Fonte: INEP</div>
+                      </div>
+                      <div className="organic-divider" />
+
+                      {/* Seletor de ano */}
+                      {hadAnos.length > 1 && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+                          {hadAnos.map(a => (
+                            <button key={a} onClick={() => setHadAno(a)}
+                              style={{
+                                padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                border: `2px solid ${a === selAno ? '#5d4037' : '#e7d9bf'}`,
+                                background: a === selAno ? '#5d4037' : '#fffef8',
+                                color: a === selAno ? '#fff' : '#5d4037',
+                              }}>
+                              {a}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Tabela agrupada por etapa — scroll horizontal */}
+                      <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
+                        ⏱️ Média de horas-aula diárias — {selAno}
+                      </div>
+                      <div className="soft-card" style={{ padding: 0, overflow: 'auto', marginBottom: 16 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                          <thead>
+                            {/* Linha dos grupos */}
+                            <tr style={{ background: '#f7f2ea' }}>
+                              {grupos.map(g => (
+                                <th key={g.label} colSpan={g.cols.length}
+                                  style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 800, color: '#fff',
+                                    background: g.color, borderRight: '2px solid #fff', whiteSpace: 'nowrap', fontSize: 11 }}>
+                                  {g.label}
+                                </th>
+                              ))}
+                            </tr>
+                            {/* Linha das sub-colunas */}
+                            <tr style={{ background: '#f7f2ea' }}>
+                              {allCols.map((c, i) => {
+                                const grp = grupos.find(g => g.cols.includes(c))!;
+                                const isLast = i === allCols.length - 1 || !grupos.find(g => g.cols.includes(allCols[i+1]))?.cols.includes(allCols[i+1]);
+                                return (
+                                  <th key={c.key} style={{
+                                    padding: '6px 8px', textAlign: 'center', fontWeight: 700, fontSize: 11,
+                                    color: grp.color, whiteSpace: 'nowrap',
+                                    borderRight: isLast ? '2px solid #e0d8cc' : '1px solid #ede5d5',
+                                  }}>
+                                    {c.label}
+                                  </th>
+                                );
+                              })}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr style={{ background: '#fff' }}>
+                              {allCols.map((c, i) => {
+                                const grp = grupos.find(g => g.cols.includes(c))!;
+                                const isLast = i === allCols.length - 1 || grupos.find(g => g.cols.includes(allCols[i+1])) !== grp;
+                                const val = row[c.key];
+                                return (
+                                  <td key={c.key} style={{
+                                    padding: '9px 10px', textAlign: 'center', fontWeight: val != null ? 700 : 400,
+                                    color: val != null ? grp.color : '#bbb',
+                                    borderRight: isLast ? '2px solid #e0d8cc' : '1px solid #f0e8d8',
+                                    fontSize: 13,
+                                  }}>
+                                    {hr(val)}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Evolução histórica — apenas etapas disponíveis */}
+                      {allHad.length > 1 && (() => {
+                        const evoEtapas = [
+                          { key: 'inf_total', label: 'Ed. Infantil',  color: '#7b5ea7' },
+                          { key: 'fund',      label: 'Fund. Total',   color: '#2d5a88' },
+                          { key: 'fund_ai',   label: 'Fund. AI',      color: '#2d6a4f' },
+                          { key: 'fund_af',   label: 'Fund. AF',      color: '#1d3557' },
+                          { key: 'medio',     label: 'Ensino Médio',  color: '#6b2d6b' },
+                        ].filter(e => allHad.some((d: any) => d[e.key] != null));
+                        if (evoEtapas.length === 0) return null;
+                        return (
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
+                              📅 Evolução histórica por etapa (em horas/dia)
+                            </div>
+                            <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                <thead>
+                                  <tr style={{ background: '#f7f2ea' }}>
+                                    <th style={{ padding: '8px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
+                                    {evoEtapas.map(e => (
+                                      <th key={e.key} style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700, color: e.color, fontSize: 12, whiteSpace: 'nowrap' }}>
+                                        {e.label}
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {allHad.map((d: any, i: number) => (
+                                    <tr key={d.ano} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                      <td style={{ padding: '8px 14px', fontWeight: 700, color: d.ano === selAno ? '#2d5a88' : '#5d4037' }}>
+                                        {d.ano === selAno ? `▶ ${d.ano}` : d.ano}
+                                      </td>
+                                      {evoEtapas.map(e => (
+                                        <td key={e.key} style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: d[e.key] != null ? e.color : '#ccc' }}>
+                                          {hr(d[e.key])}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))}
                                 </tbody>
                               </table>
                             </div>
