@@ -1418,7 +1418,7 @@ export default function Dashboard() {
                   <div className="two-col">
                     <div className="soft-card theme-blue">
                       <div className="attention-head"><span>🏫</span><strong>Identidade</strong></div>
-                      <div className="row-list" style={{marginTop:'10px'}}>
+                      <div className="row-list" style={{marginTop:'8px'}}>
                         {[
                           ['Situação', censoLatest.ds_situacao],
                           ['Dependência', censoLatest.ds_dependencia],
@@ -1428,37 +1428,93 @@ export default function Dashboard() {
                           ['UF', censoLatest.sg_uf],
                           ['Código IBGE', censoLatest.co_municipio],
                           ['Regulamentação', censoLatest.tp_regulamentacao === 1 ? 'Sim' : censoLatest.tp_regulamentacao === 2 ? 'Em tramitação' : censoLatest.tp_regulamentacao === 3 ? 'Não' : null],
-                          ['Alimentação', censoLatest.in_alimentacao === 1 ? 'Sim' : censoLatest.in_alimentacao === 0 ? 'Não' : null],
                           ['Prédio escolar', censoLatest.in_local_func_predio_escolar === 1 ? 'Sim' : censoLatest.in_local_func_predio_escolar === 0 ? 'Não' : null],
                         ].filter(([,v]) => v != null).map(([k, v], i) => (
-                          <div key={i} className="row-item">
-                            <span style={{color:'var(--m-muted)',fontSize:'13px'}}>{k}</span>
-                            <strong style={{fontSize:'13px'}}>{String(v)}</strong>
+                          <div key={i} className="row-item" style={{padding:'7px 14px'}}>
+                            <span style={{color:'var(--m-muted)',fontSize:'12px'}}>{k}</span>
+                            <strong style={{fontSize:'12px'}}>{String(v)}</strong>
                           </div>
                         ))}
                       </div>
                     </div>
                     <div className="soft-card theme-yellow">
                       <div className="attention-head"><span>⚙️</span><strong>Vida organizacional</strong></div>
-                      <div className="row-list" style={{marginTop:'10px'}}>
-                        {[
-                          ['Conselho Escolar', censoLatest.in_orgao_conselho_escolar === 1 ? 'Sim' : censoLatest.in_orgao_conselho_escolar === 0 ? 'Não' : null],
-                          ['APM / APP', censoLatest.in_orgao_ass_pais_mestres === 1 ? 'Sim' : censoLatest.in_orgao_ass_pais_mestres === 0 ? 'Não' : null],
-                          ['Grêmio Estudantil', censoLatest.in_orgao_gremio_estudantil === 1 ? 'Sim' : censoLatest.in_orgao_gremio_estudantil === 0 ? 'Não' : null],
-                          ['Redes Sociais', censoLatest.in_redes_sociais === 1 ? 'Sim' : censoLatest.in_redes_sociais === 0 ? 'Não' : null],
-                          ['Ed. Ambiental', censoLatest.in_educ_ambiental === 1 ? 'Sim' : censoLatest.in_educ_ambiental === 0 ? 'Não' : null],
-                          ['AEE', censoLatest.tp_aee === 1 ? 'Na própria escola' : censoLatest.tp_aee === 2 ? 'Em outra escola' : censoLatest.tp_aee === 3 ? 'Em inst. especializada' : censoLatest.tp_aee === 0 ? 'Não oferece' : null],
-                          ['Sala Atend. Especial', censoLatest.in_sala_atendimento_especial === 1 ? 'Sim' : censoLatest.in_sala_atendimento_especial === 0 ? 'Não' : null],
-                          ['Internet', censoLatest.in_internet === 1 ? 'Sim' : censoLatest.in_internet === 0 ? 'Não' : null],
-                          ['Banda Larga', censoLatest.in_banda_larga === 1 ? 'Sim' : censoLatest.in_banda_larga === 0 ? 'Não' : null],
-                          ['Biblioteca', censoLatest.in_biblioteca === 1 ? 'Sim' : censoLatest.in_biblioteca === 0 ? 'Não' : null],
-                        ].filter(([,v]) => v != null).map(([k, v], i) => (
-                          <div key={i} className="row-item">
-                            <span style={{color:'var(--m-muted)',fontSize:'13px'}}>{k}</span>
-                            <strong style={{fontSize:'13px'}}>{String(v)}</strong>
+                      {(() => {
+                        const cl = censoLatest;
+                        const chip = (label: string, val: number | null | undefined) => {
+                          if (val == null) return null;
+                          return (
+                            <span key={label} style={{
+                              display:'inline-flex',alignItems:'center',gap:'4px',
+                              padding:'3px 9px',borderRadius:'20px',fontSize:'11px',fontWeight:600,
+                              background: val === 1 ? '#eef7f1' : '#fff3f3',
+                              color:      val === 1 ? '#2f7a58' : '#c0392b',
+                              border:     val === 1 ? '1px solid #c7e8d6' : '1px solid #f5c6cb',
+                              marginRight:'4px',marginBottom:'4px',
+                            }}>
+                              {val === 1 ? '✓' : '✗'} {label}
+                            </span>
+                          );
+                        };
+                        const group = (title: string, content: React.ReactNode) => (
+                          <div style={{marginBottom:'10px'}}>
+                            <div style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#888',marginBottom:'5px',paddingLeft:'2px'}}>{title}</div>
+                            <div style={{display:'flex',flexWrap:'wrap'}}>{content}</div>
                           </div>
-                        ))}
-                      </div>
+                        );
+                        const aeeLabel = cl.tp_aee === 1 ? 'Na própria escola' : cl.tp_aee === 2 ? 'Em outra escola' : cl.tp_aee === 3 ? 'Em inst. especializada' : cl.tp_aee === 0 ? 'Não oferece' : null;
+                        const orgaos = [
+                          chip('Conselho Escolar', cl.in_orgao_conselho_escolar),
+                          chip('APM / APP', cl.in_orgao_ass_pais_mestres),
+                          chip('Grêmio Estudantil', cl.in_orgao_gremio_estudantil),
+                        ].filter(Boolean);
+                        const programas = [
+                          chip('Alimentação escolar', cl.in_alimentacao),
+                          chip('Ed. Ambiental', cl.in_educ_ambiental),
+                          chip('Atividade complementar', cl.in_atividade_complementar),
+                          chip('Redes Sociais', cl.in_redes_sociais),
+                        ].filter(Boolean);
+                        const inclusao = [
+                          chip('Sala AEE', cl.in_sala_atendimento_especial),
+                          chip('Atendimento AEE', cl.in_atendimento_aee),
+                        ].filter(Boolean);
+                        const conectividade = [
+                          chip('Internet', cl.in_internet),
+                          chip('Banda larga', cl.in_banda_larga),
+                          chip('Internet alunos', cl.in_internet_alunos),
+                          chip('Int. aprendizagem', cl.in_internet_aprendizagem),
+                          chip('Int. administrativo', cl.in_internet_administrativo),
+                        ].filter(Boolean);
+                        const tecnologia = [
+                          chip('Tablet', cl.in_tablet_aluno),
+                          chip('TV', cl.in_equip_tv),
+                          chip('Multimídia', cl.in_equip_multimidia),
+                          chip('Impressora', cl.in_impressora),
+                        ].filter(Boolean);
+                        const acessibilidade = [
+                          chip('Rampas', cl.in_rampas),
+                          chip('Corrimão', cl.in_corrimao),
+                          chip('Elevador', cl.in_elevador),
+                          chip('Pisos táteis', cl.in_pisos_tateis),
+                          chip('Sinal visual', cl.in_sinal_visual),
+                        ].filter(Boolean);
+                        return (
+                          <div style={{marginTop:'10px'}}>
+                            {orgaos.length > 0 && group('Órgãos colegiados', orgaos)}
+                            {programas.length > 0 && group('Programas e serviços', programas)}
+                            {(inclusao.length > 0 || aeeLabel) && group('Inclusão / AEE', <>
+                              {inclusao}
+                              {aeeLabel && <span style={{display:'inline-flex',alignItems:'center',gap:'4px',padding:'3px 9px',borderRadius:'20px',fontSize:'11px',fontWeight:600,background:'#f0f4f8',color:'#3d4d5a',border:'1px solid #dde3ea',marginRight:'4px',marginBottom:'4px'}}>AEE: {aeeLabel}</span>}
+                            </>)}
+                            {conectividade.length > 0 && group('Conectividade', conectividade)}
+                            {(tecnologia.length > 0 || (cl.qt_computadores != null && cl.qt_computadores > 0)) && group('Tecnologia', <>
+                              {cl.qt_computadores != null && cl.qt_computadores > 0 && <span style={{display:'inline-flex',alignItems:'center',gap:'4px',padding:'3px 9px',borderRadius:'20px',fontSize:'11px',fontWeight:600,background:'#f0f4f8',color:'#3d4d5a',border:'1px solid #dde3ea',marginRight:'4px',marginBottom:'4px'}}>💻 {cl.qt_computadores} computadores</span>}
+                              {tecnologia}
+                            </>)}
+                            {acessibilidade.length > 0 && group('Acessibilidade', acessibilidade)}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </section>
