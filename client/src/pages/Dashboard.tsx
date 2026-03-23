@@ -472,7 +472,22 @@ export default function Dashboard() {
       tnr: anos.map((a: number) => {
         const t = indicadores[a]?.taxa_nao_resposta;
         if (!t) return { ano: a };
-        return { ano: a, fund: t.taxa_nao_resposta_fund ?? t.tnr_fund ?? null, med: t.taxa_nao_resposta_med ?? t.tnr_med ?? null };
+        return {
+          ano: a,
+          fund: t.taxa_nao_resposta_fund ?? t.tnr_fund ?? null,
+          med:  t.taxa_nao_resposta_med  ?? t.tnr_med  ?? null,
+          fund_ai: t.taxa_nao_resposta_fund_ai ?? null,
+          fund_af: t.taxa_nao_resposta_fund_af ?? null,
+          // por série — Fundamental Anos Iniciais
+          f01: t.tnr_fun_01 ?? null, f02: t.tnr_fun_02 ?? null, f03: t.tnr_fun_03 ?? null,
+          f04: t.tnr_fun_04 ?? null, f05: t.tnr_fun_05 ?? null,
+          // por série — Fundamental Anos Finais
+          f06: t.tnr_fun_06 ?? null, f07: t.tnr_fun_07 ?? null,
+          f08: t.tnr_fun_08 ?? null, f09: t.tnr_fun_09 ?? null,
+          // por série — Ensino Médio
+          m01: t.tnr_med_01 ?? null, m02: t.tnr_med_02 ?? null,
+          m03: t.tnr_med_03 ?? null, m04: t.tnr_med_04 ?? null,
+        };
       }),
     };
   }, [evolucaoData]);
@@ -1076,6 +1091,7 @@ export default function Dashboard() {
                   ...(ch?.saeb ? [{ id: 'saeb', label: 'SAEB', icon: '📝', data: ch.saeb.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Mat. AI': d.mt_ai, 'Port. AI': d.lp_ai, 'Mat. AF': d.mt_af, 'Port. AF': d.lp_af })), lines: [{ key: 'Mat. AI', color: '#2d5a88', name: 'Mat. AI' },{ key: 'Port. AI', color: '#9b6a16', name: 'Port. AI' },{ key: 'Mat. AF', color: '#2f7a58', name: 'Mat. AF' },{ key: 'Port. AF', color: '#b74f42', name: 'Port. AF' }], desc: 'SAEB — Proficiência em Matemática e Língua Portuguesa.' }] : []),
                   ...(ch?.icg ? [{ id: 'icg', label: 'Complexidade', icon: '⚙️', data: ch.icg.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'ICG': d.nivel })), lines: [{ key: 'ICG', color: '#c47a1f', name: 'Nível ICG' }], desc: 'ICG — Complexidade de Gestão (1–6). Maior = mais complexo.' }] : []),
                   ...(ch?.ird ? [{ id: 'ird', label: 'Regularidade Doc.', icon: '🔄', data: ch.ird.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'IRD': d.media })), lines: [{ key: 'IRD', color: '#2f7a58', name: 'IRD Médio' }], desc: 'IRD — Regularidade Docente (1–5). Maior = mais estável.' }] : []),
+                  ...(ch?.tnr && ch.tnr.some((d:any) => d.fund != null || d.med != null) ? [{ id: 'tnr', label: 'Não Resposta', icon: '🚫', data: ch.tnr.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Fundamental': d.fund, 'Médio': d.med })), lines: [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental' },{ key: 'Médio', color: '#9b6a16', name: 'Médio' }], desc: 'TNR — % de alunos que não participaram da avaliação Prova Brasil/SAEB. Afeta o IDEB.' }] : []),
                 ].filter(c => c.data.some((d: Record<string, any>) => Object.values(d).slice(1).some((v: any) => v != null && Number(v) > 0)));
                 const currentChart = available.find(c => c.id === selectedChart) || available[0];
                 return (
@@ -1621,6 +1637,125 @@ export default function Dashboard() {
                               </>
                             );
                           })()}
+                        </div>
+                      )}
+                    </section>
+                  );
+                })()}
+
+                {/* ── TAXA DE NÃO RESPOSTA (TNR) ── */}
+                {(() => {
+                  const ch = evolutionCharts;
+                  const allTnr = ch?.tnr?.filter((d: any) => d.fund != null || d.med != null).slice().sort((a: any, b: any) => a.ano - b.ano) || [];
+                  if (allTnr.length === 0) return null;
+                  const latest = allTnr[allTnr.length - 1];
+                  const pct = (v: any) => v != null ? `${Number(v).toFixed(1)}%` : '—';
+                  // Por série — último ano disponível
+                  const gradesFund: { label: string; key: string }[] = [
+                    { label: '1º ano', key: 'f01' }, { label: '2º ano', key: 'f02' }, { label: '3º ano', key: 'f03' },
+                    { label: '4º ano', key: 'f04' }, { label: '5º ano', key: 'f05' },
+                    { label: '6º ano', key: 'f06' }, { label: '7º ano', key: 'f07' },
+                    { label: '8º ano', key: 'f08' }, { label: '9º ano', key: 'f09' },
+                  ].filter(g => latest[g.key] != null);
+                  const gradesMed: { label: string; key: string }[] = [
+                    { label: '1ª série', key: 'm01' }, { label: '2ª série', key: 'm02' },
+                    { label: '3ª série', key: 'm03' }, { label: '4ª série', key: 'm04' },
+                  ].filter(g => latest[g.key] != null);
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div>
+                          <h2>Taxa de Não Resposta</h2>
+                          <p>% de alunos que não participaram da avaliação Prova Brasil/SAEB — afeta diretamente o cálculo do IDEB</p>
+                        </div>
+                        <div className="hint-chip">Fonte: INEP / Railway</div>
+                      </div>
+                      <div className="organic-divider" />
+
+                      {/* Cartões resumo */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 16 }}>
+                        {[
+                          { label: 'Fundamental', sub: 'total', value: latest.fund, color: '#2d5a88' },
+                          { label: 'Anos Iniciais', sub: 'Fund. 1º–5º', value: latest.fund_ai, color: '#2d6a4f' },
+                          { label: 'Anos Finais', sub: 'Fund. 6º–9º', value: latest.fund_af, color: '#1d3557' },
+                          { label: 'Ensino Médio', sub: 'total', value: latest.med, color: '#6b2d6b' },
+                        ].filter(c => c.value != null).map(c => (
+                          <div key={c.label} className="soft-card" style={{ textAlign: 'center', padding: '14px 10px' }}>
+                            <div style={{ fontSize: 22, fontWeight: 800, color: Number(c.value) > 20 ? '#b74f42' : Number(c.value) > 10 ? '#c47a1f' : c.color }}>
+                              {pct(c.value)}
+                            </div>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#5d4037', marginTop: 2 }}>{c.label}</div>
+                            <div style={{ fontSize: 10, color: '#a89a82' }}>{c.sub} — {latest.ano}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Tabela de evolução */}
+                      <div className="soft-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
+                        <div style={{ padding: '9px 14px', background: '#4a4a6a', color: '#fff', fontSize: 12, fontWeight: 700 }}>
+                          🚫 Evolução da taxa de não resposta por ano
+                        </div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                          <thead>
+                            <tr style={{ background: '#f7f2ea' }}>
+                              <th style={{ padding: '9px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
+                              <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: '#2d5a88', fontSize: 12 }}>Fundamental</th>
+                              {allTnr.some((d: any) => d.fund_ai != null) && <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: '#2d6a4f', fontSize: 12 }}>Anos Iniciais</th>}
+                              {allTnr.some((d: any) => d.fund_af != null) && <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: '#1d3557', fontSize: 12 }}>Anos Finais</th>}
+                              <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: '#6b2d6b', fontSize: 12 }}>Ensino Médio</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {allTnr.map((d: any, i: number) => (
+                              <tr key={d.ano} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                <td style={{ padding: '9px 14px', fontWeight: 700, color: '#5d4037' }}>{d.ano}</td>
+                                <td style={{ padding: '9px 14px', textAlign: 'right', color: Number(d.fund) > 20 ? '#b74f42' : '#2d5a88', fontWeight: 600 }}>{pct(d.fund)}</td>
+                                {allTnr.some((x: any) => x.fund_ai != null) && <td style={{ padding: '9px 14px', textAlign: 'right', color: '#2d6a4f', fontWeight: 600 }}>{pct(d.fund_ai)}</td>}
+                                {allTnr.some((x: any) => x.fund_af != null) && <td style={{ padding: '9px 14px', textAlign: 'right', color: '#1d3557', fontWeight: 600 }}>{pct(d.fund_af)}</td>}
+                                <td style={{ padding: '9px 14px', textAlign: 'right', color: Number(d.med) > 20 ? '#b74f42' : '#6b2d6b', fontWeight: 600 }}>{pct(d.med)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Por série — último ano */}
+                      {(gradesFund.length > 0 || gradesMed.length > 0) && (
+                        <div style={{ display: 'grid', gridTemplateColumns: gradesFund.length > 0 && gradesMed.length > 0 ? '1fr 1fr' : '1fr', gap: 12 }}>
+                          {gradesFund.length > 0 && (
+                            <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
+                              <div style={{ padding: '8px 14px', background: '#2d5a8822', fontSize: 11, fontWeight: 700, color: '#2d5a88' }}>
+                                📋 Por ano — Fundamental ({latest.ano})
+                              </div>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                <tbody>
+                                  {gradesFund.map((g, i) => (
+                                    <tr key={g.key} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                      <td style={{ padding: '8px 14px', fontWeight: 700, color: '#5d4037' }}>{g.label}</td>
+                                      <td style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 600, color: Number(latest[g.key]) > 20 ? '#b74f42' : '#2d5a88' }}>{pct(latest[g.key])}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                          {gradesMed.length > 0 && (
+                            <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
+                              <div style={{ padding: '8px 14px', background: '#6b2d6b22', fontSize: 11, fontWeight: 700, color: '#6b2d6b' }}>
+                                📋 Por série — Ensino Médio ({latest.ano})
+                              </div>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                <tbody>
+                                  {gradesMed.map((g, i) => (
+                                    <tr key={g.key} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                      <td style={{ padding: '8px 14px', fontWeight: 700, color: '#5d4037' }}>{g.label}</td>
+                                      <td style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 600, color: Number(latest[g.key]) > 20 ? '#b74f42' : '#6b2d6b' }}>{pct(latest[g.key])}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
                         </div>
                       )}
                     </section>
