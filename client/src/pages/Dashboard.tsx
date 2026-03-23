@@ -117,6 +117,7 @@ export default function Dashboard() {
   const [afdAno, setAfdAno] = useState<number | null>(null);
   const [atuAno, setAtuAno] = useState<number | null>(null);
   const [hadAno, setHadAno] = useState<number | null>(null);
+  const [inseAno, setInseAno] = useState<number | null>(null);
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
   const pddeCnpj = pddeData?.uex?.cnpj || null;
   const { data: pddeSaldosData, isLoading: pddeSaldosLoading, isError: pddeSaldosError } = usePddeSaldos(selectedInep);
@@ -423,15 +424,14 @@ export default function Dashboard() {
           fund_ai:    t.fundamental_ai   ?? null,
           fund_af:    t.fundamental_af   ?? null,
           medio:      t.medio_total      ?? null,
-          // Por série — Fundamental Anos Iniciais
-          f01: t.fun_01 ?? null, f02: t.fun_02 ?? null, f03: t.fun_03 ?? null,
-          f04: t.fun_04 ?? null, f05: t.fun_05 ?? null,
-          // Por série — Fundamental Anos Finais
-          f06: t.fun_06 ?? null, f07: t.fun_07 ?? null,
-          f08: t.fun_08 ?? null, f09: t.fun_09 ?? null,
-          // Por série — Ensino Médio
-          m01: t.med_01 ?? null, m02: t.med_02 ?? null,
-          m03: t.med_03 ?? null, m04: t.med_04 ?? null,
+          // Por ano — Fundamental (campos reais do INEP)
+          f01: t.fund_1ano ?? null, f02: t.fund_2ano ?? null, f03: t.fund_3ano ?? null,
+          f04: t.fund_4ano ?? null, f05: t.fund_5ano ?? null,
+          f06: t.fund_6ano ?? null, f07: t.fund_7ano ?? null,
+          f08: t.fund_8ano ?? null, f09: t.fund_9ano ?? null,
+          // Por série — Ensino Médio (campos reais do INEP)
+          m01: t.medio_1serie ?? null, m02: t.medio_2serie ?? null,
+          m03: t.medio_3serie ?? null, m04: t.medio_4serie ?? null,
         };
       }),
       atu: anos.map((a: number) => {
@@ -531,7 +531,17 @@ export default function Dashboard() {
       inse: anos.map((a: number) => {
         const ins = indicadores[a]?.inse;
         if (!ins) return { ano: a };
-        return { ano: a, media: ins.media_inse ?? ins.valor ?? null };
+        return {
+          ano: a,
+          media: ins.media_inse ?? ins.valor ?? null,
+          classificacao: ins.inse_classificacao ?? ins.nivel_inse ?? null,
+          qtd_alunos: ins.qtd_alunos_inse ?? null,
+          // distribuição pelos 8 níveis INSE (% dos alunos)
+          n1: ins.pc_nivel_1 ?? null, n2: ins.pc_nivel_2 ?? null,
+          n3: ins.pc_nivel_3 ?? null, n4: ins.pc_nivel_4 ?? null,
+          n5: ins.pc_nivel_5 ?? null, n6: ins.pc_nivel_6 ?? null,
+          n7: ins.pc_nivel_7 ?? null, n8: ins.pc_nivel_8 ?? null,
+        };
       }),
       saeb: anos.map((a: number) => {
         const s = indicadores[a]?.saeb;
@@ -1953,6 +1963,94 @@ export default function Dashboard() {
                   );
                 })()}
 
+                {/* ── INSE — DISTRIBUIÇÃO POR NÍVEL ── */}
+                {(() => {
+                  const ch = evolutionCharts;
+                  const inseData = (ch?.inse ?? []).filter((d: any) => d.media != null).sort((a: any, b: any) => a.ano - b.ano);
+                  if (inseData.length === 0) return null;
+                  const hasLevels = inseData.some((d: any) => d.n1 != null);
+                  if (!hasLevels) return null; // Só mostra se tiver distribuição
+                  const latest = inseData[inseData.length - 1];
+                  const selAnoInse = inseAno && inseData.some((d: any) => d.ano === inseAno) ? inseAno : latest.ano;
+                  const rowInse = inseData.find((d: any) => d.ano === selAnoInse) ?? latest;
+
+                  const niveis = [
+                    { n: 1, label: 'Nível I',   desc: 'Muito baixo',     color: '#b71c1c' },
+                    { n: 2, label: 'Nível II',  desc: 'Baixo',           color: '#d44f2a' },
+                    { n: 3, label: 'Nível III', desc: 'Médio-baixo',     color: '#e9a82b' },
+                    { n: 4, label: 'Nível IV',  desc: 'Médio',           color: '#c8a228' },
+                    { n: 5, label: 'Nível V',   desc: 'Médio-alto',      color: '#7aad3f' },
+                    { n: 6, label: 'Nível VI',  desc: 'Alto',            color: '#4caf50' },
+                    { n: 7, label: 'Nível VII', desc: 'Muito alto',      color: '#2d8f4e' },
+                    { n: 8, label: 'Nível VIII',desc: 'Muito alto (+)',  color: '#1a5c33' },
+                  ].filter(nv => rowInse[`n${nv.n}`] != null);
+
+                  if (niveis.length === 0) return null;
+
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div>
+                          <h2>INSE — Distribuição dos Estudantes por Nível Socioeconômico</h2>
+                          <p>Percentual de alunos em cada um dos 8 níveis do índice socioeconômico INEP</p>
+                        </div>
+                        <div className="hint-chip">Fonte: INEP/SAEB</div>
+                      </div>
+                      <div className="organic-divider" />
+
+                      {inseData.length > 1 && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+                          {inseData.map(d => (
+                            <button key={d.ano} onClick={() => setInseAno(d.ano)}
+                              style={{
+                                padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                border: `2px solid ${d.ano === selAnoInse ? '#7c5cbf' : '#e7d9bf'}`,
+                                background: d.ano === selAnoInse ? '#7c5cbf' : '#fffef8',
+                                color: d.ano === selAnoInse ? '#fff' : '#5d4037',
+                              }}>
+                              {d.ano}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="soft-card" style={{ padding: 16, marginBottom: 8 }}>
+                        <div style={{ marginBottom: 12, fontSize: 13, color: '#5d4037' }}>
+                          <strong>INSE Médio {rowInse.ano}:</strong>{' '}
+                          <span style={{ fontSize: 20, fontWeight: 900, color: '#7c5cbf' }}>
+                            {rowInse.media != null ? Number(rowInse.media).toFixed(2) : '—'}
+                          </span>
+                          {rowInse.classificacao && (
+                            <span style={{ marginLeft: 10, fontSize: 12, background: '#f0eaf8', color: '#7c5cbf', borderRadius: 12, padding: '2px 10px', fontWeight: 700 }}>
+                              {rowInse.classificacao}
+                            </span>
+                          )}
+                          {rowInse.qtd_alunos && (
+                            <span style={{ marginLeft: 10, fontSize: 12, color: '#888' }}>
+                              {Number(rowInse.qtd_alunos).toLocaleString('pt-BR')} alunos
+                            </span>
+                          )}
+                        </div>
+                        {niveis.map(nv => {
+                          const pct = rowInse[`n${nv.n}`] as number | null;
+                          const w = pct != null ? Math.max(2, Math.min(100, pct)) : 0;
+                          return (
+                            <div key={nv.n} style={{ marginBottom: 10 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3, fontSize: 12 }}>
+                                <span style={{ fontWeight: 700, color: nv.color }}>{nv.label} <span style={{ fontWeight: 400, color: '#888' }}>— {nv.desc}</span></span>
+                                <span style={{ fontWeight: 700, color: nv.color }}>{pct != null ? `${pct.toFixed(1)}%` : '—'}</span>
+                              </div>
+                              <div style={{ height: 10, borderRadius: 6, background: '#f0e8d8', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${w}%`, borderRadius: 6, background: nv.color, transition: 'width 0.4s' }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  );
+                })()}
+
                 {/* ── DISTORÇÃO IDADE-SÉRIE (TDI) ── */}
                 {(() => {
                   const ch = evolutionCharts;
@@ -2230,11 +2328,14 @@ export default function Dashboard() {
                       {allIed.length > 1 && (() => {
                         const evoRows = allIed.filter((d: any) => d.nivel_5 != null || d.nivel_6 != null);
                         if (evoRows.length < 2) return null;
+                        const iedEvoOpen = expandedSections['ied-evo'] !== false;
                         return (
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: 12, color: '#b74f42', marginBottom: 6 }}>
-                              ⚠️ Evolução da sobrecarga docente (Níveis 5 e 6) — Total
-                            </div>
+                            <button onClick={() => toggleSection('ied-evo')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#b74f42', marginBottom: 6, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              {iedEvoOpen ? '▼' : '▶'} ⚠️ Evolução da sobrecarga docente (Níveis 5 e 6) — Total
+                            </button>
+                            {!iedEvoOpen && null}
+                            {iedEvoOpen && <div>
                             <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                 <thead>
@@ -2264,6 +2365,7 @@ export default function Dashboard() {
                                 </tbody>
                               </table>
                             </div>
+                            </div>}
                           </div>
                         );
                       })()}
@@ -2412,10 +2514,10 @@ export default function Dashboard() {
                         if (evoEtapas.length === 0) return null;
                         return (
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
-                              📅 Evolução do Grupo 1 (formação adequada) por etapa
-                            </div>
-                            <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
+                            <button onClick={() => toggleSection('afd-evo')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              {expandedSections['afd-evo'] !== false ? '▼' : '▶'} 📅 Evolução do Grupo 1 (formação adequada) por etapa
+                            </button>
+                            {expandedSections['afd-evo'] !== false && <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                 <thead>
                                   <tr style={{ background: '#f7f2ea' }}>
@@ -2448,7 +2550,7 @@ export default function Dashboard() {
                                   ))}
                                 </tbody>
                               </table>
-                            </div>
+                            </div>}
                           </div>
                         );
                       })()}
@@ -2621,10 +2723,10 @@ export default function Dashboard() {
                         if (evoEtapas.length === 0) return null;
                         return (
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
-                              📅 Evolução histórica — médias por etapa
-                            </div>
-                            <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
+                            <button onClick={() => toggleSection('atu-evo')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              {expandedSections['atu-evo'] !== false ? '▼' : '▶'} 📅 Evolução histórica — médias por etapa
+                            </button>
+                            {expandedSections['atu-evo'] !== false && <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                 <thead>
                                   <tr style={{ background: '#f7f2ea' }}>
@@ -2658,7 +2760,7 @@ export default function Dashboard() {
                                   ))}
                                 </tbody>
                               </table>
-                            </div>
+                            </div>}
                           </div>
                         );
                       })()}
@@ -2822,10 +2924,10 @@ export default function Dashboard() {
                         if (evoEtapas.length === 0) return null;
                         return (
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
-                              📅 Evolução histórica por etapa (em horas/dia)
-                            </div>
-                            <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
+                            <button onClick={() => toggleSection('had-evo')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              {expandedSections['had-evo'] !== false ? '▼' : '▶'} 📅 Evolução histórica por etapa (em horas/dia)
+                            </button>
+                            {expandedSections['had-evo'] !== false && <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                 <thead>
                                   <tr style={{ background: '#f7f2ea' }}>
@@ -2852,7 +2954,7 @@ export default function Dashboard() {
                                   ))}
                                 </tbody>
                               </table>
-                            </div>
+                            </div>}
                           </div>
                         );
                       })()}
