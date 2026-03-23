@@ -2,16 +2,12 @@ import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
 import { rm, readFile } from "fs/promises";
 
-// Only bundle small/core packages that benefit from reduced require() calls.
-// Heavy libraries (openai, xlsx, date-fns, drizzle-orm, pg, etc.) stay
-// external so they are loaded from node_modules at runtime — this keeps
-// dist/index.cjs well under deployment size limits.
-const allowlist = [
-  "express",
-  "nanoid",
-  "ws",
-  "zod",
-  "zod-validation-error",
+// Packages with native C/C++ bindings that CANNOT be bundled by esbuild.
+// Everything else is inlined into dist/index.cjs so the production container
+// only needs these packages in node_modules — keeping the deployed image tiny.
+const NATIVE_EXTERNALS = [
+  "better-sqlite3", // .node native addon
+  "bufferutil",     // optional native addon for ws
 ];
 
 async function buildAll() {
@@ -26,7 +22,9 @@ async function buildAll() {
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.devDependencies || {}),
   ];
-  const externals = allDeps.filter((dep) => !allowlist.includes(dep));
+
+  // Keep only native packages as external — bundle everything else.
+  const externals = allDeps.filter((dep) => NATIVE_EXTERNALS.includes(dep));
 
   await esbuild({
     entryPoints: ["server/index.ts"],

@@ -47,4 +47,4 @@ SQLITE_DATABASE_URL = "file:dev.db"
 [deployment]
 deploymentTarget = "autoscale"
 run = ["bash", "start.sh"]
-build = ["npm", "run", "build"]
+build = ["bash", "scripts/deploy-build.sh"]
