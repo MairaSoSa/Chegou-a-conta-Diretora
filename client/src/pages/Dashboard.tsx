@@ -1640,6 +1640,68 @@ export default function Dashboard() {
                           </div>
                         ))}
                       </div>
+
+                      {/* Matrículas por etapa */}
+                      {(() => {
+                        const total_mat = censoLatest.qt_mat_bas || 0;
+                        const etapas = [
+                          { label: 'Ed. Infantil', key: 'qt_mat_inf', color: '#a78bfa' },
+                          { label: 'Fund. AI', key: 'qt_mat_fund_ai', color: '#60a5fa' },
+                          { label: 'Fund. AF', key: 'qt_mat_fund_af', color: '#34d399' },
+                          { label: 'Ens. Médio', key: 'qt_mat_med', color: '#f59e0b' },
+                          { label: 'EJA', key: 'qt_mat_eja', color: '#fb923c' },
+                          { label: 'Ed. Especial', key: 'qt_mat_esp', color: '#f472b6' },
+                        ].filter(e => (censoLatest[e.key] || 0) > 0);
+                        if (!etapas.length || !total_mat) return null;
+                        return (
+                          <div style={{marginTop:'16px'}}>
+                            <div style={{fontSize:'11px',fontWeight:700,color:'var(--m-muted)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px'}}>Matrículas por etapa</div>
+                            <div style={{display:'flex',height:'8px',borderRadius:'99px',overflow:'hidden',gap:'2px',marginBottom:'8px'}}>
+                              {etapas.map(e => {
+                                const pct = total_mat > 0 ? (censoLatest[e.key] / total_mat) * 100 : 0;
+                                return <div key={e.key} style={{flex: pct, background: e.color, minWidth: pct > 0 ? '4px' : 0}} />;
+                              })}
+                            </div>
+                            <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
+                              {etapas.map(e => {
+                                const pct = total_mat > 0 ? ((censoLatest[e.key] / total_mat) * 100).toFixed(1) : '0';
+                                return (
+                                  <div key={e.key} style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'11px'}}>
+                                    <span style={{width:8,height:8,borderRadius:'50%',background:e.color,flexShrink:0,display:'inline-block'}} />
+                                    <span style={{color:'var(--m-muted)'}}>{e.label}</span>
+                                    <strong style={{color:'var(--m-text)'}}>{Number(censoLatest[e.key]).toLocaleString('pt-BR')}</strong>
+                                    <span style={{color:'#94a3b8'}}>({pct}%)</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Docentes por nível */}
+                      {(() => {
+                        const niveis = [
+                          { label: 'Ed. Infantil', val: censoLatest.qt_doc_inf },
+                          { label: 'Fundamental', val: censoLatest.qt_doc_fund },
+                          { label: 'Ensino Médio', val: censoLatest.qt_doc_med },
+                        ].filter(n => n.val != null && n.val > 0);
+                        if (!niveis.length) return null;
+                        return (
+                          <div style={{marginTop:'14px'}}>
+                            <div style={{fontSize:'11px',fontWeight:700,color:'var(--m-muted)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px'}}>Docentes por nível</div>
+                            <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
+                              {niveis.map(n => (
+                                <div key={n.label} style={{background:'#f1f5f9',borderRadius:'8px',padding:'5px 10px',fontSize:'12px',display:'flex',gap:'5px',alignItems:'center'}}>
+                                  <strong style={{color:'var(--m-text)'}}>{Number(n.val).toLocaleString('pt-BR')}</strong>
+                                  <span style={{color:'var(--m-muted)'}}>{n.label}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <p style={{fontSize:'10px',color:'#94a3b8',margin:'6px 0 0'}}>O Censo Escolar não detalha por disciplina — apenas por nível de ensino.</p>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </section>
