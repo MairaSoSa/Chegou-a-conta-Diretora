@@ -89,6 +89,7 @@ export default function Dashboard() {
   const [selectedChart, setSelectedChart] = useState("matriculas");
   const [chartEtapa, setChartEtapa] = useState<string>('total');
   const [showChartDropdown, setShowChartDropdown] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [activeSchoolTab, setActiveSchoolTab] = useState<"dim1"|"dim2"|"dim3"|"dim4"|"dim5"|"dim6"|"dim7"|"dim8"|"dim9"|"dim10">("dim1");
   const [filterUf, setFilterUf] = useState("");
   const [filterDep, setFilterDep] = useState("");
@@ -171,6 +172,12 @@ export default function Dashboard() {
   useEffect(() => {
     setPddeAno(new Date().getFullYear());
   }, [selectedInep]);
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 170);
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
 
   const selectSchool = (inep: string, name?: string) => {
     const tabId = `school-${inep}`;
@@ -1291,6 +1298,33 @@ export default function Dashboard() {
                 const currentChart = available.find(c => c.id === selectedChart) || available[0];
                 return (
               <>
+                {/* ── STICKY HEADER — aparece ao rolar ── */}
+                {scrolled && selectedInep && (
+                  <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
+                    background: 'rgba(251,247,238,0.97)',
+                    backdropFilter: 'blur(12px)',
+                    borderBottom: '1px solid #e0d4b8',
+                    padding: '8px 20px',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    boxShadow: '0 2px 16px rgba(90,80,50,0.10)',
+                    animation: 'fadeSlideDown 0.2s ease',
+                  }}>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: '#3d2b1a', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {evolucaoData.escola.no_entidade}
+                    </div>
+                    <span style={{ fontSize: 12, color: '#8a7a6a', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      📍 {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}
+                    </span>
+                    <span style={{ fontSize: 11, color: '#bbb', fontWeight: 600, flexShrink: 0 }}>INEP {selectedInep}</span>
+                    {criticals.length > 0 && (
+                      <span style={{ background: '#fff0f0', color: '#c0392b', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, border: '1px solid #f5c6cb', flexShrink: 0 }}>
+                        ⚠️ {criticals.length} crítico{criticals.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {/* ── CABEÇALHO APENAS PARA IMPRESSÃO ── */}
                 <div className="print-only-header">
                   <div className="print-brand">
@@ -1366,6 +1400,41 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </section>
+
+                {/* ── FAIXA DE DIAGNÓSTICO ── */}
+                {(() => {
+                  const idebLatest = ch?.ideb?.slice().sort((a:any,b:any) => b.ano - a.ano)[0];
+                  const bestIdeb = idebLatest ? ([idebLatest.ideb_ai, idebLatest.ideb_af, idebLatest.ideb_em].filter((v): v is number => v != null).reduce((mx,v) => v > mx ? v : mx, 0) || null) : null;
+                  const rendLatestD = ch?.taxasRendimento?.slice().sort((a:any,b:any)=>b.ano-a.ano).find((d:any) => d.abandono != null);
+                  const abandono = rendLatestD?.abandono ?? null;
+                  const pddeAdimplente = prestacaoContaData?.ok && prestacaoContaData.itens.length > 0
+                    ? prestacaoContaData.itens.every((it:any) => it.situacao_pc_uex?.toLowerCase().includes('adimpl'))
+                    : null;
+                  const diagChips = [
+                    bestIdeb != null ? { label: 'IDEB', val: Number(bestIdeb).toFixed(1), status: bestIdeb >= 6 ? 'ok' : bestIdeb >= 4 ? 'warn' : 'bad' } : null,
+                    abandono != null ? { label: 'Abandono', val: `${Number(abandono).toFixed(1)}%`, status: Number(abandono) < 1 ? 'ok' : Number(abandono) < 5 ? 'warn' : 'bad' } : null,
+                    pddeAdimplente !== null ? { label: 'PDDE', val: pddeAdimplente ? 'Adimplente' : 'Verificar', status: pddeAdimplente ? 'ok' : 'warn' } : null,
+                    total === 0 ? { label: 'Alertas', val: 'Tudo certo', status: 'ok' } : null,
+                    criticals.length > 0 ? { label: `${criticals.length} crítico${criticals.length !== 1 ? 's' : ''}`, val: 'ver alertas', status: 'bad' } : null,
+                    warnings.length > 0 && criticals.length === 0 ? { label: `${warnings.length} atenção`, val: 'ver alertas', status: 'warn' } : null,
+                  ].filter(Boolean) as { label: string; val: string; status: 'ok'|'warn'|'bad' }[];
+                  if (diagChips.length === 0) return null;
+                  const col = { ok: { bg:'#eef7f1', txt:'#2f7a58', bd:'#c7e8d6', dot:'#34a97b' }, warn: { bg:'#fffbec', txt:'#9b6a16', bd:'#f7d87c', dot:'#c47a1f' }, bad: { bg:'#fff0f0', txt:'#c0392b', bd:'#f5c6cb', dot:'#c0392b' } };
+                  return (
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:8, padding:'4px 0 8px', margin:'0 0 4px' }}>
+                      {diagChips.map((chip, i) => {
+                        const c = col[chip.status];
+                        return (
+                          <div key={i} style={{ display:'flex', alignItems:'center', gap:7, padding:'7px 14px', borderRadius:22, background:c.bg, border:`1px solid ${c.bd}` }}>
+                            <div style={{ width:7, height:7, borderRadius:'50%', background:c.dot, flexShrink:0 }} />
+                            <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.05em', color:c.txt, opacity:0.75 }}>{chip.label}</span>
+                            <span style={{ fontSize:13, fontWeight:800, color:c.txt }}>{chip.val}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
 
                 {/* ── RESUMO EXECUTIVO ── */}
                 <section className="section">
@@ -1519,185 +1588,6 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </section>
-
-                {/* ── ESTRUTURA E RECURSOS ── */}
-                {(() => {
-                  const turEI  = censoLatest.qt_tur_inf  ?? null;
-                  const turEF  = censoLatest.qt_tur_fund ?? null;
-                  const turEM  = censoLatest.qt_tur_med  ?? null;
-                  const turTot = censoLatest.qt_tur_bas  ?? censoLatest.qt_turmas ?? null;
-                  const docEI  = censoLatest.qt_doc_inf  ?? null;
-                  const docEF  = censoLatest.qt_doc_fund ?? null;
-                  const docEM  = censoLatest.qt_doc_med  ?? null;
-                  const docTot = censoLatest.qt_doc_bas  ?? censoLatest.qt_docentes ?? null;
-                  const salTot    = censoLatest.qt_salas_utilizadas        ?? null;
-                  const salDentro = censoLatest.qt_salas_utilizadas_dentro ?? null;
-                  const salFora   = censoLatest.qt_salas_utilizadas_fora   ?? null;
-                  const hasTur = [turEI,turEF,turEM,turTot].some(v => v != null && v > 0);
-                  const hasDoc = [docEI,docEF,docEM,docTot].some(v => v != null && v > 0);
-                  const hasSal = salTot != null && salTot > 0;
-                  if (!hasTur && !hasDoc && !hasSal) return null;
-                  const etapaRow = (label: string, val: number | null, tot: number | null) => {
-                    const pct = (val != null && tot != null && tot > 0) ? Math.round(val / tot * 100) : null;
-                    return (
-                      <div key={label} style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'8px'}}>
-                        <span style={{minWidth:'90px',fontSize:'12px',color:'var(--m-muted)',fontWeight:600}}>{label}</span>
-                        <div style={{flex:1,height:'8px',borderRadius:'4px',background:'#e9ecef',overflow:'hidden'}}>
-                          {pct != null && <div style={{height:'100%',width:`${pct}%`,borderRadius:'4px',background:'var(--m-primary)',transition:'width 0.4s'}} />}
-                        </div>
-                        <span style={{minWidth:'40px',fontSize:'13px',fontWeight:700,textAlign:'right'}}>{val != null ? val.toLocaleString('pt-BR') : '—'}</span>
-                        {pct != null && <span style={{minWidth:'32px',fontSize:'11px',color:'var(--m-muted)',textAlign:'right'}}>{pct}%</span>}
-                      </div>
-                    );
-                  };
-                  return (
-                    <section className="section">
-                      <div className="section-title">
-                        <div><h2>Estrutura e recursos</h2><p>Turmas, equipe docente e espaços físicos por etapa</p></div>
-                      </div>
-                      <div className="organic-divider" />
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'14px'}}>
-                        {hasTur && (
-                          <div className="soft-card">
-                            <div className="attention-head"><span>🏫</span><strong>Turmas por etapa</strong></div>
-                            <div style={{marginTop:'14px'}}>
-                              {etapaRow('Infantil',  turEI,  turTot)}
-                              {etapaRow('Fundamental', turEF, turTot)}
-                              {etapaRow('Médio',     turEM,  turTot)}
-                              <div style={{borderTop:'1px solid #eee',marginTop:'6px',paddingTop:'8px',display:'flex',justifyContent:'space-between',fontSize:'12px'}}>
-                                <span style={{color:'var(--m-muted)',fontWeight:600}}>Total</span>
-                                <strong>{turTot != null ? turTot.toLocaleString('pt-BR') : '—'} turmas</strong>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        {hasDoc && (
-                          <div className="soft-card">
-                            <div className="attention-head"><span>🧑‍🏫</span><strong>Docentes por etapa</strong></div>
-                            <div style={{marginTop:'14px'}}>
-                              {etapaRow('Infantil',  docEI,  docTot)}
-                              {etapaRow('Fundamental', docEF, docTot)}
-                              {etapaRow('Médio',     docEM,  docTot)}
-                              <div style={{borderTop:'1px solid #eee',marginTop:'6px',paddingTop:'8px',display:'flex',justifyContent:'space-between',fontSize:'12px'}}>
-                                <span style={{color:'var(--m-muted)',fontWeight:600}}>Total</span>
-                                <strong>{docTot != null ? docTot.toLocaleString('pt-BR') : '—'} docentes</strong>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        {hasSal && (
-                          <div className="soft-card">
-                            <div className="attention-head"><span>🚪</span><strong>Salas de aula</strong></div>
-                            <div style={{marginTop:'14px'}}>
-                              <div style={{textAlign:'center',marginBottom:'10px'}}>
-                                <strong style={{fontSize:'42px',letterSpacing:'-0.04em',lineHeight:1}}>{salTot?.toLocaleString('pt-BR')}</strong>
-                                <div style={{fontSize:'12px',color:'var(--m-muted)',marginTop:'2px'}}>salas utilizadas</div>
-                              </div>
-                              {(salDentro != null || salFora != null) && (
-                                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginTop:'8px'}}>
-                                  {salDentro != null && (
-                                    <div style={{textAlign:'center',padding:'8px',borderRadius:'8px',background:'#f0f4f8'}}>
-                                      <strong style={{fontSize:'20px'}}>{salDentro}</strong>
-                                      <div style={{fontSize:'11px',color:'var(--m-muted)'}}>dentro do prédio</div>
-                                    </div>
-                                  )}
-                                  {salFora != null && (
-                                    <div style={{textAlign:'center',padding:'8px',borderRadius:'8px',background:'#f0f4f8'}}>
-                                      <strong style={{fontSize:'20px'}}>{salFora}</strong>
-                                      <div style={{fontSize:'11px',color:'var(--m-muted)'}}>fora do prédio</div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </section>
-                  );
-                })()}
-
-                {/* ── INFRAESTRUTURA E SANEAMENTO ── */}
-                {(() => {
-                  const cl = censoLatest;
-                  const infChips = (items: { label: string; val: number | null | undefined; ok?: boolean }[]) =>
-                    items.filter(i => i.val != null).map((it, idx) => (
-                      <span key={idx} style={{
-                        display:'inline-flex',alignItems:'center',gap:'5px',
-                        padding:'4px 10px',borderRadius:'20px',fontSize:'12px',fontWeight:600,
-                        background: it.val === 1 ? '#eef7f1' : it.val === 0 ? '#fff3f3' : '#f0f4f8',
-                        color:      it.val === 1 ? '#2f7a58' : it.val === 0 ? '#c0392b' : '#555',
-                        border:     it.val === 1 ? '1px solid #c7e8d6' : it.val === 0 ? '1px solid #f5c6cb' : '1px solid #ddd',
-                        marginRight:'6px',marginBottom:'6px',
-                      }}>
-                        {it.val === 1 ? '✓' : it.val === 0 ? '✗' : '·'} {it.label}
-                      </span>
-                    ));
-
-                  const aguaItems = [
-                    { label: 'Rede pública',   val: cl.in_agua_rede_publica },
-                    { label: 'Poço artesiano', val: cl.in_agua_poco_artesiano },
-                    { label: 'Cacimba/cisterna', val: cl.in_agua_cacimba },
-                    { label: 'Fonte/rio',      val: cl.in_agua_fonte_rio },
-                    { label: 'Carro-pipa',     val: cl.in_agua_carro_pipa },
-                    { label: 'Inexistente',    val: cl.in_agua_inexistente },
-                  ].filter(i => i.val != null);
-                  const esgotoItems = [
-                    { label: 'Rede pública',   val: cl.in_esgoto_rede_publica },
-                    { label: 'Fossa séptica',  val: cl.in_esgoto_fossa_septica },
-                    { label: 'Fossa comum',    val: cl.in_esgoto_fossa_comum },
-                    { label: 'Inexistente',    val: cl.in_esgoto_inexistente },
-                  ].filter(i => i.val != null);
-                  const energiaItems = [
-                    { label: 'Rede pública',   val: cl.in_energia_rede_publica },
-                    { label: 'Gerador a fóssil', val: cl.in_energia_gerador_fossil },
-                    { label: 'Energia renovável', val: cl.in_energia_renovavel },
-                    { label: 'Inexistente',    val: cl.in_energia_inexistente },
-                  ].filter(i => i.val != null);
-                  const lixoItems = [
-                    { label: 'Coleta pública',   val: cl.in_lixo_coleta_publica },
-                    { label: 'Queima',           val: cl.in_lixo_queima },
-                    { label: 'Enterra',          val: cl.in_lixo_enterra },
-                    { label: 'Separação',        val: cl.in_tratamento_lixo_separacao },
-                    { label: 'Reciclagem',       val: cl.in_tratamento_lixo_reciclagem },
-                    { label: 'Reutiliza',        val: cl.in_tratamento_lixo_reutiliza },
-                  ].filter(i => i.val != null);
-                  const banhItems = [
-                    { label: 'Banheiro alunos',      val: cl.in_banheiro },
-                    { label: 'Banheiro Ed. Infantil', val: cl.in_banheiro_ei },
-                    { label: 'Banheiro PNE',         val: cl.in_banheiro_pne },
-                    { label: 'Banheiro funcionários', val: cl.in_banheiro_funcionarios },
-                  ].filter(i => i.val != null);
-
-                  const hasAnySanit = aguaItems.length + esgotoItems.length + energiaItems.length + lixoItems.length + banhItems.length > 0;
-                  if (!hasAnySanit) return null;
-
-                  const subCard = (icon: string, title: string, items: { label: string; val: number | null | undefined }[]) => (
-                    <div className="soft-card" style={{padding:'16px 18px'}}>
-                      <div className="attention-head" style={{marginBottom:'10px'}}><span>{icon}</span><strong>{title}</strong></div>
-                      <div style={{display:'flex',flexWrap:'wrap',gap:'0'}}>
-                        {infChips(items)}
-                      </div>
-                      {items.length === 0 && <span style={{fontSize:'12px',color:'var(--m-muted)'}}>Sem dados disponíveis</span>}
-                    </div>
-                  );
-
-                  return (
-                    <section className="section">
-                      <div className="section-title">
-                        <div><h2>Infraestrutura e saneamento</h2><p>Água, esgoto, energia, coleta de lixo e instalações sanitárias</p></div>
-                      </div>
-                      <div className="organic-divider" />
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'14px'}}>
-                        {aguaItems.length > 0   && subCard('💧', 'Abastecimento de água', aguaItems)}
-                        {esgotoItems.length > 0 && subCard('🚿', 'Esgotamento sanitário', esgotoItems)}
-                        {energiaItems.length > 0 && subCard('⚡', 'Fornecimento de energia', energiaItems)}
-                        {lixoItems.length > 0   && subCard('♻️', 'Coleta e tratamento de lixo', lixoItems)}
-                        {banhItems.length > 0   && subCard('🚽', 'Banheiros e sanitários', banhItems)}
-                      </div>
-                    </section>
-                  );
-                })()}
 
                 {/* ── PONTOS DE ATENÇÃO ── */}
                 <section className="section">
@@ -2475,6 +2365,185 @@ export default function Dashboard() {
                   );
                 })()}
 
+                {/* ── ESTRUTURA E RECURSOS ── */}
+                {(() => {
+                  const turEI  = censoLatest.qt_tur_inf  ?? null;
+                  const turEF  = censoLatest.qt_tur_fund ?? null;
+                  const turEM  = censoLatest.qt_tur_med  ?? null;
+                  const turTot = censoLatest.qt_tur_bas  ?? censoLatest.qt_turmas ?? null;
+                  const docEI  = censoLatest.qt_doc_inf  ?? null;
+                  const docEF  = censoLatest.qt_doc_fund ?? null;
+                  const docEM  = censoLatest.qt_doc_med  ?? null;
+                  const docTot = censoLatest.qt_doc_bas  ?? censoLatest.qt_docentes ?? null;
+                  const salTot    = censoLatest.qt_salas_utilizadas        ?? null;
+                  const salDentro = censoLatest.qt_salas_utilizadas_dentro ?? null;
+                  const salFora   = censoLatest.qt_salas_utilizadas_fora   ?? null;
+                  const hasTur = [turEI,turEF,turEM,turTot].some(v => v != null && v > 0);
+                  const hasDoc = [docEI,docEF,docEM,docTot].some(v => v != null && v > 0);
+                  const hasSal = salTot != null && salTot > 0;
+                  if (!hasTur && !hasDoc && !hasSal) return null;
+                  const etapaRow = (label: string, val: number | null, tot: number | null) => {
+                    const pct = (val != null && tot != null && tot > 0) ? Math.round(val / tot * 100) : null;
+                    return (
+                      <div key={label} style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'8px'}}>
+                        <span style={{minWidth:'90px',fontSize:'12px',color:'var(--m-muted)',fontWeight:600}}>{label}</span>
+                        <div style={{flex:1,height:'8px',borderRadius:'4px',background:'#e9ecef',overflow:'hidden'}}>
+                          {pct != null && <div style={{height:'100%',width:`${pct}%`,borderRadius:'4px',background:'var(--m-primary)',transition:'width 0.4s'}} />}
+                        </div>
+                        <span style={{minWidth:'40px',fontSize:'13px',fontWeight:700,textAlign:'right'}}>{val != null ? val.toLocaleString('pt-BR') : '—'}</span>
+                        {pct != null && <span style={{minWidth:'32px',fontSize:'11px',color:'var(--m-muted)',textAlign:'right'}}>{pct}%</span>}
+                      </div>
+                    );
+                  };
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div><h2>Estrutura e recursos</h2><p>Turmas, equipe docente e espaços físicos por etapa</p></div>
+                      </div>
+                      <div className="organic-divider" />
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'14px'}}>
+                        {hasTur && (
+                          <div className="soft-card">
+                            <div className="attention-head"><span>🏫</span><strong>Turmas por etapa</strong></div>
+                            <div style={{marginTop:'14px'}}>
+                              {etapaRow('Infantil',  turEI,  turTot)}
+                              {etapaRow('Fundamental', turEF, turTot)}
+                              {etapaRow('Médio',     turEM,  turTot)}
+                              <div style={{borderTop:'1px solid #eee',marginTop:'6px',paddingTop:'8px',display:'flex',justifyContent:'space-between',fontSize:'12px'}}>
+                                <span style={{color:'var(--m-muted)',fontWeight:600}}>Total</span>
+                                <strong>{turTot != null ? turTot.toLocaleString('pt-BR') : '—'} turmas</strong>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {hasDoc && (
+                          <div className="soft-card">
+                            <div className="attention-head"><span>🧑‍🏫</span><strong>Docentes por etapa</strong></div>
+                            <div style={{marginTop:'14px'}}>
+                              {etapaRow('Infantil',  docEI,  docTot)}
+                              {etapaRow('Fundamental', docEF, docTot)}
+                              {etapaRow('Médio',     docEM,  docTot)}
+                              <div style={{borderTop:'1px solid #eee',marginTop:'6px',paddingTop:'8px',display:'flex',justifyContent:'space-between',fontSize:'12px'}}>
+                                <span style={{color:'var(--m-muted)',fontWeight:600}}>Total</span>
+                                <strong>{docTot != null ? docTot.toLocaleString('pt-BR') : '—'} docentes</strong>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {hasSal && (
+                          <div className="soft-card">
+                            <div className="attention-head"><span>🚪</span><strong>Salas de aula</strong></div>
+                            <div style={{marginTop:'14px'}}>
+                              <div style={{textAlign:'center',marginBottom:'10px'}}>
+                                <strong style={{fontSize:'42px',letterSpacing:'-0.04em',lineHeight:1}}>{salTot?.toLocaleString('pt-BR')}</strong>
+                                <div style={{fontSize:'12px',color:'var(--m-muted)',marginTop:'2px'}}>salas utilizadas</div>
+                              </div>
+                              {(salDentro != null || salFora != null) && (
+                                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginTop:'8px'}}>
+                                  {salDentro != null && (
+                                    <div style={{textAlign:'center',padding:'8px',borderRadius:'8px',background:'#f0f4f8'}}>
+                                      <strong style={{fontSize:'20px'}}>{salDentro}</strong>
+                                      <div style={{fontSize:'11px',color:'var(--m-muted)'}}>dentro do prédio</div>
+                                    </div>
+                                  )}
+                                  {salFora != null && (
+                                    <div style={{textAlign:'center',padding:'8px',borderRadius:'8px',background:'#f0f4f8'}}>
+                                      <strong style={{fontSize:'20px'}}>{salFora}</strong>
+                                      <div style={{fontSize:'11px',color:'var(--m-muted)'}}>fora do prédio</div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  );
+                })()}
+
+                {/* ── INFRAESTRUTURA E SANEAMENTO ── */}
+                {(() => {
+                  const cl = censoLatest;
+                  const infChips = (items: { label: string; val: number | null | undefined; ok?: boolean }[]) =>
+                    items.filter(i => i.val != null).map((it, idx) => (
+                      <span key={idx} style={{
+                        display:'inline-flex',alignItems:'center',gap:'5px',
+                        padding:'4px 10px',borderRadius:'20px',fontSize:'12px',fontWeight:600,
+                        background: it.val === 1 ? '#eef7f1' : it.val === 0 ? '#fff3f3' : '#f0f4f8',
+                        color:      it.val === 1 ? '#2f7a58' : it.val === 0 ? '#c0392b' : '#555',
+                        border:     it.val === 1 ? '1px solid #c7e8d6' : it.val === 0 ? '1px solid #f5c6cb' : '1px solid #ddd',
+                        marginRight:'6px',marginBottom:'6px',
+                      }}>
+                        {it.val === 1 ? '✓' : it.val === 0 ? '✗' : '·'} {it.label}
+                      </span>
+                    ));
+
+                  const aguaItems = [
+                    { label: 'Rede pública',   val: cl.in_agua_rede_publica },
+                    { label: 'Poço artesiano', val: cl.in_agua_poco_artesiano },
+                    { label: 'Cacimba/cisterna', val: cl.in_agua_cacimba },
+                    { label: 'Fonte/rio',      val: cl.in_agua_fonte_rio },
+                    { label: 'Carro-pipa',     val: cl.in_agua_carro_pipa },
+                    { label: 'Inexistente',    val: cl.in_agua_inexistente },
+                  ].filter(i => i.val != null);
+                  const esgotoItems = [
+                    { label: 'Rede pública',   val: cl.in_esgoto_rede_publica },
+                    { label: 'Fossa séptica',  val: cl.in_esgoto_fossa_septica },
+                    { label: 'Fossa comum',    val: cl.in_esgoto_fossa_comum },
+                    { label: 'Inexistente',    val: cl.in_esgoto_inexistente },
+                  ].filter(i => i.val != null);
+                  const energiaItems = [
+                    { label: 'Rede pública',   val: cl.in_energia_rede_publica },
+                    { label: 'Gerador a fóssil', val: cl.in_energia_gerador_fossil },
+                    { label: 'Energia renovável', val: cl.in_energia_renovavel },
+                    { label: 'Inexistente',    val: cl.in_energia_inexistente },
+                  ].filter(i => i.val != null);
+                  const lixoItems = [
+                    { label: 'Coleta pública',   val: cl.in_lixo_coleta_publica },
+                    { label: 'Queima',           val: cl.in_lixo_queima },
+                    { label: 'Enterra',          val: cl.in_lixo_enterra },
+                    { label: 'Separação',        val: cl.in_tratamento_lixo_separacao },
+                    { label: 'Reciclagem',       val: cl.in_tratamento_lixo_reciclagem },
+                    { label: 'Reutiliza',        val: cl.in_tratamento_lixo_reutiliza },
+                  ].filter(i => i.val != null);
+                  const banhItems = [
+                    { label: 'Banheiro alunos',      val: cl.in_banheiro },
+                    { label: 'Banheiro Ed. Infantil', val: cl.in_banheiro_ei },
+                    { label: 'Banheiro PNE',         val: cl.in_banheiro_pne },
+                    { label: 'Banheiro funcionários', val: cl.in_banheiro_funcionarios },
+                  ].filter(i => i.val != null);
+
+                  const hasAnySanit = aguaItems.length + esgotoItems.length + energiaItems.length + lixoItems.length + banhItems.length > 0;
+                  if (!hasAnySanit) return null;
+
+                  const subCard = (icon: string, title: string, items: { label: string; val: number | null | undefined }[]) => (
+                    <div className="soft-card" style={{padding:'16px 18px'}}>
+                      <div className="attention-head" style={{marginBottom:'10px'}}><span>{icon}</span><strong>{title}</strong></div>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:'0'}}>
+                        {infChips(items)}
+                      </div>
+                      {items.length === 0 && <span style={{fontSize:'12px',color:'var(--m-muted)'}}>Sem dados disponíveis</span>}
+                    </div>
+                  );
+
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div><h2>Infraestrutura e saneamento</h2><p>Água, esgoto, energia, coleta de lixo e instalações sanitárias</p></div>
+                      </div>
+                      <div className="organic-divider" />
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'14px'}}>
+                        {aguaItems.length > 0   && subCard('💧', 'Abastecimento de água', aguaItems)}
+                        {esgotoItems.length > 0 && subCard('🚿', 'Esgotamento sanitário', esgotoItems)}
+                        {energiaItems.length > 0 && subCard('⚡', 'Fornecimento de energia', energiaItems)}
+                        {lixoItems.length > 0   && subCard('♻️', 'Coleta e tratamento de lixo', lixoItems)}
+                        {banhItems.length > 0   && subCard('🚽', 'Banheiros e sanitários', banhItems)}
+                      </div>
+                    </section>
+                  );
+                })()}
+
                 {/* ── ESFORÇO DOCENTE (IED) ── */}
                 {(() => {
                   const ch = evolutionCharts;
@@ -3237,64 +3306,31 @@ export default function Dashboard() {
                     </div>
                     <div className="organic-divider" />
 
-                    {/* Dropdown selector */}
-                    <div style={{ position: 'relative', marginBottom: 16 }} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setShowChartDropdown(false); }}>
-                      <button
-                        onClick={() => setShowChartDropdown(v => !v)}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 10,
-                          padding: '10px 16px', width: '100%', maxWidth: 360,
-                          background: '#fffef8', border: '1.5px solid #e7d9bf',
-                          borderRadius: '16px 20px 14px 18px',
-                          boxShadow: '0 4px 12px rgba(83,72,53,0.07)',
-                          cursor: 'pointer', fontWeight: 700, fontSize: 14,
-                          color: '#3d4450', textAlign: 'left',
-                          transition: 'border-color .15s',
-                        }}
-                      >
-                        <span style={{ fontSize: 18 }}>{currentChart.icon}</span>
-                        <span style={{ flex: 1 }}>{currentChart.label}</span>
-                        <span style={{ fontSize: 11, color: '#a89a82', fontWeight: 400, marginRight: 4 }}>
-                          {available.findIndex(c => c.id === selectedChart) + 1}/{available.length}
-                        </span>
-                        <span style={{ fontSize: 12, color: '#a89a82', transform: showChartDropdown ? 'rotate(180deg)' : 'none', transition: 'transform .2s', display: 'inline-block' }}>▾</span>
-                      </button>
-
-                      {showChartDropdown && (
-                        <div style={{
-                          position: 'absolute', top: 'calc(100% + 6px)', left: 0,
-                          minWidth: 260, maxWidth: 360,
-                          background: '#fffef8', border: '1.5px solid #e7d9bf',
-                          borderRadius: '8px 18px 18px 14px',
-                          boxShadow: '0 8px 28px rgba(83,72,53,0.13)',
-                          zIndex: 200, overflow: 'hidden',
-                          padding: '6px',
-                          display: 'flex', flexDirection: 'column', gap: 2,
-                        }}>
-                          {available.map((c, i) => (
-                            <button
-                              key={c.id}
-                              onClick={() => { setSelectedChart(c.id); setChartEtapa('total'); setShowChartDropdown(false); }}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 10,
-                                padding: '9px 12px',
-                                background: selectedChart === c.id ? 'linear-gradient(135deg,#dff1ff,#f7fbff)' : 'transparent',
-                                border: 'none',
-                                borderRadius: i === 0 ? '6px 14px 6px 6px' : i === available.length - 1 ? '6px 6px 14px 6px' : '6px',
-                                cursor: 'pointer', fontWeight: selectedChart === c.id ? 700 : 500,
-                                fontSize: 13, color: selectedChart === c.id ? '#2d5a88' : '#5d6470',
-                                textAlign: 'left', transition: 'background .12s',
-                              }}
-                              onMouseEnter={e => { if (selectedChart !== c.id) (e.currentTarget as HTMLElement).style.background = '#f5f0e8'; }}
-                              onMouseLeave={e => { if (selectedChart !== c.id) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-                            >
-                              <span style={{ fontSize: 16, minWidth: 20, textAlign: 'center' }}>{c.icon}</span>
-                              <span>{c.label}</span>
-                              {selectedChart === c.id && <span style={{ marginLeft: 'auto', fontSize: 11, color: '#2d5a88' }}>✓</span>}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                    {/* Pills selector */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
+                      {available.map(c => {
+                        const active = selectedChart === c.id;
+                        return (
+                          <button
+                            key={c.id}
+                            onClick={() => { setSelectedChart(c.id); setChartEtapa('total'); }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 6,
+                              padding: '7px 14px',
+                              background: active ? 'linear-gradient(135deg,#dff1ff,#f0f9ff)' : '#fffef8',
+                              border: active ? '1.5px solid #2d5a88' : '1.5px solid #e7d9bf',
+                              borderRadius: '20px',
+                              cursor: 'pointer', fontWeight: active ? 700 : 500,
+                              fontSize: 13, color: active ? '#2d5a88' : '#5d6470',
+                              boxShadow: active ? '0 2px 8px rgba(45,90,136,0.13)' : '0 1px 3px rgba(0,0,0,0.04)',
+                              transition: 'all .15s',
+                            }}
+                          >
+                            <span style={{ fontSize: 15 }}>{c.icon}</span>
+                            <span>{c.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
 
                     {/* Chart card — full width */}
@@ -4073,213 +4109,6 @@ export default function Dashboard() {
                     );
                   })()}
 
-                  {/* ── GRUPO: QUEM GERENCIA ── */}
-                  {(pddeData?.ok || cadastralData?.ok) && (
-                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'4px'}}>
-                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#7c5cbf',background:'#f3eeff',padding:'3px 10px',borderRadius:'20px'}}>Quem gerencia</span>
-                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#e8e0f5,transparent)'}} />
-                    </div>
-                  )}
-
-                  {/* ── 1. IDENTIDADE DA UEx ── */}
-                  {(pddeData?.ok || cadastralData?.ok) && (() => {
-                    const uexNome = pddeData?.uex?.executora || cadastralData?.itens?.[0]?.razao_social || null;
-                    const cnpj = pddeData?.uex?.cnpj || null;
-                    const cnpjEex = cadastralData?.itens?.[0]?.cnpj_eex || null;
-                    const rede = pddeData?.rede || cadastralData?.itens?.[0]?.rede_atendimento || null;
-                    const municipio = pddeData?.municipio || pddeData?.uex?.municipio || null;
-                    const uf = pddeData?.uf || pddeData?.uex?.uf || null;
-                    const localizacao = cadastralData?.itens?.[0]?.localizacao || null;
-                    const ddd = cadastralData?.itens?.[0]?.ddd || null;
-                    const telefone = cadastralData?.itens?.[0]?.telefone || null;
-                    const dataAtualizacao = cadastralData?.itens?.[0]?.data_atualizacao || null;
-                    const dirigente = cadastralData?.itens?.[0]?.mandato_dirigente || null;
-                    const mandatoFim = cadastralData?.itens?.[0]?.data_fim_mandato || pddeData?.situacao_uex?.mandato_fim || null;
-                    const mandatoInicio = pddeData?.situacao_uex?.mandato_inicio || null;
-                    const dadosCadastrais = pddeData?.situacao_uex?.dados_cadastrais || null;
-                    const now = new Date();
-                    const fimDate = mandatoFim ? (() => { const [d,m,a] = mandatoFim.split('/'); return a ? new Date(+a,+m-1,+d) : null; })() : null;
-                    const vigente = fimDate ? fimDate >= now : null;
-                    return (
-                      <div className="soft-card" style={{marginBottom:'16px',padding:'20px'}}>
-                        <div style={{display:'flex',alignItems:'flex-start',gap:'16px',flexWrap:'wrap'}}>
-                          <div style={{flex:'1 1 260px'}}>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                              <Landmark className="w-3.5 h-3.5" /> Unidade Executora (UEx)
-                            </p>
-                            {uexNome && <p style={{fontWeight:700,fontSize:'14px',lineHeight:'1.4',marginBottom:'6px'}}>{uexNome}</p>}
-                            <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
-                              {cnpj && <span className="meta-chip">CNPJ UEx: {cnpj}</span>}
-                              {cnpjEex && <span className="meta-chip">CNPJ EEx: {cnpjEex}</span>}
-                              {municipio && uf && <span className="meta-chip">📍 {municipio}/{uf}</span>}
-                              {rede && <span className="meta-chip">🏢 {rede}</span>}
-                              {localizacao && <span className="meta-chip">📌 {localizacao}</span>}
-                              {(ddd || telefone) && <span className="meta-chip">📞 {ddd ? `(${ddd}) ` : ''}{telefone}</span>}
-                              {dataAtualizacao && <span className="meta-chip text-muted-foreground">Atualizado: {dataAtualizacao}</span>}
-                            </div>
-                          </div>
-                          <div style={{flex:'1 1 220px',borderLeft:'2px solid #f0ece4',paddingLeft:'16px'}}>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Diretoria vigente</p>
-                            {dirigente && (
-                              <div style={{marginBottom:'6px'}}>
-                                <span className="text-xs text-muted-foreground">Presidente / Dirigente</span>
-                                <p style={{fontWeight:700,fontSize:'13px'}}>{dirigente}</p>
-                              </div>
-                            )}
-                            {(mandatoInicio || mandatoFim) && (
-                              <div style={{marginBottom:'6px'}}>
-                                <span className="text-xs text-muted-foreground">Vigência do mandato</span>
-                                <p style={{fontSize:'13px',fontWeight:600}}>
-                                  {mandatoInicio && mandatoFim ? `${mandatoInicio} → ${mandatoFim}` : mandatoFim ? `até ${mandatoFim}` : mandatoInicio}
-                                  {vigente !== null && (
-                                    <span className={`ml-2 badge ${vigente ? 'badge-good' : 'badge-attn'}`} style={{verticalAlign:'middle'}}>
-                                      {vigente ? 'Vigente' : 'Expirado'}
-                                    </span>
-                                  )}
-                                </p>
-                              </div>
-                            )}
-                            {!dirigente && !mandatoInicio && !mandatoFim && (
-                              <p className="text-xs text-muted-foreground">Dados da diretoria não disponíveis</p>
-                            )}
-                          </div>
-                        </div>
-                        {dadosCadastrais && (
-                          <div style={{marginTop:'14px',paddingTop:'12px',borderTop:'1px solid #f0ece4'}}>
-                            <p className="text-xs text-muted-foreground" style={{lineHeight:'1.6'}}>
-                              <strong>Situação cadastral:</strong> {dadosCadastrais}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {/* ── GRUPO: CONTAS E SALDOS ── */}
-                  {((pddeData?.contas?.length ?? 0) > 0 || pddeUexSaldoData?.ok || pddeSaldosData?.ok) && (
-                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
-                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#2d5a88',background:'#e6eef8',padding:'3px 10px',borderRadius:'20px'}}>Contas e saldos</span>
-                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#b8cfe8,transparent)'}} />
-                    </div>
-                  )}
-
-                  {/* ── 2. CONTAS BANCÁRIAS ── */}
-                  {pddeData?.ok && pddeData.contas && pddeData.contas.length > 0 && (
-                    <div style={{marginBottom:'16px'}}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <BanknoteIcon className="w-3.5 h-3.5" /> Contas bancárias — ano {pddeData.ano}
-                      </p>
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:'10px'}}>
-                        {pddeData.contas.map((c: any, i: number) => (
-                          <div key={i} className="soft-card" style={{padding:'14px',borderLeft:'3px solid var(--m-blue)'}}>
-                            <p style={{fontWeight:700,fontSize:'12px',textTransform:'uppercase',letterSpacing:'0.05em',color:'var(--m-blue)',marginBottom:'8px'}}>{c.programa}</p>
-                            <div style={{display:'flex',flexDirection:'column',gap:'3px'}}>
-                              <div className="row-item" style={{padding:0}}>
-                                <span className="text-xs text-muted-foreground">Banco</span>
-                                <span className="text-xs font-semibold">{c.banco || '—'}</span>
-                              </div>
-                              <div className="row-item" style={{padding:0}}>
-                                <span className="text-xs text-muted-foreground">Agência</span>
-                                <span className="text-xs font-semibold">{c.agencia || '—'}</span>
-                              </div>
-                              <div className="row-item" style={{padding:0}}>
-                                <span className="text-xs text-muted-foreground">Conta</span>
-                                <span className="text-xs font-semibold font-mono">{c.conta || '—'}</span>
-                              </div>
-                              {c.saldo != null && (
-                                <div style={{marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #f0ece4'}}>
-                                  <span className="text-xs text-muted-foreground">Saldo</span>
-                                  <p style={{fontSize:'16px',fontWeight:800,color: c.saldo > 0 ? '#16a34a' : 'var(--m-muted)'}}>{brl(c.saldo)}</p>
-                                </div>
-                              )}
-                              {c.ocorrencia && (
-                                <p className="text-xs text-amber-600 mt-1">⚠️ {c.ocorrencia}</p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── 2c. SITUAÇÃO DA EEx ── */}
-                  {pddeData?.ok && pddeData.situacao_eex && (pddeData.situacao_eex.adesao || pddeData.situacao_eex.prestacao_contas) && (
-                    <div style={{marginBottom:'16px'}}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <FileText className="w-3.5 h-3.5" /> Situação da Entidade Executora (EEx)
-                      </p>
-                      <div className="soft-card" style={{padding:'14px',display:'flex',gap:'24px',flexWrap:'wrap'}}>
-                        {pddeData.situacao_eex.adesao && (
-                          <div>
-                            <span className="text-xs text-muted-foreground block mb-1">Adesão</span>
-                            <span className={`badge ${pddeData.situacao_eex.adesao.toLowerCase().includes('adimpl') ? 'badge-good' : 'badge-attn'}`}>{pddeData.situacao_eex.adesao}</span>
-                          </div>
-                        )}
-                        {pddeData.situacao_eex.prestacao_contas && (
-                          <div>
-                            <span className="text-xs text-muted-foreground block mb-1">Prestação de Contas EEx</span>
-                            <span className={`badge ${pddeData.situacao_eex.prestacao_contas.toLowerCase().includes('adimpl') ? 'badge-good' : 'badge-attn'}`}>{pddeData.situacao_eex.prestacao_contas}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── GRUPO: PRESTAÇÃO DE CONTAS ── */}
-                  {(prestacaoContaData?.ok || sigpcData?.ok) && (
-                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
-                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#9b6a16',background:'#fdf3e0',padding:'3px 10px',borderRadius:'20px'}}>Prestação de contas</span>
-                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#f0ddb5,transparent)'}} />
-                    </div>
-                  )}
-
-                  {/* ── 3. PRESTAÇÃO DE CONTAS ── */}
-                  {prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 && (
-                    <div style={{marginBottom:'16px'}}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <FileText className="w-3.5 h-3.5" /> Prestação de Contas
-                      </p>
-                      <div className="table-card" style={{overflowX:'auto'}}>
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. UEx</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. EEx</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp. UEx</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp. EEx</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Vl. Previsto</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {prestacaoContaData.itens.map((item: any, i: number) => {
-                              const isOkUex = item.situacao_pc_uex?.toLowerCase().includes('adimpl');
-                              const isOkEex = item.situacao_pc_eex?.toLowerCase().includes('adimpl');
-                              const hasSuspUex = item.suspensao_uex && item.suspensao_uex !== '—' && item.suspensao_uex.trim() !== '';
-                              const hasSuspEex = item.suspensao_eex && item.suspensao_eex !== '—' && item.suspensao_eex.trim() !== '';
-                              return (
-                                <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                  <td className="py-2 px-3 text-xs font-medium">{item.ds_programa || item.programa || 'PDDE'}</td>
-                                  <td className="py-2 px-3 text-xs">{item.ano || pddeAno}</td>
-                                  <td className="py-2 px-3">
-                                    {item.situacao_pc_uex ? <span className={`badge ${isOkUex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_uex}</span> : <span className="text-muted-foreground text-xs">—</span>}
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    {item.situacao_pc_eex ? <span className={`badge ${isOkEex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_eex}</span> : <span className="text-muted-foreground text-xs">—</span>}
-                                  </td>
-                                  <td className="py-2 px-3 text-xs">{hasSuspUex ? <span className="badge badge-critical">{item.suspensao_uex}</span> : <span className="text-muted-foreground">—</span>}</td>
-                                  <td className="py-2 px-3 text-xs">{hasSuspEex ? <span className="badge badge-critical">{item.suspensao_eex}</span> : <span className="text-muted-foreground">—</span>}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono">{item.valor_previsto || '—'}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
                   {/* ── GRUPO: REPASSES E EXECUÇÃO ── */}
                   {(atendimentoData?.ok || pddeExecFinData?.ok || (pddeData?.destinacoes?.length ?? 0) > 0) && (
                     <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
@@ -4610,6 +4439,213 @@ export default function Dashboard() {
                       <p style={{margin:'8px 0 0',fontSize:'13px'}}>Os dados financeiros são obtidos em tempo real do PDDE Info e dos Dados Abertos do FNDE. Podem apresentar atraso ou indisponibilidade. Os dados censais são do Censo Escolar INEP/MEC.</p>
                     </div>
                   </div>
+                  {/* ── GRUPO: PRESTAÇÃO DE CONTAS ── */}
+                  {(prestacaoContaData?.ok || sigpcData?.ok) && (
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
+                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#9b6a16',background:'#fdf3e0',padding:'3px 10px',borderRadius:'20px'}}>Prestação de contas</span>
+                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#f0ddb5,transparent)'}} />
+                    </div>
+                  )}
+
+                  {/* ── 3. PRESTAÇÃO DE CONTAS ── */}
+                  {prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 && (
+                    <div style={{marginBottom:'16px'}}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                        <FileText className="w-3.5 h-3.5" /> Prestação de Contas
+                      </p>
+                      <div className="table-card" style={{overflowX:'auto'}}>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. UEx</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. EEx</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp. UEx</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp. EEx</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Vl. Previsto</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {prestacaoContaData.itens.map((item: any, i: number) => {
+                              const isOkUex = item.situacao_pc_uex?.toLowerCase().includes('adimpl');
+                              const isOkEex = item.situacao_pc_eex?.toLowerCase().includes('adimpl');
+                              const hasSuspUex = item.suspensao_uex && item.suspensao_uex !== '—' && item.suspensao_uex.trim() !== '';
+                              const hasSuspEex = item.suspensao_eex && item.suspensao_eex !== '—' && item.suspensao_eex.trim() !== '';
+                              return (
+                                <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                  <td className="py-2 px-3 text-xs font-medium">{item.ds_programa || item.programa || 'PDDE'}</td>
+                                  <td className="py-2 px-3 text-xs">{item.ano || pddeAno}</td>
+                                  <td className="py-2 px-3">
+                                    {item.situacao_pc_uex ? <span className={`badge ${isOkUex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_uex}</span> : <span className="text-muted-foreground text-xs">—</span>}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    {item.situacao_pc_eex ? <span className={`badge ${isOkEex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_eex}</span> : <span className="text-muted-foreground text-xs">—</span>}
+                                  </td>
+                                  <td className="py-2 px-3 text-xs">{hasSuspUex ? <span className="badge badge-critical">{item.suspensao_uex}</span> : <span className="text-muted-foreground">—</span>}</td>
+                                  <td className="py-2 px-3 text-xs">{hasSuspEex ? <span className="badge badge-critical">{item.suspensao_eex}</span> : <span className="text-muted-foreground">—</span>}</td>
+                                  <td className="py-2 px-3 text-xs text-right font-mono">{item.valor_previsto || '—'}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── GRUPO: CONTAS E SALDOS ── */}
+                  {((pddeData?.contas?.length ?? 0) > 0 || pddeUexSaldoData?.ok || pddeSaldosData?.ok) && (
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
+                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#2d5a88',background:'#e6eef8',padding:'3px 10px',borderRadius:'20px'}}>Contas e saldos</span>
+                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#b8cfe8,transparent)'}} />
+                    </div>
+                  )}
+
+                  {/* ── 2. CONTAS BANCÁRIAS ── */}
+                  {pddeData?.ok && pddeData.contas && pddeData.contas.length > 0 && (
+                    <div style={{marginBottom:'16px'}}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                        <BanknoteIcon className="w-3.5 h-3.5" /> Contas bancárias — ano {pddeData.ano}
+                      </p>
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:'10px'}}>
+                        {pddeData.contas.map((c: any, i: number) => (
+                          <div key={i} className="soft-card" style={{padding:'14px',borderLeft:'3px solid var(--m-blue)'}}>
+                            <p style={{fontWeight:700,fontSize:'12px',textTransform:'uppercase',letterSpacing:'0.05em',color:'var(--m-blue)',marginBottom:'8px'}}>{c.programa}</p>
+                            <div style={{display:'flex',flexDirection:'column',gap:'3px'}}>
+                              <div className="row-item" style={{padding:0}}>
+                                <span className="text-xs text-muted-foreground">Banco</span>
+                                <span className="text-xs font-semibold">{c.banco || '—'}</span>
+                              </div>
+                              <div className="row-item" style={{padding:0}}>
+                                <span className="text-xs text-muted-foreground">Agência</span>
+                                <span className="text-xs font-semibold">{c.agencia || '—'}</span>
+                              </div>
+                              <div className="row-item" style={{padding:0}}>
+                                <span className="text-xs text-muted-foreground">Conta</span>
+                                <span className="text-xs font-semibold font-mono">{c.conta || '—'}</span>
+                              </div>
+                              {c.saldo != null && (
+                                <div style={{marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #f0ece4'}}>
+                                  <span className="text-xs text-muted-foreground">Saldo</span>
+                                  <p style={{fontSize:'16px',fontWeight:800,color: c.saldo > 0 ? '#16a34a' : 'var(--m-muted)'}}>{brl(c.saldo)}</p>
+                                </div>
+                              )}
+                              {c.ocorrencia && (
+                                <p className="text-xs text-amber-600 mt-1">⚠️ {c.ocorrencia}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 2c. SITUAÇÃO DA EEx ── */}
+                  {pddeData?.ok && pddeData.situacao_eex && (pddeData.situacao_eex.adesao || pddeData.situacao_eex.prestacao_contas) && (
+                    <div style={{marginBottom:'16px'}}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                        <FileText className="w-3.5 h-3.5" /> Situação da Entidade Executora (EEx)
+                      </p>
+                      <div className="soft-card" style={{padding:'14px',display:'flex',gap:'24px',flexWrap:'wrap'}}>
+                        {pddeData.situacao_eex.adesao && (
+                          <div>
+                            <span className="text-xs text-muted-foreground block mb-1">Adesão</span>
+                            <span className={`badge ${pddeData.situacao_eex.adesao.toLowerCase().includes('adimpl') ? 'badge-good' : 'badge-attn'}`}>{pddeData.situacao_eex.adesao}</span>
+                          </div>
+                        )}
+                        {pddeData.situacao_eex.prestacao_contas && (
+                          <div>
+                            <span className="text-xs text-muted-foreground block mb-1">Prestação de Contas EEx</span>
+                            <span className={`badge ${pddeData.situacao_eex.prestacao_contas.toLowerCase().includes('adimpl') ? 'badge-good' : 'badge-attn'}`}>{pddeData.situacao_eex.prestacao_contas}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── GRUPO: QUEM GERENCIA ── */}
+                  {(pddeData?.ok || cadastralData?.ok) && (
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'4px'}}>
+                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#7c5cbf',background:'#f3eeff',padding:'3px 10px',borderRadius:'20px'}}>Quem gerencia</span>
+                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#e8e0f5,transparent)'}} />
+                    </div>
+                  )}
+
+                  {/* ── 1. IDENTIDADE DA UEx ── */}
+                  {(pddeData?.ok || cadastralData?.ok) && (() => {
+                    const uexNome = pddeData?.uex?.executora || cadastralData?.itens?.[0]?.razao_social || null;
+                    const cnpj = pddeData?.uex?.cnpj || null;
+                    const cnpjEex = cadastralData?.itens?.[0]?.cnpj_eex || null;
+                    const rede = pddeData?.rede || cadastralData?.itens?.[0]?.rede_atendimento || null;
+                    const municipio = pddeData?.municipio || pddeData?.uex?.municipio || null;
+                    const uf = pddeData?.uf || pddeData?.uex?.uf || null;
+                    const localizacao = cadastralData?.itens?.[0]?.localizacao || null;
+                    const ddd = cadastralData?.itens?.[0]?.ddd || null;
+                    const telefone = cadastralData?.itens?.[0]?.telefone || null;
+                    const dataAtualizacao = cadastralData?.itens?.[0]?.data_atualizacao || null;
+                    const dirigente = cadastralData?.itens?.[0]?.mandato_dirigente || null;
+                    const mandatoFim = cadastralData?.itens?.[0]?.data_fim_mandato || pddeData?.situacao_uex?.mandato_fim || null;
+                    const mandatoInicio = pddeData?.situacao_uex?.mandato_inicio || null;
+                    const dadosCadastrais = pddeData?.situacao_uex?.dados_cadastrais || null;
+                    const now = new Date();
+                    const fimDate = mandatoFim ? (() => { const [d,m,a] = mandatoFim.split('/'); return a ? new Date(+a,+m-1,+d) : null; })() : null;
+                    const vigente = fimDate ? fimDate >= now : null;
+                    return (
+                      <div className="soft-card" style={{marginBottom:'16px',padding:'20px'}}>
+                        <div style={{display:'flex',alignItems:'flex-start',gap:'16px',flexWrap:'wrap'}}>
+                          <div style={{flex:'1 1 260px'}}>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                              <Landmark className="w-3.5 h-3.5" /> Unidade Executora (UEx)
+                            </p>
+                            {uexNome && <p style={{fontWeight:700,fontSize:'14px',lineHeight:'1.4',marginBottom:'6px'}}>{uexNome}</p>}
+                            <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
+                              {cnpj && <span className="meta-chip">CNPJ UEx: {cnpj}</span>}
+                              {cnpjEex && <span className="meta-chip">CNPJ EEx: {cnpjEex}</span>}
+                              {municipio && uf && <span className="meta-chip">📍 {municipio}/{uf}</span>}
+                              {rede && <span className="meta-chip">🏢 {rede}</span>}
+                              {localizacao && <span className="meta-chip">📌 {localizacao}</span>}
+                              {(ddd || telefone) && <span className="meta-chip">📞 {ddd ? `(${ddd}) ` : ''}{telefone}</span>}
+                              {dataAtualizacao && <span className="meta-chip text-muted-foreground">Atualizado: {dataAtualizacao}</span>}
+                            </div>
+                          </div>
+                          <div style={{flex:'1 1 220px',borderLeft:'2px solid #f0ece4',paddingLeft:'16px'}}>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Diretoria vigente</p>
+                            {dirigente && (
+                              <div style={{marginBottom:'6px'}}>
+                                <span className="text-xs text-muted-foreground">Presidente / Dirigente</span>
+                                <p style={{fontWeight:700,fontSize:'13px'}}>{dirigente}</p>
+                              </div>
+                            )}
+                            {(mandatoInicio || mandatoFim) && (
+                              <div style={{marginBottom:'6px'}}>
+                                <span className="text-xs text-muted-foreground">Vigência do mandato</span>
+                                <p style={{fontSize:'13px',fontWeight:600}}>
+                                  {mandatoInicio && mandatoFim ? `${mandatoInicio} → ${mandatoFim}` : mandatoFim ? `até ${mandatoFim}` : mandatoInicio}
+                                  {vigente !== null && (
+                                    <span className={`ml-2 badge ${vigente ? 'badge-good' : 'badge-attn'}`} style={{verticalAlign:'middle'}}>
+                                      {vigente ? 'Vigente' : 'Expirado'}
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            )}
+                            {!dirigente && !mandatoInicio && !mandatoFim && (
+                              <p className="text-xs text-muted-foreground">Dados da diretoria não disponíveis</p>
+                            )}
+                          </div>
+                        </div>
+                        {dadosCadastrais && (
+                          <div style={{marginTop:'14px',paddingTop:'12px',borderTop:'1px solid #f0ece4'}}>
+                            <p className="text-xs text-muted-foreground" style={{lineHeight:'1.6'}}>
+                              <strong>Situação cadastral:</strong> {dadosCadastrais}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                 </section>
               </>
                 );
