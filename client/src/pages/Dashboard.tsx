@@ -114,6 +114,7 @@ export default function Dashboard() {
   const [tnrSegmento, setTnrSegmento] = useState<string | null>(null);
   const [tdiSegmento, setTdiSegmento] = useState<string | null>(null);
   const [iedAno, setIedAno] = useState<number | null>(null);
+  const [atuAno, setAtuAno] = useState<number | null>(null);
   const [hadAno, setHadAno] = useState<number | null>(null);
   const { data: pddeData, isLoading: pddeLoading } = usePddeInfo(selectedInep, pddeAno);
   const pddeCnpj = pddeData?.uex?.cnpj || null;
@@ -437,10 +438,31 @@ export default function Dashboard() {
         if (!at) return { ano: a };
         return {
           ano: a,
-          fund: at.media_fund ?? null,
-          fund_ai: at.media_fund_ai ?? null,
-          fund_af: at.media_fund_af ?? null,
-          medio: at.media_med ?? null,
+          // Educação Infantil
+          inf_total:   at.inf_cat_0       ?? null,
+          inf_cre:     at.inf_cre_cat_0   ?? null,
+          inf_pre:     at.inf_pre_cat_0   ?? null,
+          // Ensino Fundamental
+          fund:        at.fun_cat_0       ?? at.media_fund    ?? null,
+          fund_ai:     at.fun_ai_cat_0    ?? at.media_fund_ai ?? null,
+          fund_af:     at.fun_af_cat_0    ?? at.media_fund_af ?? null,
+          fun_01:      at.fun_01_cat_0    ?? null,
+          fun_02:      at.fun_02_cat_0    ?? null,
+          fun_03:      at.fun_03_cat_0    ?? null,
+          fun_04:      at.fun_04_cat_0    ?? null,
+          fun_05:      at.fun_05_cat_0    ?? null,
+          fun_06:      at.fun_06_cat_0    ?? null,
+          fun_07:      at.fun_07_cat_0    ?? null,
+          fun_08:      at.fun_08_cat_0    ?? null,
+          fun_09:      at.fun_09_cat_0    ?? null,
+          fun_mul:     at.fun_mul_cat_0   ?? null,  // Multietapa/Multi/Correção de Fluxo
+          // Ensino Médio
+          medio:       at.med_cat_0       ?? at.media_med     ?? null,
+          med_01:      at.med_01_cat_0    ?? null,
+          med_02:      at.med_02_cat_0    ?? null,
+          med_03:      at.med_03_cat_0    ?? null,
+          med_04:      at.med_04_cat_0    ?? null,
+          med_ns:      at.med_ns_cat_0    ?? null,
         };
       }),
       had: anos.map((a: number) => {
@@ -2216,6 +2238,216 @@ export default function Dashboard() {
                                       </tr>
                                     );
                                   })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </section>
+                  );
+                })()}
+
+                {/* ── MÉDIA DE ALUNOS POR TURMA (ATU) ── */}
+                {(() => {
+                  const ch = evolutionCharts;
+                  const allAtu = (ch?.atu ?? [])
+                    .filter((d: any) => d.fund != null || d.fund_ai != null || d.fund_af != null || d.medio != null || d.inf_total != null)
+                    .sort((a: any, b: any) => a.ano - b.ano);
+                  if (allAtu.length === 0) return null;
+
+                  const atuAnos = allAtu.map((d: any) => d.ano);
+                  const selAno  = atuAno && atuAnos.includes(atuAno) ? atuAno : atuAnos[atuAnos.length - 1];
+                  const row     = allAtu.find((d: any) => d.ano === selAno) ?? allAtu[allAtu.length - 1];
+
+                  const fmt = (v: any) => v != null ? Number(v).toFixed(1) : '—';
+
+                  const hasAnyInf    = allAtu.some((d: any) => d.inf_total != null || d.inf_cre != null || d.inf_pre != null);
+                  const hasSeries    = allAtu.some((d: any) => d.fun_01 != null);
+                  const hasMul       = allAtu.some((d: any) => d.fun_mul != null);
+                  const hasMedSeries = allAtu.some((d: any) => d.med_01 != null);
+
+                  type AtuCol   = { key: string; label: string };
+                  type AtuGroup = { label: string; color: string; cols: AtuCol[] };
+                  const grupos: AtuGroup[] = [
+                    ...(hasAnyInf ? [{
+                      label: 'Educação Infantil', color: '#7b5ea7',
+                      cols: [
+                        { key: 'inf_total', label: 'Total' },
+                        { key: 'inf_cre',   label: 'Creche' },
+                        { key: 'inf_pre',   label: 'Pré-Escola' },
+                      ] as AtuCol[],
+                    }] : []),
+                    {
+                      label: 'Ensino Fundamental', color: '#2d5a88',
+                      cols: [
+                        { key: 'fund',    label: 'Total' },
+                        { key: 'fund_ai', label: 'Anos Iniciais' },
+                        { key: 'fund_af', label: 'Anos Finais' },
+                        ...(hasSeries ? [
+                          { key: 'fun_01', label: '1º Ano' }, { key: 'fun_02', label: '2º Ano' },
+                          { key: 'fun_03', label: '3º Ano' }, { key: 'fun_04', label: '4º Ano' },
+                          { key: 'fun_05', label: '5º Ano' }, { key: 'fun_06', label: '6º Ano' },
+                          { key: 'fun_07', label: '7º Ano' }, { key: 'fun_08', label: '8º Ano' },
+                          { key: 'fun_09', label: '9º Ano' },
+                        ] as AtuCol[] : []),
+                        ...(hasMul ? [{ key: 'fun_mul', label: 'Multietapa / Correção de Fluxo' }] as AtuCol[] : []),
+                      ] as AtuCol[],
+                    },
+                    {
+                      label: 'Ensino Médio', color: '#6b2d6b',
+                      cols: [
+                        { key: 'medio',  label: 'Total' },
+                        ...(hasMedSeries ? [
+                          { key: 'med_01', label: '1ª Série' }, { key: 'med_02', label: '2ª Série' },
+                          { key: 'med_03', label: '3ª Série' }, { key: 'med_04', label: '4ª Série' },
+                          { key: 'med_ns', label: 'Não-Seriado' },
+                        ] as AtuCol[] : []),
+                      ] as AtuCol[],
+                    },
+                  ].filter(g => g.cols.some(c => row[c.key] != null || allAtu.some((d: any) => d[c.key] != null)));
+
+                  const allCols = grupos.flatMap(g => g.cols);
+
+                  // Aviso INEP se turma tiver acima de 35 alunos (referência comum)
+                  const atuAlert = (v: any) => v != null && Number(v) > 35;
+
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div>
+                          <h2>Média de Alunos por Turma (ATU)</h2>
+                          <p>Número médio de alunos por turma, por etapa e ano de ensino</p>
+                        </div>
+                        <div className="hint-chip">Fonte: INEP</div>
+                      </div>
+                      <div className="organic-divider" />
+
+                      {/* Seletor de ano */}
+                      {atuAnos.length > 1 && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+                          {atuAnos.map(a => (
+                            <button key={a} onClick={() => setAtuAno(a)}
+                              style={{
+                                padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                border: `2px solid ${a === selAno ? '#5d4037' : '#e7d9bf'}`,
+                                background: a === selAno ? '#5d4037' : '#fffef8',
+                                color: a === selAno ? '#fff' : '#5d4037',
+                              }}>
+                              {a}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Tabela agrupada */}
+                      <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
+                        🧑‍🤝‍🧑 Alunos por turma — {selAno}
+                      </div>
+                      <div className="soft-card" style={{ padding: 0, overflow: 'auto', marginBottom: 16 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                          <thead>
+                            <tr>
+                              {grupos.map(g => (
+                                <th key={g.label} colSpan={g.cols.length}
+                                  style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 800,
+                                    color: '#fff', background: g.color, borderRight: '2px solid #fff',
+                                    whiteSpace: 'nowrap', fontSize: 11 }}>
+                                  {g.label}
+                                </th>
+                              ))}
+                            </tr>
+                            <tr style={{ background: '#f7f2ea' }}>
+                              {allCols.map((c) => {
+                                const grp = grupos.find(g => g.cols.includes(c))!;
+                                return (
+                                  <th key={c.key} style={{
+                                    padding: '6px 8px', textAlign: 'center', fontWeight: 700, fontSize: 11,
+                                    color: grp.color, whiteSpace: 'nowrap',
+                                    borderRight: '1px solid #ede5d5',
+                                  }}>
+                                    {c.label}
+                                  </th>
+                                );
+                              })}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr style={{ background: '#fff' }}>
+                              {allCols.map((c) => {
+                                const grp = grupos.find(g => g.cols.includes(c))!;
+                                const val = row[c.key];
+                                const alert = atuAlert(val);
+                                return (
+                                  <td key={c.key} style={{
+                                    padding: '9px 10px', textAlign: 'center',
+                                    fontWeight: val != null ? 700 : 400,
+                                    color: alert ? '#b71c1c' : val != null ? grp.color : '#bbb',
+                                    borderRight: '1px solid #f0e8d8',
+                                    fontSize: 13, background: alert ? '#fff5f5' : undefined,
+                                  }}>
+                                    {fmt(val)}
+                                    {alert && <span style={{ fontSize: 10, marginLeft: 3 }}>⚠️</span>}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      {allAtu.some((d: any) => allCols.some(c => atuAlert(d[c.key]))) && (
+                        <p style={{ fontSize: 11, color: '#b71c1c', marginBottom: 12 }}>
+                          ⚠️ Valores acima de 35 alunos/turma podem indicar superlotação (referência INEP/MEC).
+                        </p>
+                      )}
+
+                      {/* Evolução histórica */}
+                      {allAtu.length > 1 && (() => {
+                        const evoEtapas = [
+                          { key: 'inf_total', label: 'Ed. Infantil',  color: '#7b5ea7' },
+                          { key: 'fund',      label: 'Fund. Total',   color: '#2d5a88' },
+                          { key: 'fund_ai',   label: 'Fund. AI',      color: '#2d6a4f' },
+                          { key: 'fund_af',   label: 'Fund. AF',      color: '#1d3557' },
+                          { key: 'medio',     label: 'Ensino Médio',  color: '#6b2d6b' },
+                        ].filter(e => allAtu.some((d: any) => d[e.key] != null));
+                        if (evoEtapas.length === 0) return null;
+                        return (
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
+                              📅 Evolução histórica — médias por etapa
+                            </div>
+                            <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                <thead>
+                                  <tr style={{ background: '#f7f2ea' }}>
+                                    <th style={{ padding: '8px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
+                                    {evoEtapas.map(e => (
+                                      <th key={e.key} style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700, color: e.color, fontSize: 12, whiteSpace: 'nowrap' }}>
+                                        {e.label}
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {allAtu.map((d: any, i: number) => (
+                                    <tr key={d.ano} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                      <td style={{ padding: '8px 14px', fontWeight: 700, color: d.ano === selAno ? '#2d5a88' : '#5d4037' }}>
+                                        {d.ano === selAno ? `▶ ${d.ano}` : d.ano}
+                                      </td>
+                                      {evoEtapas.map(e => {
+                                        const v = d[e.key];
+                                        return (
+                                          <td key={e.key} style={{
+                                            padding: '8px 10px', textAlign: 'center', fontWeight: 600,
+                                            color: atuAlert(v) ? '#b71c1c' : v != null ? e.color : '#ccc',
+                                            background: atuAlert(v) ? '#fff5f5' : undefined,
+                                          }}>
+                                            {fmt(v)}{atuAlert(v) ? ' ⚠️' : ''}
+                                          </td>
+                                        );
+                                      })}
+                                    </tr>
+                                  ))}
                                 </tbody>
                               </table>
                             </div>

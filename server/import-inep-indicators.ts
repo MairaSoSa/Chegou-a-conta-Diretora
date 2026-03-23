@@ -121,12 +121,20 @@ const INDICATORS: IndicatorDef[] = [
         const v = values[idx];
         return v === "--" || v === "" || v === null || v === undefined ? null : Number(v);
       };
-      return {
-        media_fund: get("FUN_CAT_0"),
-        media_fund_ai: get("FUN_AI_CAT_0"),
-        media_fund_af: get("FUN_AF_CAT_0"),
-        media_med: get("MED_CAT_0"),
-      };
+      const data: Record<string, any> = {};
+      // Captura todos os prefixos relevantes: INF (Infantil), FUN (Fundamental), MED (Médio)
+      for (const h of headers) {
+        if (h.startsWith("INF_") || h.startsWith("FUN_") || h.startsWith("MED_")) {
+          const v = get(h);
+          if (v !== undefined) data[h.toLowerCase()] = v;
+        }
+      }
+      // Aliases legados para compatibilidade com dados já importados
+      if (!data.media_fund    && data.fun_cat_0    != null) data.media_fund    = data.fun_cat_0;
+      if (!data.media_fund_ai && data.fun_ai_cat_0 != null) data.media_fund_ai = data.fun_ai_cat_0;
+      if (!data.media_fund_af && data.fun_af_cat_0 != null) data.media_fund_af = data.fun_af_cat_0;
+      if (!data.media_med     && data.med_cat_0    != null) data.media_med     = data.med_cat_0;
+      return Object.keys(data).length > 0 ? data : null;
     },
   },
   {
