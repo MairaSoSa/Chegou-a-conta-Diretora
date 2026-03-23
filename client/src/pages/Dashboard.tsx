@@ -4179,6 +4179,157 @@ export default function Dashboard() {
                     );
                   })()}
 
+                  {/* ── GRUPO: QUEM GERENCIA ── */}
+                  {(pddeData?.ok || cadastralData?.ok) && (
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'4px'}}>
+                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#7c5cbf',background:'#f3eeff',padding:'3px 10px',borderRadius:'20px'}}>Quem gerencia</span>
+                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#e8e0f5,transparent)'}} />
+                    </div>
+                  )}
+
+                  {/* ── 1. IDENTIDADE DA UEx ── */}
+                  {(pddeData?.ok || cadastralData?.ok) && (() => {
+                    const uexNome = pddeData?.uex?.executora || cadastralData?.itens?.[0]?.razao_social || null;
+                    const cnpj = pddeData?.uex?.cnpj || null;
+                    const cnpjEex = cadastralData?.itens?.[0]?.cnpj_eex || null;
+                    const rede = pddeData?.rede || cadastralData?.itens?.[0]?.rede_atendimento || null;
+                    const municipio = pddeData?.municipio || pddeData?.uex?.municipio || null;
+                    const uf = pddeData?.uf || pddeData?.uex?.uf || null;
+                    const localizacao = cadastralData?.itens?.[0]?.localizacao || null;
+                    const ddd = cadastralData?.itens?.[0]?.ddd || null;
+                    const telefone = cadastralData?.itens?.[0]?.telefone || null;
+                    const dataAtualizacao = cadastralData?.itens?.[0]?.data_atualizacao || null;
+                    const dirigente = cadastralData?.itens?.[0]?.mandato_dirigente || null;
+                    const mandatoFim = cadastralData?.itens?.[0]?.data_fim_mandato || pddeData?.situacao_uex?.mandato_fim || null;
+                    const mandatoInicio = pddeData?.situacao_uex?.mandato_inicio || null;
+                    const dadosCadastrais = pddeData?.situacao_uex?.dados_cadastrais || null;
+                    const now = new Date();
+                    const fimDate = mandatoFim ? (() => { const [d,m,a] = mandatoFim.split('/'); return a ? new Date(+a,+m-1,+d) : null; })() : null;
+                    const vigente = fimDate ? fimDate >= now : null;
+                    return (
+                      <div className="soft-card" style={{marginBottom:'16px',padding:'20px'}}>
+                        <div style={{display:'flex',alignItems:'flex-start',gap:'16px',flexWrap:'wrap'}}>
+                          <div style={{flex:'1 1 260px'}}>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                              <Landmark className="w-3.5 h-3.5" /> Unidade Executora (UEx)
+                            </p>
+                            {uexNome && <p style={{fontWeight:700,fontSize:'14px',lineHeight:'1.4',marginBottom:'6px'}}>{uexNome}</p>}
+                            <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
+                              {cnpj && <span className="meta-chip">CNPJ UEx: {cnpj}</span>}
+                              {cnpjEex && <span className="meta-chip">CNPJ EEx: {cnpjEex}</span>}
+                              {municipio && uf && <span className="meta-chip">📍 {municipio}/{uf}</span>}
+                              {rede && <span className="meta-chip">🏢 {rede}</span>}
+                              {localizacao && <span className="meta-chip">📌 {localizacao}</span>}
+                              {(ddd || telefone) && <span className="meta-chip">📞 {ddd ? `(${ddd}) ` : ''}{telefone}</span>}
+                              {dataAtualizacao && <span className="meta-chip text-muted-foreground">Atualizado: {dataAtualizacao}</span>}
+                            </div>
+                          </div>
+                          <div style={{flex:'1 1 220px',borderLeft:'2px solid #f0ece4',paddingLeft:'16px'}}>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Diretoria vigente</p>
+                            {dirigente && (
+                              <div style={{marginBottom:'6px'}}>
+                                <span className="text-xs text-muted-foreground">Presidente / Dirigente</span>
+                                <p style={{fontWeight:700,fontSize:'13px'}}>{dirigente}</p>
+                              </div>
+                            )}
+                            {(mandatoInicio || mandatoFim) && (
+                              <div style={{marginBottom:'6px'}}>
+                                <span className="text-xs text-muted-foreground">Vigência do mandato</span>
+                                <p style={{fontSize:'13px',fontWeight:600}}>
+                                  {mandatoInicio && mandatoFim ? `${mandatoInicio} → ${mandatoFim}` : mandatoFim ? `até ${mandatoFim}` : mandatoInicio}
+                                  {vigente !== null && (
+                                    <span className={`ml-2 badge ${vigente ? 'badge-good' : 'badge-attn'}`} style={{verticalAlign:'middle'}}>
+                                      {vigente ? 'Vigente' : 'Expirado'}
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            )}
+                            {!dirigente && !mandatoInicio && !mandatoFim && (
+                              <p className="text-xs text-muted-foreground">Dados da diretoria não disponíveis</p>
+                            )}
+                          </div>
+                        </div>
+                        {dadosCadastrais && (
+                          <div style={{marginTop:'14px',paddingTop:'12px',borderTop:'1px solid #f0ece4'}}>
+                            <p className="text-xs text-muted-foreground" style={{lineHeight:'1.6'}}>
+                              <strong>Situação cadastral:</strong> {dadosCadastrais}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                  {/* ── GRUPO: CONTAS E SALDOS ── */}
+                  {((pddeData?.contas?.length ?? 0) > 0 || pddeUexSaldoData?.ok || pddeSaldosData?.ok) && (
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
+                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#2d5a88',background:'#e6eef8',padding:'3px 10px',borderRadius:'20px'}}>Contas e saldos</span>
+                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#b8cfe8,transparent)'}} />
+                    </div>
+                  )}
+
+                  {/* ── 2. CONTAS BANCÁRIAS ── */}
+                  {pddeData?.ok && pddeData.contas && pddeData.contas.length > 0 && (
+                    <div style={{marginBottom:'16px'}}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                        <BanknoteIcon className="w-3.5 h-3.5" /> Contas bancárias — ano {pddeData.ano}
+                      </p>
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:'10px'}}>
+                        {pddeData.contas.map((c: any, i: number) => (
+                          <div key={i} className="soft-card" style={{padding:'14px',borderLeft:'3px solid var(--m-blue)'}}>
+                            <p style={{fontWeight:700,fontSize:'12px',textTransform:'uppercase',letterSpacing:'0.05em',color:'var(--m-blue)',marginBottom:'8px'}}>{c.programa}</p>
+                            <div style={{display:'flex',flexDirection:'column',gap:'3px'}}>
+                              <div className="row-item" style={{padding:0}}>
+                                <span className="text-xs text-muted-foreground">Banco</span>
+                                <span className="text-xs font-semibold">{c.banco || '—'}</span>
+                              </div>
+                              <div className="row-item" style={{padding:0}}>
+                                <span className="text-xs text-muted-foreground">Agência</span>
+                                <span className="text-xs font-semibold">{c.agencia || '—'}</span>
+                              </div>
+                              <div className="row-item" style={{padding:0}}>
+                                <span className="text-xs text-muted-foreground">Conta</span>
+                                <span className="text-xs font-semibold font-mono">{c.conta || '—'}</span>
+                              </div>
+                              {c.saldo != null && (
+                                <div style={{marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #f0ece4'}}>
+                                  <span className="text-xs text-muted-foreground">Saldo</span>
+                                  <p style={{fontSize:'16px',fontWeight:800,color: c.saldo > 0 ? '#16a34a' : 'var(--m-muted)'}}>{brl(c.saldo)}</p>
+                                </div>
+                              )}
+                              {c.ocorrencia && (
+                                <p className="text-xs text-amber-600 mt-1">⚠️ {c.ocorrencia}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 2c. SITUAÇÃO DA EEx ── */}
+                  {pddeData?.ok && pddeData.situacao_eex && (pddeData.situacao_eex.adesao || pddeData.situacao_eex.prestacao_contas) && (
+                    <div style={{marginBottom:'16px'}}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                        <FileText className="w-3.5 h-3.5" /> Situação da Entidade Executora (EEx)
+                      </p>
+                      <div className="soft-card" style={{padding:'14px',display:'flex',gap:'24px',flexWrap:'wrap'}}>
+                        {pddeData.situacao_eex.adesao && (
+                          <div>
+                            <span className="text-xs text-muted-foreground block mb-1">Adesão</span>
+                            <span className={`badge ${pddeData.situacao_eex.adesao.toLowerCase().includes('adimpl') ? 'badge-good' : 'badge-attn'}`}>{pddeData.situacao_eex.adesao}</span>
+                          </div>
+                        )}
+                        {pddeData.situacao_eex.prestacao_contas && (
+                          <div>
+                            <span className="text-xs text-muted-foreground block mb-1">Prestação de Contas EEx</span>
+                            <span className={`badge ${pddeData.situacao_eex.prestacao_contas.toLowerCase().includes('adimpl') ? 'badge-good' : 'badge-attn'}`}>{pddeData.situacao_eex.prestacao_contas}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* ── GRUPO: REPASSES E EXECUÇÃO ── */}
                   {(atendimentoData?.ok || pddeExecFinData?.ok || (pddeData?.destinacoes?.length ?? 0) > 0) && (
                     <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
@@ -4564,157 +4715,6 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  {/* ── GRUPO: CONTAS E SALDOS ── */}
-                  {((pddeData?.contas?.length ?? 0) > 0 || pddeUexSaldoData?.ok || pddeSaldosData?.ok) && (
-                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
-                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#2d5a88',background:'#e6eef8',padding:'3px 10px',borderRadius:'20px'}}>Contas e saldos</span>
-                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#b8cfe8,transparent)'}} />
-                    </div>
-                  )}
-
-                  {/* ── 2. CONTAS BANCÁRIAS ── */}
-                  {pddeData?.ok && pddeData.contas && pddeData.contas.length > 0 && (
-                    <div style={{marginBottom:'16px'}}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <BanknoteIcon className="w-3.5 h-3.5" /> Contas bancárias — ano {pddeData.ano}
-                      </p>
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:'10px'}}>
-                        {pddeData.contas.map((c: any, i: number) => (
-                          <div key={i} className="soft-card" style={{padding:'14px',borderLeft:'3px solid var(--m-blue)'}}>
-                            <p style={{fontWeight:700,fontSize:'12px',textTransform:'uppercase',letterSpacing:'0.05em',color:'var(--m-blue)',marginBottom:'8px'}}>{c.programa}</p>
-                            <div style={{display:'flex',flexDirection:'column',gap:'3px'}}>
-                              <div className="row-item" style={{padding:0}}>
-                                <span className="text-xs text-muted-foreground">Banco</span>
-                                <span className="text-xs font-semibold">{c.banco || '—'}</span>
-                              </div>
-                              <div className="row-item" style={{padding:0}}>
-                                <span className="text-xs text-muted-foreground">Agência</span>
-                                <span className="text-xs font-semibold">{c.agencia || '—'}</span>
-                              </div>
-                              <div className="row-item" style={{padding:0}}>
-                                <span className="text-xs text-muted-foreground">Conta</span>
-                                <span className="text-xs font-semibold font-mono">{c.conta || '—'}</span>
-                              </div>
-                              {c.saldo != null && (
-                                <div style={{marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #f0ece4'}}>
-                                  <span className="text-xs text-muted-foreground">Saldo</span>
-                                  <p style={{fontSize:'16px',fontWeight:800,color: c.saldo > 0 ? '#16a34a' : 'var(--m-muted)'}}>{brl(c.saldo)}</p>
-                                </div>
-                              )}
-                              {c.ocorrencia && (
-                                <p className="text-xs text-amber-600 mt-1">⚠️ {c.ocorrencia}</p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── 2c. SITUAÇÃO DA EEx ── */}
-                  {pddeData?.ok && pddeData.situacao_eex && (pddeData.situacao_eex.adesao || pddeData.situacao_eex.prestacao_contas) && (
-                    <div style={{marginBottom:'16px'}}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <FileText className="w-3.5 h-3.5" /> Situação da Entidade Executora (EEx)
-                      </p>
-                      <div className="soft-card" style={{padding:'14px',display:'flex',gap:'24px',flexWrap:'wrap'}}>
-                        {pddeData.situacao_eex.adesao && (
-                          <div>
-                            <span className="text-xs text-muted-foreground block mb-1">Adesão</span>
-                            <span className={`badge ${pddeData.situacao_eex.adesao.toLowerCase().includes('adimpl') ? 'badge-good' : 'badge-attn'}`}>{pddeData.situacao_eex.adesao}</span>
-                          </div>
-                        )}
-                        {pddeData.situacao_eex.prestacao_contas && (
-                          <div>
-                            <span className="text-xs text-muted-foreground block mb-1">Prestação de Contas EEx</span>
-                            <span className={`badge ${pddeData.situacao_eex.prestacao_contas.toLowerCase().includes('adimpl') ? 'badge-good' : 'badge-attn'}`}>{pddeData.situacao_eex.prestacao_contas}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── GRUPO: QUEM GERENCIA ── */}
-                  {(pddeData?.ok || cadastralData?.ok) && (
-                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'4px'}}>
-                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#7c5cbf',background:'#f3eeff',padding:'3px 10px',borderRadius:'20px'}}>Quem gerencia</span>
-                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#e8e0f5,transparent)'}} />
-                    </div>
-                  )}
-
-                  {/* ── 1. IDENTIDADE DA UEx ── */}
-                  {(pddeData?.ok || cadastralData?.ok) && (() => {
-                    const uexNome = pddeData?.uex?.executora || cadastralData?.itens?.[0]?.razao_social || null;
-                    const cnpj = pddeData?.uex?.cnpj || null;
-                    const cnpjEex = cadastralData?.itens?.[0]?.cnpj_eex || null;
-                    const rede = pddeData?.rede || cadastralData?.itens?.[0]?.rede_atendimento || null;
-                    const municipio = pddeData?.municipio || pddeData?.uex?.municipio || null;
-                    const uf = pddeData?.uf || pddeData?.uex?.uf || null;
-                    const localizacao = cadastralData?.itens?.[0]?.localizacao || null;
-                    const ddd = cadastralData?.itens?.[0]?.ddd || null;
-                    const telefone = cadastralData?.itens?.[0]?.telefone || null;
-                    const dataAtualizacao = cadastralData?.itens?.[0]?.data_atualizacao || null;
-                    const dirigente = cadastralData?.itens?.[0]?.mandato_dirigente || null;
-                    const mandatoFim = cadastralData?.itens?.[0]?.data_fim_mandato || pddeData?.situacao_uex?.mandato_fim || null;
-                    const mandatoInicio = pddeData?.situacao_uex?.mandato_inicio || null;
-                    const dadosCadastrais = pddeData?.situacao_uex?.dados_cadastrais || null;
-                    const now = new Date();
-                    const fimDate = mandatoFim ? (() => { const [d,m,a] = mandatoFim.split('/'); return a ? new Date(+a,+m-1,+d) : null; })() : null;
-                    const vigente = fimDate ? fimDate >= now : null;
-                    return (
-                      <div className="soft-card" style={{marginBottom:'16px',padding:'20px'}}>
-                        <div style={{display:'flex',alignItems:'flex-start',gap:'16px',flexWrap:'wrap'}}>
-                          <div style={{flex:'1 1 260px'}}>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                              <Landmark className="w-3.5 h-3.5" /> Unidade Executora (UEx)
-                            </p>
-                            {uexNome && <p style={{fontWeight:700,fontSize:'14px',lineHeight:'1.4',marginBottom:'6px'}}>{uexNome}</p>}
-                            <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
-                              {cnpj && <span className="meta-chip">CNPJ UEx: {cnpj}</span>}
-                              {cnpjEex && <span className="meta-chip">CNPJ EEx: {cnpjEex}</span>}
-                              {municipio && uf && <span className="meta-chip">📍 {municipio}/{uf}</span>}
-                              {rede && <span className="meta-chip">🏢 {rede}</span>}
-                              {localizacao && <span className="meta-chip">📌 {localizacao}</span>}
-                              {(ddd || telefone) && <span className="meta-chip">📞 {ddd ? `(${ddd}) ` : ''}{telefone}</span>}
-                              {dataAtualizacao && <span className="meta-chip text-muted-foreground">Atualizado: {dataAtualizacao}</span>}
-                            </div>
-                          </div>
-                          <div style={{flex:'1 1 220px',borderLeft:'2px solid #f0ece4',paddingLeft:'16px'}}>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Diretoria vigente</p>
-                            {dirigente && (
-                              <div style={{marginBottom:'6px'}}>
-                                <span className="text-xs text-muted-foreground">Presidente / Dirigente</span>
-                                <p style={{fontWeight:700,fontSize:'13px'}}>{dirigente}</p>
-                              </div>
-                            )}
-                            {(mandatoInicio || mandatoFim) && (
-                              <div style={{marginBottom:'6px'}}>
-                                <span className="text-xs text-muted-foreground">Vigência do mandato</span>
-                                <p style={{fontSize:'13px',fontWeight:600}}>
-                                  {mandatoInicio && mandatoFim ? `${mandatoInicio} → ${mandatoFim}` : mandatoFim ? `até ${mandatoFim}` : mandatoInicio}
-                                  {vigente !== null && (
-                                    <span className={`ml-2 badge ${vigente ? 'badge-good' : 'badge-attn'}`} style={{verticalAlign:'middle'}}>
-                                      {vigente ? 'Vigente' : 'Expirado'}
-                                    </span>
-                                  )}
-                                </p>
-                              </div>
-                            )}
-                            {!dirigente && !mandatoInicio && !mandatoFim && (
-                              <p className="text-xs text-muted-foreground">Dados da diretoria não disponíveis</p>
-                            )}
-                          </div>
-                        </div>
-                        {dadosCadastrais && (
-                          <div style={{marginTop:'14px',paddingTop:'12px',borderTop:'1px solid #f0ece4'}}>
-                            <p className="text-xs text-muted-foreground" style={{lineHeight:'1.6'}}>
-                              <strong>Situação cadastral:</strong> {dadosCadastrais}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
 
                 </section>
               </>
