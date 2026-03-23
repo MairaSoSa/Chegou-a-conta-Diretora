@@ -57,4 +57,8 @@ fi
 # ── Phase 2: start the real application ──────────────────────────────────────
 export SQLITE_DATABASE_URL="file:$DB_PATH"
 echo "[START] Iniciando servidor na porta $PORT..."
-exec node dist/index.cjs
+if [ -f dist/bootstrap.cjs ]; then
+  exec node dist/bootstrap.cjs
+else
+  exec node dist/index.cjs
+fi
