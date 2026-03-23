@@ -1457,13 +1457,11 @@ export default function Dashboard() {
                     return null;
                   };
 
-                  const fetchOsmData = (nome: string, uf: string) => {
-                    if (!nome || osmUnidades !== null || osmLoading) return;
+                  const fetchOsmData = (coMun: string) => {
+                    if (!coMun || osmUnidades !== null || osmLoading) return;
                     setOsmLoading(true);
-                    const ufFilter = uf ? `["ISO3166-2"~"BR-${uf}"]["admin_level"="4"]` : `["admin_level"="4"]`;
                     const query = `[out:json][timeout:15];
-area${ufFilter}->.estado;
-area["name"="${nome}"]["admin_level"="8"](area.estado)->.mun;
+area["ref:IBGE"="${coMun}"]["admin_level"="8"]->.mun;
 (
   node(area.mun)[amenity~"^(clinic|hospital|doctors|health_centre)$"];
   node(area.mun)[healthcare~"^(hospital|clinic|centre|doctor)$"];
@@ -1529,7 +1527,7 @@ out center body 50;`;
                           .then(d => { setEquipamentosData(d); setEquipamentosLoading(false); })
                           .catch(() => { setEquipamentosData({ ok: false }); setEquipamentosLoading(false); });
                       }
-                      if (nomeMunicipio) fetchOsmData(nomeMunicipio, sgUf);
+                      if (coMunicipio) fetchOsmData(String(coMunicipio));
                     }
                   };
 
