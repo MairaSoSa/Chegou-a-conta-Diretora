@@ -1955,3 +1955,8 @@ mark.ficha-grifo:hover {
   from { opacity: 0; transform: translateY(-10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Retrato: tabelas recolhíveis */
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+details[open] > summary span:last-child { transform: rotate(180deg); }
