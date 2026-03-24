@@ -2037,7 +2037,8 @@ out center tags 100;`;
                         </button>
 
                         {showSuporteInstitucional && (() => {
-                          const escolaUF = (pddeData?.uf || pddeData?.uex?.uf || null) as string | null;
+                          const escolaUF = (evolucaoData?.escola?.sg_uf || pddeData?.uf || pddeData?.uex?.uf || null) as string | null;
+                          const escolaDep = evolucaoData?.escola?.ds_dependencia as string | undefined;
                           const secretarioEstadual = escolaUF ? SECRETARIOS_ESTADUAIS[escolaUF] : null;
                           const undimeUF = escolaUF ? UNDIME_UF[escolaUF] : null;
                           const cecampeRegiao = escolaUF ? UF_CECAMPE[escolaUF] : null;
@@ -2078,23 +2079,35 @@ out center tags 100;`;
                                 )}
 
                                 {/* Secretaria Municipal via UNDIME */}
-                                <div style={{ borderRadius: 12, border: '1.5px solid #f0ddb5', background: '#fdf3e0', padding: '12px 14px' }}>
-                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#7a4a10', margin: '0 0 8px' }}>🏛️ Secretaria Municipal de Educação</p>
-                                  <p style={{ fontSize: 11, color: '#7a4a10', margin: '0 0 10px', lineHeight: 1.5 }}>
-                                    Os secretários municipais de educação são representados pela <strong>UNDIME</strong>. Acesse a seção do seu estado para localizar o(a) dirigente municipal do seu município.
+                                <div style={{ borderRadius: 12, border: escolaDep === 'Municipal' ? '2px solid #d4861a' : '1.5px solid #f0ddb5', background: escolaDep === 'Municipal' ? '#fff8ed' : '#fdf3e0', padding: '12px 14px' }}>
+                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#7a4a10', margin: '0 0 6px' }}>
+                                    🏛️ Secretaria Municipal de Educação
+                                    {escolaDep === 'Municipal' && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, background: '#d4861a', color: '#fff', borderRadius: 8, padding: '1px 7px' }}>sua rede</span>}
                                   </p>
+                                  {escolaDep === 'Municipal' ? (
+                                    <p style={{ fontSize: 11, color: '#7a4a10', margin: '0 0 10px', lineHeight: 1.5 }}>
+                                      Esta escola pertence à <strong>rede municipal</strong>. A Secretaria Municipal de Educação de <strong>{evolucaoData?.escola?.no_municipio}</strong> é sua supervisora direta. O contato nominal do(a) secretário(a) deve ser obtido junto à prefeitura ou à UNDIME de {escolaUF}.
+                                    </p>
+                                  ) : (
+                                    <p style={{ fontSize: 11, color: '#7a4a10', margin: '0 0 10px', lineHeight: 1.5 }}>
+                                      Para escolas municipais, a Secretaria Municipal é a supervisora direta. Para localizá-la no seu município, acesse a UNDIME do seu estado.
+                                    </p>
+                                  )}
                                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                                     {undimeUF && (
                                       <a href={undimeUF} target="_blank" rel="noopener noreferrer"
-                                        style={{ fontSize: 12, fontWeight: 700, color: '#7a4a10', background: 'rgba(255,255,255,0.7)', padding: '6px 14px', borderRadius: 20, border: '1.5px solid #f0ddb5', textDecoration: 'none' }}>
+                                        style={{ fontSize: 12, fontWeight: 700, color: '#7a4a10', background: 'rgba(255,255,255,0.8)', padding: '6px 14px', borderRadius: 20, border: '1.5px solid #f0ddb5', textDecoration: 'none' }}>
                                         UNDIME {escolaUF} ↗
                                       </a>
                                     )}
                                     <a href="https://undime.org.br" target="_blank" rel="noopener noreferrer"
-                                      style={{ fontSize: 12, fontWeight: 700, color: '#7a4a10', background: 'rgba(255,255,255,0.7)', padding: '6px 14px', borderRadius: 20, border: '1.5px solid #f0ddb5', textDecoration: 'none' }}>
+                                      style={{ fontSize: 12, fontWeight: 700, color: '#7a4a10', background: 'rgba(255,255,255,0.8)', padding: '6px 14px', borderRadius: 20, border: '1.5px solid #f0ddb5', textDecoration: 'none' }}>
                                       UNDIME Nacional ↗
                                     </a>
                                   </div>
+                                  <p style={{ fontSize: 10, color: '#a06020', margin: '8px 0 0' }}>
+                                    A UNDIME não disponibiliza busca pública por município — cada seccional estadual mantém o cadastro dos dirigentes do seu estado.
+                                  </p>
                                 </div>
 
                                 {/* MEC */}
