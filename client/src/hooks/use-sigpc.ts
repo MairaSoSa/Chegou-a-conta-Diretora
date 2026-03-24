@@ -100,6 +100,7 @@ export interface SigpcLocalizarResponse {
   error?: string;
   fonte?: "olinda-sigpc" | "indisponivel";
   anosConsultados?: number[];
+  sigpcUrl?: string;
 }
 
 export function useSigpcLocalizar(cnpj?: string, anoConcessao?: number) {

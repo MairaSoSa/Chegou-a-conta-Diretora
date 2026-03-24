@@ -11,6 +11,9 @@ const HEADERS: Record<string, string> = {
 
 const apiCache = new Map<string, { data: any; ts: number }>();
 const CACHE_TTL = 15 * 60 * 1000;
+// Cache failures for 30 min to avoid hammering a broken endpoint
+const NEGATIVE_CACHE_TTL = 30 * 60 * 1000;
+const negativeCache = new Map<string, number>(); // key → timestamp
 
 function getCached<T>(key: string): T | null {
   const entry = apiCache.get(key);
@@ -168,7 +171,8 @@ function mapOlindaToListItem(item: any, idx: number): SigpcPrestacaoListItem {
   };
 }
 
-async function fetchOlindaSigpc(ano: number, filter?: string, top = 100, skip = 0): Promise<any[] | null> {
+// Returns: records[] on success, null on "no data / transient", "DOWN" if server is broken
+async function fetchOlindaSigpc(ano: number, filter?: string, top = 100, skip = 0): Promise<any[] | null | "DOWN"> {
   try {
     const params = new URLSearchParams();
     params.set("$format", "json");
@@ -187,7 +191,8 @@ async function fetchOlindaSigpc(ano: number, filter?: string, top = 100, skip = 
 
     if (!response.ok) {
       console.log(`[SIGPC-OLINDA] HTTP ${response.status}`);
-      return null;
+      // 4xx/5xx from FNDE server = endpoint is broken (not just empty data)
+      return "DOWN";
     }
 
     const text = await response.text();
@@ -200,7 +205,7 @@ async function fetchOlindaSigpc(ano: number, filter?: string, top = 100, skip = 
 
     if (data.codigo && data.codigo >= 400) {
       console.log(`[SIGPC-OLINDA] API error ${data.codigo}: ${data.mensagem}`);
-      return null;
+      return data.codigo >= 500 ? "DOWN" : null;
     }
 
     const records = data.value || data.d?.results || [];
@@ -221,6 +226,8 @@ export interface SigpcLocalizarResult {
   sigpcUrl?: string;
 }
 
+const OLINDA_SIGPC_DOWN_KEY = "olinda-sigpc-down";
+
 export async function localizarPrestacoesPorCnpj(
   cnpj: string,
   anoConcessao?: number
@@ -230,24 +237,78 @@ export async function localizarPrestacoesPorCnpj(
     ? `${cleanCnpj.slice(0,2)}.${cleanCnpj.slice(2,5)}.${cleanCnpj.slice(5,8)}/${cleanCnpj.slice(8,12)}-${cleanCnpj.slice(12)}`
     : cnpj;
 
-  const filter = `CNPJ_UEX eq '${formattedCnpj}'`;
+  const sigpcUrl = `https://www.fnde.gov.br/sigpcadm/sistema.pu?operation=localizar`;
 
+  // Check negative cache — if OLINDA was confirmed down recently, skip all calls
+  const downSince = negativeCache.get(OLINDA_SIGPC_DOWN_KEY);
+  if (downSince && Date.now() - downSince < NEGATIVE_CACHE_TTL) {
+    console.log("[SIGPC-OLINDA] Skipping (negative cache — API confirmed down)");
+    return {
+      ok: false,
+      fonte: "indisponivel",
+      prestacoes: [],
+      error: "A API SIGPC do FNDE está com instabilidade (ORA-00942). Consulte diretamente o SIGPC.",
+      anosConsultados: [],
+      sigpcUrl,
+    };
+  }
+
+  const filter = `CNPJ_UEX eq '${formattedCnpj}'`;
   const anosToQuery = anoConcessao
     ? [anoConcessao]
     : [2024, 2023, 2022, 2021, 2020];
+
+  // Probe with the most recent year first — if it's DOWN, cache and bail early
+  const probeResult = await fetchOlindaSigpc(anosToQuery[0], filter, 1);
+  if (probeResult === "DOWN") {
+    negativeCache.set(OLINDA_SIGPC_DOWN_KEY, Date.now());
+    console.log("[SIGPC-OLINDA] Probe failed — marking as DOWN for 30min");
+    return {
+      ok: false,
+      fonte: "indisponivel",
+      prestacoes: [],
+      error: "A API SIGPC do FNDE está com instabilidade (ORA-00942). Consulte diretamente o SIGPC.",
+      anosConsultados: [],
+      sigpcUrl,
+    };
+  }
 
   const allPrestacoes: SigpcPrestacaoListItem[] = [];
   const anosConsultados: number[] = [];
   let apiAvailable = false;
 
-  for (const ano of anosToQuery) {
+  // Include the probe result if it had data
+  if (Array.isArray(probeResult) && probeResult.length > 0) {
+    // Re-fetch with full top limit for the first year
+    const fullRecords = await fetchOlindaSigpc(anosToQuery[0], filter, 200);
+    if (Array.isArray(fullRecords)) {
+      apiAvailable = true;
+      anosConsultados.push(anosToQuery[0]);
+      allPrestacoes.push(...fullRecords.map((item: any, idx: number) =>
+        mapOlindaToListItem(item, idx)
+      ));
+    }
+  } else if (probeResult !== null) {
+    // probeResult is [] — no data for that year, but API is up
+    apiAvailable = true;
+    anosConsultados.push(anosToQuery[0]);
+  }
+
+  // Query remaining years
+  for (const ano of anosToQuery.slice(1)) {
     const records = await fetchOlindaSigpc(ano, filter, 200);
+    if (records === "DOWN") {
+      // Unlikely after probe passed, but handle gracefully
+      break;
+    }
     if (records !== null) {
       apiAvailable = true;
-      anosConsultados.push(ano);
-      allPrestacoes.push(...records.map((item: any, idx: number) =>
-        mapOlindaToListItem(item, allPrestacoes.length + idx)
-      ));
+      if (records.length > 0) {
+        anosConsultados.push(ano);
+        allPrestacoes.push(...records.map((item: any, idx: number) =>
+          mapOlindaToListItem(item, allPrestacoes.length + idx)
+        ));
+      }
     }
   }
 
@@ -256,8 +317,9 @@ export async function localizarPrestacoesPorCnpj(
       ok: false,
       fonte: "indisponivel",
       prestacoes: [],
-      error: "O sistema SIGPC/OLINDA do FNDE está temporariamente indisponível. Tente novamente mais tarde.",
+      error: "A API SIGPC do FNDE está com instabilidade. Consulte diretamente o SIGPC.",
       anosConsultados: [],
+      sigpcUrl,
     };
   }
 
@@ -266,6 +328,7 @@ export async function localizarPrestacoesPorCnpj(
     fonte: "olinda-sigpc",
     prestacoes: allPrestacoes,
     anosConsultados,
+    sigpcUrl,
   };
 }
 
@@ -286,9 +349,16 @@ export async function localizarPrestacoesPorUf(
     filter += ` and DS_PROGRAMA_FNDE eq '${cleanPrograma}'`;
   }
 
+  // Check negative cache
+  const downSince = negativeCache.get(OLINDA_SIGPC_DOWN_KEY);
+  if (downSince && Date.now() - downSince < NEGATIVE_CACHE_TTL) {
+    return { ok: false, fonte: "indisponivel", prestacoes: [], error: "API SIGPC indisponível" };
+  }
+
   const records = await fetchOlindaSigpc(ano, filter, top, skip);
 
-  if (records === null) {
+  if (records === "DOWN" || records === null) {
+    if (records === "DOWN") negativeCache.set(OLINDA_SIGPC_DOWN_KEY, Date.now());
     return {
       ok: false,
       fonte: "indisponivel",

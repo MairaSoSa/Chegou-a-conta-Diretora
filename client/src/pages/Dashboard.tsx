@@ -5135,16 +5135,16 @@ out center tags 100;`;
                         <div>
                           <p className="text-xs font-semibold text-amber-700 mb-1">
                             {sigpcData?.fonte === 'indisponivel'
-                              ? 'SIGPC/OLINDA temporariamente indisponível'
+                              ? 'SIGPC indisponível na API aberta do FNDE'
                               : 'Nenhuma prestação de contas encontrada no SIGPC para este ano'}
                           </p>
                           <p className="text-xs text-muted-foreground mb-2">
                             {sigpcData?.fonte === 'indisponivel'
-                              ? 'A API aberta do FNDE (OLINDA) está fora do ar no momento. Os dados de Prestação de Contas do SIGPC ficam disponíveis automaticamente quando o serviço for restaurado.'
+                              ? 'O serviço OLINDA do FNDE está com instabilidade na consulta de Prestação de Contas (erro interno no banco de dados do FNDE). Os dados ficam disponíveis automaticamente quando o FNDE restaurar o serviço.'
                               : `Não foram localizados registros para o CNPJ ${pddeCnpj || 'da UEx'} no SIGPC em ${pddeAno}. Tente outro ano ou consulte diretamente pelo site.`}
                           </p>
                           <a
-                            href="https://www.fnde.gov.br/sigpcadm/actionPublico.pu?tilesPublico=ConsultarSituacao"
+                            href={sigpcData?.sigpcUrl || "https://www.fnde.gov.br/sigpcadm/sistema.pu?operation=localizar"}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline font-semibold"
