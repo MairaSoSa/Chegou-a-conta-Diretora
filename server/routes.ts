@@ -2327,6 +2327,97 @@ export async function registerRoutes(
     }
   });
 
+  // ── MAPA SOCIAL MDS – equipamentos por município ──
+  const mapaSocialCache: Record<string, { data: any; at: number }> = {};
+  const MAPA_SOCIAL_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+
+  app.get("/api/mapa-social/:coMunicipio", async (req, res) => {
+    const { coMunicipio } = req.params;
+    if (!coMunicipio || !/^\d{6,7}$/.test(coMunicipio)) {
+      return res.status(400).json({ ok: false, error: "Código de município inválido" });
+    }
+
+    const ibge6 = coMunicipio.length === 7 ? coMunicipio.slice(0, 6) : coMunicipio;
+    const cached = mapaSocialCache[ibge6];
+    if (cached && Date.now() - cached.at < MAPA_SOCIAL_TTL_MS) {
+      return res.json(cached.data);
+    }
+
+    // Social assistance types we care about
+    const SOCIAL_TYPES = new Set([
+      "CRAS", "CREAS", "CAPS", "CONSELHO_TUTELAR", "CONSELHO_ASSISTENCIA",
+      "ACOLHIMENTO", "CONVIVENCIA", "CENTRO_POP", "CENTRO_DIA", "CMDCA",
+      "REPUBLICA", "REDE_PARCERIA",
+    ]);
+
+    const TIPO_LABEL: Record<string, string> = {
+      CRAS: "CRAS",
+      CREAS: "CREAS",
+      CAPS: "CAPS",
+      CONSELHO_TUTELAR: "Conselho Tutelar",
+      CONSELHO_ASSISTENCIA: "Conselho Municipal de Assistência Social",
+      ACOLHIMENTO: "Serviço de Acolhimento",
+      CONVIVENCIA: "Centro de Convivência",
+      CENTRO_POP: "Centro POP",
+      CENTRO_DIA: "Centro-Dia",
+      CMDCA: "CMDCA",
+      REPUBLICA: "República",
+      REDE_PARCERIA: "Rede de Parceria",
+    };
+
+    try {
+      const apiUrl = `https://mapa-social-api.mds.gov.br/api/v1/equipamento?q=${ibge6}&rows=300`;
+      const r = await fetch(apiUrl, {
+        signal: AbortSignal.timeout(12000),
+        headers: { "User-Agent": "ChegoAContaDiretora/1.0", "Accept": "application/json" },
+      });
+      if (!r.ok) throw new Error(`Mapa Social HTTP ${r.status}`);
+      const raw: any = await r.json();
+
+      const equipamentos: any[] = [];
+      for (const doc of (raw.docs ?? [])) {
+        const tipo: string = doc.tipo_equipamento_eq ?? "";
+        if (!SOCIAL_TYPES.has(tipo)) continue;
+        equipamentos.push({
+          tipo,
+          tipo_label: TIPO_LABEL[tipo] ?? tipo,
+          nome: doc.nome ?? "",
+          endereco: [doc.endereco, doc.numero, doc.bairro].filter(Boolean).join(", "),
+          cep: doc.cep ?? "",
+          telefone: doc.telefone ?? "",
+          email: doc.email ?? "",
+          latitude: doc.latitude ?? null,
+          longitude: doc.longitude ?? null,
+          municipio: doc.municipio ?? "",
+          cod_ibge: doc.cod_ibge ?? ibge6,
+        });
+      }
+
+      // Group by tipo
+      const grouped: Record<string, any[]> = {};
+      for (const eq of equipamentos) {
+        if (!grouped[eq.tipo]) grouped[eq.tipo] = [];
+        grouped[eq.tipo].push(eq);
+      }
+
+      const result = {
+        ok: true,
+        co_municipio: coMunicipio,
+        ibge6,
+        total: equipamentos.length,
+        fonte: "Mapa Social – MDS (dados.mds.gov.br)",
+        atualizado_em: new Date().toISOString(),
+        equipamentos,
+        grouped,
+      };
+
+      mapaSocialCache[ibge6] = { data: result, at: Date.now() };
+      return res.json(result);
+    } catch (e: any) {
+      return res.json({ ok: false, co_municipio: coMunicipio, error: e.message, equipamentos: [], grouped: {} });
+    }
+  });
+
   // ── BUSCA CRAS/CREAS por município (cadunicobrasil.com.br scraper) ──
   // Cache: avoid re-geocoding the same municipality within the server process lifetime
   const crasCacheStore: Record<string, { data: any; at: number }> = {};

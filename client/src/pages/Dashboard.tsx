@@ -233,6 +233,8 @@ export default function Dashboard() {
   const [osmLoading, setOsmLoading] = useState(false);
   const [crasData, setCrasData] = useState<any>(null);
   const [crasLoading, setCrasLoading] = useState(false);
+  const [mapaSocialData, setMapaSocialData] = useState<any>(null);
+  const [mapaSocialLoading, setMapaSocialLoading] = useState(false);
   const [rendSegmento, setRendSegmento] = useState<'ai' | 'af' | 'med' | null>(null);
   const [tnrSegmento, setTnrSegmento] = useState<string | null>(null);
   const [tdiSegmento, setTdiSegmento] = useState<string | null>(null);
@@ -1732,6 +1734,14 @@ out center tags 100;`;
                           .catch(() => { setEquipamentosData({ ok: false }); setEquipamentosLoading(false); });
                       }
                       if (coMunicipio) fetchOsmData(String(coMunicipio));
+                      // Busca equipamentos sociais via Mapa Social MDS
+                      if (coMunicipio && !mapaSocialData && !mapaSocialLoading) {
+                        setMapaSocialLoading(true);
+                        fetch(`/api/mapa-social/${coMunicipio}`)
+                          .then(r => r.json())
+                          .then(d => { setMapaSocialData(d); setMapaSocialLoading(false); })
+                          .catch(() => { setMapaSocialData({ ok: false, equipamentos: [], grouped: {} }); setMapaSocialLoading(false); });
+                      }
                       // Busca CRAS/CREAS via cadunicobrasil.com.br
                       if (nomeMunicipio && sgUf && !crasData && !crasLoading) {
                         setCrasLoading(true);
@@ -1757,10 +1767,28 @@ out center tags 100;`;
                     abrigos:          { icon: '🏠', label: 'Abrigos / Casa Lar',   bg: '#f3eeff', border: '#d4c4f5', txt: '#5b3fa8', dot: '#7c4dff' },
                   };
 
-                  const UnitCard = ({ u, cat }: { u: any; cat: string }) => {
-                    const m = CAT_META[cat] || CAT_META.ubs;
-                    const mapsUrl = u.mapsUrl || (u.lat && u.lon ? `https://www.google.com/maps?q=${u.lat},${u.lon}` : null);
-                    const mapsSearchUrl = u.nome ? `https://www.google.com/maps/search/${encodeURIComponent(u.nome)}` : null;
+                  // Mapa Social tipo → visual meta
+                  const MS_META: Record<string, { icon: string; label: string; bg: string; border: string; txt: string; dot: string }> = {
+                    CRAS:                   { icon: '🏘️', label: 'CRAS',                                bg: '#e8f5ee', border: '#b8dfc8', txt: '#1f6b45', dot: '#2f7a58' },
+                    CREAS:                  { icon: '🛡️', label: 'CREAS',                               bg: '#e6eef8', border: '#b8cfe8', txt: '#1e4a78', dot: '#2d5a88' },
+                    CAPS:                   { icon: '🧠', label: 'CAPS',                                 bg: '#fff8e1', border: '#ffe082', txt: '#5f4200', dot: '#f9a825' },
+                    CONSELHO_TUTELAR:       { icon: '⚖️', label: 'Conselho Tutelar',                    bg: '#fff3e0', border: '#ffd180', txt: '#7a3f00', dot: '#ff8f00' },
+                    CONSELHO_ASSISTENCIA:   { icon: '🏛️', label: 'Conselho Municipal de Assist. Social', bg: '#f0f4ff', border: '#b8c8f0', txt: '#1a3060', dot: '#2a4a90' },
+                    ACOLHIMENTO:            { icon: '🏠', label: 'Serviço de Acolhimento',               bg: '#f3eeff', border: '#d4c4f5', txt: '#5b3fa8', dot: '#7c4dff' },
+                    CONVIVENCIA:            { icon: '🤝', label: 'Centro de Convivência',                bg: '#fdf6ff', border: '#e8c8f0', txt: '#6a2080', dot: '#9c27b0' },
+                    CENTRO_POP:             { icon: '🏕️', label: 'Centro POP',                          bg: '#fdf3e0', border: '#f0ddb5', txt: '#7a4a10', dot: '#d4870a' },
+                    CENTRO_DIA:             { icon: '☀️', label: 'Centro-Dia',                           bg: '#fffde7', border: '#fff176', txt: '#5d4037', dot: '#f9a825' },
+                    CMDCA:                  { icon: '👶', label: 'CMDCA',                                bg: '#fce4ec', border: '#f48fb1', txt: '#880e4f', dot: '#c2185b' },
+                    REPUBLICA:              { icon: '🏡', label: 'República',                            bg: '#f1f8e9', border: '#c5e1a5', txt: '#33691e', dot: '#558b2f' },
+                    REDE_PARCERIA:          { icon: '🔗', label: 'Rede de Parceria',                     bg: '#e8eaf6', border: '#9fa8da', txt: '#283593', dot: '#3949ab' },
+                  };
+
+                  const UnitCard = ({ u, cat, meta }: { u: any; cat: string; meta?: any }) => {
+                    const m = meta || CAT_META[cat] || CAT_META.ubs;
+                    const lat = u.lat || u.latitude;
+                    const lon = u.lon || u.longitude;
+                    const mapsUrl = u.mapsUrl || (lat && lon ? `https://www.google.com/maps?q=${lat},${lon}` : null);
+                    const mapsSearchUrl = u.nome ? `https://www.google.com/maps/search/${encodeURIComponent(u.nome + (u.municipio ? ' ' + u.municipio : ''))}` : null;
                     return (
                       <div style={{ background: '#fff', border: `1.5px solid ${m.border}`, borderRadius: 12, padding: '12px 14px', borderLeft: `4px solid ${m.dot}` }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6, marginBottom: 6 }}>
@@ -1798,6 +1826,12 @@ out center tags 100;`;
                           <p style={{ fontSize: 11, color: '#555', margin: '0 0 3px', display: 'flex', alignItems: 'center', gap: 4 }}>
                             <span>🌐</span>
                             <a href={u.website} target="_blank" rel="noopener noreferrer" style={{ color: m.txt, textDecoration: 'underline' }}>Site oficial</a>
+                          </p>
+                        )}
+                        {u.email && (
+                          <p style={{ fontSize: 11, color: '#555', margin: '0 0 3px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span>✉️</span>
+                            <a href={`mailto:${u.email}`} style={{ color: m.txt, textDecoration: 'none', fontWeight: 600 }}>{u.email}</a>
                           </p>
                         )}
                         {u.horario && (
@@ -1862,6 +1896,43 @@ out center tags 100;`;
                                             );
                                           })}
                                         </div>
+                                      </div>
+                                    );
+                                  })()}
+
+                                  {/* Mapa Social MDS — equipamentos sociais */}
+                                  {mapaSocialLoading && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0', color: '#1f6b45', fontSize: 12 }}>
+                                      <Loader2 className="w-3 h-3 animate-spin" /> Consultando Mapa Social (MDS)...
+                                    </div>
+                                  )}
+                                  {!mapaSocialLoading && mapaSocialData?.ok && mapaSocialData.equipamentos?.length > 0 && (() => {
+                                    const ORDER = ['CRAS','CREAS','CAPS','CONSELHO_TUTELAR','CONSELHO_ASSISTENCIA','CENTRO_POP','ACOLHIMENTO','CONVIVENCIA','CENTRO_DIA','CMDCA','REPUBLICA','REDE_PARCERIA'];
+                                    const grupos = ORDER.filter(t => (mapaSocialData.grouped?.[t]?.length ?? 0) > 0);
+                                    return (
+                                      <div style={{ marginTop: 14 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                                          <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#1f6b45', margin: 0 }}>
+                                            Rede Socioassistencial — Mapa Social MDS
+                                          </p>
+                                          <span style={{ fontSize: 9, color: '#6b8a74', background: '#d2f0e0', borderRadius: 20, padding: '2px 8px', fontWeight: 600 }}>
+                                            {mapaSocialData.total} equipamentos
+                                          </span>
+                                        </div>
+                                        {grupos.map(tipo => {
+                                          const items: any[] = mapaSocialData.grouped[tipo] || [];
+                                          const meta = MS_META[tipo] || MS_META.CRAS;
+                                          return (
+                                            <div key={tipo} style={{ marginBottom: 12 }}>
+                                              <p style={{ fontSize: 11, fontWeight: 700, color: meta.txt, background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 10px', marginBottom: 6 }}>
+                                                {meta.icon} {meta.label} <span style={{ opacity: 0.7 }}>({items.length})</span>
+                                              </p>
+                                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8 }}>
+                                                {items.map((u: any, i: number) => <UnitCard key={i} u={u} cat="" meta={meta} />)}
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
                                       </div>
                                     );
                                   })()}
@@ -1954,8 +2025,9 @@ out center tags 100;`;
                                   })()}
 
                                   <p style={{ fontSize: '10px', color: '#6b8a74', marginTop: 10, marginBottom: 6 }}>
-                                    {equipamentosData.ibge_fonte && <span>Contagens: {equipamentosData.ibge_fonte}. </span>}
-                                    {osmUnidades && totalOsm > 0 && <span>Endereços: CNES/Min. Saúde e OpenStreetMap. </span>}
+                                    {mapaSocialData?.ok && mapaSocialData.total > 0 && <span>Rede socioassistencial: Mapa Social MDS. </span>}
+                                    {equipamentosData.ibge_fonte && <span>Contagens históricas: {equipamentosData.ibge_fonte}. </span>}
+                                    {osmUnidades && totalOsm > 0 && <span>Saúde: CNES/Min. Saúde e OpenStreetMap. </span>}
                                     {crasData && (crasData.cras?.length > 0 || crasData.creas?.length > 0) && <span>CRAS/CREAS: CadUnico Brasil. </span>}
                                     Dados podem estar desatualizados.
                                   </p>
