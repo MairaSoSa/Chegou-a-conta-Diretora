@@ -1290,36 +1290,7 @@ function AiDocsManager({ token }: { token: string }) {
       let text = "";
       const title = file.name.replace(/\.[^.]+$/, "");
 
-      const extractPdfText = async (sourceFile: File): Promise<string> => {
-        const pdfjsLib = await import("pdfjs-dist");
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs";
-
-        const data = new Uint8Array(await sourceFile.arrayBuffer());
-        const loadingTask = pdfjsLib.getDocument({ data });
-        const pdf = await loadingTask.promise;
-
-        let fullText = "";
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum += 1) {
-          const page = await pdf.getPage(pageNum);
-          const content = await page.getTextContent();
-          const pageText = content.items
-            .map((item: any) => ("str" in item ? item.str : ""))
-            .join(" ");
-          fullText += `${pageText}\n\n`;
-        }
-
-        const normalized = fullText.trim();
-        if (!normalized) {
-          throw new Error("Não foi possível extrair texto do PDF.");
-        }
-        return normalized;
-      };
-
       if (isBinary) {
-        if (ext === "pdf") {
-          text = await extractPdfText(file);
-        } else {
         const mimeMap: Record<string, string> = {
           pdf: "application/pdf",
           docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -1349,7 +1320,6 @@ function AiDocsManager({ token }: { token: string }) {
         }
         const result = await res.json();
         text = result.text;
-        }
       } else {
         text = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
