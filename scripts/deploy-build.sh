@@ -75,6 +75,38 @@ Module._load = function (request, parent, isMain) {
 // Also expose the path via an env var that some bindings versions check.
 process.env.BETTER_SQLITE3_NODE = nativeTmp;
 
+// ── 2b. Polyfill browser globals required by pdfjs-dist on Node.js ───────────
+if (typeof globalThis.DOMMatrix === 'undefined') {
+  globalThis.DOMMatrix = class DOMMatrix {
+    constructor() { this.a=1;this.b=0;this.c=0;this.d=1;this.e=0;this.f=0; }
+    static fromFloat32Array() { return new globalThis.DOMMatrix(); }
+    static fromFloat64Array() { return new globalThis.DOMMatrix(); }
+    static fromMatrix() { return new globalThis.DOMMatrix(); }
+    multiply() { return new globalThis.DOMMatrix(); }
+    translate() { return new globalThis.DOMMatrix(); }
+    scale() { return new globalThis.DOMMatrix(); }
+    rotate() { return new globalThis.DOMMatrix(); }
+    inverse() { return new globalThis.DOMMatrix(); }
+    transformPoint(p) { return p || {x:0,y:0}; }
+  };
+}
+if (typeof globalThis.ImageData === 'undefined') {
+  globalThis.ImageData = class ImageData {
+    constructor(sw, sh) {
+      this.width = sw instanceof Uint8ClampedArray ? arguments[1] : sw;
+      this.height = sw instanceof Uint8ClampedArray ? arguments[2] : sh;
+      this.data = sw instanceof Uint8ClampedArray ? sw : new Uint8ClampedArray(this.width * this.height * 4);
+    }
+  };
+}
+if (typeof globalThis.Path2D === 'undefined') {
+  globalThis.Path2D = class Path2D {
+    constructor() {}
+    addPath(){}closePath(){}moveTo(){}lineTo(){}bezierCurveTo(){}
+    quadraticCurveTo(){}arc(){}arcTo(){}ellipse(){}rect(){}
+  };
+}
+
 // ── 3. Decompress and execute the main server bundle ─────────────────────────
 // Module._compile sets __dirname = distDir so paths resolve correctly.
 const gzPath = path.join(distDir, 'index.cjs.gz');
