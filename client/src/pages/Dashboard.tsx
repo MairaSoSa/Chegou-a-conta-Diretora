@@ -354,9 +354,9 @@ export default function Dashboard() {
         if (v == null) continue;
         const progressao = getProgressaoInd('tdi', field, false);
         if (Number(v) > 30) {
-          alertas.push({ tipo: 'critical', titulo: `Distorção idade-série no ${name}: ${Number(v).toFixed(1)}%`, descricao: progressao ? `A distorção está caindo — a escola está no caminho certo. Ainda está acima de 30%, então considere intensificar programas de correção de fluxo.` : `Mais de 30% dos alunos estão com idade acima da esperada para a série. Considere programas de correção de fluxo.`, indicador: 'tdi', progressao });
+          alertas.push({ tipo: 'critical', titulo: `Distorção idade-série no ${name}: ${Number(v).toFixed(1)}%`, descricao: progressao ? `A distorção está em queda — a escola está avançando. Para seguir reduzindo, reforçar as ações de recomposição da aprendizagem e os programas de aceleração de estudos tende a trazer bons resultados.` : `Mais de 30% dos alunos estão com 2 anos ou mais de defasagem idade-série. Ações de recomposição da aprendizagem e programas de aceleração de estudos são estratégias reconhecidas pelo MEC para reduzir essa distorção.`, indicador: 'tdi', progressao });
         } else if (Number(v) > 20) {
-          alertas.push({ tipo: 'warning', titulo: `Distorção idade-série no ${name}: ${Number(v).toFixed(1)}%`, descricao: progressao ? `A distorção está diminuindo. Continue monitorando e planejando intervenções.` : `Entre 20% e 30% dos alunos estão com defasagem. Monitore e planeje intervenções pedagógicas.`, indicador: 'tdi', progressao });
+          alertas.push({ tipo: 'warning', titulo: `Distorção idade-série no ${name}: ${Number(v).toFixed(1)}%`, descricao: progressao ? `A distorção está diminuindo — bom sinal. Continue com as intervenções pedagógicas e priorize a recomposição da aprendizagem dos alunos em situação de maior defasagem.` : `Entre 20% e 30% dos alunos estão com defasagem de 2 anos ou mais. Planeje intervenções pedagógicas com foco em recomposição da aprendizagem.`, indicador: 'tdi', progressao });
         }
       }
     }

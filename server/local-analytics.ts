@@ -304,11 +304,11 @@ export function getDiagnosticoLocal(inep: string) {
     const prog = getProgInd(tdiHist, key, false);
     if (prog) {
       pontos_fortes.push(`Distorção idade-série no ${label} em queda: ${prog.label} (atual: ${round1(v)}%)`);
-      if (v > 30) pontos_atencao.push(`Distorção idade-série no ${label} ainda elevada (${round1(v)}%) — mas está melhorando. Considere programas de correção de fluxo.`);
+      if (v > 30) pontos_atencao.push(`Distorção idade-série no ${label} ainda elevada (${round1(v)}%) — mas está em queda. Reforçar ações de recomposição da aprendizagem e programas de aceleração de estudos pode acelerar esse avanço.`);
     } else if (v > 30) {
-      pontos_atencao.push(`Distorção idade-série elevada no ${label}: ${round1(v)}% — considere programas de correção de fluxo`);
+      pontos_atencao.push(`Distorção idade-série elevada no ${label}: ${round1(v)}% — estratégias de recomposição da aprendizagem e programas de aceleração de estudos são caminhos reconhecidos para reduzir essa defasagem.`);
     } else if (v > 20) {
-      pontos_atencao.push(`Distorção idade-série no ${label}: ${round1(v)}% — monitore e planeje intervenções pedagógicas`);
+      pontos_atencao.push(`Distorção idade-série no ${label}: ${round1(v)}% — monitore e planeje intervenções pedagógicas, com atenção à recomposição da aprendizagem dos alunos com maior defasagem.`);
     }
   }
 
