@@ -77,6 +77,72 @@ const STATE_FIXED_COLORS: Record<string, string> = {
 // Paleta para gráficos de pizza
 const PIE_COLORS = ["#2d6a4f", "#40916c", "#74c69d", "#b7e4c7"];
 
+// Secretários Estaduais de Educação — fonte: CONSED (consed.org.br/secretarios)
+const SECRETARIOS_ESTADUAIS: Record<string, { nome: string; email: string; site: string; estado: string }> = {
+  AC: { nome: 'Aberson Carvalho', email: 'gabseeacre@gmail.com', site: 'http://www.see.ac.gov.br', estado: 'Acre' },
+  AL: { nome: 'Roseane Vasconcelos', email: 'gabinete@educ.al.gov.br', site: 'http://www.educacao.al.gov.br', estado: 'Alagoas' },
+  AM: { nome: 'Arlete Mendonça', email: 'gabinete@educacao.am.gov.br', site: 'http://www.seduc.am.gov.br', estado: 'Amazonas' },
+  AP: { nome: 'Paulo Lemos', email: 'seed@seed.ap.gov.br', site: 'http://www.seed.ap.gov.br', estado: 'Amapá' },
+  BA: { nome: 'Rowenna Brito', email: 'gabinete@enova.educacao.ba.gov.br', site: 'http://www.educacao.ba.gov.br', estado: 'Bahia' },
+  CE: { nome: 'Eliana Estrela', email: 'eliana.estrela@seduc.ce.gov.br', site: 'http://www.seduc.ce.gov.br', estado: 'Ceará' },
+  DF: { nome: 'Hélvia Paranaguá', email: 'gabinete@se.df.gov.br', site: 'http://www.educacao.df.gov.br', estado: 'Distrito Federal' },
+  ES: { nome: 'Vitor de Angelo', email: 'secretario@sedu.es.gov.br', site: 'http://www.educacao.es.gov.br', estado: 'Espírito Santo' },
+  GO: { nome: 'Fátima Gavioli', email: 'gabinete@seduc.go.gov.br', site: 'https://goias.gov.br/educacao', estado: 'Goiás' },
+  MA: { nome: 'Jandira Dias', email: 'gabinete@edu.ma.gov.br', site: 'http://www.educacao.ma.gov.br', estado: 'Maranhão' },
+  MG: { nome: 'Rossieli Soares', email: 'gabinete.assessoria@educacao.mg.gov.br', site: 'http://www.educacao.mg.gov.br', estado: 'Minas Gerais' },
+  MS: { nome: 'Helio Daher', email: 'gabinete@sed.ms.gov.br', site: 'http://www.sed.ms.gov.br', estado: 'Mato Grosso do Sul' },
+  MT: { nome: 'Alan Porto', email: 'gabinete@edu.mt.gov.br', site: 'http://www.seduc.mt.gov.br', estado: 'Mato Grosso' },
+  PA: { nome: 'Ricardo Sefer', email: 'gabinete@seduc.pa.gov.br', site: 'http://www.seduc.pa.gov.br', estado: 'Pará' },
+  PB: { nome: 'Wilson Filho', email: 'gseducacaoparaiba@see.pb.gov.br', site: 'https://paraiba.pb.gov.br/diretas/secretaria-da-educacao', estado: 'Paraíba' },
+  PE: { nome: 'Gilson Monteiro Filho', email: 'gabinetedasecretaria@adm.educacao.pe.gov.br', site: 'http://www.educacao.pe.gov.br', estado: 'Pernambuco' },
+  PI: { nome: 'Rodrigo Torres', email: 'ouvidoriaeduc@seduc.pi.gov.br', site: 'http://www.seduc.pi.gov.br', estado: 'Piauí' },
+  PR: { nome: 'Roni Miranda', email: 'gabinete.seed@seed.pr.gov.br', site: 'http://www.educacao.pr.gov.br', estado: 'Paraná' },
+  RJ: { nome: 'Luciana Calaça', email: 'gabinete@educacao.rj.gov.br', site: 'http://www.rj.gov.br/secretaria/educacao', estado: 'Rio de Janeiro' },
+  RN: { nome: 'Socorro Batista', email: 'gabseec@educar.rn.gov.br', site: 'http://www.educacao.rn.gov.br', estado: 'Rio Grande do Norte' },
+  RO: { nome: 'Albaniza Batista de Oliveira', email: 'seduc@seduc.ro.gov.br', site: 'http://www.seduc.ro.gov.br', estado: 'Rondônia' },
+  RR: { nome: 'Mikael Cury-Rad', email: 'gabinete@educacao.rr.gov.br', site: 'http://www.rr.gov.br', estado: 'Roraima' },
+  RS: { nome: 'Raquel Teixeira', email: 'gabinetese@seduc.rs.gov.br', site: 'http://www.educacao.rs.gov.br', estado: 'Rio Grande do Sul' },
+  SC: { nome: 'Luciane Ceretta', email: 'educacao.sc@sed.sc.gov.br', site: 'http://www.sed.sc.gov.br', estado: 'Santa Catarina' },
+  SE: { nome: 'Maria Gilvânia G. dos Santos', email: 'gabinetedosecretario@seduc.se.gov.br', site: 'http://www.seduc.se.gov.br', estado: 'Sergipe' },
+  SP: { nome: 'Renato Feder', email: 'agenda.secretario@educacao.sp.gov.br', site: 'http://www.educacao.sp.gov.br', estado: 'São Paulo' },
+  TO: { nome: 'Fábio Vaz', email: 'gabinete@seduc.to.gov.br', site: 'http://www.seduc.to.gov.br', estado: 'Tocantins' },
+};
+
+// CECAMPE: mapeamento de UF para região
+const UF_CECAMPE: Record<string, string> = {
+  AM:'Norte', AC:'Norte', RR:'Norte', RO:'Norte', AP:'Norte', PA:'Norte', TO:'Norte',
+  MA:'Nordeste', PI:'Nordeste', CE:'Nordeste', RN:'Nordeste', PB:'Nordeste', PE:'Nordeste', AL:'Nordeste', SE:'Nordeste', BA:'Nordeste',
+  MT:'Centro-Oeste', MS:'Centro-Oeste', GO:'Centro-Oeste', DF:'Centro-Oeste',
+  MG:'Sudeste', ES:'Sudeste', RJ:'Sudeste', SP:'Sudeste',
+  PR:'Sul', SC:'Sul', RS:'Sul',
+};
+
+const CECAMPES = [
+  { regiao: 'Norte', uni: 'Universidade Federal do Pará (UFPA)', email: 'cecampenorte@ufpa.br', site: 'https://cecampenorte.ufpa.br', painel: null, cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+  { regiao: 'Nordeste', uni: 'Universidade Federal da Paraíba (UFPB)', email: 'cecampenordeste@gmail.com', site: 'https://www.cecampe.ufpb.br', painel: 'https://www.cecampe.ufpb.br/paineisdeinformacoes', cor: '#7a4a10', bg: '#fdf3e0', bd: '#f0ddb5' },
+  { regiao: 'Centro-Oeste', uni: 'Universidade de Brasília (UnB)', email: 'cecampeco.form@unb.br', site: 'https://cecampe-fe.unb.br', painel: null, cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+  { regiao: 'Sudeste', uni: 'Universidade Federal de Uberlândia (UFU)', email: 'contatocecampeufu@gmail.com', site: 'http://www.proexc.ufu.br/cecampesudeste', painel: 'http://www.proexc.ufu.br/cecampesudeste/dados', cor: '#5b3fa8', bg: '#f3eeff', bd: '#d4c4f5' },
+  { regiao: 'Sul', uni: 'Universidade Federal do Rio Grande do Sul (UFRGS)', email: 'cecampe-sul@ufrgs.br', site: 'https://www.ufrgs.br/cecampe-sul', painel: 'https://datastudio.google.com/reporting/89f97085-a65c-4db2-9a52-9375d8056445/page/p_ys6715q1pc?s=ktz-3IIzg50', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+];
+
+// UNDIME por UF — fonte: undime.org.br
+const UNDIME_UF: Record<string, string> = {
+  AC: 'https://ac.undime.org.br',  AL: 'https://al.undime.org.br',
+  AM: 'https://am.undime.org.br',  AP: 'https://ap.undime.org.br',
+  BA: 'http://undimebahia.com.br', CE: 'https://ce.undime.org.br',
+  DF: 'https://undime.org.br',     ES: 'https://es.undime.org.br',
+  GO: 'https://go.undime.org.br',  MA: 'https://ma.undime.org.br',
+  MG: 'http://www.undimemg.org.br',MS: 'https://ms.undime.org.br',
+  MT: 'https://undime-mt.blogspot.com', PA: 'https://pa.undime.org.br',
+  PB: 'http://www.undimepb.org.br',PE: 'https://pe.undime.org.br',
+  PI: 'https://pi.undime.org.br',  PR: 'http://www.undimepr.org.br',
+  RJ: 'https://rj.undime.org.br',  RN: 'https://rn.undime.org.br',
+  RO: 'https://ro.undime.org.br',  RR: 'https://rr.undime.org.br',
+  RS: 'https://undimers.org.br',   SC: 'http://undime-sc.org.br',
+  SE: 'https://se.undime.org.br',  SP: 'http://www.undime-sp.org.br',
+  TO: 'https://to.undime.org.br',
+};
+
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -1924,14 +1990,20 @@ out center tags 100;`;
                           <span style={{ fontSize: '16px', color: '#7c5cbf', transform: showSuporteInstitucional ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
                         </button>
 
-                        {showSuporteInstitucional && (
+                        {showSuporteInstitucional && (() => {
+                          const escolaUF = (pddeData?.uf || pddeData?.uex?.uf || null) as string | null;
+                          const secretarioEstadual = escolaUF ? SECRETARIOS_ESTADUAIS[escolaUF] : null;
+                          const undimeUF = escolaUF ? UNDIME_UF[escolaUF] : null;
+                          const cecampeRegiao = escolaUF ? UF_CECAMPE[escolaUF] : null;
+                          const cecampesDaEscola = cecampeRegiao ? CECAMPES.filter(c => c.regiao === cecampeRegiao) : CECAMPES;
+                          return (
                           <div style={{ padding: '0 16px 16px', borderTop: '1px solid #e8deff' }}>
                             {/* Abas */}
                             <div style={{ display: 'flex', gap: 6, marginTop: 14, marginBottom: 14, flexWrap: 'wrap' }}>
                               {([
-                                { id: 'contatos', label: '📞 Contatos MEC/FNDE' },
-                                { id: 'cecampe', label: '🤝 CECAMPE por Região' },
-                                { id: 'sistemas', label: '🖥️ Sistemas e Ferramentas' },
+                                { id: 'contatos', label: '📞 Contatos' },
+                                { id: 'cecampe', label: '🤝 CECAMPE' },
+                                { id: 'sistemas', label: '🖥️ Sistemas' },
                               ] as const).map(t => (
                                 <button key={t.id} onClick={() => setSuporteTab(t.id)}
                                   style={{ padding: '6px 14px', borderRadius: 20, border: suporteTab === t.id ? '1.5px solid #7c5cbf' : '1.5px solid #d4c4f5', background: suporteTab === t.id ? '#7c5cbf' : '#f9f6ff', color: suporteTab === t.id ? '#fff' : '#5b3fa8', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
@@ -1943,20 +2015,54 @@ out center tags 100;`;
                             {/* Aba: Contatos */}
                             {suporteTab === 'contatos' && (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+                                {/* Secretário Estadual da escola */}
+                                {secretarioEstadual && (
+                                  <div style={{ borderRadius: 12, border: '1.5px solid #c8d8f5', background: '#eaf0fb', padding: '12px 14px' }}>
+                                    <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1e4a78', margin: '0 0 10px' }}>🏫 Secretaria Estadual de Educação — {secretarioEstadual.estado}</p>
+                                    <div style={{ background: 'rgba(255,255,255,0.75)', borderRadius: 10, padding: '10px 12px', border: '1px solid #b8cfe8', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                      <p style={{ fontSize: 10, fontWeight: 700, color: '#1e4a78', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Secretário(a) de Educação</p>
+                                      <p style={{ fontSize: 13, fontWeight: 700, color: '#0d2b50', margin: 0 }}>{secretarioEstadual.nome}</p>
+                                      <p style={{ fontSize: 11, color: '#1e4a78', margin: 0 }}>✉️ <a href={`mailto:${secretarioEstadual.email}`} style={{ color: '#1e4a78' }}>{secretarioEstadual.email}</a></p>
+                                      <a href={secretarioEstadual.site} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 4, fontSize: 11, fontWeight: 700, color: '#1e4a78', background: 'rgba(30,74,120,0.08)', padding: '3px 12px', borderRadius: 20, border: '1px solid #b8cfe8', textDecoration: 'none' }}>Site da Secretaria ↗</a>
+                                    </div>
+                                    <p style={{ fontSize: 10, color: '#6a8bb5', margin: '8px 0 0' }}>Fonte: CONSED — consed.org.br/secretarios</p>
+                                  </div>
+                                )}
+
+                                {/* Secretaria Municipal via UNDIME */}
+                                <div style={{ borderRadius: 12, border: '1.5px solid #f0ddb5', background: '#fdf3e0', padding: '12px 14px' }}>
+                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#7a4a10', margin: '0 0 8px' }}>🏛️ Secretaria Municipal de Educação</p>
+                                  <p style={{ fontSize: 11, color: '#7a4a10', margin: '0 0 10px', lineHeight: 1.5 }}>
+                                    Os secretários municipais de educação são representados pela <strong>UNDIME</strong>. Acesse a seção do seu estado para localizar o(a) dirigente municipal do seu município.
+                                  </p>
+                                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                    {undimeUF && (
+                                      <a href={undimeUF} target="_blank" rel="noopener noreferrer"
+                                        style={{ fontSize: 12, fontWeight: 700, color: '#7a4a10', background: 'rgba(255,255,255,0.7)', padding: '6px 14px', borderRadius: 20, border: '1.5px solid #f0ddb5', textDecoration: 'none' }}>
+                                        UNDIME {escolaUF} ↗
+                                      </a>
+                                    )}
+                                    <a href="https://undime.org.br" target="_blank" rel="noopener noreferrer"
+                                      style={{ fontSize: 12, fontWeight: 700, color: '#7a4a10', background: 'rgba(255,255,255,0.7)', padding: '6px 14px', borderRadius: 20, border: '1.5px solid #f0ddb5', textDecoration: 'none' }}>
+                                      UNDIME Nacional ↗
+                                    </a>
+                                  </div>
+                                </div>
+
                                 {/* MEC */}
                                 <div style={{ borderRadius: 12, border: '1.5px solid #b8cfe8', background: '#e6eef8', padding: '12px 14px' }}>
-                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1e4a78', margin: '0 0 10px' }}>🏛️ Ministério da Educação (MEC)</p>
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1e4a78', margin: '0 0 10px' }}>🏛️ Ministério da Educação (MEC) — Federal</p>
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 10 }}>
                                     {[
                                       { cargo: 'Ministro da Educação', nome: 'Camilo Sobreira de Santana', tel: '(61) 2022-7828 / 7822', email: 'gabinetedoministro@mec.gov.br' },
                                       { cargo: 'Secretária de Educação Básica (SEB)', nome: 'Kátia Helena S. Cruz Schweickardt', tel: '(61) 2022-8320 / 8319', email: 'gabinete-seb@mec.gov.br' },
                                       { cargo: 'DAGE — Apoio à Gestão Educacional', nome: 'Anita Gea Martinez Stefani', tel: '(61) 2022-9139 / 2788', email: 'dage@mec.gov.br' },
-                                      { cargo: 'DIMAM — Monitoramento e Avaliação', nome: 'Valdoir Pedro Wathier', tel: '(61) 2022-8350', email: 'dimam.seb@mec.gov.br' },
-                                      { cargo: 'Central de Atendimento MEC', nome: 'Fala Brasil (gratuito)', tel: '0800-616161', email: 'falabrasil@mec.gov.br' },
+                                      { cargo: 'Central MEC — Fala Brasil (gratuito)', nome: '', tel: '0800-616161', email: 'falabrasil@mec.gov.br' },
                                     ].map((c, i) => (
                                       <div key={i} style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '10px 12px', border: '1px solid #b8cfe8' }}>
                                         <p style={{ fontSize: 10, fontWeight: 700, color: '#1e4a78', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c.cargo}</p>
-                                        <p style={{ fontSize: 12, fontWeight: 600, color: '#0d2b50', margin: '0 0 6px' }}>{c.nome}</p>
+                                        {c.nome && <p style={{ fontSize: 12, fontWeight: 600, color: '#0d2b50', margin: '0 0 6px' }}>{c.nome}</p>}
                                         <p style={{ fontSize: 11, color: '#1e4a78', margin: '0 0 2px' }}>📞 {c.tel}</p>
                                         <p style={{ fontSize: 11, color: '#1e4a78', margin: 0 }}>✉️ <a href={`mailto:${c.email}`} style={{ color: '#1e4a78' }}>{c.email}</a></p>
                                       </div>
@@ -1967,12 +2073,11 @@ out center tags 100;`;
                                 {/* FNDE */}
                                 <div style={{ borderRadius: 12, border: '1.5px solid #b8dfc8', background: '#e8f5ee', padding: '12px 14px' }}>
                                   <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1f6b45', margin: '0 0 10px' }}>💰 FNDE — Fundo Nacional de Desenvolvimento da Educação</p>
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 10 }}>
                                     {[
-                                      { cargo: 'Presidente do FNDE', nome: 'Fernanda Mara de Oliveira M C Pacobahyba', tel: '(61) 2022-4806 / 4599 / 4812', email: 'presidencia@fnde.gov.br' },
+                                      { cargo: 'Presidente do FNDE', nome: 'Fernanda Mara de Oliveira M C Pacobahyba', tel: '(61) 2022-4806 / 4599', email: 'presidencia@fnde.gov.br' },
                                       { cargo: 'DIGAP — Responsável pelo PDDE', nome: 'Diretoria de Articulação e Projetos Educacionais', tel: '(61) 2022-5908 / 4903', email: 'assessoriadigap@fnde.gov.br' },
-                                      { cargo: 'Atendimento Institucional FNDE', nome: 'Balcão FNDE / Atendimento Virtual', tel: '(61) 2022-4488', email: 'atend.institucional@fnde.gov.br' },
-                                      { cargo: 'Central de Atendimento FNDE', nome: 'Fala Brasil — opção FNDE (gratuito)', tel: '0800-616161', email: 'atend.institucional@fnde.gov.br' },
+                                      { cargo: 'Atendimento FNDE (gratuito)', nome: 'Balcão FNDE / Fala Brasil opção FNDE', tel: '0800-616161', email: 'atend.institucional@fnde.gov.br' },
                                     ].map((c, i) => (
                                       <div key={i} style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '10px 12px', border: '1px solid #b8dfc8' }}>
                                         <p style={{ fontSize: 10, fontWeight: 700, color: '#1f6b45', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c.cargo}</p>
@@ -1990,30 +2095,24 @@ out center tags 100;`;
                             {suporteTab === 'cecampe' && (
                               <div>
                                 <p style={{ fontSize: 11, color: '#5b3fa8', margin: '0 0 12px', lineHeight: 1.5 }}>
-                                  Os <strong>CECAMPEs</strong> são universidades federais parceiras do FNDE que oferecem assistência técnica gratuita, formações e monitoramento do PDDE para gestores escolares. Contate o da sua região.
+                                  Os <strong>CECAMPEs</strong> são universidades federais parceiras do FNDE que oferecem assistência técnica gratuita, formações e monitoramento do PDDE.
+                                  {cecampeRegiao && <> Exibindo o CECAMPE da <strong>Região {cecampeRegiao}</strong>, que atende esta escola.</>}
                                 </p>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 10 }}>
-                                  {[
-                                    { regiao: 'Norte', uni: 'Universidade Federal do Pará (UFPA)', email: 'cecampenorte@ufpa.br', site: 'https://cecampenorte.ufpa.br', painel: null, cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
-                                    { regiao: 'Nordeste', uni: 'Universidade Federal da Paraíba (UFPB)', email: 'cecampenordeste@gmail.com', site: 'https://www.cecampe.ufpb.br', painel: 'https://www.cecampe.ufpb.br/paineisdeinformacoes', cor: '#7a4a10', bg: '#fdf3e0', bd: '#f0ddb5' },
-                                    { regiao: 'Centro-Oeste (Formação)', uni: 'Universidade de Brasília (UnB)', email: 'cecampeco.form@unb.br', site: 'https://cecampe-fe.unb.br', painel: null, cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
-                                    { regiao: 'Centro-Oeste (Monitoramento)', uni: 'Universidade de Brasília (UnB)', email: 'cecampeco.form@unb.br', site: 'https://smaprogramasfnde.org', painel: null, cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
-                                    { regiao: 'Sudeste', uni: 'Universidade Federal de Uberlândia (UFU)', email: 'contatocecampeufu@gmail.com', site: 'http://www.proexc.ufu.br/cecampesudeste', painel: 'http://www.proexc.ufu.br/cecampesudeste/dados', cor: '#5b3fa8', bg: '#f3eeff', bd: '#d4c4f5' },
-                                    { regiao: 'Sul', uni: 'Universidade Federal do Rio Grande do Sul (UFRGS)', email: 'cecampe-sul@ufrgs.br', site: 'https://www.ufrgs.br/cecampe-sul', painel: 'https://datastudio.google.com/reporting/89f97085-a65c-4db2-9a52-9375d8056445/page/p_ys6715q1pc?s=ktz-3IIzg50', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
-                                  ].map((c, i) => (
-                                    <div key={i} style={{ borderRadius: 12, border: `1.5px solid ${c.bd}`, background: c.bg, padding: '12px 14px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                  {cecampesDaEscola.map((c, i) => (
+                                    <div key={i} style={{ borderRadius: 12, border: `1.5px solid ${c.bd}`, background: c.bg, padding: '14px 16px' }}>
                                       <p style={{ fontSize: 10, fontWeight: 800, color: c.cor, margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Região {c.regiao}</p>
-                                      <p style={{ fontSize: 12, fontWeight: 700, color: c.cor, margin: '0 0 8px', lineHeight: 1.3 }}>{c.uni}</p>
-                                      <p style={{ fontSize: 11, color: c.cor, margin: '0 0 4px' }}>✉️ <a href={`mailto:${c.email}`} style={{ color: c.cor }}>{c.email}</a></p>
-                                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
-                                        <a href={c.site} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 700, color: c.cor, background: 'rgba(255,255,255,0.7)', padding: '3px 10px', borderRadius: 20, border: `1px solid ${c.bd}`, textDecoration: 'none' }}>Site ↗</a>
-                                        {c.painel && <a href={c.painel} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 700, color: c.cor, background: 'rgba(255,255,255,0.7)', padding: '3px 10px', borderRadius: 20, border: `1px solid ${c.bd}`, textDecoration: 'none' }}>Painel ↗</a>}
+                                      <p style={{ fontSize: 13, fontWeight: 700, color: c.cor, margin: '0 0 10px', lineHeight: 1.3 }}>{c.uni}</p>
+                                      <p style={{ fontSize: 12, color: c.cor, margin: '0 0 10px' }}>✉️ <a href={`mailto:${c.email}`} style={{ color: c.cor, fontWeight: 600 }}>{c.email}</a></p>
+                                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                        <a href={c.site} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: c.cor, background: 'rgba(255,255,255,0.7)', padding: '5px 14px', borderRadius: 20, border: `1px solid ${c.bd}`, textDecoration: 'none' }}>Site ↗</a>
+                                        {c.painel && <a href={c.painel} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: c.cor, background: 'rgba(255,255,255,0.7)', padding: '5px 14px', borderRadius: 20, border: `1px solid ${c.bd}`, textDecoration: 'none' }}>Painel de Dados ↗</a>}
                                       </div>
                                     </div>
                                   ))}
                                 </div>
                                 <p style={{ fontSize: 10, color: '#9b7fcf', margin: '10px 0 0', lineHeight: 1.4 }}>
-                                  Fonte: FNDE — atualizado em abril/2025. O contrato Centro-Oeste (UnB — Formação) foi encerrado em dezembro/2024; verifique status antes de contatar.
+                                  Fonte: FNDE — atualizado em abril/2025.
                                 </p>
                               </div>
                             )}
@@ -2026,9 +2125,6 @@ out center tags 100;`;
                                   { icon: '📚', titulo: 'PDDE Interativo', desc: 'Elaboração do PDE Escola e gestão financeira (MEC)', url: 'https://pddeinterativo.mec.gov.br', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
                                   { icon: '🧾', titulo: 'SIGPC — Prestação de Contas', desc: 'Consulta pública à prestação de contas do PDDE e programas FNDE', url: 'https://www.gov.br/fnde/pt-br/assuntos/sistemas/sigpc-acesso-publico', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
                                   { icon: '📋', titulo: 'SIMEC / PAR', desc: 'Plano de Ações Articuladas — monitoramento e planejamento municipal', url: 'https://simec.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
-                                  { icon: '📈', titulo: 'QEdu', desc: 'Dados educacionais abertos para gestão baseada em evidências', url: 'https://qedu.org.br', cor: '#5b3fa8', bg: '#f3eeff', bd: '#d4c4f5' },
-                                  { icon: '🎓', titulo: 'ProGestão', desc: 'Capacitação nacional para gestores escolares', url: 'https://progestao.mec.gov.br', cor: '#7a4a10', bg: '#fdf3e0', bd: '#f0ddb5' },
-                                  { icon: '🏛️', titulo: 'UNDIME', desc: 'União Nacional dos Dirigentes Municipais de Educação', url: 'https://undime.org.br', cor: '#7a4a10', bg: '#fdf3e0', bd: '#f0ddb5' },
                                   { icon: '🔗', titulo: 'Balcão FNDE', desc: 'Atendimento virtual do FNDE — dúvidas sobre programas e repasses', url: 'https://www.gov.br/fnde/pt-br/acesso-a-informacao/acoes-e-programas/acoes/balcao-fnde-1', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
                                 ].map((item, i) => (
                                   <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
@@ -2043,7 +2139,8 @@ out center tags 100;`;
                               </div>
                             )}
                           </div>
-                        )}
+                          );
+                        })()}
                       </div>
                     </div>
                   );
