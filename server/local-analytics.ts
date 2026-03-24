@@ -173,6 +173,10 @@ export function getDiagnosticoLocal(inep: string) {
   const afdHist  = getHist('afd');
   const iedHist  = getHist('ied');
 
+  // IED overload pre-computed early — used to contextualize HAD assessment
+  // Níveis 5 e 6 = docentes com alta acumulação de escolas/turnos/disciplinas
+  const iedAltoTotal = Number(ied.nivel_5 || 0) + Number(ied.nivel_6 || 0);
+
   // Generic progression helper
   // higherIsBetter=true: increase is good (DSU, HAD, IRD, AFD, aprovação)
   // higherIsBetter=false: decrease is good (abandono, reprovação, TDI, ATU, IED)
@@ -332,6 +336,9 @@ export function getDiagnosticoLocal(inep: string) {
   }
 
   // ── HAD (horas-aula diárias) ──
+  // Aumento de HAD só é positivo se os docentes não estiverem sobrecarregados.
+  // Se iedAltoTotal > 30% (muitos professores em múltiplas escolas/turnos),
+  // subir a carga horária aqui pode pressionar ainda mais o esforço docente.
   const hadEtapas = [
     { key: 'media_fund', label: 'Fundamental' },
     { key: 'media_med',  label: 'Ensino Médio' },
@@ -341,9 +348,16 @@ export function getDiagnosticoLocal(inep: string) {
     if (v == null || v <= 0) continue;
     const prog = getProgInd(hadHist, key, true);
     if (v >= 4) {
-      if (prog) pontos_fortes.push(`Carga horária no ${label} crescendo: ${prog.label} (atual: ${round1(v)}h/dia)`);
+      if (prog && iedAltoTotal <= 30) {
+        pontos_fortes.push(`Carga horária no ${label} crescendo: ${prog.label} (atual: ${round1(v)}h/dia)`);
+      } else if (prog && iedAltoTotal > 30) {
+        pontos_atencao.push(`Carga horária no ${label} aumentou (${round1(v)}h/dia), mas ${round1(iedAltoTotal)}% dos docentes já acumulam muitas escolas ou turnos — acompanhe o esforço docente antes de ampliar mais.`);
+      }
     } else if (prog) {
-      pontos_fortes.push(`Carga horária no ${label} aumentando: ${prog.label} (atual: ${round1(v)}h/dia)`);
+      if (iedAltoTotal <= 30) {
+        pontos_fortes.push(`Carga horária no ${label} aumentando: ${prog.label} (atual: ${round1(v)}h/dia)`);
+      }
+      // se iedAlto > 30 e HAD < 4h e ainda subindo: não celebra, apenas observa
     } else {
       pontos_atencao.push(`Carga horária baixa no ${label}: ${round1(v)}h/dia — considere ampliar a jornada escolar`);
     }
@@ -397,17 +411,14 @@ export function getDiagnosticoLocal(inep: string) {
   }
 
   // ── IED (esforço docente) ──
-  const iedN5 = Number(ied.nivel_5 || 0);
-  const iedN6 = Number(ied.nivel_6 || 0);
-  const iedAlto = iedN5 + iedN6;
-  if (iedAlto > 0) {
+  if (iedAltoTotal > 0) {
     const prog = getProgInd(iedHist, 'nivel_5', false);
-    if (iedAlto > 50) {
+    if (iedAltoTotal > 50) {
       if (prog) {
-        pontos_fortes.push(`Sobrecarga docente em queda: ${prog.label} (atual: ${iedAlto.toFixed(1)}% nos níveis 5-6)`);
-        pontos_atencao.push(`Alta sobrecarga docente ainda presente (${iedAlto.toFixed(1)}% nos níveis 5-6) — mas a tendência é positiva.`);
+        pontos_fortes.push(`Sobrecarga docente em queda: ${prog.label} (atual: ${iedAltoTotal.toFixed(1)}% nos níveis 5-6)`);
+        pontos_atencao.push(`Alta sobrecarga docente ainda presente (${iedAltoTotal.toFixed(1)}% nos níveis 5-6) — mas a tendência é positiva.`);
       } else {
-        pontos_atencao.push(`Alto esforço docente: ${iedAlto.toFixed(1)}% nos níveis 5 e 6 — risco de impacto na qualidade pedagógica`);
+        pontos_atencao.push(`Alto esforço docente: ${iedAltoTotal.toFixed(1)}% nos níveis 5 e 6 — risco de impacto na qualidade pedagógica`);
       }
     }
   }
