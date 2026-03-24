@@ -1868,37 +1868,9 @@ out center tags 100;`;
                             )}
 
                             {!equipamentosLoading && equipamentosData && (() => {
-                              const counts = equipamentosData.suas_counts || {};
                               const totalOsm = osmUnidades ? Object.values(osmUnidades).reduce((s: number, arr: any) => s + arr.length, 0) : 0;
                               return (
                                 <>
-                                  {/* Contagens SUAS (IBGE) */}
-                                  {Object.keys(counts).length > 0 && (() => {
-                                    const suasList = Object.entries(counts)
-                                      .filter(([, val]: [string, any]) => val.total && val.total !== 'Não aplicável' && val.total !== '0');
-                                    const suasSummary = suasList.map(([, val]: [string, any]) => `${val.total} ${val.label}`).join(', ');
-                                    return (
-                                      <div style={{ marginTop: 14, marginBottom: 12 }}>
-                                        <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#4a8a65', marginBottom: 4 }}>Rede SUAS no município (IBGE 2013)</p>
-                                        {suasSummary && <p style={{ fontSize: 12, color: '#2f7a58', marginBottom: 8, fontWeight: 600 }}>
-                                          {nomeMunicipio} tem: {suasSummary}
-                                        </p>}
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
-                                          {Object.entries(counts).map(([key, val]: [string, any]) => {
-                                            const m = CAT_META[key] || CAT_META.cras;
-                                            const isNA = !val.total || val.total === 'Não aplicável' || val.total === '0';
-                                            return (
-                                              <div key={key} style={{ background: isNA ? '#f5f5f5' : m.bg, border: `1.5px solid ${isNA ? '#ddd' : m.border}`, borderRadius: 10, padding: '10px 12px', opacity: isNA ? 0.6 : 1 }}>
-                                                <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: isNA ? '#999' : m.txt, margin: '0 0 2px' }}>{m.icon} {val.label}</p>
-                                                <p style={{ fontSize: 22, fontWeight: 800, color: isNA ? '#bbb' : m.txt, margin: '0 0 2px', lineHeight: 1 }}>{val.total ?? '—'}</p>
-                                                {val.descricao && <p style={{ fontSize: 9, color: isNA ? '#aaa' : m.txt, margin: 0, opacity: 0.75, lineHeight: 1.3 }}>{val.descricao}</p>}
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
-                                    );
-                                  })()}
 
                                   {/* Mapa Social MDS — equipamentos sociais */}
                                   {mapaSocialLoading && (
@@ -2039,19 +2011,6 @@ out center tags 100;`;
                               <p style={{ fontSize: 12, color: '#888', padding: '12px 0' }}>Código IBGE do município não disponível para esta escola.</p>
                             )}
 
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
-                              {(equipamentosData?.links || [
-                                { nome: 'Mapa SUAS', url: 'https://mapas.mds.gov.br/mapas/app/painel-suas/' },
-                                { nome: 'CNES (saúde)', url: 'https://cnes.datasus.gov.br/' },
-                                { nome: 'Dados SUAS', url: 'https://dados.gov.br/dataset/unidades-de-atendimento-da-assistencia-social' },
-                                { nome: 'CadSUAS', url: 'https://cadsuas.mds.gov.br/' },
-                              ]).map((link: any, i: number) => (
-                                <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-                                  style={{ fontSize: 11, fontWeight: 600, color: '#1f6b45', background: '#d2f0e0', borderRadius: 20, padding: '4px 10px', textDecoration: 'none' }}>
-                                  {link.nome} ↗
-                                </a>
-                              ))}
-                            </div>
                           </div>
                         )}
                       </div>
