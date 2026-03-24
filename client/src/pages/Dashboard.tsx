@@ -143,6 +143,52 @@ const UNDIME_UF: Record<string, string> = {
   TO: 'https://to.undime.org.br',
 };
 
+const CEE_ESTADUAIS: Record<string, { presidente?: string; email?: string; tel?: string; endereco?: string; site: string }> = {
+  AC: { site: 'http://www.see.ac.gov.br/cee' },
+  AL: { presidente: 'Eliel dos Santos de Carvalho', email: 'cee.alagoas@gmail.com', tel: '(82) 3315-1401', endereco: 'Rua da Alegria, 379 – Centro, CEP 57020-320, Maceió – AL', site: 'http://www.cee.al.gov.br' },
+  AM: { presidente: 'José Augusto de Melo Neto', tel: '(92) 3234-5074', endereco: 'Rua José Paranaguá, 574 – Centro, CEP 69.005-130, Manaus – AM', site: 'http://www.cee.am.gov.br' },
+  AP: { presidente: 'Ivone de Souza Conceição', email: 'cee@cee.ap.gov.br', tel: '(96) 98126-5242', endereco: 'Av. Feliciano Coelho, 1969 – Buritizal, CEP 68.900-000, Macapá – AP', site: 'http://www.cee.ap.gov.br' },
+  BA: { presidente: 'Roberto Gondim Pires', email: 'conselho.bahia@educacao.ba.gov.br', endereco: 'Av. Eng. Oscar Pontes, s/n – Água de Meninos, Salvador – BA', site: 'http://www.ba.gov.br/conselhodeeducacao' },
+  CE: { presidente: 'José Linhares Ponte', email: 'jose.linhares@cee.ce.gov.br', tel: '(85) 3101-2005', endereco: 'Rua Napoleão Laureano, 500 – Fátima, CEP 60.411.170, Fortaleza – CE', site: 'https://www.cee.ce.gov.br' },
+  DF: { site: 'http://www.se.df.gov.br' },
+  ES: { email: 'cee.es@sedu.es.gov.br', tel: '(27) 3636-4850', endereco: 'Av. Nossa Senhora dos Navegantes, 635, 7º andar – Enseada do Suá, CEP 29.050-335, Vitória – ES', site: 'https://cee.es.gov.br' },
+  GO: { presidente: 'Maria Ester Galvão de Carvalho', email: 'presidenciaceego@gmail.com', tel: '(62) 3201-9812', endereco: 'Rua 3, esq. Rua 23, 63 – Centro, CEP 74.015-120, Goiânia – GO', site: 'http://www.cee.go.gov.br' },
+  MA: { presidente: 'Geraldo Castro Sobrinho', endereco: 'Rua do Sol, 412 – Centro, CEP 65.020-590, São Luís – MA', site: 'http://www.cee.ma.gov.br' },
+  MG: { presidente: 'Felipe Michel Santos Araújo Braga', email: 'cee.gab@educacao.mg.gov.br', tel: '(31) 3071-4750', endereco: 'Rua Rio de Janeiro, 2418 – Lourdes, CEP 30160-042, Belo Horizonte – MG', site: 'https://cee.educacao.mg.gov.br' },
+  MS: { presidente: 'Eva Maria Katayama Negrisolli', email: 'conselho.ceems@gmail.com', tel: '(67) 3318-7080', endereco: 'Rua Lima Felix, s/n – Parque dos Poderes, CEP 79037-109, Campo Grande – MS', site: 'http://www.cee.ms.gov.br' },
+  MT: { presidente: 'Adriana Tomasoni', site: 'http://www.cee.mt.gov.br' },
+  PA: { presidente: 'Suely Melo de Castro Menezes', tel: '(91) 3210-3200', endereco: 'Rua Arcipreste Manoel Teodoro, 862 – Campina, CEP 66015-040, Belém – PA', site: 'http://www.cee.pa.gov.br' },
+  PB: { site: 'http://www.cee.pb.gov.br' },
+  PE: { presidente: 'Natanael José da Silva', email: 'ceepe@educacao.pe.gov.br', tel: '(81) 3181-2686', endereco: 'Av. Rui Barbosa, 1559 – Graça, CEP 52.050-000, Recife – PE', site: 'http://www.cee.pe.gov.br' },
+  PI: { site: 'http://www.cee.pi.gov.br' },
+  PR: { presidente: 'Oscar Alves', email: 'cee-pr@seed.pr.gov.br', site: 'http://www.cee.pr.gov.br' },
+  RJ: { presidente: 'Malvina Tânia Tuttiman', email: 'assadmceerj@educacao.rj.gov.br', site: 'https://www.cee.rj.gov.br' },
+  RN: { site: 'http://www.cee.rn.gov.br' },
+  RO: { site: 'http://www.cee.ro.gov.br' },
+  RR: { site: 'http://www.cee.rr.gov.br' },
+  RS: { presidente: 'Fátima Anise Rodrigues Ehlert', tel: '(51) 3288-7600', endereco: 'Av. Borges de Medeiros, 521 – Centro Histórico, CEP 90020-023, Porto Alegre – RS', site: 'https://ceed.rs.gov.br' },
+  SC: { presidente: 'Patrícia Lueders', tel: '(48) 3224-0104', endereco: 'Av. Prefeito Osmar Cunha, 183 – Ed. Ceisa Center, Bloco B, Sala 303, CEP 88.015-100, Florianópolis – SC', site: 'https://www.cee.sc.gov.br' },
+  SE: { site: 'http://www.cee.se.gov.br' },
+  SP: { presidente: 'Maria Helena Guimarães de Castro', tel: '(11) 2075-4500', endereco: 'Praça da República, 53 – 2º andar, CEP 01045-903, São Paulo – SP', site: 'http://www.ceesp.sp.gov.br' },
+  TO: { site: 'http://www.cee.to.gov.br' },
+};
+
+const CNE_INFO = {
+  presidente: 'César Callegari',
+  tel: '(61) 2022-7700 / 7701',
+  email: 'cneagendamento@mec.gov.br',
+  endereco: 'SGAS, Av. L2 Sul, Quadra 607, Lote 50 – CEP 70200-670, Brasília – DF',
+  site: 'https://www.gov.br/mec/pt-br/cne',
+};
+
+const MEC_SECRETARIAS = [
+  { sigla: 'SEB', nome: 'Secretaria de Educação Básica', titular: 'Kátia Helena S. Cruz Schweickardt', tel: '(61) 2022-8320 / 8319', email: 'gabinete-seb@mec.gov.br', foco: 'Ed. Infantil, Ensino Fundamental e Médio' },
+  { sigla: 'SETEC', nome: 'Secretaria de Educação Profissional e Tecnológica', titular: 'Marcelo Bregagnoli', tel: '(61) 2022-8684 / 8581', email: 'gerencia.setec@mec.gov.br', foco: 'Educação profissional, IFs e PRONATEC' },
+  { sigla: 'SECADI', nome: 'Secretaria de Educação Continuada, Alfabetização, Diversidade e Inclusão', titular: 'Zara Figueiredo', tel: '(61) 2022-7672 / 9217', email: 'secadigab@mec.gov.br', foco: 'EJA, Educação Especial, Diversidade e Inclusão' },
+  { sigla: 'DAGE', nome: 'Diretoria de Apoio à Gestão Educacional (SEB/MEC)', titular: 'Anita Gea Martinez Stefani', tel: '(61) 2022-9139 / 2788', email: 'dage@mec.gov.br', foco: 'Apoio direto às redes de ensino e gestores escolares' },
+  { sigla: 'MEC Central', nome: 'Fala Brasil — Central de Atendimento MEC (gratuito)', titular: '', tel: '0800-616161', email: 'falabrasil@mec.gov.br', foco: 'Dúvidas gerais sobre programas e políticas do MEC' },
+];
+
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -180,7 +226,7 @@ export default function Dashboard() {
   const [pddeAno, setPddeAno] = useState<number>(new Date().getFullYear());
   const [showEquipamentos, setShowEquipamentos] = useState(false);
   const [showSuporteInstitucional, setShowSuporteInstitucional] = useState(false);
-  const [suporteTab, setSuporteTab] = useState<'contatos'|'cecampe'|'sistemas'>('contatos');
+  const [suporteTab, setSuporteTab] = useState<'contatos'|'cecampe'|'sistemas'|'conselhos'>('contatos');
   const [equipamentosData, setEquipamentosData] = useState<any>(null);
   const [equipamentosLoading, setEquipamentosLoading] = useState(false);
   const [osmUnidades, setOsmUnidades] = useState<Record<string, any[]> | null>(null);
@@ -2003,6 +2049,7 @@ out center tags 100;`;
                               {([
                                 { id: 'contatos', label: '📞 Contatos' },
                                 { id: 'cecampe', label: '🤝 CECAMPE' },
+                                { id: 'conselhos', label: '🏛️ Conselhos' },
                                 { id: 'sistemas', label: '🖥️ Sistemas' },
                               ] as const).map(t => (
                                 <button key={t.id} onClick={() => setSuporteTab(t.id)}
@@ -2052,19 +2099,19 @@ out center tags 100;`;
 
                                 {/* MEC */}
                                 <div style={{ borderRadius: 12, border: '1.5px solid #b8cfe8', background: '#e6eef8', padding: '12px 14px' }}>
-                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1e4a78', margin: '0 0 10px' }}>🏛️ Ministério da Educação (MEC) — Federal</p>
+                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1e4a78', margin: '0 0 6px' }}>🏛️ Ministério da Educação (MEC) — Federal</p>
+                                  <p style={{ fontSize: 11, color: '#1e4a78', margin: '0 0 10px', lineHeight: 1.5 }}>
+                                    <strong>Ministro:</strong> Camilo Sobreira de Santana — <a href="mailto:gabinetedoministro@mec.gov.br" style={{ color: '#1e4a78' }}>gabinetedoministro@mec.gov.br</a> — 📞 (61) 2022-7828
+                                  </p>
                                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 10 }}>
-                                    {[
-                                      { cargo: 'Ministro da Educação', nome: 'Camilo Sobreira de Santana', tel: '(61) 2022-7828 / 7822', email: 'gabinetedoministro@mec.gov.br' },
-                                      { cargo: 'Secretária de Educação Básica (SEB)', nome: 'Kátia Helena S. Cruz Schweickardt', tel: '(61) 2022-8320 / 8319', email: 'gabinete-seb@mec.gov.br' },
-                                      { cargo: 'DAGE — Apoio à Gestão Educacional', nome: 'Anita Gea Martinez Stefani', tel: '(61) 2022-9139 / 2788', email: 'dage@mec.gov.br' },
-                                      { cargo: 'Central MEC — Fala Brasil (gratuito)', nome: '', tel: '0800-616161', email: 'falabrasil@mec.gov.br' },
-                                    ].map((c, i) => (
+                                    {MEC_SECRETARIAS.map((s, i) => (
                                       <div key={i} style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '10px 12px', border: '1px solid #b8cfe8' }}>
-                                        <p style={{ fontSize: 10, fontWeight: 700, color: '#1e4a78', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c.cargo}</p>
-                                        {c.nome && <p style={{ fontSize: 12, fontWeight: 600, color: '#0d2b50', margin: '0 0 6px' }}>{c.nome}</p>}
-                                        <p style={{ fontSize: 11, color: '#1e4a78', margin: '0 0 2px' }}>📞 {c.tel}</p>
-                                        <p style={{ fontSize: 11, color: '#1e4a78', margin: 0 }}>✉️ <a href={`mailto:${c.email}`} style={{ color: '#1e4a78' }}>{c.email}</a></p>
+                                        <p style={{ fontSize: 10, fontWeight: 800, color: '#1e4a78', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.sigla}</p>
+                                        <p style={{ fontSize: 11, fontWeight: 600, color: '#0d2b50', margin: '0 0 4px', lineHeight: 1.3 }}>{s.nome}</p>
+                                        {s.titular && <p style={{ fontSize: 11, color: '#1e4a78', margin: '0 0 2px', fontStyle: 'italic' }}>{s.titular}</p>}
+                                        <p style={{ fontSize: 10, color: '#4a7aab', margin: '0 0 6px', lineHeight: 1.3 }}>{s.foco}</p>
+                                        <p style={{ fontSize: 11, color: '#1e4a78', margin: '0 0 2px' }}>📞 {s.tel}</p>
+                                        <p style={{ fontSize: 11, color: '#1e4a78', margin: 0 }}>✉️ <a href={`mailto:${s.email}`} style={{ color: '#1e4a78' }}>{s.email}</a></p>
                                       </div>
                                     ))}
                                   </div>
@@ -2113,6 +2160,72 @@ out center tags 100;`;
                                 </div>
                                 <p style={{ fontSize: 10, color: '#9b7fcf', margin: '10px 0 0', lineHeight: 1.4 }}>
                                   Fonte: FNDE — atualizado em abril/2025.
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Aba: Conselhos de Educação */}
+                            {suporteTab === 'conselhos' && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+                                {/* CNE */}
+                                <div style={{ borderRadius: 12, border: '1.5px solid #b8cfe8', background: '#e6eef8', padding: '14px 16px' }}>
+                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1e4a78', margin: '0 0 10px' }}>🏛️ Conselho Nacional de Educação (CNE) — Federal</p>
+                                  <p style={{ fontSize: 11, color: '#1e4a78', margin: '0 0 10px', lineHeight: 1.5 }}>Órgão colegiado do MEC com funções normativas e deliberativas. Responsável pelas Diretrizes Curriculares Nacionais (BNCC, DCNs) e políticas de qualidade do ensino.</p>
+                                  <div style={{ background: 'rgba(255,255,255,0.75)', borderRadius: 10, padding: '10px 12px', border: '1px solid #b8cfe8', display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}>
+                                    <p style={{ fontSize: 10, fontWeight: 700, color: '#1e4a78', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Presidente</p>
+                                    <p style={{ fontSize: 13, fontWeight: 700, color: '#0d2b50', margin: 0 }}>{CNE_INFO.presidente}</p>
+                                    <p style={{ fontSize: 11, color: '#1e4a78', margin: 0 }}>📞 {CNE_INFO.tel}</p>
+                                    <p style={{ fontSize: 11, color: '#1e4a78', margin: 0 }}>✉️ <a href={`mailto:${CNE_INFO.email}`} style={{ color: '#1e4a78' }}>{CNE_INFO.email}</a></p>
+                                    <p style={{ fontSize: 11, color: '#1e4a78', margin: 0 }}>📍 {CNE_INFO.endereco}</p>
+                                  </div>
+                                  <a href={CNE_INFO.site} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: '#1e4a78', background: 'rgba(255,255,255,0.7)', padding: '5px 14px', borderRadius: 20, border: '1px solid #b8cfe8', textDecoration: 'none', display: 'inline-block' }}>Portal do CNE ↗</a>
+                                </div>
+
+                                {/* CEE da escola */}
+                                {escolaUF && CEE_ESTADUAIS[escolaUF] && (() => {
+                                  const cee = CEE_ESTADUAIS[escolaUF]!;
+                                  return (
+                                    <div style={{ borderRadius: 12, border: '1.5px solid #d4c4f5', background: '#f3eeff', padding: '14px 16px' }}>
+                                      <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#5b3fa8', margin: '0 0 10px' }}>🏛️ Conselho Estadual de Educação — {escolaUF}</p>
+                                      <p style={{ fontSize: 11, color: '#5b3fa8', margin: '0 0 10px', lineHeight: 1.5 }}>Responsável pela normatização e supervisão do sistema estadual de ensino, incluindo autorização e credenciamento de escolas privadas e municipais.</p>
+                                      <div style={{ background: 'rgba(255,255,255,0.75)', borderRadius: 10, padding: '10px 12px', border: '1px solid #d4c4f5', display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}>
+                                        {cee.presidente && <>
+                                          <p style={{ fontSize: 10, fontWeight: 700, color: '#5b3fa8', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Presidente</p>
+                                          <p style={{ fontSize: 13, fontWeight: 700, color: '#3a2070', margin: 0 }}>{cee.presidente}</p>
+                                        </>}
+                                        {cee.tel && <p style={{ fontSize: 11, color: '#5b3fa8', margin: 0 }}>📞 {cee.tel}</p>}
+                                        {cee.email && <p style={{ fontSize: 11, color: '#5b3fa8', margin: 0 }}>✉️ <a href={`mailto:${cee.email}`} style={{ color: '#5b3fa8' }}>{cee.email}</a></p>}
+                                        {cee.endereco && <p style={{ fontSize: 11, color: '#5b3fa8', margin: 0 }}>📍 {cee.endereco}</p>}
+                                      </div>
+                                      <a href={cee.site} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: '#5b3fa8', background: 'rgba(255,255,255,0.7)', padding: '5px 14px', borderRadius: 20, border: '1px solid #d4c4f5', textDecoration: 'none', display: 'inline-block' }}>Site do CEE-{escolaUF} ↗</a>
+                                    </div>
+                                  );
+                                })()}
+
+                                {/* CME — nota */}
+                                <div style={{ borderRadius: 12, border: '1.5px solid #b8dfc8', background: '#e8f5ee', padding: '14px 16px' }}>
+                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1f6b45', margin: '0 0 8px' }}>🏘️ Conselho Municipal de Educação (CME)</p>
+                                  <p style={{ fontSize: 11, color: '#1f6b45', margin: '0 0 10px', lineHeight: 1.5 }}>
+                                    O CME é o órgão de controle social do sistema municipal de ensino. Cada município tem o seu — fiscaliza as políticas educacionais locais, delibera sobre normas e aprova o Plano Municipal de Educação (PME).
+                                    Para localizar o CME do seu município, consulte a Secretaria Municipal de Educação ou a UNDIME do seu estado.
+                                  </p>
+                                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                    {undimeUF && (
+                                      <a href={undimeUF} target="_blank" rel="noopener noreferrer"
+                                        style={{ fontSize: 12, fontWeight: 700, color: '#1f6b45', background: 'rgba(255,255,255,0.7)', padding: '5px 14px', borderRadius: 20, border: '1px solid #b8dfc8', textDecoration: 'none' }}>
+                                        UNDIME {escolaUF} ↗
+                                      </a>
+                                    )}
+                                    <a href="https://www.uncme.org.br" target="_blank" rel="noopener noreferrer"
+                                      style={{ fontSize: 12, fontWeight: 700, color: '#1f6b45', background: 'rgba(255,255,255,0.7)', padding: '5px 14px', borderRadius: 20, border: '1px solid #b8dfc8', textDecoration: 'none' }}>
+                                      UNCME Nacional ↗
+                                    </a>
+                                  </div>
+                                </div>
+
+                                <p style={{ fontSize: 10, color: '#9b7fcf', margin: 0, lineHeight: 1.4 }}>
+                                  Fonte: dados compilados de sites oficiais dos órgãos. Presidências sujeitas a alteração. Verifique nos sites oficiais.
                                 </p>
                               </div>
                             )}
