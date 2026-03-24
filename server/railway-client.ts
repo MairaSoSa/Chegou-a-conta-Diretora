@@ -148,17 +148,23 @@ function mapIndicadores(h: any): Record<string, any> {
 
   if (h.rendimento_dados_json) {
     const a = h.rendimento_dados_json;
+    // Helper: converte para número ou null — filtra "--", "", NaN e valores não numéricos
+    const clean = (v: any): number | null => {
+      if (v == null || v === '--' || v === '' || v === 'ND') return null;
+      const n = Number(v);
+      return isNaN(n) ? null : n;
+    };
     // Helper: pega valor numérico de coluna Unnamed ou null se "--"/ausente
-    const u = (idx: number) => { const v = a[`Unnamed: ${idx}`]; return (v != null && v !== '--') ? Number(v) : null; };
-    const aprovTotal  = a["Taxa de Aprovação"]  ?? a.APROV_BAS_CAT_0  ?? a.aprovacao_total  ?? null;
-    const abandTotal  = a["Taxa de Abandono"]   ?? a.ABAND_BAS_CAT_0  ?? a.abandono_total   ?? null;
-    const reprovTotal = a["Taxa de Reprovação"] ?? a.REPROV_BAS_CAT_0 ?? a.reprovacao_total  ?? null;
-    const aprovFund  = a.APROV_FUN_CAT_0  ?? null;
-    const abandFund  = a.ABAND_FUN_CAT_0  ?? null;
-    const reprovFund = a.REPROV_FUN_CAT_0 ?? null;
-    const aprovMed   = a.APROV_MED_CAT_0  ?? u(21) ?? null;
-    const abandMed   = a.ABAND_MED_CAT_0  ?? u(57) ?? null;
-    const reprovMed  = a.REPROV_MED_CAT_0 ?? u(39) ?? null;
+    const u = (idx: number) => clean(a[`Unnamed: ${idx}`]);
+    const aprovTotal  = clean(a["Taxa de Aprovação"])  ?? clean(a.APROV_BAS_CAT_0)  ?? clean(a.aprovacao_total)  ?? null;
+    const abandTotal  = clean(a["Taxa de Abandono"])   ?? clean(a.ABAND_BAS_CAT_0)  ?? clean(a.abandono_total)   ?? null;
+    const reprovTotal = clean(a["Taxa de Reprovação"]) ?? clean(a.REPROV_BAS_CAT_0) ?? clean(a.reprovacao_total)  ?? null;
+    const aprovFund  = clean(a.APROV_FUN_CAT_0)  ?? null;
+    const abandFund  = clean(a.ABAND_FUN_CAT_0)  ?? null;
+    const reprovFund = clean(a.REPROV_FUN_CAT_0) ?? null;
+    const aprovMed   = clean(a.APROV_MED_CAT_0)  ?? u(21) ?? null;
+    const abandMed   = clean(a.ABAND_MED_CAT_0)  ?? u(57) ?? null;
+    const reprovMed  = clean(a.REPROV_MED_CAT_0) ?? u(39) ?? null;
     // Unnamed column mapping (INEP sheet structure):
     // Aprovação:  AI=10, AF=11, 1o-5o=12-16, 6o-9o=17-20, EM=21, 1a-3a=22-24
     // Reprovação: +18 de aprovação

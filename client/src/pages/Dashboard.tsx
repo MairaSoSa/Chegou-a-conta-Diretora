@@ -442,38 +442,43 @@ export default function Dashboard() {
       taxasRendimento: anos.map((a: number) => {
         const tr = indicadores[a]?.taxas_rendimento;
         if (!tr) return { ano: a };
+        // Safeguard: "--" or non-numeric values (e.g. from cached Railway data) → null
+        const r = (v: any): number | null => {
+          if (v == null || v === '--' || v === '') return null;
+          const n = Number(v); return isNaN(n) ? null : n;
+        };
         return {
           ano: a,
-          aprovacao: tr.aprovacao_fund ?? tr.aprovacao_total ?? null,
-          reprovacao: tr.reprovacao_fund ?? tr.reprovacao_total ?? null,
-          abandono: tr.abandono_fund ?? tr.abandono_total ?? null,
-          aprovacao_ai: tr.aprovacao_fund_ai ?? null,
-          reprovacao_ai: tr.reprovacao_fund_ai ?? null,
-          abandono_ai: tr.abandono_fund_ai ?? null,
-          aprovacao_af: tr.aprovacao_fund_af ?? null,
-          reprovacao_af: tr.reprovacao_fund_af ?? null,
-          abandono_af: tr.abandono_fund_af ?? null,
-          aprovacao_med: tr.aprovacao_med ?? null,
-          reprovacao_med: tr.reprovacao_med ?? null,
-          abandono_med: tr.abandono_med ?? null,
+          aprovacao: r(tr.aprovacao_fund) ?? r(tr.aprovacao_total) ?? null,
+          reprovacao: r(tr.reprovacao_fund) ?? r(tr.reprovacao_total) ?? null,
+          abandono: r(tr.abandono_fund) ?? r(tr.abandono_total) ?? null,
+          aprovacao_ai: r(tr.aprovacao_fund_ai) ?? null,
+          reprovacao_ai: r(tr.reprovacao_fund_ai) ?? null,
+          abandono_ai: r(tr.abandono_fund_ai) ?? null,
+          aprovacao_af: r(tr.aprovacao_fund_af) ?? null,
+          reprovacao_af: r(tr.reprovacao_fund_af) ?? null,
+          abandono_af: r(tr.abandono_fund_af) ?? null,
+          aprovacao_med: r(tr.aprovacao_med) ?? null,
+          reprovacao_med: r(tr.reprovacao_med) ?? null,
+          abandono_med: r(tr.abandono_med) ?? null,
           // Por série — Anos Finais (6º–9º)
-          aprov_f06: tr.aprovacao_fun_06 ?? null, aprov_f07: tr.aprovacao_fun_07 ?? null,
-          aprov_f08: tr.aprovacao_fun_08 ?? null, aprov_f09: tr.aprovacao_fun_09 ?? null,
-          reprov_f06: tr.reprovacao_fun_06 ?? null, reprov_f07: tr.reprovacao_fun_07 ?? null,
-          reprov_f08: tr.reprovacao_fun_08 ?? null, reprov_f09: tr.reprovacao_fun_09 ?? null,
-          aband_f06: tr.abandono_fun_06 ?? null, aband_f07: tr.abandono_fun_07 ?? null,
-          aband_f08: tr.abandono_fun_08 ?? null, aband_f09: tr.abandono_fun_09 ?? null,
+          aprov_f06: r(tr.aprovacao_fun_06), aprov_f07: r(tr.aprovacao_fun_07),
+          aprov_f08: r(tr.aprovacao_fun_08), aprov_f09: r(tr.aprovacao_fun_09),
+          reprov_f06: r(tr.reprovacao_fun_06), reprov_f07: r(tr.reprovacao_fun_07),
+          reprov_f08: r(tr.reprovacao_fun_08), reprov_f09: r(tr.reprovacao_fun_09),
+          aband_f06: r(tr.abandono_fun_06), aband_f07: r(tr.abandono_fun_07),
+          aband_f08: r(tr.abandono_fun_08), aband_f09: r(tr.abandono_fun_09),
           // Por série — Anos Iniciais (1º–5º)
-          aprov_f01: tr.aprovacao_fun_01 ?? null, aprov_f02: tr.aprovacao_fun_02 ?? null,
-          aprov_f03: tr.aprovacao_fun_03 ?? null, aprov_f04: tr.aprovacao_fun_04 ?? null, aprov_f05: tr.aprovacao_fun_05 ?? null,
-          reprov_f01: tr.reprovacao_fun_01 ?? null, reprov_f02: tr.reprovacao_fun_02 ?? null,
-          reprov_f03: tr.reprovacao_fun_03 ?? null, reprov_f04: tr.reprovacao_fun_04 ?? null, reprov_f05: tr.reprovacao_fun_05 ?? null,
-          aband_f01: tr.abandono_fun_01 ?? null, aband_f02: tr.abandono_fun_02 ?? null,
-          aband_f03: tr.abandono_fun_03 ?? null, aband_f04: tr.abandono_fun_04 ?? null, aband_f05: tr.abandono_fun_05 ?? null,
+          aprov_f01: r(tr.aprovacao_fun_01), aprov_f02: r(tr.aprovacao_fun_02),
+          aprov_f03: r(tr.aprovacao_fun_03), aprov_f04: r(tr.aprovacao_fun_04), aprov_f05: r(tr.aprovacao_fun_05),
+          reprov_f01: r(tr.reprovacao_fun_01), reprov_f02: r(tr.reprovacao_fun_02),
+          reprov_f03: r(tr.reprovacao_fun_03), reprov_f04: r(tr.reprovacao_fun_04), reprov_f05: r(tr.reprovacao_fun_05),
+          aband_f01: r(tr.abandono_fun_01), aband_f02: r(tr.abandono_fun_02),
+          aband_f03: r(tr.abandono_fun_03), aband_f04: r(tr.abandono_fun_04), aband_f05: r(tr.abandono_fun_05),
           // Por série — Ensino Médio (1ª–3ª)
-          aprov_m01: tr.aprovacao_med_01 ?? null, aprov_m02: tr.aprovacao_med_02 ?? null, aprov_m03: tr.aprovacao_med_03 ?? null,
-          reprov_m01: tr.reprovacao_med_01 ?? null, reprov_m02: tr.reprovacao_med_02 ?? null, reprov_m03: tr.reprovacao_med_03 ?? null,
-          aband_m01: tr.abandono_med_01 ?? null, aband_m02: tr.abandono_med_02 ?? null, aband_m03: tr.abandono_med_03 ?? null,
+          aprov_m01: r(tr.aprovacao_med_01), aprov_m02: r(tr.aprovacao_med_02), aprov_m03: r(tr.aprovacao_med_03),
+          reprov_m01: r(tr.reprovacao_med_01), reprov_m02: r(tr.reprovacao_med_02), reprov_m03: r(tr.reprovacao_med_03),
+          aband_m01: r(tr.abandono_med_01), aband_m02: r(tr.abandono_med_02), aband_m03: r(tr.abandono_med_03),
         };
       }),
       tdi: anos.map((a: number) => {
