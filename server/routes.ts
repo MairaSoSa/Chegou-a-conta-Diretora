@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import type { Server } from "http";
 import crypto from "crypto";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import express from "express";
 import Papa from "papaparse";
@@ -53,8 +53,14 @@ import {
   insertAiDocumentSchema
 } from "@shared/schema";
 
+function resolveServerJson(filename: string): string {
+  const devPath = join(process.cwd(), "server", filename);
+  if (existsSync(devPath)) return devPath;
+  return join(process.cwd(), filename);
+}
+
 const MUNICIPIO_CENTROIDES: Record<number, [number, number]> = JSON.parse(
-  readFileSync(join(process.cwd(), "server", "municipio-centroides.json"), "utf-8")
+  readFileSync(resolveServerJson("municipio-centroides.json"), "utf-8")
 );
 
 // Helper: grava no cache sem travar a rota se o DB for somente-leitura (produção)
@@ -357,7 +363,7 @@ export async function registerRoutes(
 
   // === PUBLIC: MICRORREGIÃO — média IDEB local a partir do banco SQLite ===
   const microlookup: Record<string, [number, string]> = JSON.parse(
-    readFileSync(join(process.cwd(), "server/municipio-microregiao.json"), "utf8")
+    readFileSync(resolveServerJson("municipio-microregiao.json"), "utf8")
   );
 
   app.get("/api/escola-microregiao/:inep", (req, res) => {

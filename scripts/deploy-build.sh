@@ -87,6 +87,11 @@ module.exports = m.exports;
 BOOTSTRAP
 echo "  dist/bootstrap.cjs: $(du -sh dist/bootstrap.cjs | cut -f1)"
 
+echo "=== [deploy-build] Step 5b: Copying runtime JSON data files to app root ==="
+cp server/municipio-centroides.json ./
+cp server/municipio-microregiao.json ./
+echo "  municipio-centroides.json e municipio-microregiao.json copiados"
+
 echo "=== [deploy-build] Step 6: Wiping node_modules (binary now in dist/) ==="
 rm -rf node_modules
 echo "  node_modules/ removed"
