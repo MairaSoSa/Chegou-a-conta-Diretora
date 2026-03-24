@@ -4139,6 +4139,30 @@ out center tags 100;`;
 
                       // ── COMPONENTE: tabela binária (sim/não) ──
                       const BinTable = ({ rows, title }: { rows: Row[]; title?: string }) => {
+                        // Pre-process: separate rows the school HAS (latest=1) from those it DOESN'T HAVE (latest=0)
+                        // Group "sem" items into compact summary lines, flushed before each new section header
+                        type EnrichedRow =
+                          | { kind: 'header'; label: string }
+                          | { kind: 'data'; row: Row; vals: (number | null)[] }
+                          | { kind: 'sem'; labels: string[] };
+                        const enriched: EnrichedRow[] = [];
+                        let semBuf: string[] = [];
+                        const flushSem = () => {
+                          if (semBuf.length > 0) { enriched.push({ kind: 'sem', labels: [...semBuf] }); semBuf = []; }
+                        };
+                        for (const row of rows) {
+                          if (row.header) { flushSem(); enriched.push({ kind: 'header', label: row.label }); continue; }
+                          const vals = anos.map((a: number) => c[a]?.[row.key] ?? null);
+                          if (vals.every((v: any) => v == null)) continue;
+                          const latestVal = [...vals].reverse().find((v: any) => v != null);
+                          if (latestVal === 1) {
+                            enriched.push({ kind: 'data', row, vals });
+                          } else {
+                            semBuf.push(row.label);
+                          }
+                        }
+                        flushSem();
+
                         const tableBody = (
                           <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
@@ -4151,37 +4175,37 @@ out center tags 100;`;
                                 </tr>
                               </thead>
                               <tbody>
-                                {rows.map((row, rowIdx) => {
-                                  if (row.header) return (
-                                    <tr key={rowIdx}>
+                                {enriched.map((er, idx) => {
+                                  if (er.kind === 'header') return (
+                                    <tr key={idx}>
                                       <td colSpan={anos.length + 1} style={{ padding: '8px 20px', background: '#ede8df', fontWeight: 800, fontSize: 11, color: '#7a5230', textTransform: 'uppercase', letterSpacing: '0.06em', borderTop: '2px solid #ddd5c5' }}>
-                                        {row.label}
+                                        {er.label}
                                       </td>
                                     </tr>
                                   );
-                                  const vals = anos.map((a: number) => c[a]?.[row.key] ?? null);
-                                  if (vals.every((v: any) => v == null)) return null;
+                                  if (er.kind === 'sem') return (
+                                    <tr key={idx} style={{ borderTop: '1px solid #f0e8d8', background: '#faf8f4' }}>
+                                      <td colSpan={anos.length + 1} style={{ padding: '7px 20px', fontSize: 12, color: '#9a8878' }}>
+                                        <span style={{ fontWeight: 700, color: '#7a6858', marginRight: 4 }}>Sem:</span>
+                                        {er.labels.map((lbl, li) => {
+                                          const clean = lbl.replace(/^.*?—\s*/, '');
+                                          return <span key={li}>{li > 0 && <span style={{ color: '#ccc', margin: '0 4px' }}>·</span>}{clean}</span>;
+                                        })}
+                                      </td>
+                                    </tr>
+                                  );
+                                  const { vals } = er;
                                   return (
-                                    <tr key={rowIdx} style={{ borderTop: '1px solid #f0e8d8', background: rowIdx % 2 === 0 ? '#fff' : '#fdf9f4' }}>
-                                      <td style={{ padding: '9px 20px', color: '#4a3020', fontWeight: 500, fontSize: 13 }}>{row.label}</td>
+                                    <tr key={idx} style={{ borderTop: '1px solid #f0e8d8', background: idx % 2 === 0 ? '#fff' : '#fdf9f4' }}>
+                                      <td style={{ padding: '9px 20px', color: '#4a3020', fontWeight: 500, fontSize: 13 }}>{er.row.label}</td>
                                       {vals.map((v: any, vi: number) => {
-                                        const prev = vi > 0 ? vals[vi - 1] : null;
-                                        const gained = prev === 0 && v === 1;
-                                        const lost = prev === 1 && v === 0;
                                         const isLatest = vi === anos.length - 1;
-                                        const bgCell = gained ? '#e8faf0' : lost ? '#fef2f2' : isLatest && v === 1 ? '#f0faf4' : undefined;
                                         return (
-                                          <td key={vi} style={{ padding: '9px 12px', textAlign: 'center', verticalAlign: 'middle', background: bgCell }}>
+                                          <td key={vi} style={{ padding: '9px 12px', textAlign: 'center', verticalAlign: 'middle', background: isLatest && v === 1 ? '#f0faf4' : undefined }}>
                                             {v === 1 ? (
-                                              <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                                                <span style={{ fontSize: 18, color: '#16714a', lineHeight: 1 }}>✓</span>
-                                                {gained && <span style={{ fontSize: 9, fontWeight: 800, color: '#16714a', background: '#d1fadf', borderRadius: 4, padding: '1px 4px' }}>ganhou</span>}
-                                              </span>
+                                              <span style={{ fontSize: 18, color: '#16714a', lineHeight: 1 }}>✓</span>
                                             ) : v === 0 ? (
-                                              <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                                                <span style={{ fontSize: 15, color: '#ccc5bb', lineHeight: 1 }}>✗</span>
-                                                {lost && <span style={{ fontSize: 9, fontWeight: 800, color: '#b74f42', background: '#fee2e2', borderRadius: 4, padding: '1px 4px' }}>perdeu</span>}
-                                              </span>
+                                              <span style={{ fontSize: 15, color: '#ddd5c8', lineHeight: 1 }}>✗</span>
                                             ) : (
                                               <span style={{ color: '#ddd', fontSize: 13 }}>—</span>
                                             )}
