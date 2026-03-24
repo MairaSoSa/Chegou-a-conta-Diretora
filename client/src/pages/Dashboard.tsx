@@ -1484,11 +1484,6 @@ export default function Dashboard() {
                       📍 {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}
                     </span>
                     <span style={{ fontSize: 11, color: '#bbb', fontWeight: 600, flexShrink: 0 }}>INEP {selectedInep}</span>
-                    {criticals.length > 0 && (
-                      <span style={{ background: '#fff0f0', color: '#c0392b', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, border: '1px solid #f5c6cb', flexShrink: 0 }}>
-                        ⚠️ {criticals.length} {criticals.length !== 1 ? 'precisam' : 'precisa'} de atenção
-                      </span>
-                    )}
                   </div>
                 )}
 

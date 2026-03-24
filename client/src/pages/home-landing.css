@@ -811,12 +811,12 @@
   .hl-root {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     justify-content: flex-start;
     min-height: 100vh;
     width: 100vw;
     box-sizing: border-box;
-    padding: 0 8px 0 8px;
+    padding: 0;
     overflow-x: hidden;
     overflow-y: auto;
     background: inherit;
@@ -825,13 +825,13 @@
   .hl-notebook {
     box-sizing: border-box;
     width: 100%;
-    max-width: 420px;
-    margin: 0 auto;
-    border-radius: 8px 8px 0 0;
-    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
     overflow-x: hidden;
     overflow-y: visible;
-    min-height: calc(100svh - 90px);
+    min-height: 100svh;
     background: #fffdf8;
   }
 
@@ -841,7 +841,7 @@
   .hl-page {
     height: auto;
     overflow: visible;
-    padding: 16px 8px 72px 8px;
+    padding: 20px 16px 80px 16px;
     background:
       repeating-linear-gradient(
         to bottom,
@@ -849,8 +849,7 @@
         #dbe9fb 32px 33px
       );
     box-sizing: border-box;
-    margin: 0 auto;
-    max-width: 420px;
+    max-width: 100%;
   }
 
   /* Layout: coluna única */
@@ -859,7 +858,7 @@
     gap: 20px;
   }
   .hl-left-col {
-    gap: 18px;
+    gap: 16px;
     overflow: visible;
   }
 
@@ -868,25 +867,25 @@
     padding: 18px 16px 16px;
   }
   .hl-hero-note::before,
-  .hl-hero-note::after { display: none; } /* remove fitas decorativas */
-  .hl-eyebrow { display: none; }          /* remove eyebrow pill no mobile */
+  .hl-hero-note::after { display: none; }
+  .hl-eyebrow { display: none; }
   .hl-hero-note h2 {
-    font-size: 1.7rem;
+    font-size: 1.8rem;
     line-height: 1.05;
     margin-top: 0;
   }
-  .hl-hero-desc { display: none; }        /* remove parágrafo descritivo no mobile */
+  .hl-hero-desc { font-size: .82rem; display: block; }
   .hl-hero-tags { gap: 6px; }
   .hl-tag { font-size: .70rem; }
 
-  /* Cards: 2 colunas compactas */
+  /* Cards: 2 colunas */
   .hl-mural-label { font-size: .95rem; }
   .hl-cards-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
   .hl-note-card {
-    height: 104px;
+    height: 110px;
     min-height: unset;
     padding: 14px 12px 12px;
     transform: none !important;
@@ -916,10 +915,16 @@
   .hl-tip-box::after { display: none; }
   .hl-caderno-box {
     flex: none;
-    max-height: 300px;
+    max-height: none;
+    overflow: visible;
   }
-  .hl-trilha-item-title,
-  .hl-trilha-item-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hl-trilha-list {
+    max-height: none;
+    overflow: visible;
+    flex: none;
+  }
+  .hl-trilha-item-title { white-space: normal; overflow: visible; text-overflow: unset; }
+  .hl-trilha-item-sub   { white-space: normal; overflow: visible; text-overflow: unset; }
 
   /* Rodapé mobile */
   .hl-footer-mobile {
@@ -932,6 +937,7 @@
     height: auto;
     background: none;
   }
+  .hl-footer-desktop { display: none !important; }
 
   /* Botão acessibilidade */
   .hl-a11y-btn {
@@ -944,12 +950,11 @@
 
 /* ── Mobile pequeno (≤ 420px): ajustes finos ── */
 @media (max-width: 420px) {
-  .hl-page { padding: 16px 12px 90px 16px; }
-  .hl-hero-note h2 { font-size: 1.75rem; }
+  .hl-page { padding: 16px 14px 80px 14px; }
+  .hl-hero-note h2 { font-size: 1.65rem; }
   .hl-cards-grid { gap: 8px; }
-  .hl-note-card { height: 96px; min-height: unset; padding: 12px 10px; }
+  .hl-note-card { height: 100px; min-height: unset; padding: 12px 10px; }
   .hl-note-card h3 { font-size: .88rem; }
-  .hl-caderno-box { max-height: 260px; }
 }
 
 /* ── Mobile mínimo (≤ 360px): 1 coluna de cards ── */
