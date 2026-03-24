@@ -254,21 +254,44 @@ export default function Dashboard() {
   }, [evolucaoData, latestAno]);
 
   const alertasPreocupantes = useMemo(() => {
-    const alertas: { tipo: 'critical' | 'warning'; titulo: string; descricao: string; indicador: string }[] = [];
+    type Progressao = { delta: number; label: string; anoAnterior: number };
+    const alertas: { tipo: 'critical' | 'warning'; titulo: string; descricao: string; indicador: string; progressao?: Progressao }[] = [];
     const ind = indicadoresLatest;
+
+    // Build IDEB history sorted by year to detect year-over-year improvement
+    const idebHistorico: Array<{ ano: number; ideb_ai?: number; ideb_af?: number; ideb_em?: number }> =
+      evolucaoData
+        ? Object.entries(evolucaoData.indicadores_por_ano || {})
+            .filter(([, tipos]: [string, any]) => tipos?.ideb)
+            .sort(([a], [b]) => Number(a) - Number(b))
+            .map(([ano, tipos]: [string, any]) => ({ ano: Number(ano), ...tipos.ideb }))
+        : [];
+
+    const getIdebProgressao = (field: 'ideb_ai' | 'ideb_af' | 'ideb_em'): Progressao | undefined => {
+      if (idebHistorico.length < 2) return undefined;
+      const ultimo = idebHistorico[idebHistorico.length - 1];
+      const penultimo = idebHistorico[idebHistorico.length - 2];
+      const vAtual = Number(ultimo[field]);
+      const vAnterior = Number(penultimo[field]);
+      if (!vAtual || !vAnterior) return undefined;
+      const delta = vAtual - vAnterior;
+      if (delta > 0.05) return { delta, label: `Subiu ${delta.toFixed(1)} ponto${delta >= 2 ? 's' : ''} desde ${penultimo.ano}`, anoAnterior: penultimo.ano };
+      return undefined;
+    };
 
     if (ind.ideb) {
       const vals = [
-        { v: ind.ideb.ideb_ai, name: 'Anos Iniciais' },
-        { v: ind.ideb.ideb_af, name: 'Anos Finais' },
-        { v: ind.ideb.ideb_em, name: 'Ensino Médio' },
+        { v: ind.ideb.ideb_ai, name: 'Anos Iniciais', field: 'ideb_ai' as const },
+        { v: ind.ideb.ideb_af, name: 'Anos Finais', field: 'ideb_af' as const },
+        { v: ind.ideb.ideb_em, name: 'Ensino Médio', field: 'ideb_em' as const },
       ];
-      for (const { v, name } of vals) {
+      for (const { v, name, field } of vals) {
         if (v != null && Number(v) > 0) {
+          const progressao = getIdebProgressao(field);
           if (Number(v) < 4.0) {
-            alertas.push({ tipo: 'critical', titulo: `IDEB ${name} muito baixo: ${Number(v).toFixed(1)}`, descricao: `O IDEB de ${name} está abaixo de 4,0, o que indica necessidade urgente de ações para melhoria da qualidade do ensino.`, indicador: 'ideb' });
+            alertas.push({ tipo: 'critical', titulo: `IDEB ${name}: ${Number(v).toFixed(1)}`, descricao: progressao ? `O IDEB de ${name} ainda está abaixo de 4,0, mas a escola já está avançando. Continue com o plano pedagógico para acelerar a evolução.` : `O IDEB de ${name} está abaixo de 4,0. Recomenda-se elaborar um plano de melhoria pedagógica com metas claras.`, indicador: 'ideb', progressao });
           } else if (Number(v) < 5.0) {
-            alertas.push({ tipo: 'warning', titulo: `IDEB ${name} requer atenção: ${Number(v).toFixed(1)}`, descricao: `O IDEB de ${name} está entre 4,0 e 5,0. Recomenda-se acompanhamento e planejamento de ações pedagógicas.`, indicador: 'ideb' });
+            alertas.push({ tipo: 'warning', titulo: `IDEB ${name}: ${Number(v).toFixed(1)}`, descricao: progressao ? `O IDEB de ${name} está em trajetória positiva. Mantenha as ações pedagógicas que estão surtindo efeito.` : `O IDEB de ${name} está entre 4,0 e 5,0. Recomenda-se acompanhamento e planejamento de ações pedagógicas.`, indicador: 'ideb', progressao });
           }
         }
       }
@@ -383,7 +406,7 @@ export default function Dashboard() {
     }
 
     return alertas;
-  }, [indicadoresLatest]);
+  }, [indicadoresLatest, evolucaoData]);
 
   const evolutionCharts = useMemo(() => {
     if (!evolucaoData) return null;
@@ -1322,7 +1345,7 @@ export default function Dashboard() {
                     <span style={{ fontSize: 11, color: '#bbb', fontWeight: 600, flexShrink: 0 }}>INEP {selectedInep}</span>
                     {criticals.length > 0 && (
                       <span style={{ background: '#fff0f0', color: '#c0392b', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, border: '1px solid #f5c6cb', flexShrink: 0 }}>
-                        ⚠️ {criticals.length} crítico{criticals.length !== 1 ? 's' : ''}
+                        ⚠️ {criticals.length} {criticals.length !== 1 ? 'precisam' : 'precisa'} de atenção
                       </span>
                     )}
                   </div>
@@ -1418,7 +1441,7 @@ export default function Dashboard() {
                     abandono != null ? { label: 'Abandono', val: `${Number(abandono).toFixed(1)}%`, status: Number(abandono) < 1 ? 'ok' : Number(abandono) < 5 ? 'warn' : 'bad' } : null,
                     pddeAdimplente !== null ? { label: 'PDDE', val: pddeAdimplente ? 'Adimplente' : 'Verificar', status: pddeAdimplente ? 'ok' : 'warn' } : null,
                     total === 0 ? { label: 'Alertas', val: 'Tudo certo', status: 'ok' } : null,
-                    criticals.length > 0 ? { label: `${criticals.length} crítico${criticals.length !== 1 ? 's' : ''}`, val: 'ver alertas', status: 'bad' } : null,
+                    criticals.length > 0 ? { label: `${criticals.length} ${criticals.length !== 1 ? 'precisam' : 'precisa'} de atenção`, val: 'ver alertas', status: 'bad' } : null,
                     warnings.length > 0 && criticals.length === 0 ? { label: `${warnings.length} atenção`, val: 'ver alertas', status: 'warn' } : null,
                   ].filter(Boolean) as { label: string; val: string; status: 'ok'|'warn'|'bad' }[];
                   if (diagChips.length === 0) return null;
@@ -1916,7 +1939,7 @@ out center tags 100;`;
                       { label: `Docentes ${latestAno}`, val: censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0, prev: censoPrev ? (censoPrev.qt_doc_bas || censoPrev.qt_docentes || 0) : 0, icon: '🧑‍🏫' },
                       { label: `Turmas ${latestAno}`, val: censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0, prev: censoPrev ? (censoPrev.qt_tur_bas || censoPrev.qt_turmas || 0) : 0, icon: '🏫' },
                       { label: 'Salas utilizadas', val: censoLatest.qt_salas_utilizadas || 0, prev: censoPrev?.qt_salas_utilizadas || 0, icon: '🚪' },
-                      { label: 'Pontos de atenção', val: total, prev: null, icon: criticals.length > 0 ? '⚠️' : total > 0 ? '◌' : '✅', extra: total === 0 ? 'Tudo certo' : `${criticals.length} crítico(s)` },
+                      { label: 'Pontos de atenção', val: total, prev: null, icon: criticals.length > 0 ? '⚠️' : total > 0 ? '◌' : '✅', extra: total === 0 ? 'Tudo certo' : criticals.length > 0 ? `${criticals.length} ${criticals.length !== 1 ? 'precisam' : 'precisa'} de atenção` : `${warnings.length} aviso${warnings.length !== 1 ? 's' : ''}` },
                       { label: 'Status PDDE', val: pddeData?.ok ? (prestacaoContaData?.ok && prestacaoContaData.itens.every((it:any)=>it.situacao_pc_uex?.toLowerCase().includes('adimpl')) ? '✅' : 'Ver') : '—', prev: null, icon: '💸', extra: prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? `${prestacaoContaData.itens.length} programa(s)` : pddeData?.ok ? 'Ativo' : 'Sem dados' },
                     ];
                     return (
@@ -2078,11 +2101,17 @@ out center tags 100;`;
                                 <div className="flex items-start justify-between gap-2 mb-2">
                                   <p style={{fontSize:'13px',fontWeight:700,lineHeight:'1.3',margin:0}}>{ct}</p>
                                   <span className={`severity ${alerta.tipo === 'critical' ? 'critical' : 'attn'}`}>
-                                    {alerta.tipo === 'critical' ? 'Crítico' : 'Atenção'}
+                                    {alerta.tipo === 'critical' ? 'Atenção especial' : 'Atenção'}
                                   </span>
                                 </div>
                                 {mv && <strong style={{display:'block',fontSize:'26px',lineHeight:1,letterSpacing:'-0.04em',marginBottom:'6px'}}>{mv}</strong>}
                                 <p style={{fontSize:'12px',color:'#6b7785',lineHeight:'1.5',margin:0}}>{alerta.descricao}</p>
+                                {(alerta as any).progressao && (
+                                  <div style={{marginTop:'8px',display:'inline-flex',alignItems:'center',gap:'5px',background:'#eafaf2',border:'1px solid #a3dfc0',borderRadius:'20px',padding:'3px 10px'}}>
+                                    <span style={{fontSize:'12px'}}>📈</span>
+                                    <span style={{fontSize:'11px',fontWeight:700,color:'#1f7a4a'}}>{(alerta as any).progressao.label}</span>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -2101,7 +2130,7 @@ out center tags 100;`;
                           Com <strong>{censoLatest.qt_mat_bas?.toLocaleString('pt-BR') || '—'}</strong> matrículas e <strong>{(censoLatest.qt_doc_bas || censoLatest.qt_docentes)?.toLocaleString('pt-BR') || '—'}</strong> docentes.
                         </p>
                         {total > 0 && (
-                          <p style={{margin:'6px 0 0',color:'#9b6a16'}}>Há <strong>{total} ponto{total !== 1 ? 's' : ''} de atenção</strong>, sendo {criticals.length} crític{criticals.length !== 1 ? 'os' : 'o'}.</p>
+                          <p style={{margin:'6px 0 0',color:'#9b6a16'}}>Há <strong>{total} ponto{total !== 1 ? 's' : ''} de atenção</strong>{criticals.length > 0 ? `, sendo ${criticals.length} ${criticals.length !== 1 ? 'indicadores que precisam' : 'indicador que precisa'} de atenção especial` : ''}.</p>
                         )}
                       </div>
                       <div className="snapshot-grid" style={{marginTop:'14px'}}>

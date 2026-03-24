@@ -141,17 +141,41 @@ function round1(v: number | null | undefined): number | null {
 }
 
 export function getDiagnosticoLocal(inep: string) {
-  const idebRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='ideb' AND inep=? LIMIT 1`).get(inep) as any;
-  const inseRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='inse' AND inep=? LIMIT 1`).get(inep) as any;
-  const rendRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='taxas_rendimento' AND inep=? LIMIT 1`).get(inep) as any;
-  const tdiRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='tdi' AND inep=? LIMIT 1`).get(inep) as any;
-  const atuRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='atu' AND inep=? LIMIT 1`).get(inep) as any;
+  // Fetch most-recent IDEB row
+  const idebRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='ideb' AND inep=? ORDER BY ano DESC LIMIT 1`).get(inep) as any;
+  const inseRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='inse' AND inep=? ORDER BY ano DESC LIMIT 1`).get(inep) as any;
+  const rendRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='taxas_rendimento' AND inep=? ORDER BY ano DESC LIMIT 1`).get(inep) as any;
+  const tdiRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='tdi' AND inep=? ORDER BY ano DESC LIMIT 1`).get(inep) as any;
+  const atuRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='atu' AND inep=? ORDER BY ano DESC LIMIT 1`).get(inep) as any;
 
   const ideb = idebRow ? JSON.parse(idebRow.dados) : {};
   const inse = inseRow ? JSON.parse(inseRow.dados) : {};
   const rend = rendRow ? JSON.parse(rendRow.dados) : {};
   const tdi = tdiRow ? JSON.parse(tdiRow.dados) : {};
   const atu = atuRow ? JSON.parse(atuRow.dados) : {};
+
+  // Fetch all historical IDEB years for this school to detect progression
+  const idebHistRows = sqlite.prepare(
+    `SELECT ano, dados FROM indicadores_educacionais WHERE tipo='ideb' AND inep=? ORDER BY ano ASC`
+  ).all(inep) as Array<{ ano: number; dados: string }>;
+  const idebHistorico = idebHistRows.map(r => ({ ano: r.ano, ...JSON.parse(r.dados) }));
+
+  // Helper: detect IDEB progression for a field (e.g. 'ideb_ai')
+  // Finds the two most recent years that actually have data for that field
+  function getIdebProgressao(field: string): { delta: number; label: string; anoAnterior: number } | null {
+    const comDados = idebHistorico.filter(r => {
+      const v = Number((r as any)[field]);
+      return !isNaN(v) && v > 0;
+    });
+    if (comDados.length < 2) return null;
+    const ultimo = comDados[comDados.length - 1];
+    const penultimo = comDados[comDados.length - 2];
+    const vAtual = Number((ultimo as any)[field]);
+    const vAnterior = Number((penultimo as any)[field]);
+    const delta = vAtual - vAnterior;
+    if (delta > 0.05) return { delta, label: `subiu ${round1(delta)} ponto${delta >= 2 ? 's' : ''} desde ${penultimo.ano}`, anoAnterior: penultimo.ano };
+    return null;
+  }
 
   const leituras: string[] = [];
   const pontos_fortes: string[] = [];
@@ -171,11 +195,25 @@ export function getDiagnosticoLocal(inep: string) {
     if (v != null) {
       idebRecente = v;
       idebEtapaRecente = label;
-      leituras.push(`IDEB ${label}: ${round1(v)} (meta: ${round1(ideb[`projecao_${key}`]) ?? 'não disponível'})`);
-      if (v >= 6) pontos_fortes.push(`IDEB excelente em ${label}: ${round1(v)}`);
-      else if (v >= 5) pontos_fortes.push(`IDEB satisfatório em ${label}: ${round1(v)}`);
-      else if (v < 4) pontos_atencao.push(`IDEB abaixo da meta em ${label}: ${round1(v)} — recomenda-se plano de melhoria pedagógica`);
-      else pontos_atencao.push(`IDEB em ${label} requer atenção: ${round1(v)}`);
+      const prog = getIdebProgressao(`ideb_${key}`);
+      const metaTxt = round1(ideb[`projecao_${key}`]) ?? 'não disponível';
+      leituras.push(`IDEB ${label}: ${round1(v)} (meta: ${metaTxt}${prog ? ` — ${prog.label}` : ''})`);
+      if (v >= 6) {
+        pontos_fortes.push(`IDEB excelente em ${label}: ${round1(v)}`);
+      } else if (v >= 5) {
+        const msg = prog ? `IDEB satisfatório em ${label}: ${round1(v)} — e ainda ${prog.label}!` : `IDEB satisfatório em ${label}: ${round1(v)}`;
+        pontos_fortes.push(msg);
+      } else if (prog) {
+        // Below ideal but improving — celebrate the progression prominently
+        pontos_fortes.push(`IDEB em ${label} avançando: ${prog.label} (atual: ${round1(v)})`);
+        if (v < 4) {
+          pontos_atencao.push(`IDEB em ${label} ainda abaixo de 4,0 (${round1(v)}) — a escola está crescendo, mas vale reforçar o plano pedagógico`);
+        }
+      } else if (v < 4) {
+        pontos_atencao.push(`IDEB em ${label}: ${round1(v)} — recomenda-se elaborar plano de melhoria pedagógica com metas de curto prazo`);
+      } else {
+        pontos_atencao.push(`IDEB em ${label}: ${round1(v)} — acompanhe e planeje ações para alcançar a meta de ${metaTxt}`);
+      }
     }
   }
 
@@ -218,13 +256,20 @@ export function getDiagnosticoLocal(inep: string) {
     if (v != null && v > 35) pontos_atencao.push(`Turmas superlotadas no ${label}: média de ${round1(v)} alunos/turma`);
   }
 
+  // Check if there is any IDEB progression detected
+  const algumIdebMelhorando = (['ai','af','em'] as const).some(k => getIdebProgressao(`ideb_${k}`) !== null);
+
   let resumo_geral = "A escola possui base mínima para acompanhamento no painel.";
   if (pontos_fortes.length > 0 && pontos_atencao.length === 0) {
-    resumo_geral = "A escola apresenta bons indicadores educacionais, com destaque nos pontos identificados.";
+    resumo_geral = algumIdebMelhorando
+      ? "A escola está em trajetória positiva, com indicadores educacionais em crescimento. Continue assim!"
+      : "A escola apresenta bons indicadores educacionais, com destaque nos pontos identificados.";
   } else if (pontos_fortes.length > 0 && pontos_atencao.length > 0) {
-    resumo_geral = "A escola possui dados relevantes para análise, mas há pontos de atenção a observar.";
+    resumo_geral = algumIdebMelhorando
+      ? "A escola está crescendo — os dados mostram avanços reais. Há pontos que merecem atenção, mas o caminho é positivo."
+      : "A escola possui dados relevantes para análise. Há conquistas a celebrar e pontos que merecem acompanhamento.";
   } else if (pontos_atencao.length > 0) {
-    resumo_geral = "A escola apresenta indicadores que requerem atenção e planejamento de ações de melhoria.";
+    resumo_geral = "Toda escola tem seu próprio ritmo. Os pontos abaixo indicam onde concentrar energia para avançar.";
   }
 
   if (leituras.length === 0 && pontos_fortes.length === 0 && pontos_atencao.length === 0) {
