@@ -1915,7 +1915,7 @@ out center tags 100;`;
                                       <Loader2 className="w-3 h-3 animate-spin" /> Localizando unidades com endereço...
                                     </div>
                                   )}
-                                  {!osmLoading && osmUnidades && (totalOsm > 0 ? (
+                                  {!osmLoading && osmUnidades && totalOsm > 0 && (
                                     <div style={{ marginTop: 6 }}>
                                       <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#4a8a65', marginBottom: 8 }}>Unidades localizadas — CNES / Mapa colaborativo</p>
                                       {Object.entries(CAT_META).map(([cat, meta]) => {
@@ -1933,30 +1933,7 @@ out center tags 100;`;
                                         );
                                       })}
                                     </div>
-                                  ) : (
-                                    <div style={{ marginTop: 8, padding: '12px 14px', background: '#fffdf5', border: '1px solid #f0ddb5', borderRadius: 10, fontSize: 12, color: '#7a4a10' }}>
-                                      <p style={{ margin: '0 0 8px', fontWeight: 600 }}>📍 Unidades não localizadas no CNES ou no mapa colaborativo para {nomeMunicipio}</p>
-                                      <p style={{ margin: '0 0 8px', color: '#555', fontSize: 11 }}>Os equipamentos existem segundo o IBGE, mas não foram encontrados no CNES (Ministério da Saúde) nem no OpenStreetMap. Consulte diretamente nos sistemas oficiais:</p>
-                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                        <a href={`https://cadsuas.mds.gov.br/`} target="_blank" rel="noopener noreferrer"
-                                          style={{ fontSize: 11, fontWeight: 600, color: '#1f6b45', background: '#d2f0e0', borderRadius: 20, padding: '3px 9px', textDecoration: 'none' }}>
-                                          🏘️ CRAS/CREAS no CadSUAS ↗
-                                        </a>
-                                        <a href={`https://www.google.com/maps/search/CRAS+${encodeURIComponent(nomeMunicipio)}+${sgUf}`} target="_blank" rel="noopener noreferrer"
-                                          style={{ fontSize: 11, fontWeight: 600, color: '#1e4a78', background: '#e6eef8', borderRadius: 20, padding: '3px 9px', textDecoration: 'none' }}>
-                                          🗺️ CRAS no Maps ↗
-                                        </a>
-                                        <a href={`https://www.google.com/maps/search/CREAS+${encodeURIComponent(nomeMunicipio)}+${sgUf}`} target="_blank" rel="noopener noreferrer"
-                                          style={{ fontSize: 11, fontWeight: 600, color: '#5b3fa8', background: '#f3eeff', borderRadius: 20, padding: '3px 9px', textDecoration: 'none' }}>
-                                          🗺️ CREAS no Maps ↗
-                                        </a>
-                                        <a href={`https://cnes.datasus.gov.br/pages/estabelecimentos/consulta.jsp`} target="_blank" rel="noopener noreferrer"
-                                          style={{ fontSize: 11, fontWeight: 600, color: '#0d47a1', background: '#e3f2fd', borderRadius: 20, padding: '3px 9px', textDecoration: 'none' }}>
-                                          🏥 UBS/Hospital no CNES ↗
-                                        </a>
-                                      </div>
-                                    </div>
-                                  ))}
+                                  )}
 
                                   {/* Seção cadunicobrasil.com.br — CRAS e CREAS com endereço e telefone */}
                                   {crasLoading && (
