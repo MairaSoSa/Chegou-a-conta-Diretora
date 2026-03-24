@@ -2,12 +2,43 @@
 set -e
 
 DB_PATH="${SQLITE_DB_PATH:-/data/dev.db}"
-DOWNLOAD_URL="${SQLITE_DB_DOWNLOAD_URL:-}"
+DOWNLOAD_URL="${SQLITE_DB_DOWNLOAD_URL:-https://drive.google.com/file/d/11dADzb3tOac2Zkm9awy7j4Q_Nz05frRE/view?usp=drive_link}"
 PORT="${PORT:-5000}"
 FORCE_DOWNLOAD="${FORCE_DOWNLOAD:-false}"
 
 ensure_parent_dir() {
   mkdir -p "$(dirname "$DB_PATH")"
+}
+
+start_status_server() {
+  local status="$1"
+  local message="$2"
+
+  START_STATUS="$status" START_MESSAGE="$message" PORT="$PORT" exec python3 - <<'PYEOF'
+import http.server
+import json
+import os
+import socketserver
+
+PORT = int(os.environ.get("PORT", "5000"))
+STATUS = os.environ.get("START_STATUS", "starting")
+MESSAGE = os.environ.get("START_MESSAGE", "")
+
+class Handler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        body = json.dumps({"ok": True, "status": STATUS, "message": MESSAGE}).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args):
+        pass
+
+with socketserver.TCPServer(("", PORT), Handler) as httpd:
+    httpd.serve_forever()
+PYEOF
 }
 
 copy_bundled_db_if_available() {
@@ -92,9 +123,9 @@ fi
 
 if [ ! -f "$DB_PATH" ] || [ ! -s "$DB_PATH" ]; then
   if [ -z "$DOWNLOAD_URL" ]; then
-    echo "[ERRO] Banco não encontrado/validado em $DB_PATH."
-    echo "[ERRO] Defina SQLITE_DB_DOWNLOAD_URL (ou SQLITE_DB_BUNDLED_PATH) nas variáveis do Railway."
-    exit 1
+    echo "[WARN] Banco não encontrado/validado em $DB_PATH."
+    echo "[WARN] SQLITE_DB_DOWNLOAD_URL/SQLITE_DB_BUNDLED_PATH ausente; mantendo serviço de status para healthcheck."
+    start_status_server "database_not_configured" "Defina SQLITE_DB_DOWNLOAD_URL ou SQLITE_DB_BUNDLED_PATH"
   fi
 
   echo "[START] Iniciando servidor de espera na porta $PORT..."
