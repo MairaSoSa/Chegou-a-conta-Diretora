@@ -114,6 +114,7 @@ export default function Dashboard() {
   const [pddeAno, setPddeAno] = useState<number>(new Date().getFullYear());
   const [showEquipamentos, setShowEquipamentos] = useState(false);
   const [showSuporteInstitucional, setShowSuporteInstitucional] = useState(false);
+  const [suporteTab, setSuporteTab] = useState<'contatos'|'cecampe'|'sistemas'>('contatos');
   const [equipamentosData, setEquipamentosData] = useState<any>(null);
   const [equipamentosLoading, setEquipamentosLoading] = useState(false);
   const [osmUnidades, setOsmUnidades] = useState<Record<string, any[]> | null>(null);
@@ -1924,31 +1925,123 @@ out center tags 100;`;
                         </button>
 
                         {showSuporteInstitucional && (
-                          <div style={{ padding: '0 18px 16px', borderTop: '1px solid #e8deff' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '10px', marginTop: '14px' }}>
-                              {[
-                                { icon: '📊', titulo: 'Painel PDDE — FNDE', desc: 'Acompanhamento da execução financeira do PDDE por escola (PowerBI oficial FNDE)', url: 'https://app.powerbi.com/view?r=eyJrIjoiMDU1ODMyMmEtNzMxNi00NGI1LWIwMTctMTc5OWEzYWMwMDY3IiwidCI6ImNmODQ1NGQzLWUwMTItNGE5ZC05NWIzLTcwYmRiNmY0NTlkNSJ9', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
-                                { icon: '📚', titulo: 'PDDE Interativo', desc: 'Planejamento e gestão financeira escolar — elaboração do PDE Escola', url: 'https://pddeinterativo.mec.gov.br', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
-                                { icon: '🧾', titulo: 'SIGPC — Prestação de Contas', desc: 'Sistema de prestação de contas dos programas FNDE (PDDE e outros)', url: 'https://www.fnde.gov.br/sigpc', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
-                                { icon: '🤝', titulo: 'CECAMPE', desc: 'Centros Colaboradores de Apoio ao Monitoramento e Gestão do PDDE', url: 'https://www.gov.br/fnde/pt-br/acesso-a-informacao/acoes-e-programas/programas/pdde/cecampes-centros-colaboradores-de-apoio-ao-monitoramento-e-a-gestao-de-programas-educacionais', cor: '#7a4a10', bg: '#fdf3e0', bd: '#f0ddb5' },
-                                { icon: '💰', titulo: 'FNDE — Quem é Quem', desc: 'Estrutura institucional do FNDE: responsáveis por PDDE, FUNDEB e programas escolares', url: 'https://www.gov.br/fnde/pt-br/acesso-a-informacao/institucional/quem-e-quem', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
-                                { icon: '🏛️', titulo: 'MEC — Composição', desc: 'Ministério da Educação: gabinete, secretarias e quem contatar por tema', url: 'https://www.gov.br/mec/pt-br/composicao', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
-                                { icon: '🏫', titulo: 'SEB / MEC', desc: 'Secretaria de Educação Básica — supervisora das políticas da educação básica pública', url: 'https://www.gov.br/mec/pt-br/secretarias/educacao-basica', cor: '#5b3fa8', bg: '#f3eeff', bd: '#d4c4f5' },
-                                { icon: '🏛️', titulo: 'UNDIME', desc: 'União Nacional dos Dirigentes Municipais de Educação', url: 'https://undime.org.br', cor: '#7a4a10', bg: '#fdf3e0', bd: '#f0ddb5' },
-                                { icon: '📋', titulo: 'SIMEC / PAR', desc: 'Sistema de monitoramento do Plano de Ações Articuladas', url: 'https://simec.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
-                                { icon: '📈', titulo: 'QEdu', desc: 'Plataforma de dados educacionais para gestão baseada em evidências', url: 'https://qedu.org.br', cor: '#5b3fa8', bg: '#f3eeff', bd: '#d4c4f5' },
-                                { icon: '🎓', titulo: 'ProGestão', desc: 'Programa nacional de capacitação para gestores escolares', url: 'https://progestao.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
-                              ].map((item, i) => (
-                                <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
-                                  style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px', borderRadius: 12, background: item.bg, border: `1.5px solid ${item.bd}`, textDecoration: 'none' }}>
-                                  <span style={{ fontSize: 18, flexShrink: 0 }}>{item.icon}</span>
-                                  <div>
-                                    <p style={{ fontSize: 12, fontWeight: 700, color: item.cor, margin: '0 0 2px' }}>{item.titulo} ↗</p>
-                                    <p style={{ fontSize: 11, color: item.cor, opacity: 0.8, margin: 0, lineHeight: 1.4 }}>{item.desc}</p>
-                                  </div>
-                                </a>
+                          <div style={{ padding: '0 16px 16px', borderTop: '1px solid #e8deff' }}>
+                            {/* Abas */}
+                            <div style={{ display: 'flex', gap: 6, marginTop: 14, marginBottom: 14, flexWrap: 'wrap' }}>
+                              {([
+                                { id: 'contatos', label: '📞 Contatos MEC/FNDE' },
+                                { id: 'cecampe', label: '🤝 CECAMPE por Região' },
+                                { id: 'sistemas', label: '🖥️ Sistemas e Ferramentas' },
+                              ] as const).map(t => (
+                                <button key={t.id} onClick={() => setSuporteTab(t.id)}
+                                  style={{ padding: '6px 14px', borderRadius: 20, border: suporteTab === t.id ? '1.5px solid #7c5cbf' : '1.5px solid #d4c4f5', background: suporteTab === t.id ? '#7c5cbf' : '#f9f6ff', color: suporteTab === t.id ? '#fff' : '#5b3fa8', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                                  {t.label}
+                                </button>
                               ))}
                             </div>
+
+                            {/* Aba: Contatos */}
+                            {suporteTab === 'contatos' && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {/* MEC */}
+                                <div style={{ borderRadius: 12, border: '1.5px solid #b8cfe8', background: '#e6eef8', padding: '12px 14px' }}>
+                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1e4a78', margin: '0 0 10px' }}>🏛️ Ministério da Educação (MEC)</p>
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+                                    {[
+                                      { cargo: 'Ministro da Educação', nome: 'Camilo Sobreira de Santana', tel: '(61) 2022-7828 / 7822', email: 'gabinetedoministro@mec.gov.br' },
+                                      { cargo: 'Secretária de Educação Básica (SEB)', nome: 'Kátia Helena S. Cruz Schweickardt', tel: '(61) 2022-8320 / 8319', email: 'gabinete-seb@mec.gov.br' },
+                                      { cargo: 'DAGE — Apoio à Gestão Educacional', nome: 'Anita Gea Martinez Stefani', tel: '(61) 2022-9139 / 2788', email: 'dage@mec.gov.br' },
+                                      { cargo: 'DIMAM — Monitoramento e Avaliação', nome: 'Valdoir Pedro Wathier', tel: '(61) 2022-8350', email: 'dimam.seb@mec.gov.br' },
+                                      { cargo: 'Central de Atendimento MEC', nome: 'Fala Brasil (gratuito)', tel: '0800-616161', email: 'falabrasil@mec.gov.br' },
+                                    ].map((c, i) => (
+                                      <div key={i} style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '10px 12px', border: '1px solid #b8cfe8' }}>
+                                        <p style={{ fontSize: 10, fontWeight: 700, color: '#1e4a78', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c.cargo}</p>
+                                        <p style={{ fontSize: 12, fontWeight: 600, color: '#0d2b50', margin: '0 0 6px' }}>{c.nome}</p>
+                                        <p style={{ fontSize: 11, color: '#1e4a78', margin: '0 0 2px' }}>📞 {c.tel}</p>
+                                        <p style={{ fontSize: 11, color: '#1e4a78', margin: 0 }}>✉️ <a href={`mailto:${c.email}`} style={{ color: '#1e4a78' }}>{c.email}</a></p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* FNDE */}
+                                <div style={{ borderRadius: 12, border: '1.5px solid #b8dfc8', background: '#e8f5ee', padding: '12px 14px' }}>
+                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1f6b45', margin: '0 0 10px' }}>💰 FNDE — Fundo Nacional de Desenvolvimento da Educação</p>
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+                                    {[
+                                      { cargo: 'Presidente do FNDE', nome: 'Fernanda Mara de Oliveira M C Pacobahyba', tel: '(61) 2022-4806 / 4599 / 4812', email: 'presidencia@fnde.gov.br' },
+                                      { cargo: 'DIGAP — Responsável pelo PDDE', nome: 'Diretoria de Articulação e Projetos Educacionais', tel: '(61) 2022-5908 / 4903', email: 'assessoriadigap@fnde.gov.br' },
+                                      { cargo: 'Atendimento Institucional FNDE', nome: 'Balcão FNDE / Atendimento Virtual', tel: '(61) 2022-4488', email: 'atend.institucional@fnde.gov.br' },
+                                      { cargo: 'Central de Atendimento FNDE', nome: 'Fala Brasil — opção FNDE (gratuito)', tel: '0800-616161', email: 'atend.institucional@fnde.gov.br' },
+                                    ].map((c, i) => (
+                                      <div key={i} style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '10px 12px', border: '1px solid #b8dfc8' }}>
+                                        <p style={{ fontSize: 10, fontWeight: 700, color: '#1f6b45', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c.cargo}</p>
+                                        <p style={{ fontSize: 12, fontWeight: 600, color: '#0d3320', margin: '0 0 6px' }}>{c.nome}</p>
+                                        <p style={{ fontSize: 11, color: '#1f6b45', margin: '0 0 2px' }}>📞 {c.tel}</p>
+                                        <p style={{ fontSize: 11, color: '#1f6b45', margin: 0 }}>✉️ <a href={`mailto:${c.email}`} style={{ color: '#1f6b45' }}>{c.email}</a></p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Aba: CECAMPE */}
+                            {suporteTab === 'cecampe' && (
+                              <div>
+                                <p style={{ fontSize: 11, color: '#5b3fa8', margin: '0 0 12px', lineHeight: 1.5 }}>
+                                  Os <strong>CECAMPEs</strong> são universidades federais parceiras do FNDE que oferecem assistência técnica gratuita, formações e monitoramento do PDDE para gestores escolares. Contate o da sua região.
+                                </p>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 10 }}>
+                                  {[
+                                    { regiao: 'Norte', uni: 'Universidade Federal do Pará (UFPA)', email: 'cecampenorte@ufpa.br', site: 'https://cecampenorte.ufpa.br', painel: null, cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+                                    { regiao: 'Nordeste', uni: 'Universidade Federal da Paraíba (UFPB)', email: 'cecampenordeste@gmail.com', site: 'https://www.cecampe.ufpb.br', painel: 'https://www.cecampe.ufpb.br/paineisdeinformacoes', cor: '#7a4a10', bg: '#fdf3e0', bd: '#f0ddb5' },
+                                    { regiao: 'Centro-Oeste (Formação)', uni: 'Universidade de Brasília (UnB)', email: 'cecampeco.form@unb.br', site: 'https://cecampe-fe.unb.br', painel: null, cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                                    { regiao: 'Centro-Oeste (Monitoramento)', uni: 'Universidade de Brasília (UnB)', email: 'cecampeco.form@unb.br', site: 'https://smaprogramasfnde.org', painel: null, cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                                    { regiao: 'Sudeste', uni: 'Universidade Federal de Uberlândia (UFU)', email: 'contatocecampeufu@gmail.com', site: 'http://www.proexc.ufu.br/cecampesudeste', painel: 'http://www.proexc.ufu.br/cecampesudeste/dados', cor: '#5b3fa8', bg: '#f3eeff', bd: '#d4c4f5' },
+                                    { regiao: 'Sul', uni: 'Universidade Federal do Rio Grande do Sul (UFRGS)', email: 'cecampe-sul@ufrgs.br', site: 'https://www.ufrgs.br/cecampe-sul', painel: 'https://datastudio.google.com/reporting/89f97085-a65c-4db2-9a52-9375d8056445/page/p_ys6715q1pc?s=ktz-3IIzg50', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+                                  ].map((c, i) => (
+                                    <div key={i} style={{ borderRadius: 12, border: `1.5px solid ${c.bd}`, background: c.bg, padding: '12px 14px' }}>
+                                      <p style={{ fontSize: 10, fontWeight: 800, color: c.cor, margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Região {c.regiao}</p>
+                                      <p style={{ fontSize: 12, fontWeight: 700, color: c.cor, margin: '0 0 8px', lineHeight: 1.3 }}>{c.uni}</p>
+                                      <p style={{ fontSize: 11, color: c.cor, margin: '0 0 4px' }}>✉️ <a href={`mailto:${c.email}`} style={{ color: c.cor }}>{c.email}</a></p>
+                                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
+                                        <a href={c.site} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 700, color: c.cor, background: 'rgba(255,255,255,0.7)', padding: '3px 10px', borderRadius: 20, border: `1px solid ${c.bd}`, textDecoration: 'none' }}>Site ↗</a>
+                                        {c.painel && <a href={c.painel} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 700, color: c.cor, background: 'rgba(255,255,255,0.7)', padding: '3px 10px', borderRadius: 20, border: `1px solid ${c.bd}`, textDecoration: 'none' }}>Painel ↗</a>}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                <p style={{ fontSize: 10, color: '#9b7fcf', margin: '10px 0 0', lineHeight: 1.4 }}>
+                                  Fonte: FNDE — atualizado em abril/2025. O contrato Centro-Oeste (UnB — Formação) foi encerrado em dezembro/2024; verifique status antes de contatar.
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Aba: Sistemas */}
+                            {suporteTab === 'sistemas' && (
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
+                                {[
+                                  { icon: '📊', titulo: 'Painel PDDE — FNDE', desc: 'Execução financeira do PDDE por escola — PowerBI oficial do FNDE', url: 'https://app.powerbi.com/view?r=eyJrIjoiMDU1ODMyMmEtNzMxNi00NGI1LWIwMTctMTc5OWEzYWMwMDY3IiwidCI6ImNmODQ1NGQzLWUwMTItNGE5ZC05NWIzLTcwYmRiNmY0NTlkNSJ9', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+                                  { icon: '📚', titulo: 'PDDE Interativo', desc: 'Elaboração do PDE Escola e gestão financeira (MEC)', url: 'https://pddeinterativo.mec.gov.br', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+                                  { icon: '🧾', titulo: 'SIGPC — Prestação de Contas', desc: 'Consulta pública à prestação de contas do PDDE e programas FNDE', url: 'https://www.gov.br/fnde/pt-br/assuntos/sistemas/sigpc-acesso-publico', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                                  { icon: '📋', titulo: 'SIMEC / PAR', desc: 'Plano de Ações Articuladas — monitoramento e planejamento municipal', url: 'https://simec.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                                  { icon: '📈', titulo: 'QEdu', desc: 'Dados educacionais abertos para gestão baseada em evidências', url: 'https://qedu.org.br', cor: '#5b3fa8', bg: '#f3eeff', bd: '#d4c4f5' },
+                                  { icon: '🎓', titulo: 'ProGestão', desc: 'Capacitação nacional para gestores escolares', url: 'https://progestao.mec.gov.br', cor: '#7a4a10', bg: '#fdf3e0', bd: '#f0ddb5' },
+                                  { icon: '🏛️', titulo: 'UNDIME', desc: 'União Nacional dos Dirigentes Municipais de Educação', url: 'https://undime.org.br', cor: '#7a4a10', bg: '#fdf3e0', bd: '#f0ddb5' },
+                                  { icon: '🔗', titulo: 'Balcão FNDE', desc: 'Atendimento virtual do FNDE — dúvidas sobre programas e repasses', url: 'https://www.gov.br/fnde/pt-br/acesso-a-informacao/acoes-e-programas/acoes/balcao-fnde-1', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+                                ].map((item, i) => (
+                                  <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
+                                    style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px', borderRadius: 12, background: item.bg, border: `1.5px solid ${item.bd}`, textDecoration: 'none' }}>
+                                    <span style={{ fontSize: 18, flexShrink: 0 }}>{item.icon}</span>
+                                    <div>
+                                      <p style={{ fontSize: 12, fontWeight: 700, color: item.cor, margin: '0 0 2px' }}>{item.titulo} ↗</p>
+                                      <p style={{ fontSize: 11, color: item.cor, opacity: 0.8, margin: 0, lineHeight: 1.4 }}>{item.desc}</p>
+                                    </div>
+                                  </a>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
