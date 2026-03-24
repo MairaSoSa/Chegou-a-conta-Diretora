@@ -1566,40 +1566,6 @@ export default function Dashboard() {
                   </div>
                 </section>
 
-                {/* ── FAIXA DE DIAGNÓSTICO ── */}
-                {(() => {
-                  const idebLatest = ch?.ideb?.slice().sort((a:any,b:any) => b.ano - a.ano)[0];
-                  const bestIdeb = idebLatest ? ([idebLatest.ideb_ai, idebLatest.ideb_af, idebLatest.ideb_em].filter((v): v is number => v != null).reduce((mx,v) => v > mx ? v : mx, 0) || null) : null;
-                  const rendLatestD = ch?.taxasRendimento?.slice().sort((a:any,b:any)=>b.ano-a.ano).find((d:any) => d.abandono != null);
-                  const abandono = rendLatestD?.abandono ?? null;
-                  const pddeAdimplente = prestacaoContaData?.ok && prestacaoContaData.itens.length > 0
-                    ? prestacaoContaData.itens.every((it:any) => it.situacao_pc_uex?.toLowerCase().includes('adimpl'))
-                    : null;
-                  const diagChips = [
-                    bestIdeb != null ? { label: 'IDEB', val: Number(bestIdeb).toFixed(1), status: bestIdeb >= 6 ? 'ok' : bestIdeb >= 4 ? 'warn' : 'bad' } : null,
-                    abandono != null ? { label: 'Abandono', val: `${Number(abandono).toFixed(1)}%`, status: Number(abandono) < 1 ? 'ok' : Number(abandono) < 5 ? 'warn' : 'bad' } : null,
-                    pddeAdimplente !== null ? { label: 'PDDE', val: pddeAdimplente ? 'Adimplente' : 'Verificar', status: pddeAdimplente ? 'ok' : 'warn' } : null,
-                    null,
-                    criticals.length > 0 ? { label: 'Pontos de atenção', val: `${criticals.length} ${criticals.length !== 1 ? 'precisam' : 'precisa'} de atenção`, status: 'bad' } : null,
-                    warnings.length > 0 && criticals.length === 0 ? { label: 'Pontos de atenção', val: `${warnings.length} aviso${warnings.length !== 1 ? 's' : ''}`, status: 'warn' } : null,
-                  ].filter(Boolean) as { label: string; val: string; status: 'ok'|'warn'|'bad' }[];
-                  if (diagChips.length === 0) return null;
-                  const col = { ok: { bg:'#eef7f1', txt:'#2f7a58', bd:'#c7e8d6', dot:'#34a97b' }, warn: { bg:'#fffbec', txt:'#9b6a16', bd:'#f7d87c', dot:'#c47a1f' }, bad: { bg:'#fff0f0', txt:'#c0392b', bd:'#f5c6cb', dot:'#c0392b' } };
-                  return (
-                    <div style={{ display:'flex', flexWrap:'wrap', gap:8, padding:'4px 0 8px', margin:'0 0 4px' }}>
-                      {diagChips.map((chip, i) => {
-                        const c = col[chip.status];
-                        return (
-                          <div key={i} style={{ display:'flex', alignItems:'center', gap:7, padding:'7px 14px', borderRadius:22, background:c.bg, border:`1px solid ${c.bd}` }}>
-                            <div style={{ width:7, height:7, borderRadius:'50%', background:c.dot, flexShrink:0 }} />
-                            <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.05em', color:c.txt, opacity:0.75 }}>{chip.label}</span>
-                            <span style={{ fontSize:13, fontWeight:800, color:c.txt }}>{chip.val}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
 
                 {/* ── PAINÉIS DE CONTEXTO: EQUIPAMENTOS PÚBLICOS + SUPORTE INSTITUCIONAL ── */}
                 {(() => {
