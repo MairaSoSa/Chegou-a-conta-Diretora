@@ -1467,8 +1467,8 @@ export default function Dashboard() {
                     abandono != null ? { label: 'Abandono', val: `${Number(abandono).toFixed(1)}%`, status: Number(abandono) < 1 ? 'ok' : Number(abandono) < 5 ? 'warn' : 'bad' } : null,
                     pddeAdimplente !== null ? { label: 'PDDE', val: pddeAdimplente ? 'Adimplente' : 'Verificar', status: pddeAdimplente ? 'ok' : 'warn' } : null,
                     total === 0 ? { label: 'Alertas', val: 'Tudo certo', status: 'ok' } : null,
-                    criticals.length > 0 ? { label: `${criticals.length} ${criticals.length !== 1 ? 'precisam' : 'precisa'} de atenção`, val: 'ver alertas', status: 'bad' } : null,
-                    warnings.length > 0 && criticals.length === 0 ? { label: `${warnings.length} atenção`, val: 'ver alertas', status: 'warn' } : null,
+                    criticals.length > 0 ? { label: 'Pontos de atenção', val: `${criticals.length} ${criticals.length !== 1 ? 'precisam' : 'precisa'} de atenção`, status: 'bad' } : null,
+                    warnings.length > 0 && criticals.length === 0 ? { label: 'Pontos de atenção', val: `${warnings.length} aviso${warnings.length !== 1 ? 's' : ''}`, status: 'warn' } : null,
                   ].filter(Boolean) as { label: string; val: string; status: 'ok'|'warn'|'bad' }[];
                   if (diagChips.length === 0) return null;
                   const col = { ok: { bg:'#eef7f1', txt:'#2f7a58', bd:'#c7e8d6', dot:'#34a97b' }, warn: { bg:'#fffbec', txt:'#9b6a16', bd:'#f7d87c', dot:'#c47a1f' }, bad: { bg:'#fff0f0', txt:'#c0392b', bd:'#f5c6cb', dot:'#c0392b' } };
@@ -1927,12 +1927,17 @@ out center tags 100;`;
                           <div style={{ padding: '0 18px 16px', borderTop: '1px solid #e8deff' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '10px', marginTop: '14px' }}>
                               {[
-                                { icon: '📚', titulo: 'PDDE Interativo', desc: 'Planejamento e gestão financeira escolar pelo MEC', url: 'https://pddeinterativo.mec.gov.br', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
-                                { icon: '🎓', titulo: 'ProGestão', desc: 'Programa de capacitação para gestores escolares', url: 'https://progestao.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                                { icon: '📊', titulo: 'Painel PDDE — FNDE', desc: 'Acompanhamento da execução financeira do PDDE por escola (PowerBI oficial FNDE)', url: 'https://app.powerbi.com/view?r=eyJrIjoiMDU1ODMyMmEtNzMxNi00NGI1LWIwMTctMTc5OWEzYWMwMDY3IiwidCI6ImNmODQ1NGQzLWUwMTItNGE5ZC05NWIzLTcwYmRiNmY0NTlkNSJ9', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+                                { icon: '📚', titulo: 'PDDE Interativo', desc: 'Planejamento e gestão financeira escolar — elaboração do PDE Escola', url: 'https://pddeinterativo.mec.gov.br', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+                                { icon: '🧾', titulo: 'SIGPC — Prestação de Contas', desc: 'Sistema de prestação de contas dos programas FNDE (PDDE e outros)', url: 'https://www.fnde.gov.br/sigpc', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                                { icon: '🤝', titulo: 'CECAMPE', desc: 'Centros Colaboradores de Apoio ao Monitoramento e Gestão do PDDE', url: 'https://www.gov.br/fnde/pt-br/acesso-a-informacao/acoes-e-programas/programas/pdde/cecampes-centros-colaboradores-de-apoio-ao-monitoramento-e-a-gestao-de-programas-educacionais', cor: '#7a4a10', bg: '#fdf3e0', bd: '#f0ddb5' },
+                                { icon: '💰', titulo: 'FNDE — Quem é Quem', desc: 'Estrutura institucional do FNDE: responsáveis por PDDE, FUNDEB e programas escolares', url: 'https://www.gov.br/fnde/pt-br/acesso-a-informacao/institucional/quem-e-quem', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+                                { icon: '🏛️', titulo: 'MEC — Composição', desc: 'Ministério da Educação: gabinete, secretarias e quem contatar por tema', url: 'https://www.gov.br/mec/pt-br/composicao', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                                { icon: '🏫', titulo: 'SEB / MEC', desc: 'Secretaria de Educação Básica — supervisora das políticas da educação básica pública', url: 'https://www.gov.br/mec/pt-br/secretarias/educacao-basica', cor: '#5b3fa8', bg: '#f3eeff', bd: '#d4c4f5' },
                                 { icon: '🏛️', titulo: 'UNDIME', desc: 'União Nacional dos Dirigentes Municipais de Educação', url: 'https://undime.org.br', cor: '#7a4a10', bg: '#fdf3e0', bd: '#f0ddb5' },
-                                { icon: '📊', titulo: 'QEdu', desc: 'Plataforma de dados educacionais para gestão baseada em evidências', url: 'https://qedu.org.br', cor: '#5b3fa8', bg: '#f3eeff', bd: '#d4c4f5' },
-                                { icon: '💰', titulo: 'Portal FNDE', desc: 'Programas de financiamento da educação básica', url: 'https://www.fnde.gov.br', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
-                                { icon: '📋', titulo: 'SIMEC/PAR', desc: 'Sistema de monitoramento do Plano de Ações Articuladas', url: 'https://simec.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                                { icon: '📋', titulo: 'SIMEC / PAR', desc: 'Sistema de monitoramento do Plano de Ações Articuladas', url: 'https://simec.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                                { icon: '📈', titulo: 'QEdu', desc: 'Plataforma de dados educacionais para gestão baseada em evidências', url: 'https://qedu.org.br', cor: '#5b3fa8', bg: '#f3eeff', bd: '#d4c4f5' },
+                                { icon: '🎓', titulo: 'ProGestão', desc: 'Programa nacional de capacitação para gestores escolares', url: 'https://progestao.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
                               ].map((item, i) => (
                                 <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
                                   style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px', borderRadius: 12, background: item.bg, border: `1.5px solid ${item.bd}`, textDecoration: 'none' }}>
