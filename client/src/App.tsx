@@ -1,4 +1,4 @@
-import { useState, createContext, useContext, useEffect } from "react";
+import { useState, createContext, useContext, useEffect, Suspense, lazy } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -9,7 +9,7 @@ import { TTSProvider } from "@/contexts/TTSContext";
 import { TTSBubble } from "@/components/TTSBubble";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
-import Dashboard from "@/pages/Dashboard";
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
 import Trilha from "@/pages/Trilha";
 import TrilhaUnidade from "@/pages/TrilhaUnidade";
 import Programas from "@/pages/Programas";
@@ -35,7 +35,11 @@ function Router() {
       <ScrollToTop />
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/dashboard">
+          <Suspense fallback={<div>Carregando...</div>}>
+            <Dashboard />
+          </Suspense>
+        </Route>
       <Route path="/legislacao" component={Legislacao} />
       <Route path="/trilha" component={Trilha} />
       <Route path="/trilha/:unitId" component={TrilhaUnidade} />
