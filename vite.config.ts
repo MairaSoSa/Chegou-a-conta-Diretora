@@ -34,31 +34,27 @@ export default defineConfig({
   build: {
     outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         manualChunks: (id) => {
+          // Truly isolated packages with no React/d3 dependencies.
           if (id.includes("node_modules/pdfjs-dist")) return "vendor-pdf";
-          // Keep react and react-dom together so react is always initialized
-          // before react-dom — splitting them causes TDZ errors at runtime.
-          if (
-            id.includes("node_modules/react-dom") ||
-            id.includes("node_modules/react/") ||
-            id.includes("node_modules/react-is")
-          ) return "vendor-react";
-          // recharts gets its own chunk, separate from d3, so Rollup can
-          // determine a safe initialization order between them.
+          if (id.includes("node_modules/xlsx")) return "vendor-xlsx";
+
+          // Large but standalone packages: they only import FROM vendor-react,
+          // never referenced back by vendor-react, so no circular dep.
           if (id.includes("node_modules/recharts")) return "vendor-recharts";
-          // d3 sub-packages in their own chunk, loaded before recharts.
-          if (id.includes("node_modules/d3-")) return "vendor-d3";
           if (id.includes("node_modules/react-simple-maps")) return "vendor-maps";
           if (id.includes("node_modules/@tiptap")) return "vendor-editor";
           if (id.includes("node_modules/framer-motion")) return "vendor-motion";
-          if (id.includes("node_modules/xlsx")) return "vendor-xlsx";
-          if (id.includes("node_modules/@radix-ui")) return "vendor-radix";
-          if (id.includes("node_modules/lucide-react")) return "vendor-icons";
-          if (id.includes("node_modules/@tanstack")) return "vendor-query";
-          if (id.includes("node_modules/")) return "vendor-misc";
+
+          // Everything else — React, react-dom, scheduler, d3-*, @radix-ui,
+          // lucide-react, @tanstack, wouter, zod, date-fns, sonner, etc. —
+          // all lives in ONE chunk. This eliminates every cross-chunk circular
+          // dependency (d3 ↔ React, misc helpers ↔ React) that causes:
+          //   TypeError: Cannot set properties of undefined (setting 'Children')
+          if (id.includes("node_modules/")) return "vendor-react";
         },
       },
     },
