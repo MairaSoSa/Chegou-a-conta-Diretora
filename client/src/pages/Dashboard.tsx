@@ -269,13 +269,32 @@ export default function Dashboard() {
 
     const getIdebProgressao = (field: 'ideb_ai' | 'ideb_af' | 'ideb_em'): Progressao | undefined => {
       if (idebHistorico.length < 2) return undefined;
-      const ultimo = idebHistorico[idebHistorico.length - 1];
-      const penultimo = idebHistorico[idebHistorico.length - 2];
-      const vAtual = Number(ultimo[field]);
-      const vAnterior = Number(penultimo[field]);
-      if (!vAtual || !vAnterior) return undefined;
-      const delta = vAtual - vAnterior;
+      const comDados = idebHistorico.filter(r => { const v = Number(r[field]); return !isNaN(v) && v > 0; });
+      if (comDados.length < 2) return undefined;
+      const ultimo = comDados[comDados.length - 1];
+      const penultimo = comDados[comDados.length - 2];
+      const delta = Number(ultimo[field]) - Number(penultimo[field]);
       if (delta > 0.05) return { delta, label: `Subiu ${delta.toFixed(1)} ponto${delta >= 2 ? 's' : ''} desde ${penultimo.ano}`, anoAnterior: penultimo.ano };
+      return undefined;
+    };
+
+    // Generic progression helper for all other indicators
+    const getProgressaoInd = (tipo: string, field: string, higherIsBetter: boolean): Progressao | undefined => {
+      if (!evolucaoData) return undefined;
+      const allData = evolucaoData.indicadores_por_ano || {};
+      const comDados = Object.entries(allData)
+        .filter(([, tipos]: [string, any]) => tipos?.[tipo] && Number((tipos[tipo] as any)[field]) > 0)
+        .sort(([a], [b]) => Number(a) - Number(b))
+        .map(([ano, tipos]: [string, any]) => ({ ano: Number(ano), value: Number((tipos[tipo] as any)[field]) }));
+      if (comDados.length < 2) return undefined;
+      const ultimo = comDados[comDados.length - 1];
+      const penultimo = comDados[comDados.length - 2];
+      const delta = ultimo.value - penultimo.value;
+      const abs = Math.abs(delta);
+      if (higherIsBetter && delta > 0.3)
+        return { delta, label: `Subiu ${abs.toFixed(1)} p.p. desde ${penultimo.ano}`, anoAnterior: penultimo.ano };
+      if (!higherIsBetter && delta < -0.3)
+        return { delta, label: `Caiu ${abs.toFixed(1)} p.p. desde ${penultimo.ano}`, anoAnterior: penultimo.ano };
       return undefined;
     };
 
@@ -299,101 +318,102 @@ export default function Dashboard() {
 
     if (ind.taxas_rendimento) {
       const abandono = [
-        { v: ind.taxas_rendimento.abandono_fund, name: 'Fundamental' },
-        { v: ind.taxas_rendimento.abandono_med, name: 'Ensino Médio' },
+        { v: ind.taxas_rendimento.abandono_fund, name: 'Fundamental', field: 'abandono_fund', limCrit: 5, limWarn: 2 },
+        { v: ind.taxas_rendimento.abandono_med,  name: 'Ensino Médio', field: 'abandono_med',  limCrit: 8, limWarn: 4 },
       ];
-      for (const { v, name } of abandono) {
-        if (v != null) {
-          if (Number(v) > 5) {
-            alertas.push({ tipo: 'critical', titulo: `Abandono escolar elevado no ${name}: ${Number(v).toFixed(1)}%`, descricao: `A taxa de abandono acima de 5% exige ações imediatas de busca ativa e acolhimento dos alunos.`, indicador: 'taxas_rendimento' });
-          } else if (Number(v) > 2) {
-            alertas.push({ tipo: 'warning', titulo: `Abandono escolar no ${name}: ${Number(v).toFixed(1)}%`, descricao: `A taxa de abandono entre 2% e 5% merece atenção. Identifique os alunos em risco e implemente estratégias de permanência.`, indicador: 'taxas_rendimento' });
-          }
+      for (const { v, name, field, limCrit, limWarn } of abandono) {
+        if (v == null) continue;
+        const progressao = getProgressaoInd('taxas_rendimento', field, false);
+        if (Number(v) > limCrit) {
+          alertas.push({ tipo: 'critical', titulo: `Abandono escolar no ${name}: ${Number(v).toFixed(1)}%`, descricao: progressao ? `A taxa de abandono está caindo — bom sinal! Ainda está acima do ideal, então continue com as ações de busca ativa.` : `A taxa de abandono acima de ${limCrit}% exige ações imediatas de busca ativa e acolhimento dos alunos.`, indicador: 'taxas_rendimento', progressao });
+        } else if (Number(v) > limWarn) {
+          alertas.push({ tipo: 'warning', titulo: `Abandono escolar no ${name}: ${Number(v).toFixed(1)}%`, descricao: progressao ? `A taxa de abandono está caindo. Mantenha as estratégias de permanência que estão funcionando.` : `A taxa de abandono merece atenção. Identifique os alunos em risco e implemente estratégias de permanência.`, indicador: 'taxas_rendimento', progressao });
         }
       }
       const reprov = [
-        { v: ind.taxas_rendimento.reprovacao_fund, name: 'Fundamental' },
-        { v: ind.taxas_rendimento.reprovacao_med, name: 'Ensino Médio' },
+        { v: ind.taxas_rendimento.reprovacao_fund, name: 'Fundamental', field: 'reprovacao_fund', limCrit: 20, limWarn: 10 },
+        { v: ind.taxas_rendimento.reprovacao_med,  name: 'Ensino Médio', field: 'reprovacao_med',  limCrit: 20, limWarn: 10 },
       ];
-      for (const { v, name } of reprov) {
-        if (v != null) {
-          if (Number(v) > 20) {
-            alertas.push({ tipo: 'critical', titulo: `Reprovação alta no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Taxa de reprovação acima de 20% indica necessidade urgente de revisão das práticas pedagógicas e avaliativas.`, indicador: 'taxas_rendimento' });
-          } else if (Number(v) > 10) {
-            alertas.push({ tipo: 'warning', titulo: `Reprovação no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Taxa de reprovação entre 10% e 20%. Avalie as causas e considere reforço escolar e acompanhamento individualizado.`, indicador: 'taxas_rendimento' });
-          }
+      for (const { v, name, field, limCrit, limWarn } of reprov) {
+        if (v == null) continue;
+        const progressao = getProgressaoInd('taxas_rendimento', field, false);
+        if (Number(v) > limCrit) {
+          alertas.push({ tipo: 'critical', titulo: `Reprovação no ${name}: ${Number(v).toFixed(1)}%`, descricao: progressao ? `A reprovação está diminuindo — ótimo caminho! Ainda está acima de ${limCrit}%, então vale continuar revisando as práticas avaliativas.` : `Taxa de reprovação acima de ${limCrit}% indica necessidade de revisão das práticas pedagógicas e avaliativas.`, indicador: 'taxas_rendimento', progressao });
+        } else if (Number(v) > limWarn) {
+          alertas.push({ tipo: 'warning', titulo: `Reprovação no ${name}: ${Number(v).toFixed(1)}%`, descricao: progressao ? `A reprovação está em queda. Continue com o acompanhamento e reforço escolar.` : `Taxa de reprovação entre ${limWarn}% e ${limCrit}%. Avalie as causas e considere reforço escolar e acompanhamento individualizado.`, indicador: 'taxas_rendimento', progressao });
         }
       }
     }
 
     if (ind.tdi) {
       const tdiVals = [
-        { v: ind.tdi.fundamental_total, name: 'Fundamental' },
-        { v: ind.tdi.medio_total, name: 'Ensino Médio' },
+        { v: ind.tdi.fundamental_total, name: 'Fundamental', field: 'fundamental_total' },
+        { v: ind.tdi.medio_total,       name: 'Ensino Médio', field: 'medio_total' },
       ];
-      for (const { v, name } of tdiVals) {
-        if (v != null) {
-          if (Number(v) > 30) {
-            alertas.push({ tipo: 'critical', titulo: `Distorção idade-série alta no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Mais de 30% dos alunos estão com idade acima da esperada para a série. Considere programas de correção de fluxo.`, indicador: 'tdi' });
-          } else if (Number(v) > 20) {
-            alertas.push({ tipo: 'warning', titulo: `Distorção idade-série no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Entre 20% e 30% dos alunos estão com defasagem. Monitore e planeje intervenções pedagógicas.`, indicador: 'tdi' });
-          }
+      for (const { v, name, field } of tdiVals) {
+        if (v == null) continue;
+        const progressao = getProgressaoInd('tdi', field, false);
+        if (Number(v) > 30) {
+          alertas.push({ tipo: 'critical', titulo: `Distorção idade-série no ${name}: ${Number(v).toFixed(1)}%`, descricao: progressao ? `A distorção está caindo — a escola está no caminho certo. Ainda está acima de 30%, então considere intensificar programas de correção de fluxo.` : `Mais de 30% dos alunos estão com idade acima da esperada para a série. Considere programas de correção de fluxo.`, indicador: 'tdi', progressao });
+        } else if (Number(v) > 20) {
+          alertas.push({ tipo: 'warning', titulo: `Distorção idade-série no ${name}: ${Number(v).toFixed(1)}%`, descricao: progressao ? `A distorção está diminuindo. Continue monitorando e planejando intervenções.` : `Entre 20% e 30% dos alunos estão com defasagem. Monitore e planeje intervenções pedagógicas.`, indicador: 'tdi', progressao });
         }
       }
     }
 
     if (ind.dsu) {
       const dsuVals = [
-        { v: ind.dsu.percentual_fund, name: 'Fundamental' },
-        { v: ind.dsu.percentual_med, name: 'Ensino Médio' },
+        { v: ind.dsu.percentual_fund, name: 'Fundamental', field: 'percentual_fund' },
+        { v: ind.dsu.percentual_med,  name: 'Ensino Médio', field: 'percentual_med' },
       ];
-      for (const { v, name } of dsuVals) {
-        if (v != null && Number(v) > 0) {
-          if (Number(v) < 60) {
-            alertas.push({ tipo: 'critical', titulo: `Poucos docentes com curso superior no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Menos de 60% dos docentes possuem formação superior. Isso impacta diretamente a qualidade do ensino.`, indicador: 'dsu' });
-          } else if (Number(v) < 80) {
-            alertas.push({ tipo: 'warning', titulo: `Formação docente no ${name}: ${Number(v).toFixed(1)}%`, descricao: `Entre 60% e 80% dos docentes têm curso superior. Incentive a formação continuada.`, indicador: 'dsu' });
-          }
+      for (const { v, name, field } of dsuVals) {
+        if (v == null || Number(v) <= 0) continue;
+        const progressao = getProgressaoInd('dsu', field, true);
+        if (Number(v) < 60) {
+          alertas.push({ tipo: 'critical', titulo: `Docentes com ensino superior no ${name}: ${Number(v).toFixed(1)}%`, descricao: progressao ? `O percentual está crescendo — boa notícia! Ainda está abaixo de 60%, então continue incentivando a formação continuada.` : `Menos de 60% dos docentes possuem formação superior. Isso impacta diretamente a qualidade do ensino.`, indicador: 'dsu', progressao });
+        } else if (Number(v) < 80) {
+          alertas.push({ tipo: 'warning', titulo: `Formação docente no ${name}: ${Number(v).toFixed(1)}%`, descricao: progressao ? `O percentual de docentes com superior está aumentando. Continue incentivando a formação continuada.` : `Entre 60% e 80% dos docentes têm curso superior. Incentive a formação continuada.`, indicador: 'dsu', progressao });
         }
       }
     }
 
     if (ind.had) {
       const hadVals = [
-        { v: ind.had.media_fund, name: 'Fundamental' },
-        { v: ind.had.media_med, name: 'Ensino Médio' },
+        { v: ind.had.media_fund, name: 'Fundamental', field: 'media_fund' },
+        { v: ind.had.media_med,  name: 'Ensino Médio', field: 'media_med' },
       ];
-      for (const { v, name } of hadVals) {
-        if (v != null && Number(v) > 0 && Number(v) < 4) {
-          alertas.push({ tipo: 'warning', titulo: `Carga horária baixa no ${name}: ${Number(v).toFixed(1)}h/dia`, descricao: `A média de horas-aula diária está abaixo de 4 horas. Considere ampliar a jornada escolar.`, indicador: 'had' });
-        }
+      for (const { v, name, field } of hadVals) {
+        if (v == null || Number(v) <= 0 || Number(v) >= 4) continue;
+        const progressao = getProgressaoInd('had', field, true);
+        alertas.push({ tipo: 'warning', titulo: `Carga horária no ${name}: ${Number(v).toFixed(1)}h/dia`, descricao: progressao ? `A carga horária está aumentando — ótimo sinal! Continue buscando ampliar a jornada escolar.` : `A média de horas-aula diária está abaixo de 4 horas. Considere ampliar a jornada escolar.`, indicador: 'had', progressao });
       }
     }
 
     if (ind.atu) {
       const atuVals = [
-        { v: ind.atu.media_fund, name: 'Fundamental' },
-        { v: ind.atu.media_med, name: 'Ensino Médio' },
+        { v: ind.atu.media_fund, name: 'Fundamental', field: 'media_fund' },
+        { v: ind.atu.media_med,  name: 'Ensino Médio', field: 'media_med' },
       ];
-      for (const { v, name } of atuVals) {
-        if (v != null && Number(v) > 35) {
-          alertas.push({ tipo: 'warning', titulo: `Turmas superlotadas no ${name}: ${Number(v).toFixed(1)} alunos/turma`, descricao: `A média de alunos por turma acima de 35 prejudica a qualidade do atendimento pedagógico.`, indicador: 'atu' });
-        }
+      for (const { v, name, field } of atuVals) {
+        if (v == null || Number(v) <= 35) continue;
+        const progressao = getProgressaoInd('atu', field, false);
+        alertas.push({ tipo: 'warning', titulo: `Alunos por turma no ${name}: ${Number(v).toFixed(1)}`, descricao: progressao ? `O número de alunos por turma está caindo. Continue trabalhando para reduzir a superlotação.` : `A média de alunos por turma acima de 35 prejudica a qualidade do atendimento pedagógico.`, indicador: 'atu', progressao });
       }
     }
-
 
     if (ind.ird) {
       const media = Number(ind.ird.media_ird ?? ind.ird.media);
       if (media > 0 && media < 2.0) {
-        alertas.push({ tipo: 'warning', titulo: `Baixa regularidade docente: ${media.toFixed(2)}`, descricao: `O índice de regularidade do corpo docente está abaixo de 2,0, indicando alta rotatividade de professores.`, indicador: 'ird' });
+        const progressao = getProgressaoInd('ird', 'media_ird', true) || getProgressaoInd('ird', 'media', true);
+        alertas.push({ tipo: 'warning', titulo: `Regularidade docente: ${media.toFixed(2)}`, descricao: progressao ? `A regularidade docente está melhorando. Continue trabalhando para reduzir a rotatividade.` : `O índice de regularidade docente está abaixo de 2,0, indicando alta rotatividade de professores.`, indicador: 'ird', progressao });
       }
     }
 
     if (ind.afd) {
       const funCat1 = Number(ind.afd.fun_cat_1);
       if (funCat1 > 0 && funCat1 < 50) {
-        alertas.push({ tipo: 'warning', titulo: `Adequação da formação docente baixa: ${funCat1.toFixed(1)}%`, descricao: `Menos de 50% dos docentes do Fundamental possuem formação adequada (Grupo 1). Isso afeta a qualidade do ensino.`, indicador: 'afd' });
+        const progressao = getProgressaoInd('afd', 'fun_cat_1', true);
+        alertas.push({ tipo: 'warning', titulo: `Adequação da formação docente: ${funCat1.toFixed(1)}%`, descricao: progressao ? `O percentual de docentes com formação adequada está crescendo. Continue incentivando a especialização por área.` : `Menos de 50% dos docentes do Fundamental possuem formação adequada (Grupo 1). Isso afeta a qualidade do ensino.`, indicador: 'afd', progressao });
       }
     }
 
@@ -401,7 +421,8 @@ export default function Dashboard() {
       const n5 = Number(ind.ied.nivel_5 || 0);
       const n6 = Number(ind.ied.nivel_6 || 0);
       if ((n5 + n6) > 50) {
-        alertas.push({ tipo: 'warning', titulo: `Alto esforço docente: ${(n5 + n6).toFixed(1)}% nos níveis 5 e 6`, descricao: `Mais da metade dos docentes atuam com sobrecarga (múltiplas escolas e turnos). Isso pode impactar a qualidade do trabalho pedagógico.`, indicador: 'ied' });
+        const progressao = getProgressaoInd('ied', 'nivel_5', false);
+        alertas.push({ tipo: 'warning', titulo: `Sobrecarga docente: ${(n5 + n6).toFixed(1)}% nos níveis 5 e 6`, descricao: progressao ? `A sobrecarga docente está diminuindo — bom progresso! Continue buscando equilibrar a carga de trabalho.` : `Mais da metade dos docentes atuam com sobrecarga (múltiplas escolas e turnos). Isso pode impactar a qualidade do trabalho pedagógico.`, indicador: 'ied', progressao });
       }
     }
 

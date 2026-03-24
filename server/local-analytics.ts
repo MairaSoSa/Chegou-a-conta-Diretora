@@ -141,38 +141,66 @@ function round1(v: number | null | undefined): number | null {
 }
 
 export function getDiagnosticoLocal(inep: string) {
-  // Fetch most-recent IDEB row
-  const idebRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='ideb' AND inep=? ORDER BY ano DESC LIMIT 1`).get(inep) as any;
-  const inseRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='inse' AND inep=? ORDER BY ano DESC LIMIT 1`).get(inep) as any;
-  const rendRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='taxas_rendimento' AND inep=? ORDER BY ano DESC LIMIT 1`).get(inep) as any;
-  const tdiRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='tdi' AND inep=? ORDER BY ano DESC LIMIT 1`).get(inep) as any;
-  const atuRow = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo='atu' AND inep=? ORDER BY ano DESC LIMIT 1`).get(inep) as any;
+  // Fetch most-recent row for each indicator type
+  const getLatest = (tipo: string) => {
+    const row = sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo=? AND inep=? ORDER BY ano DESC LIMIT 1`).get(tipo, inep) as any;
+    return row ? JSON.parse(row.dados) : {};
+  };
 
-  const ideb = idebRow ? JSON.parse(idebRow.dados) : {};
-  const inse = inseRow ? JSON.parse(inseRow.dados) : {};
-  const rend = rendRow ? JSON.parse(rendRow.dados) : {};
-  const tdi = tdiRow ? JSON.parse(tdiRow.dados) : {};
-  const atu = atuRow ? JSON.parse(atuRow.dados) : {};
+  const ideb = getLatest('ideb');
+  const inse = getLatest('inse');
+  const rend = getLatest('taxas_rendimento');
+  const tdi  = getLatest('tdi');
+  const atu  = getLatest('atu');
+  const had  = getLatest('had');
+  const dsu  = getLatest('dsu');
+  const ird  = getLatest('ird');
+  const afd  = getLatest('afd');
+  const ied  = getLatest('ied');
 
-  // Fetch all historical IDEB years for this school to detect progression
-  const idebHistRows = sqlite.prepare(
-    `SELECT ano, dados FROM indicadores_educacionais WHERE tipo='ideb' AND inep=? ORDER BY ano ASC`
-  ).all(inep) as Array<{ ano: number; dados: string }>;
-  const idebHistorico = idebHistRows.map(r => ({ ano: r.ano, ...JSON.parse(r.dados) }));
+  // Fetch full history for each indicator to detect progression
+  const getHist = (tipo: string) =>
+    (sqlite.prepare(`SELECT ano, dados FROM indicadores_educacionais WHERE tipo=? AND inep=? ORDER BY ano ASC`).all(tipo, inep) as Array<{ ano: number; dados: string }>)
+      .map(r => ({ ano: r.ano, ...JSON.parse(r.dados) as any }));
 
-  // Helper: detect IDEB progression for a field (e.g. 'ideb_ai')
-  // Finds the two most recent years that actually have data for that field
-  function getIdebProgressao(field: string): { delta: number; label: string; anoAnterior: number } | null {
-    const comDados = idebHistorico.filter(r => {
-      const v = Number((r as any)[field]);
-      return !isNaN(v) && v > 0;
-    });
+  const idebHist = getHist('ideb');
+  const rendHist = getHist('taxas_rendimento');
+  const tdiHist  = getHist('tdi');
+  const atuHist  = getHist('atu');
+  const hadHist  = getHist('had');
+  const dsuHist  = getHist('dsu');
+  const irdHist  = getHist('ird');
+  const afdHist  = getHist('afd');
+  const iedHist  = getHist('ied');
+
+  // Generic progression helper
+  // higherIsBetter=true: increase is good (DSU, HAD, IRD, AFD, aprovação)
+  // higherIsBetter=false: decrease is good (abandono, reprovação, TDI, ATU, IED)
+  function getProgInd(
+    hist: any[],
+    field: string,
+    higherIsBetter: boolean
+  ): { delta: number; label: string; anoAnterior: number } | null {
+    const comDados = hist.filter(r => { const v = Number(r[field]); return !isNaN(v) && v > 0; });
     if (comDados.length < 2) return null;
     const ultimo = comDados[comDados.length - 1];
     const penultimo = comDados[comDados.length - 2];
-    const vAtual = Number((ultimo as any)[field]);
-    const vAnterior = Number((penultimo as any)[field]);
-    const delta = vAtual - vAnterior;
+    const delta = Number(ultimo[field]) - Number(penultimo[field]);
+    const threshold = 0.3;
+    if (higherIsBetter && delta > threshold)
+      return { delta, label: `subiu ${round1(delta)} p.p. desde ${penultimo.ano}`, anoAnterior: penultimo.ano };
+    if (!higherIsBetter && delta < -threshold)
+      return { delta, label: `caiu ${round1(Math.abs(delta))} p.p. desde ${penultimo.ano}`, anoAnterior: penultimo.ano };
+    return null;
+  }
+
+  // IDEB uses points (not p.p.)
+  function getIdebProgressao(field: string): { delta: number; label: string; anoAnterior: number } | null {
+    const comDados = idebHist.filter(r => { const v = Number(r[field]); return !isNaN(v) && v > 0; });
+    if (comDados.length < 2) return null;
+    const ultimo = comDados[comDados.length - 1];
+    const penultimo = comDados[comDados.length - 2];
+    const delta = Number(ultimo[field]) - Number(penultimo[field]);
     if (delta > 0.05) return { delta, label: `subiu ${round1(delta)} ponto${delta >= 2 ? 's' : ''} desde ${penultimo.ano}`, anoAnterior: penultimo.ano };
     return null;
   }
@@ -222,42 +250,178 @@ export function getDiagnosticoLocal(inep: string) {
     if ((inse.media_inse ?? 0) >= 5) pontos_fortes.push(`Nível socioeconômico favorável: ${inse.nivel_inse ?? round1(inse.media_inse)}`);
   }
 
-  const abandFund = rend.abandono_fund;
-  const abandMed = rend.abandono_med;
-  if (abandFund != null && abandFund < 1) pontos_fortes.push(`Baixa taxa de abandono no Ensino Fundamental: ${round1(abandFund)}%`);
-  else if (abandFund != null && abandFund > 5) pontos_atencao.push(`Taxa de abandono elevada no Fundamental: ${round1(abandFund)}% — busca ativa recomendada`);
-
-  if (abandMed != null && abandMed > 8) pontos_atencao.push(`Taxa de abandono no Ensino Médio: ${round1(abandMed)}% — atenção à permanência`);
-  else if (abandMed != null && abandMed < 2) pontos_fortes.push(`Boa retenção no Ensino Médio: abandono de apenas ${round1(abandMed)}%`);
-
-  const reprovFund = rend.reprovacao_fund;
-  if (reprovFund != null) {
-    if (reprovFund > 15) pontos_atencao.push(`Reprovação alta no Fundamental: ${round1(reprovFund)}%`);
-    else if (reprovFund < 5) pontos_fortes.push(`Baixa reprovação no Fundamental: ${round1(reprovFund)}%`);
+  // ── Taxas de Rendimento (abandono e reprovação) ──
+  const abandEtapas = [
+    { field: 'abandono_fund', label: 'Ensino Fundamental', limCrit: 5, limWarn: 2 },
+    { field: 'abandono_med',  label: 'Ensino Médio',       limCrit: 8, limWarn: 4 },
+  ];
+  for (const { field, label, limCrit, limWarn } of abandEtapas) {
+    const v = rend[field];
+    if (v == null) continue;
+    const prog = getProgInd(rendHist, field, false); // lower is better
+    if (v < 1) {
+      pontos_fortes.push(`Baixa taxa de abandono no ${label}: ${round1(v)}%`);
+    } else if (prog) {
+      pontos_fortes.push(`Abandono no ${label} em queda: ${prog.label} (atual: ${round1(v)}%)`);
+      if (v > limCrit) pontos_atencao.push(`Taxa de abandono no ${label} ainda elevada (${round1(v)}%) — mas já está caindo. Continue com as ações de busca ativa.`);
+    } else if (v > limCrit) {
+      pontos_atencao.push(`Taxa de abandono elevada no ${label}: ${round1(v)}% — busca ativa recomendada`);
+    } else if (v > limWarn) {
+      pontos_atencao.push(`Taxa de abandono no ${label}: ${round1(v)}% — monitore e implemente estratégias de permanência`);
+    } else if (v < 2) {
+      pontos_fortes.push(`Boa retenção no ${label}: abandono de apenas ${round1(v)}%`);
+    }
   }
 
+  const reprovEtapas = [
+    { field: 'reprovacao_fund', label: 'Fundamental', limCrit: 15, limWarn: 8 },
+    { field: 'reprovacao_med',  label: 'Ensino Médio', limCrit: 15, limWarn: 8 },
+  ];
+  for (const { field, label, limCrit, limWarn } of reprovEtapas) {
+    const v = rend[field];
+    if (v == null) continue;
+    const prog = getProgInd(rendHist, field, false);
+    if (v < 5) {
+      pontos_fortes.push(`Baixa reprovação no ${label}: ${round1(v)}%`);
+    } else if (prog) {
+      pontos_fortes.push(`Reprovação no ${label} em queda: ${prog.label} (atual: ${round1(v)}%)`);
+      if (v > limCrit) pontos_atencao.push(`Reprovação no ${label} ainda elevada (${round1(v)}%) — a tendência é positiva, mas vale revisar práticas avaliativas.`);
+    } else if (v > limCrit) {
+      pontos_atencao.push(`Reprovação alta no ${label}: ${round1(v)}% — revise práticas pedagógicas e avaliativas`);
+    } else if (v > limWarn) {
+      pontos_atencao.push(`Reprovação no ${label}: ${round1(v)}% — acompanhe e considere reforço escolar`);
+    }
+  }
+
+  // ── TDI (distorção idade-série) ──
   const tdiEtapas = [
-    { key: 'tdi_fund_ai', label: 'Fundamental AI' },
-    { key: 'tdi_fund_af', label: 'Fundamental AF' },
-    { key: 'tdi_med', label: 'Ensino Médio' },
+    { key: 'fundamental_total', label: 'Fundamental' },
+    { key: 'medio_total',       label: 'Ensino Médio' },
   ];
   for (const { key, label } of tdiEtapas) {
     const v = tdi[key];
-    if (v != null && v > 30) pontos_atencao.push(`Distorção idade-série elevada no ${label}: ${round1(v)}%`);
+    if (v == null) continue;
+    const prog = getProgInd(tdiHist, key, false);
+    if (prog) {
+      pontos_fortes.push(`Distorção idade-série no ${label} em queda: ${prog.label} (atual: ${round1(v)}%)`);
+      if (v > 30) pontos_atencao.push(`Distorção idade-série no ${label} ainda elevada (${round1(v)}%) — mas está melhorando. Considere programas de correção de fluxo.`);
+    } else if (v > 30) {
+      pontos_atencao.push(`Distorção idade-série elevada no ${label}: ${round1(v)}% — considere programas de correção de fluxo`);
+    } else if (v > 20) {
+      pontos_atencao.push(`Distorção idade-série no ${label}: ${round1(v)}% — monitore e planeje intervenções pedagógicas`);
+    }
   }
 
+  // ── ATU (alunos por turma) ──
   const atuEtapas = [
-    { key: 'atu_fund_ai', label: 'Fundamental AI' },
-    { key: 'atu_fund_af', label: 'Fundamental AF' },
-    { key: 'atu_med', label: 'Ensino Médio' },
+    { key: 'media_fund', label: 'Fundamental' },
+    { key: 'media_med',  label: 'Ensino Médio' },
   ];
   for (const { key, label } of atuEtapas) {
     const v = atu[key];
-    if (v != null && v > 35) pontos_atencao.push(`Turmas superlotadas no ${label}: média de ${round1(v)} alunos/turma`);
+    if (v == null) continue;
+    const prog = getProgInd(atuHist, key, false);
+    if (v > 35) {
+      if (prog) {
+        pontos_fortes.push(`Média de alunos/turma no ${label} caindo: ${prog.label} (atual: ${round1(v)})`);
+        pontos_atencao.push(`Turmas ainda superlotadas no ${label} (${round1(v)} alunos) — mas a tendência é de redução.`);
+      } else {
+        pontos_atencao.push(`Turmas superlotadas no ${label}: média de ${round1(v)} alunos/turma`);
+      }
+    }
   }
 
-  // Check if there is any IDEB progression detected
-  const algumIdebMelhorando = (['ai','af','em'] as const).some(k => getIdebProgressao(`ideb_${k}`) !== null);
+  // ── HAD (horas-aula diárias) ──
+  const hadEtapas = [
+    { key: 'media_fund', label: 'Fundamental' },
+    { key: 'media_med',  label: 'Ensino Médio' },
+  ];
+  for (const { key, label } of hadEtapas) {
+    const v = had[key];
+    if (v == null || v <= 0) continue;
+    const prog = getProgInd(hadHist, key, true);
+    if (v >= 4) {
+      if (prog) pontos_fortes.push(`Carga horária no ${label} crescendo: ${prog.label} (atual: ${round1(v)}h/dia)`);
+    } else if (prog) {
+      pontos_fortes.push(`Carga horária no ${label} aumentando: ${prog.label} (atual: ${round1(v)}h/dia)`);
+    } else {
+      pontos_atencao.push(`Carga horária baixa no ${label}: ${round1(v)}h/dia — considere ampliar a jornada escolar`);
+    }
+  }
+
+  // ── DSU (docentes com curso superior) ──
+  const dsuEtapas = [
+    { key: 'percentual_fund', label: 'Fundamental' },
+    { key: 'percentual_med',  label: 'Ensino Médio' },
+  ];
+  for (const { key, label } of dsuEtapas) {
+    const v = dsu[key];
+    if (v == null || v <= 0) continue;
+    const prog = getProgInd(dsuHist, key, true);
+    if (v >= 80) {
+      if (prog) pontos_fortes.push(`Formação superior docente no ${label} crescendo: ${prog.label} (atual: ${round1(v)}%)`);
+      else pontos_fortes.push(`Boa formação docente no ${label}: ${round1(v)}% com curso superior`);
+    } else if (prog) {
+      pontos_fortes.push(`Formação docente no ${label} em alta: ${prog.label} (atual: ${round1(v)}%)`);
+      if (v < 60) pontos_atencao.push(`Docentes com superior no ${label} ainda abaixo de 60% (${round1(v)}%) — mas crescendo.`);
+    } else if (v < 60) {
+      pontos_atencao.push(`Poucos docentes com curso superior no ${label}: ${round1(v)}% — incentive a formação continuada`);
+    } else {
+      pontos_atencao.push(`Formação docente no ${label}: ${round1(v)}% com superior — incentive a formação continuada`);
+    }
+  }
+
+  // ── IRD (regularidade docente) ──
+  const irdMedia = Number(ird.media_ird ?? ird.media ?? 0);
+  if (irdMedia > 0) {
+    const prog = getProgInd(irdHist, 'media_ird', true) || getProgInd(irdHist, 'media', true);
+    if (irdMedia >= 3) {
+      if (prog) pontos_fortes.push(`Regularidade docente crescendo: ${prog.label} (atual: ${irdMedia.toFixed(2)})`);
+    } else if (prog) {
+      pontos_fortes.push(`Regularidade docente em alta: ${prog.label} (atual: ${irdMedia.toFixed(2)})`);
+    } else if (irdMedia < 2) {
+      pontos_atencao.push(`Baixa regularidade docente: ${irdMedia.toFixed(2)} — alta rotatividade de professores`);
+    }
+  }
+
+  // ── AFD (adequação formação docente) ──
+  const afdFund = Number(afd.fun_cat_1 ?? 0);
+  if (afdFund > 0) {
+    const prog = getProgInd(afdHist, 'fun_cat_1', true);
+    if (prog) {
+      pontos_fortes.push(`Adequação docente no Fundamental crescendo: ${prog.label} (atual: ${afdFund.toFixed(1)}%)`);
+      if (afdFund < 50) pontos_atencao.push(`Adequação docente no Fundamental ainda abaixo de 50% (${afdFund.toFixed(1)}%) — mas em melhora.`);
+    } else if (afdFund < 50) {
+      pontos_atencao.push(`Adequação da formação docente baixa: ${afdFund.toFixed(1)}% — invista em formação alinhada à área de atuação`);
+    }
+  }
+
+  // ── IED (esforço docente) ──
+  const iedN5 = Number(ied.nivel_5 || 0);
+  const iedN6 = Number(ied.nivel_6 || 0);
+  const iedAlto = iedN5 + iedN6;
+  if (iedAlto > 0) {
+    const prog = getProgInd(iedHist, 'nivel_5', false);
+    if (iedAlto > 50) {
+      if (prog) {
+        pontos_fortes.push(`Sobrecarga docente em queda: ${prog.label} (atual: ${iedAlto.toFixed(1)}% nos níveis 5-6)`);
+        pontos_atencao.push(`Alta sobrecarga docente ainda presente (${iedAlto.toFixed(1)}% nos níveis 5-6) — mas a tendência é positiva.`);
+      } else {
+        pontos_atencao.push(`Alto esforço docente: ${iedAlto.toFixed(1)}% nos níveis 5 e 6 — risco de impacto na qualidade pedagógica`);
+      }
+    }
+  }
+
+  // Check if any indicator is improving (for resumo_geral)
+  const algumMelhorando =
+    (['ai','af','em'] as const).some(k => getIdebProgressao(`ideb_${k}`) !== null) ||
+    ['abandono_fund','abandono_med','reprovacao_fund'].some(f => getProgInd(rendHist, f, false) !== null) ||
+    ['fundamental_total','medio_total'].some(f => getProgInd(tdiHist, f, false) !== null) ||
+    ['media_fund','media_med'].some(f => getProgInd(atuHist, f, false) !== null) ||
+    ['media_fund','media_med'].some(f => getProgInd(dsuHist, f, true) !== null);
+
+  // (kept for backward compat — same as algumMelhorando)
+  const algumIdebMelhorando = algumMelhorando;
 
   let resumo_geral = "A escola possui base mínima para acompanhamento no painel.";
   if (pontos_fortes.length > 0 && pontos_atencao.length === 0) {
