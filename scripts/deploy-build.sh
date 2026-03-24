@@ -18,7 +18,8 @@ npm run build
 echo "=== [deploy-build] Step 2: Gzipping static assets in dist/public/assets/ ==="
 for f in dist/public/assets/*.js dist/public/assets/*.mjs dist/public/assets/*.css; do
   [ -f "$f" ] || continue
-  gzip -9 "$f"
+  # Keep original files and generate .gz in parallel for safer CDN/proxy behavior.
+  gzip -9 -k -f "$f"
   echo "  gzipped: $(basename "$f").gz"
 done
 

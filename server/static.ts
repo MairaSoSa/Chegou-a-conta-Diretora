@@ -12,6 +12,7 @@ const CONTENT_TYPES: Record<string, string> = {
 
 function precompressedMiddleware(distPath: string) {
   return (req: Request, res: Response, next: NextFunction) => {
+    if (req.method !== "GET" && req.method !== "HEAD") return next();
     const ext = path.extname(req.path);
     if (!GZIP_EXTS.has(ext)) return next();
     const gzPath = path.join(distPath, req.path + ".gz");
@@ -38,6 +39,13 @@ export function serveStatic(app: Express) {
   }
 
   app.use(express.static(distPath));
+
+  app.use("/{*path}", (req, res, next) => {
+    if (req.path.startsWith("/assets/") || path.extname(req.path)) {
+      return res.status(404).end();
+    }
+    return next();
+  });
 
   app.use("/{*path}", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
