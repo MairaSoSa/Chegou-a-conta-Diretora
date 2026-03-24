@@ -2,6 +2,8 @@ node_modules/
 *.db
 *.db-wal
 *.db-shm
+!dev.db
+!dev.db.backup-*
 .local/
 .git/
 .cache/
