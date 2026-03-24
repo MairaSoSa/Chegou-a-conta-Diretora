@@ -6,6 +6,72 @@ DOWNLOAD_URL="${SQLITE_DB_DOWNLOAD_URL:-}"
 PORT="${PORT:-5000}"
 FORCE_DOWNLOAD="${FORCE_DOWNLOAD:-false}"
 
+ensure_parent_dir() {
+  mkdir -p "$(dirname "$DB_PATH")"
+}
+
+copy_bundled_db_if_available() {
+  if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
+    return 0
+  fi
+
+  local bundled=""
+  if [ -n "${SQLITE_DB_BUNDLED_PATH:-}" ] && [ -f "$SQLITE_DB_BUNDLED_PATH" ] && [ -s "$SQLITE_DB_BUNDLED_PATH" ]; then
+    bundled="$SQLITE_DB_BUNDLED_PATH"
+  elif [ -f "/app/dev.db" ] && [ -s "/app/dev.db" ]; then
+    bundled="/app/dev.db"
+  else
+    # Fallback para backup com nome versionado presente no repositório.
+    bundled=$(ls -1 /app/dev.db.backup-* 2>/dev/null | head -n 1 || true)
+  fi
+
+  if [ -n "$bundled" ] && [ -f "$bundled" ] && [ -s "$bundled" ]; then
+    echo "[START] Banco embarcado encontrado em $bundled; copiando para $DB_PATH..."
+    ensure_parent_dir
+    cp "$bundled" "$DB_PATH"
+  fi
+}
+
+validate_db() {
+  python3 - <<'PYEOF'
+import os
+import sqlite3
+import sys
+
+db_path = os.environ.get("DB_PATH")
+if not db_path or not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
+    sys.exit(1)
+
+try:
+    con = sqlite3.connect(db_path)
+    cur = con.cursor()
+    cur.execute("PRAGMA quick_check")
+    if cur.fetchone()[0] != "ok":
+        sys.exit(2)
+
+    cur.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='censo_escolar'")
+    if cur.fetchone()[0] == 0:
+        sys.exit(3)
+
+    cur.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='indicadores_educacionais'")
+    if cur.fetchone()[0] == 0:
+        sys.exit(4)
+
+    cur.execute("SELECT COUNT(*) FROM censo_escolar")
+    if cur.fetchone()[0] == 0:
+        sys.exit(5)
+
+    sys.exit(0)
+except Exception:
+    sys.exit(9)
+finally:
+    try:
+        con.close()
+    except Exception:
+        pass
+PYEOF
+}
+
 # ── Phase 1: download DB if needed ───────────────────────────────────────────
 # Force re-download if FORCE_DOWNLOAD=true (useful when the Drive file was updated)
 if [ "$FORCE_DOWNLOAD" = "true" ] && [ -n "$DOWNLOAD_URL" ]; then
@@ -13,9 +79,21 @@ if [ "$FORCE_DOWNLOAD" = "true" ] && [ -n "$DOWNLOAD_URL" ]; then
   rm -f "$DB_PATH"
 fi
 
+copy_bundled_db_if_available
+
+if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
+  if validate_db; then
+    echo "[START] Banco válido encontrado em $DB_PATH: $(du -sh "$DB_PATH" | cut -f1)"
+  else
+    echo "[START] Banco em $DB_PATH está inválido/incompleto; removendo para reprocessar..."
+    rm -f "$DB_PATH"
+  fi
+fi
+
 if [ ! -f "$DB_PATH" ] || [ ! -s "$DB_PATH" ]; then
   if [ -z "$DOWNLOAD_URL" ]; then
-    echo "[ERRO] Banco não encontrado em $DB_PATH e SQLITE_DB_DOWNLOAD_URL não definida."
+    echo "[ERRO] Banco não encontrado/validado em $DB_PATH."
+    echo "[ERRO] Defina SQLITE_DB_DOWNLOAD_URL (ou SQLITE_DB_BUNDLED_PATH) nas variáveis do Railway."
     exit 1
   fi
 
@@ -42,7 +120,7 @@ PYEOF
   echo "[START] Servidor de espera rodando (PID $HEALTH_PID)"
 
   echo "[START] Baixando banco de dados (~10 GB)..."
-  mkdir -p "$(dirname "$DB_PATH")"
+  ensure_parent_dir
 
   if echo "$DOWNLOAD_URL" | grep -q "drive.google.com"; then
     python3 -m gdown "$DOWNLOAD_URL" -O "$DB_PATH" --fuzzy
@@ -50,7 +128,13 @@ PYEOF
     curl -L --retry 3 --retry-delay 5 "$DOWNLOAD_URL" -o "$DB_PATH"
   fi
 
-  echo "[START] Download concluído: $(du -sh "$DB_PATH" | cut -f1)"
+  if validate_db; then
+    echo "[START] Download concluído e validado: $(du -sh "$DB_PATH" | cut -f1)"
+  else
+    echo "[ERRO] Download concluído, mas o arquivo não é um banco SQLite válido com dados do censo."
+    kill "$HEALTH_PID" 2>/dev/null || true
+    exit 1
+  fi
 
   kill "$HEALTH_PID" 2>/dev/null || true
   sleep 1
