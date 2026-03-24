@@ -1579,7 +1579,7 @@ export default function Dashboard() {
                     bestIdeb != null ? { label: 'IDEB', val: Number(bestIdeb).toFixed(1), status: bestIdeb >= 6 ? 'ok' : bestIdeb >= 4 ? 'warn' : 'bad' } : null,
                     abandono != null ? { label: 'Abandono', val: `${Number(abandono).toFixed(1)}%`, status: Number(abandono) < 1 ? 'ok' : Number(abandono) < 5 ? 'warn' : 'bad' } : null,
                     pddeAdimplente !== null ? { label: 'PDDE', val: pddeAdimplente ? 'Adimplente' : 'Verificar', status: pddeAdimplente ? 'ok' : 'warn' } : null,
-                    total === 0 ? { label: 'Alertas', val: 'Tudo certo', status: 'ok' } : null,
+                    null,
                     criticals.length > 0 ? { label: 'Pontos de atenção', val: `${criticals.length} ${criticals.length !== 1 ? 'precisam' : 'precisa'} de atenção`, status: 'bad' } : null,
                     warnings.length > 0 && criticals.length === 0 ? { label: 'Pontos de atenção', val: `${warnings.length} aviso${warnings.length !== 1 ? 's' : ''}`, status: 'warn' } : null,
                   ].filter(Boolean) as { label: string; val: string; status: 'ok'|'warn'|'bad' }[];
@@ -2286,7 +2286,7 @@ out center tags 100;`;
                       { label: `Docentes ${latestAno}`, val: censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0, prev: censoPrev ? (censoPrev.qt_doc_bas || censoPrev.qt_docentes || 0) : 0, icon: '🧑‍🏫' },
                       { label: `Turmas ${latestAno}`, val: censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0, prev: censoPrev ? (censoPrev.qt_tur_bas || censoPrev.qt_turmas || 0) : 0, icon: '🏫' },
                       { label: 'Salas utilizadas', val: censoLatest.qt_salas_utilizadas || 0, prev: censoPrev?.qt_salas_utilizadas || 0, icon: '🚪' },
-                      { label: 'Pontos de atenção', val: total, prev: null, icon: criticals.length > 0 ? '⚠️' : total > 0 ? '◌' : '✅', extra: total === 0 ? 'Tudo certo' : criticals.length > 0 ? `${criticals.length} ${criticals.length !== 1 ? 'precisam' : 'precisa'} de atenção` : `${warnings.length} aviso${warnings.length !== 1 ? 's' : ''}` },
+                      { label: 'Pontos de atenção', val: total, prev: null, icon: criticals.length > 0 ? '⚠️' : total > 0 ? '◌' : '✅', extra: total === 0 ? '' : criticals.length > 0 ? `${criticals.length} ${criticals.length !== 1 ? 'precisam' : 'precisa'} de atenção` : `${warnings.length} aviso${warnings.length !== 1 ? 's' : ''}` },
                       { label: 'Status PDDE', val: pddeData?.ok ? (prestacaoContaData?.ok && prestacaoContaData.itens.every((it:any)=>it.situacao_pc_uex?.toLowerCase().includes('adimpl')) ? '✅' : 'Ver') : '—', prev: null, icon: '💸', extra: prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? `${prestacaoContaData.itens.length} programa(s)` : pddeData?.ok ? 'Ativo' : 'Sem dados' },
                     ];
                     return (
