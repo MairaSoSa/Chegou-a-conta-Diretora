@@ -125,8 +125,6 @@
     @apply border-border;
   }
   html {
-    /* mesma cor do fundo do footer — sem descontinuidade no fim da página */
-    background-color: #b0bfa4;
     overflow-x: hidden;
     max-width: 100vw;
   }
