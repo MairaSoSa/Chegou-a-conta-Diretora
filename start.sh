@@ -46,6 +46,13 @@ PYEOF
 fail_with_status() {
   local status="$1"
   local message="$2"
+
+  if [ -n "${HEALTH_PID:-}" ]; then
+    kill "$HEALTH_PID" 2>/dev/null || true
+    wait "$HEALTH_PID" 2>/dev/null || true
+    unset HEALTH_PID
+  fi
+
   echo "[ERRO] $message"
   start_status_server "$status" "$message"
 }
