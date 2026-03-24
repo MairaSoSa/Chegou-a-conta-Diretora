@@ -4,10 +4,15 @@ set -e
 DB_PATH="${SQLITE_DB_PATH:-/data/dev.db}"
 DOWNLOAD_URL="${SQLITE_DB_DOWNLOAD_URL:-}"
 PORT="${PORT:-5000}"
+FORCE_DOWNLOAD="${FORCE_DOWNLOAD:-false}"
 
-# ── Phase 1: if the DB doesn't exist yet, serve a minimal health-check HTTP
-#    server so Replit's startup probe doesn't time out while we download the
-#    2.7 GB SQLite file.  The real app starts once the download is done. ──────
+# ── Phase 1: download DB if needed ───────────────────────────────────────────
+# Force re-download if FORCE_DOWNLOAD=true (useful when the Drive file was updated)
+if [ "$FORCE_DOWNLOAD" = "true" ] && [ -n "$DOWNLOAD_URL" ]; then
+  echo "[START] FORCE_DOWNLOAD=true — removendo banco antigo e baixando novamente..."
+  rm -f "$DB_PATH"
+fi
+
 if [ ! -f "$DB_PATH" ] || [ ! -s "$DB_PATH" ]; then
   if [ -z "$DOWNLOAD_URL" ]; then
     echo "[ERRO] Banco não encontrado em $DB_PATH e SQLITE_DB_DOWNLOAD_URL não definida."
@@ -36,7 +41,7 @@ PYEOF
   HEALTH_PID=$!
   echo "[START] Servidor de espera rodando (PID $HEALTH_PID)"
 
-  echo "[START] Baixando banco de dados (~2.7 GB)..."
+  echo "[START] Baixando banco de dados (~10 GB)..."
   mkdir -p "$(dirname "$DB_PATH")"
 
   if echo "$DOWNLOAD_URL" | grep -q "drive.google.com"; then
@@ -47,7 +52,6 @@ PYEOF
 
   echo "[START] Download concluído: $(du -sh "$DB_PATH" | cut -f1)"
 
-  # Shut down the temporary health-check server
   kill "$HEALTH_PID" 2>/dev/null || true
   sleep 1
 else
