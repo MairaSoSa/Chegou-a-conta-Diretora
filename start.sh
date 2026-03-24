@@ -43,6 +43,13 @@ with socketserver.TCPServer(("", PORT), Handler) as httpd:
 PYEOF
 }
 
+fail_with_status() {
+  local status="$1"
+  local message="$2"
+  echo "[ERRO] $message"
+  start_status_server "$status" "$message"
+}
+
 copy_bundled_db_if_available() {
   if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
     return 0
@@ -156,17 +163,23 @@ PYEOF
   ensure_parent_dir
 
   if echo "$DOWNLOAD_URL" | grep -q "drive.google.com"; then
-    python3 -m gdown "$DOWNLOAD_URL" -O "$DB_PATH" --fuzzy
+    if ! python3 -m gdown "$DOWNLOAD_URL" -O "$DB_PATH" --fuzzy; then
+      rm -f "$DB_PATH"
+      fail_with_status "database_download_failed" "Falha ao baixar banco do Google Drive. O arquivo pode ter excedido a cota de downloads."
+    fi
   else
-    curl -L --retry 3 --retry-delay 5 "$DOWNLOAD_URL" -o "$DB_PATH"
+    if ! curl -L --retry 3 --retry-delay 5 "$DOWNLOAD_URL" -o "$DB_PATH"; then
+      rm -f "$DB_PATH"
+      fail_with_status "database_download_failed" "Falha ao baixar banco de dados pela URL configurada."
+    fi
   fi
 
   if validate_db; then
     echo "[START] Download concluído e validado: $(du -sh "$DB_PATH" | cut -f1)"
   else
-    echo "[ERRO] Download concluído, mas o arquivo não é um banco SQLite válido com dados do censo."
     kill "$HEALTH_PID" 2>/dev/null || true
-    exit 1
+    rm -f "$DB_PATH"
+    fail_with_status "database_invalid" "Download concluído, mas o arquivo não é um banco SQLite válido com dados do censo."
   fi
 
   kill "$HEALTH_PID" 2>/dev/null || true
