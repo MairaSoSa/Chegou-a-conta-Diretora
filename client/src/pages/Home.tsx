@@ -44,7 +44,7 @@ const NOTE_CARDS: NoteCard[] = [
     Icon: CalendarDays,
     title: "Calendário",
     desc: "Prazos de prestação de contas e repasses FNDE.",
-    small: "não perca o prazo",
+    small: "",
     href: "/calendario",
   },
   {
