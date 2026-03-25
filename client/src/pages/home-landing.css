@@ -250,7 +250,7 @@
 /* ── Layout principal ── */
 .hl-layout {
   display: grid; grid-template-columns: 1.3fr .7fr;
-  gap: 22px; flex: 1; min-height: 0; padding: 0 4px 0 0;
+  gap: 22px; flex: 1; min-height: 0; padding: 16px 4px 8px 0;
 }
 
 /* ── Coluna esquerda ── */
@@ -646,6 +646,7 @@
 /* ── Caderno / Trilha ── papel sem pauta ── */
 .hl-caderno-box {
   position: relative; flex: 1; min-height: 0; max-height: 488px;
+  margin-top: 16px;
   border-radius: 3px 14px 3px 3px;
   padding: 16px 18px 14px;
   background:
@@ -746,6 +747,10 @@
   border-top: 1px solid rgba(190,160,115,.2);
   flex-shrink: 0;
   background: none;
+}
+
+.hl-footer-desktop .hl-a11y-pill {
+  margin-top: 8px;
 }
 
 

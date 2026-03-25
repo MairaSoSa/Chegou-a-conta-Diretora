@@ -21,6 +21,7 @@ export function AccessibilityMenu({ isOpen, onToggle }: { isOpen: boolean; onTog
   const [fontSize, setFontSize] = useState(100);
   const [highContrast, setHighContrast] = useState(false);
   const [dyslexiaFont, setDyslexiaFont] = useState(false);
+  const DYSLEXIA_MIN_FONT_SIZE = 110;
 
   const { readPage, readPageDescribed, readSelection, isActive } = useTTS();
 
@@ -40,6 +41,11 @@ export function AccessibilityMenu({ isOpen, onToggle }: { isOpen: boolean; onTog
     if (savedDyslexia === "true") {
       setDyslexiaFont(true);
       document.documentElement.classList.add("dyslexia-font");
+      if (!savedFontSize || parseInt(savedFontSize) < DYSLEXIA_MIN_FONT_SIZE) {
+        document.documentElement.style.fontSize = `${DYSLEXIA_MIN_FONT_SIZE}%`;
+        setFontSize(DYSLEXIA_MIN_FONT_SIZE);
+        localStorage.setItem(FONT_SIZE_KEY, DYSLEXIA_MIN_FONT_SIZE.toString());
+      }
     }
   }, []);
 
@@ -60,6 +66,10 @@ export function AccessibilityMenu({ isOpen, onToggle }: { isOpen: boolean; onTog
     const v = !dyslexiaFont; setDyslexiaFont(v);
     document.documentElement.classList.toggle("dyslexia-font", v);
     localStorage.setItem(DYSLEXIA_FONT_KEY, v.toString());
+
+    if (v && fontSize < DYSLEXIA_MIN_FONT_SIZE) {
+      updateFontSize(DYSLEXIA_MIN_FONT_SIZE);
+    }
   };
 
   const resetAll = () => {
@@ -115,6 +125,21 @@ export function AccessibilityMenu({ isOpen, onToggle }: { isOpen: boolean; onTog
           </div>
 
           <div className="space-y-2">
+            {/* Fonte para dislexia */}
+            <button
+              onClick={toggleDyslexiaFont}
+              aria-pressed={dyslexiaFont}
+              className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-[12px] font-medium transition-colors ${
+                dyslexiaFont
+                  ? "border-[#c5a08a] bg-[#8e2f2f] text-white"
+                  : "border-[#d9cec6] bg-[#f5ede7] text-[#5a3328] hover:bg-[#ede3db]"
+              }`}
+            >
+              <Type className="w-3 h-3" />
+              Fonte para dislexia (110%+)
+              {dyslexiaFont && <span className="ml-auto text-[10px] opacity-80">Ativo</span>}
+            </button>
+
             {/* Tamanho do texto */}
             <div className="space-y-1.5">
               <label className="flex items-center gap-1.5 text-[11px] text-[#8b5a4d]">
@@ -154,21 +179,6 @@ export function AccessibilityMenu({ isOpen, onToggle }: { isOpen: boolean; onTog
               <Contrast className="w-3 h-3" />
               Alto contraste
               {highContrast && <span className="ml-auto text-[10px] opacity-80">Ativo</span>}
-            </button>
-
-            {/* Fonte dislexia */}
-            <button
-              onClick={toggleDyslexiaFont}
-              aria-pressed={dyslexiaFont}
-              className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-[12px] font-medium transition-colors ${
-                dyslexiaFont
-                  ? "border-[#c5a08a] bg-[#8e2f2f] text-white"
-                  : "border-[#d9cec6] bg-[#f5ede7] text-[#5a3328] hover:bg-[#ede3db]"
-              }`}
-            >
-              <Type className="w-3 h-3" />
-              Fonte para dislexia
-              {dyslexiaFont && <span className="ml-auto text-[10px] opacity-80">Ativo</span>}
             </button>
 
             {/* Leitura em voz */}
