@@ -1,3 +1,4 @@
+import { useCallback, useEffect } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -76,10 +77,38 @@ const NOTE_CARDS: NoteCard[] = [
   },
 ];
 
+const preloadDashboardPage = () => import("@/pages/Dashboard");
+
 export default function Home() {
   const { toggle: toggleAccessibility } = useAccessibility();
   const { data: trilhaUnits = [] } = useQuery<TrilhaUnit[]>({ queryKey: ["/api/trilha"] });
   const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
+
+  const handlePreloadDashboard = useCallback(() => {
+    void preloadDashboardPage();
+  }, []);
+
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
+
+    if (typeof w.requestIdleCallback === "function") {
+      const idleId = w.requestIdleCallback(() => {
+        void preloadDashboardPage();
+      });
+
+      return () => {
+        if (typeof w.cancelIdleCallback === "function") {
+          w.cancelIdleCallback(idleId);
+        }
+      };
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void preloadDashboardPage();
+    }, 1200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   const heroTags = (settings?.home_hero_tags || "PDDE,financiamento,ferramentas,políticas públicas")
     .split(",").map(t => t.trim()).filter(Boolean);
@@ -124,7 +153,12 @@ export default function Home() {
               <div className="hl-cards-grid">
                 {NOTE_CARDS.map((card, i) => (
                   <Link key={i} href={card.href}>
-                    <div className={`hl-note-card ${card.color}`}>
+                    <div
+                      className={`hl-note-card ${card.color}`}
+                      onMouseEnter={card.href === "/dashboard" ? handlePreloadDashboard : undefined}
+                      onTouchStart={card.href === "/dashboard" ? handlePreloadDashboard : undefined}
+                      onFocus={card.href === "/dashboard" ? handlePreloadDashboard : undefined}
+                    >
                       <div className="hl-card-icon">
                         <card.Icon size={18} color={card.iconColor} strokeWidth={1.75} />
                       </div>

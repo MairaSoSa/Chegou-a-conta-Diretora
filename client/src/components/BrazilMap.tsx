@@ -59,6 +59,7 @@ function getSimilarColor(count: number, max: number): string {
 
 type Props = {
   onStateClick?: (uf: string) => void;
+  onStateHover?: (uf: string) => void;
   ufStats?: Record<string, { name: string; escolas: number; matriculas?: number; color?: string }>;
   selectedUf?: string | null;
   clickedUf?: string | null;
@@ -66,7 +67,7 @@ type Props = {
   similarUfCounts?: Record<string, number>;
 };
 
-export function BrazilMap({ onStateClick, ufStats, selectedUf, clickedUf, similarMode, similarUfCounts }: Props) {
+export function BrazilMap({ onStateClick, onStateHover, ufStats, selectedUf, clickedUf, similarMode, similarUfCounts }: Props) {
   const [tooltip, setTooltip] = useState<{
     x: number; y: number; uf: string; escolas: number; matriculas?: number; name: string; similarCount?: number;
   } | null>(null);
@@ -159,6 +160,7 @@ export function BrazilMap({ onStateClick, ufStats, selectedUf, clickedUf, simila
                   geography={geo}
                   onClick={() => onStateClick && onStateClick(uf)}
                   onMouseEnter={e => {
+                    onStateHover?.(uf);
                     const bounds = (e.target as SVGPathElement).getBoundingClientRect();
                     setTooltip({
                       x: bounds.left + bounds.width / 2,
@@ -181,7 +183,7 @@ export function BrazilMap({ onStateClick, ufStats, selectedUf, clickedUf, simila
                       opacity: similarMode && !isSchoolState && !similarCount ? 0.45 : 1,
                     },
                     hover: {
-                      fill: isSchoolState ? "#fbbf24" : similarMode ? "#0d9488" : "#60a5fa",
+                      fill: isSchoolState ? "#fbbf24" : similarMode ? "#0d9488" : "#2f7a5f",
                       outline: "none",
                       stroke: "#1e3a5f",
                       strokeWidth: 1.5,

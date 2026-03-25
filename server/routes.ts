@@ -815,9 +815,17 @@ export async function registerRoutes(
   app.get("/api/censo-escolar/:ano/uf/:uf/stats", (req, res) => {
     const ano = parseInt(req.params.ano);
     const uf = (req.params.uf || "").toUpperCase();
+
     try {
       const total = sqlite.prepare(
         `SELECT COUNT(*) as escolas, SUM(CAST(matriculas as INTEGER)) as matriculas
+         FROM censo_escolar WHERE ano=? AND upper(uf)=?`
+      ).get(ano, uf) as any;
+      const totalComDocentes = sqlite.prepare(
+        `SELECT COUNT(*) as escolas,
+                COALESCE(SUM(CAST(matriculas as INTEGER)),0) as matriculas,
+                COALESCE(SUM(CAST(docentes as INTEGER)),0) as docentes,
+                COALESCE(SUM(CAST(turmas as INTEGER)),0) as turmas
          FROM censo_escolar WHERE ano=? AND upper(uf)=?`
       ).get(ano, uf) as any;
       const porDep = sqlite.prepare(
@@ -831,11 +839,14 @@ export async function registerRoutes(
          FROM censo_escolar WHERE ano=? AND upper(uf)=? AND situacao='Em Atividade'
          GROUP BY municipio ORDER BY escolas DESC LIMIT 8`
       ).all(ano, uf) as any[];
+
       res.json({
         uf,
         ano,
         total_escolas: total?.escolas || 0,
         total_matriculas: total?.matriculas || 0,
+        total_docentes: totalComDocentes?.docentes || 0,
+        total_turmas: totalComDocentes?.turmas || 0,
         por_dependencia: Object.fromEntries(porDep.map((r: any) => [r.dependencia || "Outro", r.n])),
         por_localizacao: Object.fromEntries(porLoc.map((r: any) => [r.localizacao || "Outro", r.n])),
         top_municipios: topMun.map((r: any) => ({ municipio: r.municipio, escolas: r.escolas, matriculas: r.matriculas || 0 })),
@@ -867,6 +878,13 @@ export async function registerRoutes(
     } catch {}
 
     const CAMPOS = [
+      { key: "in_agua_potavel",             label: "Água potável" },
+      { key: "in_agua_rede_publica",        label: "Água da rede pública" },
+      { key: "in_esgoto_rede_publica",      label: "Esgoto em rede pública" },
+      { key: "in_lixo_servico_coleta",      label: "Coleta regular de lixo" },
+      { key: "in_energia_rede_publica",     label: "Energia da rede pública" },
+      { key: "in_banheiro",                 label: "Banheiro" },
+      { key: "in_banheiro_pne",             label: "Banheiro acessível (PNE)" },
       { key: "in_internet",                label: "Acesso à internet" },
       { key: "in_banda_larga",             label: "Banda larga" },
       { key: "in_wifi",                    label: "Wi-Fi" },
@@ -2233,6 +2251,13 @@ export async function registerRoutes(
   // Pré-aquece o cache de insights nacionais em background (query pesada, só precisa rodar uma vez)
   setTimeout(() => {
     const PREWARM_CAMPOS = [
+      { key: "in_agua_potavel",             label: "Água potável" },
+      { key: "in_agua_rede_publica",        label: "Água da rede pública" },
+      { key: "in_esgoto_rede_publica",      label: "Esgoto em rede pública" },
+      { key: "in_lixo_servico_coleta",      label: "Coleta regular de lixo" },
+      { key: "in_energia_rede_publica",     label: "Energia da rede pública" },
+      { key: "in_banheiro",                 label: "Banheiro" },
+      { key: "in_banheiro_pne",             label: "Banheiro acessível (PNE)" },
       { key: "in_internet",                label: "Acesso à internet" },
       { key: "in_banda_larga",             label: "Banda larga" },
       { key: "in_wifi",                    label: "Wi-Fi" },

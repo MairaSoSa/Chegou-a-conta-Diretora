@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, startTransition } from "react";
 import { BrazilMap } from "@/components/BrazilMap";
 import "../../public/painel-educacional.css";
 import { AlertPanel } from "@/components/AlertPanel";
@@ -7,6 +7,7 @@ import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Search, Users, ArrowRight, ArrowLeft,
   MapPin, GraduationCap, Info, ExternalLink,
@@ -190,6 +191,7 @@ const MEC_SECRETARIAS = [
 ];
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -268,14 +270,50 @@ export default function Dashboard() {
   const [censoInsightsUF, setCensoInsightsUF] = useState<any>(null);
   const [censoInsightsUFLoading, setCensoInsightsUFLoading] = useState(false);
   const [censoInsightsNacional, setCensoInsightsNacional] = useState<any>(null);
+  const censoInsightsUfCacheRef = useRef<Record<string, any>>({});
 
   useEffect(() => {
     if (!clickedUf) { setCensoInsightsUF(null); return; }
+
+    const cached = censoInsightsUfCacheRef.current[clickedUf];
+    if (cached) {
+      setCensoInsightsUF(cached);
+      setCensoInsightsUFLoading(false);
+      return;
+    }
+
     setCensoInsightsUFLoading(true);
     fetch(`/api/censo-escolar/insights/${clickedUf}`)
-      .then(r => r.json()).then(d => { setCensoInsightsUF(d); setCensoInsightsUFLoading(false); })
+      .then(r => r.json()).then(d => {
+        censoInsightsUfCacheRef.current[clickedUf] = d;
+        setCensoInsightsUF(d);
+        setCensoInsightsUFLoading(false);
+      })
       .catch(() => setCensoInsightsUFLoading(false));
   }, [clickedUf]);
+
+  const prefetchUfData = (uf: string) => {
+    if (!uf || similarMode) return;
+
+    void queryClient.prefetchQuery({
+      queryKey: ["uf-stats", uf, selectedAno],
+      queryFn: async () => {
+        const res = await fetch(`/api/censo-escolar/${selectedAno}/uf/${uf}/stats`);
+        if (!res.ok) return null;
+        return res.json();
+      },
+      staleTime: 30 * 60 * 1000,
+    });
+
+    if (!censoInsightsUfCacheRef.current[uf]) {
+      void fetch(`/api/censo-escolar/insights/${uf}`)
+        .then(r => r.json())
+        .then(d => {
+          censoInsightsUfCacheRef.current[uf] = d;
+        })
+        .catch(() => {});
+    }
+  };
 
   useEffect(() => {
     fetch('/api/censo-escolar/insights/BR')
@@ -799,6 +837,21 @@ export default function Dashboard() {
       .sort((a, b) => b.escolas - a.escolas);
   }, [stats]);
 
+  const totalEscolasAtivas = useMemo(() => {
+    if (!stats) return 0;
+
+    const porSituacao = (stats as any).por_situacao as Record<string, number> | undefined;
+    if (!porSituacao) return Number((stats as any).total_escolas || 0);
+
+    const entradaAtiva = Object.entries(porSituacao).find(([key]) => {
+      const k = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      return k.includes("atividade") || k.includes("ativa");
+    });
+
+    if (entradaAtiva) return Number(entradaAtiva[1] || 0);
+    return Number((stats as any).total_escolas || 0);
+  }, [stats]);
+
   const depChartData = useMemo(() => {
     if (!stats?.por_dependencia) return [];
     return Object.entries(stats.por_dependencia)
@@ -999,15 +1052,15 @@ export default function Dashboard() {
               <section className="section">
                 <div className="summary-grid" style={{gridTemplateColumns: 'repeat(4, 1fr)'}}>
                   <div className="metric theme-blue">
-                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Escolas</label>
-                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(stats.total_escolas)}</strong>
+                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Escolas ativas</label>
+                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(totalEscolasAtivas)}</strong>
                   </div>
                   <div className="metric theme-yellow">
                     <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Matrículas</label>
                     <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(stats.total_matriculas)}</strong>
                   </div>
                   <div className="metric theme-green">
-                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Docentes</label>
+                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>Professores</label>
                     <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{formatNumber(stats.total_docentes)}</strong>
                   </div>
                   <div className="metric theme-purple">
@@ -1122,14 +1175,17 @@ export default function Dashboard() {
                           clickedUf={similarMode ? null : clickedUf}
                           similarMode={similarMode}
                           similarUfCounts={similarMode ? (similarData?.por_uf ?? {}) : undefined}
+                          onStateHover={prefetchUfData}
                           onStateClick={(uf) => {
                             if (similarMode) {
                               setSimilarClickedUf(prev => prev === uf ? null : uf);
                             } else {
                               setClickedUf(prev => prev === uf ? null : uf);
-                              setFilterUf(uf);
-                              setFilterDep("");
-                              setListPage(1);
+                              startTransition(() => {
+                                setFilterUf(uf);
+                                setFilterDep("");
+                                setListPage(1);
+                              });
                             }
                           }}
                         />
@@ -1226,9 +1282,32 @@ export default function Dashboard() {
                 {/* Cards: O que mudou de 2024 para 2025 */}
                 {censoInsightsNacional?.campos?.length > 0 && (() => {
                   const campos = censoInsightsNacional.campos as any[];
+                  const camposByKey = Object.fromEntries(campos.map((c: any) => [c.key, c]));
                   const todos = campos.filter(c => c.diff_pp !== 0 && c.pct_2025 > 0);
                   const aumentou = todos.filter(c => c.diff_pp > 0).sort((a, b) => b.diff_pp - a.diff_pp).slice(0, 5);
                   const diminuiu = todos.filter(c => c.diff_pp < 0).sort((a, b) => a.diff_pp - b.diff_pp).slice(0, 5);
+                  const essenciais = [
+                    "in_agua_potavel",
+                    "in_agua_rede_publica",
+                    "in_esgoto_rede_publica",
+                    "in_energia_rede_publica",
+                    "in_banheiro",
+                    "in_banheiro_pne",
+                    "in_internet",
+                    "in_laboratorio_informatica",
+                    "in_cozinha",
+                    "in_refeitorio",
+                  ]
+                    .map((k) => camposByKey[k])
+                    .filter(Boolean)
+                    .map((c: any) => ({
+                      ...c,
+                      faltante_pct: Math.max(0, 100 - Number(c.pct_2025 || 0)),
+                      faltante_n: Math.max(0, Number(c.escolas_2025 || 0) - Number(c.total_2025 || 0)),
+                    }))
+                    .filter((c: any) => c.faltante_pct >= 5)
+                    .sort((a: any, b: any) => b.faltante_pct - a.faltante_pct)
+                    .slice(0, 5);
                   if (!aumentou.length && !diminuiu.length) return null;
 
                   const MiniCard = ({ cam }: { cam: any }) => {
@@ -1262,6 +1341,31 @@ export default function Dashboard() {
                     );
                   };
 
+                  const EssentialCard = ({ cam }: { cam: any }) => {
+                    return (
+                      <div style={{
+                        background: "#eff6ff",
+                        borderRadius: 10,
+                        padding: "10px 11px",
+                        border: "1px solid #bfdbfe",
+                        display: "flex", flexDirection: "column", gap: 4,
+                        flex: "1 1 0", minWidth: 0,
+                      }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#1e293b", lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                          {cam.label}
+                        </span>
+                        <div style={{ marginTop: 2 }}>
+                          <span style={{ fontSize: 16, fontWeight: 900, color: "#1d4ed8", display: "block", lineHeight: 1 }}>
+                            ▼ {Number(cam.faltante_pct).toFixed(1)}<span style={{ fontSize: 10, fontWeight: 600 }}>%</span>
+                          </span>
+                        </div>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#1e40af" }}>
+                          {Number(cam.faltante_n || 0).toLocaleString("pt-BR")} escolas
+                        </span>
+                      </div>
+                    );
+                  };
+
                   return (
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {aumentou.length > 0 && (
@@ -1272,6 +1376,19 @@ export default function Dashboard() {
                           <div style={{ display: "flex", gap: 7 }}>
                             {aumentou.map((cam: any) => <MiniCard key={cam.key} cam={cam} />)}
                           </div>
+                          {essenciais.length > 0 && (
+                            <div style={{ marginTop: 10 }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: "#1e40af", marginBottom: 7, display: "flex", alignItems: "center", gap: 5 }}>
+                                🛠️ Observações — serviços essenciais que ainda faltam (2025)
+                              </div>
+                              <div style={{ display: "flex", gap: 7 }}>
+                                {essenciais.map((cam: any) => <EssentialCard key={cam.key} cam={cam} />)}
+                              </div>
+                              <p style={{ margin: "7px 0 0", fontSize: 10, color: "#475569" }}>
+                                Priorize os itens com maior ausência para garantir funcionamento básico, salubridade e segurança escolar.
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
                       {diminuiu.length > 0 && (
