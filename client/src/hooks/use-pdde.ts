@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { normalizeTextDeep } from "@/lib/utils";
 
 export interface PddeSaldoConta {
   an_exercicio: number;
@@ -31,7 +32,7 @@ export function usePddeSaldos(coEscola: string | null) {
       if (!coEscola) return { ok: false, saldos: [], anosDisponiveis: [], fonte: "indisponivel" as const, error: "Sem código INEP" };
       const res = await fetch(`/api/pdde/saldos/${coEscola}`);
       if (!res.ok) throw new Error("Erro ao consultar saldos PDDE");
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: !!coEscola && /^\d{8}$/.test(coEscola),
     staleTime: 5 * 60 * 1000,
@@ -76,7 +77,7 @@ export function usePddeExecFin(coEscola: string | null) {
       if (!coEscola) return { ok: false, repasses: [], anosDisponiveis: [], fonte: "indisponivel" as const, error: "Sem código INEP" };
       const res = await fetch(`/api/pdde/execfin/${coEscola}`);
       if (!res.ok) throw new Error("Erro ao consultar execução financeira PDDE");
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: !!coEscola && /^\d{8}$/.test(coEscola),
     staleTime: 5 * 60 * 1000,
@@ -191,7 +192,7 @@ export function usePddeUexSaldo(cnpj: string | null, opts?: { mes?: string }) {
       if (opts?.mes) params.set("mes", opts.mes);
       const res = await fetch(`/api/pdde/uex/saldo?${params.toString()}`);
       if (!res.ok) throw new Error("Erro ao consultar saldo UEx");
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: !!cnpjClean && cnpjClean.length === 14,
     staleTime: 10 * 60 * 1000,
@@ -237,7 +238,7 @@ export function usePddeSituacaoCadastral(inep: string | null, ano?: number) {
           `/api/pdde/relatorios/situacao-cadastral?ano=${year}&co_escola=${inep}`
         );
         if (!res.ok) throw new Error("Erro ao consultar situação cadastral");
-        return res.json() as Promise<SituacaoCadastralResult>;
+        return normalizeTextDeep(await res.json()) as SituacaoCadastralResult;
       };
       const result = await tryYear(queryYear);
       if (result.ok && result.itens.length === 0) {
@@ -287,7 +288,7 @@ export function usePddePrestacaoConta(inep: string | null, ano?: number) {
       const tryYear = async (year: number) => {
         const res = await fetch(`/api/pdde/relatorios/prestacao-contas?ano=${year}&co_escola=${inep}`);
         if (!res.ok) throw new Error("Erro ao consultar prestação de contas");
-        return res.json() as Promise<SituacaoPrestacaoContaResult>;
+        return normalizeTextDeep(await res.json()) as SituacaoPrestacaoContaResult;
       };
       const result = await tryYear(queryYear);
       if (result.ok && result.itens.length === 0) return tryYear(queryYear - 1);
@@ -338,7 +339,7 @@ export function usePddeAtendimento(inep: string | null, ano?: number) {
       const tryYear = async (year: number) => {
         const res = await fetch(`/api/pdde/relatorios/atendimento?ano=${year}&co_escola=${inep}`);
         if (!res.ok) throw new Error("Erro ao consultar situação de atendimento");
-        return res.json() as Promise<SituacaoAtendimentoResult>;
+        return normalizeTextDeep(await res.json()) as SituacaoAtendimentoResult;
       };
       const result = await tryYear(queryYear);
       if (result.ok && result.itens.length === 0) return tryYear(queryYear - 1);
@@ -360,11 +361,11 @@ export function usePddeInfo(inep: string | null, ano?: number) {
       if (!inep) return { ok: false, error: "No INEP code", ano: queryYear, co_escola: "" };
       const res = await fetch(`/api/pdde/${inep}?ano=${queryYear}`);
       if (!res.ok) throw new Error("Erro ao consultar PDDE");
-      const data = await res.json();
+      const data = normalizeTextDeep(await res.json());
       if (!data.ok && queryYear === currentYear && data.error && /nenhum dado|não encontrad/i.test(data.error)) {
         const fallbackRes = await fetch(`/api/pdde/${inep}?ano=${currentYear - 1}`);
         if (fallbackRes.ok) {
-          const fallbackData = await fallbackRes.json();
+          const fallbackData = normalizeTextDeep(await fallbackRes.json());
           if (fallbackData.ok) {
             console.log("PDDE Data Received (fallback):", fallbackData);
             return fallbackData;

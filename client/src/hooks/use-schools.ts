@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
+import { normalizeTextDeep } from "@/lib/utils";
 
 export function useSchoolSearch(query: string) {
   return useQuery({
@@ -8,7 +9,7 @@ export function useSchoolSearch(query: string) {
       if (!query || query.length < 2) return { dados: [], total: 0 };
       const res = await fetch(`/api/escola/buscar?nome=${encodeURIComponent(query)}`);
       if (!res.ok) throw new Error("Failed to search schools");
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: query.length >= 2,
     staleTime: 1000 * 60 * 5,
@@ -24,7 +25,7 @@ export function useSchool(inep: string) {
       const res = await fetch(`/api/escola/${inep}`);
       if (res.status === 404) throw new Error("Escola não encontrada");
       if (!res.ok) throw new Error("Erro ao buscar dados da escola");
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: !!inep,
     retry: false,
@@ -39,7 +40,7 @@ export function useEscolaCompleta(inep: string, ano?: number) {
       const anoParam = ano || new Date().getFullYear();
       const res = await fetch(`/api/escola-completa/${inep}?ano=${anoParam}`);
       if (!res.ok) return null;
-      const data = await res.json();
+      const data = normalizeTextDeep(await res.json());
       if (data.erro) return null;
       return data;
     },
@@ -56,7 +57,7 @@ export function useEscolaEvolucao(inep: string) {
       if (!inep) return null;
       const res = await fetch(`/api/escola-evolucao/${inep}`);
       if (!res.ok) return null;
-      const data = await res.json();
+      const data = normalizeTextDeep(await res.json());
       if (!data.escola) return null;
       return data;
     },
@@ -73,7 +74,7 @@ export function useEscolaComparativo(inep: string) {
       if (!inep) return null;
       const res = await fetch(`/api/escola-comparativo/${inep}`);
       if (!res.ok) return null;
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: !!inep,
     retry: false,
@@ -88,7 +89,7 @@ export function useEscolaMicroregiao(inep: string) {
       if (!inep) return null;
       const res = await fetch(`/api/escola-microregiao/${inep}`);
       if (!res.ok) return null;
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: !!inep,
     retry: false,
@@ -103,7 +104,7 @@ export function useEscolaDiagnostico(inep: string) {
       if (!inep) return null;
       const res = await fetch(`/api/escola-diagnostico/${inep}`);
       if (!res.ok) return null;
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: !!inep,
     retry: false,
@@ -118,7 +119,7 @@ export function useUfStats(uf: string | null, ano = 2025) {
       if (!uf) return null;
       const res = await fetch(`/api/censo-escolar/${ano}/uf/${uf}/stats`);
       if (!res.ok) return null;
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: !!uf,
     staleTime: 30 * 60 * 1000,
@@ -131,7 +132,7 @@ export function useEstatisticas(ano: number) {
     queryFn: async () => {
       const res = await fetch(`/api/censo-escolar/${ano}/escolas/estatisticas`);
       if (!res.ok) throw new Error("Erro ao buscar estatísticas");
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -144,7 +145,7 @@ export function useMediasNacionais(ano?: number) {
       const url = ano ? `/api/medias-nacionais?ano=${ano}` : '/api/medias-nacionais';
       const res = await fetch(url);
       if (!res.ok) return {};
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     staleTime: 30 * 60 * 1000,
   });
@@ -162,7 +163,7 @@ export function useListaEscolas(ano: number, filters: Record<string, string>, pa
       });
       const res = await fetch(`/api/censo-escolar/${ano}/escolas?${params.toString()}`);
       if (!res.ok) throw new Error("Erro ao buscar escolas");
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -175,7 +176,7 @@ export function useSimilarSchools(inep: string, ano: number, enabled: boolean) {
       if (!inep) return null;
       const res = await fetch(`/api/escola/${inep}/similares?ano=${ano}`);
       if (!res.ok) throw new Error("Erro ao buscar escolas similares");
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: !!inep && enabled,
     staleTime: 10 * 60 * 1000,

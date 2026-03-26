@@ -122,9 +122,9 @@ const INDICATORS: IndicatorDef[] = [
         return v === "--" || v === "" || v === null || v === undefined ? null : Number(v);
       };
       const data: Record<string, any> = {};
-      // Captura todos os prefixos relevantes: INF (Infantil), FUN (Fundamental), MED (Médio)
+      // Captura todos os prefixos relevantes: INF (Infantil), FUN (Fundamental), MED (Médio), EJA
       for (const h of headers) {
-        if (h.startsWith("INF_") || h.startsWith("FUN_") || h.startsWith("MED_")) {
+        if (h.startsWith("INF_") || h.startsWith("FUN_") || h.startsWith("MED_") || h.startsWith("EJA_FUN_") || h.startsWith("EJA_MED_") || h.startsWith("EF_") || h.startsWith("EM_")) {
           const v = get(h);
           if (v !== undefined) data[h.toLowerCase()] = v;
         }
@@ -134,6 +134,10 @@ const INDICATORS: IndicatorDef[] = [
       if (!data.media_fund_ai && data.fun_ai_cat_0 != null) data.media_fund_ai = data.fun_ai_cat_0;
       if (!data.media_fund_af && data.fun_af_cat_0 != null) data.media_fund_af = data.fun_af_cat_0;
       if (!data.media_med     && data.med_cat_0    != null) data.media_med     = data.med_cat_0;
+      if (!data.media_eja_fund && data.eja_fun_cat_0 != null) data.media_eja_fund = data.eja_fun_cat_0;
+      if (!data.media_eja_fund && data.ef_cat_0 != null) data.media_eja_fund = data.ef_cat_0;
+      if (!data.media_eja_med && data.eja_med_cat_0 != null) data.media_eja_med = data.eja_med_cat_0;
+      if (!data.media_eja_med && data.em_cat_0 != null) data.media_eja_med = data.em_cat_0;
       return Object.keys(data).length > 0 ? data : null;
     },
   },
@@ -149,9 +153,9 @@ const INDICATORS: IndicatorDef[] = [
         return v === "--" || v === "" || v === null || v === undefined ? null : Number(v);
       };
       const data: Record<string, any> = {};
-      // Captura todos os prefixos relevantes: INF (Infantil), FUN (Fundamental), MED (Médio)
+      // Captura todos os prefixos relevantes: INF (Infantil), FUN (Fundamental), MED (Médio), EJA
       for (const h of headers) {
-        if (h.startsWith("INF_") || h.startsWith("FUN_") || h.startsWith("MED_")) {
+        if (h.startsWith("INF_") || h.startsWith("FUN_") || h.startsWith("MED_") || h.startsWith("EJA_FUN_") || h.startsWith("EJA_MED_") || h.startsWith("EF_") || h.startsWith("EM_")) {
           const v = get(h);
           if (v !== undefined) data[h.toLowerCase()] = v;
         }
@@ -161,6 +165,10 @@ const INDICATORS: IndicatorDef[] = [
       if (!data.media_fund_ai && data.fun_ai_cat_0 != null) data.media_fund_ai = data.fun_ai_cat_0;
       if (!data.media_fund_af && data.fun_af_cat_0 != null) data.media_fund_af = data.fun_af_cat_0;
       if (!data.media_med && data.med_cat_0 != null)     data.media_med     = data.med_cat_0;
+      if (!data.media_eja_fund && data.eja_fun_cat_0 != null) data.media_eja_fund = data.eja_fun_cat_0;
+      if (!data.media_eja_fund && data.ef_cat_0 != null) data.media_eja_fund = data.ef_cat_0;
+      if (!data.media_eja_med && data.eja_med_cat_0 != null) data.media_eja_med = data.eja_med_cat_0;
+      if (!data.media_eja_med && data.em_cat_0 != null) data.media_eja_med = data.em_cat_0;
       return Object.keys(data).length > 0 ? data : null;
     },
   },

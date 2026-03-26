@@ -6,6 +6,7 @@ const SIT_MAP: Record<number, string> = { 1: "Em Atividade", 2: "Paralisada", 3:
 
 const serverCache = new Map<string, { data: any; ts: number }>();
 const CACHE_TTL_MS = 30 * 60 * 1000;
+const MOJIBAKE_REGEX = /Ã.|Â.|â[\u0080-\u00BF]|�/g;
 
 function cacheGet(key: string) {
   const e = serverCache.get(key);
@@ -17,6 +18,90 @@ function cacheSet(key: string, data: any) {
   serverCache.set(key, { data, ts: Date.now() });
 }
 
+function mojibakeScore(value: string): number {
+  const replacementCount = (value.match(/�/g) || []).length;
+  const mojibakeCount = (value.match(/Ã.|Â.|â[\u0080-\u00BF]/g) || []).length;
+  return (replacementCount * 4) + mojibakeCount;
+}
+
+function decodeUtf8FromLatin1String(value: string): string {
+  try {
+    const bytes = Uint8Array.from(Array.from(value), (char) => char.charCodeAt(0) & 0xff);
+    return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+  } catch {
+    return value;
+  }
+}
+
+function fixCommonBrokenWords(value: string): string {
+  const commonMap: Record<string, string> = {
+    "S�o": "São",
+    "Par�": "Pará",
+    "Amap�": "Amapá",
+    "Maranh�o": "Maranhão",
+    "Goi�s": "Goiás",
+    "Educa��o": "Educação",
+    "Munic�pio": "Município",
+    "Regi�o": "Região",
+    "Aprova��o": "Aprovação",
+    "Reprova��o": "Reprovação",
+  };
+
+  let output = value;
+  for (const [broken, fixed] of Object.entries(commonMap)) {
+    output = output.split(broken).join(fixed);
+  }
+  return output;
+}
+
+function normalizeText(value: string): string {
+  if (!value || !MOJIBAKE_REGEX.test(value)) {
+    MOJIBAKE_REGEX.lastIndex = 0;
+    return value;
+  }
+  MOJIBAKE_REGEX.lastIndex = 0;
+
+  const decoded = decodeUtf8FromLatin1String(value);
+  const best = mojibakeScore(decoded) < mojibakeScore(value) ? decoded : value;
+  return fixCommonBrokenWords(best);
+}
+
+function normalizeTextDeep<T>(input: T): T {
+  if (typeof input === "string") {
+    return normalizeText(input) as T;
+  }
+  if (Array.isArray(input)) {
+    return input.map((item) => normalizeTextDeep(item)) as T;
+  }
+  if (input && typeof input === "object") {
+    const entries = Object.entries(input as Record<string, unknown>).map(([key, value]) => [key, normalizeTextDeep(value)]);
+    return Object.fromEntries(entries) as T;
+  }
+  return input;
+}
+
+async function parseRailwayJson(res: Response): Promise<any | null> {
+  const rawBuffer = new Uint8Array(await res.arrayBuffer());
+  const contentType = res.headers.get("content-type") || "";
+
+  const utf8Text = new TextDecoder("utf-8").decode(rawBuffer);
+  const latin1Text = new TextDecoder("iso-8859-1").decode(rawBuffer);
+
+  let text = utf8Text;
+  if (/charset\s*=\s*(iso-8859-1|latin1)/i.test(contentType)) {
+    text = latin1Text;
+  } else if (MOJIBAKE_REGEX.test(utf8Text) && mojibakeScore(latin1Text) < mojibakeScore(utf8Text)) {
+    text = latin1Text;
+  }
+  MOJIBAKE_REGEX.lastIndex = 0;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 async function fetchRailway(path: string, timeout = 8000): Promise<any | null> {
   try {
     const res = await fetch(`${RAILWAY_API}${path}`, {
@@ -24,7 +109,8 @@ async function fetchRailway(path: string, timeout = 8000): Promise<any | null> {
       headers: { Accept: "application/json" },
     });
     if (!res.ok) return null;
-    return await res.json();
+    const parsed = await parseRailwayJson(res);
+    return parsed ? normalizeTextDeep(parsed) : null;
   } catch {
     return null;
   }
@@ -70,6 +156,8 @@ function mapIndicadores(h: any): Record<string, any> {
     ind.atu = {
       media_fund: a.FUN_CAT_0,
       media_med: a.MED_CAT_0,
+      media_eja_fund: a.EJA_FUN_CAT_0 ?? a.EF_CAT_0,
+      media_eja_med: a.EJA_MED_CAT_0 ?? a.EM_CAT_0,
       media_fund_ai: a.FUN_AI_CAT_0,
       media_fund_af: a.FUN_AF_CAT_0,
       media_cre: a.CRE_CAT_0,
@@ -83,6 +171,8 @@ function mapIndicadores(h: any): Record<string, any> {
     ind.had = {
       media_fund: a.FUN_CAT_0,
       media_med: a.MED_CAT_0,
+      media_eja_fund: a.EJA_FUN_CAT_0 ?? a.EF_CAT_0,
+      media_eja_med: a.EJA_MED_CAT_0 ?? a.EM_CAT_0,
       media_fund_ai: a.FUN_AI_CAT_0,
       media_fund_af: a.FUN_AF_CAT_0,
       media_cre: a.CRE_CAT_0,
@@ -242,19 +332,40 @@ function mapCensoRaw(escolaData: any, baseInfo: any): any {
     // ── Matrículas ──────────────────────────────────────────────────────────
     qt_mat_bas:  n(raw.qt_mat_bas  ?? mat.qt_mat_bas),
     qt_mat_inf:  n(raw.qt_mat_inf  ?? mat.qt_mat_inf),
+    qt_mat_inf_cre: n(raw.qt_mat_inf_cre ?? mat.qt_mat_inf_cre),
+    qt_mat_inf_pre: n(raw.qt_mat_inf_pre ?? mat.qt_mat_inf_pre),
     qt_mat_fund: n(raw.qt_mat_fund ?? mat.qt_mat_fund),
+    qt_mat_fund_ai: n(raw.qt_mat_fund_ai ?? mat.qt_mat_fund_ai),
+    qt_mat_fund_af: n(raw.qt_mat_fund_af ?? mat.qt_mat_fund_af),
     qt_mat_med:  n(raw.qt_mat_med  ?? mat.qt_mat_med),
     qt_mat_eja:  n(raw.qt_mat_eja  ?? mat.qt_mat_eja),
+    qt_mat_eja_fund: n(raw.qt_mat_eja_fund ?? mat.qt_mat_eja_fund),
+    qt_mat_eja_med: n(raw.qt_mat_eja_med ?? mat.qt_mat_eja_med),
     // ── Docentes ────────────────────────────────────────────────────────────
     qt_doc_bas:  n(raw.qt_doc_bas  ?? doc.qt_doc_bas),
     qt_doc_inf:  n(raw.qt_doc_inf  ?? doc.qt_doc_inf),
+    qt_doc_inf_cre: n(raw.qt_doc_inf_cre ?? doc.qt_doc_inf_cre),
+    qt_doc_inf_pre: n(raw.qt_doc_inf_pre ?? doc.qt_doc_inf_pre),
     qt_doc_fund: n(raw.qt_doc_fund ?? doc.qt_doc_fund),
+    qt_doc_fund_ai: n(raw.qt_doc_fund_ai ?? doc.qt_doc_fund_ai),
+    qt_doc_fund_af: n(raw.qt_doc_fund_af ?? doc.qt_doc_fund_af),
     qt_doc_med:  n(raw.qt_doc_med  ?? doc.qt_doc_med),
+    qt_doc_eja:  n(raw.qt_doc_eja  ?? doc.qt_doc_eja),
+    qt_doc_eja_fund: n(raw.qt_doc_eja_fund ?? doc.qt_doc_eja_fund),
+    qt_doc_eja_med: n(raw.qt_doc_eja_med ?? doc.qt_doc_eja_med),
     // ── Turmas ──────────────────────────────────────────────────────────────
     qt_tur_bas:  n(raw.qt_tur_bas  ?? tur.qt_tur_bas),
     qt_tur_inf:  n(raw.qt_tur_inf  ?? tur.qt_tur_inf),
     qt_tur_fund: n(raw.qt_tur_fund ?? tur.qt_tur_fund),
     qt_tur_med:  n(raw.qt_tur_med  ?? tur.qt_tur_med),
+    qt_tur_eja:  n(raw.qt_tur_eja  ?? tur.qt_tur_eja),
+    qt_tur_eja_fund: n(raw.qt_tur_eja_fund ?? tur.qt_tur_eja_fund),
+    qt_tur_eja_med: n(raw.qt_tur_eja_med ?? tur.qt_tur_eja_med),
+    // ── Oferta educacional ──────────────────────────────────────────────────
+    in_med: b(raw.in_med ?? str.in_med),
+    in_eja: b(raw.in_eja ?? str.in_eja),
+    in_eja_fund: b(raw.in_eja_fund ?? str.in_eja_fund),
+    in_eja_med: b(raw.in_eja_med ?? str.in_eja_med),
     // ── Salas ───────────────────────────────────────────────────────────────
     qt_salas_utilizadas:        n(raw.qt_salas_utilizadas        ?? cap.qt_salas_utilizadas),
     qt_salas_utilizadas_dentro: n(raw.qt_salas_utilizadas_dentro ?? cap.qt_salas_utilizadas_dentro),
@@ -454,6 +565,13 @@ export async function getEscolaCompletaRailway(inep: string, ano?: number) {
 
   const dsDep = DEP_MAP[identificacao.tp_dependencia] ?? "";
   const dsLoc = LOC_MAP[identificacao.tp_localizacao] ?? "";
+  const censoEscolar = mapCensoRaw(escolaData, {
+    no_entidade: identificacao.no_entidade ?? hAno?.no_entidade ?? null,
+    no_municipio: identificacao.no_municipio ?? hAno?.no_municipio ?? null,
+    sg_uf: identificacao.sg_uf ?? hAno?.sg_uf ?? null,
+    ds_dependencia: dsDep,
+    ds_localizacao: dsLoc,
+  });
 
   return {
     co_entidade: parseInt(inep),
@@ -466,6 +584,7 @@ export async function getEscolaCompletaRailway(inep: string, ano?: number) {
       ds_dependencia: dsDep,
       ds_localizacao: dsLoc,
     },
+    censo_escolar: censoEscolar,
     ...ind,
     ideb: ind.ideb ?? null,
     inse: ind.inse ?? null,

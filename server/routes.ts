@@ -2,13 +2,15 @@ import type { Express, Request, Response, NextFunction } from "express";
 import type { Server } from "http";
 import crypto from "crypto";
 import { readFileSync, existsSync } from "fs";
-import { join } from "path";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import { Worker } from "worker_threads";
 import express from "express";
 import Papa from "papaparse";
 import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 import { storage } from "./storage";
-import { sqlite } from "./db";
+import { sqlite, resolvedDbPath } from "./db";
 import { api } from "@shared/routes";
 import { registerChatRoutes } from "./integrations/chat";
 import { registerCadernoRoutes } from "./caderno-routes";
@@ -153,6 +155,28 @@ function adminAuth(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ message: "Sessão expirada" });
   }
   next();
+}
+
+// Resolve o caminho do worker relativo a este arquivo (funciona com tsx e em build)
+const _workerDir = (() => { try { return dirname(fileURLToPath(import.meta.url)); } catch { return process.cwd(); } })();
+const INSIGHTS_WORKER_PATH = join(_workerDir, "censo-insights-worker.mjs");
+
+// Mapa de cálculos em andamento — evita N workers simultâneos para o mesmo scope
+const _pendingInsights = new Map<string, Promise<any>>();
+
+/** Roda o cálculo pesado em Worker Thread para não bloquear o event loop */
+function computeInsightsInWorker(scope: string, campos: Array<{key:string;label:string}>, dbPath: string): Promise<any> {
+  const key = `insights_${scope}`;
+  const existing = _pendingInsights.get(key);
+  if (existing) return existing;
+  const p = new Promise<any>((resolve, reject) => {
+    const w = new Worker(INSIGHTS_WORKER_PATH, { workerData: { dbPath, campos, scope } });
+    w.once("message", msg => { _pendingInsights.delete(key); if (msg.ok) resolve(msg.payload); else reject(new Error(msg.error)); });
+    w.once("error", err => { _pendingInsights.delete(key); reject(err); });
+    w.once("exit", code => { if (code !== 0) { _pendingInsights.delete(key); reject(new Error(`Worker exited ${code}`)); } });
+  });
+  _pendingInsights.set(key, p);
+  return p;
 }
 
 export async function registerRoutes(
@@ -857,12 +881,11 @@ export async function registerRoutes(
   });
 
   // === INSIGHTS CENSO: comparativo 2024→2025 por campo binário (por UF ou nacional) ===
-  // Resultado é cacheado por 24h na stats_cache para evitar queries pesadas repetidas.
-  app.get("/api/censo-escolar/insights/:scope", (req, res) => {
+  // Resultado é cacheado por 7 dias. Cálculo pesado roda em Worker Thread (não bloqueia o event loop).
+  app.get("/api/censo-escolar/insights/:scope", async (req, res) => {
     const scope = (req.params.scope || "BR").toUpperCase();
-    const isBR = scope === "BR";
     const CACHE_KEY = `censo_insights_${scope}`;
-    const CACHE_TTL_H = 24;
+    const CACHE_TTL_H = 7 * 24; // 7 dias — dados do censo são estáticos
 
     // Verifica cache primeiro
     try {
@@ -902,41 +925,7 @@ export async function registerRoutes(
     ];
 
     try {
-      const result: Record<string, any> = { scope };
-      for (const ano of [2024, 2025]) {
-        const whereClause = isBR
-          ? `ano=? AND situacao='Em Atividade'`
-          : `ano=? AND upper(uf)=? AND situacao='Em Atividade'`;
-        const params: any[] = isBR ? [ano] : [ano, scope];
-        const selectParts = [
-          `COUNT(*) as total`,
-          ...CAMPOS.map(c => `SUM(CAST(COALESCE(json_extract(dados,'$.${c.key}'),0) as INTEGER)) as ${c.key}`)
-        ].join(', ');
-        result[ano] = sqlite.prepare(
-          `SELECT ${selectParts} FROM censo_escolar WHERE ${whereClause}`
-        ).get(...params) as any;
-      }
-
-      const campos_resultado = CAMPOS.map(c => {
-        const v24 = result[2024] as any;
-        const v25 = result[2025] as any;
-        if (!v24?.total || !v25?.total) return null;
-        const pct24 = v24[c.key] / v24.total;
-        const pct25 = v25[c.key] / v25.total;
-        return {
-          key: c.key,
-          label: c.label,
-          pct_2024: Math.round(pct24 * 1000) / 10,
-          pct_2025: Math.round(pct25 * 1000) / 10,
-          diff_pp: Math.round((pct25 - pct24) * 1000) / 10,
-          total_2024: v24[c.key],
-          total_2025: v25[c.key],
-          escolas_2024: v24.total,
-          escolas_2025: v25.total,
-        };
-      }).filter(Boolean);
-
-      const payload = { scope, campos: campos_resultado };
+      const payload = await computeInsightsInWorker(scope, CAMPOS, resolvedDbPath);
 
       // Salva no cache
       try {
@@ -2273,38 +2262,25 @@ export async function registerRoutes(
       { key: "in_educacao_campo",          label: "Ed. do Campo" },
       { key: "in_ppp",                     label: "Projeto Político-Pedagógico" },
     ];
-    // Invalida cache antigo (campos mudaram)
-    try { sqlite.prepare(`DELETE FROM stats_cache WHERE cache_key='censo_insights_BR'`).run(); } catch {}
     for (const scope of ["BR"]) {
       const CACHE_KEY = `censo_insights_${scope}`;
       try {
         const existing = sqlite.prepare(`SELECT updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`).get(CACHE_KEY) as any;
         if (existing) {
           const ageH = (Date.now() - new Date(existing.updated_at).getTime()) / 3600000;
-          if (ageH < 24) { continue; }
+          if (ageH < 7 * 24) { continue; }  // cache ainda válido (7 dias)
         }
       } catch {}
-      console.log(`[censo-insights] Pré-aquecendo cache para ${scope}...`);
-      try {
-        const result: Record<string, any> = {};
-        for (const ano of [2024, 2025]) {
-          const selectParts = [`COUNT(*) as total`, ...PREWARM_CAMPOS.map(c => `SUM(CAST(COALESCE(json_extract(dados,'$.${c.key}'),0) as INTEGER)) as ${c.key}`)].join(', ');
-          result[ano] = sqlite.prepare(`SELECT ${selectParts} FROM censo_escolar WHERE ano=? AND situacao='Em Atividade'`).get(ano) as any;
-        }
-        const campos_resultado = PREWARM_CAMPOS.map(c => {
-          const v24 = result[2024] as any;
-          const v25 = result[2025] as any;
-          if (!v24?.total || !v25?.total) return null;
-          const pct24 = v24[c.key] / v24.total;
-          const pct25 = v25[c.key] / v25.total;
-          return { key: c.key, label: c.label, pct_2024: Math.round(pct24 * 1000) / 10, pct_2025: Math.round(pct25 * 1000) / 10, diff_pp: Math.round((pct25 - pct24) * 1000) / 10, total_2024: v24[c.key], total_2025: v25[c.key], escolas_2024: v24.total, escolas_2025: v25.total };
-        }).filter(Boolean);
-        const payload = JSON.stringify({ scope, campos: campos_resultado });
-        sqlite.prepare(`INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?) ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at`).run(CACHE_KEY, payload, new Date().toISOString());
-        console.log(`[censo-insights] Cache ${scope} salvo (${campos_resultado.length} campos).`);
-      } catch (e: any) {
-        console.error(`[censo-insights] Erro ao pré-aquecer ${scope}:`, e.message);
-      }
+      console.log(`[censo-insights] Pré-aquecendo cache para ${scope} (worker thread)...`);
+      computeInsightsInWorker(scope, PREWARM_CAMPOS, resolvedDbPath)
+        .then(payload => {
+          try {
+            sqlite.prepare(`INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?) ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at`)
+              .run(CACHE_KEY, JSON.stringify(payload), new Date().toISOString());
+            console.log(`[censo-insights] Cache ${scope} salvo (${payload.campos.length} campos).`);
+          } catch {}
+        })
+        .catch((e: any) => console.error(`[censo-insights] Erro ao pré-aquecer ${scope}:`, e.message));
     }
   }, 3000);
 

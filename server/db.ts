@@ -4,9 +4,9 @@ import * as schema from "@shared/schema";
 import path from "path";
 
 const dbPath = (process.env.SQLITE_DATABASE_URL || process.env.DATABASE_URL || "file:dev.db").replace("file:", "");
-const resolvedPath = path.isAbsolute(dbPath) ? dbPath : path.join(process.cwd(), dbPath);
+export const resolvedDbPath = path.isAbsolute(dbPath) ? dbPath : path.join(process.cwd(), dbPath);
 
-export const sqlite = new Database(resolvedPath);
+export const sqlite = new Database(resolvedDbPath);
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("cache_size = -128000");
 sqlite.pragma("mmap_size = 268435456");

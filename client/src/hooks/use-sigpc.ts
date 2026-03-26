@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { normalizeTextDeep } from "@/lib/utils";
 
 export interface SigpcPrestacaoListItem {
   pcId: number;
@@ -119,7 +120,7 @@ export function useSigpcLocalizar(cnpj?: string, anoConcessao?: number) {
         throw new Error("Erro ao localizar prestações");
       }
       
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: !!cnpj,
     staleTime: 5 * 60 * 1000,
@@ -144,7 +145,7 @@ export function useSigpcPorUf(uf?: string, ano?: number, programa?: string) {
         throw new Error("Erro ao buscar prestações por UF");
       }
       
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: !!uf,
     staleTime: 5 * 60 * 1000,
@@ -164,7 +165,7 @@ export function useSigpcDetalhar(pcId?: number) {
         throw new Error("Erro ao detalhar prestação");
       }
       
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: !!pcId && pcId > 0,
     staleTime: 5 * 60 * 1000,
@@ -184,7 +185,7 @@ export function useSigpcHistorico(concessaoId?: number) {
         throw new Error("Erro ao recuperar histórico");
       }
       
-      return res.json();
+      return normalizeTextDeep(await res.json());
     },
     enabled: !!concessaoId && concessaoId > 0,
     staleTime: 5 * 60 * 1000,

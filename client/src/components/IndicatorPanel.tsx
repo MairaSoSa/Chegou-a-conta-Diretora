@@ -37,9 +37,12 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
       if (v != null && Number(v) > 0) {
         result.push({
           tipo: "IDEB",
+          tipoKey: "ideb",
           label,
           titulo: `IDEB — ${label}`,
           valor: fmt(v),
+          raw: Number(v),
+          fieldKey: key,
           status: statusIdeb(Number(v)),
           explicacao: `Índice de Desenvolvimento da Educação Básica para ${label}. Meta nacional ≥ 6,0.`,
         });
@@ -65,9 +68,12 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
         else if (n > 25) st = "adequado";
         result.push({
           tipo: "ATU",
+          tipoKey: "atu",
           label,
           titulo: `Média Alunos/Turma — ${label}`,
           valor: fmt(v) + " alunos/turma",
+          raw: Number(v),
+          fieldKey: key,
           status: st,
           explicacao: "Relação média entre alunos matriculados e turmas existentes.",
         });
@@ -91,9 +97,12 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
         else if (n > 5) st = "adequado";
         result.push({
           tipo: "TDI",
+          tipoKey: "tdi",
           label,
           titulo: `Distorção Idade-Série — ${label}`,
           valor: fmt(v) + "%",
+          raw: Number(v),
+          fieldKey: key,
           status: st,
           explicacao: "Taxa de alunos com defasagem de 2 ou mais anos no ensino " + label.toLowerCase() + ".",
         });
@@ -118,9 +127,12 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
         else if (n < 5) st = "adequado";
         result.push({
           tipo: "HAD",
+          tipoKey: "had",
           label,
           titulo: `Horas-Aula Diárias — ${label}`,
           valor: fmt(v) + "h",
+          raw: Number(v),
+          fieldKey: key,
           status: st,
           explicacao: "Número médio de horas-aula oferecidas por dia no " + label.toLowerCase() + ".",
         });
@@ -145,9 +157,12 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
         else if (n < 90) st = "adequado";
         result.push({
           tipo: "DSU",
+          tipoKey: "dsu",
           label,
           titulo: `Docentes c/ Superior — ${label}`,
           valor: fmt(v) + "%",
+          raw: Number(v),
+          fieldKey: key,
           status: st,
           explicacao: "Percentual de docentes com ensino superior completo.",
         });
@@ -164,9 +179,12 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
       else if (nivel >= 3) st = "adequado";
       result.push({
         tipo: "ICG",
+        tipoKey: "icg",
         label: `Nível ${nivel}`,
         titulo: "Complexidade de Gestão (ICG)",
         valor: `Nível ${nivel} / 6`,
+        raw: nivel,
+        fieldKey: "nivel",
         status: st,
         explicacao: "Índice de complexidade de gestão de 1 a 6. Escolas nos níveis 5–6 exigem maior suporte administrativo.",
       });
@@ -182,9 +200,12 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
       else if (media < 4) st = "adequado";
       result.push({
         tipo: "IRD",
+        tipoKey: "ird",
         label: fmt(media),
         titulo: "Regularidade Docente (IRD)",
         valor: fmt(media) + " / 5",
+        raw: media,
+        fieldKey: "media_ird",
         status: st,
         explicacao: "Mede a regularidade do vínculo dos professores com a escola (escala 1–5). Abaixo de 3 indica alta rotatividade.",
       });
@@ -207,9 +228,12 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
         else if (v < 85) st = "adequado";
         result.push({
           tipo: "AFD",
+          tipoKey: "afd",
           label,
           titulo: `Adequação Formação Docente — ${label}`,
           valor: fmt(v) + "%",
+          raw: v,
+          fieldKey: label === "Ensino Médio" ? "med_cat_1" : "fun_cat_1",
           status: st,
           explicacao: `% de professores do ${label} com formação adequada (Grupo 1) para a disciplina que lecionam.`,
         });
@@ -225,9 +249,12 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
     if (alto >= 0 && (n5 > 0 || n6 > 0 || d.nivel_1 != null)) {
       result.push({
         tipo: "IED",
+        tipoKey: "ied",
         label: `Nív. 5+6`,
         titulo: "Esforço Docente (IED)",
         valor: fmt(alto) + "% sobrecarga",
+        raw: alto,
+        fieldKey: "nivel_5_6",
         status: alto > 50 ? "atencao" : "bom",
         explicacao: "% de professores nos níveis de esforço mais altos (5 e 6), atuando em múltiplas escolas e turnos. Acima de 50% é preocupante.",
       });
@@ -262,9 +289,12 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
         }
         result.push({
           tipo: "Rendimento",
+          tipoKey: "taxas_rendimento",
           label,
           titulo: label,
           valor: fmt(v) + "%",
+          raw: n,
+          fieldKey: key,
           status: st,
           explicacao: "Taxa de " + label.toLowerCase() + " do Censo Escolar.",
         });
@@ -277,9 +307,12 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
     if (d.inse_valor != null && Number(d.inse_valor) > 0) {
       result.push({
         tipo: "INSE",
+        tipoKey: "inse",
         label: "Nível " + (d.inse_classificacao || ""),
         titulo: "Índice Socioeconômico (INSE)",
         valor: fmt(d.inse_valor),
+        raw: Number(d.inse_valor),
+        fieldKey: "inse_valor",
         status: "info",
         explicacao: "Nível socioeconômico médio dos estudantes da escola. Escala de I a VIII.",
       });
@@ -301,9 +334,12 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
       if (v != null && Number(v) > 0) {
         result.push({
           tipo: "SAEB",
+          tipoKey: "saeb",
           label,
           titulo: `SAEB — ${label}`,
           valor: fmt(v, 0),
+          raw: Number(v),
+          fieldKey: key,
           status: "info",
           explicacao: "Proficiência no SAEB. Média nacional para o ensino fundamental: ~230 (AI) e ~260 (AF).",
         });
@@ -314,17 +350,59 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
   return result;
 }
 
+function getNested(obj: any, path: string): number | null {
+  if (!obj || !path) return null;
+  const v = path.split('.').reduce((acc: any, k: string) => (acc ? acc[k] : undefined), obj);
+  const n = Number(v);
+  return isNaN(n) ? null : n;
+}
+
+function fmtDiff(v: number | null | undefined) {
+  if (v == null || isNaN(v)) return "";
+  const s = v >= 0 ? "+" : "";
+  return `${s}${Number(v).toFixed(1)}`;
+}
+
 export function IndicatorPanel({
   indicators,
   indicadores,
   mediasNacionais,
+  comparativo,
+  microregiao,
 }: {
   indicators?: Array<any>;
   indicadores?: Record<string, any>;
   mediasNacionais?: any;
+  comparativo?: any;
+  microregiao?: any;
 }) {
   const items = indicators ?? (indicadores ? buildIndicators(indicadores, mediasNacionais) : []);
   if (!items || !items.length) return null;
+
+  const getRefs = (ind: any) => {
+    const school = Number(ind.raw);
+    if (isNaN(school)) return [] as Array<{label:string; value:number|null; diff:number|null}>;
+
+    // IDEB: tem micro/mun/uf/brasil dedicados
+    if (ind.tipoKey === "ideb" && ind.fieldKey) {
+      const microVal = getNested(microregiao, ind.fieldKey);
+      const munVal = getNested(comparativo, `municipio.${ind.fieldKey}`);
+      const ufVal = getNested(comparativo, `uf.${ind.fieldKey}`);
+      const brVal = getNested(comparativo, `brasil.${ind.fieldKey}`) ?? getNested(mediasNacionais, `ideb.${ind.fieldKey}`);
+      return [
+        { label: `Microrregião ${microregiao?.micro_nome || ''}`.trim(), value: microVal, diff: microVal != null ? school - microVal : null },
+        { label: comparativo?.municipio?.nome || "Município", value: munVal, diff: munVal != null ? school - munVal : null },
+        { label: comparativo?.uf?.sg || "UF", value: ufVal, diff: ufVal != null ? school - ufVal : null },
+        { label: "Brasil", value: brVal, diff: brVal != null ? school - brVal : null },
+      ];
+    }
+
+    // Demais cards: pelo menos Brasil (média nacional do mesmo campo)
+    const br = getNested(mediasNacionais, `${ind.tipoKey}.${ind.fieldKey}`);
+    if (br == null) return [] as Array<{label:string; value:number|null; diff:number|null}>;
+    return [{ label: "Brasil", value: br, diff: school - br }];
+  };
+
   return (
     <div className="indicator-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-2 mt-2 mb-4">
       {items.map((ind: any, i: number) => (
@@ -346,6 +424,25 @@ export function IndicatorPanel({
             </div>
           )}
           <p className="text-xs text-[#47586d] leading-snug mt-0.5">{ind.explicacao}</p>
+          {(() => {
+            const refs = getRefs(ind);
+            if (!refs.length) return null;
+            return (
+              <div className="mt-1 pt-1 border-t border-gray-200/80 space-y-0.5">
+                {refs.map((r, idx) => (
+                  <div key={`${ind.titulo}-${idx}`} className="flex items-center justify-between text-[11px]">
+                    <span className="text-[#64748b] truncate pr-2">{r.label}</span>
+                    <span className="font-medium text-[#334155] shrink-0">
+                      {r.value == null ? "—" : fmt(r.value, 1)}
+                      {r.diff != null && (
+                        <span className={r.diff >= 0 ? "text-green-700 ml-1" : "text-red-700 ml-1"}>{fmtDiff(r.diff)}</span>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       ))}
     </div>
