@@ -4669,6 +4669,37 @@ out center tags 100;`;
                     const salaAcessTotal = salaAcessRaw.reduce((s,x)=>s+x.v,0);
                     const salaAcessData = salaAcessRaw.map(x=>({...x, pct:pct(x.v,salaAcessTotal)}));
 
+                    // ── 10. EJA POR ETAPA ──
+                    const ejaRaw = [
+                      { name:'EJA Fundamental', v: cd.qt_mat_eja_fund ?? 0, cor:'#6d4c41' },
+                      { name:'EJA Médio', v: cd.qt_mat_eja_med ?? 0, cor:'#4e342e' },
+                    ].filter(x => x.v > 0);
+                    const ejaTotal = ejaRaw.reduce((s,x)=>s+x.v,0);
+                    const ejaData = ejaRaw.map(x=>({...x, pct:pct(x.v,ejaTotal)}));
+
+                    // ── 11. ED. ESPECIAL — MODALIDADE (inclusão vs exclusiva) ──
+                    const espRaw = [
+                      { name:'Classes comuns (inclusão)', v: cd.qt_mat_esp_cc ?? 0, cor:'#5c8a6e' },
+                      { name:'Classes exclusivas', v: cd.qt_mat_esp_ce ?? 0, cor:'#9b6a16' },
+                    ].filter(x => x.v > 0);
+                    const espTotal = espRaw.reduce((s,x)=>s+x.v,0);
+                    const espData = espRaw.map(x=>({...x, pct:pct(x.v,espTotal)}));
+
+                    // ── 12. ZONA DE RESIDÊNCIA ──
+                    const zonaRaw = [
+                      { name:'Zona urbana', v: cd.qt_mat_zr_urb ?? 0, cor:'#4d9de0' },
+                      { name:'Zona rural', v: cd.qt_mat_zr_rur ?? 0, cor:'#7b9a6a' },
+                    ].filter(x => x.v > 0);
+                    const zonaTotal = zonaRaw.reduce((s,x)=>s+x.v,0);
+                    const zonaData = zonaRaw.map(x=>({...x, pct:pct(x.v,zonaTotal)}));
+
+                    // ── BADGES DE MODALIDADE ESPECIAL ──
+                    const modalBadges = [
+                      { key: 'in_educacao_indigena',   label: 'Escola Indígena',   cor:'#4a7c59', bg:'#e8f4ec' },
+                      { key: 'in_educacao_quilombola', label: 'Escola Quilombola', cor:'#6b3a2a', bg:'#f4ece8' },
+                      { key: 'in_educacao_campo',      label: 'Educação do Campo', cor:'#7b9a6a', bg:'#eff4eb' },
+                    ].filter(b => cd[b.key] === 1 || cd[b.key] === true || cd[b.key] === 'Sim');
+
                     type PieSlice = { name:string; v:number; cor:string; pct:number };
 
                     const PizzaCard = ({ title, data, noDataMsg, nota }: { title:string; data:PieSlice[]; noDataMsg?:string; nota?:string }) => {
@@ -4736,6 +4767,15 @@ out center tags 100;`;
                             ))}
                           </div>
                         </div>
+                        {modalBadges.length > 0 && (
+                          <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:12 }}>
+                            {modalBadges.map(b => (
+                              <span key={b.key} style={{ display:'inline-flex', alignItems:'center', gap:5, background:b.bg, color:b.cor, border:`1.5px solid ${b.cor}55`, borderRadius:20, padding:'4px 14px', fontSize:13, fontWeight:700 }}>
+                                ★ {b.label}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:14 }}>
                           <PizzaCard title="Matrículas por etapa de ensino" data={etapasData} />
                           <PizzaCard title="Cor / Raça dos estudantes" data={racaData}
@@ -4751,6 +4791,12 @@ out center tags 100;`;
                             noDataMsg="Sem dados de salas para este ano" />
                           <PizzaCard title="Salas de aula — acessibilidade" data={salaAcessData}
                             noDataMsg="Sem dados de salas para este ano" />
+                          <PizzaCard title="EJA — Fundamental vs Médio" data={ejaData}
+                            noDataMsg="Escola sem matrícula EJA" />
+                          <PizzaCard title="Ed. Especial — modalidade de atendimento" data={espData}
+                            noDataMsg="Escola sem dados de Ed. Especial" />
+                          <PizzaCard title="Zona de residência dos alunos" data={zonaData}
+                            noDataMsg="Sem dados de zona de residência" />
                         </div>
                       </div>
                     );
