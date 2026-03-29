@@ -1,6 +1,7 @@
 
 import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 
 const BRAZIL_TOPOJSON = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson";
 
@@ -216,12 +217,12 @@ export function BrazilMap({ onStateClick, onStateHover, ufStats, selectedUf, cli
         })}
       </ComposableMap>
 
-      {tooltip && (
+      {tooltip && createPortal(
         <div
           style={{
             position: "fixed",
             left: tooltip.x,
-            top: tooltip.y - 44,
+            top: tooltip.y - 8,
             background: "#fff",
             border: "1px solid #e5e7eb",
             borderRadius: 10,
@@ -229,8 +230,8 @@ export function BrazilMap({ onStateClick, onStateHover, ufStats, selectedUf, cli
             fontSize: 13,
             color: "#222",
             pointerEvents: "none",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-            zIndex: 9999,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+            zIndex: 99999,
             transform: "translate(-50%, -100%)",
             minWidth: 160,
           }}
@@ -263,7 +264,8 @@ export function BrazilMap({ onStateClick, onStateHover, ufStats, selectedUf, cli
               <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>Clique para ver detalhes</div>
             </>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
