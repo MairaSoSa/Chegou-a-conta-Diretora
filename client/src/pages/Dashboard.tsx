@@ -5900,48 +5900,114 @@ out center tags 100;`;
                           </div>
                         )}
 
-                        {/* Tabela de dados */}
-                        {!prestacaoContaLoading && prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 && (
-                          <div className="table-card" style={{overflowX:'auto'}}>
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
-                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
-                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
-                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. UEx</th>
-                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. EEx</th>
-                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp. UEx</th>
-                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp. EEx</th>
-                                  <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Vl. Previsto</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {prestacaoContaData.itens.map((item: any, i: number) => {
-                                  const isOkUex = item.situacao_pc_uex?.toLowerCase().includes('adimpl');
-                                  const isOkEex = item.situacao_pc_eex?.toLowerCase().includes('adimpl');
-                                  const isNegativo = (v: string) => !v || v === '—' || /^n[aã]o$/i.test(v.trim());
-                                  const hasSuspUex = item.suspensao_uex && !isNegativo(item.suspensao_uex);
-                                  const hasSuspEex = item.suspensao_eex && !isNegativo(item.suspensao_eex);
-                                  return (
-                                    <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                      <td className="py-2 px-3 text-xs font-medium">{item.ds_programa || item.programa || 'PDDE'}</td>
-                                      <td className="py-2 px-3 text-xs font-semibold" style={{color:'#9b6a16'}}>{item.ano || anoExibido}</td>
-                                      <td className="py-2 px-3">
-                                        {item.situacao_pc_uex ? <span className={`badge ${isOkUex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_uex}</span> : <span className="text-muted-foreground text-xs">—</span>}
-                                      </td>
-                                      <td className="py-2 px-3">
-                                        {item.situacao_pc_eex ? <span className={`badge ${isOkEex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_eex}</span> : <span className="text-muted-foreground text-xs">—</span>}
-                                      </td>
-                                      <td className="py-2 px-3 text-xs">{hasSuspUex ? <span className="badge badge-critical">{item.suspensao_uex}</span> : <span className="text-muted-foreground">—</span>}</td>
-                                      <td className="py-2 px-3 text-xs">{hasSuspEex ? <span className="badge badge-critical">{item.suspensao_eex}</span> : <span className="text-muted-foreground">—</span>}</td>
-                                      <td className="py-2 px-3 text-xs text-right font-mono">{item.valor_previsto || '—'}</td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
+                        {/* Cards por programa */}
+                        {!prestacaoContaLoading && prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 && (() => {
+                          const isNegativo = (v: string) => !v || v === '—' || /^n[aã]o$/i.test(v.trim());
+                          // filtra atendimento do mesmo ano
+                          const atenYear = String(anoExibido);
+                          const atenItens: any[] = (atendimentoData?.itens ?? []).filter((a: any) => a.ano === atenYear);
+                          // qtd_alunos: pega do primeiro item de atendimento (é igual pra todos)
+                          const qtdAlunos = atenItens[0]?.qtd_alunos ?? null;
+
+                          return (
+                            <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+                              {prestacaoContaData.itens.map((item: any, i: number) => {
+                                const prog = item.ds_programa || item.programa || 'PDDE';
+                                const isOkUex = item.situacao_pc_uex?.toLowerCase().includes('adimpl');
+                                const isOkEex = item.situacao_pc_eex?.toLowerCase().includes('adimpl');
+                                const hasSuspUex = item.suspensao_uex && !isNegativo(item.suspensao_uex);
+                                const hasSuspEex = item.suspensao_eex && !isNegativo(item.suspensao_eex);
+                                const temSusp = hasSuspUex || hasSuspEex;
+                                // destinações desse programa no atendimento
+                                const destsProg = atenItens.filter((a: any) =>
+                                  (a.programa || '').toLowerCase() === prog.toLowerCase()
+                                );
+                                const bgHeader = isOkUex && isOkEex && !temSusp ? '#e8f5ee' : '#fdf3e7';
+                                const borderColor = isOkUex && isOkEex && !temSusp ? '#b8dfc8' : '#f0d8b8';
+                                const txtHeader = isOkUex && isOkEex && !temSusp ? '#1a5c38' : '#7a4510';
+
+                                return (
+                                  <div key={i} style={{borderRadius:'10px',overflow:'hidden',border:`1px solid ${borderColor}`}}>
+                                    {/* ── Cabeçalho do programa ── */}
+                                    <div style={{background:bgHeader,padding:'8px 12px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'6px'}}>
+                                      <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                                        <span style={{fontSize:'11px',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.06em',color:txtHeader}}>{prog}</span>
+                                        <span style={{fontSize:'10px',color:'#9b6a16',background:'#fdf3e0',borderRadius:'4px',padding:'1px 6px',fontWeight:600}}>
+                                          {item.ano || anoExibido}
+                                        </span>
+                                        {qtdAlunos && (
+                                          <span style={{fontSize:'10px',color:'#4a6a8a',background:'#e8f0fb',borderRadius:'4px',padding:'1px 6px',fontWeight:600}}>
+                                            {Number(qtdAlunos).toLocaleString('pt-BR')} alunos
+                                          </span>
+                                        )}
+                                        {item.valor_previsto && (
+                                          <span style={{fontSize:'11px',color:'#555',fontFamily:'monospace',fontWeight:600}}>
+                                            R$ {item.valor_previsto}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {/* Status badges */}
+                                      <div style={{display:'flex',alignItems:'center',gap:'4px',flexWrap:'wrap'}}>
+                                        {item.situacao_pc_uex && (
+                                          <span style={{fontSize:'10px',display:'inline-flex',alignItems:'center',gap:'3px'}}>
+                                            <span style={{color:'#888',fontSize:'9px'}}>UEx</span>
+                                            <span className={`badge ${isOkUex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_uex}</span>
+                                          </span>
+                                        )}
+                                        {item.situacao_pc_eex && (
+                                          <span style={{fontSize:'10px',display:'inline-flex',alignItems:'center',gap:'3px'}}>
+                                            <span style={{color:'#888',fontSize:'9px'}}>EEx</span>
+                                            <span className={`badge ${isOkEex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_eex}</span>
+                                          </span>
+                                        )}
+                                        {hasSuspUex && <span className="badge badge-critical" style={{fontSize:'10px'}}>Susp. UEx: {item.suspensao_uex}</span>}
+                                        {hasSuspEex && <span className="badge badge-critical" style={{fontSize:'10px'}}>Susp. EEx: {item.suspensao_eex}</span>}
+                                      </div>
+                                    </div>
+
+                                    {/* ── Destinações (do atendimento) ── */}
+                                    {destsProg.length > 0 ? (
+                                      <div style={{background:'#fff'}}>
+                                        {destsProg.map((dest: any, di: number) => (
+                                          <div key={di} style={{
+                                            display:'flex',alignItems:'center',justifyContent:'space-between',
+                                            padding:'7px 12px',
+                                            borderTop:'1px solid #f0ece4',
+                                            gap:'8px',flexWrap:'wrap'
+                                          }}>
+                                            <span style={{fontSize:'12px',color:'#2a2018',fontWeight:500,flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                                              {dest.destinacao || '—'}
+                                            </span>
+                                            <div style={{display:'flex',alignItems:'center',gap:'12px',flexShrink:0}}>
+                                              {dest.data_ordem_pgto && dest.data_ordem_pgto !== '-' && (
+                                                <div style={{textAlign:'right'}}>
+                                                  <div style={{fontSize:'9px',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.04em'}}>Data Pgto</div>
+                                                  <div style={{fontSize:'11px',color:'#555',whiteSpace:'nowrap'}}>{dest.data_ordem_pgto}</div>
+                                                </div>
+                                              )}
+                                              {dest.valor_total != null && (
+                                                <div style={{textAlign:'right'}}>
+                                                  <div style={{fontSize:'9px',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.04em'}}>Valor</div>
+                                                  <div style={{fontSize:'12px',fontFamily:'monospace',fontWeight:700,color:'#16a34a'}}>
+                                                    {dest.valor_total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div style={{padding:'8px 12px',fontSize:'11px',color:'#aaa',background:'#fff',borderTop:'1px solid #f0ece4'}}>
+                                        Detalhes de destinação não disponíveis para este exercício.
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })()}
