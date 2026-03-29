@@ -2537,7 +2537,7 @@ out center tags 100;`;
                 <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap', marginTop: '22px' }}>
 
                   {/* FICHA GERAL */}
-                  <section id="sec-ficha" className="section" style={{ flex: '1 1 0', minWidth: '220px', marginTop: 0, scrollMarginTop: 70 }}>
+                  <section id="sec-ficha" className="section section-pauta" style={{ flex: '1 1 0', minWidth: '220px', marginTop: 0, scrollMarginTop: 70 }}>
                     <div className="section-title">
                       <div><h2>Ficha geral da escola</h2><p>Identidade e vida organizacional</p></div>
                     </div>
@@ -2718,7 +2718,7 @@ out center tags 100;`;
                     { key: 'lp_em', label: 'Língua Port.', sub: 'Ens. Médio', color: '#9b6a16' },
                   ].filter(m => saebLatest && saebLatest[m.key] != null);
                   return (
-                    <section id="sec-desempenho" className="section" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-desempenho" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div><h2>Desempenho escolar</h2><p>Notas do SAEB e taxas de aprovação, reprovação e abandono</p></div>
                       </div>
@@ -2934,7 +2934,7 @@ out center tags 100;`;
                   const gradesDisponiveis = seg ? seg.grades.filter(g => latest[g.key] != null) : [];
 
                   return (
-                    <section id="sec-tnr" className="section" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-tnr" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Taxa de Não Resposta</h2>
@@ -3071,7 +3071,7 @@ out center tags 100;`;
                   if (niveis.length === 0) return null;
 
                   return (
-                    <section id="sec-inse" className="section" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-inse" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>INSE — Distribuição dos Estudantes por Nível Socioeconômico</h2>
@@ -3177,7 +3177,7 @@ out center tags 100;`;
                   const gradesDisponiveis = seg ? seg.grades.filter(g => latest[g.key] != null) : [];
 
                   return (
-                    <section id="sec-tdi" className="section" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-tdi" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Distorção Idade-Série</h2>
@@ -3304,7 +3304,7 @@ out center tags 100;`;
                   const anosDisp = (evolucaoData.anos_disponiveis as number[]).filter((a: number) => a >= 2020).sort((a, b) => a - b);
                   const hasHistorico = anosDisp.length > 1;
                   return (
-                    <section id="sec-matriculas" className="section" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-matriculas" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Matrículas por etapa</h2>
@@ -3485,7 +3485,7 @@ out center tags 100;`;
                     );
                   };
                   return (
-                    <section id="sec-estrutura" className="section" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-estrutura" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div><h2>Estrutura e recursos</h2><p>Turmas, equipe docente e espaços físicos por etapa</p></div>
                       </div>
@@ -3567,7 +3567,7 @@ out center tags 100;`;
                   const pct = (v: any) => v != null ? `${Number(v).toFixed(1)}%` : '—';
 
                   return (
-                    <section id="sec-ied" className="section" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-ied" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Esforço Docente (IED)</h2>
@@ -3733,7 +3733,7 @@ out center tags 100;`;
                   ].filter(e => e.hasData);
 
                   return (
-                    <section id="sec-afd" className="section" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-afd" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Adequação da Formação Docente (AFD)</h2>
@@ -3954,7 +3954,7 @@ out center tags 100;`;
                   const atuAlert = (v: any) => v != null && Number(v) > 35;
 
                   return (
-                    <section id="sec-atu" className="section" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-atu" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Média de Alunos por Turma (ATU)</h2>
@@ -4169,7 +4169,7 @@ out center tags 100;`;
                   const allCols = grupos.flatMap(g => g.cols);
 
                   return (
-                    <section id="sec-had" className="section" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-had" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Horas-Aula Diárias (HAD)</h2>
@@ -4304,7 +4304,7 @@ out center tags 100;`;
                 })()}
 
                 {/* ── RETRATO DA ESCOLA — GRÁFICOS + 3 CAMADAS × 10 DIMENSÕES ── */}
-                <section id="sec-retrato" className="section" style={{ scrollMarginTop: 70 }}>
+                <section id="sec-retrato" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
                   <div className="section-title">
                     <div><h2>Retrato da escola</h2><p>Evolução visual e dados detalhados do Censo Escolar ao longo dos anos</p></div>
                   </div>
@@ -5291,7 +5291,7 @@ out center tags 100;`;
                 </section>
 
                 {/* ── DADOS FINANCEIROS PDDE ── */}
-                <section id="sec-pdde" className="section" style={{ scrollMarginTop: 70 }}>
+                <section id="sec-pdde" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
                   <div className="section-title">
                     <div><h2>Dados financeiros PDDE</h2><p>Situação financeira e repasses do Programa Dinheiro Direto na Escola</p></div>
                   </div>

@@ -1406,6 +1406,37 @@
 /* Section spacing */
 .section { margin-top: 22px; }
 
+/* ── Papel com pauta — estilo caderno escolar ── */
+.section-pauta {
+  background: linear-gradient(180deg, rgba(255,253,248,0.98) 0%, rgba(252,248,240,0.98) 100%);
+  border: 1px solid #e8ddd2;
+  border-radius: 26px;
+  box-shadow: 0 14px 36px rgba(134,112,92,0.09);
+  position: relative;
+  overflow: hidden;
+  padding: 26px 28px 30px 46px;
+  margin-top: 22px;
+}
+.section-pauta::before {
+  content: "";
+  position: absolute;
+  left: 22px;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  background: rgba(232,160,160,0.55);
+  pointer-events: none;
+}
+@media print {
+  .section-pauta {
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    border: 1px solid #e0d8cc !important;
+    padding: 12pt 12pt 12pt 16pt !important;
+  }
+  .section-pauta::before { display: none !important; }
+}
+
 /* Summary grid */
 .summary-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
 
