@@ -5310,43 +5310,60 @@ out center tags 100;`;
                   )}
 
                   {/* ── ALERTA: ESCOLA SEM UEx ── */}
-                  {pddeData?.ok && !pddeData?.uex && (pddeData?.destinacoes?.length ?? 0) > 0 &&
-                    pddeData.destinacoes!.every((d: any) => (d.pago_total ?? 0) === 0) && (
-                    <div style={{
-                      background:'#fef2f2',border:'1.5px solid #fca5a5',borderRadius:'10px',
-                      padding:'14px 16px',marginBottom:'16px',
-                      display:'flex',flexDirection:'column',gap:'8px'
-                    }}>
-                      <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                        <AlertTriangle className="w-4 h-4" style={{color:'#dc2626',flexShrink:0}} />
-                        <span style={{fontSize:'13px',fontWeight:800,color:'#991b1b'}}>
-                          Repasses suspensos — Escola sem UEx cadastrada
-                        </span>
-                        <span style={{fontSize:'10px',fontWeight:700,color:'#991b1b',background:'#fecaca',borderRadius:'9999px',padding:'1px 8px',marginLeft:'auto',whiteSpace:'nowrap'}}>
-                          ⚠ Ativo
-                        </span>
-                      </div>
-                      <p style={{fontSize:'12px',color:'#7f1d1d',margin:0,lineHeight:'1.6'}}>
-                        Esta escola <strong>não possui Unidade Executora (UEx/EM) registrada no FNDE</strong>.
-                        Enquanto a UEx não for criada e cadastrada, os repasses do PDDE ficam bloqueados
-                        — mesmo que os recursos estejam previstos.
-                      </p>
-                      {(pddeData?.destinacoes?.reduce((s: number, d: any) => s + (d.devido_total ?? 0), 0) ?? 0) > 0 && (
-                        <div style={{background:'#fee2e2',borderRadius:'6px',padding:'6px 10px',display:'inline-flex',alignItems:'center',gap:'8px',alignSelf:'flex-start'}}>
-                          <span style={{fontSize:'11px',color:'#7f1d1d',fontWeight:600}}>
-                            Valor previsto bloqueado:
+                  {pddeData?.ok && !pddeData?.uex &&
+                   (pddeData?.destinacoes?.length ?? 0) > 0 &&
+                   pddeData.destinacoes!.every((d: any) => (d.pago_total ?? 0) === 0) && (() => {
+                    const dadosCad = pddeData?.situacao_uex?.dados_cadastrais || '';
+                    const viaEex = /eex|entidade executora/i.test(dadosCad);
+                    const totalDevido = pddeData.destinacoes!.reduce((s: number, d: any) => s + (d.devido_total ?? 0), 0);
+                    return (
+                      <div style={{
+                        background:'#fef2f2',border:'1.5px solid #fca5a5',borderRadius:'10px',
+                        padding:'14px 16px',marginBottom:'16px',
+                        display:'flex',flexDirection:'column',gap:'8px'
+                      }}>
+                        <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                          <AlertTriangle className="w-4 h-4" style={{color:'#dc2626',flexShrink:0}} />
+                          <span style={{fontSize:'13px',fontWeight:800,color:'#991b1b'}}>
+                            {viaEex
+                              ? 'Ação integrada bloqueada — escola recebe via EEX'
+                              : 'Repasses suspensos — Escola sem UEx cadastrada'}
                           </span>
-                          <span style={{fontSize:'13px',fontWeight:800,color:'#991b1b',fontFamily:'monospace'}}>
-                            {pddeData.destinacoes!.reduce((s: number, d: any) => s + (d.devido_total ?? 0), 0)
-                              .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          <span style={{fontSize:'10px',fontWeight:700,color:'#991b1b',background:'#fecaca',borderRadius:'9999px',padding:'1px 8px',marginLeft:'auto',whiteSpace:'nowrap'}}>
+                            ⚠ Ativo
                           </span>
                         </div>
-                      )}
-                      <p style={{fontSize:'11px',color:'#9ca3af',margin:0}}>
-                        Para regularizar: a escola precisa constituir uma UEx (conselho escolar ou APM) e cadastrá-la no PDDE/FNDE.
-                      </p>
-                    </div>
-                  )}
+                        {viaEex ? (
+                          <p style={{fontSize:'12px',color:'#7f1d1d',margin:0,lineHeight:'1.6'}}>
+                            Esta escola <strong>não possui UEx própria</strong> — os repasses são feitos pela Entidade Executora (EEX/prefeitura).
+                            Para ações integradas que exigem a UEx como credora, o repasse fica bloqueado enquanto a escola
+                            não cadastrar sua própria UEx no PDDEweb.
+                          </p>
+                        ) : (
+                          <p style={{fontSize:'12px',color:'#7f1d1d',margin:0,lineHeight:'1.6'}}>
+                            Esta escola <strong>não possui Unidade Executora (UEx/EM) registrada no FNDE</strong>.
+                            Enquanto a UEx não for criada e cadastrada, os repasses do PDDE ficam bloqueados
+                            — mesmo que os recursos estejam previstos.
+                          </p>
+                        )}
+                        {totalDevido > 0 && (
+                          <div style={{background:'#fee2e2',borderRadius:'6px',padding:'6px 10px',display:'inline-flex',alignItems:'center',gap:'8px',alignSelf:'flex-start'}}>
+                            <span style={{fontSize:'11px',color:'#7f1d1d',fontWeight:600}}>
+                              Valor previsto bloqueado:
+                            </span>
+                            <span style={{fontSize:'13px',fontWeight:800,color:'#991b1b',fontFamily:'monospace'}}>
+                              {totalDevido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </span>
+                          </div>
+                        )}
+                        <p style={{fontSize:'11px',color:'#9ca3af',margin:0}}>
+                          {viaEex
+                            ? 'Para regularizar: constituir e cadastrar uma UEx própria (conselho escolar ou APM) no PDDEweb.'
+                            : 'Para regularizar: a escola precisa constituir uma UEx (conselho escolar ou APM) e cadastrá-la no PDDE/FNDE.'}
+                        </p>
+                      </div>
+                    );
+                  })()}
 
                   {/* ── ALERTA: UEx COM PENDÊNCIAS (tem UEx mas tem problemas) ── */}
                   {pddeData?.ok && pddeData?.uex && (() => {
@@ -5364,8 +5381,14 @@ out center tags 100;`;
                       (it: any) => it.situacao_pc_uex?.toLowerCase().includes('inadimp') ||
                                    it.situacao_pc_eex?.toLowerCase().includes('inadimp')
                     );
+                    const dests: Array<any> = pddeData?.destinacoes || [];
+                    const uexTodosPago0 = !mandatoVencido && pendentes.length === 0 && !pcInadimplente &&
+                      dests.length > 0 && dests.every((d: any) => (d.pago_total ?? 0) === 0);
+                    const destsBloqueadas = (!mandatoVencido && pendentes.length === 0 && !pcInadimplente && !uexTodosPago0)
+                      ? dests.filter((d: any) => (d.pago_total ?? 0) === 0 && (d.devido_total ?? 0) > 0)
+                      : [];
 
-                    if (!mandatoVencido && pendentes.length === 0 && !pcInadimplente) return null;
+                    if (!mandatoVencido && pendentes.length === 0 && !pcInadimplente && !uexTodosPago0 && destsBloqueadas.length === 0) return null;
 
                     return (
                       <div style={{
@@ -5411,6 +5434,33 @@ out center tags 100;`;
                             <span style={{fontSize:'11px',fontWeight:700,color:'#7c2d12',background:'#fed7aa',borderRadius:'4px',padding:'1px 6px',whiteSpace:'nowrap',flexShrink:0}}>PC</span>
                             <span style={{fontSize:'12px',color:'#7c2d12',fontWeight:500}}>
                               <strong>Inadimplência registrada no FNDE</strong> — verifique a situação da PC para regularizar.
+                            </span>
+                          </div>
+                        )}
+
+                        {uexTodosPago0 && (
+                          <div style={{display:'flex',alignItems:'flex-start',gap:'8px',background:'#ffedd5',borderRadius:'6px',padding:'8px 10px'}}>
+                            <span style={{fontSize:'11px',fontWeight:700,color:'#7c2d12',background:'#fed7aa',borderRadius:'4px',padding:'1px 6px',whiteSpace:'nowrap',flexShrink:0}}>Cadastro</span>
+                            <span style={{fontSize:'12px',color:'#7c2d12',fontWeight:500}}>
+                              <strong>Nenhum repasse efetuado</strong> — a UEx existe e o mandato está vigente,
+                              mas todos os pagamentos estão zerados. Possíveis causas: CNPJ inválido na Receita Federal,
+                              conta corrente inativa ou bloqueio cadastral não visível no PDDEweb.
+                              Verifique o <em>Relatório de Suspensão</em> no FNDE.
+                            </span>
+                          </div>
+                        )}
+
+                        {destsBloqueadas.length > 0 && (
+                          <div style={{display:'flex',alignItems:'flex-start',gap:'8px',background:'#ffedd5',borderRadius:'6px',padding:'8px 10px'}}>
+                            <span style={{fontSize:'11px',fontWeight:700,color:'#7c2d12',background:'#fed7aa',borderRadius:'4px',padding:'1px 6px',whiteSpace:'nowrap',flexShrink:0}}>Repasse</span>
+                            <span style={{fontSize:'12px',color:'#7c2d12',fontWeight:500,display:'flex',flexDirection:'column',gap:'4px'}}>
+                              <span><strong>Destinação(ões) com pagamento zerado</strong> — possível conta corrente inativa ou bloqueio específico:</span>
+                              {destsBloqueadas.map((d: any, i: number) => (
+                                <span key={i} style={{fontFamily:'monospace',fontSize:'11px',background:'#fed7aa',borderRadius:'3px',padding:'1px 6px',alignSelf:'flex-start'}}>
+                                  {d.destinacao} — previsto: {(d.devido_total ?? 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                                </span>
+                              ))}
+                              <span style={{fontSize:'11px',color:'#92400e'}}>Verifique o <em>Relatório de Suspensão</em> no FNDE para o motivo específico.</span>
                             </span>
                           </div>
                         )}
