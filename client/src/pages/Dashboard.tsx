@@ -3364,15 +3364,17 @@ out center tags 100;`;
                   const turEM  = censoLatest.qt_tur_med  ?? null;
                   const turEJA = censoLatest.qt_tur_eja ?? null;
                   const turTot = censoLatest.qt_tur_bas  ?? censoLatest.qt_turmas ?? null;
-                  const turTotEtapas = [turEI, turEF, turEM, turEJA].reduce((sum, val) => sum + (val ?? 0), 0);
-                  const turPctDen = turTotEtapas > 0 ? turTotEtapas : turTot;
+                  // Percentual sempre em relação ao total real de turmas
+                  const turPctDen = turTot;
                   const docEI  = censoLatest.qt_doc_inf  ?? null;
                   const docEF  = censoLatest.qt_doc_fund ?? null;
                   const docEM  = censoLatest.qt_doc_med  ?? null;
                   const docEJA = censoLatest.qt_doc_eja ?? null;
                   const docTot = censoLatest.qt_doc_bas  ?? censoLatest.qt_docentes ?? null;
-                  const docTotEtapas = [docEI, docEF, docEM, docEJA].reduce((sum, val) => sum + (val ?? 0), 0);
-                  const docPctDen = docTotEtapas > 0 ? docTotEtapas : docTot;
+                  // Docentes: um mesmo professor pode atuar em mais de uma etapa,
+                  // então a soma por etapa pode superar o total de pessoas únicas.
+                  // Usamos docTot como denominador para manter o % coerente com o total real.
+                  const docPctDen = docTot;
                   const salTot    = censoLatest.qt_salas_utilizadas        ?? null;
                   const salDentro = censoLatest.qt_salas_utilizadas_dentro ?? null;
                   const salFora   = censoLatest.qt_salas_utilizadas_fora   ?? null;
@@ -3427,6 +3429,7 @@ out center tags 100;`;
                                 <span style={{color:'var(--m-muted)',fontWeight:600}}>Total</span>
                                 <strong>{docTot != null ? docTot.toLocaleString('pt-BR') : '—'} docentes</strong>
                               </div>
+                              <p style={{fontSize:'11px',color:'var(--m-muted)',margin:'6px 0 0',lineHeight:1.4}}>* Um mesmo docente pode atuar em mais de uma etapa.</p>
                             </div>
                           </div>
                         )}
