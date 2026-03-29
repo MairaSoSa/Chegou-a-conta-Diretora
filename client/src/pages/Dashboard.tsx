@@ -2516,7 +2516,7 @@ out center tags 100;`;
                     <div className="soft-card">
                       <div className="panel-head">
                         <h3 style={{margin:'0 0 4px',fontSize:'20px',letterSpacing:'-0.03em'}}>Pontos de atenção</h3>
-                        <p style={{margin:0,color:'var(--m-muted)',fontSize:'13px'}}>Indicadores que merecem acompanhamento especial</p>
+                        <p style={{margin:0,color:'var(--m-muted)',fontSize:'13px'}}>Indicadores que merecem acompanhamento — detalhes no Painel de Indicadores abaixo</p>
                       </div>
                       {total === 0 ? (
                         <div className="flex items-center gap-3 p-4 rounded-xl mt-4" style={{background:'#eef7f1',border:'1px solid #c7e8d6'}}>
@@ -2524,26 +2524,22 @@ out center tags 100;`;
                           <p style={{fontSize:'13px',color:'#2f7a58',margin:0}}>Diretora, os indicadores desta escola estão dentro das faixas esperadas!</p>
                         </div>
                       ) : (
-                        <div className="alert-grid" style={{marginTop:'14px'}}>
+                        <div style={{display:'flex',flexWrap:'wrap',gap:'8px',marginTop:'14px'}}>
                           {[...criticals, ...warnings].map((alerta, i) => {
-                            const mv = extractVal(alerta.titulo);
                             const ct = cleanTitle(alerta.titulo);
+                            const mv = extractVal(alerta.titulo);
+                            const isCritical = alerta.tipo === 'critical';
                             return (
-                              <div key={i} className={`alert-sticker ${alerta.tipo === 'critical' ? 'critical' : ''}`}>
-                                <div className="flex items-start justify-between gap-2 mb-2">
-                                  <p style={{fontSize:'13px',fontWeight:700,lineHeight:'1.3',margin:0}}>{ct}</p>
-                                  <span className={`severity ${alerta.tipo === 'critical' ? 'critical' : 'attn'}`}>
-                                    {alerta.tipo === 'critical' ? 'Atenção especial' : 'Atenção'}
-                                  </span>
-                                </div>
-                                {mv && <strong style={{display:'block',fontSize:'26px',lineHeight:1,letterSpacing:'-0.04em',marginBottom:'6px'}}>{mv}</strong>}
-                                <p style={{fontSize:'12px',color:'#6b7785',lineHeight:'1.5',margin:0}}>{alerta.descricao}</p>
-                                {(alerta as any).progressao && (
-                                  <div style={{marginTop:'8px',display:'inline-flex',alignItems:'center',gap:'5px',background:'#eafaf2',border:'1px solid #a3dfc0',borderRadius:'20px',padding:'3px 10px'}}>
-                                    <span style={{fontSize:'12px'}}>📈</span>
-                                    <span style={{fontSize:'11px',fontWeight:700,color:'#1f7a4a'}}>{(alerta as any).progressao.label}</span>
-                                  </div>
-                                )}
+                              <div key={i} style={{
+                                display:'inline-flex',alignItems:'center',gap:'6px',
+                                padding:'7px 13px',borderRadius:'20px',
+                                background: isCritical ? '#fff1f0' : '#fffbeb',
+                                border: `1.5px solid ${isCritical ? '#fca5a5' : '#fcd34d'}`,
+                              }}>
+                                <span style={{fontSize:'13px'}}>{isCritical ? '🔴' : '🟡'}</span>
+                                <span style={{fontSize:'12px',fontWeight:700,color: isCritical ? '#b91c1c' : '#92400e'}}>
+                                  {ct}{mv ? ` — ${mv}` : ''}
+                                </span>
                               </div>
                             );
                           })}
@@ -2594,144 +2590,56 @@ out center tags 100;`;
                         );
                       })()}
 
-                      {/* Progressão histórica da escola (Ensino Médio) */}
-                      {(() => {
-                        if (!evolutionCharts) return null;
-
-                        const anos = (evolucaoData?.anos_disponiveis || [])
-                          .slice()
-                          .sort((a: number, b: number) => a - b);
-                        if (anos.length < 2) return null;
-
-                        const fmt = (v: any, pct = false) => {
-                          if (v == null || Number.isNaN(Number(v))) return '—';
-                          const n = Number(v);
-                          return pct ? `${n.toFixed(1).replace('.', ',')}%` : n.toFixed(1).replace('.', ',');
-                        };
-
-                        const metrics = [
-                          {
-                            label: 'IDEB — Ensino Médio',
-                            values: (evolutionCharts.ideb || []).map((d: any) => ({ ano: d.ano, val: d.ideb_em })),
-                            pct: false,
-                          },
-                          {
-                            label: 'ICG — Complexidade de Gestão',
-                            values: (evolutionCharts.icg || []).map((d: any) => ({ ano: d.ano, val: d.nivel })),
-                            pct: false,
-                          },
-                          {
-                            label: 'IRD — Regularidade Docente',
-                            values: (evolutionCharts.ird || []).map((d: any) => ({ ano: d.ano, val: d.media })),
-                            pct: false,
-                          },
-                          {
-                            label: 'AFD — Ensino Médio (Grupo 1)',
-                            values: (evolutionCharts.afd || []).map((d: any) => ({ ano: d.ano, val: d.med_g1 })),
-                            pct: true,
-                          },
-                          {
-                            label: 'Aprovação Médio',
-                            values: (evolutionCharts.taxasRendimento || []).map((d: any) => ({ ano: d.ano, val: d.aprovacao_med })),
-                            pct: true,
-                          },
-                          {
-                            label: 'Reprovação Médio',
-                            values: (evolutionCharts.taxasRendimento || []).map((d: any) => ({ ano: d.ano, val: d.reprovacao_med })),
-                            pct: true,
-                          },
-                          {
-                            label: 'Abandono Médio',
-                            values: (evolutionCharts.taxasRendimento || []).map((d: any) => ({ ano: d.ano, val: d.abandono_med })),
-                            pct: true,
-                          },
-                        ].map((m) => {
-                          const serie = m.values
-                            .filter((p: any) => anos.includes(p.ano) && p.val != null)
-                            .sort((a: any, b: any) => a.ano - b.ano);
-                          return { ...m, serie };
-                        }).filter((m) => m.serie.length >= 2);
-
-                        if (!metrics.length) return null;
-
-                        return (
-                          <div style={{ marginTop: 16 }}>
-                            <div style={{fontSize:'11px',fontWeight:700,color:'var(--m-muted)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px'}}>
-                              Progressão da escola ao longo dos anos
-                            </div>
-                            <div style={{ display: 'grid', gap: 8 }}>
-                              {metrics.map((m) => (
-                                <div key={m.label} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '8px 10px' }}>
-                                  <div style={{ fontSize: 11, fontWeight: 700, color: '#334155', marginBottom: 5 }}>{m.label}</div>
-                                  <div style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap', overflowX: 'auto' }}>
-                                    {m.serie.map((p: any, idx: number) => (
-                                      <span key={`${m.label}-${p.ano}`}>
-                                        <strong style={{ color: '#334155' }}>{p.ano}</strong>: {fmt(p.val, m.pct)}{idx < m.serie.length - 1 ? '  →  ' : ''}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })()}
 
                     </div>
                   </div>
                 </section>
 
-                {/* ── RAIO-X EDUCACIONAL ── */}
-                {Object.keys(indicadoresLatest).length > 0 && (
+                {/* ── PAINEL DE INDICADORES ── */}
+                {(Object.keys(indicadoresLatest).length > 0 || (diagnosticoData && (diagnosticoData.pontos_fortes.length > 0 || diagnosticoData.pontos_atencao.length > 0 || diagnosticoData.leituras.length > 0))) && (
                   <section className="section">
                     <div className="section-title">
-                      <div><h2>Raio-X educacional</h2><p>Indicadores calculados com base no Censo Escolar e SAEB</p></div>
+                      <div><h2>Painel de indicadores</h2><p>Valores, comparações e interpretações para cada indicador da escola</p></div>
                       <div className="hint-chip">Comparação com médias nacionais</div>
                     </div>
                     <div className="organic-divider" />
-                    <IndicatorPanel indicadores={indicadoresLatest} mediasNacionais={mediasNacionais} comparativo={comparativoData} microregiao={microregiaoData} />
-                  </section>
-                )}
-
-                {/* ── DIAGNÓSTICO DA ESCOLA ── */}
-                {diagnosticoData && (diagnosticoData.pontos_fortes.length > 0 || diagnosticoData.pontos_atencao.length > 0 || diagnosticoData.leituras.length > 0) && (
-                  <section className="section">
-                    <div className="section-title">
-                      <div><h2>Diagnóstico da escola</h2><p>Pontos fortes e de atenção identificados automaticamente</p></div>
-                    </div>
-                    <div className="organic-divider" />
-                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:'14px'}}>
-                      {diagnosticoData.pontos_fortes.length > 0 && (
-                        <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #2f7a58'}}>
-                          <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2f7a58'}}>✅ Pontos fortes</div>
-                          <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
-                            {diagnosticoData.pontos_fortes.map((p: string, i: number) => (
-                              <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {diagnosticoData.pontos_atencao.length > 0 && (
-                        <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #c0392b'}}>
-                          <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#c0392b'}}>⚠️ Pontos de atenção</div>
-                          <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
-                            {diagnosticoData.pontos_atencao.map((p: string, i: number) => (
-                              <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {diagnosticoData.leituras.length > 0 && (
-                        <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #2d5a88'}}>
-                          <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2d5a88'}}>📊 Leituras dos dados</div>
-                          <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
-                            {diagnosticoData.leituras.map((p: string, i: number) => (
-                              <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
+                    {Object.keys(indicadoresLatest).length > 0 && (
+                      <IndicatorPanel indicadores={indicadoresLatest} mediasNacionais={mediasNacionais} comparativo={comparativoData} microregiao={microregiaoData} />
+                    )}
+                    {diagnosticoData && (diagnosticoData.pontos_fortes.length > 0 || diagnosticoData.pontos_atencao.length > 0 || diagnosticoData.leituras.length > 0) && (
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:'14px',marginTop:'16px'}}>
+                        {diagnosticoData.pontos_fortes.length > 0 && (
+                          <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #2f7a58'}}>
+                            <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2f7a58'}}>✅ Pontos fortes</div>
+                            <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
+                              {diagnosticoData.pontos_fortes.map((p: string, i: number) => (
+                                <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {diagnosticoData.pontos_atencao.length > 0 && (
+                          <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #c0392b'}}>
+                            <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#c0392b'}}>⚠️ Pontos de atenção</div>
+                            <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
+                              {diagnosticoData.pontos_atencao.map((p: string, i: number) => (
+                                <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {diagnosticoData.leituras.length > 0 && (
+                          <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #2d5a88'}}>
+                            <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2d5a88'}}>📊 Leituras dos dados</div>
+                            <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
+                              {diagnosticoData.leituras.map((p: string, i: number) => (
+                                <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </section>
                 )}
 
