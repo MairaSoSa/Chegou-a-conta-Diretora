@@ -207,7 +207,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!selectedInep) { setVisibleSecIds(new Set()); return; }
-    const allIds = ['sec-ficha','sec-desempenho','sec-tnr','sec-inse','sec-tdi','sec-matriculas','sec-estrutura','sec-ied','sec-afd','sec-atu','sec-had','sec-retrato','retrato-abas','sec-pdde'];
+    const allIds = ['sec-ficha','sec-desempenho','sec-tnr','sec-inse','sec-tdi','sec-matriculas','sec-estrutura','sec-ied','sec-afd','sec-atu','sec-had','sec-retrato','sec-pdde'];
     const scan = () => setVisibleSecIds(new Set(allIds.filter(id => !!document.getElementById(id))));
     const timers = [200, 1500, 3500, 7000].map(ms => setTimeout(scan, ms));
     return () => timers.forEach(clearTimeout);
@@ -1013,7 +1013,6 @@ export default function Dashboard() {
     { id: 'sec-atu',        icon: <Users size={12} />,         title: 'Turma',        bg: '#fdf3e0', border: '#f0ddb5', color: '#9b6a16' },
     { id: 'sec-had',        icon: <Clock size={12} />,         title: 'Horas-aula',   bg: '#fff7ed', border: '#fed7aa', color: '#9a3412' },
     { id: 'sec-retrato',    icon: <BookOpen size={12} />,      title: 'Retrato',      bg: '#faf7f2', border: '#e8dfc8', color: '#5d4037' },
-    { id: 'retrato-abas',   icon: <ClipboardList size={12} />, title: 'Dimensões',    bg: '#faf7f2', border: '#d6ceba', color: '#7a5c3a' },
     { id: 'sec-pdde',       icon: <DollarSign size={12} />,    title: 'PDDE',         bg: '#e8f5ee', border: '#b8dfc8', color: '#1f6b45' },
   ] as const;
 
@@ -1028,6 +1027,25 @@ export default function Dashboard() {
           zIndex: 200, display: 'flex', flexDirection: 'column', gap: 2,
           pointerEvents: 'auto',
         }}>
+          <button
+            title="Visão geral"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '5px 8px 5px 5px',
+              background: '#f0f4ff', border: '1px solid #b8c8e8', borderLeft: 'none',
+              borderRadius: '0 7px 7px 0', cursor: 'pointer',
+              boxShadow: '2px 1px 5px rgba(0,0,0,0.13)',
+              transform: 'translateX(-2px)', transition: 'transform 0.15s, box-shadow 0.15s, max-width 0.18s',
+              overflow: 'hidden', maxWidth: 28, marginBottom: 6,
+            }}
+            onMouseEnter={e => { const b = e.currentTarget; b.style.transform='translateX(0)'; b.style.maxWidth='120px'; b.style.boxShadow='3px 2px 8px rgba(0,0,0,0.18)'; }}
+            onMouseLeave={e => { const b = e.currentTarget; b.style.transform='translateX(-2px)'; b.style.maxWidth='28px'; b.style.boxShadow='2px 1px 5px rgba(0,0,0,0.13)'; }}
+          >
+            <span style={{ color: '#2d5a88', display: 'flex', flexShrink: 0 }}><Home size={12} /></span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#2d5a88', whiteSpace: 'nowrap' }}>Visão geral</span>
+          </button>
+
           {secNavItems.filter(tab => visibleSecIds.size === 0 || visibleSecIds.has(tab.id)).map(tab => (
             <button
               key={tab.id}
