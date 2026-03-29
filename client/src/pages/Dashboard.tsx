@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
-  LineChart, Line
+  LineChart, Line, ReferenceLine
 } from "recharts";
 
 const UF_NAMES: Record<string, string> = {
@@ -1661,22 +1661,33 @@ export default function Dashboard() {
                 const cleanTitle = (titulo: string) => titulo.replace(/:\s*[\d,\.]+\s*(?:%|alunos\/turma|h\/dia|h)?\s*$/, '').replace(/:\s*Nível\s*\d+\s*$/, '');
                 const ch = evolutionCharts;
                 const anosVisiveis = (evolucaoData.anos_disponiveis as number[]).filter((a: number) => a >= 2020).sort((a, b) => a - b);
+                // Detectar etapas que a escola efetivamente oferta
+                const _cens = censoLatest as any;
+                const oferta = {
+                  inf:    (_cens?.qt_mat_inf  ?? 0) > 0 || anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_inf  ?? 0) > 0),
+                  fund:   (_cens?.qt_mat_fund ?? 0) > 0 || anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_fund ?? 0) > 0),
+                  med:    (_cens?.qt_mat_med  ?? 0) > 0 || anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_med  ?? 0) > 0),
+                  eja:    (_cens?.qt_mat_eja  ?? 0) > 0 || anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_eja  ?? 0) > 0),
+                  fundAI: !!(ch?.ideb?.some((d: any) => d.ideb_ai != null) || ch?.taxasRendimento?.some((d: any) => d.aprovacao_ai != null) || ch?.saeb?.some((d: any) => d.mt_ai != null)),
+                  fundAF: !!(ch?.ideb?.some((d: any) => d.ideb_af != null) || ch?.taxasRendimento?.some((d: any) => d.aprovacao_af != null) || ch?.saeb?.some((d: any) => d.mt_af != null)),
+                };
+                if (oferta.fund && !oferta.fundAI && !oferta.fundAF) { oferta.fundAI = true; oferta.fundAF = true; }
                 const available = [
-                  { id: 'matriculas', label: 'Matrículas', icon: '👩‍🎓', etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; return { ano: String(a), 'Total': c?.qt_mat_bas || null, 'E. Infantil': c?.qt_mat_inf || null, 'Fundamental': c?.qt_mat_fund || null, 'Médio': c?.qt_mat_med || null, 'EJA': c?.qt_mat_eja || null }; }), lines: [{ key: 'Total', color: '#2d5a88', name: 'Total', etapa: 'total' }, { key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }, { key: 'Fundamental', color: '#2f7a58', name: 'Fundamental', etapa: 'fund' }, { key: 'Médio', color: '#9b6a16', name: 'Médio', etapa: 'med' }, { key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }], desc: 'Total de alunos matriculados por etapa de ensino.' },
-                  { id: 'docentes', label: 'Docentes', icon: '🧑‍🏫', etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; return { ano: String(a), 'Total': c?.qt_doc_bas || c?.qt_docentes || null, 'E. Infantil': c?.qt_doc_inf || null, 'Fundamental': c?.qt_doc_fund || null, 'Médio': c?.qt_doc_med || null, 'EJA': c?.qt_doc_eja || null }; }), lines: [{ key: 'Total', color: '#9b6a16', name: 'Total', etapa: 'total' }, { key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }, { key: 'Fundamental', color: '#2f7a58', name: 'Fundamental', etapa: 'fund' }, { key: 'Médio', color: '#c47a1f', name: 'Médio', etapa: 'med' }, { key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }], desc: 'Número de docentes atuando por etapa de ensino.' },
-                  { id: 'turmas', label: 'Turmas', icon: '🏫', etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; return { ano: String(a), 'Total': c?.qt_tur_bas || c?.qt_turmas || null, 'E. Infantil': c?.qt_tur_inf || null, 'Fundamental': c?.qt_tur_fund || null, 'Médio': c?.qt_tur_med || null, 'EJA': c?.qt_tur_eja || null }; }), lines: [{ key: 'Total', color: '#2f7a58', name: 'Total', etapa: 'total' }, { key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }, { key: 'Fundamental', color: '#2d5a88', name: 'Fundamental', etapa: 'fund' }, { key: 'Médio', color: '#9b6a16', name: 'Médio', etapa: 'med' }, { key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }], desc: 'Total de turmas por etapa de ensino.' },
-                  ...(ch?.ideb ? [{ id: 'ideb', label: 'IDEB', icon: '⭐', data: ch.ideb.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'AI': d.ideb_ai, 'AF': d.ideb_af, 'Médio': d.ideb_em })), lines: [{ key: 'AI', color: '#2d5a88', name: 'Anos Iniciais' },{ key: 'AF', color: '#9b6a16', name: 'Anos Finais' },{ key: 'Médio', color: '#2f7a58', name: 'Ensino Médio' }], desc: 'IDEB por etapa de ensino (escala 0–10, meta ≥ 6,0).' }] : []),
+                  { id: 'matriculas', label: 'Matrículas', icon: '👩‍🎓', etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; return { ano: String(a), 'Total': c?.qt_mat_bas || null, 'E. Infantil': c?.qt_mat_inf || null, 'Fundamental': c?.qt_mat_fund || null, 'Médio': c?.qt_mat_med || null, 'EJA': c?.qt_mat_eja || null }; }), lines: [{ key: 'Total', color: '#2d5a88', name: 'Total', etapa: 'total' }, ...(oferta.inf ? [{ key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }] : []), ...(oferta.fund ? [{ key: 'Fundamental', color: '#2f7a58', name: 'Fundamental', etapa: 'fund' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio', etapa: 'med' }] : []), ...(oferta.eja ? [{ key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }] : [])], desc: 'Total de alunos matriculados por etapa de ensino.' },
+                  { id: 'docentes', label: 'Docentes', icon: '🧑‍🏫', etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; return { ano: String(a), 'Total': c?.qt_doc_bas || c?.qt_docentes || null, 'E. Infantil': c?.qt_doc_inf || null, 'Fundamental': c?.qt_doc_fund || null, 'Médio': c?.qt_doc_med || null, 'EJA': c?.qt_doc_eja || null }; }), lines: [{ key: 'Total', color: '#9b6a16', name: 'Total', etapa: 'total' }, ...(oferta.inf ? [{ key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }] : []), ...(oferta.fund ? [{ key: 'Fundamental', color: '#2f7a58', name: 'Fundamental', etapa: 'fund' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#c47a1f', name: 'Médio', etapa: 'med' }] : []), ...(oferta.eja ? [{ key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }] : [])], desc: 'Número de docentes atuando por etapa de ensino.' },
+                  { id: 'turmas', label: 'Turmas', icon: '🏫', etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; return { ano: String(a), 'Total': c?.qt_tur_bas || c?.qt_turmas || null, 'E. Infantil': c?.qt_tur_inf || null, 'Fundamental': c?.qt_tur_fund || null, 'Médio': c?.qt_tur_med || null, 'EJA': c?.qt_tur_eja || null }; }), lines: [{ key: 'Total', color: '#2f7a58', name: 'Total', etapa: 'total' }, ...(oferta.inf ? [{ key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }] : []), ...(oferta.fund ? [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental', etapa: 'fund' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio', etapa: 'med' }] : []), ...(oferta.eja ? [{ key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }] : [])], desc: 'Total de turmas por etapa de ensino.' },
+                  ...(ch?.ideb && ch.ideb.length > 0 ? [{ id: 'ideb', label: 'IDEB', icon: '⭐', cadencia: 'Bienal', referenceLines: [{ y: 6, label: 'Meta 6,0', color: '#c0392b' }], data: ch.ideb.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'AI': d.ideb_ai, 'AF': d.ideb_af, 'Médio': d.ideb_em })), lines: [...(oferta.fundAI ? [{ key: 'AI', color: '#2d5a88', name: 'Anos Iniciais' }] : []), ...(oferta.fundAF ? [{ key: 'AF', color: '#9b6a16', name: 'Anos Finais' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#2f7a58', name: 'Ensino Médio' }] : [])], desc: 'IDEB por etapa de ensino (escala 0–10). A linha tracejada indica a meta nacional de 6,0.' }] : []),
                   ...(ch?.taxasRendimento ? [{ id: 'rendimento', label: 'Rendimento', icon: '📊', data: ch.taxasRendimento.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Aprovação': d.aprovacao, 'Reprovação': d.reprovacao, 'Abandono': d.abandono })), lines: [{ key: 'Aprovação', color: '#2f7a58', name: 'Aprovação' },{ key: 'Reprovação', color: '#b74f42', name: 'Reprovação' },{ key: 'Abandono', color: '#c47a1f', name: 'Abandono' }], desc: 'Taxas de aprovação, reprovação e abandono escolar (%).' }] : []),
-                  ...(ch?.tdi ? [{ id: 'tdi', label: 'Dist. Idade', icon: '📅', data: ch.tdi.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Fundamental': d.fund_total, 'Médio': d.medio })), lines: [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental' },{ key: 'Médio', color: '#9b6a16', name: 'Médio' }], desc: 'TDI — % de alunos com 2 ou mais anos de defasagem idade-série.' }] : []),
-                  ...(ch?.atu ? [{ id: 'atu', label: 'Alunos/Turma', icon: '🏃', data: ch.atu.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Fundamental': d.fund, 'Médio': d.medio, 'EJA Fundamental': d.eja_fun, 'EJA Médio': d.eja_med })), lines: [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental' },{ key: 'Médio', color: '#9b6a16', name: 'Médio' },{ key: 'EJA Fundamental', color: '#795548', name: 'EJA Fundamental', etapa: 'eja_fun' },{ key: 'EJA Médio', color: '#4e342e', name: 'EJA Médio', etapa: 'eja_med' }], desc: 'ATU — Média de alunos por turma.' }] : []),
-                  ...(ch?.had ? [{ id: 'had', label: 'Horas/Dia', icon: '⏰', data: ch.had.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Fundamental': d.fund, 'Médio': d.medio, 'EJA Fundamental': d.eja_fun, 'EJA Médio': d.eja_med })), lines: [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental' },{ key: 'Médio', color: '#9b6a16', name: 'Médio' },{ key: 'EJA Fundamental', color: '#795548', name: 'EJA Fundamental', etapa: 'eja_fun' },{ key: 'EJA Médio', color: '#4e342e', name: 'EJA Médio', etapa: 'eja_med' }], desc: 'HAD — Horas-aula diárias médias.' }] : []),
-                  ...(ch?.dsu ? [{ id: 'dsu', label: 'Doc. c/ Superior', icon: '🎓', data: ch.dsu.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Fundamental': d.fund, 'Médio': d.medio })), lines: [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental' },{ key: 'Médio', color: '#9b6a16', name: 'Médio' }], desc: 'DSU — % de docentes com ensino superior completo.' }] : []),
-                  ...(ch?.inse ? [{ id: 'inse', label: 'INSE', icon: '🏠', data: ch.inse.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'INSE': d.media })), lines: [{ key: 'INSE', color: '#7c5cbf', name: 'INSE Médio' }], desc: 'INSE — Índice Socioeconômico médio dos estudantes (escala I–VIII).' }] : []),
-                  ...(ch?.saeb ? [{ id: 'saeb', label: 'SAEB', icon: '📝', data: ch.saeb.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Mat. AI': d.mt_ai, 'Port. AI': d.lp_ai, 'Mat. AF': d.mt_af, 'Port. AF': d.lp_af })), lines: [{ key: 'Mat. AI', color: '#2d5a88', name: 'Mat. AI' },{ key: 'Port. AI', color: '#9b6a16', name: 'Port. AI' },{ key: 'Mat. AF', color: '#2f7a58', name: 'Mat. AF' },{ key: 'Port. AF', color: '#b74f42', name: 'Port. AF' }], desc: 'SAEB — Proficiência em Matemática e Língua Portuguesa.' }] : []),
+                  ...(ch?.tdi ? [{ id: 'tdi', label: 'Dist. Idade', icon: '📅', data: ch.tdi.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Fundamental': d.fund_total, 'Médio': d.medio })), lines: [...(oferta.fund ? [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio' }] : [])], desc: 'TDI — % de alunos com 2 ou mais anos de defasagem idade-série.' }] : []),
+                  ...(ch?.atu ? [{ id: 'atu', label: 'Alunos/Turma', icon: '🏃', data: ch.atu.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Fundamental': d.fund, 'Médio': d.medio, 'EJA Fund.': d.eja_fun, 'EJA Médio': d.eja_med })), lines: [...(oferta.fund ? [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio' }] : []), ...(oferta.eja ? [{ key: 'EJA Fund.', color: '#795548', name: 'EJA Fund.' }, { key: 'EJA Médio', color: '#4e342e', name: 'EJA Médio' }] : [])], desc: 'ATU — Média de alunos por turma.' }] : []),
+                  ...(ch?.had ? [{ id: 'had', label: 'Horas/Dia', icon: '⏰', data: ch.had.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Fundamental': d.fund, 'Médio': d.medio, 'EJA Fund.': d.eja_fun, 'EJA Médio': d.eja_med })), lines: [...(oferta.fund ? [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio' }] : []), ...(oferta.eja ? [{ key: 'EJA Fund.', color: '#795548', name: 'EJA Fund.' }, { key: 'EJA Médio', color: '#4e342e', name: 'EJA Médio' }] : [])], desc: 'HAD — Horas-aula diárias médias.' }] : []),
+                  ...(ch?.dsu ? [{ id: 'dsu', label: 'Doc. c/ Superior', icon: '🎓', data: ch.dsu.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Fundamental': d.fund, 'Médio': d.medio })), lines: [...(oferta.fund ? [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio' }] : [])], desc: 'DSU — % de docentes com ensino superior completo.' }] : []),
+                  ...(ch?.inse && ch.inse.length > 0 ? [{ id: 'inse', label: 'INSE', icon: '🏠', cadencia: 'Irregular', data: ch.inse.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'INSE': d.media })), lines: [{ key: 'INSE', color: '#7c5cbf', name: 'INSE Médio' }], desc: 'INSE — Índice Socioeconômico médio dos estudantes (escala I–VIII).' }] : []),
+                  ...(ch?.saeb && ch.saeb.length > 0 ? [{ id: 'saeb', label: 'SAEB', icon: '📝', cadencia: 'Bienal', etapas: true, data: ch.saeb.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Mat.AI': d.mt_ai, 'Port.AI': d.lp_ai, 'Mat.AF': d.mt_af, 'Port.AF': d.lp_af, 'Mat.Med': d.mt_em, 'Port.Med': d.lp_em })), lines: [...(oferta.fundAI ? [{ key: 'Mat.AI', color: '#2d5a88', name: 'Matemática', etapa: 'ai', etapaLabel: 'Anos Iniciais' }, { key: 'Port.AI', color: '#9b6a16', name: 'Língua Port.', etapa: 'ai', etapaLabel: 'Anos Iniciais' }] : []), ...(oferta.fundAF ? [{ key: 'Mat.AF', color: '#2d5a88', name: 'Matemática', etapa: 'af', etapaLabel: 'Anos Finais' }, { key: 'Port.AF', color: '#9b6a16', name: 'Língua Port.', etapa: 'af', etapaLabel: 'Anos Finais' }] : []), ...(oferta.med ? [{ key: 'Mat.Med', color: '#2d5a88', name: 'Matemática', etapa: 'med', etapaLabel: 'Ens. Médio' }, { key: 'Port.Med', color: '#9b6a16', name: 'Língua Port.', etapa: 'med', etapaLabel: 'Ens. Médio' }] : [])], desc: 'SAEB — Proficiência em Matemática e Língua Portuguesa por etapa (escala SAEB).' }] : []),
                   ...(ch?.icg ? [{ id: 'icg', label: 'Complexidade', icon: '⚙️', data: ch.icg.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'ICG': d.nivel })), lines: [{ key: 'ICG', color: '#c47a1f', name: 'Nível ICG' }], desc: 'ICG — Complexidade de Gestão (1–6). Maior = mais complexo.' }] : []),
                   ...(ch?.ird ? [{ id: 'ird', label: 'Regularidade Doc.', icon: '🔄', data: ch.ird.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'IRD': d.media })), lines: [{ key: 'IRD', color: '#2f7a58', name: 'IRD Médio' }], desc: 'IRD — Regularidade Docente (1–5). Maior = mais estável.' }] : []),
-                  ...(ch?.tnr && ch.tnr.some((d:any) => d.fund != null || d.med != null) ? [{ id: 'tnr', label: 'Não Resposta', icon: '🚫', data: ch.tnr.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Fundamental': d.fund, 'Médio': d.med })), lines: [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental' },{ key: 'Médio', color: '#9b6a16', name: 'Médio' }], desc: 'TNR — % de alunos que não participaram da avaliação Prova Brasil/SAEB. Afeta o IDEB.' }] : []),
-                ].filter(c => c.data.some((d: Record<string, any>) => Object.values(d).slice(1).some((v: any) => v != null && Number(v) > 0)));
+                  ...(ch?.tnr && ch.tnr.some((d:any) => d.fund != null || d.med != null) ? [{ id: 'tnr', label: 'Não Resposta', icon: '🚫', data: ch.tnr.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Fundamental': d.fund, 'Médio': d.med })), lines: [...(oferta.fund ? [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio' }] : [])], desc: 'TNR — % de alunos que não participaram da avaliação Prova Brasil/SAEB. Afeta o IDEB.' }] : []),
+                ].filter(c => c.data.some((d: Record<string, any>) => Object.values(d).slice(1).some((v: any) => v != null && Number(v) > 0)) && (c as any).lines.length > 0);
                 const currentChart = available.find(c => c.id === selectedChart) || available[0];
                 return (
               <>
@@ -4267,6 +4278,11 @@ out center tags 100;`;
                             >
                               <span style={{ fontSize: 15 }}>{c.icon}</span>
                               <span>{c.label}</span>
+                              {(c as any).cadencia && (
+                                <span style={{fontSize:'9px',fontWeight:700,padding:'1px 5px',borderRadius:'10px',background:(c as any).cadencia==='Bienal'?'#fef3c7':'#ede9fe',color:(c as any).cadencia==='Bienal'?'#92400e':'#5b21b6',letterSpacing:'0.03em'}}>
+                                  {(c as any).cadencia.toLowerCase()}
+                                </span>
+                              )}
                             </button>
                           );
                         })}
@@ -4275,9 +4291,25 @@ out center tags 100;`;
                       {/* Chart card */}
                       {(() => {
                         const hasEtapas = !!(currentChart as any).etapas;
-                        const filteredLines = hasEtapas
-                          ? currentChart.lines.filter((l: any) => chartEtapa === 'total' ? l.etapa === 'total' : l.etapa === chartEtapa)
+                        const cadencia: string | undefined = (currentChart as any).cadencia;
+                        const refLines: Array<{ y: number; label: string; color?: string }> = (currentChart as any).referenceLines || [];
+                        // Deduplicate available etapas by etapa key (e.g. SAEB has 2 lines per etapa)
+                        const seenEtapas = new Set<string>();
+                        const availableEtapas = hasEtapas ? currentChart.lines.filter((l: any) => {
+                          if (!l.etapa || seenEtapas.has(l.etapa)) return false;
+                          const hasVal = currentChart.data.some((d: Record<string,any>) => d[l.key] != null && Number(d[l.key]) > 0);
+                          if (hasVal) { seenEtapas.add(l.etapa); return true; }
+                          return false;
+                        }) : [];
+                        // filteredLines: by selected etapa; fallback to first available etapa if 'total' missing
+                        let activeEtapa = chartEtapa;
+                        let filteredLines = hasEtapas
+                          ? currentChart.lines.filter((l: any) => activeEtapa === 'total' ? l.etapa === 'total' : l.etapa === activeEtapa)
                           : currentChart.lines;
+                        if (hasEtapas && filteredLines.length === 0 && availableEtapas.length > 0) {
+                          activeEtapa = availableEtapas[0].etapa;
+                          filteredLines = currentChart.lines.filter((l: any) => l.etapa === activeEtapa);
+                        }
                         const activeKeys = new Set(filteredLines.map((l: any) => l.key));
                         const yearsWithData = currentChart.data.filter((d: Record<string,any>) =>
                           Object.entries(d).some(([k, v]) => k !== 'ano' && activeKeys.has(k) && v != null && Number(v) > 0)
@@ -4285,30 +4317,40 @@ out center tags 100;`;
                         const lastPoint = [...yearsWithData].reverse()[0];
                         const bigVal = lastPoint ? lastPoint[filteredLines[0]?.key] : null;
                         const bigAno = lastPoint ? lastPoint.ano : latestAno;
-                        const availableEtapas = hasEtapas ? currentChart.lines.filter((l: any) =>
-                          currentChart.data.some((d: Record<string,any>) => d[l.key] != null && Number(d[l.key]) > 0)
-                        ) : [];
+                        // Etapa label for chart subtitle
+                        const etapaLabel = availableEtapas.find((l: any) => l.etapa === activeEtapa);
+                        const etapaDisplay = etapaLabel ? (etapaLabel.etapaLabel || etapaLabel.name) : '';
                         return (
                           <div className="soft-card" style={{ padding: '20px' }}>
                             {availableEtapas.length > 1 && (
                               <div style={{display:'flex',flexWrap:'wrap',gap:'6px',marginBottom:'16px',alignItems:'center'}}>
                                 <span style={{fontSize:'11px',fontWeight:600,color:'#888',marginRight:'4px',textTransform:'uppercase',letterSpacing:'0.04em'}}>Etapa:</span>
-                                {availableEtapas.map((l: any) => (
-                                  <button key={l.etapa} onClick={() => setChartEtapa(l.etapa)} style={{
-                                    padding:'4px 12px',borderRadius:'20px',fontSize:'12px',fontWeight:600,
-                                    cursor:'pointer',transition:'all .15s',border:'none',
-                                    background: chartEtapa === l.etapa ? l.color : '#f0f4f8',
-                                    color: chartEtapa === l.etapa ? '#fff' : '#555',
-                                    boxShadow: chartEtapa === l.etapa ? `0 2px 8px ${l.color}55` : 'none',
-                                  }}>
-                                    {l.name}
-                                  </button>
-                                ))}
+                                {availableEtapas.map((l: any) => {
+                                  const isActive = activeEtapa === l.etapa;
+                                  return (
+                                    <button key={l.etapa} onClick={() => setChartEtapa(l.etapa)} style={{
+                                      padding:'4px 12px',borderRadius:'20px',fontSize:'12px',fontWeight:600,
+                                      cursor:'pointer',transition:'all .15s',border:'none',
+                                      background: isActive ? l.color : '#f0f4f8',
+                                      color: isActive ? '#fff' : '#555',
+                                      boxShadow: isActive ? `0 2px 8px ${l.color}55` : 'none',
+                                    }}>
+                                      {l.etapaLabel || l.name}
+                                    </button>
+                                  );
+                                })}
                               </div>
                             )}
                             <div className="chart-header">
                               <div>
-                                <h4>{currentChart.icon} {currentChart.label}{hasEtapas && chartEtapa !== 'total' ? ` — ${filteredLines[0]?.name}` : ''}</h4>
+                                <h4 style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                                  <span>{currentChart.icon} {currentChart.label}{hasEtapas && etapaDisplay && activeEtapa !== 'total' ? ` — ${etapaDisplay}` : ''}</span>
+                                  {cadencia && (
+                                    <span style={{fontSize:'10px',fontWeight:700,padding:'2px 8px',borderRadius:'20px',background: cadencia === 'Bienal' ? '#fff3cd' : '#f3e8ff',color: cadencia === 'Bienal' ? '#7a5a00' : '#5b21b6',border: cadencia === 'Bienal' ? '1px solid #ffd97d' : '1px solid #c4b5fd',letterSpacing:'0.04em',textTransform:'uppercase'}}>
+                                      {cadencia}
+                                    </span>
+                                  )}
+                                </h4>
                                 <p>{currentChart.desc}</p>
                                 <div className="chip-row">
                                   {yearsWithData.map((d: Record<string,any>) => (
@@ -4317,15 +4359,15 @@ out center tags 100;`;
                                 </div>
                               </div>
                               <div className="big-stat">
-                                <strong>{bigVal != null ? Number(bigVal).toLocaleString('pt-BR') : '—'}</strong>
+                                <strong>{bigVal != null ? (typeof bigVal === 'number' ? Number(bigVal).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : bigVal) : '—'}</strong>
                                 <span>{bigAno}</span>
                               </div>
                             </div>
                             <div style={{ height: '280px' }}>
-                              <EvolutionChart data={currentChart.data} lines={filteredLines} large />
+                              <EvolutionChart data={currentChart.data} lines={filteredLines} referenceLines={refLines} large />
                             </div>
                             <div className="chart-note">
-                              📝 Dados do Censo Escolar INEP/MEC · código {selectedInep}
+                              📝 Dados INEP/MEC · código {selectedInep}{cadencia ? ` · publicação ${cadencia.toLowerCase()}` : ''}
                             </div>
                           </div>
                         );
@@ -6060,7 +6102,7 @@ out center tags 100;`;
   );
 }
 
-function EvolutionChart({ data, lines, unit, large }: { title?: string; data: any[]; lines: { key: string; color: string; name: string }[]; icon?: React.ReactNode; description?: string; unit?: string; large?: boolean }) {
+function EvolutionChart({ data, lines, unit, large, referenceLines }: { title?: string; data: any[]; lines: { key: string; color: string; name: string }[]; icon?: React.ReactNode; description?: string; unit?: string; large?: boolean; referenceLines?: Array<{ y: number; label: string; color?: string }> }) {
   const hasData = data.some(d => lines.some(l => d[l.key] != null && d[l.key] !== 0));
   if (!hasData) return null;
 
@@ -6087,7 +6129,7 @@ function EvolutionChart({ data, lines, unit, large }: { title?: string; data: an
   return (
     <div>
       <ResponsiveContainer width="100%" height={large ? 300 : 140}>
-        <BarChart data={data} margin={{ top: large ? 25 : 5, right: 5, bottom: 5, left: -10 }} barCategoryGap={large ? "25%" : "30%"}>
+        <BarChart data={data} margin={{ top: large ? 28 : 5, right: referenceLines && referenceLines.length > 0 ? 60 : 5, bottom: 5, left: -10 }} barCategoryGap={large ? "25%" : "30%"}>
           <defs>
             {lines.map((line) => (
               <linearGradient key={`bg-${line.key}`} id={`bg-${line.key}`} x1="0" y1="0" x2="0" y2="1">
@@ -6106,6 +6148,16 @@ function EvolutionChart({ data, lines, unit, large }: { title?: string; data: an
             cursor={{ fill: 'rgba(0,0,0,0.04)', radius: 4 }}
           />
           {multiSeries && <Legend iconType="circle" iconSize={large ? 10 : 8} wrapperStyle={{ fontSize: large ? "12px" : "10px", paddingTop: 8 }} />}
+          {(referenceLines || []).map((rl) => (
+            <ReferenceLine
+              key={`rl-${rl.y}`}
+              y={rl.y}
+              stroke={rl.color || '#e74c3c'}
+              strokeDasharray="5 4"
+              strokeWidth={1.5}
+              label={{ value: rl.label, position: 'right', fontSize: 10, fontWeight: 700, fill: rl.color || '#e74c3c' }}
+            />
+          ))}
           {lines.map((line) => (
             <Bar
               key={line.key}
