@@ -667,7 +667,7 @@ export default function Dashboard() {
 
   const evolutionCharts = useMemo(() => {
     if (!evolucaoData) return null;
-    const anos = evolucaoData.anos_disponiveis;
+    const anos = (evolucaoData.anos_disponiveis as number[]).filter((a: number) => a >= 2020);
     const censo = evolucaoData.censo_por_ano;
     const indicadores = evolucaoData.indicadores_por_ano;
 
@@ -826,14 +826,14 @@ export default function Dashboard() {
       }),
       ideb: anos.map((a: number) => {
         const id = indicadores[a]?.ideb;
-        if (!id) return { ano: a };
-        return {
-          ano: a,
-          ideb_ai: id.ideb_ai ?? id.ideb ?? null,
-          ideb_af: id.ideb_af ?? null,
-          ideb_em: id.ideb_em ?? null,
-        };
-      }),
+        if (!id) return null;
+        const ideb_ai = id.ideb_ai ?? id.ideb ?? null;
+        const ideb_af = id.ideb_af ?? null;
+        const ideb_em = id.ideb_em ?? null;
+        // IDEB é bienal — só incluir anos com nota real publicada
+        if (ideb_ai == null && ideb_af == null && ideb_em == null) return null;
+        return { ano: a, ideb_ai, ideb_af, ideb_em };
+      }).filter(Boolean) as any[],
       inse: anos.map((a: number) => {
         const ins = indicadores[a]?.inse;
         if (!ins) return { ano: a };
