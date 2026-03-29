@@ -2639,7 +2639,6 @@ out center tags 100;`;
                     <section className="section">
                       <div className="section-title">
                         <div><h2>Desempenho escolar</h2><p>Notas do SAEB e taxas de aprovação, reprovação e abandono</p></div>
-                        <div className="hint-chip">Fonte: INEP</div>
                       </div>
                       <div className="organic-divider" />
                       {saebLatest && saebMetrics.length > 0 && (
@@ -2859,7 +2858,6 @@ out center tags 100;`;
                           <h2>Taxa de Não Resposta</h2>
                           <p>% de alunos que não participaram da avaliação Prova Brasil/SAEB — afeta diretamente o cálculo do IDEB</p>
                         </div>
-                        <div className="hint-chip">Fonte: INEP / Railway</div>
                       </div>
                       <div className="organic-divider" />
 
@@ -2997,7 +2995,6 @@ out center tags 100;`;
                           <h2>INSE — Distribuição dos Estudantes por Nível Socioeconômico</h2>
                           <p>Percentual de alunos em cada um dos 8 níveis do índice socioeconômico INEP</p>
                         </div>
-                        <div className="hint-chip">Fonte: INEP/SAEB</div>
                       </div>
                       <div className="organic-divider" />
 
@@ -3104,7 +3101,6 @@ out center tags 100;`;
                           <h2>Distorção Idade-Série</h2>
                           <p>% de alunos com 2 ou mais anos de defasagem em relação à série esperada para a idade</p>
                         </div>
-                        <div className="hint-chip">Fonte: INEP / Railway</div>
                       </div>
                       <div className="organic-divider" />
 
@@ -3232,7 +3228,6 @@ out center tags 100;`;
                           <h2>Matrículas por etapa</h2>
                           <p>Distribuição e evolução histórica das matrículas por etapa de ensino</p>
                         </div>
-                        <div className="hint-chip">Fonte: INEP / Censo Escolar</div>
                       </div>
                       <div className="organic-divider" />
 
@@ -3496,7 +3491,6 @@ out center tags 100;`;
                           <h2>Esforço Docente (IED)</h2>
                           <p>Percentual de docentes por nível de esforço e etapa de ensino — quanto maior o nível, maior a sobrecarga</p>
                         </div>
-                        <div className="hint-chip">Fonte: INEP</div>
                       </div>
                       <div className="organic-divider" />
 
@@ -3663,7 +3657,6 @@ out center tags 100;`;
                           <h2>Adequação da Formação Docente (AFD)</h2>
                           <p>Percentual de docentes por grupo de adequação à disciplina e etapa de ensino</p>
                         </div>
-                        <div className="hint-chip">Fonte: INEP</div>
                       </div>
                       <div className="organic-divider" />
 
@@ -3885,7 +3878,6 @@ out center tags 100;`;
                           <h2>Média de Alunos por Turma (ATU)</h2>
                           <p>Número médio de alunos por turma, por etapa e ano de ensino</p>
                         </div>
-                        <div className="hint-chip">Fonte: INEP</div>
                       </div>
                       <div className="organic-divider" />
 
@@ -4101,7 +4093,6 @@ out center tags 100;`;
                           <h2>Horas-Aula Diárias (HAD)</h2>
                           <p>Média de horas-aula diárias por etapa de ensino e ano escolar</p>
                         </div>
-                        <div className="hint-chip">Fonte: INEP</div>
                       </div>
                       <div className="organic-divider" />
 
@@ -5082,7 +5073,6 @@ out center tags 100;`;
                           title="Próximo ano"
                         >›</button>
                       </div>
-                      <div className="hint-chip">Fonte: FNDE / PDDE Info</div>
                     </div>
                   </div>
                   <div className="organic-divider" />
