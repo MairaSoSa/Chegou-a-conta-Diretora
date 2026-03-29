@@ -2465,12 +2465,20 @@ out center tags 100;`;
                           ['Situação', censoLatest.ds_situacao],
                           ['Dependência', censoLatest.ds_dependencia],
                           ['Localização', censoLatest.ds_localizacao],
+                          ['Localização diferenciada', (() => {
+                            const d = censoLatest.tp_localizacao_diferenciada;
+                            if (d == null || d === 0) return null;
+                            const dMap: Record<number,string> = { 1: 'Área indígena', 2: 'Quilombola', 3: 'Assentamento', 4: 'Área rural diferenciada', 5: 'Área de ilha', 6: 'Reserva extrativista' };
+                            return dMap[d] ?? null;
+                          })()],
                           ['Região', censoLatest.no_regiao],
                           ['Município', censoLatest.no_municipio],
                           ['UF', censoLatest.sg_uf],
                           ['Código IBGE', censoLatest.co_municipio],
                           ['Regulamentação', censoLatest.tp_regulamentacao === 1 ? 'Sim' : censoLatest.tp_regulamentacao === 2 ? 'Em tramitação' : censoLatest.tp_regulamentacao === 3 ? 'Não' : null],
                           ['Prédio escolar', censoLatest.in_local_func_predio_escolar === 1 ? 'Sim' : censoLatest.in_local_func_predio_escolar === 0 ? 'Não' : null],
+                          ['Início do ano letivo', censoLatest.dt_ano_letivo_inicio ?? null],
+                          ['Término do ano letivo', censoLatest.dt_ano_letivo_termino ?? null],
                         ].filter(([,v]) => v != null).map(([k, v], i) => (
                           <div key={i} className="row-item" style={{padding:'7px 14px'}}>
                             <span style={{color:'var(--m-muted)',fontSize:'12px'}}>{k}</span>
@@ -4555,6 +4563,47 @@ out center tags 100;`;
                         return <div style={{ borderBottom: '1px solid #ede8df' }}>{tableBody}</div>;
                       };
 
+                      // ── COMPONENTE: tabela de texto (campos descritivos, ex.: perfil do gestor) ──
+                      const TextTable = ({ rows, title }: { rows: Row[]; title?: string }) => {
+                        const tableBody = (
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                              <thead>
+                                <tr style={{ background: '#f0ebe0' }}>
+                                  <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 700, color: '#5d3a1a', fontSize: 12, minWidth: 220, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Campo</th>
+                                  {anos.map((a: number, ai: number) => (
+                                    <th key={a} style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700, color: '#5d3a1a', fontSize: 12, minWidth: 120, background: ai === anos.length - 1 ? '#e8dfc8' : undefined }}>{a}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {rows.map((row, rowIdx) => {
+                                  const vals = anos.map((a: number) => c[a]?.[row.key] ?? null);
+                                  if (vals.every((v: any) => v == null)) return null;
+                                  return (
+                                    <tr key={rowIdx} style={{ borderTop: '1px solid #f0e8d8', background: rowIdx % 2 === 0 ? '#fff' : '#fdf9f4' }}>
+                                      <td style={{ padding: '9px 20px', color: '#4a3020', fontWeight: 500, fontSize: 13 }}>{row.label}</td>
+                                      {vals.map((v: any, vi: number) => (
+                                        <td key={vi} style={{ padding: '9px 12px', fontWeight: vi === anos.length - 1 ? 700 : 400, color: '#2c3e50', background: vi === anos.length - 1 ? '#fdf5e6' : undefined }}>
+                                          {v != null ? String(v) : <span style={{ color: '#ccc' }}>—</span>}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                        if (title) return (
+                          <details style={{ borderBottom: '1px solid #ede8df' }}>
+                            <summary style={summaryStyle}><span>{title}</span><span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>clique para ver ▾</span></summary>
+                            {tableBody}
+                          </details>
+                        );
+                        return <div style={{ borderBottom: '1px solid #ede8df' }}>{tableBody}</div>;
+                      };
+
                       // ── DIM 1: INFRAESTRUTURA ──
                       if (activeSchoolTab === 'dim1') return (
                         <div className="tab-panel-v6 active" style={{ padding: 0 }}>
@@ -4852,6 +4901,16 @@ out center tags 100;`;
                       if (activeSchoolTab === 'dim8') return (
                         <div className="tab-panel-v6 active" style={{ padding: 0 }}>
                           <DimHeader num={8} icon="📋" title="Gestão Escolar" desc="Estrutura administrativa e equipe de suporte" index="Índice de Gestão" />
+                          <TextTable title="Perfil do(a) Gestor(a)" rows={[
+                            { label: 'Sexo', key: 'gest_sexo' },
+                            { label: 'Escolaridade', key: 'gest_escolaridade' },
+                            { label: 'Pós-graduação', key: 'gest_pos_graduacao' },
+                            { label: 'Forma de ingresso', key: 'gest_tipo_gestao' },
+                            { label: 'Tempo no cargo', key: 'gest_tempo_gestao' },
+                          ]} />
+                          <NumTable title="Quantidade de Gestores" rows={[
+                            { label: 'Gestores Ed. Básica', key: 'qt_gest_bas' },
+                          ]} />
                           <NumTable title="Equipe Não Docente" rows={[
                             { label: 'Coordenadores pedagógicos', key: 'qt_prof_coordenador' },
                             { label: 'Secretários escolares', key: 'qt_prof_secretario' },
@@ -4863,9 +4922,6 @@ out center tags 100;`;
                             { label: 'Psicólogos', key: 'qt_prof_psicologo' },
                             { label: 'Assistentes sociais', key: 'qt_prof_assist_social' },
                             { label: 'Nutricionistas', key: 'qt_prof_nutricionista' },
-                          ]} />
-                          <NumTable title="Gestores" rows={[
-                            { label: 'Gestores Ed. Básica', key: 'qt_gest_bas' },
                           ]} />
                         </div>
                       );
