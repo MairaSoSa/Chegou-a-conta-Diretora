@@ -3364,17 +3364,21 @@ out center tags 100;`;
                   const turEM  = censoLatest.qt_tur_med  ?? null;
                   const turEJA = censoLatest.qt_tur_eja ?? null;
                   const turTot = censoLatest.qt_tur_bas  ?? censoLatest.qt_turmas ?? null;
-                  // Percentual sempre em relação ao total real de turmas
                   const turPctDen = turTot;
+                  // Calcula resto para que o total sempre feche
+                  const turSomaEtapas = [turEI, turEF, turEM, turEJA].reduce((s, v) => s + (v ?? 0), 0);
+                  const turResto = turTot != null && turSomaEtapas < turTot ? turTot - turSomaEtapas : null;
                   const docEI  = censoLatest.qt_doc_inf  ?? null;
                   const docEF  = censoLatest.qt_doc_fund ?? null;
                   const docEM  = censoLatest.qt_doc_med  ?? null;
                   const docEJA = censoLatest.qt_doc_eja ?? null;
                   const docTot = censoLatest.qt_doc_bas  ?? censoLatest.qt_docentes ?? null;
-                  // Docentes: um mesmo professor pode atuar em mais de uma etapa,
-                  // então a soma por etapa pode superar o total de pessoas únicas.
-                  // Usamos docTot como denominador para manter o % coerente com o total real.
+                  // Docentes: um mesmo professor pode atuar em mais de uma etapa.
+                  // Usamos docTot como denominador; se a soma das etapas ultrapassar o total,
+                  // não mostramos o resto (a duplicidade é esperada e explicada em nota).
                   const docPctDen = docTot;
+                  const docSomaEtapas = [docEI, docEF, docEM, docEJA].reduce((s, v) => s + (v ?? 0), 0);
+                  const docResto = docTot != null && docSomaEtapas < docTot ? docTot - docSomaEtapas : null;
                   const salTot    = censoLatest.qt_salas_utilizadas        ?? null;
                   const salDentro = censoLatest.qt_salas_utilizadas_dentro ?? null;
                   const salFora   = censoLatest.qt_salas_utilizadas_fora   ?? null;
@@ -3410,6 +3414,7 @@ out center tags 100;`;
                               {etapaRow('Fundamental', turEF, turPctDen)}
                               {etapaRow('Médio',     turEM,  turPctDen)}
                               {etapaRow('EJA',       turEJA, turPctDen)}
+                              {turResto != null && turResto > 0 && etapaRow('Outras', turResto, turPctDen)}
                               <div style={{borderTop:'1px solid #eee',marginTop:'6px',paddingTop:'8px',display:'flex',justifyContent:'space-between',fontSize:'12px'}}>
                                 <span style={{color:'var(--m-muted)',fontWeight:600}}>Total</span>
                                 <strong>{turTot != null ? turTot.toLocaleString('pt-BR') : '—'} turmas</strong>
@@ -3425,11 +3430,14 @@ out center tags 100;`;
                               {etapaRow('Fundamental', docEF, docPctDen)}
                               {etapaRow('Médio',     docEM,  docPctDen)}
                               {etapaRow('EJA',       docEJA, docPctDen)}
+                              {docResto != null && docResto > 0 && etapaRow('Outras', docResto, docPctDen)}
                               <div style={{borderTop:'1px solid #eee',marginTop:'6px',paddingTop:'8px',display:'flex',justifyContent:'space-between',fontSize:'12px'}}>
                                 <span style={{color:'var(--m-muted)',fontWeight:600}}>Total</span>
                                 <strong>{docTot != null ? docTot.toLocaleString('pt-BR') : '—'} docentes</strong>
                               </div>
-                              <p style={{fontSize:'11px',color:'var(--m-muted)',margin:'6px 0 0',lineHeight:1.4}}>* Um mesmo docente pode atuar em mais de uma etapa.</p>
+                              {docSomaEtapas > (docTot ?? 0) && (
+                                <p style={{fontSize:'11px',color:'var(--m-muted)',margin:'6px 0 0',lineHeight:1.4}}>* Um mesmo docente pode atuar em mais de uma etapa.</p>
+                              )}
                             </div>
                           </div>
                         )}
