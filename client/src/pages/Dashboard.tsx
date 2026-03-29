@@ -4694,11 +4694,22 @@ out center tags 100;`;
                     const zonaData = zonaRaw.map(x=>({...x, pct:pct(x.v,zonaTotal)}));
 
                     // ── BADGES DE MODALIDADE ESPECIAL ──
+                    const isActive = (v: any) => v === 1 || v === true || v === 'Sim';
                     const modalBadges = [
                       { key: 'in_educacao_indigena',   label: 'Escola Indígena',   cor:'#4a7c59', bg:'#e8f4ec' },
                       { key: 'in_educacao_quilombola', label: 'Escola Quilombola', cor:'#6b3a2a', bg:'#f4ece8' },
                       { key: 'in_educacao_campo',      label: 'Educação do Campo', cor:'#7b9a6a', bg:'#eff4eb' },
-                    ].filter(b => cd[b.key] === 1 || cd[b.key] === true || cd[b.key] === 'Sim');
+                    ].filter(b => isActive(cd[b.key]));
+
+                    // ── BADGES DE IDIOMAS OFERTADOS ──
+                    const idiomaBadges = [
+                      { key: 'in_lingua_ingles',        label: 'Inglês' },
+                      { key: 'in_lingua_espanhol',      label: 'Espanhol' },
+                      { key: 'in_lingua_frances',       label: 'Francês' },
+                      { key: 'in_lingua_libras',        label: 'Libras' },
+                      { key: 'in_lingua_indigena',      label: 'Língua Indígena' },
+                      { key: 'in_lingua_outra_estrang', label: 'Outro idioma' },
+                    ].filter(b => isActive(cd[b.key]));
 
                     type PieSlice = { name:string; v:number; cor:string; pct:number };
 
@@ -4767,13 +4778,27 @@ out center tags 100;`;
                             ))}
                           </div>
                         </div>
-                        {modalBadges.length > 0 && (
-                          <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:12 }}>
-                            {modalBadges.map(b => (
-                              <span key={b.key} style={{ display:'inline-flex', alignItems:'center', gap:5, background:b.bg, color:b.cor, border:`1.5px solid ${b.cor}55`, borderRadius:20, padding:'4px 14px', fontSize:13, fontWeight:700 }}>
-                                ★ {b.label}
-                              </span>
-                            ))}
+                        {(modalBadges.length > 0 || idiomaBadges.length > 0) && (
+                          <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:14 }}>
+                            {modalBadges.length > 0 && (
+                              <div style={{ display:'flex', flexWrap:'wrap', gap:7 }}>
+                                {modalBadges.map(b => (
+                                  <span key={b.key} style={{ display:'inline-flex', alignItems:'center', gap:5, background:b.bg, color:b.cor, border:`1.5px solid ${b.cor}55`, borderRadius:20, padding:'4px 14px', fontSize:13, fontWeight:700 }}>
+                                    ★ {b.label}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {idiomaBadges.length > 0 && (
+                              <div style={{ display:'flex', flexWrap:'wrap', gap:7, alignItems:'center' }}>
+                                <span style={{ fontSize:11, fontWeight:700, color:'#9a8070', textTransform:'uppercase', letterSpacing:'0.05em', flexShrink:0 }}>Idiomas ofertados:</span>
+                                {idiomaBadges.map(b => (
+                                  <span key={b.key} style={{ display:'inline-flex', alignItems:'center', background:'#f0ebf8', color:'#5b3fa0', border:'1.5px solid #c4aee855', borderRadius:20, padding:'3px 12px', fontSize:12, fontWeight:600 }}>
+                                    {b.label}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
                         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:14 }}>
