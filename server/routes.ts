@@ -1087,6 +1087,33 @@ export async function registerRoutes(
       if (!cnpj && !sg_uf) {
         return res.status(400).json({ ok: false, saldos: [], total_saldo_fundos: 0, total_saldo_geral: 0, error: "Informe CNPJ ou UF para consulta" });
       }
+
+      // Build list of months to try: requested month + up to 4 previous months as fallback
+      const buildMonthList = (base?: string): string[] => {
+        const ref = base || (() => { const d = new Date(); return `${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`; })();
+        const [mm, yyyy] = ref.split('-').map(Number);
+        const months: string[] = [];
+        for (let i = 0; i < 5; i++) {
+          let m = mm - i; let y = yyyy;
+          if (m <= 0) { m += 12; y -= 1; }
+          months.push(`${String(m).padStart(2,'0')}-${y}`);
+        }
+        return months;
+      };
+
+      // Only do fallback for single-CNPJ queries (not bulk UF queries)
+      if (cnpj && !sg_uf) {
+        for (const tryMes of buildMonthList(mes)) {
+          const result = await getPddeUexSaldo(cnpj, { mes: tryMes, co_programa_fnde, page });
+          if (result?.ok && result.saldos && result.saldos.length > 0) {
+            return res.json(result);
+          }
+        }
+        // All months returned no data — return last attempt with its mes
+        const last = await getPddeUexSaldo(cnpj, { mes: buildMonthList(mes)[0], co_programa_fnde, page });
+        return res.json(last);
+      }
+
       const result = await getPddeUexSaldo(cnpj || "", { mes, sg_uf, co_municipio_fnde, co_programa_fnde, page });
       res.json(result);
     } catch (err: any) {
