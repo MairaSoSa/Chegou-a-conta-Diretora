@@ -5904,6 +5904,22 @@ out center tags 100;`;
                         {/* Cards por programa */}
                         {!prestacaoContaLoading && prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 && (() => {
                           const isNegativo = (v: string) => !v || v === '—' || /^n[aã]o$/i.test(v.trim());
+
+                          // Mapeia valores normalizados do FNDE → rótulo legível em português
+                          const suspLabel = (raw: string | null): string => {
+                            if (!raw) return '';
+                            const v = raw.toUpperCase().replace(/\s+/g,' ').trim();
+                            if (/inadimpl.*uex|inadimpl.*prestac/i.test(v))  return 'Inadimplência por prestação de contas (UEx)';
+                            if (/omiss.*eex|omiss.*prestac/i.test(v))        return 'Omissão na prestação de contas (EEx)';
+                            if (/sem dirigente/i.test(v))                    return 'UEx sem dirigente ativo';
+                            if (/nao habilitad|não habilitad|exercicio atual/i.test(v)) return 'Entidade não habilitada no exercício atual (EM)';
+                            if (/sem conta corrente/i.test(v))               return 'UEx sem conta corrente ativa';
+                            if (/sem uex|sem \/|escola sem/i.test(v))        return 'Escola sem UEx/EM';
+                            if (/cnpj irregular|receita federal/i.test(v))   return 'CNPJ irregular na Receita Federal';
+                            if (/fora do prazo legal/i.test(v))              return 'Regularização fora do prazo legal';
+                            if (/bloqueio|solicitacao da entidade/i.test(v)) return 'Bloqueio por solicitação da entidade ou do FNDE';
+                            return raw; // fallback: mostra o texto cru do FNDE
+                          };
                           // filtra atendimento do mesmo ano
                           const atenYear = String(anoExibido);
                           const atenItens: any[] = (atendimentoPcData?.itens ?? atendimentoData?.itens ?? []).filter((a: any) => a.ano === atenYear);
@@ -5979,10 +5995,29 @@ out center tags 100;`;
                                             <span className={`badge ${isOkEex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_eex}</span>
                                           </span>
                                         )}
-                                        {hasSuspUex && <span className="badge badge-critical" style={{fontSize:'10px'}}>Susp. UEx: {item.suspensao_uex}</span>}
-                                        {hasSuspEex && <span className="badge badge-critical" style={{fontSize:'10px'}}>Susp. EEx: {item.suspensao_eex}</span>}
                                       </div>
                                     </div>
+
+                                    {/* ── Alerta de Suspensão ── */}
+                                    {(hasSuspUex || hasSuspEex) && (
+                                      <div style={{background:'#fef2f2',borderTop:'1px solid #fca5a5',padding:'8px 12px',display:'flex',flexDirection:'column',gap:'4px'}}>
+                                        <div style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'2px'}}>
+                                          <span style={{fontSize:'10px',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.06em',color:'#991b1b'}}>⚠ Suspensão ativa</span>
+                                        </div>
+                                        {hasSuspUex && (
+                                          <div style={{display:'flex',alignItems:'flex-start',gap:'6px'}}>
+                                            <span style={{fontSize:'10px',fontWeight:700,color:'#7f1d1d',background:'#fee2e2',borderRadius:'4px',padding:'1px 5px',whiteSpace:'nowrap',flexShrink:0}}>UEx</span>
+                                            <span style={{fontSize:'12px',color:'#7f1d1d',fontWeight:600}}>{suspLabel(item.suspensao_uex)}</span>
+                                          </div>
+                                        )}
+                                        {hasSuspEex && (
+                                          <div style={{display:'flex',alignItems:'flex-start',gap:'6px'}}>
+                                            <span style={{fontSize:'10px',fontWeight:700,color:'#7f1d1d',background:'#fee2e2',borderRadius:'4px',padding:'1px 5px',whiteSpace:'nowrap',flexShrink:0}}>EEx</span>
+                                            <span style={{fontSize:'12px',color:'#7f1d1d',fontWeight:600}}>{suspLabel(item.suspensao_eex)}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
 
                                     {/* ── Destinações (do atendimento) ── */}
                                     {destsProg.length > 0 ? (
