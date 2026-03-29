@@ -259,6 +259,7 @@ export default function Dashboard() {
   const prestacaoContaAnoEfetivo = prestacaoContaAno ?? pddeAno;
   const { data: prestacaoContaData, isLoading: prestacaoContaLoading } = usePddePrestacaoConta(selectedInep, prestacaoContaAnoEfetivo, prestacaoContaAno !== null);
   const { data: atendimentoData, isLoading: atendimentoLoading } = usePddeAtendimento(selectedInep, pddeAno);
+  const { data: atendimentoPcData } = usePddeAtendimento(selectedInep, prestacaoContaAnoEfetivo);
   const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined, pddeAno);
   const listFilters = useMemo(() => {
     const f: Record<string, string> = {};
@@ -5905,7 +5906,7 @@ out center tags 100;`;
                           const isNegativo = (v: string) => !v || v === '—' || /^n[aã]o$/i.test(v.trim());
                           // filtra atendimento do mesmo ano
                           const atenYear = String(anoExibido);
-                          const atenItens: any[] = (atendimentoData?.itens ?? []).filter((a: any) => a.ano === atenYear);
+                          const atenItens: any[] = (atendimentoPcData?.itens ?? atendimentoData?.itens ?? []).filter((a: any) => a.ano === atenYear);
                           // qtd_alunos: pega do primeiro item de atendimento (é igual pra todos)
                           const qtdAlunos = atenItens[0]?.qtd_alunos ?? null;
 
