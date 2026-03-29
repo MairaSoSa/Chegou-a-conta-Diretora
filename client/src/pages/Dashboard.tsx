@@ -5764,6 +5764,15 @@ out center tags 100;`;
                   {((pddeData?.contas?.length ?? 0) > 0 || pddeUexSaldoData?.ok || pddeSaldosData?.ok) && (
                     <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
                       <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#2d5a88',background:'#e6eef8',padding:'3px 10px',borderRadius:'20px'}}>Contas e saldos</span>
+                      {pddeUexSaldoData?.ok && pddeUexSaldoData.mes && (
+                        <span style={{fontSize:'10px',color:'#9b8877',fontStyle:'italic',whiteSpace:'nowrap'}}>
+                          {(() => {
+                            const [mm, aaaa] = (pddeUexSaldoData.mes as string).split('-');
+                            const meses = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+                            return `posição ${meses[parseInt(mm)] || mm}/${aaaa}`;
+                          })()}
+                        </span>
+                      )}
                       <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#b8cfe8,transparent)'}} />
                     </div>
                   )}
@@ -5771,20 +5780,9 @@ out center tags 100;`;
                   {/* ── 2. CONTAS BANCÁRIAS ── */}
                   {pddeData?.ok && pddeData.contas && pddeData.contas.length > 0 && (
                     <div style={{marginBottom:'16px'}}>
-                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'8px',flexWrap:'wrap',gap:'4px'}}>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1" style={{margin:0}}>
-                          <BanknoteIcon className="w-3.5 h-3.5" /> Contas bancárias
-                        </p>
-                        {pddeUexSaldoData?.ok && pddeUexSaldoData.mes && (
-                          <span style={{fontSize:'10px',color:'#9b8877',fontStyle:'italic'}}>
-                            Posição FNDE: {(() => {
-                              const [mm, aaaa] = (pddeUexSaldoData.mes as string).split('-');
-                              const meses = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-                              return `${meses[parseInt(mm)] || mm}/${aaaa}`;
-                            })()}
-                          </span>
-                        )}
-                      </div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                        <BanknoteIcon className="w-3.5 h-3.5" /> Contas bancárias
+                      </p>
                       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:'10px'}}>
                         {pddeData.contas.map((c: any, i: number) => (
                           <div key={i} className="soft-card" style={{padding:'14px',borderLeft:'3px solid var(--m-blue)'}}>
