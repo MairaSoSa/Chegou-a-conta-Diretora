@@ -5,6 +5,12 @@ function fmt(v: number | null | undefined, decimals = 1) {
   return Number(v).toLocaleString("pt-BR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
+function fmtDiff(v: number | null | undefined) {
+  if (v == null || isNaN(v)) return "";
+  const s = v >= 0 ? "+" : "";
+  return `${s}${Number(v).toFixed(1).replace(".", ",")}`;
+}
+
 function statusIdeb(v: number) {
   if (v < 4.0) return "critico";
   if (v < 5.0) return "atencao";
@@ -12,13 +18,13 @@ function statusIdeb(v: number) {
   return "bom";
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  critico: "bg-red-50 border-red-200 text-red-700",
-  atencao: "bg-amber-50 border-amber-200 text-amber-700",
-  adequado: "bg-yellow-50 border-yellow-200 text-yellow-700",
-  bom: "bg-green-50 border-green-200 text-green-700",
-  info: "bg-blue-50 border-blue-200 text-blue-700",
-  sem_dados: "bg-gray-50 border-gray-200 text-gray-500",
+const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; badge: string }> = {
+  critico:  { bg: "#fff5f5", border: "#fecaca", text: "#b91c1c", badge: "#fee2e2" },
+  atencao:  { bg: "#fffbeb", border: "#fde68a", text: "#92400e", badge: "#fef3c7" },
+  adequado: { bg: "#fefce8", border: "#fef08a", text: "#713f12", badge: "#fef9c3" },
+  bom:      { bg: "#f0fdf4", border: "#bbf7d0", text: "#166534", badge: "#dcfce7" },
+  info:     { bg: "#eff6ff", border: "#bfdbfe", text: "#1e40af", badge: "#dbeafe" },
+  sem_dados:{ bg: "#f8fafc", border: "#e2e8f0", text: "#64748b", badge: "#f1f5f9" },
 };
 
 function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any): Array<any> {
@@ -70,8 +76,8 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
           tipo: "ATU",
           tipoKey: "atu",
           label,
-          titulo: `Média Alunos/Turma — ${label}`,
-          valor: fmt(v) + " alunos/turma",
+          titulo: `Alunos/Turma — ${label}`,
+          valor: fmt(v) + " al./turma",
           raw: Number(v),
           fieldKey: key,
           status: st,
@@ -357,103 +363,172 @@ function getNested(obj: any, path: string): number | null {
   return isNaN(n) ? null : n;
 }
 
-function fmtDiff(v: number | null | undefined) {
-  if (v == null || isNaN(v)) return "";
-  const s = v >= 0 ? "+" : "";
-  return `${s}${Number(v).toFixed(1)}`;
-}
-
 export function IndicatorPanel({
   indicators,
   indicadores,
   mediasNacionais,
   comparativo,
   microregiao,
+  historico,
 }: {
   indicators?: Array<any>;
   indicadores?: Record<string, any>;
   mediasNacionais?: any;
   comparativo?: any;
   microregiao?: any;
+  historico?: Record<string, Array<{ano: number; valor: number}>>;
 }) {
   const items = indicators ?? (indicadores ? buildIndicators(indicadores, mediasNacionais) : []);
   if (!items || !items.length) return null;
 
+  const getEvolucao = (ind: any): Array<{ano: number; valor: number}> => {
+    if (!historico) return [];
+    if (ind.tipoKey === "ied") {
+      const s5 = historico["ied.nivel_5"] ?? [];
+      const s6 = historico["ied.nivel_6"] ?? [];
+      const anos = Array.from(new Set([...s5.map(d => d.ano), ...s6.map(d => d.ano)])).sort();
+      return anos.map(ano => ({
+        ano,
+        valor: Number(((s5.find(d => d.ano === ano)?.valor ?? 0) + (s6.find(d => d.ano === ano)?.valor ?? 0)).toFixed(1)),
+      })).filter(d => d.valor > 0);
+    }
+    return historico[`${ind.tipoKey}.${ind.fieldKey}`] ?? [];
+  };
+
   const getRefs = (ind: any) => {
     const school = Number(ind.raw);
-    if (isNaN(school)) return [] as Array<{label:string; value:number|null; diff:number|null}>;
+    if (isNaN(school)) return [] as Array<{label: string; value: number | null; diff: number | null}>;
 
-    // IDEB: tem micro/mun/uf/brasil dedicados
     if (ind.tipoKey === "ideb" && ind.fieldKey) {
       const microVal = getNested(microregiao, ind.fieldKey);
       const munVal = getNested(comparativo, `municipio.${ind.fieldKey}`);
       const ufVal = getNested(comparativo, `uf.${ind.fieldKey}`);
       const brVal = getNested(comparativo, `brasil.${ind.fieldKey}`) ?? getNested(mediasNacionais, `ideb.${ind.fieldKey}`);
       return [
-        { label: `Microrregião ${microregiao?.micro_nome || ''}`.trim(), value: microVal, diff: microVal != null ? school - microVal : null },
+        { label: `Micro ${microregiao?.micro_nome || ''}`.trim(), value: microVal, diff: microVal != null ? school - microVal : null },
         { label: comparativo?.municipio?.nome || "Município", value: munVal, diff: munVal != null ? school - munVal : null },
         { label: comparativo?.uf?.sg || "UF", value: ufVal, diff: ufVal != null ? school - ufVal : null },
         { label: "Brasil", value: brVal, diff: brVal != null ? school - brVal : null },
-      ];
+      ].filter(r => r.value != null);
     }
 
-    // IED: campo derivado nivel_5 + nivel_6 — calcular a partir das médias individuais
     if (ind.tipoKey === "ied") {
       const mn5 = getNested(mediasNacionais, "ied.nivel_5");
       const mn6 = getNested(mediasNacionais, "ied.nivel_6");
-      if (mn5 == null && mn6 == null) return [] as Array<{label:string; value:number|null; diff:number|null}>;
+      if (mn5 == null && mn6 == null) return [];
       const brVal = (mn5 ?? 0) + (mn6 ?? 0);
       return [{ label: "Brasil", value: Number(brVal.toFixed(1)), diff: school - brVal }];
     }
 
-    // Demais cards: pelo menos Brasil (média nacional do mesmo campo)
     const br = getNested(mediasNacionais, `${ind.tipoKey}.${ind.fieldKey}`);
-    if (br == null) return [] as Array<{label:string; value:number|null; diff:number|null}>;
+    if (br == null) return [] as Array<{label: string; value: number | null; diff: number | null}>;
     return [{ label: "Brasil", value: br, diff: school - br }];
   };
 
   return (
-    <div className="indicator-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-2 mt-2 mb-4">
-      {items.map((ind: any, i: number) => (
-        <div
-          key={i}
-          className={`indicator-card p-3 rounded-lg border bg-white relative transition-all duration-100 ${STATUS_COLORS[ind.status] || STATUS_COLORS["info"]}`}
-        >
-          <div className="indicator-top flex items-center gap-1 mb-1">
-            <span className={`badge px-1.5 py-0.5 rounded-full text-[11px] font-bold ${STATUS_COLORS[ind.status] || STATUS_COLORS["info"]}`}>{ind.label}</span>
-            <span className="text-[11px] text-muted-foreground font-mono">{ind.tipo}</span>
-          </div>
-          <div className="indicator-title font-semibold text-[13px] mb-0.5 truncate" title={ind.titulo}>{ind.titulo}</div>
-          <div className="indicator-value text-lg font-bold mb-0.5 text-[#24313f]">{ind.valor}</div>
-          {ind.secundarios && (
-            <div className="flex flex-wrap gap-0.5 mb-0.5">
-              {ind.secundarios.map((s: string, j: number) => (
-                <span key={j} className="mini-chip bg-white/90 border border-gray-200 rounded-full px-1.5 py-0.5 text-[10px] font-medium">{s}</span>
-              ))}
+    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:'10px', marginTop:'4px', marginBottom:'16px'}}>
+      {items.map((ind: any, i: number) => {
+        const colors = STATUS_COLORS[ind.status] ?? STATUS_COLORS["info"];
+        const evolucao = getEvolucao(ind);
+        const refs = getRefs(ind);
+
+        const visibleEv = evolucao.slice(-5);
+        const hasEv = visibleEv.length >= 2;
+        const firstEv = visibleEv[0];
+        const lastEv = visibleEv[visibleEv.length - 1];
+        const delta = hasEv ? lastEv.valor - firstEv.valor : null;
+        const higherIsBetter = !["tdi", "reprovacao_fund", "reprovacao_med", "abandono_fund", "abandono_med"].includes(ind.tipoKey)
+          && !["Reprovação Fund.", "Reprovação Médio", "Abandono Fund.", "Abandono Médio"].includes(ind.label);
+        const improving = delta != null ? (higherIsBetter ? delta > 0 : delta < 0) : null;
+        const trendIcon = improving == null ? null : improving ? "↑" : delta === 0 ? "→" : "↓";
+        const trendColor = improving == null ? "#94a3b8" : improving ? "#166534" : "#b91c1c";
+
+        return (
+          <div
+            key={i}
+            style={{
+              background: colors.bg,
+              border: `1.5px solid ${colors.border}`,
+              borderRadius: 12,
+              padding: '14px 16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0,
+            }}
+          >
+            {/* Cabeçalho */}
+            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: 4}}>
+              <span style={{fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'0.06em', color: colors.text, background: colors.badge, borderRadius:20, padding:'2px 8px'}}>{ind.tipo}</span>
+              <span style={{fontSize:11, color:'#64748b', fontWeight:600}}>{ind.label}</span>
             </div>
-          )}
-          <p className="text-xs text-[#47586d] leading-snug mt-0.5">{ind.explicacao}</p>
-          {(() => {
-            const refs = getRefs(ind);
-            if (!refs.length) return null;
-            return (
-              <div className="mt-1 pt-1 border-t border-gray-200/80 space-y-0.5">
-                {refs.map((r, idx) => (
-                  <div key={`${ind.titulo}-${idx}`} className="flex items-center justify-between text-[11px]">
-                    <span className="text-[#64748b] truncate pr-2">{r.label}</span>
-                    <span className="font-medium text-[#334155] shrink-0">
-                      {r.value == null ? "—" : fmt(r.value, 1)}
-                      {r.diff != null && (
-                        <span className={r.diff >= 0 ? "text-green-700 ml-1" : "text-red-700 ml-1"}>{fmtDiff(r.diff)}</span>
+            <div style={{fontSize:13, fontWeight:700, color:'#1e293b', marginBottom:2, lineHeight:1.3}}>{ind.titulo}</div>
+            <div style={{fontSize:22, fontWeight:800, color: colors.text, letterSpacing:'-0.02em', marginBottom:8, lineHeight:1}}>{ind.valor}</div>
+
+            {/* Evolução própria — PRINCIPAL */}
+            {hasEv ? (
+              <div style={{background:'rgba(255,255,255,0.7)', borderRadius:8, padding:'8px 10px', marginBottom:8}}>
+                <div style={{fontSize:10, fontWeight:700, color:'#64748b', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:6}}>
+                  Evolução da escola
+                </div>
+                <div style={{display:'flex', alignItems:'flex-end', gap:'4px', flexWrap:'wrap'}}>
+                  {visibleEv.map((d, idx) => (
+                    <React.Fragment key={d.ano}>
+                      <div style={{textAlign:'center'}}>
+                        <div style={{fontSize:13, fontWeight:700, color:'#1e293b', lineHeight:1}}>{fmt(d.valor, ind.tipo === 'SAEB' ? 0 : 1)}</div>
+                        <div style={{fontSize:9, color:'#94a3b8', marginTop:2}}>{d.ano}</div>
+                      </div>
+                      {idx < visibleEv.length - 1 && (
+                        <span style={{fontSize:11, color:'#cbd5e1', marginBottom:8}}>›</span>
                       )}
+                    </React.Fragment>
+                  ))}
+                  {trendIcon && delta != null && (
+                    <span style={{fontSize:13, fontWeight:800, color: trendColor, marginLeft:4, marginBottom:8}}>
+                      {trendIcon} {fmtDiff(delta)}
                     </span>
+                  )}
+                </div>
+                {hasEv && (
+                  <div style={{fontSize:10, color:'#94a3b8', marginTop:4}}>
+                    {improving === true ? 'Trajetória de melhora' : improving === false ? 'Trajetória de piora' : 'Estável'}
+                    {delta != null && firstEv ? ` desde ${firstEv.ano}` : ''}
                   </div>
-                ))}
+                )}
               </div>
-            );
-          })()}
-        </div>
-      ))}
+            ) : (
+              <div style={{background:'rgba(255,255,255,0.5)', borderRadius:8, padding:'7px 10px', marginBottom:8}}>
+                <div style={{fontSize:10, fontWeight:700, color:'#64748b', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:3}}>Evolução da escola</div>
+                <div style={{fontSize:11, color:'#94a3b8'}}>Apenas um ano disponível</div>
+              </div>
+            )}
+
+            {/* Referências nacionais/regionais — CONTEXTO */}
+            {refs.length > 0 && (
+              <div style={{borderTop:'1px dashed #e2e8f0', paddingTop:7, marginBottom:6}}>
+                <div style={{fontSize:9, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:4}}>Referência</div>
+                <div style={{display:'flex', flexDirection:'column', gap:3}}>
+                  {refs.map((r, idx) => (
+                    <div key={idx} style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                      <span style={{fontSize:11, color:'#94a3b8'}}>{r.label}</span>
+                      <span style={{fontSize:11, fontWeight:600, color:'#64748b'}}>
+                        {r.value == null ? '—' : fmt(r.value, ind.tipo === 'SAEB' ? 0 : 1)}
+                        {r.diff != null && (
+                          <span style={{marginLeft:4, fontSize:10, color: r.diff >= 0 ? '#16a34a' : '#dc2626'}}>
+                            {fmtDiff(r.diff)}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Explicação */}
+            <p style={{fontSize:11, color:'#64748b', lineHeight:1.5, margin:0}}>{ind.explicacao}</p>
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -444,6 +444,28 @@ export default function Dashboard() {
     return merged;
   }, [evolucaoData, latestAno]);
 
+  const historicoIndicadores = useMemo(() => {
+    if (!evolucaoData) return {} as Record<string, Array<{ano: number; valor: number}>>;
+    const allInd = evolucaoData.indicadores_por_ano || {};
+    const out: Record<string, Array<{ano: number; valor: number}>> = {};
+    for (const [anoStr, tipos] of Object.entries(allInd)) {
+      const ano = Number(anoStr);
+      for (const [tipo, dados] of Object.entries(tipos as any)) {
+        for (const [field, val] of Object.entries(dados as any)) {
+          if (field.startsWith('_') || field === 'co_entidade' || field === 'ano') continue;
+          const n = Number(val);
+          if (!isNaN(n) && n > 0) {
+            const key = `${tipo}.${field}`;
+            if (!out[key]) out[key] = [];
+            if (!out[key].find(d => d.ano === ano)) out[key].push({ ano, valor: n });
+          }
+        }
+      }
+    }
+    for (const key of Object.keys(out)) out[key].sort((a, b) => a.ano - b.ano);
+    return out;
+  }, [evolucaoData]);
+
   const alertasPreocupantes = useMemo(() => {
     type Progressao = { delta: number; label: string; anoAnterior: number; improving: boolean; pct: number | null };
     const alertas: { tipo: 'critical' | 'warning'; titulo: string; descricao: string; indicador: string; progressao?: Progressao }[] = [];
@@ -2530,9 +2552,9 @@ out center tags 100;`;
                         {Object.keys(indicadoresLatest).length > 0 && (
                           <div style={{marginTop:24}}>
                             <div style={{fontSize:11,fontWeight:800,color:'#9a7a5a',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:14}}>
-                              📊 Indicadores com comparação nacional
+                              📈 Evolução da escola — com referências nacionais
                             </div>
-                            <IndicatorPanel indicadores={indicadoresLatest} mediasNacionais={mediasNacionais} comparativo={comparativoData} microregiao={microregiaoData} />
+                            <IndicatorPanel indicadores={indicadoresLatest} mediasNacionais={mediasNacionais} comparativo={comparativoData} microregiao={microregiaoData} historico={historicoIndicadores} />
                           </div>
                         )}
 
