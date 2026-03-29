@@ -5784,7 +5784,17 @@ out center tags 100;`;
                         <BanknoteIcon className="w-3.5 h-3.5" /> Contas bancárias
                       </p>
                       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:'10px'}}>
-                        {pddeData.contas.map((c: any, i: number) => (
+                        {pddeData.contas.map((c: any, i: number) => {
+                          const uexSaldo = pddeUexSaldoData?.saldos?.find((s: any) =>
+                            s.conta && c.conta && s.conta.replace(/\D/g,'') === c.conta.replace(/\D/g,'')
+                          );
+                          const modalidades = uexSaldo ? [
+                            { label: 'C/C', value: uexSaldo.saldo_conta },
+                            { label: 'Fundos', value: uexSaldo.saldo_fundos },
+                            { label: 'Poupança', value: uexSaldo.saldo_poupanca },
+                            { label: 'RDB/CDB', value: uexSaldo.saldo_rdb_cdb },
+                          ].filter(m => m.value > 0) : [];
+                          return (
                           <div key={i} className="soft-card" style={{padding:'14px',borderLeft:'3px solid var(--m-blue)'}}>
                             <p style={{fontWeight:700,fontSize:'12px',textTransform:'uppercase',letterSpacing:'0.05em',color:'var(--m-blue)',marginBottom:'8px'}}>{c.programa}</p>
                             <div style={{display:'flex',flexDirection:'column',gap:'3px'}}>
@@ -5802,8 +5812,17 @@ out center tags 100;`;
                               </div>
                               {c.saldo != null && (
                                 <div style={{marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #f0ece4'}}>
-                                  <span className="text-xs text-muted-foreground">Saldo</span>
+                                  <span className="text-xs text-muted-foreground">Saldo total</span>
                                   <p style={{fontSize:'16px',fontWeight:800,color: c.saldo > 0 ? '#16a34a' : 'var(--m-muted)'}}>{brl(c.saldo)}</p>
+                                  {modalidades.length > 0 && (
+                                    <div style={{display:'flex',flexWrap:'wrap',gap:'6px',marginTop:'6px'}}>
+                                      {modalidades.map(m => (
+                                        <span key={m.label} style={{fontSize:'10px',background:'#e8f5ee',color:'#1a5c38',borderRadius:'6px',padding:'2px 7px',fontWeight:600}}>
+                                          {m.label}: {brl(m.value)}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                               {c.ocorrencia && (
@@ -5811,6 +5830,8 @@ out center tags 100;`;
                               )}
                             </div>
                           </div>
+                          );
+                        })
                         ))}
                       </div>
                     </div>
