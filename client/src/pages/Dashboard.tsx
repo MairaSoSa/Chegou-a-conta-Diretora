@@ -2455,7 +2455,7 @@ out center tags 100;`;
                 <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap', marginTop: '22px' }}>
 
                   {/* FICHA GERAL */}
-                  <section className="section" style={{ flex: '0 0 270px', width: '270px', minWidth: '220px', marginTop: 0 }}>
+                  <section className="section" style={{ flex: '1 1 0', minWidth: '220px', marginTop: 0 }}>
                     <div className="section-title">
                       <div><h2>Ficha geral da escola</h2><p>Identidade e vida organizacional</p></div>
                     </div>
@@ -2503,7 +2503,7 @@ out center tags 100;`;
                       { label: 'Status PDDE', val: pddeData?.ok ? (prestacaoContaData?.ok && prestacaoContaData.itens.every((it:any)=>it.situacao_pc_uex?.toLowerCase().includes('adimpl')) ? '✅' : 'Ver') : '—', prev: null, icon: '💸', extra: prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? `${prestacaoContaData.itens.length} programa(s)` : pddeData?.ok ? 'Ativo' : 'Sem dados' },
                     ];
                     return (
-                      <div style={{ flex: 1, minWidth: '260px', marginTop: 0 }}>
+                      <div style={{ flex: '1 1 0', minWidth: '260px', marginTop: 0 }}>
                         <div className="section-title" style={{ marginBottom: 0 }}>
                           <div><h2>Painel da escola</h2><p>Números essenciais</p></div>
                           <div className="hint-chip">Gestão · Desempenho</div>
