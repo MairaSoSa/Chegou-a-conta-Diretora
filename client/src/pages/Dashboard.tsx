@@ -207,7 +207,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!selectedInep) { setVisibleSecIds(new Set()); return; }
-    const allIds = ['sec-ficha','sec-desempenho','sec-tnr','sec-inse','sec-tdi','sec-matriculas','sec-estrutura','sec-ied','sec-afd','sec-atu','sec-had','sec-retrato','sec-pdde'];
+    const allIds = ['sec-ficha','sec-desempenho','sec-tnr','sec-inse','sec-tdi','sec-matriculas','sec-estrutura','sec-ied','sec-afd','sec-atu','sec-had','sec-evolucao-censo','sec-retrato','sec-pdde'];
     const scan = () => setVisibleSecIds(new Set(allIds.filter(id => !!document.getElementById(id))));
     const timers = [200, 1500, 3500, 7000].map(ms => setTimeout(scan, ms));
     return () => timers.forEach(clearTimeout);
@@ -1012,6 +1012,7 @@ export default function Dashboard() {
     { id: 'sec-afd',        icon: <GraduationCap size={12} />, title: 'Formação',     bg: '#e6eef8', border: '#b8cfe8', color: '#1e4a78' },
     { id: 'sec-atu',        icon: <Users size={12} />,         title: 'Turma',        bg: '#fdf3e0', border: '#f0ddb5', color: '#9b6a16' },
     { id: 'sec-had',        icon: <Clock size={12} />,         title: 'Horas-aula',   bg: '#fff7ed', border: '#fed7aa', color: '#9a3412' },
+    { id: 'sec-evolucao-censo', icon: <ClipboardList size={12} />, title: 'Evolução',  bg: '#eef4fb', border: '#b8cde8', color: '#2d5a88' },
     { id: 'sec-retrato',    icon: <BookOpen size={12} />,      title: 'Retrato',      bg: '#faf7f2', border: '#e8dfc8', color: '#5d4037' },
     { id: 'sec-pdde',       icon: <DollarSign size={12} />,    title: 'PDDE',         bg: '#e8f5ee', border: '#b8dfc8', color: '#1f6b45' },
   ] as const;
@@ -4374,10 +4375,12 @@ out center tags 100;`;
                   );
                 })()}
 
-                {/* ── RETRATO DA ESCOLA — GRÁFICOS + 3 CAMADAS × 10 DIMENSÕES ── */}
-                <section id="sec-retrato" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
+                {/* ── WRAPPER FLEX para ordenação visual (Evolução antes de Retrato) ── */}
+                <div style={{display:'flex', flexDirection:'column'}}>
+                {/* ── RETRATO DA ESCOLA — GRÁFICOS ── */}
+                <section id="sec-retrato" className="section section-pauta" style={{ scrollMarginTop: 70, order: 2 }}>
                   <div className="section-title">
-                    <div><h2>Retrato da escola</h2><p>Evolução visual e dados detalhados do Censo Escolar ao longo dos anos</p></div>
+                    <div><h2>Retrato da escola</h2><p>Perfil visual dos estudantes e evolução dos indicadores</p></div>
                   </div>
                   <div className="organic-divider" />
 
@@ -4559,14 +4562,6 @@ out center tags 100;`;
                         );
                       })()}
 
-                      {/* Separador visual antes das dimensões */}
-                      <div style={{ margin: '24px 0 8px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ flex: 1, height: 1, background: '#e8dfc8' }} />
-                        <span style={{ fontSize: 11, fontWeight: 800, color: '#9a7a5a', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>
-                          <span style={{display:'flex',alignItems:'center',gap:5}}><ClipboardList size={11} /> Dados detalhados por dimensão</span>
-                        </span>
-                        <div style={{ flex: 1, height: 1, background: '#e8dfc8' }} />
-                      </div>
                     </div>
                   )}
                   {/* ── PERFIL EM PIZZA — CRUZAMENTOS DO CENSO ── */}
@@ -4605,8 +4600,8 @@ out center tags 100;`;
 
                     // ── 3. SEXO ──
                     const sexoRaw = [
-                      { name:'Feminino', v: cd.qt_mat_bas_fem ?? 0, cor:'#e07896' },
-                      { name:'Masculino', v: cd.qt_mat_bas_masc ?? 0, cor:'#4a8ec2' },
+                      { name:'Feminino', v: cd.qt_mat_bas_fem ?? 0, cor:'#9b6a16' },
+                      { name:'Masculino', v: cd.qt_mat_bas_masc ?? 0, cor:'#2f7a58' },
                     ].filter(x => x.v > 0);
                     const sexoTotal = sexoRaw.reduce((s,x)=>s+x.v, 0);
                     const sexoData = sexoRaw.map(x=>({...x, pct:pct(x.v,sexoTotal)}));
@@ -4723,10 +4718,27 @@ out center tags 100;`;
                     );
                   })()}
 
-                  <div id="retrato-abas" className="soft-card" style={{padding:0,overflow:'hidden',scrollMarginTop:70}}>
-                    <div className="tab-head">
-                      <h3 style={{margin:0,fontSize:'18px',letterSpacing:'-0.03em'}}>Evolução do Censo Escolar</h3>
-                    </div>
+                </section>
+
+                {/* ── EVOLUÇÃO DO CENSO ESCOLAR ── */}
+                <section id="sec-evolucao-censo" className="section section-pauta" style={{ scrollMarginTop: 70, order: 1 }}>
+                  <div className="section-title">
+                    <div><h2>Evolução do Censo Escolar</h2><p>Dados detalhados por dimensão — infraestrutura, tecnologia, equidade e mais</p></div>
+                  </div>
+                  <div className="organic-divider" />
+
+                  <div className="soft-card" style={{padding:0,overflow:'hidden'}}>
+                    <button
+                      onClick={() => setExpandedSections(prev => ({ ...prev, 'censo-dims': !prev['censo-dims'] }))}
+                      style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 20px', background:'#faf7f2', border:'none', borderBottom: expandedSections['censo-dims'] ? '2px solid #e8e0d0' : '1px solid #ede8df', cursor:'pointer' }}
+                    >
+                      <span style={{fontWeight:700, fontSize:14, color:'#5d4037', display:'flex', alignItems:'center', gap:8}}>
+                        <ClipboardList size={14} /> Dados detalhados por dimensão
+                      </span>
+                      {expandedSections['censo-dims'] ? <ChevronUp size={16} color="#9a7a5a" /> : <ChevronDown size={16} color="#9a7a5a" />}
+                    </button>
+                    {expandedSections['censo-dims'] && (
+                    <>
 
                     {/* ── NAVEGAÇÃO: 3 CAMADAS × 10 DIMENSÕES ── */}
                     <div style={{background:'#faf7f2', borderBottom:'2px solid #e8e0d0'}}>
@@ -5512,8 +5524,11 @@ out center tags 100;`;
 
                     })()}
 
+                    </>
+                    )}
                   </div>
                 </section>
+                </div>{/* ── fim wrapper flex ── */}
 
                 {/* ── DADOS FINANCEIROS PDDE ── */}
                 <section id="sec-pdde" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
