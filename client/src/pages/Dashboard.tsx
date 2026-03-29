@@ -5789,34 +5789,6 @@ out center tags 100;`;
                     </div>
                   )}
 
-                  {/* ── 5. SALDOS PDDE BÁSICO ── */}
-                  {pddeSaldosData?.ok && pddeSaldosData.saldos.length > 0 && (
-                    <div style={{marginBottom:'16px'}}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <BanknoteIcon className="w-3.5 h-3.5" /> Saldos PDDE Básico ({pddeSaldosData.anosDisponiveis.join(', ')})
-                      </p>
-                      <div className="table-card">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Exercício</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Banco</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Saldo Acumulado</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {pddeSaldosData.saldos.slice().sort((a: any, b: any) => b.an_exercicio - a.an_exercicio).map((s: any, i: number) => (
-                              <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                <td className="py-2 px-3 text-xs font-medium">{s.an_exercicio}</td>
-                                <td className="py-2 px-3 text-xs">{s.banco || '—'}</td>
-                                <td className={`py-2 px-3 text-xs text-right font-mono ${s.saldo_acumulado > 0 ? 'font-bold text-emerald-700' : ''}`}>{brl(s.saldo_acumulado)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
 
                   {/* ── 6. EXECUÇÃO FINANCEIRA ── */}
                   {pddeExecFinData?.ok && pddeExecFinData.repasses.length > 0 && (
