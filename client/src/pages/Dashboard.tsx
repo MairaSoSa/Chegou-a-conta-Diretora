@@ -4091,113 +4091,115 @@ out center tags 100;`;
                   );
                 })()}
 
-                {/* ── GALERIA DE GRÁFICOS ── */}
-                {currentChart && available.length > 0 && (
-                  <section className="section">
-                    <div className="section-title">
-                      <div><h2>Galeria de gráficos</h2><p>Evolução dos indicadores ao longo dos anos</p></div>
-                    </div>
-                    <div className="organic-divider" />
-
-                    {/* Pills selector */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
-                      {available.map(c => {
-                        const active = selectedChart === c.id;
-                        return (
-                          <button
-                            key={c.id}
-                            onClick={() => { setSelectedChart(c.id); setChartEtapa('total'); }}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: 6,
-                              padding: '7px 14px',
-                              background: active ? 'linear-gradient(135deg,#dff1ff,#f0f9ff)' : '#fffef8',
-                              border: active ? '1.5px solid #2d5a88' : '1.5px solid #e7d9bf',
-                              borderRadius: '20px',
-                              cursor: 'pointer', fontWeight: active ? 700 : 500,
-                              fontSize: 13, color: active ? '#2d5a88' : '#5d6470',
-                              boxShadow: active ? '0 2px 8px rgba(45,90,136,0.13)' : '0 1px 3px rgba(0,0,0,0.04)',
-                              transition: 'all .15s',
-                            }}
-                          >
-                            <span style={{ fontSize: 15 }}>{c.icon}</span>
-                            <span>{c.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Chart card — full width */}
-                    {(() => {
-                      const hasEtapas = !!(currentChart as any).etapas;
-                      // Linhas filtradas pela etapa selecionada
-                      const filteredLines = hasEtapas
-                        ? currentChart.lines.filter((l: any) => chartEtapa === 'total' ? l.etapa === 'total' : l.etapa === chartEtapa)
-                        : currentChart.lines;
-                      // Anos com dados reais para a(s) linha(s) ativa(s)
-                      const activeKeys = new Set(filteredLines.map((l: any) => l.key));
-                      const yearsWithData = currentChart.data.filter((d: Record<string,any>) =>
-                        Object.entries(d).some(([k, v]) => k !== 'ano' && activeKeys.has(k) && v != null && Number(v) > 0)
-                      );
-                      // Valor do último ponto com dado
-                      const lastPoint = [...yearsWithData].reverse()[0];
-                      const bigVal = lastPoint ? lastPoint[filteredLines[0]?.key] : null;
-                      const bigAno = lastPoint ? lastPoint.ano : latestAno;
-                      // Etapas disponíveis neste gráfico (com pelo menos 1 ano com dado > 0)
-                      const availableEtapas = hasEtapas ? currentChart.lines.filter((l: any) =>
-                        currentChart.data.some((d: Record<string,any>) => d[l.key] != null && Number(d[l.key]) > 0)
-                      ) : [];
-                      return (
-                        <div className="soft-card" style={{ padding: '20px' }}>
-                          {/* Filtro de etapa — só quando suportado e há múltiplas etapas */}
-                          {availableEtapas.length > 1 && (
-                            <div style={{display:'flex',flexWrap:'wrap',gap:'6px',marginBottom:'16px',alignItems:'center'}}>
-                              <span style={{fontSize:'11px',fontWeight:600,color:'#888',marginRight:'4px',textTransform:'uppercase',letterSpacing:'0.04em'}}>Etapa:</span>
-                              {availableEtapas.map((l: any) => (
-                                <button key={l.etapa} onClick={() => setChartEtapa(l.etapa)} style={{
-                                  padding:'4px 12px',borderRadius:'20px',fontSize:'12px',fontWeight:600,
-                                  cursor:'pointer',transition:'all .15s',border:'none',
-                                  background: chartEtapa === l.etapa ? l.color : '#f0f4f8',
-                                  color: chartEtapa === l.etapa ? '#fff' : '#555',
-                                  boxShadow: chartEtapa === l.etapa ? `0 2px 8px ${l.color}55` : 'none',
-                                }}>
-                                  {l.name}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                          <div className="chart-header">
-                            <div>
-                              <h4>{currentChart.icon} {currentChart.label}{hasEtapas && chartEtapa !== 'total' ? ` — ${filteredLines[0]?.name}` : ''}</h4>
-                              <p>{currentChart.desc}</p>
-                              <div className="chip-row">
-                                {yearsWithData.map((d: Record<string,any>) => (
-                                  <span key={d.ano} className="mini-chip">{d.ano}</span>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="big-stat">
-                              <strong>{bigVal != null ? Number(bigVal).toLocaleString('pt-BR') : '—'}</strong>
-                              <span>{bigAno}</span>
-                            </div>
-                          </div>
-                          <div style={{ height: '280px' }}>
-                            <EvolutionChart data={currentChart.data} lines={filteredLines} large />
-                          </div>
-                          <div className="chart-note">
-                            📝 Dados do Censo Escolar INEP/MEC · código {selectedInep}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </section>
-                )}
-
-                {/* ── RETRATO DA ESCOLA — 3 CAMADAS × 10 DIMENSÕES ── */}
+                {/* ── RETRATO DA ESCOLA — GRÁFICOS + 3 CAMADAS × 10 DIMENSÕES ── */}
                 <section className="section">
                   <div className="section-title">
-                    <div><h2>Retrato da escola</h2><p>Evolução dos dados do Censo Escolar ao longo dos anos</p></div>
+                    <div><h2>Retrato da escola</h2><p>Evolução visual e dados detalhados do Censo Escolar ao longo dos anos</p></div>
                   </div>
                   <div className="organic-divider" />
+
+                  {/* ── GALERIA DE GRÁFICOS (integrada) ── */}
+                  {currentChart && available.length > 0 && (
+                    <div style={{ marginBottom: 28 }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: '#9a7a5a', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
+                        📊 Evolução visual dos indicadores
+                      </div>
+                      {/* Pills selector */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                        {available.map(c => {
+                          const active = selectedChart === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              onClick={() => { setSelectedChart(c.id); setChartEtapa('total'); }}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 6,
+                                padding: '7px 14px',
+                                background: active ? 'linear-gradient(135deg,#dff1ff,#f0f9ff)' : '#fffef8',
+                                border: active ? '1.5px solid #2d5a88' : '1.5px solid #e7d9bf',
+                                borderRadius: '20px',
+                                cursor: 'pointer', fontWeight: active ? 700 : 500,
+                                fontSize: 13, color: active ? '#2d5a88' : '#5d6470',
+                                boxShadow: active ? '0 2px 8px rgba(45,90,136,0.13)' : '0 1px 3px rgba(0,0,0,0.04)',
+                                transition: 'all .15s',
+                              }}
+                            >
+                              <span style={{ fontSize: 15 }}>{c.icon}</span>
+                              <span>{c.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Chart card */}
+                      {(() => {
+                        const hasEtapas = !!(currentChart as any).etapas;
+                        const filteredLines = hasEtapas
+                          ? currentChart.lines.filter((l: any) => chartEtapa === 'total' ? l.etapa === 'total' : l.etapa === chartEtapa)
+                          : currentChart.lines;
+                        const activeKeys = new Set(filteredLines.map((l: any) => l.key));
+                        const yearsWithData = currentChart.data.filter((d: Record<string,any>) =>
+                          Object.entries(d).some(([k, v]) => k !== 'ano' && activeKeys.has(k) && v != null && Number(v) > 0)
+                        );
+                        const lastPoint = [...yearsWithData].reverse()[0];
+                        const bigVal = lastPoint ? lastPoint[filteredLines[0]?.key] : null;
+                        const bigAno = lastPoint ? lastPoint.ano : latestAno;
+                        const availableEtapas = hasEtapas ? currentChart.lines.filter((l: any) =>
+                          currentChart.data.some((d: Record<string,any>) => d[l.key] != null && Number(d[l.key]) > 0)
+                        ) : [];
+                        return (
+                          <div className="soft-card" style={{ padding: '20px' }}>
+                            {availableEtapas.length > 1 && (
+                              <div style={{display:'flex',flexWrap:'wrap',gap:'6px',marginBottom:'16px',alignItems:'center'}}>
+                                <span style={{fontSize:'11px',fontWeight:600,color:'#888',marginRight:'4px',textTransform:'uppercase',letterSpacing:'0.04em'}}>Etapa:</span>
+                                {availableEtapas.map((l: any) => (
+                                  <button key={l.etapa} onClick={() => setChartEtapa(l.etapa)} style={{
+                                    padding:'4px 12px',borderRadius:'20px',fontSize:'12px',fontWeight:600,
+                                    cursor:'pointer',transition:'all .15s',border:'none',
+                                    background: chartEtapa === l.etapa ? l.color : '#f0f4f8',
+                                    color: chartEtapa === l.etapa ? '#fff' : '#555',
+                                    boxShadow: chartEtapa === l.etapa ? `0 2px 8px ${l.color}55` : 'none',
+                                  }}>
+                                    {l.name}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            <div className="chart-header">
+                              <div>
+                                <h4>{currentChart.icon} {currentChart.label}{hasEtapas && chartEtapa !== 'total' ? ` — ${filteredLines[0]?.name}` : ''}</h4>
+                                <p>{currentChart.desc}</p>
+                                <div className="chip-row">
+                                  {yearsWithData.map((d: Record<string,any>) => (
+                                    <span key={d.ano} className="mini-chip">{d.ano}</span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="big-stat">
+                                <strong>{bigVal != null ? Number(bigVal).toLocaleString('pt-BR') : '—'}</strong>
+                                <span>{bigAno}</span>
+                              </div>
+                            </div>
+                            <div style={{ height: '280px' }}>
+                              <EvolutionChart data={currentChart.data} lines={filteredLines} large />
+                            </div>
+                            <div className="chart-note">
+                              📝 Dados do Censo Escolar INEP/MEC · código {selectedInep}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Separador visual antes das dimensões */}
+                      <div style={{ margin: '24px 0 8px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ flex: 1, height: 1, background: '#e8dfc8' }} />
+                        <span style={{ fontSize: 11, fontWeight: 800, color: '#9a7a5a', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>
+                          🗂️ Dados detalhados por dimensão
+                        </span>
+                        <div style={{ flex: 1, height: 1, background: '#e8dfc8' }} />
+                      </div>
+                    </div>
+                  )}
                   <div className="soft-card" style={{padding:0,overflow:'hidden'}}>
                     <div className="tab-head">
                       <h3 style={{margin:'0 0 4px',fontSize:'18px',letterSpacing:'-0.03em'}}>Evolução do Censo Escolar</h3>
@@ -4777,8 +4779,12 @@ out center tags 100;`;
                             { label: 'Ed. Profissional', key: 'qt_doc_prof' },
                             { label: 'Ed. Especial', key: 'qt_doc_esp' },
                           ]} />
-                          <div style={{ padding: '14px 20px', background: '#fffbf2', borderTop: '1px solid #f0e8d0', fontSize: 13, color: '#8a7040' }}>
-                            ℹ️ <strong>Nota:</strong> O Censo Escolar informa a quantidade de docentes por etapa. Dados de formação, licenciatura e regime de trabalho não estão disponíveis nesta versão.
+                          <div style={{ padding: '14px 20px', background: '#fffbf2', borderTop: '1px solid #f0e8d0', fontSize: 13, color: '#8a7040', lineHeight: 1.6 }}>
+                            ℹ️ <strong>Nota:</strong> Esta dimensão registra a <em>quantidade</em> de docentes por etapa (Censo Escolar). Para dados qualitativos de formação e atuação, consulte as seções dedicadas:
+                            <ul style={{ margin: '6px 0 0 18px', padding: 0, fontSize: 12 }}>
+                              <li><strong>AFD — Adequação da Formação Docente:</strong> percentual de professores com licenciatura na área em que lecionam.</li>
+                              <li><strong>IED — Esforço Docente:</strong> índice de intensidade de trabalho (número de escolas, turnos e etapas acumuladas).</li>
+                            </ul>
                           </div>
                         </div>
                       );
