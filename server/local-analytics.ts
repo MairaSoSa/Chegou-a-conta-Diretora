@@ -336,9 +336,9 @@ export function getDiagnosticoLocal(inep: string) {
   }
 
   // ── HAD (horas-aula diárias) ──
-  // Aumento de HAD só é positivo se os docentes não estiverem sobrecarregados.
-  // Se iedAltoTotal > 30% (muitos professores em múltiplas escolas/turnos),
-  // subir a carga horária aqui pode pressionar ainda mais o esforço docente.
+  // Aumento de HAD não é necessariamente positivo: pode ampliar aprendizado, mas
+  // também sobrecarregar alunos. Só registramos como leitura neutra; se o esforço
+  // docente (IED) já estiver alto, sinalizamos como observação.
   const hadEtapas = [
     { key: 'media_fund', label: 'Fundamental' },
     { key: 'media_med',  label: 'Ensino Médio' },
@@ -347,19 +347,18 @@ export function getDiagnosticoLocal(inep: string) {
     const v = had[key];
     if (v == null || v <= 0) continue;
     const prog = getProgInd(hadHist, key, true);
-    if (v >= 4) {
-      if (prog && iedAltoTotal <= 30) {
-        pontos_fortes.push(`Carga horária no ${label} crescendo: ${prog.label} (atual: ${round1(v)}h/dia)`);
-      } else if (prog && iedAltoTotal > 30) {
-        pontos_atencao.push(`Carga horária no ${label} aumentou (${round1(v)}h/dia), mas ${round1(iedAltoTotal)}% dos docentes já acumulam muitas escolas ou turnos — acompanhe o esforço docente antes de ampliar mais.`);
+    if (prog) {
+      // HAD cresceu: registra como leitura neutra contextualizada
+      if (iedAltoTotal > 30) {
+        // docentes sobrecarregados + mais horas: observar com cuidado
+        pontos_atencao.push(`Carga horária no ${label} subiu (${prog.label}, atual: ${round1(v)}h/dia), mas ${round1(iedAltoTotal)}% dos docentes já acumulam muitas escolas ou turnos — acompanhe o esforço docente.`);
+      } else {
+        // sem sinal de sobrecarga: apenas observa, sem celebrar
+        leituras.push(`Carga horária no ${label}: ${prog.label} (atual: ${round1(v)}h/dia). Aumento de jornada pode ampliar o tempo de aprendizado, mas vale acompanhar o impacto no ritmo escolar.`);
       }
-    } else if (prog) {
-      if (iedAltoTotal <= 30) {
-        pontos_fortes.push(`Carga horária no ${label} aumentando: ${prog.label} (atual: ${round1(v)}h/dia)`);
-      }
-      // se iedAlto > 30 e HAD < 4h e ainda subindo: não celebra, apenas observa
-    } else {
-      pontos_atencao.push(`Carga horária baixa no ${label}: ${round1(v)}h/dia — considere ampliar a jornada escolar`);
+    } else if (v < 4) {
+      // carga ainda baixa e sem crescimento expressivo: observar
+      pontos_atencao.push(`Carga horária no ${label} abaixo de 4h/dia (${round1(v)}h) — considere estratégias para ampliar a jornada escolar.`);
     }
   }
 
