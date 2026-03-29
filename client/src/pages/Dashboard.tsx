@@ -5747,11 +5747,17 @@ out center tags 100;`;
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div style={{ background: "#eff6ff", borderRadius: 14, padding: "14px 12px", textAlign: "center" }}>
                     <div style={{ fontSize: 26, fontWeight: 800, color: "#1d4ed8" }}>{ufStatsData.total_escolas?.toLocaleString("pt-BR")}</div>
-                    <div style={{ fontSize: 12, color: "#3b82f6", marginTop: 2 }}>🏫 escolas</div>
+                    <div style={{ fontSize: 12, color: "#3b82f6", marginTop: 2, display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
+                      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#3b82f6" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="5.5" width="12" height="7.5" rx="0.5"/><polyline points="1,5.5 7,1.5 13,5.5"/><rect x="5" y="9.5" width="4" height="3.5"/></svg>
+                      escolas
+                    </div>
                   </div>
                   <div style={{ background: "#ecfdf5", borderRadius: 14, padding: "14px 12px", textAlign: "center" }}>
                     <div style={{ fontSize: 26, fontWeight: 800, color: "#065f46" }}>{ufStatsData.total_matriculas?.toLocaleString("pt-BR")}</div>
-                    <div style={{ fontSize: 12, color: "#059669", marginTop: 2 }}>👩‍🎓 matrículas</div>
+                    <div style={{ fontSize: 12, color: "#059669", marginTop: 2, display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
+                      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#059669" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M7 1L1 4.5l6 3 6-3L7 1z"/><path d="M1 4.5v4c0 0 2 2 6 2s6-2 6-2v-4"/><line x1="13" y1="4.5" x2="13" y2="9.5"/></svg>
+                      matrículas
+                    </div>
                   </div>
                 </div>
 
@@ -5789,7 +5795,14 @@ out center tags 100;`;
                     {Object.entries(ufStatsData.por_localizacao as Record<string, number>).map(([loc, n]) => (
                       <div key={loc} style={{ flex: 1, borderRadius: 14, padding: "10px 8px", textAlign: "center", background: loc === "Rural" ? "#f0fdf4" : "#f0f9ff" }}>
                         <div style={{ fontSize: 18, fontWeight: 700, color: loc === "Rural" ? "#16a34a" : "#0284c7" }}>{(n as number).toLocaleString("pt-BR")}</div>
-                        <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{loc === "Rural" ? "🌿" : "🏙️"} {loc}</div>
+                        <div style={{ fontSize: 12, color: "#64748b", marginTop: 2, display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
+                          {loc === "Rural" ? (
+                            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#16a34a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M7 1v12M4 4c0 0 1 3 3 3s3-3 3-3M2 8c0 0 2 3 5 3s5-3 5-3"/></svg>
+                          ) : (
+                            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#0284c7" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="7" width="4" height="6"/><rect x="5" y="4" width="4" height="9"/><rect x="9" y="6" width="4" height="7"/><line x1="0.5" y1="13" x2="13.5" y2="13"/></svg>
+                          )}
+                          {loc}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -5827,8 +5840,9 @@ out center tags 100;`;
                   if (!destaques.length) return null;
                   return (
                     <div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
-                        📊 Censo Escolar — mudanças 2024→2025
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10, display:"flex", alignItems:"center", gap:5 }}>
+                        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#94a3b8" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="8" width="3" height="5" rx="0.4"/><rect x="5.5" y="5" width="3" height="8" rx="0.4"/><rect x="10" y="2" width="3" height="11" rx="0.4"/><line x1="0.5" y1="13.5" x2="13.5" y2="13.5"/></svg>
+                        Censo Escolar — mudanças 2024→2025
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                         {destaques.map((cam: any) => {
