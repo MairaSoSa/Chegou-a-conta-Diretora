@@ -5771,9 +5771,16 @@ out center tags 100;`;
                   {/* ── 2. CONTAS BANCÁRIAS ── */}
                   {pddeData?.ok && pddeData.contas && pddeData.contas.length > 0 && (
                     <div style={{marginBottom:'16px'}}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <BanknoteIcon className="w-3.5 h-3.5" /> Contas bancárias — ano {pddeData.ano}
-                      </p>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'8px',flexWrap:'wrap',gap:'4px'}}>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1" style={{margin:0}}>
+                          <BanknoteIcon className="w-3.5 h-3.5" /> Contas bancárias — {pddeData.ano}
+                        </p>
+                        {pddeData._cached_at && (
+                          <span style={{fontSize:'10px',color:'#9b8877',fontStyle:'italic'}}>
+                            Última atualização: {new Date(pddeData._cached_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+                          </span>
+                        )}
+                      </div>
                       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:'10px'}}>
                         {pddeData.contas.map((c: any, i: number) => (
                           <div key={i} className="soft-card" style={{padding:'14px',borderLeft:'3px solid var(--m-blue)'}}>

@@ -1018,8 +1018,17 @@ export async function registerRoutes(
       if (!/^\d{8}$/.test(inep)) {
         return res.status(400).json({ ok: false, error: "Código INEP deve ter 8 dígitos" });
       }
+      const CACHE_KEY = `pdde_info_${inep}_${ano}`;
+      const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4h
+      const cached = sqlite.prepare(`SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`).get(CACHE_KEY) as any;
+      if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) {
+        const parsed = JSON.parse(cached.data);
+        return res.json({ ...parsed, _cached_at: cached.updated_at });
+      }
       const result = await getPddeInfo(ano, inep);
-      res.json(result);
+      if (result?.ok) safeCacheWrite(CACHE_KEY, result);
+      const nowTs = Date.now();
+      res.json({ ...result, _cached_at: nowTs });
     } catch (err: any) {
       console.error("PDDE scraper error:", err.message);
       res.status(500).json({ ok: false, error: "Erro ao consultar dados do FNDE" });
