@@ -4695,7 +4695,7 @@ out center tags 100;`;
                             </table>
                           </div>
                         );
-                        const hasData = enriched.length > 0;
+                        const hasData = enriched.some(er => er.kind === 'data');
                         if (title) {
                           if (!hasData) return (
                             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 20px', background:'#f7f6f3', borderBottom:'1px dashed #ddd6c8', marginBottom:4, opacity:0.6, cursor:'default' }}>
