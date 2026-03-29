@@ -4253,40 +4253,54 @@ out center tags 100;`;
                   {/* ── GALERIA DE GRÁFICOS (integrada) ── */}
                   {currentChart && available.length > 0 && (
                     <div style={{ marginBottom: 28 }}>
-                      <div style={{ fontSize: 11, fontWeight: 800, color: '#9a7a5a', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
-                        📊 Evolução visual dos indicadores
+                      {/* Section header */}
+                      <div className="cg-section-head">
+                        <span className="cg-section-head-label">Evolução visual dos indicadores</span>
+                        <div className="cg-section-head-line" />
                       </div>
-                      {/* Pills selector */}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                        {available.map(c => {
-                          const active = selectedChart === c.id;
-                          return (
-                            <button
-                              key={c.id}
-                              onClick={() => { setSelectedChart(c.id); setChartEtapa('total'); }}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 6,
-                                padding: '7px 14px',
-                                background: active ? 'linear-gradient(135deg,#dff1ff,#f0f9ff)' : '#fffef8',
-                                border: active ? '1.5px solid #2d5a88' : '1.5px solid #e7d9bf',
-                                borderRadius: '20px',
-                                cursor: 'pointer', fontWeight: active ? 700 : 500,
-                                fontSize: 13, color: active ? '#2d5a88' : '#5d6470',
-                                boxShadow: active ? '0 2px 8px rgba(45,90,136,0.13)' : '0 1px 3px rgba(0,0,0,0.04)',
-                                transition: 'all .15s',
-                              }}
-                            >
-                              <span style={{ fontSize: 15 }}>{c.icon}</span>
-                              <span>{c.label}</span>
-                              {(c as any).cadencia && (
-                                <span style={{fontSize:'9px',fontWeight:700,padding:'1px 5px',borderRadius:'10px',background:(c as any).cadencia==='Bienal'?'#fef3c7':'#ede9fe',color:(c as any).cadencia==='Bienal'?'#92400e':'#5b21b6',letterSpacing:'0.03em'}}>
-                                  {(c as any).cadencia.toLowerCase()}
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
+
+                      {/* Grouped pill selector */}
+                      {(() => {
+                        const pillGroups = [
+                          { label: 'Censo', ids: ['matriculas', 'docentes', 'turmas'] },
+                          { label: 'Qualidade', ids: ['ideb', 'saeb', 'rendimento', 'tdi', 'inse'] },
+                          { label: 'Condições', ids: ['atu', 'had', 'dsu', 'icg', 'ird', 'tnr'] },
+                        ];
+                        return (
+                          <div className="chart-pill-groups">
+                            {pillGroups.map(group => {
+                              const groupCharts = available.filter(c => group.ids.includes(c.id));
+                              if (groupCharts.length === 0) return null;
+                              return (
+                                <div className="cpg-row" key={group.label}>
+                                  <span className="cpg-group-label">{group.label}</span>
+                                  <div className="cpg-pills">
+                                    {groupCharts.map(c => {
+                                      const active = selectedChart === c.id;
+                                      const cad = (c as any).cadencia as string | undefined;
+                                      return (
+                                        <button
+                                          key={c.id}
+                                          onClick={() => { setSelectedChart(c.id); setChartEtapa('total'); }}
+                                          className={`cpg-pill${active ? ' active' : ''}`}
+                                        >
+                                          <span style={{ fontSize: 13 }}>{c.icon}</span>
+                                          <span>{c.label}</span>
+                                          {cad && (
+                                            <span className={`cpg-pill-cadencia ${cad.toLowerCase()}`}>
+                                              {cad.toLowerCase()}
+                                            </span>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
 
                       {/* Chart card */}
                       {(() => {
@@ -4314,60 +4328,82 @@ out center tags 100;`;
                         const yearsWithData = currentChart.data.filter((d: Record<string,any>) =>
                           Object.entries(d).some(([k, v]) => k !== 'ano' && activeKeys.has(k) && v != null && Number(v) > 0)
                         );
-                        const lastPoint = [...yearsWithData].reverse()[0];
-                        const bigVal = lastPoint ? lastPoint[filteredLines[0]?.key] : null;
+                        // Big stat + delta
+                        const firstKey = filteredLines[0]?.key;
+                        const pointsWithVal = firstKey
+                          ? yearsWithData.filter((d: Record<string,any>) => d[firstKey] != null && Number(d[firstKey]) > 0)
+                          : [];
+                        const lastPoint = pointsWithVal[pointsWithVal.length - 1];
+                        const prevPoint = pointsWithVal[pointsWithVal.length - 2];
+                        const bigVal = lastPoint ? lastPoint[firstKey] : null;
                         const bigAno = lastPoint ? lastPoint.ano : latestAno;
+                        const delta = bigVal != null && prevPoint ? Number(bigVal) - Number(prevPoint[firstKey]) : null;
+                        const deltaYear = prevPoint ? prevPoint.ano : null;
+                        const accentColor = filteredLines[0]?.color || '#2d5a88';
                         // Etapa label for chart subtitle
-                        const etapaLabel = availableEtapas.find((l: any) => l.etapa === activeEtapa);
-                        const etapaDisplay = etapaLabel ? (etapaLabel.etapaLabel || etapaLabel.name) : '';
+                        const etapaLabelEntry = availableEtapas.find((l: any) => l.etapa === activeEtapa);
+                        const etapaDisplay = etapaLabelEntry ? (etapaLabelEntry.etapaLabel || etapaLabelEntry.name) : '';
                         return (
-                          <div className="soft-card" style={{ padding: '20px' }}>
+                          <div className="census-chart-card" style={{ borderLeftColor: accentColor }}>
+                            {/* Header */}
+                            <div className="ccc-header">
+                              <div className="ccc-meta">
+                                <div className="ccc-title-row">
+                                  <span className="ccc-label">
+                                    {currentChart.icon} {currentChart.label}{hasEtapas && etapaDisplay && activeEtapa !== 'total' ? ` — ${etapaDisplay}` : ''}
+                                  </span>
+                                  {cadencia && (
+                                    <span style={{fontSize:'10px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background: cadencia === 'Bienal' ? '#fff3cd' : '#f3e8ff',color: cadencia === 'Bienal' ? '#7a5a00' : '#5b21b6',border: cadencia === 'Bienal' ? '1px solid #ffd97d' : '1px solid #c4b5fd',letterSpacing:'0.04em',textTransform:'uppercase'}}>
+                                      {cadencia}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="ccc-desc">{currentChart.desc}</p>
+                                <div className="ccc-year-chips">
+                                  {yearsWithData.map((d: Record<string,any>) => (
+                                    <span key={d.ano} className="ccc-year-chip">{d.ano}</span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="ccc-stat-box">
+                                <strong className="ccc-val" style={{ color: accentColor }}>
+                                  {bigVal != null ? (typeof bigVal === 'number' ? Number(bigVal).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : bigVal) : '—'}
+                                </strong>
+                                <span className="ccc-val-year">{bigAno}</span>
+                                {delta != null && (
+                                  <span className={`ccc-delta ${delta > 0 ? 'up' : delta < 0 ? 'down' : 'neutral'}`}>
+                                    {delta > 0 ? '↑' : delta < 0 ? '↓' : '='} {Math.abs(delta).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} vs {deltaYear}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {/* Etapa bar */}
                             {availableEtapas.length > 1 && (
-                              <div style={{display:'flex',flexWrap:'wrap',gap:'6px',marginBottom:'16px',alignItems:'center'}}>
-                                <span style={{fontSize:'11px',fontWeight:600,color:'#888',marginRight:'4px',textTransform:'uppercase',letterSpacing:'0.04em'}}>Etapa:</span>
+                              <div className="ccc-etapa-bar">
+                                <span className="ccc-etapa-bar-label">Etapa</span>
                                 {availableEtapas.map((l: any) => {
                                   const isActive = activeEtapa === l.etapa;
                                   return (
-                                    <button key={l.etapa} onClick={() => setChartEtapa(l.etapa)} style={{
-                                      padding:'4px 12px',borderRadius:'20px',fontSize:'12px',fontWeight:600,
-                                      cursor:'pointer',transition:'all .15s',border:'none',
-                                      background: isActive ? l.color : '#f0f4f8',
-                                      color: isActive ? '#fff' : '#555',
-                                      boxShadow: isActive ? `0 2px 8px ${l.color}55` : 'none',
-                                    }}>
+                                    <button
+                                      key={l.etapa}
+                                      onClick={() => setChartEtapa(l.etapa)}
+                                      className={`ccc-etapa-btn${isActive ? ' active' : ''}`}
+                                      style={isActive ? { background: l.color } : {}}
+                                    >
                                       {l.etapaLabel || l.name}
                                     </button>
                                   );
                                 })}
                               </div>
                             )}
-                            <div className="chart-header">
-                              <div>
-                                <h4 style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                                  <span>{currentChart.icon} {currentChart.label}{hasEtapas && etapaDisplay && activeEtapa !== 'total' ? ` — ${etapaDisplay}` : ''}</span>
-                                  {cadencia && (
-                                    <span style={{fontSize:'10px',fontWeight:700,padding:'2px 8px',borderRadius:'20px',background: cadencia === 'Bienal' ? '#fff3cd' : '#f3e8ff',color: cadencia === 'Bienal' ? '#7a5a00' : '#5b21b6',border: cadencia === 'Bienal' ? '1px solid #ffd97d' : '1px solid #c4b5fd',letterSpacing:'0.04em',textTransform:'uppercase'}}>
-                                      {cadencia}
-                                    </span>
-                                  )}
-                                </h4>
-                                <p>{currentChart.desc}</p>
-                                <div className="chip-row">
-                                  {yearsWithData.map((d: Record<string,any>) => (
-                                    <span key={d.ano} className="mini-chip">{d.ano}</span>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="big-stat">
-                                <strong>{bigVal != null ? (typeof bigVal === 'number' ? Number(bigVal).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : bigVal) : '—'}</strong>
-                                <span>{bigAno}</span>
-                              </div>
-                            </div>
-                            <div style={{ height: '280px' }}>
+                            {/* Chart area */}
+                            <div className="ccc-chart-wrap">
                               <EvolutionChart data={currentChart.data} lines={filteredLines} referenceLines={refLines} large />
                             </div>
-                            <div className="chart-note">
-                              📝 Dados INEP/MEC · código {selectedInep}{cadencia ? ` · publicação ${cadencia.toLowerCase()}` : ''}
+                            {/* Footer */}
+                            <div className="ccc-footer">
+                              <span>Dados INEP/MEC · {selectedInep}</span>
+                              {cadencia && <span className="ccc-footer-cadencia">publicação {cadencia.toLowerCase()}</span>}
                             </div>
                           </div>
                         );
