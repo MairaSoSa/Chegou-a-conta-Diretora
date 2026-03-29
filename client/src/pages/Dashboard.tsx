@@ -5348,6 +5348,76 @@ out center tags 100;`;
                     </div>
                   )}
 
+                  {/* ── ALERTA: UEx COM PENDÊNCIAS (tem UEx mas tem problemas) ── */}
+                  {pddeData?.ok && pddeData?.uex && (() => {
+                    const mandatoFimStr = cadastralData?.itens?.[0]?.data_fim_mandato || pddeData?.situacao_uex?.mandato_fim || null;
+                    const fimDate = mandatoFimStr ? (() => {
+                      const [dd, mm, aaaa] = mandatoFimStr.split('/');
+                      return aaaa ? new Date(+aaaa, +mm - 1, +dd) : null;
+                    })() : null;
+                    const mandatoVencido =
+                      cadastralData?.itens?.[0]?.mandato_dirigente === 'VENCIDO' ||
+                      (fimDate ? fimDate < new Date() : false);
+                    const pendentes: Array<{ano_exercicio: number; programa: string}> =
+                      pddeData?.situacao_uex?.programas_pendentes || [];
+                    const pcInadimplente = prestacaoContaData?.itens?.some(
+                      (it: any) => it.situacao_pc_uex?.toLowerCase().includes('inadimp') ||
+                                   it.situacao_pc_eex?.toLowerCase().includes('inadimp')
+                    );
+
+                    if (!mandatoVencido && pendentes.length === 0 && !pcInadimplente) return null;
+
+                    return (
+                      <div style={{
+                        background:'#fff7ed',border:'1.5px solid #fed7aa',borderRadius:'10px',
+                        padding:'14px 16px',marginBottom:'16px',
+                        display:'flex',flexDirection:'column',gap:'8px'
+                      }}>
+                        <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                          <AlertTriangle className="w-4 h-4" style={{color:'#c2410c',flexShrink:0}} />
+                          <span style={{fontSize:'13px',fontWeight:800,color:'#7c2d12'}}>
+                            UEx com pendências — repasses podem estar bloqueados
+                          </span>
+                          <span style={{fontSize:'10px',fontWeight:700,color:'#c2410c',background:'#fed7aa',borderRadius:'9999px',padding:'1px 8px',marginLeft:'auto',whiteSpace:'nowrap'}}>
+                            ⚠ Ativo
+                          </span>
+                        </div>
+
+                        {mandatoVencido && (
+                          <div style={{display:'flex',alignItems:'flex-start',gap:'8px',background:'#ffedd5',borderRadius:'6px',padding:'8px 10px'}}>
+                            <span style={{fontSize:'11px',fontWeight:700,color:'#7c2d12',background:'#fed7aa',borderRadius:'4px',padding:'1px 6px',whiteSpace:'nowrap',flexShrink:0}}>Dirigente</span>
+                            <span style={{fontSize:'12px',color:'#7c2d12',fontWeight:500}}>
+                              <strong>UEx sem dirigente ativo</strong> — mandato encerrado em {mandatoFimStr}.
+                              A UEx precisa eleger novo presidente e atualizar o cadastro no FNDE.
+                            </span>
+                          </div>
+                        )}
+
+                        {pendentes.length > 0 && (
+                          <div style={{display:'flex',alignItems:'flex-start',gap:'8px',background:'#ffedd5',borderRadius:'6px',padding:'8px 10px'}}>
+                            <span style={{fontSize:'11px',fontWeight:700,color:'#7c2d12',background:'#fed7aa',borderRadius:'4px',padding:'1px 6px',whiteSpace:'nowrap',flexShrink:0}}>PC</span>
+                            <span style={{fontSize:'12px',color:'#7c2d12',fontWeight:500}}>
+                              <strong>Prestação de Contas pendente</strong> —{' '}
+                              {pendentes.map((p, i) => (
+                                <span key={i}>{p.programa} ({p.ano_exercicio}){i < pendentes.length - 1 ? ', ' : ''}</span>
+                              ))}.
+                              {' '}Se não regularizar até 31/outubro, o FNDE não repassará recursos.
+                            </span>
+                          </div>
+                        )}
+
+                        {pcInadimplente && pendentes.length === 0 && (
+                          <div style={{display:'flex',alignItems:'flex-start',gap:'8px',background:'#ffedd5',borderRadius:'6px',padding:'8px 10px'}}>
+                            <span style={{fontSize:'11px',fontWeight:700,color:'#7c2d12',background:'#fed7aa',borderRadius:'4px',padding:'1px 6px',whiteSpace:'nowrap',flexShrink:0}}>PC</span>
+                            <span style={{fontSize:'12px',color:'#7c2d12',fontWeight:500}}>
+                              <strong>Inadimplência registrada no FNDE</strong> — verifique a situação da PC para regularizar.
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   {/* ── GRUPO: QUEM GERENCIA ── */}
                   {(pddeData?.ok || cadastralData?.ok) && (
                     <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'4px'}}>
