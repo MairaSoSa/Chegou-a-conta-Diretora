@@ -5393,13 +5393,11 @@ out center tags 100;`;
                       : pddeExecFinData?.ok
                         ? pddeExecFinData.repasses.reduce((s: number, r: any) => s + (r.vl_pago_total || 0), 0)
                         : null;
-                    const totalSaldo = pddeUexSaldoData?.ok
+                    // Saldo Atual: só mostramos se vier do dado em tempo real (UEX — saldo bancário live).
+                    // pddeSaldosData e pddeData.contas mostram saldo acumulado de repasses, não o saldo atual da conta.
+                    const totalSaldo = (pddeUexSaldoData?.ok && pddeUexSaldoData.total_saldo_geral > 0)
                       ? pddeUexSaldoData.total_saldo_geral
-                      : pddeSaldosData?.ok
-                        ? pddeSaldosData.saldos.reduce((s: number, r: any) => s + (r.saldo_acumulado || 0), 0)
-                        : pddeData?.contas
-                          ? pddeData.contas.reduce((s: number, c: any) => s + (c.saldo || 0), 0)
-                          : null;
+                      : null;
                     const hasAny = totalRepasses != null || totalSaldo != null;
                     if (!hasAny) return null;
                     return (
@@ -5412,25 +5410,39 @@ out center tags 100;`;
                           </div>
                         )}
                         {totalSaldo != null && (
-                          <div className="soft-card" style={{padding:'16px',borderLeft:`3px solid ${totalSaldo > 0 ? '#2d5a88' : '#b74f42'}`,display:'flex',flexDirection:'column',gap:'4px'}}>
-                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:totalSaldo > 0 ? '#2d5a88' : '#b74f42'}}>Saldo Atual</span>
-                            <span style={{fontSize:'20px',fontWeight:800,color:totalSaldo > 0 ? '#2d5a88' : '#b74f42',fontVariantNumeric:'tabular-nums'}}>{brl(totalSaldo)}</span>
-                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>
-                              {pddeUexSaldoData?.ok
-                                ? `posição ${pddeUexSaldoData.mes}`
-                                : pddeSaldosData?.ok
-                                  ? `contas PDDE ${pddeSaldosData.saldos[0]?.an_exercicio || pddeAno}`
-                                  : `contas bancárias ${pddeData?.ano || pddeAno}`}
-                            </span>
+                          <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #2d5a88',display:'flex',flexDirection:'column',gap:'4px'}}>
+                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#2d5a88'}}>Saldo Atual</span>
+                            <span style={{fontSize:'20px',fontWeight:800,color:'#2d5a88',fontVariantNumeric:'tabular-nums'}}>{brl(totalSaldo)}</span>
+                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>posição {pddeUexSaldoData.mes} — saldo bancário</span>
                           </div>
                         )}
-                        {pddeData?.ok && pddeData.matriculas_total != null && (
-                          <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #9b6a16',display:'flex',flexDirection:'column',gap:'4px'}}>
-                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#9b6a16'}}>Alunos (PDDE)</span>
-                            <span style={{fontSize:'20px',fontWeight:800,color:'#9b6a16',fontVariantNumeric:'tabular-nums'}}>{Number(pddeData.matriculas_total).toLocaleString('pt-BR')}</span>
-                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>base de cálculo {pddeData.ano}</span>
-                          </div>
-                        )}
+                        {pddeData?.ok && pddeData.matriculas_total != null && (() => {
+                          const pddeAlunos = Number(pddeData.matriculas_total);
+                          const censoAlunos = censoLatest ? (Number((censoLatest as any).qt_mat_bas) || null) : null;
+                          const diff = censoAlunos != null ? pddeAlunos - censoAlunos : null;
+                          return (
+                            <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #9b6a16',display:'flex',flexDirection:'column',gap:'4px'}}>
+                              <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#9b6a16'}}>Alunos (PDDE)</span>
+                              <span style={{fontSize:'20px',fontWeight:800,color:'#9b6a16',fontVariantNumeric:'tabular-nums'}}>{pddeAlunos.toLocaleString('pt-BR')}</span>
+                              <span style={{fontSize:'11px',color:'var(--m-muted)'}}>base de cálculo {pddeData.ano}</span>
+                              {censoAlunos != null && (
+                                <div style={{marginTop:'6px',paddingTop:'6px',borderTop:'1px solid #f0e8d8',display:'flex',flexDirection:'column',gap:'2px'}}>
+                                  <span style={{fontSize:'10px',color:'var(--m-muted)'}}>
+                                    Censo INEP: <strong style={{color:'#555'}}>{censoAlunos.toLocaleString('pt-BR')}</strong> alunos
+                                  </span>
+                                  {diff !== null && diff !== 0 && (
+                                    <span style={{fontSize:'10px',color: Math.abs(diff) > 20 ? '#b74f42' : '#9b6a16'}}>
+                                      {diff > 0 ? `+${diff}` : diff} em relação ao Censo{Math.abs(diff) > 20 ? ' — verifique' : ''}
+                                    </span>
+                                  )}
+                                  {diff === 0 && (
+                                    <span style={{fontSize:'10px',color:'#2f7a58'}}>coincide com o Censo</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })()}
