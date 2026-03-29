@@ -4566,7 +4566,9 @@ out center tags 100;`;
                   )}
                   {/* ── PERFIL EM PIZZA — CRUZAMENTOS DO CENSO ── */}
                   {evolucaoData && (evolucaoData.anos_disponiveis as number[]).length > 0 && (() => {
-                    const anosDisp = [...(evolucaoData.anos_disponiveis as number[])].sort((a,b)=>b-a);
+                    const anosDisp = [...(evolucaoData.anos_disponiveis as number[])]
+                      .filter(a => a >= 2020)
+                      .sort((a,b)=>b-a);
                     const anoEfetivo = anosDisp.includes(pieAno) ? pieAno : anosDisp[0];
                     const cd = (evolucaoData.censo_por_ano as Record<number,any>)[anoEfetivo] ?? {};
 
@@ -4637,6 +4639,35 @@ out center tags 100;`;
                     ].filter(x => x.v > 0);
                     const integralTotal = integralRaw.reduce((s,x)=>s+x.v,0);
                     const integralData = integralRaw.map(x=>({...x, pct:pct(x.v,integralTotal)}));
+
+                    // ── 7. TEMPO INTEGRAL POR ETAPA ──
+                    const intEtapasRaw = [
+                      { name:'Ed. Infantil', v: cd.qt_mat_inf_int ?? 0, cor:'#b5d7f5' },
+                      { name:'Fund. Anos Iniciais', v: cd.qt_mat_fund_ai_int ?? 0, cor:'#4d9de0' },
+                      { name:'Fund. Anos Finais', v: cd.qt_mat_fund_af_int ?? 0, cor:'#2d5a88' },
+                      { name:'Ensino Médio', v: cd.qt_mat_med_int ?? 0, cor:'#1e3d5c' },
+                    ].filter(x => x.v > 0);
+                    const intEtapasTotal = intEtapasRaw.reduce((s,x)=>s+x.v,0);
+                    const intEtapasData = intEtapasRaw.map(x=>({...x, pct:pct(x.v,intEtapasTotal)}));
+
+                    // ── 8. SALAS CLIMATIZADAS ──
+                    const qtSalas = cd.qt_salas_utilizadas ?? 0;
+                    const qtClim = cd.qt_salas_utiliza_climatizadas ?? 0;
+                    const salaClimRaw = [
+                      { name:'Climatizadas', v: qtClim, cor:'#4d9de0' },
+                      { name:'Não climatizadas', v: qtSalas - qtClim > 0 ? qtSalas - qtClim : 0, cor:'#e8dfc8' },
+                    ].filter(x => x.v > 0);
+                    const salaClimTotal = salaClimRaw.reduce((s,x)=>s+x.v,0);
+                    const salaClimData = salaClimRaw.map(x=>({...x, pct:pct(x.v,salaClimTotal)}));
+
+                    // ── 9. SALAS ACESSÍVEIS ──
+                    const qtAcess = cd.qt_salas_utilizadas_acessiveis ?? 0;
+                    const salaAcessRaw = [
+                      { name:'Acessíveis', v: qtAcess, cor:'#2f7a58' },
+                      { name:'Não acessíveis', v: qtSalas - qtAcess > 0 ? qtSalas - qtAcess : 0, cor:'#e8dfc8' },
+                    ].filter(x => x.v > 0);
+                    const salaAcessTotal = salaAcessRaw.reduce((s,x)=>s+x.v,0);
+                    const salaAcessData = salaAcessRaw.map(x=>({...x, pct:pct(x.v,salaAcessTotal)}));
 
                     type PieSlice = { name:string; v:number; cor:string; pct:number };
 
@@ -4713,6 +4744,12 @@ out center tags 100;`;
                           <PizzaCard title="Turno de atendimento" data={turnoData} />
                           <PizzaCard title="Tempo integral vs parcial" data={integralData}
                             noDataMsg="Escola sem dados de tempo integral" />
+                          <PizzaCard title="Tempo integral por etapa" data={intEtapasData}
+                            noDataMsg="Escola sem alunos em tempo integral" />
+                          <PizzaCard title="Salas de aula — climatização" data={salaClimData}
+                            noDataMsg="Sem dados de salas para este ano" />
+                          <PizzaCard title="Salas de aula — acessibilidade" data={salaAcessData}
+                            noDataMsg="Sem dados de salas para este ano" />
                         </div>
                       </div>
                     );
