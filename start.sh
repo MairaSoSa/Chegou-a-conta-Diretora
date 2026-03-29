@@ -2,7 +2,7 @@
 set -e
 
 DB_PATH="${SQLITE_DB_PATH:-/data/dev.db}"
-DOWNLOAD_URL="${SQLITE_DB_DOWNLOAD_URL:-https://drive.google.com/file/d/1-3FH4MIBS4b2LKD4ib1WVWnRKQvgZL4s/view?usp=sharing}"
+DOWNLOAD_URL="${SQLITE_DB_DOWNLOAD_URL:-https://drive.google.com/file/d/120kC7oUyZe9WsjGbinMDrAIW2ozcwc99/view?usp=sharing}"
 PORT="${PORT:-5000}"
 FORCE_DOWNLOAD="${FORCE_DOWNLOAD:-false}"
 
