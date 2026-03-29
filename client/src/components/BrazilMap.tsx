@@ -230,7 +230,7 @@ export function BrazilMap({ onStateClick, onStateHover, ufStats, selectedUf, cli
             color: "#222",
             pointerEvents: "none",
             boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-            zIndex: 1000,
+            zIndex: 9999,
             transform: "translate(-50%, -100%)",
             minWidth: 160,
           }}
