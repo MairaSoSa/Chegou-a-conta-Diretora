@@ -1061,7 +1061,7 @@ export function getMediasNacionais(ano?: number) {
   const cached = getStatsCache(cacheKey);
   if (cached) return cached;
 
-  const tiposParaMedias = ['ideb', 'taxas_rendimento', 'tdi', 'atu', 'had', 'afd', 'dsu', 'ird', 'icg', 'inse'];
+  const tiposParaMedias = ['ideb', 'taxas_rendimento', 'tdi', 'atu', 'had', 'afd', 'dsu', 'ird', 'icg', 'inse', 'ied', 'saeb'];
   const result: Record<string, any> = {};
 
   for (const tipo of tiposParaMedias) {

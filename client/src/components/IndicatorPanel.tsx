@@ -322,14 +322,14 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
   if (indicadores.saeb) {
     const d = indicadores.saeb;
     const vals = [
-      { key: "saeb_mat_fund_ai", label: "Matemática AI" },
-      { key: "saeb_port_fund_ai", label: "Língua Port. AI" },
-      { key: "saeb_mat_fund_af", label: "Matemática AF" },
-      { key: "saeb_port_fund_af", label: "Língua Port. AF" },
-      { key: "saeb_mat_med", label: "Matemática Médio" },
-      { key: "saeb_port_med", label: "Língua Port. Médio" },
+      { key: "nota_mt_ai", label: "Matemática AI", ref: "~230 (AI)" },
+      { key: "nota_lp_ai", label: "Língua Port. AI", ref: "~230 (AI)" },
+      { key: "nota_mt_af", label: "Matemática AF", ref: "~260 (AF)" },
+      { key: "nota_lp_af", label: "Língua Port. AF", ref: "~260 (AF)" },
+      { key: "nota_mt_em", label: "Matemática Médio", ref: "~275 (EM)" },
+      { key: "nota_lp_em", label: "Língua Port. Médio", ref: "~275 (EM)" },
     ];
-    for (const { key, label } of vals) {
+    for (const { key, label, ref } of vals) {
       const v = d[key];
       if (v != null && Number(v) > 0) {
         result.push({
@@ -341,7 +341,7 @@ function buildIndicators(indicadores: Record<string, any>, mediasNacionais: any)
           raw: Number(v),
           fieldKey: key,
           status: "info",
-          explicacao: "Proficiência no SAEB. Média nacional para o ensino fundamental: ~230 (AI) e ~260 (AF).",
+          explicacao: `Proficiência no SAEB. Referência nacional: ${ref}.`,
         });
       }
     }
@@ -395,6 +395,15 @@ export function IndicatorPanel({
         { label: comparativo?.uf?.sg || "UF", value: ufVal, diff: ufVal != null ? school - ufVal : null },
         { label: "Brasil", value: brVal, diff: brVal != null ? school - brVal : null },
       ];
+    }
+
+    // IED: campo derivado nivel_5 + nivel_6 — calcular a partir das médias individuais
+    if (ind.tipoKey === "ied") {
+      const mn5 = getNested(mediasNacionais, "ied.nivel_5");
+      const mn6 = getNested(mediasNacionais, "ied.nivel_6");
+      if (mn5 == null && mn6 == null) return [] as Array<{label:string; value:number|null; diff:number|null}>;
+      const brVal = (mn5 ?? 0) + (mn6 ?? 0);
+      return [{ label: "Brasil", value: Number(brVal.toFixed(1)), diff: school - brVal }];
     }
 
     // Demais cards: pelo menos Brasil (média nacional do mesmo campo)
