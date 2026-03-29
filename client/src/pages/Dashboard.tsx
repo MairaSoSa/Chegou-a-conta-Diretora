@@ -5664,43 +5664,85 @@ out center tags 100;`;
                     </div>
                   )}
 
-                  {/* ── 4b. DESTINAÇÕES (CARDS) ── */}
-                  {pddeData?.ok && pddeData.destinacoes && pddeData.destinacoes.length > 0 && (
-                    <div style={{marginBottom:'16px'}}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <DollarSign className="w-3.5 h-3.5" /> Destinações por tipo — {pddeData.ano}
-                      </p>
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',gap:'10px'}}>
-                        {pddeData.destinacoes.map((d: any, i: number) => {
-                          const devido = d.final_devido_total ?? ((d.devido_custeio || 0) + (d.devido_capital || 0));
-                          const pago = d.pago_total ?? ((d.pago_custeio || 0) + (d.pago_capital || 0));
-                          const pct = devido > 0 ? Math.min(100, Math.round((pago / devido) * 100)) : null;
-                          return (
-                            <div key={i} className="soft-card" style={{padding:'14px',borderLeft:'3px solid #2f7a58'}}>
-                              <p style={{fontWeight:700,fontSize:'12px',textTransform:'uppercase',letterSpacing:'0.04em',color:'#2f7a58',marginBottom:'10px'}}>{d.destinacao || 'Destinação'}</p>
-                              <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'4px'}}>
-                                <span style={{fontSize:'11px',color:'var(--m-muted)'}}>Devido</span>
-                                <span style={{fontSize:'12px',fontWeight:600,fontFamily:'monospace'}}>{devido != null ? brl(devido) : '—'}</span>
-                              </div>
-                              <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'8px'}}>
-                                <span style={{fontSize:'11px',color:'var(--m-muted)'}}>Pago</span>
-                                <span style={{fontSize:'14px',fontWeight:800,color:pago > 0 ? '#16a34a' : 'var(--m-muted)',fontFamily:'monospace'}}>{pago != null ? brl(pago) : '—'}</span>
-                              </div>
-                              {pct !== null && (
-                                <>
-                                  <div style={{height:'5px',borderRadius:'3px',background:'#e8f5ee',overflow:'hidden'}}>
-                                    <div style={{height:'100%',width:`${pct}%`,background: pct >= 100 ? '#16a34a' : '#2f7a58',borderRadius:'3px',transition:'width .4s'}} />
-                                  </div>
-                                  <p style={{fontSize:'10px',color:'var(--m-muted)',marginTop:'4px',textAlign:'right'}}>{pct}% executado</p>
-                                </>
-                              )}
-                              {d.data_ordem_pgto && <p style={{fontSize:'10px',color:'var(--m-muted)',marginTop:'4px'}}>Pgto: {d.data_ordem_pgto}</p>}
-                            </div>
-                          );
-                        })}
+                  {/* ── 4b. DESTINAÇÕES (TABELA) ── */}
+                  {pddeData?.ok && pddeData.destinacoes && pddeData.destinacoes.length > 0 && (() => {
+                    const rows: any[] = pddeData.destinacoes;
+                    // Identifica linhas de subtotal/total
+                    const isAgg = (nome: string) => {
+                      const n = (nome || '').trim().toLowerCase();
+                      return n === 'subtotal' || n === 'total geral';
+                    };
+                    return (
+                      <div style={{marginBottom:'16px'}}>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                          <DollarSign className="w-3.5 h-3.5" /> Destinações e pagamentos — {pddeData.ano}
+                        </p>
+                        <div className="table-card" style={{overflowX:'auto'}}>
+                          <table className="w-full text-sm" style={{borderCollapse:'collapse'}}>
+                            <thead>
+                              <tr style={{borderBottom:'2px solid #e8ddd2',background:'#f9f6f0'}}>
+                                <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground" style={{minWidth:'200px'}}>Destinação / Programa</th>
+                                <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Devido Total</th>
+                                <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Custeio</th>
+                                <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Capital</th>
+                                <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Total</th>
+                                <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Data Pgto</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {rows.map((d: any, i: number) => {
+                                const nome = d.destinacao || '';
+                                const agg = isAgg(nome);
+                                const isTotal = nome.trim().toLowerCase() === 'total geral';
+                                const devido = d.final_devido_total ?? ((d.devido_custeio || 0) + (d.devido_capital || 0));
+                                const pagoCusteio = d.pago_custeio ?? 0;
+                                const pagoCapital = d.pago_capital ?? 0;
+                                const pagoTotal = d.pago_total ?? (pagoCusteio + pagoCapital);
+                                const pendente = devido > 0 && pagoTotal < devido;
+                                if (agg) {
+                                  return (
+                                    <tr key={i} style={{
+                                      background: isTotal ? '#eef6f1' : '#f5f2ec',
+                                      borderTop: `${isTotal ? 2 : 1}px solid #d4c9b8`,
+                                      borderBottom: isTotal ? '2px solid #b8d4c4' : '1px solid #e8e0d4'
+                                    }}>
+                                      <td className="py-2 px-3 text-xs font-bold" style={{color: isTotal ? '#2f7a58' : '#6b5e4e',textTransform:'uppercase',letterSpacing:'0.04em'}}>
+                                        {isTotal ? 'Total Geral' : 'Subtotal'}
+                                      </td>
+                                      <td className="py-2 px-3 text-xs text-right font-mono font-semibold" style={{color:'#555'}}>{devido != null ? brl(devido) : '—'}</td>
+                                      <td className="py-2 px-3 text-xs text-right font-mono" style={{color:'#555'}}>{pagoCusteio != null ? brl(pagoCusteio) : '—'}</td>
+                                      <td className="py-2 px-3 text-xs text-right font-mono" style={{color:'#555'}}>{pagoCapital != null ? brl(pagoCapital) : '—'}</td>
+                                      <td className="py-2 px-3 text-xs text-right font-mono font-bold" style={{color: isTotal ? '#2f7a58' : '#555'}}>{pagoTotal != null ? brl(pagoTotal) : '—'}</td>
+                                      <td className="py-2 px-3 text-xs text-right text-muted-foreground">—</td>
+                                    </tr>
+                                  );
+                                }
+                                // Linha normal — extrair programa e ação
+                                const partes = nome.split(' / ');
+                                const programa = partes[0] || nome;
+                                const acao = partes.slice(1).join(' / ') || null;
+                                return (
+                                  <tr key={i} style={{borderBottom:'1px solid #f0ece4'}} className="hover:bg-amber-50/30">
+                                    <td className="py-2 px-3 text-xs">
+                                      <span style={{fontWeight:600,color:'#3a3028',display:'block'}}>{acao || programa}</span>
+                                      {acao && <span style={{fontSize:'10px',color:'#9b6a16',fontWeight:600,display:'block',marginTop:'1px'}}>{programa}</span>}
+                                    </td>
+                                    <td className="py-2 px-3 text-xs text-right font-mono" style={{color: pendente ? '#b74f42' : '#888'}}>{devido != null ? brl(devido) : '—'}</td>
+                                    <td className="py-2 px-3 text-xs text-right font-mono text-muted-foreground">{brl(pagoCusteio)}</td>
+                                    <td className="py-2 px-3 text-xs text-right font-mono text-muted-foreground">{brl(pagoCapital)}</td>
+                                    <td className="py-2 px-3 text-xs text-right font-mono font-bold" style={{color: pagoTotal > 0 ? '#16a34a' : 'var(--m-muted)'}}>{brl(pagoTotal)}</td>
+                                    <td className="py-2 px-3 text-xs text-right" style={{color:'#888',whiteSpace:'nowrap'}}>
+                                      {d.data_ordem_pgto && d.data_ordem_pgto !== '-' ? d.data_ordem_pgto : <span className="text-muted-foreground">—</span>}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* ── 4c. SALDO UEx POR TIPO (consultasaldoentidade) ── */}
                   {pddeUexSaldoData?.ok && pddeUexSaldoData.saldos && pddeUexSaldoData.saldos.length > 0 && (
