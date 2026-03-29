@@ -5922,6 +5922,7 @@ out center tags 100;`;
                                 const destsProg = atenItens.filter((a: any) =>
                                   (a.programa || '').toLowerCase() === prog.toLowerCase()
                                 );
+                                const totalPago = destsProg.reduce((s: number, d: any) => s + (d.valor_total ?? 0), 0);
                                 const bgHeader = isOkUex && isOkEex && !temSusp ? '#e8f5ee' : '#fdf3e7';
                                 const borderColor = isOkUex && isOkEex && !temSusp ? '#b8dfc8' : '#f0d8b8';
                                 const txtHeader = isOkUex && isOkEex && !temSusp ? '#1a5c38' : '#7a4510';
@@ -5940,9 +5941,9 @@ out center tags 100;`;
                                             {Number(qtdAlunos).toLocaleString('pt-BR')} alunos
                                           </span>
                                         )}
-                                        {item.valor_previsto && (
-                                          <span style={{fontSize:'11px',color:'#555',fontFamily:'monospace',fontWeight:600}}>
-                                            R$ {item.valor_previsto}
+                                        {totalPago > 0 && (
+                                          <span style={{fontSize:'11px',color:'#16a34a',fontFamily:'monospace',fontWeight:700}}>
+                                            {totalPago.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                                           </span>
                                         )}
                                       </div>
