@@ -240,6 +240,7 @@ export default function Dashboard() {
   const { data: microregiaoData } = useEscolaMicroregiao(selectedInep || "");
   const { data: diagnosticoData } = useEscolaDiagnostico(selectedInep || "");
   const [pddeAno, setPddeAno] = useState<number>(new Date().getFullYear());
+  const [pieAno, setPieAno] = useState<number>(new Date().getFullYear() - 1);
   const [showEquipamentos, setShowEquipamentos] = useState(false);
   const [showSuporteInstitucional, setShowSuporteInstitucional] = useState(false);
   const [suporteTab, setSuporteTab] = useState<'contatos'|'cecampe'|'sistemas'|'conselhos'>('contatos');
@@ -4549,6 +4550,162 @@ out center tags 100;`;
                       </div>
                     </div>
                   )}
+                  {/* ── PERFIL EM PIZZA — CRUZAMENTOS DO CENSO ── */}
+                  {evolucaoData && (evolucaoData.anos_disponiveis as number[]).length > 0 && (() => {
+                    const anosDisp = [...(evolucaoData.anos_disponiveis as number[])].sort((a,b)=>b-a);
+                    const anoEfetivo = anosDisp.includes(pieAno) ? pieAno : anosDisp[0];
+                    const cd = (evolucaoData.censo_por_ano as Record<number,any>)[anoEfetivo] ?? {};
+
+                    const pct = (v: number, total: number) => total > 0 ? +((v/total)*100).toFixed(1) : 0;
+
+                    // ── 1. ETAPAS ──
+                    const etapasRaw = [
+                      { name:'Ed. Infantil — Creche', v: cd.qt_mat_inf_cre ?? 0, cor:'#7eb8f7' },
+                      { name:'Ed. Infantil — Pré-escola', v: cd.qt_mat_inf_pre ?? 0, cor:'#4d9de0' },
+                      { name:'Fund. — Anos Iniciais', v: cd.qt_mat_fund_ai ?? 0, cor:'#3a7abf' },
+                      { name:'Fund. — Anos Finais', v: cd.qt_mat_fund_af ?? 0, cor:'#2d5a88' },
+                      { name:'Ensino Médio', v: cd.qt_mat_med ?? 0, cor:'#1e3d5c' },
+                      { name:'EJA', v: cd.qt_mat_eja ?? 0, cor:'#e07b39' },
+                      { name:'Ed. Profissional', v: cd.qt_mat_prof ?? 0, cor:'#c25e1b' },
+                      { name:'Ed. Especial', v: cd.qt_mat_esp ?? 0, cor:'#9b6a16' },
+                    ].filter(x => x.v > 0);
+                    const etapasTotal = etapasRaw.reduce((s,x)=>s+x.v, 0);
+                    const etapasData = etapasRaw.map(x=>({...x, pct:pct(x.v,etapasTotal)}));
+
+                    // ── 2. COR/RAÇA (excluindo não declarada) ──
+                    const racaRaw = [
+                      { name:'Branca', v: cd.qt_mat_bas_branca ?? 0, cor:'#f5c842' },
+                      { name:'Parda', v: cd.qt_mat_bas_parda ?? 0, cor:'#c0855a' },
+                      { name:'Preta', v: cd.qt_mat_bas_preta ?? 0, cor:'#6b3a2a' },
+                      { name:'Amarela', v: cd.qt_mat_bas_amarela ?? 0, cor:'#e8a030' },
+                      { name:'Indígena', v: cd.qt_mat_bas_indigena ?? 0, cor:'#4a7c59' },
+                    ].filter(x => x.v > 0);
+                    const racaTotal = racaRaw.reduce((s,x)=>s+x.v, 0);
+                    const racaNd = cd.qt_mat_bas_nd ?? 0;
+                    const racaData = racaRaw.map(x=>({...x, pct:pct(x.v,racaTotal)}));
+
+                    // ── 3. SEXO ──
+                    const sexoRaw = [
+                      { name:'Feminino', v: cd.qt_mat_bas_fem ?? 0, cor:'#e07896' },
+                      { name:'Masculino', v: cd.qt_mat_bas_masc ?? 0, cor:'#4a8ec2' },
+                    ].filter(x => x.v > 0);
+                    const sexoTotal = sexoRaw.reduce((s,x)=>s+x.v, 0);
+                    const sexoData = sexoRaw.map(x=>({...x, pct:pct(x.v,sexoTotal)}));
+
+                    // ── 4. FAIXA ETÁRIA ──
+                    const etariaRaw = [
+                      { name:'0 a 3 anos', v: cd.qt_mat_bas_0_3 ?? 0, cor:'#b5d7f5' },
+                      { name:'4 a 5 anos', v: cd.qt_mat_bas_4_5 ?? 0, cor:'#7eb8f7' },
+                      { name:'6 a 10 anos', v: cd.qt_mat_bas_6_10 ?? 0, cor:'#4d9de0' },
+                      { name:'11 a 14 anos', v: cd.qt_mat_bas_11_14 ?? 0, cor:'#2d70c0' },
+                      { name:'15 a 17 anos', v: cd.qt_mat_bas_15_17 ?? 0, cor:'#1a4a8a' },
+                      { name:'18 anos ou mais', v: cd.qt_mat_bas_18_mais ?? 0, cor:'#0f2f5c' },
+                    ].filter(x => x.v > 0);
+                    const etariaTotal = etariaRaw.reduce((s,x)=>s+x.v, 0);
+                    const etariaData = etariaRaw.map(x=>({...x, pct:pct(x.v,etariaTotal)}));
+
+                    // ── 5. TURNO ──
+                    const turnoRaw = [
+                      { name:'Diurno', v: cd.qt_mat_bas_d ?? 0, cor:'#f5c842' },
+                      { name:'Noturno', v: cd.qt_mat_bas_n ?? 0, cor:'#2d3a70' },
+                      { name:'EAD', v: cd.qt_mat_bas_ead ?? 0, cor:'#7b9a6a' },
+                    ].filter(x => x.v > 0);
+                    const turnoTotal = turnoRaw.reduce((s,x)=>s+x.v, 0);
+                    const turnoData = turnoRaw.map(x=>({...x, pct:pct(x.v,turnoTotal)}));
+
+                    // ── 6. TEMPO INTEGRAL ──
+                    const totalMat = etapasTotal;
+                    const totalInt = (cd.qt_mat_inf_int ?? 0) + (cd.qt_mat_fund_ai_int ?? 0) + (cd.qt_mat_fund_af_int ?? 0) + (cd.qt_mat_med_int ?? 0);
+                    const totalParcial = totalMat - totalInt;
+                    const integralRaw = [
+                      { name:'Tempo integral', v: totalInt, cor:'#2f7a58' },
+                      { name:'Parcial', v: totalParcial > 0 ? totalParcial : 0, cor:'#cce4d8' },
+                    ].filter(x => x.v > 0);
+                    const integralTotal = integralRaw.reduce((s,x)=>s+x.v,0);
+                    const integralData = integralRaw.map(x=>({...x, pct:pct(x.v,integralTotal)}));
+
+                    type PieSlice = { name:string; v:number; cor:string; pct:number };
+
+                    const PizzaCard = ({ title, data, noDataMsg, nota }: { title:string; data:PieSlice[]; noDataMsg?:string; nota?:string }) => {
+                      if (data.length === 0 || data.every(d=>d.v===0)) return (
+                        <div style={{ background:'#faf7f2', border:'1px solid #ede8df', borderRadius:12, padding:'18px 20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:220, gap:8 }}>
+                          <span style={{ fontSize:13, fontWeight:700, color:'#b0a090' }}>{title}</span>
+                          <span style={{ fontSize:12, color:'#c0b0a0' }}>{noDataMsg ?? 'Sem dados para este ano'}</span>
+                        </div>
+                      );
+                      const RADIAN = Math.PI / 180;
+                      const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, pct: p }: any) => {
+                        if (p < 4) return null;
+                        const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
+                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                        return <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={700}>{p}%</text>;
+                      };
+                      return (
+                        <div style={{ background:'white', border:'1px solid #ede8df', borderRadius:12, padding:'16px 18px 14px', display:'flex', flexDirection:'column', gap:10 }}>
+                          <div style={{ fontSize:13, fontWeight:800, color:'#4a3020', letterSpacing:'-0.01em' }}>{title}</div>
+                          <div style={{ display:'flex', gap:12, alignItems:'center', flexWrap:'wrap' }}>
+                            <div style={{ flexShrink:0 }}>
+                              <ResponsiveContainer width={150} height={150}>
+                                <PieChart>
+                                  <Pie data={data} dataKey="v" cx="50%" cy="50%" outerRadius={68} labelLine={false} label={renderLabel}>
+                                    {data.map((entry, i) => <Cell key={i} fill={entry.cor} />)}
+                                  </Pie>
+                                  <Tooltip formatter={(val: any, name: string) => [`${val.toLocaleString('pt-BR')} (${data.find(d=>d.name===name)?.pct}%)`, name]} />
+                                </PieChart>
+                              </ResponsiveContainer>
+                            </div>
+                            <div style={{ flex:1, minWidth:120, display:'flex', flexDirection:'column', gap:5 }}>
+                              {data.map((d,i) => (
+                                <div key={i} style={{ display:'flex', alignItems:'center', gap:7 }}>
+                                  <div style={{ width:10, height:10, borderRadius:2, background:d.cor, flexShrink:0 }} />
+                                  <span style={{ fontSize:12, color:'#5a4030', flex:1, lineHeight:1.3 }}>{d.name}</span>
+                                  <span style={{ fontSize:12, fontWeight:700, color:'#2c3e50', flexShrink:0 }}>{d.pct}%</span>
+                                </div>
+                              ))}
+                              {nota && <div style={{ fontSize:10, color:'#a09080', marginTop:4, lineHeight:1.4 }}>{nota}</div>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    };
+
+                    return (
+                      <div style={{ marginBottom:24 }}>
+                        <div className="cg-section-head" style={{ marginBottom:14 }}>
+                          <span className="cg-section-head-label" style={{ color:'#5d4037' }}>
+                            Perfil dos estudantes — {anoEfetivo}
+                          </span>
+                          <div className="cg-section-head-line" style={{ background:'linear-gradient(to right,#5d403744,transparent)' }} />
+                          <div style={{ display:'flex', gap:4, flexShrink:0 }}>
+                            {anosDisp.map(a => (
+                              <button key={a}
+                                onClick={() => setPieAno(a)}
+                                style={{
+                                  padding:'3px 10px', borderRadius:20, fontSize:12, fontWeight: a===anoEfetivo ? 700 : 500, cursor:'pointer',
+                                  border: `1.5px solid ${a===anoEfetivo ? '#5d4037' : '#ddd6c8'}`,
+                                  background: a===anoEfetivo ? '#5d4037' : 'white',
+                                  color: a===anoEfetivo ? 'white' : '#9a7a5a',
+                                  transition:'all 0.12s',
+                                }}
+                              >{a}</button>
+                            ))}
+                          </div>
+                        </div>
+                        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:14 }}>
+                          <PizzaCard title="Matrículas por etapa de ensino" data={etapasData} />
+                          <PizzaCard title="Cor / Raça dos estudantes" data={racaData}
+                            nota={racaNd > 0 ? `${racaNd.toLocaleString('pt-BR')} não declarados excluídos do cálculo` : undefined} />
+                          <PizzaCard title="Distribuição por sexo" data={sexoData} />
+                          <PizzaCard title="Faixa etária" data={etariaData} />
+                          <PizzaCard title="Turno de atendimento" data={turnoData} />
+                          <PizzaCard title="Tempo integral vs parcial" data={integralData}
+                            noDataMsg="Escola sem dados de tempo integral" />
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   <div className="soft-card" style={{padding:0,overflow:'hidden'}}>
                     <div className="tab-head">
                       <h3 style={{margin:0,fontSize:'18px',letterSpacing:'-0.03em'}}>Evolução do Censo Escolar</h3>
