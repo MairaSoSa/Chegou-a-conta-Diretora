@@ -5200,51 +5200,6 @@ out center tags 100;`;
                     </div>
                   )}
 
-                  {/* ── RESUMO RÁPIDO ── */}
-                  {(() => {
-                    const totalRepasses = atendimentoData?.ok
-                      ? atendimentoData.itens.reduce((s: number, r: any) => s + (r.vl_repasse_custeio || 0) + (r.vl_repasse_capital || 0), 0)
-                      : pddeExecFinData?.ok
-                        ? pddeExecFinData.repasses.reduce((s: number, r: any) => s + (r.vl_pago_total || 0), 0)
-                        : null;
-                    const totalSaldo = pddeUexSaldoData?.ok
-                      ? pddeUexSaldoData.total_saldo_geral
-                      : pddeSaldosData?.ok
-                        ? pddeSaldosData.saldos.reduce((s: number, r: any) => s + (r.saldo_acumulado || 0), 0)
-                        : pddeData?.contas
-                          ? pddeData.contas.reduce((s: number, c: any) => s + (c.saldo || 0), 0)
-                          : null;
-                    const hasAny = totalRepasses != null || totalSaldo != null;
-                    if (!hasAny) return null;
-                    return (
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:'10px',marginBottom:'20px'}}>
-                        {totalRepasses != null && totalRepasses > 0 && (
-                          <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #2f7a58',display:'flex',flexDirection:'column',gap:'4px'}}>
-                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#2f7a58'}}>Total Recebido</span>
-                            <span style={{fontSize:'20px',fontWeight:800,color:'#2f7a58',fontVariantNumeric:'tabular-nums'}}>{brl(totalRepasses)}</span>
-                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>repasses {atendimentoData?.itens?.[0]?.ano || pddeAno}</span>
-                          </div>
-                        )}
-                        {totalSaldo != null && (
-                          <div className="soft-card" style={{padding:'16px',borderLeft:`3px solid ${totalSaldo > 0 ? '#2d5a88' : '#b74f42'}`,display:'flex',flexDirection:'column',gap:'4px'}}>
-                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:totalSaldo > 0 ? '#2d5a88' : '#b74f42'}}>Saldo Atual</span>
-                            <span style={{fontSize:'20px',fontWeight:800,color:totalSaldo > 0 ? '#2d5a88' : '#b74f42',fontVariantNumeric:'tabular-nums'}}>{brl(totalSaldo)}</span>
-                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>
-                              {pddeUexSaldoData?.ok ? `posição ${pddeUexSaldoData.mes}` : 'saldo acumulado'}
-                            </span>
-                          </div>
-                        )}
-                        {pddeData?.ok && pddeData.matriculas_total != null && (
-                          <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #9b6a16',display:'flex',flexDirection:'column',gap:'4px'}}>
-                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#9b6a16'}}>Alunos (PDDE)</span>
-                            <span style={{fontSize:'20px',fontWeight:800,color:'#9b6a16',fontVariantNumeric:'tabular-nums'}}>{Number(pddeData.matriculas_total).toLocaleString('pt-BR')}</span>
-                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>base de cálculo {pddeData.ano}</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
                   {/* ── GRUPO: QUEM GERENCIA ── */}
                   {(pddeData?.ok || cadastralData?.ok) && (
                     <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'4px'}}>
@@ -5321,6 +5276,51 @@ out center tags 100;`;
                             <p className="text-xs text-muted-foreground" style={{lineHeight:'1.6'}}>
                               <strong>Situação cadastral:</strong> {dadosCadastrais}
                             </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── RESUMO RÁPIDO ── */}
+                  {(() => {
+                    const totalRepasses = atendimentoData?.ok
+                      ? atendimentoData.itens.reduce((s: number, r: any) => s + (r.vl_repasse_custeio || 0) + (r.vl_repasse_capital || 0), 0)
+                      : pddeExecFinData?.ok
+                        ? pddeExecFinData.repasses.reduce((s: number, r: any) => s + (r.vl_pago_total || 0), 0)
+                        : null;
+                    const totalSaldo = pddeUexSaldoData?.ok
+                      ? pddeUexSaldoData.total_saldo_geral
+                      : pddeSaldosData?.ok
+                        ? pddeSaldosData.saldos.reduce((s: number, r: any) => s + (r.saldo_acumulado || 0), 0)
+                        : pddeData?.contas
+                          ? pddeData.contas.reduce((s: number, c: any) => s + (c.saldo || 0), 0)
+                          : null;
+                    const hasAny = totalRepasses != null || totalSaldo != null;
+                    if (!hasAny) return null;
+                    return (
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:'10px',marginBottom:'20px'}}>
+                        {totalRepasses != null && totalRepasses > 0 && (
+                          <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #2f7a58',display:'flex',flexDirection:'column',gap:'4px'}}>
+                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#2f7a58'}}>Total Recebido</span>
+                            <span style={{fontSize:'20px',fontWeight:800,color:'#2f7a58',fontVariantNumeric:'tabular-nums'}}>{brl(totalRepasses)}</span>
+                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>repasses {atendimentoData?.itens?.[0]?.ano || pddeAno}</span>
+                          </div>
+                        )}
+                        {totalSaldo != null && (
+                          <div className="soft-card" style={{padding:'16px',borderLeft:`3px solid ${totalSaldo > 0 ? '#2d5a88' : '#b74f42'}`,display:'flex',flexDirection:'column',gap:'4px'}}>
+                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:totalSaldo > 0 ? '#2d5a88' : '#b74f42'}}>Saldo Atual</span>
+                            <span style={{fontSize:'20px',fontWeight:800,color:totalSaldo > 0 ? '#2d5a88' : '#b74f42',fontVariantNumeric:'tabular-nums'}}>{brl(totalSaldo)}</span>
+                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>
+                              {pddeUexSaldoData?.ok ? `posição ${pddeUexSaldoData.mes}` : 'saldo acumulado'}
+                            </span>
+                          </div>
+                        )}
+                        {pddeData?.ok && pddeData.matriculas_total != null && (
+                          <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #9b6a16',display:'flex',flexDirection:'column',gap:'4px'}}>
+                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#9b6a16'}}>Alunos (PDDE)</span>
+                            <span style={{fontSize:'20px',fontWeight:800,color:'#9b6a16',fontVariantNumeric:'tabular-nums'}}>{Number(pddeData.matriculas_total).toLocaleString('pt-BR')}</span>
+                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>base de cálculo {pddeData.ano}</span>
                           </div>
                         )}
                       </div>
