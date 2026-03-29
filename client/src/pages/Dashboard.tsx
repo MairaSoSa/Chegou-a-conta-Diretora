@@ -2429,18 +2429,18 @@ out center tags 100;`;
                   );
                 })()}
 
-                {/* ── RESUMO EXECUTIVO ── */}
+                {/* ── PAINEL DA ESCOLA — RESUMO + ALERTAS + INDICADORES ── */}
                 <section className="section">
                   <div className="section-title">
-                    <div><h2>Resumo executivo</h2><p>Os números que ajudam a entender a escola imediatamente</p></div>
-                    <div className="hint-chip">Leitura rápida para gestão</div>
+                    <div><h2>Painel da escola</h2><p>Números essenciais, alertas e indicadores com comparação nacional</p></div>
+                    <div className="hint-chip">Gestão · Desempenho · Comparação</div>
                   </div>
                   <div className="organic-divider" />
                   {(() => {
                     const THEMES = ['theme-blue','theme-yellow','theme-green','theme-purple','theme-pink','theme-teal'];
                     const temComparacaoHistorica = !!censoBaseComparacao && !!baseAnoComparacao && baseAnoComparacao < latestAno;
                     const METRICS = [
-                      { label: `Matrículas ${latestAno}`, val: censoLatest.qt_mat_bas || 0, prev: temComparacaoHistorica ? (censoBaseComparacao?.qt_mat_bas || 0) : null, icon: '👩‍🎓' },
+                      { label: `Matrículas ${latestAno ?? ''}`, val: censoLatest.qt_mat_bas || 0, prev: temComparacaoHistorica ? (censoBaseComparacao?.qt_mat_bas || 0) : null, icon: '👩‍🎓' },
                       { label: 'Pontos de atenção', val: total, prev: null, icon: criticals.length > 0 ? '⚠️' : total > 0 ? '◌' : '✅', extra: total === 0 ? '' : criticals.length > 0 ? `${criticals.length} ${criticals.length !== 1 ? 'precisam' : 'precisa'} de atenção` : `${warnings.length} aviso${warnings.length !== 1 ? 's' : ''}` },
                       { label: `Docentes ${latestAno}`, val: censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0, prev: temComparacaoHistorica ? (censoBaseComparacao ? (censoBaseComparacao.qt_doc_bas || censoBaseComparacao.qt_docentes || 0) : 0) : null, icon: '🧑‍🏫' },
                       { label: `Turmas ${latestAno}`, val: censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0, prev: temComparacaoHistorica ? (censoBaseComparacao ? (censoBaseComparacao.qt_tur_bas || censoBaseComparacao.qt_turmas || 0) : 0) : null, icon: '🏫' },
@@ -2448,33 +2448,109 @@ out center tags 100;`;
                       { label: 'Status PDDE', val: pddeData?.ok ? (prestacaoContaData?.ok && prestacaoContaData.itens.every((it:any)=>it.situacao_pc_uex?.toLowerCase().includes('adimpl')) ? '✅' : 'Ver') : '—', prev: null, icon: '💸', extra: prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? `${prestacaoContaData.itens.length} programa(s)` : pddeData?.ok ? 'Ativo' : 'Sem dados' },
                     ];
                     return (
-                      <div className="summary-grid">
-                        {METRICS.map((m, i) => {
-                          const delta = m.prev !== null && typeof m.val === 'number' ? (m.val as number) - (m.prev as number) : null;
-                          const pctDelta = delta !== null && typeof m.prev === 'number' && m.prev > 0
-                            ? (delta / m.prev) * 100
-                            : null;
-                          return (
-                            <div key={i} className={`metric ${THEMES[i]}`}>
-                              <div className="flex items-start justify-between gap-2 mb-3">
-                                <div>
-                                  <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>{m.label}</label>
-                                  <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{typeof m.val === 'number' ? m.val.toLocaleString('pt-BR') : m.val}</strong>
+                      <>
+                        {/* Métricas rápidas */}
+                        <div className="summary-grid">
+                          {METRICS.map((m, i) => {
+                            const delta = m.prev !== null && typeof m.val === 'number' ? (m.val as number) - (m.prev as number) : null;
+                            const pctDelta = delta !== null && typeof m.prev === 'number' && m.prev > 0
+                              ? (delta / m.prev) * 100
+                              : null;
+                            return (
+                              <div key={i} className={`metric ${THEMES[i]}`}>
+                                <div className="flex items-start justify-between gap-2 mb-3">
+                                  <div>
+                                    <label className="block text-xs font-semibold mb-1.5" style={{color:'#6b7785'}}>{m.label}</label>
+                                    <strong className="block text-3xl font-bold leading-none" style={{letterSpacing:'-0.04em'}}>{typeof m.val === 'number' ? m.val.toLocaleString('pt-BR') : m.val}</strong>
+                                  </div>
+                                  <div className="w-11 h-11 rounded-2xl grid place-items-center text-xl shrink-0" style={{background:'rgba(255,255,255,0.72)',border:'1px solid rgba(255,255,255,0.9)'}}>{m.icon}</div>
                                 </div>
-                                <div className="w-11 h-11 rounded-2xl grid place-items-center text-xl shrink-0" style={{background:'rgba(255,255,255,0.72)',border:'1px solid rgba(255,255,255,0.9)'}}>{m.icon}</div>
+                                {(m as any).extra ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold bg-white/60 text-gray-600">{(m as any).extra}</span>
+                                ) : delta !== null && delta !== 0 ? (
+                                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold ${delta > 0 ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                    {delta > 0 ? '▲' : '▼'}
+                                    {pctDelta !== null ? ` ${Math.abs(pctDelta).toFixed(1).replace('.', ',')}% desde ${baseAnoComparacao}` : ` ${Math.abs(delta)} desde ${baseAnoComparacao}`}
+                                  </span>
+                                ) : null}
                               </div>
-                              {(m as any).extra ? (
-                                <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold bg-white/60 text-gray-600">{(m as any).extra}</span>
-                              ) : delta !== null && delta !== 0 ? (
-                                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold ${delta > 0 ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                                  {delta > 0 ? '▲' : '▼'}
-                                  {pctDelta !== null ? ` ${Math.abs(pctDelta).toFixed(1).replace('.', ',')}% desde ${baseAnoComparacao}` : ` ${Math.abs(delta)} desde ${baseAnoComparacao}`}
-                                </span>
-                              ) : null}
+                            );
+                          })}
+                        </div>
+
+                        {/* Alertas compactos */}
+                        {total > 0 ? (
+                          <div style={{margin:'20px 0 0',padding:'14px 16px',background: criticals.length > 0 ? '#fff9f0' : '#fffdf0',border:`1px solid ${criticals.length > 0 ? '#fcd34d' : '#fde68a'}`,borderRadius:12}}>
+                            <div style={{fontSize:11,fontWeight:800,color:'#9a7a3a',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10}}>
+                              {criticals.length > 0 ? '⚠️ Indicadores que precisam de atenção' : '◌ Indicadores em observação'}
                             </div>
-                          );
-                        })}
-                      </div>
+                            <div style={{display:'flex',flexWrap:'wrap',gap:'8px'}}>
+                              {[...criticals, ...warnings].map((alerta, i) => {
+                                const ct = cleanTitle(alerta.titulo);
+                                const mv = extractVal(alerta.titulo);
+                                const isCritical = alerta.tipo === 'critical';
+                                return (
+                                  <div key={i} style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'7px 13px',borderRadius:'20px',background: isCritical ? '#fff1f0' : '#fffbeb',border:`1.5px solid ${isCritical ? '#fca5a5' : '#fcd34d'}`}}>
+                                    <span style={{fontSize:'13px'}}>{isCritical ? '🔴' : '🟡'}</span>
+                                    <span style={{fontSize:'12px',fontWeight:700,color: isCritical ? '#b91c1c' : '#92400e'}}>{ct}{mv ? ` — ${mv}` : ''}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 p-4 rounded-xl" style={{margin:'20px 0 0',background:'#eef7f1',border:'1px solid #c7e8d6'}}>
+                            <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+                            <p style={{fontSize:'13px',color:'#2f7a58',margin:0}}>Diretora, os indicadores desta escola estão dentro das faixas esperadas!</p>
+                          </div>
+                        )}
+
+                        {/* Indicadores com comparação nacional */}
+                        {Object.keys(indicadoresLatest).length > 0 && (
+                          <div style={{marginTop:24}}>
+                            <div style={{fontSize:11,fontWeight:800,color:'#9a7a5a',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:14}}>
+                              📊 Indicadores com comparação nacional
+                            </div>
+                            <IndicatorPanel indicadores={indicadoresLatest} mediasNacionais={mediasNacionais} comparativo={comparativoData} microregiao={microregiaoData} />
+                          </div>
+                        )}
+
+                        {/* Diagnóstico */}
+                        {diagnosticoData && (diagnosticoData.pontos_fortes.length > 0 || diagnosticoData.pontos_atencao.length > 0 || diagnosticoData.leituras.length > 0) && (
+                          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:'14px',marginTop:'16px'}}>
+                            {diagnosticoData.pontos_fortes.length > 0 && (
+                              <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #2f7a58'}}>
+                                <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2f7a58'}}>✅ Pontos fortes</div>
+                                <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
+                                  {diagnosticoData.pontos_fortes.map((p: string, i: number) => (
+                                    <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {diagnosticoData.pontos_atencao.length > 0 && (
+                              <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #c0392b'}}>
+                                <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#c0392b'}}>⚠️ Pontos de atenção</div>
+                                <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
+                                  {diagnosticoData.pontos_atencao.map((p: string, i: number) => (
+                                    <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {diagnosticoData.leituras.length > 0 && (
+                              <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #2d5a88'}}>
+                                <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2d5a88'}}>📊 Leituras dos dados</div>
+                                <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
+                                  {diagnosticoData.leituras.map((p: string, i: number) => (
+                                    <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
                     );
                   })()}
                 </section>
@@ -2510,138 +2586,6 @@ out center tags 100;`;
                   </div>
                 </section>
 
-                {/* ── PONTOS DE ATENÇÃO ── */}
-                <section className="section">
-                  <div className="priority-layout">
-                    <div className="soft-card">
-                      <div className="panel-head">
-                        <h3 style={{margin:'0 0 4px',fontSize:'20px',letterSpacing:'-0.03em'}}>Pontos de atenção</h3>
-                        <p style={{margin:0,color:'var(--m-muted)',fontSize:'13px'}}>Indicadores que merecem acompanhamento — detalhes no Painel de Indicadores abaixo</p>
-                      </div>
-                      {total === 0 ? (
-                        <div className="flex items-center gap-3 p-4 rounded-xl mt-4" style={{background:'#eef7f1',border:'1px solid #c7e8d6'}}>
-                          <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
-                          <p style={{fontSize:'13px',color:'#2f7a58',margin:0}}>Diretora, os indicadores desta escola estão dentro das faixas esperadas!</p>
-                        </div>
-                      ) : (
-                        <div style={{display:'flex',flexWrap:'wrap',gap:'8px',marginTop:'14px'}}>
-                          {[...criticals, ...warnings].map((alerta, i) => {
-                            const ct = cleanTitle(alerta.titulo);
-                            const mv = extractVal(alerta.titulo);
-                            const isCritical = alerta.tipo === 'critical';
-                            return (
-                              <div key={i} style={{
-                                display:'inline-flex',alignItems:'center',gap:'6px',
-                                padding:'7px 13px',borderRadius:'20px',
-                                background: isCritical ? '#fff1f0' : '#fffbeb',
-                                border: `1.5px solid ${isCritical ? '#fca5a5' : '#fcd34d'}`,
-                              }}>
-                                <span style={{fontSize:'13px'}}>{isCritical ? '🔴' : '🟡'}</span>
-                                <span style={{fontSize:'12px',fontWeight:700,color: isCritical ? '#b91c1c' : '#92400e'}}>
-                                  {ct}{mv ? ` — ${mv}` : ''}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                    <div className="soft-card">
-                      <div className="panel-head">
-                        <h3 style={{margin:'0 0 4px',fontSize:'20px',letterSpacing:'-0.03em'}}>Bilhete da Diretora</h3>
-                        <p style={{margin:0,color:'var(--m-muted)',fontSize:'13px'}}>Resumo personalizado para orientar a gestão</p>
-                      </div>
-
-                      {/* Matrículas por etapa */}
-                      {(() => {
-                        const etapas = [
-                          { label: 'Ed. Infantil', key: 'qt_mat_inf', color: '#a78bfa' },
-                          { label: 'Fund. AI', key: 'qt_mat_fund_ai', color: '#60a5fa' },
-                          { label: 'Fund. AF', key: 'qt_mat_fund_af', color: '#34d399' },
-                          { label: 'Ens. Médio', key: 'qt_mat_med', color: '#f59e0b' },
-                          { label: 'EJA', key: 'qt_mat_eja', color: '#fb923c' },
-                          { label: 'Ed. Especial', key: 'qt_mat_esp', color: '#f472b6' },
-                        ].filter(e => (censoLatest[e.key] || 0) > 0);
-                        const totalMatEtapas = etapas.reduce((sum, e) => sum + Number(censoLatest[e.key] || 0), 0);
-                        if (!etapas.length || !totalMatEtapas) return null;
-                        return (
-                          <div style={{marginTop:'16px'}}>
-                            <div style={{fontSize:'11px',fontWeight:700,color:'var(--m-muted)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px'}}>Matrículas por etapa</div>
-                            <div style={{display:'flex',height:'8px',borderRadius:'99px',overflow:'hidden',gap:'2px',marginBottom:'8px'}}>
-                              {etapas.map(e => {
-                                const pct = totalMatEtapas > 0 ? (Number(censoLatest[e.key] || 0) / totalMatEtapas) * 100 : 0;
-                                return <div key={e.key} style={{flex: pct, background: e.color, minWidth: pct > 0 ? '4px' : 0}} />;
-                              })}
-                            </div>
-                            <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
-                              {etapas.map(e => {
-                                const pct = totalMatEtapas > 0 ? ((Number(censoLatest[e.key] || 0) / totalMatEtapas) * 100).toFixed(1) : '0';
-                                return (
-                                  <div key={e.key} style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'11px'}}>
-                                    <span style={{width:8,height:8,borderRadius:'50%',background:e.color,flexShrink:0,display:'inline-block'}} />
-                                    <span style={{color:'var(--m-muted)'}}>{e.label}</span>
-                                    <strong style={{color:'var(--m-text)'}}>{Number(censoLatest[e.key]).toLocaleString('pt-BR')}</strong>
-                                    <span style={{color:'#94a3b8'}}>({pct}%)</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-
-                    </div>
-                  </div>
-                </section>
-
-                {/* ── PAINEL DE INDICADORES ── */}
-                {(Object.keys(indicadoresLatest).length > 0 || (diagnosticoData && (diagnosticoData.pontos_fortes.length > 0 || diagnosticoData.pontos_atencao.length > 0 || diagnosticoData.leituras.length > 0))) && (
-                  <section className="section">
-                    <div className="section-title">
-                      <div><h2>Painel de indicadores</h2><p>Valores, comparações e interpretações para cada indicador da escola</p></div>
-                      <div className="hint-chip">Comparação com médias nacionais</div>
-                    </div>
-                    <div className="organic-divider" />
-                    {Object.keys(indicadoresLatest).length > 0 && (
-                      <IndicatorPanel indicadores={indicadoresLatest} mediasNacionais={mediasNacionais} comparativo={comparativoData} microregiao={microregiaoData} />
-                    )}
-                    {diagnosticoData && (diagnosticoData.pontos_fortes.length > 0 || diagnosticoData.pontos_atencao.length > 0 || diagnosticoData.leituras.length > 0) && (
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:'14px',marginTop:'16px'}}>
-                        {diagnosticoData.pontos_fortes.length > 0 && (
-                          <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #2f7a58'}}>
-                            <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2f7a58'}}>✅ Pontos fortes</div>
-                            <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
-                              {diagnosticoData.pontos_fortes.map((p: string, i: number) => (
-                                <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {diagnosticoData.pontos_atencao.length > 0 && (
-                          <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #c0392b'}}>
-                            <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#c0392b'}}>⚠️ Pontos de atenção</div>
-                            <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
-                              {diagnosticoData.pontos_atencao.map((p: string, i: number) => (
-                                <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {diagnosticoData.leituras.length > 0 && (
-                          <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #2d5a88'}}>
-                            <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2d5a88'}}>📊 Leituras dos dados</div>
-                            <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
-                              {diagnosticoData.leituras.map((p: string, i: number) => (
-                                <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </section>
-                )}
 
                 {/* ── DESEMPENHO ESCOLAR: SAEB + RENDIMENTO ── */}
                 {(() => {
@@ -3235,6 +3179,158 @@ out center tags 100;`;
                           </>
                         )}
                       </div>
+                    </section>
+                  );
+                })()}
+
+                {/* ── MATRÍCULAS POR ETAPA ── */}
+                {(() => {
+                  const matEtapas = [
+                    { label: 'Ed. Infantil',  keyMat: 'qt_mat_inf',     color: '#7b5ea7' },
+                    { label: 'Fund. AI',      keyMat: 'qt_mat_fund_ai', color: '#2d5a88' },
+                    { label: 'Fund. AF',      keyMat: 'qt_mat_fund_af', color: '#1d3557' },
+                    { label: 'Ensino Médio',  keyMat: 'qt_mat_med',     color: '#9b6a16' },
+                    { label: 'EJA',           keyMat: 'qt_mat_eja',     color: '#6d4c41' },
+                    { label: 'Ed. Especial',  keyMat: 'qt_mat_esp',     color: '#2f7a58' },
+                  ].filter(e => ((censoLatest as any)[e.keyMat] || 0) > 0);
+                  const totalMat = (censoLatest as any).qt_mat_bas || matEtapas.reduce((s, e) => s + Number((censoLatest as any)[e.keyMat] || 0), 0);
+                  if (!matEtapas.length || !totalMat) return null;
+                  const anosDisp = evolucaoData.anos_disponiveis.slice().sort((a: number, b: number) => a - b);
+                  const hasHistorico = anosDisp.length > 1;
+                  return (
+                    <section className="section">
+                      <div className="section-title">
+                        <div>
+                          <h2>Matrículas por etapa</h2>
+                          <p>Distribuição e evolução histórica das matrículas por etapa de ensino</p>
+                        </div>
+                        <div className="hint-chip">Fonte: INEP / Censo Escolar</div>
+                      </div>
+                      <div className="organic-divider" />
+
+                      {/* Barra proporcional */}
+                      <div style={{ marginBottom: 20 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--m-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                          Distribuição proporcional — {latestAno}
+                        </div>
+                        <div style={{ display: 'flex', height: 12, borderRadius: 99, overflow: 'hidden', gap: 2, marginBottom: 10 }}>
+                          {matEtapas.map(e => {
+                            const pct = totalMat > 0 ? (Number((censoLatest as any)[e.keyMat] || 0) / totalMat) * 100 : 0;
+                            return <div key={e.keyMat} style={{ flex: pct, background: e.color, minWidth: pct > 0 ? 4 : 0 }} />;
+                          })}
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                          {matEtapas.map(e => {
+                            const val = Number((censoLatest as any)[e.keyMat] || 0);
+                            const pct = totalMat > 0 ? (val / totalMat * 100).toFixed(1) : '0';
+                            return (
+                              <div key={e.keyMat} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                                <span style={{ width: 10, height: 10, borderRadius: '50%', background: e.color, flexShrink: 0, display: 'inline-block' }} />
+                                <span style={{ color: 'var(--m-muted)' }}>{e.label}</span>
+                                <strong style={{ color: 'var(--m-text)' }}>{val.toLocaleString('pt-BR')}</strong>
+                                <span style={{ color: '#94a3b8' }}>({pct}%)</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Tabela por etapa */}
+                      <div className="soft-card" style={{ padding: 0, overflow: 'auto', marginBottom: 16 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                          <thead>
+                            <tr style={{ background: '#f0ebe0' }}>
+                              <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 700, color: '#5d3a1a', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Etapa</th>
+                              <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700, color: '#5d3a1a', fontSize: 12 }}>Matrículas {latestAno}</th>
+                              <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700, color: '#5d3a1a', fontSize: 12 }}>% do total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {matEtapas.map((e, i) => {
+                              const val = Number((censoLatest as any)[e.keyMat] || 0);
+                              const pct = totalMat > 0 ? (val / totalMat * 100).toFixed(1) : '0';
+                              return (
+                                <tr key={e.keyMat} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                  <td style={{ padding: '10px 16px' }}>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: e.color, display: 'inline-block' }} />
+                                      <span style={{ fontWeight: 600, color: '#4a3020' }}>{e.label}</span>
+                                    </span>
+                                  </td>
+                                  <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700, color: e.color, fontSize: 14 }}>{val.toLocaleString('pt-BR')}</td>
+                                  <td style={{ padding: '10px 16px', textAlign: 'right', color: '#888', fontWeight: 500 }}>{pct}%</td>
+                                </tr>
+                              );
+                            })}
+                            <tr style={{ borderTop: '2px solid #e0d8cc', background: '#fdf5e6' }}>
+                              <td style={{ padding: '10px 16px', fontWeight: 800, color: '#3d2b1a' }}>Total</td>
+                              <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 800, color: '#2d5a88', fontSize: 14 }}>{totalMat.toLocaleString('pt-BR')}</td>
+                              <td style={{ padding: '10px 16px', textAlign: 'right', color: '#888' }}>100%</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Evolução histórica */}
+                      {hasHistorico && (
+                        <>
+                          <button onClick={() => toggleSection('mat-evo')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            {expandedSections['mat-evo'] !== false ? '▼' : '▶'} 📅 Evolução histórica por etapa
+                          </button>
+                          {expandedSections['mat-evo'] !== false && (
+                            <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                <thead>
+                                  <tr style={{ background: '#f0ebe0' }}>
+                                    <th style={{ padding: '9px 14px', textAlign: 'left', fontWeight: 700, color: '#5d3a1a', fontSize: 12 }}>Etapa</th>
+                                    {anosDisp.map((a: number) => (
+                                      <th key={a} style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 700, color: '#5d3a1a', fontSize: 12, background: a === latestAno ? '#e8dfc8' : undefined }}>{a}</th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {matEtapas.map((e, ei) => (
+                                    <tr key={e.keyMat} style={{ background: ei % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
+                                      <td style={{ padding: '9px 14px', fontWeight: 600, color: e.color }}>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: e.color, display: 'inline-block' }} />
+                                          {e.label}
+                                        </span>
+                                      </td>
+                                      {anosDisp.map((a: number, ai: number) => {
+                                        const v = (evolucaoData.censo_por_ano[a] as any)?.[e.keyMat] ?? null;
+                                        const prev = ai > 0 ? ((evolucaoData.censo_por_ano[anosDisp[ai - 1]] as any)?.[e.keyMat] ?? null) : null;
+                                        const delta = v != null && prev != null ? v - prev : null;
+                                        return (
+                                          <td key={a} style={{ padding: '9px 10px', textAlign: 'right', fontWeight: a === latestAno ? 700 : 500, color: '#2c3e50', background: a === latestAno ? '#fdf5e6' : undefined }}>
+                                            {v != null ? v.toLocaleString('pt-BR') : <span style={{ color: '#ccc' }}>—</span>}
+                                            {delta != null && delta !== 0 && (
+                                              <div style={{ fontSize: 10, lineHeight: 1.3, marginTop: 1, fontWeight: 700, color: delta > 0 ? '#16714a' : '#b74f42' }}>
+                                                {delta > 0 ? '▲ ' : '▼ '}{Math.abs(delta).toLocaleString('pt-BR')}
+                                              </div>
+                                            )}
+                                          </td>
+                                        );
+                                      })}
+                                    </tr>
+                                  ))}
+                                  <tr style={{ borderTop: '2px solid #e0d8cc', background: '#fdf5e6' }}>
+                                    <td style={{ padding: '9px 14px', fontWeight: 800, color: '#3d2b1a' }}>Total</td>
+                                    {anosDisp.map((a: number) => {
+                                      const v = (evolucaoData.censo_por_ano[a] as any)?.qt_mat_bas ?? null;
+                                      return (
+                                        <td key={a} style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 800, color: '#2d5a88', background: a === latestAno ? '#fdf5e6' : undefined }}>
+                                          {v != null ? v.toLocaleString('pt-BR') : <span style={{ color: '#ccc' }}>—</span>}
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </section>
                   );
                 })()}
