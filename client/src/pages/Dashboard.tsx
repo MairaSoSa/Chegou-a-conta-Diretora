@@ -5309,6 +5309,45 @@ out center tags 100;`;
                     </div>
                   )}
 
+                  {/* ── ALERTA: ESCOLA SEM UEx ── */}
+                  {pddeData?.ok && !pddeData?.uex && (pddeData?.destinacoes?.length ?? 0) > 0 &&
+                    pddeData.destinacoes!.every((d: any) => (d.pago_total ?? 0) === 0) && (
+                    <div style={{
+                      background:'#fef2f2',border:'1.5px solid #fca5a5',borderRadius:'10px',
+                      padding:'14px 16px',marginBottom:'16px',
+                      display:'flex',flexDirection:'column',gap:'8px'
+                    }}>
+                      <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                        <AlertTriangle className="w-4 h-4" style={{color:'#dc2626',flexShrink:0}} />
+                        <span style={{fontSize:'13px',fontWeight:800,color:'#991b1b'}}>
+                          Repasses suspensos — Escola sem UEx cadastrada
+                        </span>
+                        <span style={{fontSize:'10px',fontWeight:700,color:'#991b1b',background:'#fecaca',borderRadius:'9999px',padding:'1px 8px',marginLeft:'auto',whiteSpace:'nowrap'}}>
+                          ⚠ Ativo
+                        </span>
+                      </div>
+                      <p style={{fontSize:'12px',color:'#7f1d1d',margin:0,lineHeight:'1.6'}}>
+                        Esta escola <strong>não possui Unidade Executora (UEx/EM) registrada no FNDE</strong>.
+                        Enquanto a UEx não for criada e cadastrada, os repasses do PDDE ficam bloqueados
+                        — mesmo que os recursos estejam previstos.
+                      </p>
+                      {(pddeData?.destinacoes?.reduce((s: number, d: any) => s + (d.devido_total ?? 0), 0) ?? 0) > 0 && (
+                        <div style={{background:'#fee2e2',borderRadius:'6px',padding:'6px 10px',display:'inline-flex',alignItems:'center',gap:'8px',alignSelf:'flex-start'}}>
+                          <span style={{fontSize:'11px',color:'#7f1d1d',fontWeight:600}}>
+                            Valor previsto bloqueado:
+                          </span>
+                          <span style={{fontSize:'13px',fontWeight:800,color:'#991b1b',fontFamily:'monospace'}}>
+                            {pddeData.destinacoes!.reduce((s: number, d: any) => s + (d.devido_total ?? 0), 0)
+                              .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </span>
+                        </div>
+                      )}
+                      <p style={{fontSize:'11px',color:'#9ca3af',margin:0}}>
+                        Para regularizar: a escola precisa constituir uma UEx (conselho escolar ou APM) e cadastrá-la no PDDE/FNDE.
+                      </p>
+                    </div>
+                  )}
+
                   {/* ── GRUPO: QUEM GERENCIA ── */}
                   {(pddeData?.ok || cadastralData?.ok) && (
                     <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'4px'}}>
@@ -5897,9 +5936,12 @@ out center tags 100;`;
                         )}
 
                         {/* Sem dados para o ano selecionado */}
-                        {!prestacaoContaLoading && prestacaoContaAno !== null && (!prestacaoContaData?.ok || prestacaoContaData.itens.length === 0) && (
-                          <div style={{padding:'12px',background:'#faf7f2',borderRadius:'8px',border:'1px solid #ede3d3',fontSize:'12px',color:'#9b8877',textAlign:'center'}}>
-                            Nenhum registro encontrado para {anoExibido} no FNDE.
+                        {!prestacaoContaLoading && (!prestacaoContaData?.ok || prestacaoContaData.itens.length === 0) && (
+                          <div style={{padding:'12px',background: pddeData?.ok && !pddeData?.uex ? '#fef2f2' : '#faf7f2',borderRadius:'8px',border:`1px solid ${pddeData?.ok && !pddeData?.uex ? '#fca5a5' : '#ede3d3'}`,fontSize:'12px',color: pddeData?.ok && !pddeData?.uex ? '#991b1b' : '#9b8877',textAlign:'center'}}>
+                            {pddeData?.ok && !pddeData?.uex
+                              ? <>Sem prestação de contas — <strong>escola sem UEx cadastrada no FNDE</strong>. Não há execução a prestar.</>
+                              : <>Nenhum registro encontrado para {anoExibido} no FNDE.</>
+                            }
                           </div>
                         )}
 
