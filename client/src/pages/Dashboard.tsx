@@ -5376,7 +5376,11 @@ out center tags 100;`;
                             <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:totalSaldo > 0 ? '#2d5a88' : '#b74f42'}}>Saldo Atual</span>
                             <span style={{fontSize:'20px',fontWeight:800,color:totalSaldo > 0 ? '#2d5a88' : '#b74f42',fontVariantNumeric:'tabular-nums'}}>{brl(totalSaldo)}</span>
                             <span style={{fontSize:'11px',color:'var(--m-muted)'}}>
-                              {pddeUexSaldoData?.ok ? `posição ${pddeUexSaldoData.mes}` : 'saldo acumulado'}
+                              {pddeUexSaldoData?.ok
+                                ? `posição ${pddeUexSaldoData.mes}`
+                                : pddeSaldosData?.ok
+                                  ? `contas PDDE ${pddeSaldosData.saldos[0]?.an_exercicio || pddeAno}`
+                                  : `contas bancárias ${pddeData?.ano || pddeAno}`}
                             </span>
                           </div>
                         )}
