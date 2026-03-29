@@ -255,11 +255,10 @@ export default function Dashboard() {
   const { data: pddeExecFinData, isLoading: pddeExecFinLoading, isError: pddeExecFinError } = usePddeExecFin(selectedInep);
   const { data: pddeUexSaldoData, isLoading: pddeUexSaldoLoading } = usePddeUexSaldo(pddeCnpj, { mes: saldoMesSel });
   const { data: cadastralData, isLoading: cadastralLoading } = usePddeSituacaoCadastral(selectedInep, pddeAno);
-  const [prestacaoContaAno, setPrestacaoContaAno] = useState<number | null>(null);
-  const prestacaoContaAnoEfetivo = prestacaoContaAno ?? pddeAno;
-  const { data: prestacaoContaData, isLoading: prestacaoContaLoading } = usePddePrestacaoConta(selectedInep, prestacaoContaAnoEfetivo, prestacaoContaAno !== null);
+  const [prestacaoContaAno, setPrestacaoContaAno] = useState<number>(new Date().getFullYear());
+  const { data: prestacaoContaData, isLoading: prestacaoContaLoading } = usePddePrestacaoConta(selectedInep, prestacaoContaAno, true);
   const { data: atendimentoData, isLoading: atendimentoLoading } = usePddeAtendimento(selectedInep, pddeAno);
-  const { data: atendimentoPcData } = usePddeAtendimento(selectedInep, prestacaoContaAnoEfetivo);
+  const { data: atendimentoPcData } = usePddeAtendimento(selectedInep, prestacaoContaAno);
   const suspEscolaUf = pddeData?.uf || null;
   const suspEscola = usePddeSuspensaoEscola(selectedInep, suspEscolaUf, [pddeAno, pddeAno === new Date().getFullYear() ? pddeAno - 1 : pddeAno]);
   const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined, pddeAno);
@@ -6145,7 +6144,7 @@ out center tags 100;`;
                   {(prestacaoContaLoading || prestacaoContaData?.ok) && (() => {
                     const currentYear = new Date().getFullYear();
                     const years = Array.from({ length: currentYear - 2016 }, (_, i) => currentYear - i);
-                    const anoExibido = prestacaoContaAnoEfetivo;
+                    const anoExibido = prestacaoContaAno;
                     return (
                       <div style={{marginBottom:'16px'}}>
                         {/* Cabeçalho com seletor de ano */}
