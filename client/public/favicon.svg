@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Warm earthy rounded-square background -->
+  <rect width="64" height="64" rx="14" fill="#7c4a1e"/>
+
+  <!-- Subtle inner glow / texture ring -->
+  <rect x="3" y="3" width="58" height="58" rx="12" fill="none" stroke="#b5722a" stroke-width="1.2" opacity="0.5"/>
+
+  <!-- Open book — left page -->
+  <path d="M12 46 L12 18 C12 17 13 16.5 14 16 C18 14.5 23 15 26 17 L26 45 C23 43.5 18 43 14 44.5 C13 45 12 45.5 12 46 Z"
+        fill="#f5e8d0" stroke="#c8a87a" stroke-width="0.8" stroke-linejoin="round"/>
+
+  <!-- Open book — right page -->
+  <path d="M52 46 L52 18 C52 17 51 16.5 50 16 C46 14.5 41 15 38 17 L38 45 C41 43.5 46 43 50 44.5 C51 45 52 45.5 52 46 Z"
+        fill="#f5e8d0" stroke="#c8a87a" stroke-width="0.8" stroke-linejoin="round"/>
+
+  <!-- Spine / center fold -->
+  <path d="M32 15.5 C30 15.5 28 16.2 26 17 L26 45 C28 44.2 30 43.8 32 43.8 C34 43.8 36 44.2 38 45 L38 17 C36 16.2 34 15.5 32 15.5 Z"
+        fill="#e0c89a" stroke="#b09060" stroke-width="0.5"/>
+
+  <!-- Left page lines — ruling -->
+  <line x1="15" y1="22" x2="24" y2="21.5" stroke="#c8a87a" stroke-width="0.8" opacity="0.7" stroke-linecap="round"/>
+  <line x1="15" y1="26" x2="24" y2="25.5" stroke="#c8a87a" stroke-width="0.8" opacity="0.7" stroke-linecap="round"/>
+  <line x1="15" y1="30" x2="24" y2="29.5" stroke="#c8a87a" stroke-width="0.8" opacity="0.7" stroke-linecap="round"/>
+  <line x1="15" y1="34" x2="24" y2="33.5" stroke="#c8a87a" stroke-width="0.8" opacity="0.5" stroke-linecap="round"/>
+
+  <!-- Right page lines -->
+  <line x1="40" y1="21.5" x2="49" y2="22" stroke="#c8a87a" stroke-width="0.8" opacity="0.7" stroke-linecap="round"/>
+  <line x1="40" y1="25.5" x2="49" y2="26" stroke="#c8a87a" stroke-width="0.8" opacity="0.7" stroke-linecap="round"/>
+  <line x1="40" y1="29.5" x2="49" y2="30" stroke="#c8a87a" stroke-width="0.8" opacity="0.7" stroke-linecap="round"/>
+  <line x1="40" y1="33.5" x2="49" y2="34" stroke="#c8a87a" stroke-width="0.8" opacity="0.5" stroke-linecap="round"/>
+
+  <!-- Pencil — resting on the book, angled -->
+  <g transform="translate(44, 9) rotate(35)">
+    <!-- Pencil body -->
+    <rect x="-3" y="-14" width="6" height="18" rx="1" fill="#f5c842" stroke="#b89a20" stroke-width="0.8"/>
+    <!-- Pencil tip ferrule (band) -->
+    <rect x="-3" y="3.5" width="6" height="2.5" rx="0.5" fill="#d4956a" stroke="#b07040" stroke-width="0.5"/>
+    <!-- Pencil eraser -->
+    <rect x="-3" y="5.5" width="6" height="3" rx="1" fill="#f0a0a0" stroke="#d07070" stroke-width="0.5"/>
+    <!-- Pencil wooden tip -->
+    <path d="M-3 -14 L3 -14 L1.5 -18 L-1.5 -18 Z" fill="#c8a060" stroke="#a07830" stroke-width="0.5"/>
+    <!-- Pencil lead point -->
+    <path d="M-1.5 -18 L1.5 -18 L0 -21 Z" fill="#444" stroke="#222" stroke-width="0.4"/>
+    <!-- Sheen on pencil body -->
+    <rect x="-1.5" y="-13" width="1.5" height="15" rx="0.5" fill="rgba(255,255,255,0.25)"/>
+  </g>
+
+  <!-- Small leaf / flourish bottom right — earthy organic touch -->
+  <path d="M48 52 C50 48 54 49 53 53 C52 55 48 55 48 52 Z"
+        fill="#4a8a5a" stroke="#2f7a40" stroke-width="0.7" opacity="0.85"/>
+  <path d="M48 52 C50 50.5 53 51.5 53 53" stroke="#2f7a40" stroke-width="0.6" fill="none" opacity="0.6"/>
+</svg>
