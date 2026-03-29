@@ -5812,9 +5812,11 @@ out center tags 100;`;
                               </div>
                               {c.saldo != null && (
                                 <div style={{marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #f0ece4'}}>
-                                  <span className="text-xs text-muted-foreground">Saldo total</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {modalidades.length === 1 ? `Saldo em ${modalidades[0].label}` : 'Saldo total'}
+                                  </span>
                                   <p style={{fontSize:'16px',fontWeight:800,color: c.saldo > 0 ? '#16a34a' : 'var(--m-muted)'}}>{brl(c.saldo)}</p>
-                                  {modalidades.length > 0 && (
+                                  {modalidades.length > 1 && (
                                     <div style={{display:'flex',flexWrap:'wrap',gap:'6px',marginTop:'6px'}}>
                                       {modalidades.map(m => (
                                         <span key={m.label} style={{fontSize:'10px',background:'#e8f5ee',color:'#1a5c38',borderRadius:'6px',padding:'2px 7px',fontWeight:600}}>
