@@ -1,99 +1,51 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <!-- Background: deep forest green — earthy, distinctive, Ghibli -->
-    <linearGradient id="bg" x1="0" y1="0" x2="0.6" y2="1">
+    <linearGradient id="bg" x1="0" y1="0" x2="0.5" y2="1">
       <stop offset="0%" stop-color="#2a6645"/>
       <stop offset="100%" stop-color="#163d28"/>
     </linearGradient>
-    <!-- Notebook cover: warm amber/golden -->
-    <linearGradient id="cover" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f0a83c"/>
-      <stop offset="100%" stop-color="#c87c1e"/>
-    </linearGradient>
-    <!-- Page: warm cream -->
-    <linearGradient id="page" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fffef6"/>
+    <linearGradient id="pagegrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fffef8"/>
       <stop offset="100%" stop-color="#f5e8cc"/>
-    </linearGradient>
-    <!-- Spine: darker amber -->
-    <linearGradient id="spine" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#a06020"/>
-      <stop offset="100%" stop-color="#c88030"/>
     </linearGradient>
   </defs>
 
-  <!-- Background square, nicely rounded -->
-  <rect width="64" height="64" rx="15" fill="url(#bg)"/>
+  <!-- Background -->
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
 
-  <!-- Inner top-left highlight for depth -->
-  <ellipse cx="18" cy="14" rx="22" ry="14" fill="rgba(255,255,255,0.07)"/>
+  <!-- Subtle inner glow top-left -->
+  <ellipse cx="16" cy="12" rx="24" ry="16" fill="rgba(255,255,255,0.06)"/>
 
-  <!-- ── CLOSED NOTEBOOK — slight clockwise tilt ── -->
-  <g transform="rotate(3, 32, 36)">
+  <!-- ── PAGE / DOCUMENT ── -->
+  <!-- Main page body (corner clipped top-right) -->
+  <path d="M 11,9 L 41,9 L 53,21 L 53,57 L 11,57 Z"
+        fill="url(#pagegrad)"/>
 
-    <!-- Drop shadow -->
-    <rect x="17" y="17" width="32" height="38" rx="5"
-          fill="rgba(0,0,0,0.28)" transform="translate(2,3)"/>
+  <!-- Folded corner flap (slightly warm shadow) -->
+  <path d="M 41,9 L 53,9 L 53,21 Z"
+        fill="#c8a060" opacity="0.85"/>
 
-    <!-- Notebook cover (amber/golden) -->
-    <rect x="17" y="17" width="32" height="38" rx="5" fill="url(#cover)"/>
+  <!-- Fold crease line shadow -->
+  <path d="M 41,9 L 53,21"
+        fill="none" stroke="rgba(100,60,10,0.3)" stroke-width="0.8"/>
 
-    <!-- Left spine strip -->
-    <rect x="17" y="17" width="8" height="38" rx="4" fill="url(#spine)"/>
-    <!-- Spine inner shadow -->
-    <rect x="24" y="17" width="2" height="38" fill="rgba(0,0,0,0.12)"/>
+  <!-- Left spine / margin line (pauta vermelha) -->
+  <line x1="19" y1="9" x2="19" y2="57"
+        stroke="rgba(195,55,55,0.45)" stroke-width="1.5"/>
 
-    <!-- Pages peeking at the right edge (3 layers) -->
-    <rect x="47" y="20" width="3" height="32" rx="1.5" fill="#fffef0"/>
-    <rect x="48" y="21" width="2" height="30" rx="1"   fill="#f0e4cc" opacity="0.7"/>
+  <!-- Ruling lines (pauta) — 4 lines -->
+  <line x1="22" y1="24" x2="50" y2="24"
+        stroke="#c8a86a" stroke-width="1.4" stroke-linecap="round" opacity="0.7"/>
+  <line x1="22" y1="32" x2="50" y2="32"
+        stroke="#c8a86a" stroke-width="1.4" stroke-linecap="round" opacity="0.7"/>
+  <line x1="22" y1="40" x2="50" y2="40"
+        stroke="#c8a86a" stroke-width="1.4" stroke-linecap="round" opacity="0.7"/>
+  <line x1="22" y1="48" x2="46" y2="48"
+        stroke="#c8a86a" stroke-width="1.2" stroke-linecap="round" opacity="0.45"/>
 
-    <!-- Cover band at top (color divider like a bookmark band) -->
-    <rect x="17" y="17" width="32" height="7" rx="4"   fill="#8a3810" opacity="0.55"/>
-    <rect x="17" y="21" width="32" height="3"           fill="#8a3810" opacity="0.55"/>
-
-    <!-- Red margin line on the page area -->
-    <rect x="28" y="26" width="1.2" height="27" rx="0.6"
-          fill="rgba(190,55,55,0.38)"/>
-
-    <!-- Ruling lines (pauta) -->
-    <line x1="30" y1="31" x2="46" y2="31"
-          stroke="rgba(160,100,30,0.4)" stroke-width="1.4" stroke-linecap="round"/>
-    <line x1="30" y1="37" x2="46" y2="37"
-          stroke="rgba(160,100,30,0.4)" stroke-width="1.4" stroke-linecap="round"/>
-    <line x1="30" y1="43" x2="46" y2="43"
-          stroke="rgba(160,100,30,0.4)" stroke-width="1.4" stroke-linecap="round"/>
-    <line x1="30" y1="49" x2="44" y2="49"
-          stroke="rgba(160,100,30,0.25)" stroke-width="1.1" stroke-linecap="round"/>
-  </g>
-
-  <!-- ── SPIRAL RINGS at top of notebook ── -->
-  <!-- Each ring = two arcs (front visible, back hidden by cover) -->
-  <g transform="rotate(3, 32, 18)">
-    <!-- Ring 1 -->
-    <circle cx="24" cy="17" r="3.4" fill="none" stroke="#5a2c08" stroke-width="2.2"/>
-    <circle cx="24" cy="17" r="3.4" fill="none" stroke="#f0b050" stroke-width="1"
-            stroke-dasharray="6 6" stroke-dashoffset="3" opacity="0.6"/>
-    <!-- Ring 2 -->
-    <circle cx="33" cy="17" r="3.4" fill="none" stroke="#5a2c08" stroke-width="2.2"/>
-    <circle cx="33" cy="17" r="3.4" fill="none" stroke="#f0b050" stroke-width="1"
-            stroke-dasharray="6 6" stroke-dashoffset="3" opacity="0.6"/>
-    <!-- Ring 3 -->
-    <circle cx="42" cy="17" r="3.4" fill="none" stroke="#5a2c08" stroke-width="2.2"/>
-    <circle cx="42" cy="17" r="3.4" fill="none" stroke="#f0b050" stroke-width="1"
-            stroke-dasharray="6 6" stroke-dashoffset="3" opacity="0.6"/>
-  </g>
-
-  <!-- ── GREEN LEAF accent, bottom-left ── -->
-  <path d="M 9 55 C 11 50 17 51 16 56 C 15 59 10 58 9 55 Z"
-        fill="#3aae6a" opacity="0.95"/>
-  <path d="M 9 55 C 13 51.5 16 54 16 56"
+  <!-- Small green leaf accent — bottom left outside the page -->
+  <path d="M 6,54 C 8,49 14,50 13,55 C 12,58 7,57 6,54 Z"
+        fill="#3aae6a" opacity="0.9"/>
+  <path d="M 6,54 C 10,51 13,53 13,55"
         fill="none" stroke="#1d7a42" stroke-width="0.9"/>
-  <!-- Tiny stem -->
-  <line x1="9" y1="55" x2="7" y2="59" stroke="#1d7a42" stroke-width="1.1"
-        stroke-linecap="round" opacity="0.7"/>
-
-  <!-- ── WARM STAR accent top-right corner ── -->
-  <circle cx="54" cy="11" r="4.5" fill="rgba(255,200,60,0.22)"/>
-  <circle cx="54" cy="11" r="2.5" fill="#ffd050" opacity="0.9"/>
-  <circle cx="53.2" cy="10.2" r="0.9" fill="rgba(255,255,255,0.6)"/>
 </svg>
