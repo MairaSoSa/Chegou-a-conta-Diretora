@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import { normalizeTextDeep } from "@/lib/utils";
 
 export interface PddeSaldoConta {
@@ -379,4 +379,88 @@ export function usePddeInfo(inep: string | null, ano?: number) {
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
+}
+
+// ── Histórico de Suspensões ───────────────────────────────────────────────────
+
+export interface SuspensaoHistItem {
+  ano: string;
+  programa: string;
+  cnpj_uex: string | null;
+  suspensao_uex: string | null;
+  suspensao_eex: string | null;
+  situacao_pc_uex: string | null;
+  situacao_pc_eex: string | null;
+  resolvidoUex: boolean;
+  resolvidoEex: boolean;
+}
+
+export interface SuspensaoHistResult {
+  loading: boolean;
+  itens: SuspensaoHistItem[];
+  anosConsultados: number[];
+  anosComSuspensao: number[];
+}
+
+const SUSP_HIST_YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
+
+function isSuspensaoNegativa(v: string | null | undefined): boolean {
+  if (!v) return true;
+  const t = v.trim();
+  return t === '—' || /^n[aã]o$/i.test(t);
+}
+
+export function usePddeSuspensaoHistorico(inep: string | null, enabled: boolean): SuspensaoHistResult {
+  const results = useQueries({
+    queries: SUSP_HIST_YEARS.map(yr => ({
+      queryKey: ["pdde-prestacao-conta", inep, yr, true],
+      queryFn: async (): Promise<SituacaoPrestacaoContaResult> => {
+        if (!inep) return { ok: false, disponivel: false, total_registros: null, pagina_atual: 1, itens: [] };
+        const res = await fetch(`/api/pdde/relatorios/prestacao-contas?ano=${yr}&co_escola=${inep}`);
+        if (!res.ok) throw new Error("erro");
+        return normalizeTextDeep(await res.json()) as SituacaoPrestacaoContaResult;
+      },
+      enabled: !!inep && enabled && /^\d{8}$/.test(inep),
+      staleTime: 15 * 60 * 1000,
+      retry: 0,
+    })),
+  });
+
+  const loading = results.some(r => r.isLoading || r.isFetching);
+
+  const allItems: Array<{ ano: number; item: SituacaoPrestacaoContaItem }> = [];
+  results.forEach((r, i) => {
+    if (r.data?.ok && r.data.itens) {
+      r.data.itens.forEach(item => allItems.push({ ano: SUSP_HIST_YEARS[i], item }));
+    }
+  });
+
+  const suspItems: SuspensaoHistItem[] = [];
+  allItems.forEach(({ ano, item }) => {
+    const hasSuspUex = !isSuspensaoNegativa(item.suspensao_uex);
+    const hasSuspEex = !isSuspensaoNegativa(item.suspensao_eex);
+    if (!hasSuspUex && !hasSuspEex) return;
+    const laterItems = allItems.filter(x =>
+      x.ano > ano &&
+      x.item.programa === item.programa &&
+      x.item.cnpj_uex === item.cnpj_uex
+    );
+    suspItems.push({
+      ano: String(ano),
+      programa: item.programa || '—',
+      cnpj_uex: item.cnpj_uex,
+      suspensao_uex: hasSuspUex ? item.suspensao_uex : null,
+      suspensao_eex: hasSuspEex ? item.suspensao_eex : null,
+      situacao_pc_uex: item.situacao_pc_uex,
+      situacao_pc_eex: item.situacao_pc_eex,
+      resolvidoUex: hasSuspUex && laterItems.some(x => isSuspensaoNegativa(x.item.suspensao_uex)),
+      resolvidoEex: hasSuspEex && laterItems.some(x => isSuspensaoNegativa(x.item.suspensao_eex)),
+    });
+  });
+
+  suspItems.sort((a, b) => Number(b.ano) - Number(a.ano));
+
+  const anosComSuspensao = [...new Set(suspItems.map(s => Number(s.ano)))].sort((a, b) => b - a);
+
+  return { loading, itens: suspItems, anosConsultados: SUSP_HIST_YEARS, anosComSuspensao };
 }

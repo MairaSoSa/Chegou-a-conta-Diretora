@@ -21,7 +21,7 @@ import {
   Folder, Pin, Ruler, Printer,
 } from "@/components/Icons";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico, useEscolaMicroregiao, useUfStats, useSimilarSchools } from "@/hooks/use-schools";
-import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento } from "@/hooks/use-pdde";
+import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento, usePddeSuspensaoHistorico } from "@/hooks/use-pdde";
 import { useSigpcLocalizar } from "@/hooks/use-sigpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -260,6 +260,8 @@ export default function Dashboard() {
   const { data: prestacaoContaData, isLoading: prestacaoContaLoading } = usePddePrestacaoConta(selectedInep, prestacaoContaAnoEfetivo, prestacaoContaAno !== null);
   const { data: atendimentoData, isLoading: atendimentoLoading } = usePddeAtendimento(selectedInep, pddeAno);
   const { data: atendimentoPcData } = usePddeAtendimento(selectedInep, prestacaoContaAnoEfetivo);
+  const [showSuspHist, setShowSuspHist] = useState(false);
+  const suspHist = usePddeSuspensaoHistorico(selectedInep, showSuspHist);
   const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined, pddeAno);
   const listFilters = useMemo(() => {
     const f: Record<string, string> = {};
@@ -6065,6 +6067,97 @@ out center tags 100;`;
                       </div>
                     );
                   })()}
+
+                  {/* ── 6b. Histórico de Suspensões ── */}
+                  {selectedInep && (
+                    <div style={{marginBottom:'16px'}}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'8px'}}>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1" style={{margin:0}}>
+                          <AlertTriangle className="w-3.5 h-3.5" /> Histórico de Suspensões (2020–2026)
+                        </p>
+                        <button
+                          onClick={() => setShowSuspHist(v => !v)}
+                          style={{fontSize:'11px',color:'#b45309',background:'#fef3c7',border:'1px solid #fcd34d',borderRadius:'6px',padding:'2px 10px',cursor:'pointer',fontWeight:600,lineHeight:'20px'}}
+                        >
+                          {showSuspHist ? 'Ocultar' : 'Carregar histórico'}
+                        </button>
+                      </div>
+
+                      {showSuspHist && suspHist.loading && (
+                        <div style={{display:'flex',alignItems:'center',gap:'8px',padding:'10px 0',color:'#888',fontSize:'12px'}}>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Consultando {suspHist.anosConsultados.length} anos no FNDE...
+                        </div>
+                      )}
+
+                      {showSuspHist && !suspHist.loading && suspHist.itens.length === 0 && (
+                        <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'8px',padding:'10px 14px',fontSize:'12px',color:'#15803d',display:'flex',alignItems:'center',gap:'8px'}}>
+                          <span style={{fontSize:'15px'}}>✓</span>
+                          Nenhuma suspensão encontrada no período 2020–2026.
+                        </div>
+                      )}
+
+                      {showSuspHist && !suspHist.loading && suspHist.itens.length > 0 && (() => {
+                        const sl = (raw: string | null): string => {
+                          if (!raw) return '';
+                          const v = raw.toUpperCase();
+                          if (/inadimpl.*uex|inadimpl.*prestac/i.test(v))  return 'Inadimplência por prestação de contas (UEx)';
+                          if (/omiss.*eex|omiss.*prestac/i.test(v))        return 'Omissão na prestação de contas (EEx)';
+                          if (/sem dirigente/i.test(v))                    return 'UEx sem dirigente ativo';
+                          if (/nao habilitad|exercicio atual/i.test(v))    return 'Entidade não habilitada no exercício atual';
+                          if (/sem conta corrente/i.test(v))               return 'UEx sem conta corrente ativa';
+                          if (/sem uex|escola sem/i.test(v))               return 'Escola sem UEx/EM';
+                          if (/cnpj irregular|receita federal/i.test(v))   return 'CNPJ irregular na Receita Federal';
+                          if (/fora do prazo legal/i.test(v))              return 'Regularização fora do prazo legal';
+                          if (/bloqueio|solicitacao/i.test(v))             return 'Bloqueio por solicitação da entidade ou do FNDE';
+                          return raw;
+                        };
+                        return (
+                          <div style={{display:'flex',flexDirection:'column',gap:'6px'}}>
+                            {suspHist.itens.map((s, si) => {
+                              const allResolved = (!s.suspensao_uex || s.resolvidoUex) && (!s.suspensao_eex || s.resolvidoEex);
+                              return (
+                                <div key={si} style={{
+                                  border:`1px solid ${allResolved ? '#bbf7d0' : '#fca5a5'}`,
+                                  borderRadius:'8px',
+                                  overflow:'hidden',
+                                  background: allResolved ? '#f0fdf4' : '#fff5f5',
+                                }}>
+                                  {/* Cabeçalho da linha */}
+                                  <div style={{display:'flex',alignItems:'center',gap:'8px',padding:'6px 12px',background: allResolved ? '#dcfce7' : '#fee2e2',borderBottom:`1px solid ${allResolved ? '#bbf7d0' : '#fca5a5'}`}}>
+                                    <span style={{fontSize:'12px',fontWeight:800,color: allResolved ? '#166534' : '#991b1b',minWidth:'36px'}}>{s.ano}</span>
+                                    <span style={{fontSize:'11px',fontWeight:700,color:'#555',flex:1,textTransform:'uppercase',letterSpacing:'0.04em'}}>{s.programa}</span>
+                                    {allResolved
+                                      ? <span style={{fontSize:'10px',fontWeight:700,color:'#166534',background:'#bbf7d0',borderRadius:'9999px',padding:'1px 8px',whiteSpace:'nowrap'}}>✓ Resolvido</span>
+                                      : <span style={{fontSize:'10px',fontWeight:700,color:'#991b1b',background:'#fecaca',borderRadius:'9999px',padding:'1px 8px',whiteSpace:'nowrap'}}>⚠ Ativo</span>
+                                    }
+                                  </div>
+                                  {/* Motivos */}
+                                  <div style={{padding:'6px 12px',display:'flex',flexDirection:'column',gap:'4px'}}>
+                                    {s.suspensao_uex && (
+                                      <div style={{display:'flex',alignItems:'flex-start',gap:'6px'}}>
+                                        <span style={{fontSize:'10px',fontWeight:700,color: s.resolvidoUex ? '#166534' : '#7f1d1d',background: s.resolvidoUex ? '#dcfce7' : '#fee2e2',borderRadius:'4px',padding:'1px 5px',whiteSpace:'nowrap',flexShrink:0}}>UEx{s.resolvidoUex ? ' ✓' : ''}</span>
+                                        <span style={{fontSize:'12px',color: s.resolvidoUex ? '#166534' : '#7f1d1d',fontWeight:500,textDecoration: s.resolvidoUex ? 'line-through' : 'none',opacity: s.resolvidoUex ? 0.7 : 1}}>{sl(s.suspensao_uex)}</span>
+                                      </div>
+                                    )}
+                                    {s.suspensao_eex && (
+                                      <div style={{display:'flex',alignItems:'flex-start',gap:'6px'}}>
+                                        <span style={{fontSize:'10px',fontWeight:700,color: s.resolvidoEex ? '#166534' : '#7f1d1d',background: s.resolvidoEex ? '#dcfce7' : '#fee2e2',borderRadius:'4px',padding:'1px 5px',whiteSpace:'nowrap',flexShrink:0}}>EEx{s.resolvidoEex ? ' ✓' : ''}</span>
+                                        <span style={{fontSize:'12px',color: s.resolvidoEex ? '#166534' : '#7f1d1d',fontWeight:500,textDecoration: s.resolvidoEex ? 'line-through' : 'none',opacity: s.resolvidoEex ? 0.7 : 1}}>{sl(s.suspensao_eex)}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            <p style={{fontSize:'10px',color:'#aaa',marginTop:'2px',textAlign:'right'}}>
+                              {suspHist.anosConsultados.length} anos consultados · {suspHist.itens.length} ocorrência(s) encontrada(s)
+                            </p>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
 
                   {/* ── 7. SIGPC — PRESTAÇÃO DE CONTAS DETALHADA ── */}
                   {(pddeCnpj || pddeData?.ok === false) && (<div style={{marginBottom:'16px'}}>
