@@ -1029,7 +1029,10 @@ export default function Dashboard() {
               <CardContent className="p-5" style={{overflow:'visible'}}>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="flex-1">
-                    <p className="text-sm font-semibold mb-1" style={{color:'#2d5a88'}}>🏫 Buscar minha escola</p>
+                    <p className="text-sm font-semibold mb-1" style={{color:'#2d5a88',display:'flex',alignItems:'center',gap:'6px'}}>
+                      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#2d5a88" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><rect x="1.5" y="5.5" width="12" height="8" rx="0.5"/><polyline points="1.5,5.5 7.5,1.5 13.5,5.5"/><rect x="5.5" y="10" width="4" height="3.5"/></svg>
+                      Buscar minha escola
+                    </p>
                     <p className="text-xs text-muted-foreground mb-3">Digite o nome ou o código INEP (8 dígitos) para ver o painel completo</p>
                     {/* Wrapper com ref para fechar dropdown ao clicar fora */}
                     <div ref={searchContainerRef} className="relative">
@@ -1457,16 +1460,18 @@ export default function Dashboard() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {aumentou.length > 0 && (
                         <div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: "#15803d", marginBottom: 7, display: "flex", alignItems: "center", gap: 5 }}>
-                            📈 O que aumentou — 2024 → 2025
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#15803d", marginBottom: 7, display: "flex", alignItems: "center", gap: 6 }}>
+                            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#15803d" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="1,11 5,7 8.5,9 14,3"/><polyline points="10,3 14,3 14,7"/></svg>
+                            O que aumentou — 2024 → 2025
                           </div>
                           <div style={{ display: "flex", gap: 7 }}>
                             {aumentou.map((cam: any) => <MiniCard key={cam.key} cam={cam} />)}
                           </div>
                           {essenciais.length > 0 && (
                             <div style={{ marginTop: 10 }}>
-                              <div style={{ fontSize: 12, fontWeight: 700, color: "#1e40af", marginBottom: 7, display: "flex", alignItems: "center", gap: 5 }}>
-                                🛠️ Observações — serviços essenciais que ainda faltam (2025)
+                              <div style={{ fontSize: 12, fontWeight: 700, color: "#1e40af", marginBottom: 7, display: "flex", alignItems: "center", gap: 6 }}>
+                                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#1e40af" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M10.5 1.5a3 3 0 0 1 1 4.8L4 13.5a1 1 0 0 1-1.4-1.4L10 4.5a3 3 0 0 1 .5-3z"/><circle cx="10.5" cy="4.5" r="1"/></svg>
+                                Observações — serviços essenciais que ainda faltam (2025)
                               </div>
                               <div style={{ display: "flex", gap: 7 }}>
                                 {essenciais.map((cam: any) => <EssentialCard key={cam.key} cam={cam} />)}
@@ -1477,8 +1482,9 @@ export default function Dashboard() {
                       )}
                       {diminuiu.length > 0 && (
                         <div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: "#b91c1c", marginBottom: 7, display: "flex", alignItems: "center", gap: 5 }}>
-                            📉 O que diminuiu — 2024 → 2025
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#b91c1c", marginBottom: 7, display: "flex", alignItems: "center", gap: 6 }}>
+                            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#b91c1c" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="1,4 5,8 8.5,6 14,12"/><polyline points="10,12 14,12 14,8"/></svg>
+                            O que diminuiu — 2024 → 2025
                           </div>
                           <div style={{ display: "flex", gap: 7 }}>
                             {diminuiu.map((cam: any) => <MiniCard key={cam.key} cam={cam} />)}
