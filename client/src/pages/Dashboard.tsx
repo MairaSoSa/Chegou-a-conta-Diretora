@@ -5764,7 +5764,7 @@ out center tags 100;`;
                   {((pddeData?.contas?.length ?? 0) > 0 || pddeUexSaldoData?.ok || pddeSaldosData?.ok) && (
                     <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
                       <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#2d5a88',background:'#e6eef8',padding:'3px 10px',borderRadius:'20px'}}>Contas e saldos</span>
-                      {pddeUexSaldoData?.ok && pddeUexSaldoData.mes && (
+                      {pddeUexSaldoData?.mes && (
                         <span style={{fontSize:'10px',color:'#9b8877',fontStyle:'italic',whiteSpace:'nowrap'}}>
                           {(() => {
                             const [mm, aaaa] = (pddeUexSaldoData.mes as string).split('-');
