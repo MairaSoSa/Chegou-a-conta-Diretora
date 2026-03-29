@@ -5864,8 +5864,9 @@ out center tags 100;`;
                             {prestacaoContaData.itens.map((item: any, i: number) => {
                               const isOkUex = item.situacao_pc_uex?.toLowerCase().includes('adimpl');
                               const isOkEex = item.situacao_pc_eex?.toLowerCase().includes('adimpl');
-                              const hasSuspUex = item.suspensao_uex && item.suspensao_uex !== '—' && item.suspensao_uex.trim() !== '';
-                              const hasSuspEex = item.suspensao_eex && item.suspensao_eex !== '—' && item.suspensao_eex.trim() !== '';
+                              const isNegativo = (v: string) => !v || v === '—' || /^n[aã]o$/i.test(v.trim());
+                              const hasSuspUex = item.suspensao_uex && !isNegativo(item.suspensao_uex);
+                              const hasSuspEex = item.suspensao_eex && !isNegativo(item.suspensao_eex);
                               return (
                                 <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
                                   <td className="py-2 px-3 text-xs font-medium">{item.ds_programa || item.programa || 'PDDE'}</td>
