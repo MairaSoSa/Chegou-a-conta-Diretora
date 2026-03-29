@@ -5844,7 +5844,12 @@ out center tags 100;`;
                   )}
 
                   {/* ── SALDO UEx POR TIPO ── */}
-                  {pddeUexSaldoData?.ok && pddeUexSaldoData.saldos && pddeUexSaldoData.saldos.length > 0 && (
+                  {pddeUexSaldoData?.ok && pddeUexSaldoData.saldos && pddeUexSaldoData.saldos.length > 0 && (() => {
+                    const saldos = pddeUexSaldoData.saldos as any[];
+                    const temFundos   = saldos.some((s: any) => (s.saldo_fundos   ?? 0) !== 0);
+                    const temPoupanca = saldos.some((s: any) => (s.saldo_poupanca ?? 0) !== 0);
+                    const temRdb      = saldos.some((s: any) => (s.saldo_rdb_cdb  ?? 0) !== 0);
+                    return (
                     <div style={{marginBottom:'16px'}}>
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
                         <BanknoteIcon className="w-3.5 h-3.5" /> Saldo bancário UEx — {pddeUexSaldoData.mes}
@@ -5857,22 +5862,22 @@ out center tags 100;`;
                               <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Banco</th>
                               <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ag./Conta</th>
                               <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Saldo C/C</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Fundos</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Poupança</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">RDB/CDB</th>
+                              {temFundos   && <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Fundos</th>}
+                              {temPoupanca && <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Poupança</th>}
+                              {temRdb      && <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">RDB/CDB</th>}
                               <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {pddeUexSaldoData.saldos.map((s: any, i: number) => (
+                            {saldos.map((s: any, i: number) => (
                               <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
                                 <td className="py-2 px-3 text-xs font-medium">{s.programa || '—'}</td>
                                 <td className="py-2 px-3 text-xs">{s.banco || '—'}</td>
                                 <td className="py-2 px-3 text-xs font-mono">{s.agencia || '—'} / {s.conta || '—'}</td>
                                 <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_conta != null ? brl(s.saldo_conta) : '—'}</td>
-                                <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_fundos != null ? brl(s.saldo_fundos) : '—'}</td>
-                                <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_poupanca != null ? brl(s.saldo_poupanca) : '—'}</td>
-                                <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_rdb_cdb != null ? brl(s.saldo_rdb_cdb) : '—'}</td>
+                                {temFundos   && <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_fundos != null ? brl(s.saldo_fundos) : '—'}</td>}
+                                {temPoupanca && <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_poupanca != null ? brl(s.saldo_poupanca) : '—'}</td>}
+                                {temRdb      && <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_rdb_cdb != null ? brl(s.saldo_rdb_cdb) : '—'}</td>}
                                 <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{s.saldo_total != null ? brl(s.saldo_total) : '—'}</td>
                               </tr>
                             ))}
@@ -5880,7 +5885,8 @@ out center tags 100;`;
                         </table>
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
 
                   {/* ── 2c. SITUAÇÃO DA EEx ── */}
                   {pddeData?.ok && pddeData.situacao_eex && (pddeData.situacao_eex.adesao || pddeData.situacao_eex.prestacao_contas) && (() => {
