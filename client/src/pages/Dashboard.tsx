@@ -2429,6 +2429,37 @@ out center tags 100;`;
                   );
                 })()}
 
+                {/* ── FICHA GERAL ── */}
+                <section className="section">
+                  <div className="section-title">
+                    <div><h2>Ficha geral da escola</h2><p>Identidade e vida organizacional</p></div>
+                  </div>
+                  <div className="organic-divider" />
+                  <div className="two-col">
+                    <div className="soft-card theme-blue">
+                      <div className="attention-head"><span>🏫</span><strong>Identidade</strong></div>
+                      <div className="row-list" style={{marginTop:'8px'}}>
+                        {[
+                          ['Situação', censoLatest.ds_situacao],
+                          ['Dependência', censoLatest.ds_dependencia],
+                          ['Localização', censoLatest.ds_localizacao],
+                          ['Região', censoLatest.no_regiao],
+                          ['Município', censoLatest.no_municipio],
+                          ['UF', censoLatest.sg_uf],
+                          ['Código IBGE', censoLatest.co_municipio],
+                          ['Regulamentação', censoLatest.tp_regulamentacao === 1 ? 'Sim' : censoLatest.tp_regulamentacao === 2 ? 'Em tramitação' : censoLatest.tp_regulamentacao === 3 ? 'Não' : null],
+                          ['Prédio escolar', censoLatest.in_local_func_predio_escolar === 1 ? 'Sim' : censoLatest.in_local_func_predio_escolar === 0 ? 'Não' : null],
+                        ].filter(([,v]) => v != null).map(([k, v], i) => (
+                          <div key={i} className="row-item" style={{padding:'7px 14px'}}>
+                            <span style={{color:'var(--m-muted)',fontSize:'12px'}}>{k}</span>
+                            <strong style={{fontSize:'12px'}}>{String(v)}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
                 {/* ── PAINEL DA ESCOLA — RESUMO + ALERTAS + INDICADORES ── */}
                 <section className="section">
                   <div className="section-title">
@@ -2554,38 +2585,6 @@ out center tags 100;`;
                     );
                   })()}
                 </section>
-
-                {/* ── FICHA GERAL ── */}
-                <section className="section">
-                  <div className="section-title">
-                    <div><h2>Ficha geral da escola</h2><p>Identidade e vida organizacional</p></div>
-                  </div>
-                  <div className="organic-divider" />
-                  <div className="two-col">
-                    <div className="soft-card theme-blue">
-                      <div className="attention-head"><span>🏫</span><strong>Identidade</strong></div>
-                      <div className="row-list" style={{marginTop:'8px'}}>
-                        {[
-                          ['Situação', censoLatest.ds_situacao],
-                          ['Dependência', censoLatest.ds_dependencia],
-                          ['Localização', censoLatest.ds_localizacao],
-                          ['Região', censoLatest.no_regiao],
-                          ['Município', censoLatest.no_municipio],
-                          ['UF', censoLatest.sg_uf],
-                          ['Código IBGE', censoLatest.co_municipio],
-                          ['Regulamentação', censoLatest.tp_regulamentacao === 1 ? 'Sim' : censoLatest.tp_regulamentacao === 2 ? 'Em tramitação' : censoLatest.tp_regulamentacao === 3 ? 'Não' : null],
-                          ['Prédio escolar', censoLatest.in_local_func_predio_escolar === 1 ? 'Sim' : censoLatest.in_local_func_predio_escolar === 0 ? 'Não' : null],
-                        ].filter(([,v]) => v != null).map(([k, v], i) => (
-                          <div key={i} className="row-item" style={{padding:'7px 14px'}}>
-                            <span style={{color:'var(--m-muted)',fontSize:'12px'}}>{k}</span>
-                            <strong style={{fontSize:'12px'}}>{String(v)}</strong>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
 
                 {/* ── DESEMPENHO ESCOLAR: SAEB + RENDIMENTO ── */}
                 {(() => {
