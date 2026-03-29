@@ -4253,52 +4253,71 @@ out center tags 100;`;
                   {/* ── GALERIA DE GRÁFICOS (integrada) ── */}
                   {currentChart && available.length > 0 && (
                     <div style={{ marginBottom: 28 }}>
-                      {/* Section header */}
-                      <div className="cg-section-head">
-                        <span className="cg-section-head-label">Evolução visual dos indicadores</span>
-                        <div className="cg-section-head-line" />
-                      </div>
-
-                      {/* Grouped pill selector */}
+                      {/* Accent color from the first line of the current chart */}
                       {(() => {
+                        const _firstLine = (currentChart.lines as any[])[0];
+                        const _chartAccent: string = _firstLine?.color || '#2d5a88';
+
                         const pillGroups = [
                           { label: 'Censo', ids: ['matriculas', 'docentes', 'turmas'] },
                           { label: 'Qualidade', ids: ['ideb', 'saeb', 'rendimento', 'tdi', 'inse'] },
                           { label: 'Condições', ids: ['atu', 'had', 'dsu', 'icg', 'ird', 'tnr'] },
                         ];
+
                         return (
-                          <div className="chart-pill-groups">
-                            {pillGroups.map(group => {
-                              const groupCharts = available.filter(c => group.ids.includes(c.id));
-                              if (groupCharts.length === 0) return null;
-                              return (
-                                <div className="cpg-row" key={group.label}>
-                                  <span className="cpg-group-label">{group.label}</span>
-                                  <div className="cpg-pills">
-                                    {groupCharts.map(c => {
-                                      const active = selectedChart === c.id;
-                                      const cad = (c as any).cadencia as string | undefined;
-                                      return (
-                                        <button
-                                          key={c.id}
-                                          onClick={() => { setSelectedChart(c.id); setChartEtapa('total'); }}
-                                          className={`cpg-pill${active ? ' active' : ''}`}
-                                        >
-                                          <span style={{ fontSize: 13 }}>{c.icon}</span>
-                                          <span>{c.label}</span>
-                                          {cad && (
-                                            <span className={`cpg-pill-cadencia ${cad.toLowerCase()}`}>
-                                              {cad.toLowerCase()}
-                                            </span>
-                                          )}
-                                        </button>
-                                      );
-                                    })}
+                          <>
+                            {/* Section header — cor acompanha a dimensão ativa */}
+                            <div className="cg-section-head">
+                              <span className="cg-section-head-label" style={{ color: _chartAccent }}>
+                                Evolução visual dos indicadores
+                              </span>
+                              <div
+                                className="cg-section-head-line"
+                                style={{ background: `linear-gradient(to right, ${_chartAccent}55, transparent)` }}
+                              />
+                            </div>
+
+                            {/* Grouped pill selector */}
+                            <div className="chart-pill-groups">
+                              {pillGroups.map(group => {
+                                const groupCharts = available.filter(c => group.ids.includes(c.id));
+                                if (groupCharts.length === 0) return null;
+                                return (
+                                  <div className="cpg-row" key={group.label}>
+                                    <span className="cpg-group-label">{group.label}</span>
+                                    <div className="cpg-pills">
+                                      {groupCharts.map(c => {
+                                        const isActive = selectedChart === c.id;
+                                        const cad = (c as any).cadencia as string | undefined;
+                                        const pillAccent: string = ((c.lines as any[])[0])?.color || '#2d5a88';
+                                        return (
+                                          <button
+                                            key={c.id}
+                                            onClick={() => { setSelectedChart(c.id); setChartEtapa('total'); }}
+                                            className={`cpg-pill${isActive ? ' active' : ''}`}
+                                            style={isActive ? {
+                                              borderColor: pillAccent,
+                                              color: pillAccent,
+                                              background: `${pillAccent}18`,
+                                              boxShadow: `0 2px 10px ${pillAccent}30`,
+                                            } : {}}
+                                          >
+                                            <span style={{ fontSize: 13 }}>{c.icon}</span>
+                                            <span>{c.label}</span>
+                                            {cad && (
+                                              <span className={`cpg-pill-cadencia ${cad.toLowerCase()}`}>
+                                                {cad.toLowerCase()}
+                                              </span>
+                                            )}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })}
-                          </div>
+                                );
+                              })}
+                            </div>
+                          </>
                         );
                       })()}
 
