@@ -3364,20 +3364,22 @@ out center tags 100;`;
                   const turEM  = censoLatest.qt_tur_med  ?? null;
                   const turEJA = censoLatest.qt_tur_eja ?? null;
                   const turTot = censoLatest.qt_tur_bas  ?? censoLatest.qt_turmas ?? null;
+                  const turESP = censoLatest.qt_tur_esp  ?? null;
                   const turPctDen = turTot;
                   // Calcula resto para que o total sempre feche
-                  const turSomaEtapas = [turEI, turEF, turEM, turEJA].reduce((s, v) => s + (v ?? 0), 0);
+                  const turSomaEtapas = [turEI, turEF, turEM, turEJA, turESP].reduce((s, v) => s + (v ?? 0), 0);
                   const turResto = turTot != null && turSomaEtapas < turTot ? turTot - turSomaEtapas : null;
                   const docEI  = censoLatest.qt_doc_inf  ?? null;
                   const docEF  = censoLatest.qt_doc_fund ?? null;
                   const docEM  = censoLatest.qt_doc_med  ?? null;
-                  const docEJA = censoLatest.qt_doc_eja ?? null;
+                  const docEJA = censoLatest.qt_doc_eja  ?? null;
+                  const docESP = censoLatest.qt_doc_esp  ?? null;
                   const docTot = censoLatest.qt_doc_bas  ?? censoLatest.qt_docentes ?? null;
                   // Docentes: um mesmo professor pode atuar em mais de uma etapa.
                   // Usamos docTot como denominador; se a soma das etapas ultrapassar o total,
                   // não mostramos o resto (a duplicidade é esperada e explicada em nota).
                   const docPctDen = docTot;
-                  const docSomaEtapas = [docEI, docEF, docEM, docEJA].reduce((s, v) => s + (v ?? 0), 0);
+                  const docSomaEtapas = [docEI, docEF, docEM, docEJA, docESP].reduce((s, v) => s + (v ?? 0), 0);
                   const docResto = docTot != null && docSomaEtapas < docTot ? docTot - docSomaEtapas : null;
                   const salTot    = censoLatest.qt_salas_utilizadas        ?? null;
                   const salDentro = censoLatest.qt_salas_utilizadas_dentro ?? null;
@@ -3414,6 +3416,7 @@ out center tags 100;`;
                               {etapaRow('Fundamental', turEF, turPctDen)}
                               {etapaRow('Médio',     turEM,  turPctDen)}
                               {etapaRow('EJA',       turEJA, turPctDen)}
+                              {etapaRow('Especial',  turESP, turPctDen)}
                               {turResto != null && turResto > 0 && etapaRow('Outras', turResto, turPctDen)}
                               <div style={{borderTop:'1px solid #eee',marginTop:'6px',paddingTop:'8px',display:'flex',justifyContent:'space-between',fontSize:'12px'}}>
                                 <span style={{color:'var(--m-muted)',fontWeight:600}}>Total</span>
@@ -3430,6 +3433,7 @@ out center tags 100;`;
                               {etapaRow('Fundamental', docEF, docPctDen)}
                               {etapaRow('Médio',     docEM,  docPctDen)}
                               {etapaRow('EJA',       docEJA, docPctDen)}
+                              {etapaRow('Especial',  docESP, docPctDen)}
                               {docResto != null && docResto > 0 && etapaRow('Outras', docResto, docPctDen)}
                               <div style={{borderTop:'1px solid #eee',marginTop:'6px',paddingTop:'8px',display:'flex',justifyContent:'space-between',fontSize:'12px'}}>
                                 <span style={{color:'var(--m-muted)',fontWeight:600}}>Total</span>
