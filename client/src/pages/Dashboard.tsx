@@ -255,7 +255,9 @@ export default function Dashboard() {
   const { data: pddeExecFinData, isLoading: pddeExecFinLoading, isError: pddeExecFinError } = usePddeExecFin(selectedInep);
   const { data: pddeUexSaldoData, isLoading: pddeUexSaldoLoading } = usePddeUexSaldo(pddeCnpj, { mes: saldoMesSel });
   const { data: cadastralData, isLoading: cadastralLoading } = usePddeSituacaoCadastral(selectedInep, pddeAno);
-  const { data: prestacaoContaData, isLoading: prestacaoContaLoading } = usePddePrestacaoConta(selectedInep, pddeAno);
+  const [prestacaoContaAno, setPrestacaoContaAno] = useState<number | null>(null);
+  const prestacaoContaAnoEfetivo = prestacaoContaAno ?? pddeAno;
+  const { data: prestacaoContaData, isLoading: prestacaoContaLoading } = usePddePrestacaoConta(selectedInep, prestacaoContaAnoEfetivo, prestacaoContaAno !== null);
   const { data: atendimentoData, isLoading: atendimentoLoading } = usePddeAtendimento(selectedInep, pddeAno);
   const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined, pddeAno);
   const listFilters = useMemo(() => {
@@ -5834,7 +5836,7 @@ out center tags 100;`;
                   )}
 
                   {/* ── GRUPO: PRESTAÇÃO DE CONTAS ── */}
-                  {(prestacaoContaData?.ok || sigpcData?.ok) && (
+                  {(prestacaoContaLoading || prestacaoContaData?.ok || sigpcData?.ok) && (
                     <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
                       <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#9b6a16',background:'#fdf3e0',padding:'3px 10px',borderRadius:'20px'}}>Prestação de contas</span>
                       <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#f0ddb5,transparent)'}} />
@@ -5842,52 +5844,107 @@ out center tags 100;`;
                   )}
 
                   {/* ── 3. PRESTAÇÃO DE CONTAS ── */}
-                  {prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 && (
-                    <div style={{marginBottom:'16px'}}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <FileText className="w-3.5 h-3.5" /> Prestação de Contas
-                      </p>
-                      <div className="table-card" style={{overflowX:'auto'}}>
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. UEx</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. EEx</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp. UEx</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp. EEx</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Vl. Previsto</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {prestacaoContaData.itens.map((item: any, i: number) => {
-                              const isOkUex = item.situacao_pc_uex?.toLowerCase().includes('adimpl');
-                              const isOkEex = item.situacao_pc_eex?.toLowerCase().includes('adimpl');
-                              const isNegativo = (v: string) => !v || v === '—' || /^n[aã]o$/i.test(v.trim());
-                              const hasSuspUex = item.suspensao_uex && !isNegativo(item.suspensao_uex);
-                              const hasSuspEex = item.suspensao_eex && !isNegativo(item.suspensao_eex);
-                              return (
-                                <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                  <td className="py-2 px-3 text-xs font-medium">{item.ds_programa || item.programa || 'PDDE'}</td>
-                                  <td className="py-2 px-3 text-xs">{item.ano || pddeAno}</td>
-                                  <td className="py-2 px-3">
-                                    {item.situacao_pc_uex ? <span className={`badge ${isOkUex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_uex}</span> : <span className="text-muted-foreground text-xs">—</span>}
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    {item.situacao_pc_eex ? <span className={`badge ${isOkEex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_eex}</span> : <span className="text-muted-foreground text-xs">—</span>}
-                                  </td>
-                                  <td className="py-2 px-3 text-xs">{hasSuspUex ? <span className="badge badge-critical">{item.suspensao_uex}</span> : <span className="text-muted-foreground">—</span>}</td>
-                                  <td className="py-2 px-3 text-xs">{hasSuspEex ? <span className="badge badge-critical">{item.suspensao_eex}</span> : <span className="text-muted-foreground">—</span>}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono">{item.valor_previsto || '—'}</td>
+                  {(prestacaoContaLoading || prestacaoContaData?.ok) && (() => {
+                    const currentYear = new Date().getFullYear();
+                    const years = Array.from({ length: currentYear - 2016 }, (_, i) => currentYear - i);
+                    const anoExibido = prestacaoContaAnoEfetivo;
+                    return (
+                      <div style={{marginBottom:'16px'}}>
+                        {/* Cabeçalho com seletor de ano */}
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'8px',flexWrap:'wrap',gap:'6px'}}>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1" style={{margin:0}}>
+                            <FileText className="w-3.5 h-3.5" /> Prestação de Contas
+                          </p>
+                          <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                            <span style={{fontSize:'11px',color:'#9b8877'}}>Exercício:</span>
+                            <select
+                              value={anoExibido}
+                              onChange={e => setPrestacaoContaAno(Number(e.target.value))}
+                              style={{
+                                fontSize:'12px',fontWeight:600,color:'#4a3728',
+                                background:'#fdf6ee',border:'1px solid #e8d8c0',
+                                borderRadius:'6px',padding:'3px 8px',cursor:'pointer',
+                                appearance:'none',paddingRight:'22px',
+                                backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239b8877'/%3E%3C/svg%3E")`,
+                                backgroundRepeat:'no-repeat',backgroundPosition:'right 7px center'
+                              }}
+                            >
+                              {years.map(y => (
+                                <option key={y} value={y}>{y}</option>
+                              ))}
+                            </select>
+                            {prestacaoContaAno !== null && (
+                              <button
+                                onClick={() => setPrestacaoContaAno(null)}
+                                title="Voltar ao ano automático"
+                                style={{fontSize:'10px',color:'#9b8877',background:'none',border:'none',cursor:'pointer',padding:'0 2px',textDecoration:'underline'}}
+                              >
+                                Auto
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Loading */}
+                        {prestacaoContaLoading && (
+                          <div style={{display:'flex',alignItems:'center',gap:'8px',padding:'12px',color:'#9b8877',fontSize:'12px'}}>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Consultando FNDE para {anoExibido}…
+                          </div>
+                        )}
+
+                        {/* Sem dados para o ano selecionado */}
+                        {!prestacaoContaLoading && prestacaoContaAno !== null && (!prestacaoContaData?.ok || prestacaoContaData.itens.length === 0) && (
+                          <div style={{padding:'12px',background:'#faf7f2',borderRadius:'8px',border:'1px solid #ede3d3',fontSize:'12px',color:'#9b8877',textAlign:'center'}}>
+                            Nenhum registro encontrado para {anoExibido} no FNDE.
+                          </div>
+                        )}
+
+                        {/* Tabela de dados */}
+                        {!prestacaoContaLoading && prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 && (
+                          <div className="table-card" style={{overflowX:'auto'}}>
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. UEx</th>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. EEx</th>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp. UEx</th>
+                                  <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp. EEx</th>
+                                  <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Vl. Previsto</th>
                                 </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                              </thead>
+                              <tbody>
+                                {prestacaoContaData.itens.map((item: any, i: number) => {
+                                  const isOkUex = item.situacao_pc_uex?.toLowerCase().includes('adimpl');
+                                  const isOkEex = item.situacao_pc_eex?.toLowerCase().includes('adimpl');
+                                  const isNegativo = (v: string) => !v || v === '—' || /^n[aã]o$/i.test(v.trim());
+                                  const hasSuspUex = item.suspensao_uex && !isNegativo(item.suspensao_uex);
+                                  const hasSuspEex = item.suspensao_eex && !isNegativo(item.suspensao_eex);
+                                  return (
+                                    <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                      <td className="py-2 px-3 text-xs font-medium">{item.ds_programa || item.programa || 'PDDE'}</td>
+                                      <td className="py-2 px-3 text-xs font-semibold" style={{color:'#9b6a16'}}>{item.ano || anoExibido}</td>
+                                      <td className="py-2 px-3">
+                                        {item.situacao_pc_uex ? <span className={`badge ${isOkUex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_uex}</span> : <span className="text-muted-foreground text-xs">—</span>}
+                                      </td>
+                                      <td className="py-2 px-3">
+                                        {item.situacao_pc_eex ? <span className={`badge ${isOkEex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_eex}</span> : <span className="text-muted-foreground text-xs">—</span>}
+                                      </td>
+                                      <td className="py-2 px-3 text-xs">{hasSuspUex ? <span className="badge badge-critical">{item.suspensao_uex}</span> : <span className="text-muted-foreground">—</span>}</td>
+                                      <td className="py-2 px-3 text-xs">{hasSuspEex ? <span className="badge badge-critical">{item.suspensao_eex}</span> : <span className="text-muted-foreground">—</span>}</td>
+                                      <td className="py-2 px-3 text-xs text-right font-mono">{item.valor_previsto || '—'}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* ── 7. SIGPC — PRESTAÇÃO DE CONTAS DETALHADA ── */}
                   {(pddeCnpj || pddeData?.ok === false) && (<div style={{marginBottom:'16px'}}>

@@ -279,10 +279,10 @@ export interface SituacaoPrestacaoContaResult {
   error?: string;
 }
 
-export function usePddePrestacaoConta(inep: string | null, ano?: number) {
+export function usePddePrestacaoConta(inep: string | null, ano?: number, noFallback?: boolean) {
   const queryYear = ano || new Date().getFullYear();
   return useQuery<SituacaoPrestacaoContaResult>({
-    queryKey: ["pdde-prestacao-conta", inep, queryYear],
+    queryKey: ["pdde-prestacao-conta", inep, queryYear, noFallback],
     queryFn: async () => {
       if (!inep) return { ok: false, disponivel: false, total_registros: null, pagina_atual: 1, itens: [], error: "Sem código INEP" };
       const tryYear = async (year: number) => {
@@ -291,7 +291,7 @@ export function usePddePrestacaoConta(inep: string | null, ano?: number) {
         return normalizeTextDeep(await res.json()) as SituacaoPrestacaoContaResult;
       };
       const result = await tryYear(queryYear);
-      if (result.ok && result.itens.length === 0) return tryYear(queryYear - 1);
+      if (!noFallback && result.ok && result.itens.length === 0) return tryYear(queryYear - 1);
       return result;
     },
     enabled: !!inep && /^\d{8}$/.test(inep),
