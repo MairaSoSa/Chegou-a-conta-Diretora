@@ -2584,7 +2584,10 @@ out center tags 100;`;
                           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:'14px',marginTop:'16px'}}>
                             {diagnosticoData.pontos_fortes.length > 0 && (
                               <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #2f7a58'}}>
-                                <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2f7a58'}}>✅ Pontos fortes</div>
+                                <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2f7a58',display:'flex',alignItems:'center',gap:'6px'}}>
+                                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#2f7a58" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="7.5" cy="7.5" r="6.2"/><polyline points="4.5,7.8 6.5,10 10.5,5"/></svg>
+                                  Pontos fortes
+                                </div>
                                 <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
                                   {diagnosticoData.pontos_fortes.map((p: string, i: number) => (
                                     <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
@@ -2594,7 +2597,10 @@ out center tags 100;`;
                             )}
                             {diagnosticoData.leituras.length > 0 && (
                               <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #2d5a88'}}>
-                                <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2d5a88'}}>📊 Leituras dos dados</div>
+                                <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2d5a88',display:'flex',alignItems:'center',gap:'6px'}}>
+                                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#2d5a88" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="1.5" y="8.5" width="3" height="5" rx="0.5"/><rect x="6" y="5.5" width="3" height="8" rx="0.5"/><rect x="10.5" y="2.5" width="3" height="11" rx="0.5"/><line x1="0.5" y1="14" x2="14.5" y2="14"/></svg>
+                                  Leituras dos dados
+                                </div>
                                 <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
                                   {diagnosticoData.leituras.map((p: string, i: number) => (
                                     <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
