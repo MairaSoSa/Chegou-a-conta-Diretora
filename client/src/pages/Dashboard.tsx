@@ -4440,8 +4440,7 @@ out center tags 100;`;
                   )}
                   <div className="soft-card" style={{padding:0,overflow:'hidden'}}>
                     <div className="tab-head">
-                      <h3 style={{margin:'0 0 4px',fontSize:'18px',letterSpacing:'-0.03em'}}>Evolução do Censo Escolar</h3>
-                      <p style={{margin:0,color:'var(--m-muted)',fontSize:'13px'}}>3 camadas · 10 dimensões · células verdes/vermelhas indicam mudanças entre anos</p>
+                      <h3 style={{margin:0,fontSize:'18px',letterSpacing:'-0.03em'}}>Evolução do Censo Escolar</h3>
                     </div>
 
                     {/* ── NAVEGAÇÃO: 3 CAMADAS × 10 DIMENSÕES ── */}
