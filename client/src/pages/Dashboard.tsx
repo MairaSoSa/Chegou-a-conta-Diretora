@@ -4513,12 +4513,20 @@ out center tags 100;`;
                       const c = evolucaoData.censo_por_ano;
                       type Row = { label: string; key: string; header?: boolean };
 
+                      // ── COR DA CAMADA ATIVA ──
+                      const dimColorMap: Record<string, string> = {
+                        dim1: '#2d5a88', dim2: '#2d5a88', dim3: '#2d5a88', dim4: '#2d5a88',
+                        dim5: '#2f7a58', dim6: '#2f7a58', dim7: '#2f7a58',
+                        dim8: '#9b6a16', dim9: '#9b6a16', dim10: '#9b6a16',
+                      };
+                      const dimColor = dimColorMap[activeSchoolTab as string] || '#2d5a88';
+
                       // ── COMPONENTE: cabeçalho da dimensão ──
                       const DimHeader = ({ num, icon, title, desc, index: idx2 }: { num: number; icon: string; title: string; desc: string; index: string }) => (
-                        <div style={{ padding: '14px 20px', borderBottom: '1px solid #eee8db', background: '#faf8f4', display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <div style={{ padding: '14px 20px 14px 22px', borderBottom: '1px solid #eee8db', background: `${dimColor}0f`, borderLeft: `5px solid ${dimColor}`, display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s' }}>
                           <div style={{ fontSize: 28, lineHeight: 1 }}>{icon}</div>
                           <div>
-                            <div style={{ fontSize: 15, fontWeight: 800, color: '#3d2b1a', letterSpacing: '-0.02em' }}>Dimensão {num} — {title}</div>
+                            <div style={{ fontSize: 15, fontWeight: 800, color: dimColor, letterSpacing: '-0.02em' }}>Dimensão {num} — {title}</div>
                             <div style={{ fontSize: 12, color: '#8a7a6a', marginTop: 2 }}>{desc} · <span style={{ fontWeight: 600 }}>Índice: {idx2}</span></div>
                           </div>
                         </div>
@@ -4526,8 +4534,8 @@ out center tags 100;`;
 
                       // ── ESTILOS DE SUMMARY COMPARTILHADOS ──
                       const summaryStyle: React.CSSProperties = {
-                        padding: '11px 20px', fontWeight: 700, fontSize: 13, color: '#5d4037',
-                        background: '#faf7f2', borderBottom: '1px solid #ede8df',
+                        padding: '11px 20px', fontWeight: 700, fontSize: 13, color: dimColor,
+                        background: `${dimColor}0d`, borderBottom: '1px solid #ede8df',
                         cursor: 'pointer', userSelect: 'none', listStyle: 'none',
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       };
@@ -4538,10 +4546,10 @@ out center tags 100;`;
                           <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                               <thead>
-                                <tr style={{ background: '#f0ebe0' }}>
-                                  <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 700, color: '#5d3a1a', fontSize: 12, minWidth: 220, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Indicador</th>
+                                <tr style={{ background: `${dimColor}18` }}>
+                                  <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 700, color: dimColor, fontSize: 12, minWidth: 220, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Indicador</th>
                                   {anos.map((a: number, ai: number) => (
-                                    <th key={a} style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: '#5d3a1a', fontSize: 12, minWidth: 70, background: ai === anos.length - 1 ? '#e8dfc8' : undefined }}>
+                                    <th key={a} style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: dimColor, fontSize: 12, minWidth: 70, background: ai === anos.length - 1 ? `${dimColor}28` : undefined }}>
                                       {a}
                                     </th>
                                   ))}
@@ -4551,7 +4559,7 @@ out center tags 100;`;
                                 {rows.map((row, rowIdx) => {
                                   if (row.header) return (
                                     <tr key={rowIdx}>
-                                      <td colSpan={anos.length + 1} style={{ padding: '8px 20px', background: '#ede8df', fontWeight: 800, fontSize: 11, color: '#7a5230', textTransform: 'uppercase', letterSpacing: '0.06em', borderTop: '2px solid #ddd5c5' }}>
+                                      <td colSpan={anos.length + 1} style={{ padding: '8px 20px', background: `${dimColor}20`, fontWeight: 800, fontSize: 11, color: dimColor, textTransform: 'uppercase', letterSpacing: '0.06em', borderTop: `2px solid ${dimColor}40` }}>
                                         {row.label}
                                       </td>
                                     </tr>
@@ -4622,10 +4630,10 @@ out center tags 100;`;
                           <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                               <thead>
-                                <tr style={{ background: '#f0ebe0' }}>
-                                  <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 700, color: '#5d3a1a', fontSize: 12, minWidth: 220, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Indicador</th>
+                                <tr style={{ background: `${dimColor}18` }}>
+                                  <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 700, color: dimColor, fontSize: 12, minWidth: 220, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Indicador</th>
                                   {anos.map((a: number, ai: number) => (
-                                    <th key={a} style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: '#5d3a1a', fontSize: 12, minWidth: 70, background: ai === anos.length - 1 ? '#e8dfc8' : undefined }}>{a}</th>
+                                    <th key={a} style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: dimColor, fontSize: 12, minWidth: 70, background: ai === anos.length - 1 ? `${dimColor}28` : undefined }}>{a}</th>
                                   ))}
                                 </tr>
                               </thead>
@@ -4633,7 +4641,7 @@ out center tags 100;`;
                                 {enriched.map((er, idx) => {
                                   if (er.kind === 'header') return (
                                     <tr key={idx}>
-                                      <td colSpan={anos.length + 1} style={{ padding: '8px 20px', background: '#ede8df', fontWeight: 800, fontSize: 11, color: '#7a5230', textTransform: 'uppercase', letterSpacing: '0.06em', borderTop: '2px solid #ddd5c5' }}>
+                                      <td colSpan={anos.length + 1} style={{ padding: '8px 20px', background: `${dimColor}20`, fontWeight: 800, fontSize: 11, color: dimColor, textTransform: 'uppercase', letterSpacing: '0.06em', borderTop: `2px solid ${dimColor}40` }}>
                                         {er.label}
                                       </td>
                                     </tr>
@@ -4689,10 +4697,10 @@ out center tags 100;`;
                           <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                               <thead>
-                                <tr style={{ background: '#f0ebe0' }}>
-                                  <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 700, color: '#5d3a1a', fontSize: 12, minWidth: 220, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Campo</th>
+                                <tr style={{ background: `${dimColor}18` }}>
+                                  <th style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 700, color: dimColor, fontSize: 12, minWidth: 220, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Campo</th>
                                   {anos.map((a: number, ai: number) => (
-                                    <th key={a} style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700, color: '#5d3a1a', fontSize: 12, minWidth: 120, background: ai === anos.length - 1 ? '#e8dfc8' : undefined }}>{a}</th>
+                                    <th key={a} style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700, color: dimColor, fontSize: 12, minWidth: 120, background: ai === anos.length - 1 ? `${dimColor}28` : undefined }}>{a}</th>
                                   ))}
                                 </tr>
                               </thead>
