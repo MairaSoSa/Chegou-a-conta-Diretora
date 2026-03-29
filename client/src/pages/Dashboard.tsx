@@ -5869,6 +5869,15 @@ out center tags 100;`;
                   {(atendimentoData?.ok || pddeExecFinData?.ok || (pddeData?.destinacoes?.length ?? 0) > 0) && (
                     <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
                       <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#2f7a58',background:'#e8f5ee',padding:'3px 10px',borderRadius:'20px'}}>Repasses e execução</span>
+                      <select
+                        value={pddeAno}
+                        onChange={e => setPddeAno(Number(e.target.value))}
+                        style={{fontSize:'11px',fontWeight:700,color:'#2f7a58',background:'#e8f5ee',border:'1px solid #b8e0cc',borderRadius:'8px',padding:'2px 8px',cursor:'pointer',outline:'none'}}
+                      >
+                        {Array.from({length: new Date().getFullYear() - 2017}, (_, i) => new Date().getFullYear() - i).map(y => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
                       <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#b8e0cc,transparent)'}} />
                     </div>
                   )}
