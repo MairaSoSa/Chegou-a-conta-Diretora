@@ -5407,6 +5407,913 @@ out center tags 100;`;
                     );
                   })()}
 
+                  {/* ── ALERTA: ESCOLA SEM UEx ── */}
+                  {pddeData?.ok && !pddeData?.uex &&
+                   (pddeData?.destinacoes?.length ?? 0) > 0 &&
+                   pddeData.destinacoes!.every((d: any) => (d.pago_total ?? 0) === 0) && (() => {
+                    const totalDevido = pddeData.destinacoes!.reduce((s: number, d: any) => s + (d.devido_total ?? 0), 0);
+                    return (
+                      <div style={{
+                        background:'#fef2f2',border:'1.5px solid #fca5a5',borderRadius:'10px',
+                        padding:'14px 16px',marginBottom:'16px',
+                        display:'flex',flexDirection:'column',gap:'8px'
+                      }}>
+                        <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                          <AlertTriangle className="w-4 h-4" style={{color:'#dc2626',flexShrink:0}} />
+                          <span style={{fontSize:'13px',fontWeight:800,color:'#991b1b'}}>
+                            Repasses suspensos — Escola sem UEx cadastrada
+                          </span>
+                          <span style={{fontSize:'10px',fontWeight:700,color:'#991b1b',background:'#fecaca',borderRadius:'9999px',padding:'1px 8px',marginLeft:'auto',whiteSpace:'nowrap'}}>
+                            ⚠ Ativo
+                          </span>
+                        </div>
+                        <p style={{fontSize:'12px',color:'#7f1d1d',margin:0,lineHeight:'1.6'}}>
+                          Esta escola <strong>não possui Unidade Executora (UEx/EM) registrada no FNDE</strong>.
+                          Enquanto a UEx não for criada e cadastrada, os repasses do PDDE ficam bloqueados
+                          — mesmo que os recursos estejam previstos.
+                        </p>
+                        {totalDevido > 0 && (
+                          <div style={{background:'#fee2e2',borderRadius:'6px',padding:'6px 10px',display:'inline-flex',alignItems:'center',gap:'8px',alignSelf:'flex-start'}}>
+                            <span style={{fontSize:'11px',color:'#7f1d1d',fontWeight:600}}>
+                              Valor previsto bloqueado:
+                            </span>
+                            <span style={{fontSize:'13px',fontWeight:800,color:'#991b1b',fontFamily:'monospace'}}>
+                              {totalDevido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </span>
+                          </div>
+                        )}
+                        <p style={{fontSize:'11px',color:'#9ca3af',margin:0}}>
+                          Para regularizar: a escola precisa constituir uma UEx (conselho escolar ou APM) e cadastrá-la no PDDE/FNDE.
+                        </p>
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── ALERTA: UEx COM PENDÊNCIAS (tem UEx mas tem problemas) ── */}
+                  {pddeData?.ok && pddeData?.uex && (() => {
+                    const mandatoFimStr = cadastralData?.itens?.[0]?.data_fim_mandato || pddeData?.situacao_uex?.mandato_fim || null;
+                    const fimDate = mandatoFimStr ? (() => {
+                      const [dd, mm, aaaa] = mandatoFimStr.split('/');
+                      return aaaa ? new Date(+aaaa, +mm - 1, +dd) : null;
+                    })() : null;
+                    const mandatoVencido =
+                      cadastralData?.itens?.[0]?.mandato_dirigente === 'VENCIDO' ||
+                      (fimDate ? fimDate < new Date() : false);
+                    const pendentes: Array<{ano_exercicio: number; programa: string}> =
+                      pddeData?.situacao_uex?.programas_pendentes || [];
+                    const pcInadimplente = prestacaoContaData?.itens?.some(
+                      (it: any) => it.situacao_pc_uex?.toLowerCase().includes('inadimp') ||
+                                   it.situacao_pc_eex?.toLowerCase().includes('inadimp')
+                    );
+                    const dests: Array<any> = pddeData?.destinacoes || [];
+                    const uexTodosPago0 = !mandatoVencido && pendentes.length === 0 && !pcInadimplente &&
+                      dests.length > 0 && dests.every((d: any) => (d.pago_total ?? 0) === 0);
+                    const destsBloqueadas = (!mandatoVencido && pendentes.length === 0 && !pcInadimplente && !uexTodosPago0)
+                      ? dests.filter((d: any) => (d.pago_total ?? 0) === 0 && (d.devido_total ?? 0) > 0)
+                      : [];
+
+                    if (!mandatoVencido && pendentes.length === 0 && !pcInadimplente && !uexTodosPago0 && destsBloqueadas.length === 0) return null;
+
+                    return (
+                      <div style={{
+                        background:'#fff7ed',border:'1.5px solid #fed7aa',borderRadius:'10px',
+                        padding:'14px 16px',marginBottom:'16px',
+                        display:'flex',flexDirection:'column',gap:'8px'
+                      }}>
+                        <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                          <AlertTriangle className="w-4 h-4" style={{color:'#c2410c',flexShrink:0}} />
+                          <span style={{fontSize:'13px',fontWeight:800,color:'#7c2d12'}}>
+                            UEx com pendências — repasses podem estar bloqueados
+                          </span>
+                          <span style={{fontSize:'10px',fontWeight:700,color:'#c2410c',background:'#fed7aa',borderRadius:'9999px',padding:'1px 8px',marginLeft:'auto',whiteSpace:'nowrap'}}>
+                            ⚠ Ativo
+                          </span>
+                        </div>
+
+                        {mandatoVencido && (
+                          <div style={{display:'flex',alignItems:'flex-start',gap:'8px',background:'#ffedd5',borderRadius:'6px',padding:'8px 10px'}}>
+                            <span style={{fontSize:'11px',fontWeight:700,color:'#7c2d12',background:'#fed7aa',borderRadius:'4px',padding:'1px 6px',whiteSpace:'nowrap',flexShrink:0}}>Dirigente</span>
+                            <span style={{fontSize:'12px',color:'#7c2d12',fontWeight:500}}>
+                              <strong>UEx sem dirigente ativo</strong> — mandato encerrado em {mandatoFimStr}.
+                              A UEx precisa eleger novo presidente e atualizar o cadastro no FNDE.
+                            </span>
+                          </div>
+                        )}
+
+                        {pendentes.length > 0 && (
+                          <div style={{display:'flex',alignItems:'flex-start',gap:'8px',background:'#ffedd5',borderRadius:'6px',padding:'8px 10px'}}>
+                            <span style={{fontSize:'11px',fontWeight:700,color:'#7c2d12',background:'#fed7aa',borderRadius:'4px',padding:'1px 6px',whiteSpace:'nowrap',flexShrink:0}}>PC</span>
+                            <span style={{fontSize:'12px',color:'#7c2d12',fontWeight:500}}>
+                              <strong>Prestação de Contas pendente</strong> —{' '}
+                              {pendentes.map((p, i) => (
+                                <span key={i}>{p.programa} ({p.ano_exercicio}){i < pendentes.length - 1 ? ', ' : ''}</span>
+                              ))}.
+                              {' '}Se não regularizar até 31/outubro, o FNDE não repassará recursos.
+                            </span>
+                          </div>
+                        )}
+
+                        {pcInadimplente && pendentes.length === 0 && (
+                          <div style={{display:'flex',alignItems:'flex-start',gap:'8px',background:'#ffedd5',borderRadius:'6px',padding:'8px 10px'}}>
+                            <span style={{fontSize:'11px',fontWeight:700,color:'#7c2d12',background:'#fed7aa',borderRadius:'4px',padding:'1px 6px',whiteSpace:'nowrap',flexShrink:0}}>PC</span>
+                            <span style={{fontSize:'12px',color:'#7c2d12',fontWeight:500}}>
+                              <strong>Inadimplência registrada no FNDE</strong> — verifique a situação da PC para regularizar.
+                            </span>
+                          </div>
+                        )}
+
+                        {uexTodosPago0 && (
+                          <div style={{display:'flex',alignItems:'flex-start',gap:'8px',background:'#ffedd5',borderRadius:'6px',padding:'8px 10px'}}>
+                            <span style={{fontSize:'11px',fontWeight:700,color:'#7c2d12',background:'#fed7aa',borderRadius:'4px',padding:'1px 6px',whiteSpace:'nowrap',flexShrink:0}}>Cadastro</span>
+                            <span style={{fontSize:'12px',color:'#7c2d12',fontWeight:500}}>
+                              <strong>Nenhum repasse efetuado</strong> — a UEx existe e o mandato está vigente,
+                              mas todos os pagamentos estão zerados. Possíveis causas: CNPJ inválido na Receita Federal,
+                              conta corrente inativa ou bloqueio cadastral não visível no PDDEweb.
+                              Verifique o <em>Relatório de Suspensão</em> no FNDE.
+                            </span>
+                          </div>
+                        )}
+
+                        {destsBloqueadas.length > 0 && (
+                          <div style={{display:'flex',alignItems:'flex-start',gap:'8px',background:'#ffedd5',borderRadius:'6px',padding:'8px 10px'}}>
+                            <span style={{fontSize:'11px',fontWeight:700,color:'#7c2d12',background:'#fed7aa',borderRadius:'4px',padding:'1px 6px',whiteSpace:'nowrap',flexShrink:0}}>Repasse</span>
+                            <span style={{fontSize:'12px',color:'#7c2d12',fontWeight:500,display:'flex',flexDirection:'column',gap:'4px'}}>
+                              <span><strong>Destinação(ões) com pagamento zerado</strong> — possível conta corrente inativa ou bloqueio específico:</span>
+                              {destsBloqueadas.map((d: any, i: number) => (
+                                <span key={i} style={{fontFamily:'monospace',fontSize:'11px',background:'#fed7aa',borderRadius:'3px',padding:'1px 6px',alignSelf:'flex-start'}}>
+                                  {d.destinacao} — previsto: {(d.devido_total ?? 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                                </span>
+                              ))}
+                              <span style={{fontSize:'11px',color:'#92400e'}}>Verifique o <em>Relatório de Suspensão</em> no FNDE para o motivo específico.</span>
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── GRUPO: QUEM GERENCIA ── */}
+                  {(pddeData?.ok || cadastralData?.ok) && (
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'4px'}}>
+                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#7c5cbf',background:'#f3eeff',padding:'3px 10px',borderRadius:'20px'}}>Quem gerencia</span>
+                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#e8e0f5,transparent)'}} />
+                    </div>
+                  )}
+
+                  {/* ── 1. IDENTIDADE DA UEx ── */}
+                  {(pddeData?.ok || cadastralData?.ok) && (() => {
+                    const uexNome = pddeData?.uex?.executora || cadastralData?.itens?.[0]?.razao_social || null;
+                    const cnpj = pddeData?.uex?.cnpj || null;
+                    const cnpjEex = cadastralData?.itens?.[0]?.cnpj_eex || null;
+                    const rede = pddeData?.rede || cadastralData?.itens?.[0]?.rede_atendimento || null;
+                    const municipio = pddeData?.municipio || pddeData?.uex?.municipio || null;
+                    const uf = pddeData?.uf || pddeData?.uex?.uf || null;
+                    const localizacao = cadastralData?.itens?.[0]?.localizacao || null;
+                    const ddd = cadastralData?.itens?.[0]?.ddd || null;
+                    const telefone = cadastralData?.itens?.[0]?.telefone || null;
+                    const dataAtualizacao = cadastralData?.itens?.[0]?.data_atualizacao || null;
+                    const dirigente = cadastralData?.itens?.[0]?.mandato_dirigente || null;
+                    const mandatoFim = cadastralData?.itens?.[0]?.data_fim_mandato || pddeData?.situacao_uex?.mandato_fim || null;
+                    const mandatoInicio = pddeData?.situacao_uex?.mandato_inicio || null;
+                    const dadosCadastrais = pddeData?.situacao_uex?.dados_cadastrais || null;
+                    const now = new Date();
+                    const fimDate = mandatoFim ? (() => { const [d,m,a] = mandatoFim.split('/'); return a ? new Date(+a,+m-1,+d) : null; })() : null;
+                    const vigente = fimDate ? fimDate >= now : null;
+                    return (
+                      <div className="soft-card" style={{marginBottom:'16px',padding:'20px'}}>
+                        <div style={{display:'flex',alignItems:'flex-start',gap:'16px',flexWrap:'wrap'}}>
+                          <div style={{flex:'1 1 260px'}}>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                              <Landmark className="w-3.5 h-3.5" /> Unidade Executora (UEx)
+                            </p>
+                            {uexNome && <p style={{fontWeight:700,fontSize:'14px',lineHeight:'1.4',marginBottom:'6px'}}>{uexNome}</p>}
+                            <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
+                              {cnpj && <span className="meta-chip">CNPJ UEx: {cnpj}</span>}
+                              {cnpjEex && <span className="meta-chip">CNPJ EEx: {cnpjEex}</span>}
+                              {municipio && uf && <span className="meta-chip flex items-center gap-0.5"><MapPin size={10} /> {municipio}/{uf}</span>}
+                              {rede && <span className="meta-chip flex items-center gap-0.5"><Building2 size={10} /> {rede}</span>}
+                              {localizacao && <span className="meta-chip flex items-center gap-0.5"><MapPin size={10} /> {localizacao}</span>}
+                              {(ddd || telefone) && <span className="meta-chip flex items-center gap-0.5"><Phone size={10} /> {ddd ? `(${ddd}) ` : ''}{telefone}</span>}
+                              {dataAtualizacao && <span className="meta-chip text-muted-foreground">Atualizado: {dataAtualizacao}</span>}
+                            </div>
+                          </div>
+                          <div style={{flex:'1 1 220px',borderLeft:'2px solid #f0ece4',paddingLeft:'16px'}}>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Diretoria vigente</p>
+                            {dirigente && (
+                              <div style={{marginBottom:'6px'}}>
+                                <span className="text-xs text-muted-foreground">Presidente / Dirigente</span>
+                                <p style={{fontWeight:700,fontSize:'13px'}}>{dirigente}</p>
+                              </div>
+                            )}
+                            {(mandatoInicio || mandatoFim) && (
+                              <div style={{marginBottom:'6px'}}>
+                                <span className="text-xs text-muted-foreground">Vigência do mandato</span>
+                                <p style={{fontSize:'13px',fontWeight:600}}>
+                                  {mandatoInicio && mandatoFim ? `${mandatoInicio} → ${mandatoFim}` : mandatoFim ? `até ${mandatoFim}` : mandatoInicio}
+                                  {vigente !== null && (
+                                    <span className={`ml-2 badge ${vigente ? 'badge-good' : 'badge-attn'}`} style={{verticalAlign:'middle'}}>
+                                      {vigente ? 'Vigente' : 'Expirado'}
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            )}
+                            {!dirigente && !mandatoInicio && !mandatoFim && (
+                              <p className="text-xs text-muted-foreground">Dados da diretoria não disponíveis</p>
+                            )}
+                          </div>
+                        </div>
+                        {dadosCadastrais && (
+                          <div style={{marginTop:'14px',paddingTop:'12px',borderTop:'1px solid #f0ece4'}}>
+                            <p className="text-xs text-muted-foreground" style={{lineHeight:'1.6'}}>
+                              <strong>Situação cadastral:</strong> {dadosCadastrais}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── RESUMO RÁPIDO ── */}
+                  {(() => {
+                    const totalRepasses = atendimentoData?.ok
+                      ? atendimentoData.itens.reduce((s: number, r: any) => s + (r.vl_repasse_custeio || 0) + (r.vl_repasse_capital || 0), 0)
+                      : pddeExecFinData?.ok
+                        ? pddeExecFinData.repasses.reduce((s: number, r: any) => s + (r.vl_pago_total || 0), 0)
+                        : null;
+                    // Saldo Atual: só mostramos se vier do dado em tempo real (UEX — saldo bancário live).
+                    // pddeSaldosData e pddeData.contas mostram saldo acumulado de repasses, não o saldo atual da conta.
+                    const totalSaldo = (pddeUexSaldoData?.ok && pddeUexSaldoData.total_saldo_geral > 0)
+                      ? pddeUexSaldoData.total_saldo_geral
+                      : null;
+                    const hasAny = totalRepasses != null || totalSaldo != null;
+                    if (!hasAny) return null;
+                    return (
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:'10px',marginBottom:'20px'}}>
+                        {totalRepasses != null && totalRepasses > 0 && (
+                          <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #2f7a58',display:'flex',flexDirection:'column',gap:'4px'}}>
+                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#2f7a58'}}>Total Recebido</span>
+                            <span style={{fontSize:'20px',fontWeight:800,color:'#2f7a58',fontVariantNumeric:'tabular-nums'}}>{brl(totalRepasses)}</span>
+                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>repasses {atendimentoData?.itens?.[0]?.ano || pddeAno}</span>
+                          </div>
+                        )}
+                        {totalSaldo != null && (
+                          <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #2d5a88',display:'flex',flexDirection:'column',gap:'4px'}}>
+                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#2d5a88'}}>Saldo Atual</span>
+                            <span style={{fontSize:'20px',fontWeight:800,color:'#2d5a88',fontVariantNumeric:'tabular-nums'}}>{brl(totalSaldo)}</span>
+                            <span style={{fontSize:'11px',color:'var(--m-muted)'}}>posição {pddeUexSaldoData.mes} — saldo bancário</span>
+                          </div>
+                        )}
+                        {pddeData?.ok && pddeData.matriculas_total != null && (() => {
+                          const pddeAlunos = Number(pddeData.matriculas_total);
+                          const cens = censoLatest as any;
+                          const censoAlunos = cens ? (Number(cens.qt_mat_bas) || null) : null;
+                          const totalDiff = censoAlunos != null ? pddeAlunos - censoAlunos : null;
+                          // Mapeamento nível PDDE → campo censo
+                          const nivelCenso: Record<string, string | null> = {
+                            'ENSINO FUNDAMENTAL': 'qt_mat_fund',
+                            'ENSINO MÉDIO':       'qt_mat_med',
+                            'EJA':                'qt_mat_eja',
+                            'PRÉ-ESCOLAR':        'qt_mat_inf',
+                            'CRECHE':             'qt_mat_inf',
+                          };
+                          const niveis: [string, number][] = pddeData.matriculas_por_nivel
+                            ? Object.entries(pddeData.matriculas_por_nivel as Record<string, number>)
+                            : [];
+                          return (
+                            <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #9b6a16',display:'flex',flexDirection:'column',gap:'4px',gridColumn: niveis.length > 0 ? 'span 2' : undefined}}>
+                              <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#9b6a16'}}>Alunos (PDDE)</span>
+                              <div style={{display:'flex',alignItems:'baseline',gap:'8px'}}>
+                                <span style={{fontSize:'20px',fontWeight:800,color:'#9b6a16',fontVariantNumeric:'tabular-nums'}}>{pddeAlunos.toLocaleString('pt-BR')}</span>
+                                <span style={{fontSize:'11px',color:'var(--m-muted)'}}>base de cálculo {pddeData.ano}</span>
+                              </div>
+                              {/* Breakdown por nível com comparação Censo */}
+                              {niveis.length > 0 && (
+                                <div style={{marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #f0e8d8'}}>
+                                  <table style={{width:'100%',borderCollapse:'collapse',fontSize:'11px'}}>
+                                    <thead>
+                                      <tr>
+                                        <th style={{textAlign:'left',fontWeight:700,fontSize:'9px',textTransform:'uppercase',color:'#9b6a16',paddingBottom:'4px',letterSpacing:'0.06em'}}>Nível</th>
+                                        <th style={{textAlign:'right',fontWeight:700,fontSize:'9px',textTransform:'uppercase',color:'#9b6a16',paddingBottom:'4px',letterSpacing:'0.06em'}}>PDDE</th>
+                                        <th style={{textAlign:'right',fontWeight:700,fontSize:'9px',textTransform:'uppercase',color:'#7a7a7a',paddingBottom:'4px',letterSpacing:'0.06em'}}>Censo INEP</th>
+                                        <th style={{textAlign:'right',fontWeight:700,fontSize:'9px',textTransform:'uppercase',color:'#7a7a7a',paddingBottom:'4px',letterSpacing:'0.06em'}}>Dif.</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {niveis.map(([key, val]) => {
+                                        const censoKey = nivelCenso[key.toUpperCase()] ?? null;
+                                        const censoVal = (censoKey && cens) ? (Number(cens[censoKey]) || null) : null;
+                                        const d = censoVal != null ? val - censoVal : null;
+                                        const dColor = d == null ? '#aaa' : d === 0 ? '#2f7a58' : Math.abs(d) > 15 ? '#b74f42' : '#9b6a16';
+                                        return (
+                                          <tr key={key} style={{borderTop:'1px solid #f5edd8'}}>
+                                            <td style={{padding:'3px 0',color:'var(--m-muted)',fontWeight:500}}>{key.replace('ENSINO ','')}</td>
+                                            <td style={{textAlign:'right',fontWeight:700,color:'#555',fontVariantNumeric:'tabular-nums',padding:'3px 0'}}>{Number(val).toLocaleString('pt-BR')}</td>
+                                            <td style={{textAlign:'right',color:'#555',fontVariantNumeric:'tabular-nums',padding:'3px 0 3px 8px'}}>
+                                              {censoVal != null ? censoVal.toLocaleString('pt-BR') : <span style={{color:'#ccc'}}>—</span>}
+                                            </td>
+                                            <td style={{textAlign:'right',fontWeight:700,color:dColor,fontVariantNumeric:'tabular-nums',padding:'3px 0 3px 8px'}}>
+                                              {d != null ? (d === 0 ? '=' : (d > 0 ? `+${d}` : d)) : '—'}
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                      {/* Linha de total */}
+                                      <tr style={{borderTop:'2px solid #e8d8c0'}}>
+                                        <td style={{padding:'4px 0',fontWeight:700,color:'#9b6a16',fontSize:'11px'}}>TOTAL</td>
+                                        <td style={{textAlign:'right',fontWeight:800,color:'#9b6a16',fontVariantNumeric:'tabular-nums',padding:'4px 0'}}>{pddeAlunos.toLocaleString('pt-BR')}</td>
+                                        <td style={{textAlign:'right',fontWeight:700,color:'#555',fontVariantNumeric:'tabular-nums',padding:'4px 0 4px 8px'}}>
+                                          {censoAlunos != null ? censoAlunos.toLocaleString('pt-BR') : <span style={{color:'#ccc'}}>—</span>}
+                                        </td>
+                                        <td style={{textAlign:'right',fontWeight:800,fontVariantNumeric:'tabular-nums',padding:'4px 0 4px 8px',
+                                            color: totalDiff == null ? '#aaa' : totalDiff === 0 ? '#2f7a58' : Math.abs(totalDiff) > 20 ? '#b74f42' : '#9b6a16'}}>
+                                          {totalDiff != null ? (totalDiff === 0 ? '=' : totalDiff > 0 ? `+${totalDiff}` : totalDiff) : '—'}
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                  {totalDiff != null && Math.abs(totalDiff) > 20 && (
+                                    <p style={{fontSize:'10px',color:'#b74f42',marginTop:'6px',marginBottom:0}}>
+                                      Diferença expressiva — verifique o Censo e o cadastro FNDE
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                              {/* Fallback sem breakdown */}
+                              {niveis.length === 0 && censoAlunos != null && (
+                                <div style={{marginTop:'6px',paddingTop:'6px',borderTop:'1px solid #f0e8d8',display:'flex',flexDirection:'column',gap:'2px'}}>
+                                  <span style={{fontSize:'10px',color:'var(--m-muted)'}}>
+                                    Censo INEP: <strong style={{color:'#555'}}>{censoAlunos.toLocaleString('pt-BR')}</strong> alunos
+                                  </span>
+                                  {totalDiff !== null && totalDiff !== 0 && (
+                                    <span style={{fontSize:'10px',color: Math.abs(totalDiff) > 20 ? '#b74f42' : '#9b6a16'}}>
+                                      {totalDiff > 0 ? `+${totalDiff}` : totalDiff} em relação ao Censo{Math.abs(totalDiff) > 20 ? ' — verifique' : ''}
+                                    </span>
+                                  )}
+                                  {totalDiff === 0 && <span style={{fontSize:'10px',color:'#2f7a58'}}>coincide com o Censo</span>}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    );
+                  })()}
+                  {/* ── GRUPO: CONTAS E SALDOS ── */}
+                  {((pddeData?.contas?.length ?? 0) > 0 || pddeUexSaldoData?.ok || pddeSaldosData?.ok) && (
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
+                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#2d5a88',background:'#e6eef8',padding:'3px 10px',borderRadius:'20px'}}>Contas e saldos</span>
+                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#b8cfe8,transparent)'}} />
+                    </div>
+                  )}
+
+                  {/* ── 2. CONTAS BANCÁRIAS ── */}
+                  {pddeData?.ok && pddeData.contas && pddeData.contas.length > 0 && (
+                    <div style={{marginBottom:'16px'}}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                        <BanknoteIcon className="w-3.5 h-3.5" /> Contas bancárias — ano {pddeData.ano}
+                      </p>
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:'10px'}}>
+                        {pddeData.contas.map((c: any, i: number) => (
+                          <div key={i} className="soft-card" style={{padding:'14px',borderLeft:'3px solid var(--m-blue)'}}>
+                            <p style={{fontWeight:700,fontSize:'12px',textTransform:'uppercase',letterSpacing:'0.05em',color:'var(--m-blue)',marginBottom:'8px'}}>{c.programa}</p>
+                            <div style={{display:'flex',flexDirection:'column',gap:'3px'}}>
+                              <div className="row-item" style={{padding:0}}>
+                                <span className="text-xs text-muted-foreground">Banco</span>
+                                <span className="text-xs font-semibold">{c.banco || '—'}</span>
+                              </div>
+                              <div className="row-item" style={{padding:0}}>
+                                <span className="text-xs text-muted-foreground">Agência</span>
+                                <span className="text-xs font-semibold">{c.agencia || '—'}</span>
+                              </div>
+                              <div className="row-item" style={{padding:0}}>
+                                <span className="text-xs text-muted-foreground">Conta</span>
+                                <span className="text-xs font-semibold font-mono">{c.conta || '—'}</span>
+                              </div>
+                              {c.saldo != null && (
+                                <div style={{marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #f0ece4'}}>
+                                  <span className="text-xs text-muted-foreground">Saldo</span>
+                                  <p style={{fontSize:'16px',fontWeight:800,color: c.saldo > 0 ? '#16a34a' : 'var(--m-muted)'}}>{brl(c.saldo)}</p>
+                                </div>
+                              )}
+                              {c.ocorrencia && (
+                                <p className="text-xs text-amber-600 mt-1">⚠️ {c.ocorrencia}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 2c. SITUAÇÃO DA EEx ── */}
+                  {pddeData?.ok && pddeData.situacao_eex && (pddeData.situacao_eex.adesao || pddeData.situacao_eex.prestacao_contas) && (() => {
+                    const rawAdesao = pddeData.situacao_eex!.adesao ?? '';
+                    const rawPc    = pddeData.situacao_eex!.prestacao_contas ?? '';
+                    // ── Parsear Adesão ──
+                    const aderiu = rawAdesao.toLowerCase().includes('aderiu');
+                    const naoAderiu = rawAdesao.toLowerCase().includes('não aderiu') || rawAdesao.toLowerCase().includes('nao aderiu');
+                    const dataAdesaoMatch = rawAdesao.match(/(\d{2}\/\d{2}\/\d{4})/);
+                    const dataAdesao = dataAdesaoMatch ? dataAdesaoMatch[1] : null;
+                    // ── Parsear Prestação de Contas ──
+                    const semPendencia = rawPc.toLowerCase().includes('não consta') || rawPc.toLowerCase().includes('nao consta');
+                    const comPendencia = rawPc.toLowerCase().includes('pendência') && !semPendencia;
+                    return (
+                      <div style={{marginBottom:'16px'}}>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                          <FileText className="w-3.5 h-3.5" /> Situação da Entidade Executora (EEx)
+                        </p>
+                        <div className="soft-card" style={{padding:'14px',display:'flex',gap:'12px',flexWrap:'wrap'}}>
+                          {rawAdesao && (
+                            <div style={{display:'flex',alignItems:'center',gap:'8px',padding:'8px 12px',borderRadius:'8px',
+                              background: aderiu ? '#e8f5ee' : naoAderiu ? '#fdf0ee' : '#f5f5f5',
+                              border: `1px solid ${aderiu ? '#b8dfc8' : naoAderiu ? '#f0c8c0' : '#e0e0e0'}`}}>
+                              <CheckCircle size={14} style={{color: aderiu ? '#2f7a58' : naoAderiu ? '#b74f42' : '#aaa', flexShrink:0}} />
+                              <div>
+                                <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',
+                                  color: aderiu ? '#2f7a58' : naoAderiu ? '#b74f42' : '#888', display:'block'}}>
+                                  Adesão ao PDDE
+                                </span>
+                                <span style={{fontSize:'12px',fontWeight:600,
+                                  color: aderiu ? '#1a5c3a' : naoAderiu ? '#9b2c1a' : '#555'}}>
+                                  {aderiu ? 'Aderiu' : naoAderiu ? 'Não aderiu' : 'Verificar'}
+                                  {dataAdesao && <span style={{fontWeight:400,color:'#777',marginLeft:'6px'}}>{dataAdesao}</span>}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          {rawPc && (
+                            <div style={{display:'flex',alignItems:'center',gap:'8px',padding:'8px 12px',borderRadius:'8px',
+                              background: semPendencia ? '#e8f5ee' : comPendencia ? '#fdf0ee' : '#f5f5f5',
+                              border: `1px solid ${semPendencia ? '#b8dfc8' : comPendencia ? '#f0c8c0' : '#e0e0e0'}`}}>
+                              <FileText size={14} style={{color: semPendencia ? '#2f7a58' : comPendencia ? '#b74f42' : '#aaa', flexShrink:0}} />
+                              <div>
+                                <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',
+                                  color: semPendencia ? '#2f7a58' : comPendencia ? '#b74f42' : '#888', display:'block'}}>
+                                  Prestação de Contas
+                                </span>
+                                <span style={{fontSize:'12px',fontWeight:600,
+                                  color: semPendencia ? '#1a5c3a' : comPendencia ? '#9b2c1a' : '#555'}}>
+                                  {semPendencia ? 'Sem pendências' : comPendencia ? 'Com pendências' : 'Verificar'}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── GRUPO: REPASSES E EXECUÇÃO ── */}
+                  {(atendimentoData?.ok || pddeExecFinData?.ok || (pddeData?.destinacoes?.length ?? 0) > 0) && (
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
+                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#2f7a58',background:'#e8f5ee',padding:'3px 10px',borderRadius:'20px'}}>Repasses e execução</span>
+                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#b8e0cc,transparent)'}} />
+                    </div>
+                  )}
+
+
+                  {/* ── 4b. DESTINAÇÕES ── */}
+                  {pddeData?.ok && pddeData.destinacoes && pddeData.destinacoes.length > 0 && (() => {
+                    const allRows: any[] = pddeData.destinacoes;
+                    const isAggLabel = (n: string) => { const s = (n||'').trim().toLowerCase(); return s === 'subtotal' || s === 'total geral'; };
+                    const isGrandTotal = (n: string) => (n||'').trim().toLowerCase() === 'total geral';
+
+                    // Separa itens normais, subtotais e total geral
+                    const itemRows = allRows.filter((d: any) => !isAggLabel(d.destinacao || ''));
+                    const subtotalRows = allRows.filter((d: any) => (d.destinacao||'').trim().toLowerCase() === 'subtotal');
+                    const grandTotal = allRows.find((d: any) => isGrandTotal(d.destinacao || ''));
+
+                    // Agrupa itens por programa (parte antes do " / ")
+                    const groups: Record<string, any[]> = {};
+                    itemRows.forEach((d: any) => {
+                      const prog = (d.destinacao || '').split(' / ')[0].trim() || 'Outros';
+                      if (!groups[prog]) groups[prog] = [];
+                      groups[prog].push(d);
+                    });
+
+                    const statusBadge = (devido: number, pago: number) => {
+                      const ok = Math.abs(devido - pago) < 0.01;
+                      return ok
+                        ? <span style={{display:'inline-flex',alignItems:'center',gap:'3px',background:'#d1fadf',color:'#166534',borderRadius:'6px',padding:'2px 8px',fontSize:'10px',fontWeight:700,whiteSpace:'nowrap'}}>✓ OK</span>
+                        : <span title="Verifique no FNDE se há informações pendentes ou divergências." style={{display:'inline-flex',alignItems:'center',gap:'3px',background:'#fee2e2',color:'#991b1b',borderRadius:'6px',padding:'2px 8px',fontSize:'10px',fontWeight:700,whiteSpace:'nowrap',cursor:'help'}}>⚠ Revisar</span>;
+                    };
+
+                    const groupColors: string[] = ['#e8f0fb','#e8f5ee','#fdf3e7','#f3e8fb','#e8f9fb'];
+                    const groupTextColors: string[] = ['#1e3a6e','#1a5c38','#7a4510','#5c1a7a','#0f5c66'];
+                    const groupEntries = Object.entries(groups);
+
+                    return (
+                      <div style={{marginBottom:'16px'}}>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1">
+                          <DollarSign className="w-3.5 h-3.5" /> Destinações e pagamentos — {pddeData.ano}
+                        </p>
+                        <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+                          {groupEntries.map(([prog, items], gi) => {
+                            const sub = subtotalRows[gi];
+                            const subDevido = sub ? (sub.final_devido_total ?? ((sub.devido_custeio||0)+(sub.devido_capital||0))) : 0;
+                            const subPago = sub ? (sub.pago_total ?? 0) : 0;
+                            const bgColor = groupColors[gi % groupColors.length];
+                            const txtColor = groupTextColors[gi % groupTextColors.length];
+                            return (
+                              <div key={prog} style={{borderRadius:'10px',overflow:'hidden',border:'1px solid #e8e0d4'}}>
+                                {/* Cabeçalho do grupo */}
+                                <div style={{background:bgColor,padding:'7px 12px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                                  <span style={{fontSize:'11px',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.06em',color:txtColor}}>{prog}</span>
+                                  {sub && (
+                                    <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                                      <span style={{fontSize:'11px',color:'#666'}}>Total:</span>
+                                      <span style={{fontSize:'12px',fontWeight:700,fontFamily:'monospace',color: subDevido === subPago ? '#166534' : '#991b1b'}}>{brl(subPago)}</span>
+                                      {statusBadge(subDevido, subPago)}
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Itens do grupo */}
+                                <div style={{background:'#fff'}}>
+                                  {items.map((d: any, ii: number) => {
+                                    const nome = d.destinacao || '';
+                                    const acao = nome.split(' / ').slice(1).join(' / ') || nome;
+                                    const devido = d.final_devido_total ?? ((d.devido_custeio||0)+(d.devido_capital||0));
+                                    const pagoCusteio = d.pago_custeio ?? 0;
+                                    const pagoCapital = d.pago_capital ?? 0;
+                                    const pagoTotal = d.pago_total ?? (pagoCusteio + pagoCapital);
+                                    const diverge = devido > 0 && Math.abs(devido - pagoTotal) >= 0.01;
+                                    return (
+                                      <div key={ii} style={{
+                                        display:'flex',alignItems:'center',justifyContent:'space-between',
+                                        padding:'8px 12px',
+                                        borderTop: ii > 0 ? '1px solid #f0ece4' : '1px solid #e8e0d4',
+                                        background: diverge ? '#fffaf9' : '#fff',
+                                        gap:'8px'
+                                      }}>
+                                        <div style={{flex:1,minWidth:0}}>
+                                          <span style={{fontSize:'12px',fontWeight:600,color:'#2a2018',display:'block',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{acao}</span>
+                                        </div>
+                                        <div style={{display:'flex',alignItems:'center',gap:'12px',flexShrink:0}}>
+                                          <div style={{textAlign:'right'}}>
+                                            <div style={{fontSize:'9px',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.04em'}}>Devido</div>
+                                            <div style={{fontSize:'11px',fontFamily:'monospace',color: diverge ? '#b74f42' : '#666'}}>{brl(devido)}</div>
+                                          </div>
+                                          <div style={{color:'#ccc',fontSize:'12px'}}>→</div>
+                                          <div style={{textAlign:'right'}}>
+                                            <div style={{fontSize:'9px',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.04em'}}>Pago</div>
+                                            <div style={{fontSize:'12px',fontFamily:'monospace',fontWeight:700,color: pagoTotal > 0 ? '#16a34a' : '#999'}}>{brl(pagoTotal)}</div>
+                                          </div>
+                                          {d.data_ordem_pgto && d.data_ordem_pgto !== '-' && (
+                                            <div style={{textAlign:'right'}}>
+                                              <div style={{fontSize:'9px',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.04em'}}>Data</div>
+                                              <div style={{fontSize:'11px',color:'#777',whiteSpace:'nowrap'}}>{d.data_ordem_pgto}</div>
+                                            </div>
+                                          )}
+                                          {statusBadge(devido, pagoTotal)}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* Total Geral */}
+                          {grandTotal && (() => {
+                            const gtDevido = grandTotal.final_devido_total ?? ((grandTotal.devido_custeio||0)+(grandTotal.devido_capital||0));
+                            const gtPago = grandTotal.pago_total ?? 0;
+                            return (
+                              <div style={{borderRadius:'10px',background:'#eef6f1',border:'2px solid #b8d4c4',padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                                <span style={{fontSize:'12px',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.06em',color:'#1a5c38'}}>Total Geral</span>
+                                <div style={{display:'flex',alignItems:'center',gap:'12px'}}>
+                                  <div style={{textAlign:'right'}}>
+                                    <div style={{fontSize:'9px',color:'#6b9e82',textTransform:'uppercase',letterSpacing:'0.04em'}}>Devido</div>
+                                    <div style={{fontSize:'12px',fontFamily:'monospace',color:'#2f7a58'}}>{brl(gtDevido)}</div>
+                                  </div>
+                                  <div style={{color:'#a0c8b0',fontSize:'14px'}}>→</div>
+                                  <div style={{textAlign:'right'}}>
+                                    <div style={{fontSize:'9px',color:'#6b9e82',textTransform:'uppercase',letterSpacing:'0.04em'}}>Pago</div>
+                                    <div style={{fontSize:'14px',fontFamily:'monospace',fontWeight:800,color:'#166534'}}>{brl(gtPago)}</div>
+                                  </div>
+                                  {statusBadge(gtDevido, gtPago)}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── 4c. SALDO UEx POR TIPO (consultasaldoentidade) ── */}
+                  {pddeUexSaldoData?.ok && pddeUexSaldoData.saldos && pddeUexSaldoData.saldos.length > 0 && (
+                    <div style={{marginBottom:'16px'}}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                        <BanknoteIcon className="w-3.5 h-3.5" /> Saldo bancário UEx — {pddeUexSaldoData.mes}
+                      </p>
+                      <div className="table-card" style={{overflowX:'auto'}}>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Banco</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ag./Conta</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Saldo C/C</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Fundos</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Poupança</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">RDB/CDB</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {pddeUexSaldoData.saldos.map((s: any, i: number) => (
+                              <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                <td className="py-2 px-3 text-xs font-medium">{s.programa || '—'}</td>
+                                <td className="py-2 px-3 text-xs">{s.banco || '—'}</td>
+                                <td className="py-2 px-3 text-xs font-mono">{s.agencia || '—'} / {s.conta || '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_conta != null ? brl(s.saldo_conta) : '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_fundos != null ? brl(s.saldo_fundos) : '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_poupanca != null ? brl(s.saldo_poupanca) : '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono">{s.saldo_rdb_cdb != null ? brl(s.saldo_rdb_cdb) : '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{s.saldo_total != null ? brl(s.saldo_total) : '—'}</td>
+                              </tr>
+                            ))}
+                            {pddeUexSaldoData.saldos.length > 1 && (
+                              <tr style={{background:'#f9f6f0',fontWeight:700}}>
+                                <td colSpan={7} className="py-2 px-3 text-xs text-right font-semibold">Total Geral</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{brl(pddeUexSaldoData.total_saldo_geral)}</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+
+                  {/* ── 6. EXECUÇÃO FINANCEIRA ── */}
+                  {pddeExecFinData?.ok && pddeExecFinData.repasses.length > 0 && (
+                    <div style={{marginBottom:'16px'}}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                        <Wallet className="w-3.5 h-3.5" /> Execução Financeira PDDE ({pddeExecFinData.anosDisponiveis.join(', ')})
+                      </p>
+                      <div className="table-card" style={{overflowX:'auto'}}>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
+                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Destinação</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Custeio</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Capital</th>
+                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total Pago</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[...pddeExecFinData.repasses].sort((a: any, b: any) => b.an_exercicio - a.an_exercicio).map((r: any, i: number) => (
+                              <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
+                                <td className="py-2 px-3 text-xs font-medium">{r.an_exercicio}</td>
+                                <td className="py-2 px-3 text-xs">{r.sg_destinacao || r.destinacao || '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono">{r.vl_pago_custeio != null ? brl(r.vl_pago_custeio) : '—'}</td>
+                                <td className="py-2 px-3 text-xs text-right font-mono">{r.vl_pago_capital != null ? brl(r.vl_pago_capital) : '—'}</td>
+                                <td className={`py-2 px-3 text-xs text-right font-mono ${r.vl_pago_total > 0 ? 'font-bold text-emerald-700' : ''}`}>{brl(r.vl_pago_total)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── GRUPO: PRESTAÇÃO DE CONTAS ── */}
+                  {(prestacaoContaLoading || prestacaoContaData?.ok || sigpcData?.ok) && (
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
+                      <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#9b6a16',background:'#fdf3e0',padding:'3px 10px',borderRadius:'20px'}}>Prestação de contas</span>
+                      <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#f0ddb5,transparent)'}} />
+                    </div>
+                  )}
+
+                  {/* ── 3. PRESTAÇÃO DE CONTAS ── */}
+                  {(prestacaoContaLoading || prestacaoContaData?.ok) && (() => {
+                    const currentYear = new Date().getFullYear();
+                    const years = Array.from({ length: currentYear - 2016 }, (_, i) => currentYear - i);
+                    const anoExibido = prestacaoContaAnoEfetivo;
+                    return (
+                      <div style={{marginBottom:'16px'}}>
+                        {/* Cabeçalho com seletor de ano */}
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'8px',flexWrap:'wrap',gap:'6px'}}>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1" style={{margin:0}}>
+                            <FileText className="w-3.5 h-3.5" /> Prestação de Contas
+                          </p>
+                          <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                            <span style={{fontSize:'11px',color:'#9b8877'}}>Exercício:</span>
+                            <select
+                              value={anoExibido}
+                              onChange={e => setPrestacaoContaAno(Number(e.target.value))}
+                              style={{
+                                fontSize:'12px',fontWeight:600,color:'#4a3728',
+                                background:'#fdf6ee',border:'1px solid #e8d8c0',
+                                borderRadius:'6px',padding:'3px 8px',cursor:'pointer',
+                                appearance:'none',paddingRight:'22px',
+                                backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239b8877'/%3E%3C/svg%3E")`,
+                                backgroundRepeat:'no-repeat',backgroundPosition:'right 7px center'
+                              }}
+                            >
+                              {years.map(y => (
+                                <option key={y} value={y}>{y}</option>
+                              ))}
+                            </select>
+                            {prestacaoContaAno !== null && (
+                              <button
+                                onClick={() => setPrestacaoContaAno(null)}
+                                title="Voltar ao ano automático"
+                                style={{fontSize:'10px',color:'#9b8877',background:'none',border:'none',cursor:'pointer',padding:'0 2px',textDecoration:'underline'}}
+                              >
+                                Auto
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Loading */}
+                        {prestacaoContaLoading && (
+                          <div style={{display:'flex',alignItems:'center',gap:'8px',padding:'12px',color:'#9b8877',fontSize:'12px'}}>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Consultando FNDE para {anoExibido}…
+                          </div>
+                        )}
+
+                        {/* Sem dados para o ano selecionado */}
+                        {!prestacaoContaLoading && (!prestacaoContaData?.ok || prestacaoContaData.itens.length === 0) && (
+                          <div style={{padding:'12px',background: pddeData?.ok && !pddeData?.uex ? '#fef2f2' : '#faf7f2',borderRadius:'8px',border:`1px solid ${pddeData?.ok && !pddeData?.uex ? '#fca5a5' : '#ede3d3'}`,fontSize:'12px',color: pddeData?.ok && !pddeData?.uex ? '#991b1b' : '#9b8877',textAlign:'center'}}>
+                            {pddeData?.ok && !pddeData?.uex
+                              ? <>Sem prestação de contas — <strong>escola sem UEx cadastrada no FNDE</strong>. Não há execução a prestar.</>
+                              : <>Nenhum registro encontrado para {anoExibido} no FNDE.</>
+                            }
+                          </div>
+                        )}
+
+                        {/* Cards por programa */}
+                        {!prestacaoContaLoading && prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 && (() => {
+                          const isNegativo = (v: string) => !v || v === '—' || /^n[aã]o$/i.test(v.trim());
+
+                          // Mapeia valores normalizados do FNDE → rótulo legível em português
+                          const suspLabel = (raw: string | null): string => {
+                            if (!raw) return '';
+                            const v = raw.toUpperCase().replace(/\s+/g,' ').trim();
+                            if (/inadimpl.*uex|inadimpl.*prestac/i.test(v))  return 'Inadimplência por prestação de contas (UEx)';
+                            if (/omiss.*eex|omiss.*prestac/i.test(v))        return 'Omissão na prestação de contas (EEx)';
+                            if (/sem dirigente/i.test(v))                    return 'UEx sem dirigente ativo';
+                            if (/nao habilitad|não habilitad|exercicio atual/i.test(v)) return 'Entidade não habilitada no exercício atual (EM)';
+                            if (/sem conta corrente/i.test(v))               return 'UEx sem conta corrente ativa';
+                            if (/sem uex|sem \/|escola sem/i.test(v))        return 'Escola sem UEx/EM';
+                            if (/cnpj irregular|receita federal/i.test(v))   return 'CNPJ irregular na Receita Federal';
+                            if (/fora do prazo legal/i.test(v))              return 'Regularização fora do prazo legal';
+                            if (/bloqueio|solicitacao da entidade/i.test(v)) return 'Bloqueio por solicitação da entidade ou do FNDE';
+                            return raw; // fallback: mostra o texto cru do FNDE
+                          };
+                          // filtra atendimento do mesmo ano
+                          const atenYear = String(anoExibido);
+                          const atenItens: any[] = (atendimentoPcData?.itens ?? atendimentoData?.itens ?? []).filter((a: any) => a.ano === atenYear);
+                          // qtd_alunos: pega do primeiro item de atendimento (é igual pra todos)
+                          const qtdAlunos = atenItens[0]?.qtd_alunos ?? null;
+
+                          return (
+                            <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+                              {prestacaoContaData.itens.map((item: any, i: number) => {
+                                const prog = item.ds_programa || item.programa || 'PDDE';
+                                const isOkUex = item.situacao_pc_uex?.toLowerCase().includes('adimpl');
+                                const isOkEex = item.situacao_pc_eex?.toLowerCase().includes('adimpl');
+                                const hasSuspUex = item.suspensao_uex && !isNegativo(item.suspensao_uex);
+                                const hasSuspEex = item.suspensao_eex && !isNegativo(item.suspensao_eex);
+                                const temSusp = hasSuspUex || hasSuspEex;
+                                // destinações desse programa no atendimento
+                                const destsProg = atenItens.filter((a: any) =>
+                                  (a.programa || '').toLowerCase() === prog.toLowerCase()
+                                );
+                                const totalPago = destsProg.reduce((s: number, d: any) => s + (d.valor_total ?? 0), 0);
+                                const bgHeader = isOkUex && isOkEex && !temSusp ? '#e8f5ee' : '#fdf3e7';
+                                const borderColor = isOkUex && isOkEex && !temSusp ? '#b8dfc8' : '#f0d8b8';
+                                const txtHeader = isOkUex && isOkEex && !temSusp ? '#1a5c38' : '#7a4510';
+
+                                return (
+                                  <div key={i} style={{borderRadius:'10px',overflow:'hidden',border:`1px solid ${borderColor}`}}>
+                                    {/* ── Cabeçalho do programa ── */}
+                                    <div style={{background:bgHeader,padding:'8px 12px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'6px'}}>
+                                      <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                                        <span style={{fontSize:'11px',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.06em',color:txtHeader}}>{prog}</span>
+                                        <span style={{fontSize:'10px',color:'#9b6a16',background:'#fdf3e0',borderRadius:'4px',padding:'1px 6px',fontWeight:600}}>
+                                          {item.ano || anoExibido}
+                                        </span>
+                                        {qtdAlunos && (
+                                          <span style={{fontSize:'10px',color:'#4a6a8a',background:'#e8f0fb',borderRadius:'4px',padding:'1px 6px',fontWeight:600}}>
+                                            {Number(qtdAlunos).toLocaleString('pt-BR')} alunos
+                                          </span>
+                                        )}
+                                        {(() => {
+                                          const prevStr = item.valor_previsto || '';
+                                          const prevNum = prevStr ? parseFloat(prevStr.replace(/\./g,'').replace(',','.')) : 0;
+                                          const match = prevNum > 0 && totalPago > 0 && Math.abs(prevNum - totalPago) < 0.05;
+                                          return (
+                                            <span style={{display:'inline-flex',alignItems:'center',gap:'5px'}}>
+                                              {prevNum > 0 && (
+                                                <span style={{fontSize:'11px',color:'#888',fontFamily:'monospace'}}>
+                                                  Prev: R$ {prevStr}
+                                                </span>
+                                              )}
+                                              {totalPago > 0 && (
+                                                <span style={{fontSize:'11px',color:'#16a34a',fontFamily:'monospace',fontWeight:700}}>
+                                                  Pago: {totalPago.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                                                </span>
+                                              )}
+                                              {match && (
+                                                <span title="Valor previsto e pago compatíveis" style={{color:'#16a34a',fontSize:'13px',fontWeight:900,lineHeight:1}}>✓</span>
+                                              )}
+                                            </span>
+                                          );
+                                        })()}
+                                      </div>
+                                      {/* Status badges */}
+                                      <div style={{display:'flex',alignItems:'center',gap:'4px',flexWrap:'wrap'}}>
+                                        {item.situacao_pc_uex && (
+                                          <span style={{fontSize:'10px',display:'inline-flex',alignItems:'center',gap:'3px'}}>
+                                            <span style={{color:'#888',fontSize:'9px'}}>UEx</span>
+                                            <span className={`badge ${isOkUex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_uex}</span>
+                                          </span>
+                                        )}
+                                        {item.situacao_pc_eex && (
+                                          <span style={{fontSize:'10px',display:'inline-flex',alignItems:'center',gap:'3px'}}>
+                                            <span style={{color:'#888',fontSize:'9px'}}>EEx</span>
+                                            <span className={`badge ${isOkEex ? 'badge-good' : 'badge-attn'}`}>{item.situacao_pc_eex}</span>
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* ── Alerta de Suspensão ── */}
+                                    {(hasSuspUex || hasSuspEex) && (
+                                      <div style={{background:'#fef2f2',borderTop:'1px solid #fca5a5',padding:'8px 12px',display:'flex',flexDirection:'column',gap:'4px'}}>
+                                        <div style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'2px'}}>
+                                          <span style={{fontSize:'10px',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.06em',color:'#991b1b'}}>⚠ Suspensão ativa</span>
+                                        </div>
+                                        {hasSuspUex && (
+                                          <div style={{display:'flex',alignItems:'flex-start',gap:'6px'}}>
+                                            <span style={{fontSize:'10px',fontWeight:700,color:'#7f1d1d',background:'#fee2e2',borderRadius:'4px',padding:'1px 5px',whiteSpace:'nowrap',flexShrink:0}}>UEx</span>
+                                            <span style={{fontSize:'12px',color:'#7f1d1d',fontWeight:600}}>{suspLabel(item.suspensao_uex)}</span>
+                                          </div>
+                                        )}
+                                        {hasSuspEex && (
+                                          <div style={{display:'flex',alignItems:'flex-start',gap:'6px'}}>
+                                            <span style={{fontSize:'10px',fontWeight:700,color:'#7f1d1d',background:'#fee2e2',borderRadius:'4px',padding:'1px 5px',whiteSpace:'nowrap',flexShrink:0}}>EEx</span>
+                                            <span style={{fontSize:'12px',color:'#7f1d1d',fontWeight:600}}>{suspLabel(item.suspensao_eex)}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* ── Destinações (do atendimento) ── */}
+                                    {destsProg.length > 0 ? (
+                                      <div style={{background:'#fff'}}>
+                                        {destsProg.map((dest: any, di: number) => (
+                                          <div key={di} style={{
+                                            display:'flex',alignItems:'center',justifyContent:'space-between',
+                                            padding:'7px 12px',
+                                            borderTop:'1px solid #f0ece4',
+                                            gap:'8px',flexWrap:'wrap'
+                                          }}>
+                                            <span style={{fontSize:'12px',color:'#2a2018',fontWeight:500,flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                                              {dest.destinacao || '—'}
+                                            </span>
+                                            <div style={{display:'flex',alignItems:'center',gap:'12px',flexShrink:0}}>
+                                              {dest.data_ordem_pgto && dest.data_ordem_pgto !== '-' && (
+                                                <div style={{textAlign:'right'}}>
+                                                  <div style={{fontSize:'9px',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.04em'}}>Data Pgto</div>
+                                                  <div style={{fontSize:'11px',color:'#555',whiteSpace:'nowrap'}}>{dest.data_ordem_pgto}</div>
+                                                </div>
+                                              )}
+                                              {dest.valor_total != null && (
+                                                <div style={{textAlign:'right'}}>
+                                                  <div style={{fontSize:'9px',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.04em'}}>Valor</div>
+                                                  <div style={{fontSize:'12px',fontFamily:'monospace',fontWeight:700,color:'#16a34a'}}>
+                                                    {dest.valor_total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div style={{padding:'8px 12px',fontSize:'11px',color:'#aaa',background:'#fff',borderTop:'1px solid #f0ece4'}}>
+                                        Detalhes de destinação não disponíveis para este exercício.
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    );
+                  })()}
+
                   {/* ── 7. SIGPC — PRESTAÇÃO DE CONTAS DETALHADA ── */}
                   {(pddeCnpj || pddeData?.ok === false) && (<div style={{marginBottom:'16px'}}>
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
