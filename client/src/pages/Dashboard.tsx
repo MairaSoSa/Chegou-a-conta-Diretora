@@ -5941,11 +5941,28 @@ out center tags 100;`;
                                             {Number(qtdAlunos).toLocaleString('pt-BR')} alunos
                                           </span>
                                         )}
-                                        {totalPago > 0 && (
-                                          <span style={{fontSize:'11px',color:'#16a34a',fontFamily:'monospace',fontWeight:700}}>
-                                            {totalPago.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                                          </span>
-                                        )}
+                                        {(() => {
+                                          const prevStr = item.valor_previsto || '';
+                                          const prevNum = prevStr ? parseFloat(prevStr.replace(/\./g,'').replace(',','.')) : 0;
+                                          const match = prevNum > 0 && totalPago > 0 && Math.abs(prevNum - totalPago) < 0.05;
+                                          return (
+                                            <span style={{display:'inline-flex',alignItems:'center',gap:'5px'}}>
+                                              {prevNum > 0 && (
+                                                <span style={{fontSize:'11px',color:'#888',fontFamily:'monospace'}}>
+                                                  Prev: R$ {prevStr}
+                                                </span>
+                                              )}
+                                              {totalPago > 0 && (
+                                                <span style={{fontSize:'11px',color:'#16a34a',fontFamily:'monospace',fontWeight:700}}>
+                                                  Pago: {totalPago.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                                                </span>
+                                              )}
+                                              {match && (
+                                                <span title="Valor previsto e pago compatíveis" style={{color:'#16a34a',fontSize:'13px',fontWeight:900,lineHeight:1}}>✓</span>
+                                              )}
+                                            </span>
+                                          );
+                                        })()}
                                       </div>
                                       {/* Status badges */}
                                       <div style={{display:'flex',alignItems:'center',gap:'4px',flexWrap:'wrap'}}>
