@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
-import { Loader2 } from "@/components/Icons";
+import { Loader2, BookOpen, Wrench, MessageCircle, Scale, CheckCircle, AlertTriangle, FileText, Folder, ClipboardList, Play, Clock, Search, Droplets, Printer, Globe, Trash2 } from "@/components/Icons";
 import type { TrilhaUnit } from "@shared/schema";
 
 const toneMap = {
@@ -68,8 +68,8 @@ function getPersonalidade(unitId: string): ToneKey {
   return "prestacao";
 }
 
-function emojiFor(p: ToneKey) {
-  return p === "origem" ? "💧" : p === "estrutura" ? "📁" : p === "planejamento" ? "🗂️" : "📝";
+function emojiFor(p: ToneKey): React.ReactNode {
+  return p === "origem" ? <Droplets size={14} /> : p === "estrutura" ? <Folder size={14} /> : p === "planejamento" ? <ClipboardList size={14} /> : <FileText size={14} />;
 }
 
 function groupName(p: ToneKey) {
@@ -97,7 +97,7 @@ function RingClip({ color }: { color: string }) {
 }
 
 type ModalData = {
-  emoji?: string;
+  emoji?: React.ReactNode;
   label: string;
   title: string;
   paragraphs: string[];
@@ -173,7 +173,7 @@ function FluxoQuadro({
         className="flex items-center gap-2 px-5 py-2.5"
         style={{ background: tone.tab, borderBottom: `1px solid ${tone.border}` }}
       >
-        <span className="text-base">🗺️</span>
+        <Globe size={14} style={{ color: tone.tabText }} />
         <span className="text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.tabText }}>
           quadro de fluxo
         </span>
@@ -351,7 +351,7 @@ function FichaGrid({
   tone,
   onOpen,
 }: {
-  fichas: Array<{ id: string; label: string; emoji: string; title: string; preview: string; paragraphs: string[] }>;
+  fichas: Array<{ id: string; label: string; emoji: React.ReactNode; title: string; preview: string; paragraphs: string[] }>;
   tone: (typeof toneMap)[ToneKey];
   onOpen: (data: ModalData) => void;
 }) {
@@ -485,7 +485,7 @@ const FICHAS_APROFUNDAMENTO = [
   {
     id: "leitura",
     label: "leitura",
-    emoji: "📖",
+    emoji: <BookOpen size={15} />,
     title: "Leitura ampliada da unidade",
     preview: "Texto corrido de 4–5 páginas para compreensão aprofundada do tema.",
     paragraphs: [
@@ -499,7 +499,7 @@ const FICHAS_APROFUNDAMENTO = [
   {
     id: "pratica",
     label: "prática",
-    emoji: "🛠️",
+    emoji: <Wrench size={15} />,
     title: "Como isso aparece na prática",
     preview: "Situações reais, exemplos e o que fazer quando o tema aparece no dia a dia.",
     paragraphs: [
@@ -513,7 +513,7 @@ const FICHAS_APROFUNDAMENTO = [
   {
     id: "conversa",
     label: "conversa",
-    emoji: "💬",
+    emoji: <MessageCircle size={15} />,
     title: "Perguntas para conversa com a equipe",
     preview: "Roteiro para reunião, formação ou conversa interna sobre o tema.",
     paragraphs: [
@@ -527,7 +527,7 @@ const FICHAS_APROFUNDAMENTO = [
   {
     id: "glossario",
     label: "glossário",
-    emoji: "📚",
+    emoji: <BookOpen size={15} />,
     title: "Glossário dos termos desta unidade",
     preview: "Definições claras dos termos técnicos que aparecem na unidade.",
     paragraphs: [
@@ -541,7 +541,7 @@ const FICHAS_APROFUNDAMENTO = [
   {
     id: "checklist",
     label: "checklist",
-    emoji: "✅",
+    emoji: <CheckCircle size={15} />,
     title: "Lista de verificação da unidade",
     preview: "O que checar antes, durante e depois de cada processo desta unidade.",
     paragraphs: [
@@ -555,7 +555,7 @@ const FICHAS_APROFUNDAMENTO = [
   {
     id: "legislacao",
     label: "legislação",
-    emoji: "⚖️",
+    emoji: <Scale size={15} />,
     title: "Base legal desta unidade",
     preview: "As leis, portarias e resoluções que fundamentam o tema desta unidade.",
     paragraphs: [
@@ -569,7 +569,7 @@ const FICHAS_APROFUNDAMENTO = [
   {
     id: "erros",
     label: "erros comuns",
-    emoji: "⚠️",
+    emoji: <AlertTriangle size={15} />,
     title: "Erros mais comuns e como evitá-los",
     preview: "Os equívocos que aparecem com mais frequência e como não repeti-los.",
     paragraphs: [
@@ -1032,7 +1032,7 @@ export default function TrilhaUnidade() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: tone.spineLight }}>
-                    {groupName(personalidade)} · {emojiFor(personalidade)} · ⏱ {unidade.duration}
+                    {groupName(personalidade)} · {emojiFor(personalidade)} · <Clock size={10} style={{display:'inline-block',verticalAlign:'middle'}} /> {unidade.duration}
                   </p>
                   <h1 className="text-2xl font-extrabold leading-tight text-slate-800 md:text-3xl">
                     {unidade.title}
@@ -1048,7 +1048,7 @@ export default function TrilhaUnidade() {
                 tone={tone}
                 label="leitura principal"
                 onClick={() => setOpenModal({
-                  emoji: "📝",
+                  emoji: <FileText size={20} />,
                   label: "leitura principal",
                   title: "Introdução: por que este tema importa",
                   paragraphs: [
@@ -1081,7 +1081,7 @@ export default function TrilhaUnidade() {
                   tone={tone}
                   label="ementa"
                   onClick={() => setOpenModal({
-                    emoji: "📋",
+                    emoji: <ClipboardList size={20} />,
                     label: "ementa",
                     title: "Ementa: o que esta unidade cobre",
                     paragraphs: [
@@ -1107,7 +1107,7 @@ export default function TrilhaUnidade() {
                   label="vídeo"
                   accent={tone.accent}
                   onClick={() => setOpenModal({
-                    emoji: "🎬",
+                    emoji: <Play size={20} />,
                     label: "vídeo sugerido",
                     title: `Guia de vídeo: ${unidade.title}`,
                     paragraphs: [
@@ -1120,7 +1120,7 @@ export default function TrilhaUnidade() {
                 >
                   <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: tone.spineLight }}>vídeo sugerido</p>
                   <div className="flex items-center gap-3 rounded-[12px] border p-2.5" style={{ borderColor: tone.border, background: tone.header }}>
-                    <span className="text-2xl">🎬</span>
+                    <Play size={22} />
                     <p className="text-xs leading-5 text-slate-500">Vídeo sobre {unidade.title.toLowerCase()}</p>
                   </div>
                 </Ficha>
@@ -1139,7 +1139,7 @@ export default function TrilhaUnidade() {
                       label={sec.titulo || `seção ${idx + 1}`}
                       rotate={idx % 2 === 0 ? -0.4 : 0.5}
                       onClick={() => setOpenModal({
-                        emoji: "📄",
+                        emoji: <FileText size={20} />,
                         label: sec.titulo || `seção ${idx + 1}`,
                         title: sec.titulo || `Seção ${idx + 1}`,
                         paragraphs: Array.isArray(sec.conteudo) ? sec.conteudo : [secText],
@@ -1164,7 +1164,7 @@ export default function TrilhaUnidade() {
                 label="o que observar"
                 rotate={-0.5}
                 onClick={() => setOpenModal({
-                  emoji: "🔍",
+                  emoji: <Search size={20} />,
                   label: "o que observar",
                   title: "Guia de observação: o que acompanhar nesta unidade",
                   paragraphs: [
@@ -1191,7 +1191,7 @@ export default function TrilhaUnidade() {
                 label="próximos passos"
                 rotate={0.5}
                 onClick={() => setOpenModal({
-                  emoji: "➡️",
+                  emoji: "→",
                   label: "próximos passos",
                   title: "Próximos passos: o que fazer depois desta unidade",
                   paragraphs: [
@@ -1294,7 +1294,7 @@ export default function TrilhaUnidade() {
               </button>
               <div className="flex-1 min-w-0 px-1">
                 <p className="text-[9px] font-extrabold uppercase tracking-[0.24em] text-white/65 truncate leading-none">
-                  {openModal.emoji && <span className="mr-1">{openModal.emoji}</span>}{openModal.label}
+                  {openModal.emoji && <span className="mr-1" style={{display:'inline-flex',alignItems:'center',verticalAlign:'middle'}}>{openModal.emoji}</span>}{openModal.label}
                 </p>
               </div>
               {/* PDF — destaque no topo */}
@@ -1303,7 +1303,7 @@ export default function TrilhaUnidade() {
                 className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-3.5 py-1.5 text-[11px] font-extrabold shadow-md transition hover:bg-white"
                 style={{ color: tone.spine }}
               >
-                📄 <span className="hidden sm:inline">Salvar </span>PDF
+                <Printer size={12} /> <span className="hidden sm:inline">Salvar </span>PDF
               </button>
             </div>
 
@@ -1319,7 +1319,7 @@ export default function TrilhaUnidade() {
                   className="shrink-0 flex h-10 w-10 items-center justify-center rounded-xl text-2xl shadow-sm"
                   style={{ background: `${tone.spine}18`, border: `1.5px solid ${tone.spine}30` }}
                 >
-                  {openModal.emoji || "📄"}
+                  {openModal.emoji || <FileText size={20} />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg sm:text-xl font-extrabold leading-tight text-slate-800 pr-2">
@@ -1330,7 +1330,7 @@ export default function TrilhaUnidade() {
                     {eraserMode ? (
                       <>
                         <span className="text-[11px] font-semibold text-rose-600">
-                          🧹 Toque em um grifo para apagá-lo
+                          Toque em um grifo para apagá-lo
                         </span>
                         <button
                           onPointerDown={(e) => e.preventDefault()}
@@ -1347,7 +1347,7 @@ export default function TrilhaUnidade() {
                           onClick={() => setEraserMode(true)}
                           className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition hover:border-rose-300 hover:text-rose-600"
                         >
-                          🧹 Apagar grifo
+                          <Trash2 size={11} style={{display:'inline',verticalAlign:'middle'}} /> Apagar grifo
                         </button>
                         <button
                           onPointerDown={(e) => e.preventDefault()}
@@ -1434,7 +1434,7 @@ export default function TrilhaUnidade() {
               className="shrink-0 flex items-center gap-2 px-4 py-2 border-t"
               style={{ background: "#fffbf0", borderColor: "#e8d5a0" }}
             >
-              <span className="text-amber-500 text-sm">⚠️</span>
+              <AlertTriangle size={14} className="text-amber-500 shrink-0" />
               <p className="flex-1 text-[10px] text-amber-700">
                 <strong>Grifos não ficam salvos</strong> ao fechar.{" "}
                 Use o botão <strong>PDF</strong> para guardar seu estudo.

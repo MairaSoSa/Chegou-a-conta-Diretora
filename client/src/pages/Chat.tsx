@@ -10,6 +10,8 @@ import {
   ChevronRight, ChevronLeft, ClipboardCopy, Plus, X, Download,
   FileText, Mail, Search, BarChart3, Bold, Italic,
   Underline, Highlighter, RefreshCw, MessageCircle, PenTool,
+  BookOpen, Scale, ClipboardList, Paperclip, MapPin, Info,
+  DollarSign, Landmark, Folder, School, Coins, Pin,
 } from "@/components/Icons";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -110,21 +112,21 @@ const SUGESTOES = [
 
 const STORAGE_KEY = "caderno-diretora-v2";
 
-const TRILHA_DESTAQUES = [
-  { id: "U03", title: "Como funciona o PDDE", sub: "Regras, objetivos e funcionamento do programa", emoji: "📚", accent: "bg-[#fff1a8]" },
-  { id: "U12", title: "Como planejar o uso dos recursos", sub: "Planejamento e priorização de compras", emoji: "📋", accent: "bg-[#ffd9c8]" },
-  { id: "U13", title: "O que pode ser pago com os recursos", sub: "Itens permitidos e vedados pelo PDDE", emoji: "💰", accent: "bg-[#d4f0d4]" },
-  { id: "U16", title: "Como funciona a prestação de contas", sub: "Documentos e prazos obrigatórios", emoji: "📊", accent: "bg-[#c8e0ff]" },
-  { id: "U05", title: "O que é a unidade executora (UEx)", sub: "Organização e papel da UEx na escola", emoji: "🏛️", accent: "bg-[#f9e4ff]" },
-  { id: "U14", title: "Notas fiscais e comprovantes", sub: "Como guardar e organizar os documentos", emoji: "🧾", accent: "bg-[#ffe4b2]" },
+const TRILHA_DESTAQUES: { id: string; title: string; sub: string; emoji: React.ReactNode; accent: string }[] = [
+  { id: "U03", title: "Como funciona o PDDE", sub: "Regras, objetivos e funcionamento do programa", emoji: <BookOpen size={20} />, accent: "bg-[#fff1a8]" },
+  { id: "U12", title: "Como planejar o uso dos recursos", sub: "Planejamento e priorização de compras", emoji: <ClipboardList size={20} />, accent: "bg-[#ffd9c8]" },
+  { id: "U13", title: "O que pode ser pago com os recursos", sub: "Itens permitidos e vedados pelo PDDE", emoji: <DollarSign size={20} />, accent: "bg-[#d4f0d4]" },
+  { id: "U16", title: "Como funciona a prestação de contas", sub: "Documentos e prazos obrigatórios", emoji: <BarChart3 size={20} />, accent: "bg-[#c8e0ff]" },
+  { id: "U05", title: "O que é a unidade executora (UEx)", sub: "Organização e papel da UEx na escola", emoji: <Landmark size={20} />, accent: "bg-[#f9e4ff]" },
+  { id: "U14", title: "Notas fiscais e comprovantes", sub: "Como guardar e organizar os documentos", emoji: <FileText size={20} />, accent: "bg-[#ffe4b2]" },
 ];
 
-const LEGISLACAO_BASE = [
-  { emoji: "📜", titulo: "Lei nº 11.947/2009", desc: "Institui o PDDE e define as regras de execução financeira" },
-  { emoji: "📋", titulo: "Resolução FNDE nº 15/2021", desc: "Normas de execução do PDDE — compras, documentos e prestação de contas" },
-  { emoji: "📗", titulo: "Manual de Execução do PDDE – FNDE", desc: "Orientações práticas para gestão dos recursos do PDDE" },
-  { emoji: "⚖️", titulo: "Lei nº 14.133/2021", desc: "Nova Lei de Licitações e Contratos Administrativos" },
-  { emoji: "📑", titulo: "Decreto nº 6.253/2007", desc: "Regulamenta o FUNDEB e o repasse de recursos às escolas" },
+const LEGISLACAO_BASE: { emoji: React.ReactNode; titulo: string; desc: string }[] = [
+  { emoji: <FileText size={18} />, titulo: "Lei nº 11.947/2009", desc: "Institui o PDDE e define as regras de execução financeira" },
+  { emoji: <ClipboardList size={18} />, titulo: "Resolução FNDE nº 15/2021", desc: "Normas de execução do PDDE — compras, documentos e prestação de contas" },
+  { emoji: <BookOpen size={18} />, titulo: "Manual de Execução do PDDE – FNDE", desc: "Orientações práticas para gestão dos recursos do PDDE" },
+  { emoji: <Scale size={18} />, titulo: "Lei nº 14.133/2021", desc: "Nova Lei de Licitações e Contratos Administrativos" },
+  { emoji: <FileText size={18} />, titulo: "Decreto nº 6.253/2007", desc: "Regulamenta o FUNDEB e o repasse de recursos às escolas" },
 ];
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -151,7 +153,7 @@ function docToHtml(doc: OpenDoc): string {
 }
 
 function separarFontes(conteudo: string): { corpo: string; fontes: string | null } {
-  const marcadores = ["📚 **Fontes:**", "**Fontes:**", "Fontes:", "📌 **Fontes usadas:**"];
+  const marcadores = ["**Fontes:**", "Fontes:", "Fontes usadas:"];
   for (const m of marcadores) {
     const idx = conteudo.indexOf(m);
     if (idx > -1) return { corpo: conteudo.substring(0, idx).trim(), fontes: conteudo.substring(idx).trim() };
@@ -255,7 +257,11 @@ function IndicadorDigitando() {
 // ─── PESQUISA PANEL ───────────────────────────────────────────────────────────
 
 // ── Card de resposta IA (página direita da caderneta) ────────────────────────
-const CARD_EMOJIS = ["📋", "📚", "🧾", "📊", "💡", "📎", "📌", "🔍"];
+const CARD_EMOJIS: React.ReactNode[] = [
+  <ClipboardList size={20} />, <BookOpen size={20} />, <FileText size={20} />,
+  <BarChart3 size={20} />, <Info size={20} />, <Paperclip size={20} />,
+  <Pin size={20} />, <Search size={20} />,
+];
 const CARD_ACCENTS = [
   "bg-[#fff1a8]", "bg-[#ffd9c8]", "bg-[#d4f0d4]",
   "bg-[#c8e0ff]", "bg-[#f9e4ff]", "bg-[#ffe4b2]",
@@ -285,7 +291,7 @@ function CardRespostaAI({
           </div>
           <div className="flex-1 min-w-0">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff08f] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#75591d]">
-              📍 Secretaria Virtual
+              <MapPin size={11} /> Secretaria Virtual
             </div>
             <div className="mt-3 text-[14px] leading-7 text-[#5f4032] prose prose-sm max-w-none">
               <ReactMarkdown>{corpo}</ReactMarkdown>
@@ -297,7 +303,7 @@ function CardRespostaAI({
       {/* Fontes */}
       {fontes && (
         <div className="px-5 py-4 border-t border-[#efe5dd] bg-[#fffaf6]">
-          <div className="text-[10px] uppercase tracking-[0.18em] text-[#a38778] mb-2">📚 Base legal</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-[#a38778] mb-2 flex items-center gap-1"><BookOpen size={10} /> Base legal</div>
           <div className="text-[13px] text-[#5f4032] leading-6">
             <ReactMarkdown>{fontes}</ReactMarkdown>
           </div>
@@ -325,7 +331,10 @@ function CardRespostaAI({
 }
 
 // ── Suggestions grid (cards estilo preview) ────────────────────────────────
-const SUGESTAO_EMOJIS = ["💰", "📝", "🧾", "📂", "🏫", "📊"];
+const SUGESTAO_EMOJIS: React.ReactNode[] = [
+  <Coins size={16} />, <FileText size={16} />, <FileText size={16} />,
+  <Folder size={16} />, <School size={16} />, <BarChart3 size={16} />,
+];
 function SugestaoCard({ s, idx, onClick }: { s: string; idx: number; onClick: () => void }) {
   return (
     <motion.button
@@ -479,7 +488,7 @@ function PesquisaPanel() {
             <div className="flex items-center px-7 pr-10 lg:pr-14 pt-6 pb-3 shrink-0 gap-2">
               <div className="flex-1 flex justify-center items-center gap-1.5 rounded-full px-3 py-1 font-bold uppercase text-[#8e2f2f]"
                 style={{ background: "rgba(142,47,47,0.10)", fontSize: 10, letterSpacing: "0.20em" }}>
-                ✍️ Folha de Pesquisa
+                <PenTool size={12} style={{display:'inline-block',verticalAlign:'middle'}} /> Folha de Pesquisa
               </div>
               {temMensagens && (
                 <button onClick={handleNewChat}
@@ -567,7 +576,7 @@ function PesquisaPanel() {
             {!temMensagens ? (
               /* ── Estado vazio ── */
               <div className="h-full flex flex-col items-center justify-center text-center px-4">
-                <div className="text-4xl mb-4 opacity-30">📖</div>
+                <div className="mb-4 opacity-30 flex justify-center"><BookOpen size={40} /></div>
                 <p className="text-[#b09080] leading-6" style={{ fontSize: 13 }}>
                   Comece uma pesquisa ao lado e sugestões de leitura e legislação relevante aparecerão aqui.
                 </p>
@@ -582,7 +591,7 @@ function PesquisaPanel() {
                       <div className="mb-6">
                         <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff1e7] px-3 py-1 font-bold uppercase text-[#9a5a4f] mb-3"
                           style={{ fontSize: 10, letterSpacing: "0.20em" }}>
-                          📘 Leituras sugeridas
+                          <BookOpen size={10} style={{display:'inline-block',verticalAlign:'middle'}} /> Leituras sugeridas
                         </div>
                         <div className="space-y-2">
                           {trilha.map(u => (
@@ -605,7 +614,7 @@ function PesquisaPanel() {
                       <div>
                         <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff8d6] px-3 py-1 font-bold uppercase text-[#75591d] mb-3"
                           style={{ fontSize: 10, letterSpacing: "0.18em" }}>
-                          ⚖️ Base Legal
+                          <Scale size={10} style={{display:'inline-block',verticalAlign:'middle'}} /> Base Legal
                         </div>
                         <div className="rounded-[16px] border border-dashed border-[#ddc8bc] bg-[#fffaf6] px-4 py-3 space-y-2">
                           {leis.map(lei => (
@@ -622,7 +631,7 @@ function PesquisaPanel() {
                     )}
                     {trilha.length === 0 && leis.length === 0 && (
                       <div className="flex flex-col items-center justify-center h-40 text-center px-4">
-                        <div className="text-3xl mb-3 opacity-25">🔍</div>
+                        <div className="mb-3 opacity-25"><Search size={28} /></div>
                         <p className="text-[#b09080]" style={{ fontSize: 12 }}>Continue pesquisando para ver sugestões relacionadas.</p>
                       </div>
                     )}
@@ -1009,7 +1018,7 @@ function EditorPanel() {
           <button onClick={() => setShowTipsMobile(true)}
             className="lg:hidden flex items-center gap-1.5 rounded-lg border border-[#d9bfb5] px-3 py-1.5 text-[12px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors shrink-0"
           >
-            💡 Dicas
+            <Info size={12} /> Dicas
           </button>
           <button onClick={() => handleSave()} disabled={isSaving}
             className="flex items-center gap-1.5 rounded-lg bg-[#8e2f2f] px-3 py-1.5 text-[12px] text-white hover:bg-[#6e2020] transition-colors disabled:opacity-50 shrink-0"
@@ -1174,7 +1183,7 @@ function EditorPanel() {
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-[#e0cfc6]" style={{ background: "#ede5db" }}>
-              <span className="text-[13px] font-bold text-[#5a3328] uppercase tracking-[0.15em]">💡 Dicas do campo</span>
+              <span className="text-[13px] font-bold text-[#5a3328] uppercase tracking-[0.15em] flex items-center gap-1.5"><Info size={13} /> Dicas do campo</span>
               <button
                 onClick={() => setShowTipsMobile(false)}
                 className="rounded-full p-1.5 hover:bg-[#d9cec6] text-[#7d5246] transition-colors"

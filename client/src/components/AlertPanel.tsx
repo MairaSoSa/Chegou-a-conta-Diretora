@@ -1,4 +1,5 @@
 import React from "react";
+import { TrendingUp } from "@/components/Icons";
 
 type AlertItem = {
   tipo: string;
@@ -27,7 +28,7 @@ export function AlertPanel({ alerts }: { alerts: AlertItem[] }) {
           <p className="text-sm text-[#47586d] leading-snug">{a.descricao}</p>
           {a.progressao && (
             <div style={{marginTop:'8px',display:'inline-flex',alignItems:'center',gap:'5px',background:'#eafaf2',border:'1px solid #a3dfc0',borderRadius:'20px',padding:'3px 10px'}}>
-              <span style={{fontSize:'13px'}}>📈</span>
+              <TrendingUp size={13} />
               <span style={{fontSize:'11px',fontWeight:700,color:'#1f7a4a'}}>{a.progressao.label}</span>
             </div>
           )}

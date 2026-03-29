@@ -4,6 +4,7 @@ import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import type { Tool } from "@shared/schema";
+import { BarChart3, FileText, CheckCircle, Flame, Search } from "@/components/Icons";
 
 // ---------------------------------------------------------------------------
 // Dados do mural (design fixo – substituído por dados da API quando disponível)
@@ -12,7 +13,7 @@ const SECOES_DESIGN = [
   {
     id: "planejar",
     titulo: "Planejar",
-    icone: "🗓️",
+    icone: "planejar",
     cor: "from-violet-100 via-violet-50 to-fuchsia-50",
     borda: "border-violet-300",
     texto: "text-violet-900",
@@ -32,7 +33,7 @@ const SECOES_DESIGN = [
   {
     id: "pesquisar",
     titulo: "Pesquisar Preços",
-    icone: "🔎",
+    icone: "pesquisar",
     cor: "from-sky-100 via-cyan-50 to-blue-50",
     borda: "border-sky-300",
     texto: "text-sky-900",
@@ -52,7 +53,7 @@ const SECOES_DESIGN = [
   {
     id: "comprar",
     titulo: "Comprar",
-    icone: "🛒",
+    icone: "comprar",
     cor: "from-emerald-100 via-green-50 to-teal-50",
     borda: "border-emerald-300",
     texto: "text-emerald-900",
@@ -72,7 +73,7 @@ const SECOES_DESIGN = [
   {
     id: "receber",
     titulo: "Receber e Conferir",
-    icone: "📥",
+    icone: "receber",
     cor: "from-amber-100 via-yellow-50 to-orange-50",
     borda: "border-amber-300",
     texto: "text-amber-900",
@@ -92,7 +93,7 @@ const SECOES_DESIGN = [
   {
     id: "prestar",
     titulo: "Prestar Contas",
-    icone: "🧾",
+    icone: "prestar",
     cor: "from-rose-100 via-pink-50 to-red-50",
     borda: "border-rose-300",
     texto: "text-rose-900",
@@ -241,10 +242,10 @@ function chunk<T>(arr: T[], size: number): T[][] {
 // Badge de tipo do documento
 // ---------------------------------------------------------------------------
 function TipoBadge({ tipo }: { tipo: string }) {
-  if (tipo === "EXCEL") return <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-emerald-700">📊 Excel</span>;
-  if (tipo === "WORD") return <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-blue-700">📝 Word</span>;
-  if (tipo === "CHECKLIST") return <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700">✅ Checklist</span>;
-  if (tipo === "PDF") return <span className="inline-flex items-center gap-1 rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-rose-700">📄 PDF</span>;
+  if (tipo === "EXCEL") return <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-emerald-700"><BarChart3 size={10} /> Excel</span>;
+  if (tipo === "WORD") return <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-blue-700"><FileText size={10} /> Word</span>;
+  if (tipo === "CHECKLIST") return <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700"><CheckCircle size={10} /> Checklist</span>;
+  if (tipo === "PDF") return <span className="inline-flex items-center gap-1 rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-rose-700"><FileText size={10} /> PDF</span>;
   return <span className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-600">{tipo}</span>;
 }
 
@@ -347,7 +348,7 @@ function CartaoFerramenta({
           <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
             {cartao.popular ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-bold text-orange-600">
-                🔥 Mais baixado
+                <Flame size={11} /> Mais baixado
               </span>
             ) : (
               <>

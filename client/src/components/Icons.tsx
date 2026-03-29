@@ -1234,6 +1234,98 @@ export const PieChart = mk(
   </>
 );
 
+/* Telefone / fone */
+export const Phone = mk(
+  <>
+    <path d="M6.5 3.5 C5.5 3.5 4.5 4.5 4.5 5.5 C4.5 14 10 19.5 18.5 19.5 C19.5 19.5 20.5 18.5 20.5 17.5 L20.5 15 C20.5 14.2 20 13.6 19.3 13.4 L16.7 12.7 C16 12.5 15.3 12.7 14.8 13.2 L13.8 14.2 C12 13.1 10.9 12 9.8 10.2 L10.8 9.2 C11.3 8.7 11.5 8 11.3 7.3 L10.6 4.7 C10.4 4 9.8 3.5 9 3.5 Z" />
+  </>
+);
+
+/* Impressora */
+export const Printer = mk(
+  <>
+    <rect x="6" y="3" width="12" height="7" rx="1" />
+    <path d="M5 10 L4 10 C2.9 10 2 10.9 2 12 L2 17 C2 18.1 2.9 19 4 19 L6 19 L6 21 L18 21 L18 19 L20 19 C21.1 19 22 18.1 22 17 L22 12 C22 10.9 21.1 10 20 10 L5 10 Z" />
+    <rect x="6" y="17" width="12" height="4" rx="0.5" />
+    <circle cx="18.5" cy="14" r="1" fill="currentColor" stroke="none" />
+  </>
+);
+
+/* Chama / fogo */
+export const Flame = mk(
+  <>
+    <path d="M12 22 C8 22 5 18.5 5 15 C5 11.5 7.5 9 8.5 7 C8.5 9.5 10 11 11 11.5 C11 8.5 12.5 5.5 14 3 C14 3 19 7.5 19 13 C19 18 16 22 12 22 Z" />
+    <path d="M12 22 C10 22 8.5 20.5 8.5 18.5 C8.5 17 9.5 16 10 15 C10 16.5 11 17.5 12 18 C11.5 16.5 12.5 14.5 13 13 C14 15 15.5 16.5 15.5 18.5 C15.5 20.5 14 22 12 22 Z" strokeWidth={1.2} />
+  </>
+);
+
+/* Gotas d'água */
+export const Droplets = mk(
+  <>
+    <path d="M7 12 C7 12 4 8 4 5.5 C4 3.6 5.3 2 7 2 C8.7 2 10 3.6 10 5.5 C10 8 7 12 7 12 Z" />
+    <path d="M17 20 C17 20 14 16 14 13.5 C14 11.6 15.3 10 17 10 C18.7 10 20 11.6 20 13.5 C20 16 17 20 17 20 Z" />
+    <path d="M7 12 C7 12 7 12 7 12" strokeLinecap="round" strokeWidth={0.5} />
+  </>
+);
+
+/* Casa / habitação */
+export const Home = mk(
+  <>
+    <path d="M3 9.5 L12 3 L21 9.5 L21 21 L15 21 L15 15 L9 15 L9 21 L3 21 Z" />
+  </>
+);
+
+/* Sol */
+export const Sun = mk(
+  <>
+    <circle cx="12" cy="12" r="4" />
+    <line x1="12" y1="2" x2="12" y2="4.5" />
+    <line x1="12" y1="19.5" x2="12" y2="22" />
+    <line x1="2" y1="12" x2="4.5" y2="12" />
+    <line x1="19.5" y1="12" x2="22" y2="12" />
+    <line x1="4.9" y1="4.9" x2="6.6" y2="6.6" />
+    <line x1="17.4" y1="17.4" x2="19.1" y2="19.1" />
+    <line x1="19.1" y1="4.9" x2="17.4" y2="6.6" />
+    <line x1="6.6" y1="17.4" x2="4.9" y2="19.1" />
+  </>
+);
+
+/* Folha / planta */
+export const Leaf = mk(
+  <>
+    <path d="M5 17 C5 17 5 10 12 6 C17 3.5 21 5 21 5 C21 5 21 12 17 16 C13 20 8 20 5 17 Z" />
+    <path d="M5 17 L11 11" strokeOpacity={0.5} />
+  </>
+);
+
+/* Cruz médica / saúde */
+export const Cross = mk(
+  <>
+    <rect x="9" y="3" width="6" height="18" rx="1" />
+    <rect x="3" y="9" width="18" height="6" rx="1" />
+  </>
+);
+
+/* Link / corrente */
+export const Link2 = mk(
+  <>
+    <path d="M9 17 L7 17 C4.2 17 2 14.8 2 12 C2 9.2 4.2 7 7 7 L9 7" />
+    <path d="M15 7 L17 7 C19.8 7 22 9.2 22 12 C22 14.8 19.8 17 17 17 L15 17" />
+    <line x1="8" y1="12" x2="16" y2="12" />
+  </>
+);
+
+/* Régua */
+export const Ruler = mk(
+  <>
+    <rect x="2" y="6" width="20" height="12" rx="2" />
+    <line x1="6" y1="6" x2="6" y2="11" />
+    <line x1="10" y1="6" x2="10" y2="9" />
+    <line x1="14" y1="6" x2="14" y2="11" />
+    <line x1="18" y1="6" x2="18" y2="9" />
+  </>
+);
+
 /* ─────────────────────────────────────────────────────────────
    ALIASES & COMPATIBILIDADE
 ───────────────────────────────────────────────────────────── */

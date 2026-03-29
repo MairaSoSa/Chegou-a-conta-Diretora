@@ -15,7 +15,10 @@ import {
   BookOpen, BookMarked, Award, ChevronDown, ChevronUp,
   Globe, Building2, TreePine, Filter, X, Clock, Heart,
   CheckCircle, CircleAlert, Hash, CalendarDays, Settings, RefreshCw,
-  DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon
+  DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon,
+  Handshake, Shield, Leaf, Accessibility, Scale, Building, Sun, Home,
+  Link2, Cross, Laptop, Mail, Phone, Droplets, ClipboardList, Wrench,
+  Folder, Pin, Ruler, Printer,
 } from "@/components/Icons";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico, useEscolaMicroregiao, useUfStats, useSimilarSchools } from "@/hooks/use-schools";
 import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento } from "@/hooks/use-pdde";
@@ -1718,7 +1721,7 @@ export default function Dashboard() {
                       {evolucaoData.escola.no_entidade}
                     </div>
                     <span style={{ fontSize: 12, color: '#8a7a6a', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                      📍 {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}
+                      <MapPin size={11} style={{display:'inline',verticalAlign:'middle'}} /> {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}
                     </span>
                     <span style={{ fontSize: 11, color: '#bbb', fontWeight: 600, flexShrink: 0 }}>INEP {selectedInep}</span>
                   </div>
@@ -1732,7 +1735,7 @@ export default function Dashboard() {
                   </div>
                   <div className="print-school-name">{evolucaoData.escola.no_entidade}</div>
                   <div className="print-meta-row">
-                    <span>📍 {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}</span>
+                    <span><MapPin size={11} style={{display:'inline',verticalAlign:'middle'}} /> {evolucaoData.escola.no_municipio}/{evolucaoData.escola.sg_uf}</span>
                     <span>INEP {selectedInep}</span>
                     <span>{evolucaoData.escola.ds_dependencia}</span>
                     <span>{evolucaoData.escola.ds_localizacao}</span>
@@ -1779,7 +1782,7 @@ export default function Dashboard() {
                           onMouseEnter={e => (e.currentTarget.style.background = "#0f766e")}
                           onMouseLeave={e => (e.currentTarget.style.background = "#0d9488")}
                         >
-                          🔍 Ver escolas com perfil similar
+                          <Search size={12} style={{display:'inline',verticalAlign:'middle'}} /> Ver escolas com perfil similar
                         </button>
                         <button
                           onClick={() => window.print()}
@@ -1793,7 +1796,7 @@ export default function Dashboard() {
                           onMouseEnter={e => { e.currentTarget.style.color = "#5d4037"; e.currentTarget.style.borderColor = '#c4b49e'; }}
                           onMouseLeave={e => { e.currentTarget.style.color = "#b8a899"; e.currentTarget.style.borderColor = '#e0d5c0'; }}
                         >
-                          🖨️ imprimir
+                          <Printer size={12} style={{display:'inline',verticalAlign:'middle'}} /> imprimir
                         </button>
                       </div>
                     </div>
@@ -1988,31 +1991,31 @@ out center tags 100;`;
                     }
                   };
 
-                  const CAT_META: Record<string, { icon: string; label: string; bg: string; border: string; txt: string; dot: string }> = {
-                    conselho_tutelar: { icon: '⚖️', label: 'Conselho Tutelar',    bg: '#fff3e0', border: '#ffd180', txt: '#7a3f00', dot: '#ff8f00' },
-                    cras:             { icon: '🏘️', label: 'CRAS',                bg: '#e8f5ee', border: '#b8dfc8', txt: '#1f6b45', dot: '#2f7a58' },
-                    creas:            { icon: '🛡️', label: 'CREAS',               bg: '#e6eef8', border: '#b8cfe8', txt: '#1e4a78', dot: '#2d5a88' },
-                    centro_pop:       { icon: '🏕️', label: 'Centro POP',          bg: '#fdf3e0', border: '#f0ddb5', txt: '#7a4a10', dot: '#d4870a' },
-                    ubs:              { icon: '🏥', label: 'UBS / Posto de Saúde', bg: '#e3f2fd', border: '#90caf9', txt: '#0d47a1', dot: '#1565c0' },
-                    hospital:         { icon: '🏨', label: 'Hospital',             bg: '#fce4ec', border: '#f48fb1', txt: '#880e4f', dot: '#c2185b' },
-                    pronto_socorro:   { icon: '🚨', label: 'Pronto Socorro / UPA', bg: '#ffebee', border: '#ef9a9a', txt: '#b71c1c', dot: '#d32f2f' },
-                    abrigos:          { icon: '🏠', label: 'Abrigos / Casa Lar',   bg: '#f3eeff', border: '#d4c4f5', txt: '#5b3fa8', dot: '#7c4dff' },
+                  const CAT_META: Record<string, { icon: React.ReactNode; label: string; bg: string; border: string; txt: string; dot: string }> = {
+                    conselho_tutelar: { icon: <Scale size={14} />,      label: 'Conselho Tutelar',    bg: '#fff3e0', border: '#ffd180', txt: '#7a3f00', dot: '#ff8f00' },
+                    cras:             { icon: <Building2 size={14} />,  label: 'CRAS',                bg: '#e8f5ee', border: '#b8dfc8', txt: '#1f6b45', dot: '#2f7a58' },
+                    creas:            { icon: <Shield size={14} />,     label: 'CREAS',               bg: '#e6eef8', border: '#b8cfe8', txt: '#1e4a78', dot: '#2d5a88' },
+                    centro_pop:       { icon: <TreePine size={14} />,   label: 'Centro POP',          bg: '#fdf3e0', border: '#f0ddb5', txt: '#7a4a10', dot: '#d4870a' },
+                    ubs:              { icon: <Cross size={14} />,      label: 'UBS / Posto de Saúde', bg: '#e3f2fd', border: '#90caf9', txt: '#0d47a1', dot: '#1565c0' },
+                    hospital:         { icon: <Building size={14} />,   label: 'Hospital',             bg: '#fce4ec', border: '#f48fb1', txt: '#880e4f', dot: '#c2185b' },
+                    pronto_socorro:   { icon: <AlertTriangle size={14} />, label: 'Pronto Socorro / UPA', bg: '#ffebee', border: '#ef9a9a', txt: '#b71c1c', dot: '#d32f2f' },
+                    abrigos:          { icon: <Home size={14} />,       label: 'Abrigos / Casa Lar',   bg: '#f3eeff', border: '#d4c4f5', txt: '#5b3fa8', dot: '#7c4dff' },
                   };
 
                   // Mapa Social tipo → visual meta
-                  const MS_META: Record<string, { icon: string; label: string; bg: string; border: string; txt: string; dot: string }> = {
-                    CRAS:                   { icon: '🏘️', label: 'CRAS',                                bg: '#e8f5ee', border: '#b8dfc8', txt: '#1f6b45', dot: '#2f7a58' },
-                    CREAS:                  { icon: '🛡️', label: 'CREAS',                               bg: '#e6eef8', border: '#b8cfe8', txt: '#1e4a78', dot: '#2d5a88' },
-                    CAPS:                   { icon: '🧠', label: 'CAPS',                                 bg: '#fff8e1', border: '#ffe082', txt: '#5f4200', dot: '#f9a825' },
-                    CONSELHO_TUTELAR:       { icon: '⚖️', label: 'Conselho Tutelar',                    bg: '#fff3e0', border: '#ffd180', txt: '#7a3f00', dot: '#ff8f00' },
-                    CONSELHO_ASSISTENCIA:   { icon: '🏛️', label: 'Conselho Municipal de Assist. Social', bg: '#f0f4ff', border: '#b8c8f0', txt: '#1a3060', dot: '#2a4a90' },
-                    ACOLHIMENTO:            { icon: '🏠', label: 'Serviço de Acolhimento',               bg: '#f3eeff', border: '#d4c4f5', txt: '#5b3fa8', dot: '#7c4dff' },
-                    CONVIVENCIA:            { icon: '🤝', label: 'Centro de Convivência',                bg: '#fdf6ff', border: '#e8c8f0', txt: '#6a2080', dot: '#9c27b0' },
-                    CENTRO_POP:             { icon: '🏕️', label: 'Centro POP',                          bg: '#fdf3e0', border: '#f0ddb5', txt: '#7a4a10', dot: '#d4870a' },
-                    CENTRO_DIA:             { icon: '☀️', label: 'Centro-Dia',                           bg: '#fffde7', border: '#fff176', txt: '#5d4037', dot: '#f9a825' },
-                    CMDCA:                  { icon: '👶', label: 'CMDCA',                                bg: '#fce4ec', border: '#f48fb1', txt: '#880e4f', dot: '#c2185b' },
-                    REPUBLICA:              { icon: '🏡', label: 'República',                            bg: '#f1f8e9', border: '#c5e1a5', txt: '#33691e', dot: '#558b2f' },
-                    REDE_PARCERIA:          { icon: '🔗', label: 'Rede de Parceria',                     bg: '#e8eaf6', border: '#9fa8da', txt: '#283593', dot: '#3949ab' },
+                  const MS_META: Record<string, { icon: React.ReactNode; label: string; bg: string; border: string; txt: string; dot: string }> = {
+                    CRAS:                   { icon: <Building2 size={14} />,   label: 'CRAS',                                bg: '#e8f5ee', border: '#b8dfc8', txt: '#1f6b45', dot: '#2f7a58' },
+                    CREAS:                  { icon: <Shield size={14} />,      label: 'CREAS',                               bg: '#e6eef8', border: '#b8cfe8', txt: '#1e4a78', dot: '#2d5a88' },
+                    CAPS:                   { icon: <Droplets size={14} />,    label: 'CAPS',                                bg: '#fff8e1', border: '#ffe082', txt: '#5f4200', dot: '#f9a825' },
+                    CONSELHO_TUTELAR:       { icon: <Scale size={14} />,       label: 'Conselho Tutelar',                    bg: '#fff3e0', border: '#ffd180', txt: '#7a3f00', dot: '#ff8f00' },
+                    CONSELHO_ASSISTENCIA:   { icon: <Landmark size={14} />,    label: 'Conselho Municipal de Assist. Social', bg: '#f0f4ff', border: '#b8c8f0', txt: '#1a3060', dot: '#2a4a90' },
+                    ACOLHIMENTO:            { icon: <Home size={14} />,        label: 'Serviço de Acolhimento',               bg: '#f3eeff', border: '#d4c4f5', txt: '#5b3fa8', dot: '#7c4dff' },
+                    CONVIVENCIA:            { icon: <Handshake size={14} />,   label: 'Centro de Convivência',                bg: '#fdf6ff', border: '#e8c8f0', txt: '#6a2080', dot: '#9c27b0' },
+                    CENTRO_POP:             { icon: <TreePine size={14} />,    label: 'Centro POP',                          bg: '#fdf3e0', border: '#f0ddb5', txt: '#7a4a10', dot: '#d4870a' },
+                    CENTRO_DIA:             { icon: <Sun size={14} />,         label: 'Centro-Dia',                           bg: '#fffde7', border: '#fff176', txt: '#5d4037', dot: '#f9a825' },
+                    CMDCA:                  { icon: <User size={14} />,        label: 'CMDCA',                                bg: '#fce4ec', border: '#f48fb1', txt: '#880e4f', dot: '#c2185b' },
+                    REPUBLICA:              { icon: <Home size={14} />,        label: 'República',                            bg: '#f1f8e9', border: '#c5e1a5', txt: '#33691e', dot: '#558b2f' },
+                    REDE_PARCERIA:          { icon: <Link2 size={14} />,       label: 'Rede de Parceria',                     bg: '#e8eaf6', border: '#9fa8da', txt: '#283593', dot: '#3949ab' },
                   };
 
                   const UnitCard = ({ u, cat, meta }: { u: any; cat: string; meta?: any }) => {
@@ -2035,7 +2038,7 @@ out center tags 100;`;
                         </div>
                         {u.endereco ? (
                           <p style={{ fontSize: 11, color: '#555', margin: '0 0 3px', display: 'flex', alignItems: 'flex-start', gap: 4 }}>
-                            <span style={{ flexShrink: 0 }}>📍</span>
+                            <MapPin size={11} style={{ flexShrink: 0 }} />
                             <span>
                               {u.endereco}
                               {u.endereco_verificado && (
@@ -2050,25 +2053,25 @@ out center tags 100;`;
                         )}
                         {u.telefone && (
                           <p style={{ fontSize: 11, color: '#555', margin: '0 0 3px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <span>📞</span>
+                            <Phone size={11} />
                             <a href={`tel:${u.telefone.replace(/\D/g,'')}`} style={{ color: m.txt, textDecoration: 'none', fontWeight: 600 }}>{u.telefone}</a>
                           </p>
                         )}
                         {u.website && (
                           <p style={{ fontSize: 11, color: '#555', margin: '0 0 3px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <span>🌐</span>
+                            <Globe size={11} />
                             <a href={u.website} target="_blank" rel="noopener noreferrer" style={{ color: m.txt, textDecoration: 'underline' }}>Site oficial</a>
                           </p>
                         )}
                         {u.email && (
                           <p style={{ fontSize: 11, color: '#555', margin: '0 0 3px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <span>✉️</span>
+                            <Mail size={11} />
                             <a href={`mailto:${u.email}`} style={{ color: m.txt, textDecoration: 'none', fontWeight: 600 }}>{u.email}</a>
                           </p>
                         )}
                         {u.horario && (
                           <p style={{ fontSize: 10, color: '#888', margin: '3px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <span>🕐</span> {u.horario}
+                            <Clock size={10} /> {u.horario}
                           </p>
                         )}
                       </div>
@@ -2083,7 +2086,7 @@ out center tags 100;`;
                           onClick={handleToggleEquipamentos}
                           style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 18px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                         >
-                          <div style={{ width: 38, height: 38, borderRadius: 12, background: '#d2f0e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🏛️</div>
+                          <div style={{ width: 38, height: 38, borderRadius: 12, background: '#d2f0e0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Landmark size={18} /></div>
                           <div style={{ flex: 1 }}>
                             <p style={{ fontWeight: 700, fontSize: '13px', color: '#1f6b45', margin: 0 }}>Equipamentos Públicos do Município</p>
                             <p style={{ fontSize: '11px', color: '#4a8a65', margin: 0 }}>CRAS, CREAS, UBS, Pronto Socorro, Conselho Tutelar — {nomeMunicipio || '—'}</p>
@@ -2240,7 +2243,7 @@ out center tags 100;`;
                             textAlign: 'left',
                           }}
                         >
-                          <div style={{ width: 38, height: 38, borderRadius: 12, background: '#e8deff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🤝</div>
+                          <div style={{ width: 38, height: 38, borderRadius: 12, background: '#e8deff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Handshake size={18} /></div>
                           <div style={{ flex: 1 }}>
                             <p style={{ fontWeight: 700, fontSize: '13px', color: '#5b3fa8', margin: 0 }}>Suporte Institucional para Gestão</p>
                             <p style={{ fontSize: '11px', color: '#7c5cbf', margin: 0 }}>Programas, recursos e canais de apoio à diretora escolar</p>
@@ -2260,10 +2263,10 @@ out center tags 100;`;
                             {/* Abas */}
                             <div style={{ display: 'flex', gap: 6, marginTop: 14, marginBottom: 14, flexWrap: 'wrap' }}>
                               {([
-                                { id: 'contatos', label: '📞 Contatos' },
-                                { id: 'cecampe', label: '🤝 CECAMPE' },
-                                { id: 'conselhos', label: '🏛️ Conselhos' },
-                                { id: 'sistemas', label: '🖥️ Sistemas' },
+                                { id: 'contatos', label: 'Contatos' },
+                                { id: 'cecampe', label: 'CECAMPE' },
+                                { id: 'conselhos', label: 'Conselhos' },
+                                { id: 'sistemas', label: 'Sistemas' },
                               ] as const).map(t => (
                                 <button key={t.id} onClick={() => setSuporteTab(t.id)}
                                   style={{ padding: '6px 14px', borderRadius: 20, border: suporteTab === t.id ? '1.5px solid #7c5cbf' : '1.5px solid #d4c4f5', background: suporteTab === t.id ? '#7c5cbf' : '#f9f6ff', color: suporteTab === t.id ? '#fff' : '#5b3fa8', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
@@ -2279,11 +2282,11 @@ out center tags 100;`;
                                 {/* Secretário Estadual da escola */}
                                 {secretarioEstadual && (
                                   <div style={{ borderRadius: 12, border: '1.5px solid #c8d8f5', background: '#eaf0fb', padding: '12px 14px' }}>
-                                    <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1e4a78', margin: '0 0 10px' }}>🏫 Secretaria Estadual de Educação — {secretarioEstadual.estado}</p>
+                                    <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1e4a78', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}><School size={11} /> Secretaria Estadual de Educação — {secretarioEstadual.estado}</p>
                                     <div style={{ background: 'rgba(255,255,255,0.75)', borderRadius: 10, padding: '10px 12px', border: '1px solid #b8cfe8', display: 'flex', flexDirection: 'column', gap: 4 }}>
                                       <p style={{ fontSize: 10, fontWeight: 700, color: '#1e4a78', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Secretário(a) de Educação</p>
                                       <p style={{ fontSize: 13, fontWeight: 700, color: '#0d2b50', margin: 0 }}>{secretarioEstadual.nome}</p>
-                                      <p style={{ fontSize: 11, color: '#1e4a78', margin: 0 }}>✉️ <a href={`mailto:${secretarioEstadual.email}`} style={{ color: '#1e4a78' }}>{secretarioEstadual.email}</a></p>
+                                      <p style={{ fontSize: 11, color: '#1e4a78', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={10} /> <a href={`mailto:${secretarioEstadual.email}`} style={{ color: '#1e4a78' }}>{secretarioEstadual.email}</a></p>
                                       <a href={secretarioEstadual.site} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 4, fontSize: 11, fontWeight: 700, color: '#1e4a78', background: 'rgba(30,74,120,0.08)', padding: '3px 12px', borderRadius: 20, border: '1px solid #b8cfe8', textDecoration: 'none' }}>Site da Secretaria ↗</a>
                                     </div>
                                     <p style={{ fontSize: 10, color: '#6a8bb5', margin: '8px 0 0' }}>Fonte: CONSED — consed.org.br/secretarios</p>
@@ -2292,8 +2295,8 @@ out center tags 100;`;
 
                                 {/* Secretaria Municipal via UNDIME */}
                                 <div style={{ borderRadius: 12, border: escolaDep === 'Municipal' ? '2px solid #d4861a' : '1.5px solid #f0ddb5', background: escolaDep === 'Municipal' ? '#fff8ed' : '#fdf3e0', padding: '12px 14px' }}>
-                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#7a4a10', margin: '0 0 6px' }}>
-                                    🏛️ Secretaria Municipal de Educação
+                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#7a4a10', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                    <Landmark size={11} /> Secretaria Municipal de Educação
                                     {escolaDep === 'Municipal' && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, background: '#d4861a', color: '#fff', borderRadius: 8, padding: '1px 7px' }}>sua rede</span>}
                                   </p>
                                   {escolaDep === 'Municipal' ? (
@@ -2324,9 +2327,9 @@ out center tags 100;`;
 
                                 {/* MEC */}
                                 <div style={{ borderRadius: 12, border: '1.5px solid #b8cfe8', background: '#e6eef8', padding: '12px 14px' }}>
-                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1e4a78', margin: '0 0 6px' }}>🏛️ Ministério da Educação (MEC) — Federal</p>
+                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1e4a78', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 5 }}><Landmark size={11} /> Ministério da Educação (MEC) — Federal</p>
                                   <p style={{ fontSize: 11, color: '#1e4a78', margin: '0 0 10px', lineHeight: 1.5 }}>
-                                    <strong>Ministro:</strong> Camilo Sobreira de Santana — <a href="mailto:gabinetedoministro@mec.gov.br" style={{ color: '#1e4a78' }}>gabinetedoministro@mec.gov.br</a> — 📞 (61) 2022-7828
+                                    <strong>Ministro:</strong> Camilo Sobreira de Santana — <a href="mailto:gabinetedoministro@mec.gov.br" style={{ color: '#1e4a78' }}>gabinetedoministro@mec.gov.br</a> — <Phone size={11} style={{display:'inline',verticalAlign:'middle'}} /> (61) 2022-7828
                                   </p>
                                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 10 }}>
                                     {MEC_SECRETARIAS.map((s, i) => (
@@ -2335,8 +2338,8 @@ out center tags 100;`;
                                         <p style={{ fontSize: 11, fontWeight: 600, color: '#0d2b50', margin: '0 0 4px', lineHeight: 1.3 }}>{s.nome}</p>
                                         {s.titular && <p style={{ fontSize: 11, color: '#1e4a78', margin: '0 0 2px', fontStyle: 'italic' }}>{s.titular}</p>}
                                         <p style={{ fontSize: 10, color: '#4a7aab', margin: '0 0 6px', lineHeight: 1.3 }}>{s.foco}</p>
-                                        <p style={{ fontSize: 11, color: '#1e4a78', margin: '0 0 2px' }}>📞 {s.tel}</p>
-                                        <p style={{ fontSize: 11, color: '#1e4a78', margin: 0 }}>✉️ <a href={`mailto:${s.email}`} style={{ color: '#1e4a78' }}>{s.email}</a></p>
+                                        <p style={{ fontSize: 11, color: '#1e4a78', margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: 4 }}><Phone size={10} /> {s.tel}</p>
+                                        <p style={{ fontSize: 11, color: '#1e4a78', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={10} /> <a href={`mailto:${s.email}`} style={{ color: '#1e4a78' }}>{s.email}</a></p>
                                       </div>
                                     ))}
                                   </div>
@@ -2344,7 +2347,7 @@ out center tags 100;`;
 
                                 {/* FNDE */}
                                 <div style={{ borderRadius: 12, border: '1.5px solid #b8dfc8', background: '#e8f5ee', padding: '12px 14px' }}>
-                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1f6b45', margin: '0 0 10px' }}>💰 FNDE — Fundo Nacional de Desenvolvimento da Educação</p>
+                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1f6b45', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}><DollarSign size={11} /> FNDE — Fundo Nacional de Desenvolvimento da Educação</p>
                                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 10 }}>
                                     {[
                                       { cargo: 'Presidente do FNDE', nome: 'Fernanda Mara de Oliveira M C Pacobahyba', tel: '(61) 2022-4806 / 4599', email: 'presidencia@fnde.gov.br' },
@@ -2354,8 +2357,8 @@ out center tags 100;`;
                                       <div key={i} style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '10px 12px', border: '1px solid #b8dfc8' }}>
                                         <p style={{ fontSize: 10, fontWeight: 700, color: '#1f6b45', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c.cargo}</p>
                                         <p style={{ fontSize: 12, fontWeight: 600, color: '#0d3320', margin: '0 0 6px' }}>{c.nome}</p>
-                                        <p style={{ fontSize: 11, color: '#1f6b45', margin: '0 0 2px' }}>📞 {c.tel}</p>
-                                        <p style={{ fontSize: 11, color: '#1f6b45', margin: 0 }}>✉️ <a href={`mailto:${c.email}`} style={{ color: '#1f6b45' }}>{c.email}</a></p>
+                                        <p style={{ fontSize: 11, color: '#1f6b45', margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: 4 }}><Phone size={10} /> {c.tel}</p>
+                                        <p style={{ fontSize: 11, color: '#1f6b45', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={10} /> <a href={`mailto:${c.email}`} style={{ color: '#1f6b45' }}>{c.email}</a></p>
                                       </div>
                                     ))}
                                   </div>
@@ -2375,7 +2378,7 @@ out center tags 100;`;
                                     <div key={i} style={{ borderRadius: 12, border: `1.5px solid ${c.bd}`, background: c.bg, padding: '14px 16px' }}>
                                       <p style={{ fontSize: 10, fontWeight: 800, color: c.cor, margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Região {c.regiao}</p>
                                       <p style={{ fontSize: 13, fontWeight: 700, color: c.cor, margin: '0 0 10px', lineHeight: 1.3 }}>{c.uni}</p>
-                                      <p style={{ fontSize: 12, color: c.cor, margin: '0 0 10px' }}>✉️ <a href={`mailto:${c.email}`} style={{ color: c.cor, fontWeight: 600 }}>{c.email}</a></p>
+                                      <p style={{ fontSize: 12, color: c.cor, margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={10} /> <a href={`mailto:${c.email}`} style={{ color: c.cor, fontWeight: 600 }}>{c.email}</a></p>
                                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                                         <a href={c.site} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: c.cor, background: 'rgba(255,255,255,0.7)', padding: '5px 14px', borderRadius: 20, border: `1px solid ${c.bd}`, textDecoration: 'none' }}>Site ↗</a>
                                         {c.painel && <a href={c.painel} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: c.cor, background: 'rgba(255,255,255,0.7)', padding: '5px 14px', borderRadius: 20, border: `1px solid ${c.bd}`, textDecoration: 'none' }}>Painel de Dados ↗</a>}
@@ -2395,14 +2398,14 @@ out center tags 100;`;
 
                                 {/* CNE */}
                                 <div style={{ borderRadius: 12, border: '1.5px solid #b8cfe8', background: '#e6eef8', padding: '14px 16px' }}>
-                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1e4a78', margin: '0 0 10px' }}>🏛️ Conselho Nacional de Educação (CNE) — Federal</p>
+                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1e4a78', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}><Landmark size={11} /> Conselho Nacional de Educação (CNE) — Federal</p>
                                   <p style={{ fontSize: 11, color: '#1e4a78', margin: '0 0 10px', lineHeight: 1.5 }}>Órgão colegiado do MEC com funções normativas e deliberativas. Responsável pelas Diretrizes Curriculares Nacionais (BNCC, DCNs) e políticas de qualidade do ensino.</p>
                                   <div style={{ background: 'rgba(255,255,255,0.75)', borderRadius: 10, padding: '10px 12px', border: '1px solid #b8cfe8', display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}>
                                     <p style={{ fontSize: 10, fontWeight: 700, color: '#1e4a78', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Presidente</p>
                                     <p style={{ fontSize: 13, fontWeight: 700, color: '#0d2b50', margin: 0 }}>{CNE_INFO.presidente}</p>
-                                    <p style={{ fontSize: 11, color: '#1e4a78', margin: 0 }}>📞 {CNE_INFO.tel}</p>
-                                    <p style={{ fontSize: 11, color: '#1e4a78', margin: 0 }}>✉️ <a href={`mailto:${CNE_INFO.email}`} style={{ color: '#1e4a78' }}>{CNE_INFO.email}</a></p>
-                                    <p style={{ fontSize: 11, color: '#1e4a78', margin: 0 }}>📍 {CNE_INFO.endereco}</p>
+                                    <p style={{ fontSize: 11, color: '#1e4a78', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><Phone size={10} /> {CNE_INFO.tel}</p>
+                                    <p style={{ fontSize: 11, color: '#1e4a78', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={10} /> <a href={`mailto:${CNE_INFO.email}`} style={{ color: '#1e4a78' }}>{CNE_INFO.email}</a></p>
+                                    <p style={{ fontSize: 11, color: '#1e4a78', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={10} /> {CNE_INFO.endereco}</p>
                                   </div>
                                   <a href={CNE_INFO.site} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: '#1e4a78', background: 'rgba(255,255,255,0.7)', padding: '5px 14px', borderRadius: 20, border: '1px solid #b8cfe8', textDecoration: 'none', display: 'inline-block' }}>Portal do CNE ↗</a>
                                 </div>
@@ -2412,16 +2415,16 @@ out center tags 100;`;
                                   const cee = CEE_ESTADUAIS[escolaUF]!;
                                   return (
                                     <div style={{ borderRadius: 12, border: '1.5px solid #d4c4f5', background: '#f3eeff', padding: '14px 16px' }}>
-                                      <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#5b3fa8', margin: '0 0 10px' }}>🏛️ Conselho Estadual de Educação — {escolaUF}</p>
+                                      <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#5b3fa8', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}><Landmark size={11} /> Conselho Estadual de Educação — {escolaUF}</p>
                                       <p style={{ fontSize: 11, color: '#5b3fa8', margin: '0 0 10px', lineHeight: 1.5 }}>Responsável pela normatização e supervisão do sistema estadual de ensino, incluindo autorização e credenciamento de escolas privadas e municipais.</p>
                                       <div style={{ background: 'rgba(255,255,255,0.75)', borderRadius: 10, padding: '10px 12px', border: '1px solid #d4c4f5', display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}>
                                         {cee.presidente && <>
                                           <p style={{ fontSize: 10, fontWeight: 700, color: '#5b3fa8', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Presidente</p>
                                           <p style={{ fontSize: 13, fontWeight: 700, color: '#3a2070', margin: 0 }}>{cee.presidente}</p>
                                         </>}
-                                        {cee.tel && <p style={{ fontSize: 11, color: '#5b3fa8', margin: 0 }}>📞 {cee.tel}</p>}
-                                        {cee.email && <p style={{ fontSize: 11, color: '#5b3fa8', margin: 0 }}>✉️ <a href={`mailto:${cee.email}`} style={{ color: '#5b3fa8' }}>{cee.email}</a></p>}
-                                        {cee.endereco && <p style={{ fontSize: 11, color: '#5b3fa8', margin: 0 }}>📍 {cee.endereco}</p>}
+                                        {cee.tel && <p style={{ fontSize: 11, color: '#5b3fa8', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><Phone size={10} /> {cee.tel}</p>}
+                                        {cee.email && <p style={{ fontSize: 11, color: '#5b3fa8', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={10} /> <a href={`mailto:${cee.email}`} style={{ color: '#5b3fa8' }}>{cee.email}</a></p>}
+                                        {cee.endereco && <p style={{ fontSize: 11, color: '#5b3fa8', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={10} /> {cee.endereco}</p>}
                                       </div>
                                       <a href={cee.site} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: '#5b3fa8', background: 'rgba(255,255,255,0.7)', padding: '5px 14px', borderRadius: 20, border: '1px solid #d4c4f5', textDecoration: 'none', display: 'inline-block' }}>Site do CEE-{escolaUF} ↗</a>
                                     </div>
@@ -2430,7 +2433,7 @@ out center tags 100;`;
 
                                 {/* CME — nota */}
                                 <div style={{ borderRadius: 12, border: '1.5px solid #b8dfc8', background: '#e8f5ee', padding: '14px 16px' }}>
-                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1f6b45', margin: '0 0 8px' }}>🏘️ Conselho Municipal de Educação (CME)</p>
+                                  <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#1f6b45', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 5 }}><Building2 size={11} /> Conselho Municipal de Educação (CME)</p>
                                   <p style={{ fontSize: 11, color: '#1f6b45', margin: '0 0 10px', lineHeight: 1.5 }}>
                                     O CME é o órgão de controle social do sistema municipal de ensino. Cada município tem o seu — fiscaliza as políticas educacionais locais, delibera sobre normas e aprova o Plano Municipal de Educação (PME).
                                     Para localizar o CME do seu município, consulte a Secretaria Municipal de Educação ou a UNDIME do seu estado.
@@ -2458,16 +2461,16 @@ out center tags 100;`;
                             {/* Aba: Sistemas */}
                             {suporteTab === 'sistemas' && (
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
-                                {[
-                                  { icon: '📊', titulo: 'Painel PDDE — FNDE', desc: 'Execução financeira do PDDE por escola — PowerBI oficial do FNDE', url: 'https://app.powerbi.com/view?r=eyJrIjoiMDU1ODMyMmEtNzMxNi00NGI1LWIwMTctMTc5OWEzYWMwMDY3IiwidCI6ImNmODQ1NGQzLWUwMTItNGE5ZC05NWIzLTcwYmRiNmY0NTlkNSJ9', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
-                                  { icon: '📚', titulo: 'PDDE Interativo', desc: 'Elaboração do PDE Escola e gestão financeira (MEC)', url: 'https://pddeinterativo.mec.gov.br', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
-                                  { icon: '🧾', titulo: 'SIGPC — Prestação de Contas', desc: 'Consulta pública à prestação de contas do PDDE e programas FNDE', url: 'https://www.gov.br/fnde/pt-br/assuntos/sistemas/sigpc-acesso-publico', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
-                                  { icon: '📋', titulo: 'SIMEC / PAR', desc: 'Plano de Ações Articuladas — monitoramento e planejamento municipal', url: 'https://simec.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
-                                  { icon: '🔗', titulo: 'Balcão FNDE', desc: 'Atendimento virtual do FNDE — dúvidas sobre programas e repasses', url: 'https://www.gov.br/fnde/pt-br/acesso-a-informacao/acoes-e-programas/acoes/balcao-fnde-1', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
-                                ].map((item, i) => (
+                                {([
+                                  { icon: <BarChart3 size={18} />, titulo: 'Painel PDDE — FNDE', desc: 'Execução financeira do PDDE por escola — PowerBI oficial do FNDE', url: 'https://app.powerbi.com/view?r=eyJrIjoiMDU1ODMyMmEtNzMxNi00NGI1LWIwMTctMTc5OWEzYWMwMDY3IiwidCI6ImNmODQ1NGQzLWUwMTItNGE5ZC05NWIzLTcwYmRiNmY0NTlkNSJ9', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+                                  { icon: <BookOpen size={18} />, titulo: 'PDDE Interativo', desc: 'Elaboração do PDE Escola e gestão financeira (MEC)', url: 'https://pddeinterativo.mec.gov.br', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+                                  { icon: <FileText size={18} />, titulo: 'SIGPC — Prestação de Contas', desc: 'Consulta pública à prestação de contas do PDDE e programas FNDE', url: 'https://www.gov.br/fnde/pt-br/assuntos/sistemas/sigpc-acesso-publico', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                                  { icon: <ClipboardList size={18} />, titulo: 'SIMEC / PAR', desc: 'Plano de Ações Articuladas — monitoramento e planejamento municipal', url: 'https://simec.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                                  { icon: <Link2 size={18} />, titulo: 'Balcão FNDE', desc: 'Atendimento virtual do FNDE — dúvidas sobre programas e repasses', url: 'https://www.gov.br/fnde/pt-br/acesso-a-informacao/acoes-e-programas/acoes/balcao-fnde-1', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
+                                ] as const).map((item, i) => (
                                   <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
                                     style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px', borderRadius: 12, background: item.bg, border: `1.5px solid ${item.bd}`, textDecoration: 'none' }}>
-                                    <span style={{ fontSize: 18, flexShrink: 0 }}>{item.icon}</span>
+                                    <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', paddingTop: 2 }}>{item.icon}</span>
                                     <div>
                                       <p style={{ fontSize: 12, fontWeight: 700, color: item.cor, margin: '0 0 2px' }}>{item.titulo} ↗</p>
                                       <p style={{ fontSize: 11, color: item.cor, opacity: 0.8, margin: 0, lineHeight: 1.4 }}>{item.desc}</p>
@@ -2494,7 +2497,7 @@ out center tags 100;`;
                     </div>
                     <div className="organic-divider" />
                     <div className="soft-card theme-blue" style={{ margin: 0 }}>
-                      <div className="attention-head"><span>🏫</span><strong>Identidade</strong></div>
+                      <div className="attention-head"><School size={16} /><strong>Identidade</strong></div>
                       <div className="row-list" style={{marginTop:'8px'}}>
                         {[
                           ['Situação', censoLatest.ds_situacao],
@@ -2582,13 +2585,13 @@ out center tags 100;`;
                       <>
                         {obs.length === 0 ? (
                           <div style={{padding:'14px 18px', background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:12, display:'flex', alignItems:'center', gap:12}}>
-                            <span style={{fontSize:20, flexShrink:0}}>✅</span>
+                            <CheckCircle size={20} style={{flexShrink:0, color:'#166534'}} />
                             <p style={{fontSize:13, color:'#166534', margin:0, lineHeight:1.5}}>Os indicadores desta escola estão dentro das faixas de referência.</p>
                           </div>
                         ) : (
                           <div style={{padding:'14px 18px', background:'#faf7f2', border:'1px solid #e8dfc8', borderRadius:12}}>
                             <div style={{fontSize:11, fontWeight:800, color:'#9a7a5a', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:12}}>
-                              📋 Indicadores em observação
+                              <span style={{display:'flex',alignItems:'center',gap:5}}><ClipboardList size={11} /> Indicadores em observação</span>
                             </div>
                             <div style={{display:'flex', flexDirection:'column', gap:10}}>
                               {obs.map((alerta: any, i: number) => (
@@ -2607,7 +2610,7 @@ out center tags 100;`;
                         {Object.keys(indicadoresLatest).length > 0 && (
                           <div style={{marginTop:24}}>
                             <div style={{fontSize:11,fontWeight:800,color:'#9a7a5a',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:14}}>
-                              📈 Evolução da escola — com referências nacionais
+                              <span style={{display:'flex',alignItems:'center',gap:5}}><TrendingUp size={11} /> Evolução da escola — com referências nacionais</span>
                             </div>
                             <IndicatorPanel indicadores={indicadoresLatest} mediasNacionais={mediasNacionais} comparativo={comparativoData} microregiao={microregiaoData} historico={historicoIndicadores} />
                           </div>
@@ -2677,7 +2680,7 @@ out center tags 100;`;
                       {saebLatest && saebMetrics.length > 0 && (
                         <div style={{ marginBottom: 20 }}>
                           <div style={{ fontWeight: 700, fontSize: 13, color: '#5d4037', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            📝 Notas SAEB <span style={{ fontWeight: 400, fontSize: 12, color: '#9e8a75' }}>— {saebLatest.ano}</span>
+                            <FileText size={13} /> Notas SAEB <span style={{ fontWeight: 400, fontSize: 12, color: '#9e8a75' }}>— {saebLatest.ano}</span>
                           </div>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
                             {saebMetrics.map(m => (
@@ -2695,7 +2698,7 @@ out center tags 100;`;
                       {allRend.length > 0 && (
                         <div>
                           <div style={{ fontWeight: 700, fontSize: 13, color: '#5d4037', marginBottom: 10 }}>
-                            📊 Taxas de aprovação, reprovação e abandono (%)
+                            <span style={{display:'flex',alignItems:'center',gap:5}}><BarChart3 size={13} /> Taxas de aprovação, reprovação e abandono (%)</span>
                           </div>
 
                           {/* ── Cartões de segmento clicáveis ── */}
@@ -2771,7 +2774,7 @@ out center tags 100;`;
                                 <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
                                   {seg && (
                                     <div style={{ padding: '9px 14px', background: seg.color, color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                      <span>📌 {seg.label} — {seg.sub} — evolução por ano</span>
+                                      <span style={{display:'flex',alignItems:'center',gap:4}}><MapPin size={11} /> {seg.label} — {seg.sub} — evolução por ano</span>
                                       <button onClick={() => setRendSegmento(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 13, opacity: 0.8 }}>✕ ver geral</button>
                                     </div>
                                   )}
@@ -2806,7 +2809,7 @@ out center tags 100;`;
                                 {hasGrades && seg && (
                                   <div style={{ marginTop: 12 }}>
                                     <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 8 }}>
-                                      📋 Por série — {latestRow.ano}
+                                      <span style={{display:'flex',alignItems:'center',gap:4}}><ClipboardList size={11} /> Por série — {latestRow.ano}</span>
                                     </div>
                                     <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
                                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -2896,7 +2899,7 @@ out center tags 100;`;
 
                       <div>
                         <div style={{ fontWeight: 700, fontSize: 13, color: '#5d4037', marginBottom: 10 }}>
-                          🚫 Taxa de não resposta ao SAEB/Prova Brasil (%)
+                          <span style={{display:'flex',alignItems:'center',gap:5}}><X size={13} /> Taxa de não resposta ao SAEB/Prova Brasil (%)</span>
                         </div>
 
                         {/* Cartões de segmento clicáveis — igual ao Rendimento */}
@@ -2940,14 +2943,14 @@ out center tags 100;`;
                           <>
                             <div className="soft-card" style={{ padding: 0, overflow: 'hidden', marginBottom: gradesDisponiveis.length > 0 ? 12 : 0 }}>
                               <div style={{ padding: '9px 14px', background: seg.color, color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <span>📌 {seg.label} — {seg.sub} — evolução por ano</span>
+                                <span style={{display:'flex',alignItems:'center',gap:4}}><MapPin size={11} /> {seg.label} — {seg.sub} — evolução por ano</span>
                                 <button onClick={() => setTnrSegmento(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 13, opacity: 0.8 }}>✕ fechar</button>
                               </div>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                 <thead>
                                   <tr style={{ background: '#f7f2ea' }}>
                                     <th style={{ padding: '9px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
-                                    <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: seg.color, fontSize: 12 }}>🚫 Taxa de Não Resposta</th>
+                                    <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: seg.color, fontSize: 12 }}>Taxa de Não Resposta</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -2968,14 +2971,14 @@ out center tags 100;`;
                             {gradesDisponiveis.length > 0 && (
                               <div style={{ marginTop: 0 }}>
                                 <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 8 }}>
-                                  📋 Por série — {latest.ano}
+                                  <span style={{display:'flex',alignItems:'center',gap:4}}><ClipboardList size={11} /> Por série — {latest.ano}</span>
                                 </div>
                                 <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
                                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                     <thead>
                                       <tr style={{ background: seg.color + '22' }}>
                                         <th style={{ padding: '8px 14px', textAlign: 'left', fontWeight: 700, color: seg.color, fontSize: 12 }}>Série / Ano</th>
-                                        <th style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 700, color: seg.color, fontSize: 12 }}>🚫 Não Resposta</th>
+                                        <th style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 700, color: seg.color, fontSize: 12 }}><X size={11} style={{display:'inline',verticalAlign:'middle'}} /> Não Resposta</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -3139,7 +3142,7 @@ out center tags 100;`;
 
                       <div>
                         <div style={{ fontWeight: 700, fontSize: 13, color: '#5d4037', marginBottom: 10 }}>
-                          📅 Taxa de Distorção Idade-Série (TDI)
+                          <span style={{display:'flex',alignItems:'center',gap:5}}><CalendarDays size={13} /> Taxa de Distorção Idade-Série (TDI)</span>
                         </div>
 
                         {/* Cartões de segmento clicáveis */}
@@ -3183,14 +3186,14 @@ out center tags 100;`;
                           <>
                             <div className="soft-card" style={{ padding: 0, overflow: 'hidden', marginBottom: gradesDisponiveis.length > 0 ? 12 : 0 }}>
                               <div style={{ padding: '9px 14px', background: seg.color, color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <span>📌 {seg.label} — {seg.sub} — evolução por ano</span>
+                                <span style={{display:'flex',alignItems:'center',gap:4}}><MapPin size={11} /> {seg.label} — {seg.sub} — evolução por ano</span>
                                 <button onClick={() => setTdiSegmento(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 13, opacity: 0.8 }}>✕ fechar</button>
                               </div>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                 <thead>
                                   <tr style={{ background: '#f7f2ea' }}>
                                     <th style={{ padding: '9px 14px', textAlign: 'left', fontWeight: 700, color: '#5d4037', fontSize: 12 }}>Ano</th>
-                                    <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: seg.color, fontSize: 12 }}>📅 Distorção Idade-Série</th>
+                                    <th style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: seg.color, fontSize: 12 }}><span style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:4}}><CalendarDays size={11} /> Distorção Idade-Série</span></th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -3211,14 +3214,14 @@ out center tags 100;`;
                             {gradesDisponiveis.length > 0 && (
                               <div>
                                 <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 8 }}>
-                                  📋 Por série / ano escolar — {latest.ano}
+                                  <span style={{display:'flex',alignItems:'center',gap:4}}><ClipboardList size={11} /> Por série / ano escolar — {latest.ano}</span>
                                 </div>
                                 <div className="soft-card" style={{ padding: 0, overflow: 'hidden' }}>
                                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                     <thead>
                                       <tr style={{ background: seg.color + '22' }}>
                                         <th style={{ padding: '8px 14px', textAlign: 'left', fontWeight: 700, color: seg.color, fontSize: 12 }}>Série / Ano</th>
-                                        <th style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 700, color: seg.color, fontSize: 12 }}>📅 Distorção</th>
+                                        <th style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 700, color: seg.color, fontSize: 12 }}><span style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:4}}><CalendarDays size={11} /> Distorção</span></th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -3331,7 +3334,7 @@ out center tags 100;`;
                       {hasHistorico && (
                         <>
                           <button onClick={() => toggleSection('mat-evo')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            {expandedSections['mat-evo'] !== false ? '▼' : '▶'} 📅 Evolução histórica por etapa
+                            {expandedSections['mat-evo'] !== false ? '▼' : '▶'} <CalendarDays size={11} /> Evolução histórica por etapa
                           </button>
                           {expandedSections['mat-evo'] !== false && (
                             <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
@@ -3444,7 +3447,7 @@ out center tags 100;`;
                       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'14px'}}>
                         {hasTur && (
                           <div className="soft-card">
-                            <div className="attention-head"><span>🏫</span><strong>Turmas por etapa</strong></div>
+                            <div className="attention-head"><School size={16} /><strong>Turmas por etapa</strong></div>
                             <div style={{marginTop:'14px'}}>
                               {etapaRow('Infantil',  turEI,  turPctDen)}
                               {etapaRow('Fundamental', turEF, turPctDen)}
@@ -3461,7 +3464,7 @@ out center tags 100;`;
                         )}
                         {hasDoc && (
                           <div className="soft-card">
-                            <div className="attention-head"><span>🧑‍🏫</span><strong>Docentes por etapa</strong></div>
+                            <div className="attention-head"><GraduationCap size={16} /><strong>Docentes por etapa</strong></div>
                             <div style={{marginTop:'14px'}}>
                               {etapaRow('Infantil',  docEI,  docPctDen)}
                               {etapaRow('Fundamental', docEF, docPctDen)}
@@ -3547,7 +3550,7 @@ out center tags 100;`;
                       {/* Legenda de níveis */}
                       <div style={{ marginBottom: 14 }}>
                         <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
-                          👩‍🏫 Percentual de docentes por nível de esforço — {selectedAno}
+                          <span style={{display:'flex',alignItems:'center',gap:5}}><GraduationCap size={12} /> Percentual de docentes por nível de esforço — {selectedAno}</span>
                         </div>
                         <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 400 }}>
@@ -3723,7 +3726,7 @@ out center tags 100;`;
 
                       {/* Tabela Etapas × Grupos */}
                       <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
-                        📊 % de docentes por grupo de adequação — {selAno}
+                        <span style={{display:'flex',alignItems:'center',gap:5}}><BarChart3 size={12} /> % de docentes por grupo de adequação — {selAno}</span>
                       </div>
                       <div className="soft-card" style={{ padding: 0, overflow: 'auto', marginBottom: 16 }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -3789,7 +3792,7 @@ out center tags 100;`;
                         return (
                           <div>
                             <button onClick={() => toggleSection('afd-evo')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-                              {expandedSections['afd-evo'] !== false ? '▼' : '▶'} 📅 Evolução do Grupo 1 (formação adequada) por etapa
+                              {expandedSections['afd-evo'] !== false ? '▼' : '▶'} <CalendarDays size={11} /> Evolução do Grupo 1 (formação adequada) por etapa
                             </button>
                             {expandedSections['afd-evo'] !== false && <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -3933,7 +3936,7 @@ out center tags 100;`;
 
                       {/* Tabela agrupada */}
                       <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
-                        🧑‍🤝‍🧑 Alunos por turma — {selAno}
+                        <span style={{display:'flex',alignItems:'center',gap:5}}><Users size={12} /> Alunos por turma — {selAno}</span>
                       </div>
                       <div className="soft-card" style={{ padding: 0, overflow: 'auto', marginBottom: 16 }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
@@ -3978,7 +3981,7 @@ out center tags 100;`;
                                     fontSize: 13, background: alert ? '#fff5f5' : undefined,
                                   }}>
                                     {fmt(val)}
-                                    {alert && <span style={{ fontSize: 10, marginLeft: 3 }}>⚠️</span>}
+                                    {alert && <AlertTriangle size={10} style={{ marginLeft: 3, display:'inline', verticalAlign:'middle', color:'#b71c1c' }} />}
                                   </td>
                                 );
                               })}
@@ -3988,7 +3991,7 @@ out center tags 100;`;
                       </div>
                       {allAtu.some((d: any) => allCols.some(c => atuAlert(d[c.key]))) && (
                         <p style={{ fontSize: 11, color: '#b71c1c', marginBottom: 12 }}>
-                          ⚠️ Valores acima de 35 alunos/turma podem indicar superlotação (referência INEP/MEC).
+                          <span style={{display:'flex',alignItems:'flex-start',gap:5}}><AlertTriangle size={12} style={{flexShrink:0,marginTop:1}} /> Valores acima de 35 alunos/turma podem indicar superlotação (referência INEP/MEC).</span>
                         </p>
                       )}
 
@@ -4007,7 +4010,7 @@ out center tags 100;`;
                         return (
                           <div>
                             <button onClick={() => toggleSection('atu-evo')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-                              {expandedSections['atu-evo'] !== false ? '▼' : '▶'} 📅 Evolução histórica — médias por etapa
+                              {expandedSections['atu-evo'] !== false ? '▼' : '▶'} <CalendarDays size={11} /> Evolução histórica — médias por etapa
                             </button>
                             {expandedSections['atu-evo'] !== false && <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -4148,7 +4151,7 @@ out center tags 100;`;
 
                       {/* Tabela agrupada por etapa — scroll horizontal */}
                       <div style={{ fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6 }}>
-                        ⏱️ Média de horas-aula diárias — {selAno}
+                        <span style={{display:'flex',alignItems:'center',gap:5}}><Clock size={12} /> Média de horas-aula diárias — {selAno}</span>
                       </div>
                       <div className="soft-card" style={{ padding: 0, overflow: 'auto', marginBottom: 16 }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
@@ -4217,7 +4220,7 @@ out center tags 100;`;
                         return (
                           <div>
                             <button onClick={() => toggleSection('had-evo')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#5d4037', marginBottom: 6, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-                              {expandedSections['had-evo'] !== false ? '▼' : '▶'} 📅 Evolução histórica por etapa (em horas/dia)
+                              {expandedSections['had-evo'] !== false ? '▼' : '▶'} <CalendarDays size={11} /> Evolução histórica por etapa (em horas/dia)
                             </button>
                             {expandedSections['had-evo'] !== false && <div className="soft-card" style={{ padding: 0, overflow: 'auto' }}>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -4443,7 +4446,7 @@ out center tags 100;`;
                       <div style={{ margin: '24px 0 8px', display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ flex: 1, height: 1, background: '#e8dfc8' }} />
                         <span style={{ fontSize: 11, fontWeight: 800, color: '#9a7a5a', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>
-                          🗂️ Dados detalhados por dimensão
+                          <span style={{display:'flex',alignItems:'center',gap:5}}><ClipboardList size={11} /> Dados detalhados por dimensão</span>
                         </span>
                         <div style={{ flex: 1, height: 1, background: '#e8dfc8' }} />
                       </div>
@@ -4461,28 +4464,28 @@ out center tags 100;`;
                           label: 'Camada 1 — Estrutura da Escola',
                           color: '#e8f0fb', activeColor: '#2d5a88', borderColor:'#b8cde8',
                           dims: [
-                            { key:'dim1', label:'🏗️ Infraestrutura' },
-                            { key:'dim2', label:'💻 Tecnologia' },
-                            { key:'dim3', label:'🛡️ Segurança' },
-                            { key:'dim4', label:'🌱 Sustentabilidade' },
+                            { key:'dim1', label:'Infraestrutura' },
+                            { key:'dim2', label:'Tecnologia' },
+                            { key:'dim3', label:'Segurança' },
+                            { key:'dim4', label:'Sustentabilidade' },
                           ],
                         },
                         {
                           label: 'Camada 2 — Pessoas e Inclusão',
                           color: '#edf7ee', activeColor: '#2f7a58', borderColor:'#b8dcca',
                           dims: [
-                            { key:'dim5', label:'♿ Inclusão' },
-                            { key:'dim6', label:'⚖️ Equidade Social' },
-                            { key:'dim7', label:'🤝 Participação' },
+                            { key:'dim5', label:'Inclusão' },
+                            { key:'dim6', label:'Equidade Social' },
+                            { key:'dim7', label:'Participação' },
                           ],
                         },
                         {
                           label: 'Camada 3 — Organização e Funcionamento',
                           color: '#faf3e8', activeColor: '#9b6a16', borderColor:'#dfc99a',
                           dims: [
-                            { key:'dim8', label:'📋 Gestão' },
-                            { key:'dim9', label:'🧑‍🏫 Docentes' },
-                            { key:'dim10', label:'📚 Oferta' },
+                            { key:'dim8', label:'Gestão' },
+                            { key:'dim9', label:'Docentes' },
+                            { key:'dim10', label:'Oferta' },
                           ],
                         },
                       ] as const).map((camada, ci) => {
@@ -4532,9 +4535,9 @@ out center tags 100;`;
                       const dimColor = dimColorMap[activeSchoolTab as string] || '#2d5a88';
 
                       // ── COMPONENTE: cabeçalho da dimensão ──
-                      const DimHeader = ({ num, icon, title, desc, index: idx2 }: { num: number; icon: string; title: string; desc: string; index: string }) => (
+                      const DimHeader = ({ num, icon, title, desc, index: idx2 }: { num: number; icon: React.ReactNode; title: string; desc: string; index: string }) => (
                         <div style={{ padding: '14px 20px 14px 22px', borderBottom: '1px solid #eee8db', background: `${dimColor}0f`, borderLeft: `5px solid ${dimColor}`, display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s' }}>
-                          <div style={{ fontSize: 28, lineHeight: 1 }}>{icon}</div>
+                          <div style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
                           <div>
                             <div style={{ fontSize: 15, fontWeight: 800, color: dimColor, letterSpacing: '-0.02em' }}>Dimensão {num} — {title}</div>
                             <div style={{ fontSize: 12, color: '#8a7a6a', marginTop: 2 }}>{desc} · <span style={{ fontWeight: 600 }}>Índice: {idx2}</span></div>
@@ -4810,7 +4813,7 @@ out center tags 100;`;
                       // ── DIM 1: INFRAESTRUTURA ──
                       if (activeSchoolTab === 'dim1') return (
                         <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <DimHeader num={1} icon="🏗️" title="Infraestrutura" desc="Estrutura física, espaços e serviços da escola" index="Índice de Infraestrutura" />
+                          <DimHeader num={1} icon={<Wrench size={24} />} title="Infraestrutura" desc="Estrutura física, espaços e serviços da escola" index="Índice de Infraestrutura" />
                           <NumTable title="Salas de Aula" rows={[
                             { label: 'Salas utilizadas (total)', key: 'qt_salas_utilizadas' },
                             { label: 'Salas climatizadas', key: 'qt_salas_utiliza_climatizadas' },
@@ -4887,7 +4890,7 @@ out center tags 100;`;
                       // ── DIM 2: TECNOLOGIA E CONECTIVIDADE ──
                       if (activeSchoolTab === 'dim2') return (
                         <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <DimHeader num={2} icon="💻" title="Tecnologia e Conectividade" desc="Acesso digital e equipamentos tecnológicos" index="Índice de Equidade Digital" />
+                          <DimHeader num={2} icon={<Laptop size={24} />} title="Tecnologia e Conectividade" desc="Acesso digital e equipamentos tecnológicos" index="Índice de Equidade Digital" />
                           <BinTable title="Conectividade" rows={[
                             { label: 'Internet (qualquer)', key: 'in_internet' },
                             { label: 'Internet para uso administrativo', key: 'in_internet_administrativo' },
@@ -4930,7 +4933,7 @@ out center tags 100;`;
                       // ── DIM 3: SEGURANÇA ESCOLAR ──
                       if (activeSchoolTab === 'dim3') return (
                         <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <DimHeader num={3} icon="🛡️" title="Segurança Escolar" desc="Ambiente seguro e local de funcionamento" index="Índice de Segurança" />
+                          <DimHeader num={3} icon={<Shield size={24} />} title="Segurança Escolar" desc="Ambiente seguro e local de funcionamento" index="Índice de Segurança" />
                           <BinTable title="Local de Funcionamento" rows={[
                             { label: 'Prédio escolar próprio', key: 'in_local_func_predio_escolar' },
                             { label: 'Salas em outra escola', key: 'in_local_func_salas_outra_esc' },
@@ -4941,7 +4944,7 @@ out center tags 100;`;
                             { label: 'Outros locais', key: 'in_local_func_outros' },
                           ]} />
                           <div style={{ padding: '14px 20px', background: '#fffbf2', borderTop: '1px solid #f0e8d0', fontSize: 13, color: '#8a7040' }}>
-                            ⚠️ <strong>Nota:</strong> O Censo Escolar não coleta dados sobre câmeras, portaria, alarmes, extintores ou plano de evacuação. Esses itens compõem o Índice de Segurança proposto, mas dependem de fontes complementares.
+                            <span style={{display:'flex',alignItems:'flex-start',gap:6}}><AlertTriangle size={13} style={{flexShrink:0,marginTop:1}} /> <span><strong>Nota:</strong> O Censo Escolar não coleta dados sobre câmeras, portaria, alarmes, extintores ou plano de evacuação. Esses itens compõem o Índice de Segurança proposto, mas dependem de fontes complementares.</span></span>
                           </div>
                         </div>
                       );
@@ -4949,7 +4952,7 @@ out center tags 100;`;
                       // ── DIM 4: SUSTENTABILIDADE E MEIO AMBIENTE ──
                       if (activeSchoolTab === 'dim4') return (
                         <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <DimHeader num={4} icon="🌱" title="Sustentabilidade e Meio Ambiente" desc="Uso de recursos naturais e educação ambiental" index="Índice de Sustentabilidade" />
+                          <DimHeader num={4} icon={<Leaf size={24} />} title="Sustentabilidade e Meio Ambiente" desc="Uso de recursos naturais e educação ambiental" index="Índice de Sustentabilidade" />
                           <BinTable title="Recursos Naturais e Energia Limpa" rows={[
                             { label: 'Energia renovável (solar etc.)', key: 'in_energia_renovavel' },
                             { label: 'Área verde', key: 'in_area_verde' },
@@ -4976,7 +4979,7 @@ out center tags 100;`;
                       // ── DIM 5: INCLUSÃO E ACESSIBILIDADE ──
                       if (activeSchoolTab === 'dim5') return (
                         <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <DimHeader num={5} icon="♿" title="Inclusão e Acessibilidade" desc="Inclusão de estudantes com deficiência e necessidades especiais" index="Índice de Inclusão" />
+                          <DimHeader num={5} icon={<Accessibility size={24} />} title="Inclusão e Acessibilidade" desc="Inclusão de estudantes com deficiência e necessidades especiais" index="Índice de Inclusão" />
                           <BinTable title="Acessibilidade Física" rows={[
                             { label: 'Rampas', key: 'in_acessibilidade_rampas' },
                             { label: 'Corrimão', key: 'in_acessibilidade_corrimao' },
@@ -5017,7 +5020,7 @@ out center tags 100;`;
                       // ── DIM 6: EQUIDADE SOCIAL E EDUCACIONAL ──
                       if (activeSchoolTab === 'dim6') return (
                         <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <DimHeader num={6} icon="⚖️" title="Equidade Social e Educacional" desc="Perfil social dos estudantes e modalidades de equidade" index="Índice Social" />
+                          <DimHeader num={6} icon={<Scale size={24} />} title="Equidade Social e Educacional" desc="Perfil social dos estudantes e modalidades de equidade" index="Índice Social" />
                           <NumTable title="Perfil dos Estudantes — por Sexo" rows={[
                             { label: 'Feminino', key: 'qt_mat_bas_fem' },
                             { label: 'Masculino', key: 'qt_mat_bas_masc' },
@@ -5074,7 +5077,7 @@ out center tags 100;`;
                       // ── DIM 7: PARTICIPAÇÃO E COMUNIDADE ──
                       if (activeSchoolTab === 'dim7') return (
                         <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <DimHeader num={7} icon="🤝" title="Participação e Comunidade" desc="Gestão democrática, vínculos e participação da comunidade" index="Índice de Participação" />
+                          <DimHeader num={7} icon={<Handshake size={24} />} title="Participação e Comunidade" desc="Gestão democrática, vínculos e participação da comunidade" index="Índice de Participação" />
                           <BinTable title="Gestão Democrática" rows={[
                             { label: 'Conselho escolar', key: 'in_orgao_conselho_escolar' },
                             { label: 'Associação de pais e mestres', key: 'in_orgao_ass_pais_mestres' },
@@ -5103,7 +5106,7 @@ out center tags 100;`;
                       // ── DIM 8: GESTÃO ESCOLAR ──
                       if (activeSchoolTab === 'dim8') return (
                         <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <DimHeader num={8} icon="📋" title="Gestão Escolar" desc="Estrutura administrativa e equipe de suporte" index="Índice de Gestão" />
+                          <DimHeader num={8} icon={<ClipboardList size={24} />} title="Gestão Escolar" desc="Estrutura administrativa e equipe de suporte" index="Índice de Gestão" />
                           <TextTable title="Perfil do(a) Gestor(a)" rows={[
                             { label: 'Sexo', key: 'gest_sexo' },
                             { label: 'Escolaridade', key: 'gest_escolaridade' },
@@ -5132,7 +5135,7 @@ out center tags 100;`;
                       // ── DIM 9: DOCENTES ──
                       if (activeSchoolTab === 'dim9') return (
                         <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <DimHeader num={9} icon="🧑‍🏫" title="Docentes" desc="Quantidade e distribuição dos professores por etapa" index="Índice Docente" />
+                          <DimHeader num={9} icon={<GraduationCap size={24} />} title="Docentes" desc="Quantidade e distribuição dos professores por etapa" index="Índice Docente" />
                           <NumTable title="Docentes por Etapa de Ensino" rows={[
                             { label: 'Total (Ed. Básica)', key: 'qt_doc_bas' },
                             { label: 'Ed. Infantil', key: 'qt_doc_inf' },
@@ -5149,7 +5152,7 @@ out center tags 100;`;
                             { label: 'Ed. Especial', key: 'qt_doc_esp' },
                           ]} />
                           <div style={{ padding: '14px 20px', background: '#fffbf2', borderTop: '1px solid #f0e8d0', fontSize: 13, color: '#8a7040', lineHeight: 1.6 }}>
-                            ℹ️ <strong>Nota:</strong> Esta dimensão registra a <em>quantidade</em> de docentes por etapa (Censo Escolar). Para dados qualitativos de formação e atuação, consulte as seções dedicadas:
+                            <span style={{display:'flex',alignItems:'flex-start',gap:6}}><Info size={13} style={{flexShrink:0,marginTop:1}} /> <span><strong>Nota:</strong> Esta dimensão registra a <em>quantidade</em> de docentes por etapa (Censo Escolar). Para dados qualitativos de formação e atuação, consulte as seções dedicadas:</span></span>
                             <ul style={{ margin: '6px 0 0 18px', padding: 0, fontSize: 12 }}>
                               <li><strong>AFD — Adequação da Formação Docente:</strong> percentual de professores com licenciatura na área em que lecionam.</li>
                               <li><strong>IED — Esforço Docente:</strong> índice de intensidade de trabalho (número de escolas, turnos e etapas acumuladas).</li>
@@ -5161,7 +5164,7 @@ out center tags 100;`;
                       // ── DIM 10: OFERTA EDUCACIONAL ──
                       if (activeSchoolTab === 'dim10') return (
                         <div className="tab-panel-v6 active" style={{ padding: 0 }}>
-                          <DimHeader num={10} icon="📚" title="Oferta Educacional" desc="O que a escola oferece — etapas, turmas e matrículas" index="Índice de Oferta Educacional" />
+                          <DimHeader num={10} icon={<BookOpen size={24} />} title="Oferta Educacional" desc="O que a escola oferece — etapas, turmas e matrículas" index="Índice de Oferta Educacional" />
                           <BinTable title="Etapas e Modalidades Oferecidas" rows={[
                             { label: 'Ed. Infantil', key: 'in_inf' },
                             { label: '— Creche', key: 'in_inf_cre' },
@@ -5293,10 +5296,10 @@ out center tags 100;`;
                             <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
                               {cnpj && <span className="meta-chip">CNPJ UEx: {cnpj}</span>}
                               {cnpjEex && <span className="meta-chip">CNPJ EEx: {cnpjEex}</span>}
-                              {municipio && uf && <span className="meta-chip">📍 {municipio}/{uf}</span>}
-                              {rede && <span className="meta-chip">🏢 {rede}</span>}
-                              {localizacao && <span className="meta-chip">📌 {localizacao}</span>}
-                              {(ddd || telefone) && <span className="meta-chip">📞 {ddd ? `(${ddd}) ` : ''}{telefone}</span>}
+                              {municipio && uf && <span className="meta-chip flex items-center gap-0.5"><MapPin size={10} /> {municipio}/{uf}</span>}
+                              {rede && <span className="meta-chip flex items-center gap-0.5"><Building2 size={10} /> {rede}</span>}
+                              {localizacao && <span className="meta-chip flex items-center gap-0.5"><MapPin size={10} /> {localizacao}</span>}
+                              {(ddd || telefone) && <span className="meta-chip flex items-center gap-0.5"><Phone size={10} /> {ddd ? `(${ddd}) ` : ''}{telefone}</span>}
                               {dataAtualizacao && <span className="meta-chip text-muted-foreground">Atualizado: {dataAtualizacao}</span>}
                             </div>
                           </div>
@@ -5821,7 +5824,7 @@ out center tags 100;`;
                   {/* ── LINKS ÚTEIS ── */}
                   <div style={{marginTop:'16px',display:'flex',gap:'16px',flexWrap:'wrap',alignItems:'flex-start'}}>
                     <div className="soft-card theme-blue" style={{flex:'1 1 280px'}}>
-                      <div className="attention-head"><span>🔗</span><strong>Links Úteis</strong></div>
+                      <div className="attention-head"><Link2 size={14} /><strong>Links Úteis</strong></div>
                       <div className="link-list">
                         {[
                           { nome: 'PDDE Interativo', url: 'https://pddeinterativo.mec.gov.br' },
@@ -5836,7 +5839,7 @@ out center tags 100;`;
                       </div>
                     </div>
                     <div className="footer-note" style={{flex:'1 1 280px'}}>
-                      <strong className="scribble">📌 Nota sobre os dados</strong>
+                      <strong className="scribble flex items-center gap-1"><MapPin size={12} /> Nota sobre os dados</strong>
                       <p style={{margin:'8px 0 0',fontSize:'13px'}}>Os dados financeiros são obtidos em tempo real do PDDE Info e dos Dados Abertos do FNDE. Podem apresentar atraso ou indisponibilidade. Os dados censais são do Censo Escolar INEP/MEC.</p>
                     </div>
                   </div>
@@ -6082,21 +6085,21 @@ out center tags 100;`;
               {/* Cabeçalho */}
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14, flexShrink: 0 }}>
                 <div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#0f766e" }}>🔍 Escolas com perfil similar</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#0f766e", display: 'flex', alignItems: 'center', gap: 7 }}><Search size={16} /> Escolas com perfil similar</div>
                   {similarData && (
                     <div style={{ margin: "6px 0 0", display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 12, background: "#f0fdf4", color: "#15803d", borderRadius: 99, padding: "2px 10px", fontWeight: 600 }}>
                         {similarData.total} escolas encontradas
                       </span>
                       <span style={{ fontSize: 12, background: "#eff6ff", color: "#1d4ed8", borderRadius: 99, padding: "2px 10px" }}>
-                        🏢 {similarData.escola_base?.dependencia}
+                        <Building2 size={12} style={{display:'inline',verticalAlign:'middle'}} /> {similarData.escola_base?.dependencia}
                       </span>
                       <span style={{ fontSize: 12, background: "#fef9c3", color: "#854d0e", borderRadius: 99, padding: "2px 10px" }}>
-                        {similarData.escola_base?.localizacao === "Rural" ? "🌿 Rural" : "🏙️ Urbana"}
+                        {similarData.escola_base?.localizacao === "Rural" ? <><Leaf size={12} style={{display:'inline',verticalAlign:'middle'}} /> Rural</> : <><Building size={12} style={{display:'inline',verticalAlign:'middle'}} /> Urbana</>}
                       </span>
                       {similarData.escola_base?.modalidades && (
                         <span style={{ fontSize: 12, background: "#fdf4ff", color: "#7e22ce", borderRadius: 99, padding: "2px 10px" }}>
-                          📚 {similarData.escola_base.modalidades}
+                          <BookOpen size={12} style={{display:'inline',verticalAlign:'middle'}} /> {similarData.escola_base.modalidades}
                         </span>
                       )}
                       {similarData.escola_base?.icg_nivel != null && (
@@ -6105,7 +6108,7 @@ out center tags 100;`;
                         </span>
                       )}
                       <span style={{ fontSize: 11, background: similarData.distancia_tipo === "rodoviária" ? "#ecfdf5" : "#f1f5f9", color: similarData.distancia_tipo === "rodoviária" ? "#065f46" : "#475569", borderRadius: 99, padding: "2px 10px" }}>
-                        {similarData.distancia_tipo === "rodoviária" ? "🛣️ km por estrada" : "📐 km em linha reta"}
+                        {similarData.distancia_tipo === "rodoviária" ? <><MapPin size={12} style={{display:'inline',verticalAlign:'middle'}} /> km por estrada</> : <><Ruler size={12} style={{display:'inline',verticalAlign:'middle'}} /> km em linha reta</>}
                       </span>
                     </div>
                   )}
@@ -6165,7 +6168,7 @@ out center tags 100;`;
                                     </div>
                                     <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 6 }}>
                                       <span style={{ fontSize: 12, background: "#fff", color: "#374151", borderRadius: 99, padding: "2px 8px", border: "1px solid #e5e7eb" }}>
-                                        📍 {escola.municipio}/{escola.uf}
+                                        <MapPin size={11} style={{display:'inline',verticalAlign:'middle'}} /> {escola.municipio}/{escola.uf}
                                       </span>
                                       {escola.distancia_km != null && (
                                         <span style={{ fontSize: 12, background: grupo.cor, color: "#fff", borderRadius: 99, padding: "2px 8px", fontWeight: 600 }}>
@@ -6173,7 +6176,7 @@ out center tags 100;`;
                                         </span>
                                       )}
                                       <span style={{ fontSize: 12, background: "#fef3c7", color: "#92400e", borderRadius: 99, padding: "2px 8px" }}>
-                                        👩‍🎓 {escola.matriculas?.toLocaleString("pt-BR") || "—"} alunos
+                                        <GraduationCap size={11} style={{display:'inline',verticalAlign:'middle'}} /> {escola.matriculas?.toLocaleString("pt-BR") || "—"} alunos
                                       </span>
                                       {escola.icg_nivel != null && (
                                         <span style={{ fontSize: 11, background: "#fff7ed", color: "#c2410c", borderRadius: 99, padding: "2px 8px" }}>ICG {escola.icg_nivel}</span>
@@ -6184,11 +6187,11 @@ out center tags 100;`;
                                     </div>
                                     <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.6 }}>
                                       {escola.ds_endereco && (
-                                        <div>📬 {escola.ds_endereco}{escola.no_bairro ? `, ${escola.no_bairro}` : ""}{escola.co_cep ? ` · CEP ${escola.co_cep}` : ""}</div>
+                                        <div style={{display:'flex',alignItems:'center',gap:4}}><MapPin size={11} /> {escola.ds_endereco}{escola.no_bairro ? `, ${escola.no_bairro}` : ""}{escola.co_cep ? ` · CEP ${escola.co_cep}` : ""}</div>
                                       )}
                                       {escola.telefone ? (
                                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3 }}>
-                                          <span>📞 {escola.telefone}</span>
+                                          <span style={{display:'flex',alignItems:'center',gap:4}}><Phone size={11} /> {escola.telefone}</span>
                                           <button
                                             onClick={() => navigator.clipboard.writeText(escola.telefone)}
                                             style={{ fontSize: 11, padding: "2px 8px", background: "#0d9488", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer" }}
@@ -6197,7 +6200,7 @@ out center tags 100;`;
                                           </button>
                                         </div>
                                       ) : (
-                                        <div style={{ color: "#94a3b8", marginTop: 2, fontSize: 11 }}>📞 Telefone não disponível no Censo</div>
+                                        <div style={{ color: "#94a3b8", marginTop: 2, fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}><Phone size={11} /> Telefone não disponível no Censo</div>
                                       )}
                                       <div style={{ color: "#cbd5e1", fontSize: 11, marginTop: 2 }}>INEP: {escola.inep}</div>
                                     </div>

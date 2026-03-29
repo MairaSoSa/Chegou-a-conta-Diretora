@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
-import { Loader2 } from "@/components/Icons";
+import { Loader2, Droplets, Folder, ClipboardList, FileText, Clock, Globe } from "@/components/Icons";
 import type { TrilhaUnit } from "@shared/schema";
 
 // Magnetic pin disc — round, flat, like a fridge magnet / whiteboard pin
@@ -173,14 +173,14 @@ function getPersonalidade(unit: TrilhaUnit): keyof typeof toneMap {
   return "prestacao";
 }
 
-function emojiFor(personalidade: keyof typeof toneMap) {
+function emojiFor(personalidade: keyof typeof toneMap): React.ReactNode {
   return personalidade === "origem"
-    ? "💧"
+    ? <Droplets size={18} />
     : personalidade === "estrutura"
-    ? "📁"
+    ? <Folder size={18} />
     : personalidade === "planejamento"
-    ? "🗂️"
-    : "📝";
+    ? <ClipboardList size={18} />
+    : <FileText size={18} />;
 }
 
 export default function Trilha() {
@@ -228,7 +228,7 @@ export default function Trilha() {
           <div className="grid items-center gap-10 lg:grid-cols-[1.08fr_0.92fr]">
             <div>
               <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-900">
-                <span>🗺️</span> mapa das unidades
+                <Globe size={14} /> mapa das unidades
               </p>
               <h1 className="max-w-3xl text-4xl font-extrabold tracking-tight text-slate-800 md:text-6xl">
                 {settings?.trilha_titulo || "Trilha da Diretora"}
@@ -535,7 +535,7 @@ export default function Trilha() {
                                   className="text-[10px] font-semibold"
                                   style={{ color: memo.stripe, fontFamily: "monospace" }}
                                 >
-                                  ⏱ {unit.duration}
+                                  <Clock size={10} style={{display:'inline-block',verticalAlign:'middle'}} /> {unit.duration}
                                 </span>
                                 <span
                                   className="text-[10px] font-bold opacity-60"

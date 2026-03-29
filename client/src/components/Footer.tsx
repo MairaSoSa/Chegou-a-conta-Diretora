@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Accessibility } from "@/components/Icons";
+import { Accessibility, Wrench } from "@/components/Icons";
 import { useAccessibility } from "@/App";
 
 export function Footer() {
@@ -127,7 +127,7 @@ export function Footer() {
               boxShadow: "inset 0 1px 0 rgba(255,255,255,0.55), 0 1px 3px rgba(60,90,50,0.15)",
             }}
           >
-            <span className="text-sm leading-none" role="img" aria-label="ferramentas">🛠️</span>
+            <Wrench size={15} />
           </Link>
         </div>
       </div>

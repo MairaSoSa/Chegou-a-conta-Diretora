@@ -12,7 +12,7 @@ import {
   BookText, Wrench, Ship, ChevronLeft,
   ChevronDown, ChevronUp, Settings,
   Building2, BarChart3, Brain, Upload, Download, Check,
-  HelpCircle, Loader2, Paperclip
+  HelpCircle, Loader2, Paperclip, Folder, CheckCircle
 } from "@/components/Icons";
 import { cn } from "@/lib/utils";
 import type { GlossaryItem, Tool, TrilhaUnit, Program, ProgramDetail, DashboardDataset, AiDocument, UnansweredQuestion } from "@shared/schema";
@@ -1108,7 +1108,7 @@ function DashboardManager({ token }: { token: string }) {
       status: testResults['pdde']?.status || 'ok',
       message: testResults['pdde']?.message,
       renders: "Dados financeiros completos: UEx (CNPJ, dirigentes), Contas bancárias, Destinações (com datas de pagamento), Matrículas, Situação cadastral",
-      info: "✅ Scraper em tempo real do portal PDDEInfo. Busca por código INEP (8 dígitos). Dados atualizados para 2025."
+      info: "Scraper em tempo real do portal PDDEInfo. Busca por código INEP (8 dígitos). Dados atualizados para 2025."
     },
     {
       name: "SIGPC - Localizar Prestações",
@@ -1116,7 +1116,7 @@ function DashboardManager({ token }: { token: string }) {
       status: testResults['sigpc-localizar']?.status || 'ok',
       message: testResults['sigpc-localizar']?.message,
       renders: "Lista de prestações de contas com status (Aprovadas/Pendentes/Irregulares), gráfico de distribuição",
-      info: "✅ Lista todas as prestações por CNPJ da UEx. Retorna pcId para consulta detalhada."
+      info: "Lista todas as prestações por CNPJ da UEx. Retorna pcId para consulta detalhada."
     },
     {
       name: "SIGPC - Detalhar Prestação",
@@ -1124,7 +1124,7 @@ function DashboardManager({ token }: { token: string }) {
       status: testResults['sigpc-detalhar']?.status || 'ok',
       message: testResults['sigpc-detalhar']?.message,
       renders: "Modal completo com 5 abas: Geral, Financeiro (gráficos), Parcelas, Equipe (dirigentes), Histórico (timeline de análise)",
-      info: "✅ Detalhes completos da prestação: valores, documentos, parcelas, equipe gestora. Inclui gráficos e exportação."
+      info: "Detalhes completos da prestação: valores, documentos, parcelas, equipe gestora. Inclui gráficos e exportação."
     },
     {
       name: "SIGPC - Histórico de Análise",
@@ -1132,7 +1132,7 @@ function DashboardManager({ token }: { token: string }) {
       status: testResults['sigpc-historico']?.status || 'ok',
       message: testResults['sigpc-historico']?.message,
       renders: "Timeline de análise técnica com pareceres, tipos de análise, documentos e datas",
-      info: "✅ Histórico completo de todas as análises realizadas na prestação. Exibido na aba Histórico do modal."
+      info: "Histórico completo de todas as análises realizadas na prestação. Exibido na aba Histórico do modal."
     },
     {
       name: "Settings",
@@ -1140,7 +1140,7 @@ function DashboardManager({ token }: { token: string }) {
       status: testResults['settings']?.status || 'ok',
       message: testResults['settings']?.message,
       renders: "Título do site (Home), Slogan e texto do rodapé (Footer)",
-      info: "✅ Configurações gerenciadas na aba Settings do Admin"
+      info: "Configurações gerenciadas na aba Settings do Admin"
     }
   ];
 
@@ -1843,7 +1843,7 @@ function DriveImportPanel({ token }: { token: string }) {
   return (
     <Card className="border-2 border-amber-200 bg-amber-50">
       <CardContent className="p-6">
-        <h2 className="text-lg font-bold mb-1 text-amber-900">📂 Importar Microdados do Google Drive (2020–2024)</h2>
+        <h2 className="text-lg font-bold mb-1 text-amber-900 flex items-center gap-2"><Folder size={18} /> Importar Microdados do Google Drive (2020–2024)</h2>
         <p className="text-sm text-amber-700 mb-4">
           Importa os arquivos completos do Censo Escolar (385 colunas) diretamente do seu Google Drive,
           enriquecendo os registros 2020–2024 com dados de infraestrutura, matrículas por raça/sexo/faixa etária,
@@ -1867,7 +1867,7 @@ function DriveImportPanel({ token }: { token: string }) {
 
         {isDone && !isRunning && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-            <p className="font-medium text-green-800">✅ Importação concluída!</p>
+            <p className="font-medium text-green-800 flex items-center gap-2"><CheckCircle size={16} /> Importação concluída!</p>
             {status?.summary && Object.entries(status.summary).map(([ano, s]: [string, any]) => (
               <p key={ano} className="text-sm text-green-700">
                 {ano}: {s.processed?.toLocaleString("pt-BR")} escolas processadas, {s.upserted?.toLocaleString("pt-BR")} atualizadas

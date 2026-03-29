@@ -113,7 +113,10 @@ export function BrazilMap({ onStateClick, onStateHover, ufStats, selectedUf, cli
               Estado da sua escola
             </span>
           )}
-          <span style={{ marginLeft: "auto", fontSize: 11, color: "#64748b" }}>🟢 Clique no estado para ver as escolas</span>
+          <span style={{ marginLeft: "auto", fontSize: 11, color: "#64748b", display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <svg width="9" height="9" viewBox="0 0 9 9"><circle cx="4.5" cy="4.5" r="4" fill="#34a853" /></svg>
+            Clique no estado para ver as escolas
+          </span>
         </div>
       ) : selectedUf && (
         <div style={{ display: "flex", gap: 16, alignItems: "center", fontSize: 12, marginBottom: 6, flexWrap: "wrap" }}>
