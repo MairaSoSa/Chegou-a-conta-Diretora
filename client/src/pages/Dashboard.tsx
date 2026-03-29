@@ -2506,7 +2506,6 @@ out center tags 100;`;
                       <div style={{ flex: '1 1 0', minWidth: '260px', marginTop: 0 }}>
                         <div className="section-title" style={{ marginBottom: 0 }}>
                           <div><h2>Painel da escola</h2><p>Números essenciais</p></div>
-                          <div className="hint-chip">Gestão · Desempenho</div>
                         </div>
                         <div className="organic-divider" />
                         <div className="summary-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
