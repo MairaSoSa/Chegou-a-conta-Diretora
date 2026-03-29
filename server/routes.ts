@@ -336,7 +336,14 @@ export async function registerRoutes(
           ...Object.keys(localInd).map(Number),
         ]);
         for (const ano of allAnosInd) {
-          mergedInd[ano] = { ...(localInd[ano] ?? {}), ...(railwayData.indicadores_por_ano as Record<number, any>)[ano] ?? {} };
+          const localAno = localInd[ano] ?? {};
+          const railAno  = ((railwayData.indicadores_por_ano as Record<number, any>)[ano]) ?? {};
+          const allTipos = new Set([...Object.keys(localAno), ...Object.keys(railAno)]);
+          mergedInd[ano] = {};
+          for (const tipo of allTipos) {
+            // Local data is richer (full distributions); railway fills missing top-level fields only
+            mergedInd[ano][tipo] = { ...(railAno[tipo] ?? {}), ...(localAno[tipo] ?? {}) };
+          }
         }
         const anosSet = new Set<number>([
           ...Object.keys(mergedCenso).map(Number),
