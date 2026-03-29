@@ -207,7 +207,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!selectedInep) { setVisibleSecIds(new Set()); return; }
-    const allIds = ['sec-ficha','sec-desempenho','sec-tnr','sec-inse','sec-tdi','sec-matriculas','sec-estrutura','sec-ied','sec-afd','sec-atu','sec-had','sec-retrato','sec-pdde'];
+    const allIds = ['sec-ficha','sec-desempenho','sec-tnr','sec-inse','sec-tdi','sec-matriculas','sec-estrutura','sec-ied','sec-afd','sec-atu','sec-had','sec-retrato','retrato-abas','sec-pdde'];
     const scan = () => setVisibleSecIds(new Set(allIds.filter(id => !!document.getElementById(id))));
     const timers = [200, 1500, 3500, 7000].map(ms => setTimeout(scan, ms));
     return () => timers.forEach(clearTimeout);
@@ -1013,6 +1013,7 @@ export default function Dashboard() {
     { id: 'sec-atu',        icon: <Users size={12} />,         title: 'Turma',        bg: '#fdf3e0', border: '#f0ddb5', color: '#9b6a16' },
     { id: 'sec-had',        icon: <Clock size={12} />,         title: 'Horas-aula',   bg: '#fff7ed', border: '#fed7aa', color: '#9a3412' },
     { id: 'sec-retrato',    icon: <BookOpen size={12} />,      title: 'Retrato',      bg: '#faf7f2', border: '#e8dfc8', color: '#5d4037' },
+    { id: 'retrato-abas',   icon: <ClipboardList size={12} />, title: 'Dimensões',    bg: '#faf7f2', border: '#d6ceba', color: '#7a5c3a' },
     { id: 'sec-pdde',       icon: <DollarSign size={12} />,    title: 'PDDE',         bg: '#e8f5ee', border: '#b8dfc8', color: '#1f6b45' },
   ] as const;
 
@@ -4646,14 +4647,12 @@ out center tags 100;`;
                           <div style={{ fontSize:13, fontWeight:800, color:'#4a3020', letterSpacing:'-0.01em' }}>{title}</div>
                           <div style={{ display:'flex', gap:12, alignItems:'center', flexWrap:'wrap' }}>
                             <div style={{ flexShrink:0 }}>
-                              <ResponsiveContainer width={150} height={150}>
-                                <PieChart>
-                                  <Pie data={data} dataKey="v" cx="50%" cy="50%" outerRadius={68} labelLine={false} label={renderLabel}>
-                                    {data.map((entry, i) => <Cell key={i} fill={entry.cor} />)}
-                                  </Pie>
-                                  <Tooltip formatter={(val: any, name: string) => [`${val.toLocaleString('pt-BR')} (${data.find(d=>d.name===name)?.pct}%)`, name]} />
-                                </PieChart>
-                              </ResponsiveContainer>
+                              <PieChart width={150} height={150}>
+                                <Pie data={data} dataKey="v" cx="50%" cy="50%" outerRadius={68} labelLine={false} label={renderLabel}>
+                                  {data.map((entry, i) => <Cell key={i} fill={entry.cor} />)}
+                                </Pie>
+                                <Tooltip formatter={(val: any, name: string) => [`${val.toLocaleString('pt-BR')} (${data.find(d=>d.name===name)?.pct}%)`, name]} />
+                              </PieChart>
                             </div>
                             <div style={{ flex:1, minWidth:120, display:'flex', flexDirection:'column', gap:5 }}>
                               {data.map((d,i) => (
@@ -4706,7 +4705,7 @@ out center tags 100;`;
                     );
                   })()}
 
-                  <div className="soft-card" style={{padding:0,overflow:'hidden'}}>
+                  <div id="retrato-abas" className="soft-card" style={{padding:0,overflow:'hidden',scrollMarginTop:70}}>
                     <div className="tab-head">
                       <h3 style={{margin:0,fontSize:'18px',letterSpacing:'-0.03em'}}>Evolução do Censo Escolar</h3>
                     </div>
