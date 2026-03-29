@@ -2451,47 +2451,48 @@ out center tags 100;`;
                   );
                 })()}
 
-                {/* ── FICHA GERAL ── */}
-                <section className="section">
+                {/* ── FICHA GERAL + PAINEL DA ESCOLA — lado a lado ── */}
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap', marginTop: '22px' }}>
+
+                {/* FICHA GERAL */}
+                <section className="section" style={{ flex: '0 0 270px', width: '270px', minWidth: '220px', marginTop: 0 }}>
                   <div className="section-title">
                     <div><h2>Ficha geral da escola</h2><p>Identidade e vida organizacional</p></div>
                   </div>
                   <div className="organic-divider" />
-                  <div className="two-col">
-                    <div className="soft-card theme-blue">
-                      <div className="attention-head"><span>🏫</span><strong>Identidade</strong></div>
-                      <div className="row-list" style={{marginTop:'8px'}}>
-                        {[
-                          ['Situação', censoLatest.ds_situacao],
-                          ['Dependência', censoLatest.ds_dependencia],
-                          ['Localização', censoLatest.ds_localizacao],
-                          ['Localização diferenciada', (() => {
-                            const d = censoLatest.tp_localizacao_diferenciada;
-                            if (d == null || d === 0) return null;
-                            const dMap: Record<number,string> = { 1: 'Área indígena', 2: 'Quilombola', 3: 'Assentamento', 4: 'Área rural diferenciada', 5: 'Área de ilha', 6: 'Reserva extrativista' };
-                            return dMap[d] ?? null;
-                          })()],
-                          ['Região', censoLatest.no_regiao],
-                          ['Município', censoLatest.no_municipio],
-                          ['UF', censoLatest.sg_uf],
-                          ['Código IBGE', censoLatest.co_municipio],
-                          ['Regulamentação', censoLatest.tp_regulamentacao === 1 ? 'Sim' : censoLatest.tp_regulamentacao === 2 ? 'Em tramitação' : censoLatest.tp_regulamentacao === 3 ? 'Não' : null],
-                          ['Prédio escolar', censoLatest.in_local_func_predio_escolar === 1 ? 'Sim' : censoLatest.in_local_func_predio_escolar === 0 ? 'Não' : null],
-                          ['Início do ano letivo', censoLatest.dt_ano_letivo_inicio ?? null],
-                          ['Término do ano letivo', censoLatest.dt_ano_letivo_termino ?? null],
-                        ].filter(([,v]) => v != null).map(([k, v], i) => (
-                          <div key={i} className="row-item" style={{padding:'7px 14px'}}>
-                            <span style={{color:'var(--m-muted)',fontSize:'12px'}}>{k}</span>
-                            <strong style={{fontSize:'12px'}}>{String(v)}</strong>
-                          </div>
-                        ))}
-                      </div>
+                  <div className="soft-card theme-blue" style={{ margin: 0 }}>
+                    <div className="attention-head"><span>🏫</span><strong>Identidade</strong></div>
+                    <div className="row-list" style={{marginTop:'8px'}}>
+                      {[
+                        ['Situação', censoLatest.ds_situacao],
+                        ['Dependência', censoLatest.ds_dependencia],
+                        ['Localização', censoLatest.ds_localizacao],
+                        ['Localização diferenciada', (() => {
+                          const d = censoLatest.tp_localizacao_diferenciada;
+                          if (d == null || d === 0) return null;
+                          const dMap: Record<number,string> = { 1: 'Área indígena', 2: 'Quilombola', 3: 'Assentamento', 4: 'Área rural diferenciada', 5: 'Área de ilha', 6: 'Reserva extrativista' };
+                          return dMap[d] ?? null;
+                        })()],
+                        ['Região', censoLatest.no_regiao],
+                        ['Município', censoLatest.no_municipio],
+                        ['UF', censoLatest.sg_uf],
+                        ['Código IBGE', censoLatest.co_municipio],
+                        ['Regulamentação', censoLatest.tp_regulamentacao === 1 ? 'Sim' : censoLatest.tp_regulamentacao === 2 ? 'Em tramitação' : censoLatest.tp_regulamentacao === 3 ? 'Não' : null],
+                        ['Prédio escolar', censoLatest.in_local_func_predio_escolar === 1 ? 'Sim' : censoLatest.in_local_func_predio_escolar === 0 ? 'Não' : null],
+                        ['Início do ano letivo', censoLatest.dt_ano_letivo_inicio ?? null],
+                        ['Término do ano letivo', censoLatest.dt_ano_letivo_termino ?? null],
+                      ].filter(([,v]) => v != null).map(([k, v], i) => (
+                        <div key={i} className="row-item" style={{padding:'7px 14px'}}>
+                          <span style={{color:'var(--m-muted)',fontSize:'12px'}}>{k}</span>
+                          <strong style={{fontSize:'12px'}}>{String(v)}</strong>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </section>
 
-                {/* ── PAINEL DA ESCOLA — RESUMO + ALERTAS + INDICADORES ── */}
-                <section className="section">
+                {/* PAINEL DA ESCOLA */}
+                <section className="section" style={{ flex: 1, minWidth: '300px', marginTop: 0 }}>
                   <div className="section-title">
                     <div><h2>Painel da escola</h2><p>Números essenciais, alertas e indicadores com comparação nacional</p></div>
                     <div className="hint-chip">Gestão · Desempenho · Comparação</div>
@@ -2608,6 +2609,8 @@ out center tags 100;`;
                     );
                   })()}
                 </section>
+
+                </div>{/* fim flex ficha+painel */}
 
                 {/* ── DESEMPENHO ESCOLAR: SAEB + RENDIMENTO ── */}
                 {(() => {
