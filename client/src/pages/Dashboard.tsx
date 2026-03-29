@@ -5654,6 +5654,7 @@ out center tags 100;`;
                                 <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Capital</th>
                                 <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Total</th>
                                 <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Data Pgto</th>
+                                <th className="py-2 px-3 text-xs font-semibold text-muted-foreground text-center">Status</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -5666,6 +5667,12 @@ out center tags 100;`;
                                 const pagoCapital = d.pago_capital ?? 0;
                                 const pagoTotal = d.pago_total ?? (pagoCusteio + pagoCapital);
                                 const pendente = devido > 0 && pagoTotal < devido;
+                                const ok = devido != null && pagoTotal != null && Math.abs(devido - pagoTotal) < 0.01;
+                                const StatusBadge = ({ agg: isAggRow }: { agg: boolean }) => (
+                                  ok
+                                    ? <span style={{display:'inline-flex',alignItems:'center',gap:'3px',background:'#d1fadf',color:'#166534',borderRadius:'6px',padding:'2px 7px',fontSize:'10px',fontWeight:700,whiteSpace:'nowrap'}}>✓ OK</span>
+                                    : <span title="Verifique no FNDE se há informações pendentes ou divergências." style={{display:'inline-flex',alignItems:'center',gap:'3px',background:'#fee2e2',color:'#991b1b',borderRadius:'6px',padding:'2px 7px',fontSize:'10px',fontWeight:700,whiteSpace:'nowrap',cursor:'help'}}>⚠ Revisar</span>
+                                );
                                 if (agg) {
                                   return (
                                     <tr key={i} style={{
@@ -5686,6 +5693,7 @@ out center tags 100;`;
                                       <td className="py-2 px-3 text-xs text-right font-mono" style={{color:'#555'}}>{pagoCapital != null ? brl(pagoCapital) : '—'}</td>
                                       <td className="py-2 px-3 text-xs text-right font-mono font-bold" style={{color: isTotal ? '#2f7a58' : '#555'}}>{pagoTotal != null ? brl(pagoTotal) : '—'}</td>
                                       <td className="py-2 px-3 text-xs text-right text-muted-foreground">—</td>
+                                      <td className="py-2 px-3 text-center"><StatusBadge agg={true} /></td>
                                     </tr>
                                   );
                                 }
@@ -5710,6 +5718,7 @@ out center tags 100;`;
                                     <td className="py-2 px-3 text-xs text-right" style={{color:'#888',whiteSpace:'nowrap'}}>
                                       {d.data_ordem_pgto && d.data_ordem_pgto !== '-' ? d.data_ordem_pgto : <span className="text-muted-foreground">—</span>}
                                     </td>
+                                    <td className="py-2 px-3 text-center"><StatusBadge agg={false} /></td>
                                   </tr>
                                 );
                               })}
