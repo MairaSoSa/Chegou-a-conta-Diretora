@@ -1051,6 +1051,75 @@ export async function getRelatorioSuspensao(params: SuspensaoParams): Promise<Su
   }
 }
 
+export interface SuspensaoEscolaItem {
+  uf: string | null;
+  municipio: string | null;
+  rede: string | null;
+  programa: string | null;
+  acao: string | null;
+  cnpj_uex: string | null;
+  razao_social_uex: string | null;
+  motivo: string | null;
+}
+
+export interface SuspensaoEscolaResult {
+  ok: boolean;
+  disponivel: boolean;
+  co_escola: string;
+  ano: number;
+  itens: SuspensaoEscolaItem[];
+  error?: string;
+}
+
+export async function getRelatorioSuspensaoPorEscola(
+  co_escola: string,
+  sg_uf: string,
+  ano: number
+): Promise<SuspensaoEscolaResult> {
+  const qs = new URLSearchParams();
+  qs.set("co_escola", co_escola);
+  qs.append("siglaUf[]", sg_uf.toUpperCase());
+  qs.set("ano", String(ano));
+  const url = `${BASE}/relatoriosuspensao/relatoriosuspensao/excel?${qs.toString()}`;
+  console.log(`[PDDE Suspensão-Escola] Fetching: ${url}`);
+  try {
+    const response = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(20000) });
+    if (!response.ok) {
+      return { ok: false, disponivel: false, co_escola, ano, itens: [], error: `HTTP ${response.status}` };
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const html = iconv.decode(buffer, "latin1");
+    const $ = cheerio.load(html);
+    const itens: SuspensaoEscolaItem[] = [];
+    $("tr").each((_, tr) => {
+      const cols = $(tr).find("td")
+        .map((__, td) => normalizeText($(td).text()))
+        .get();
+      if (cols.length >= 10 && cols[5] && cols[5].trim() === co_escola) {
+        const rawCnpj = cols[7] || "";
+        const cnpj = rawCnpj.replace(/^=?"?|"?$/g, "").replace(/\D/g, "");
+        const cnpjFmt = cnpj.length === 14
+          ? `${cnpj.slice(0,2)}.${cnpj.slice(2,5)}.${cnpj.slice(5,8)}/${cnpj.slice(8,12)}-${cnpj.slice(12)}`
+          : (cnpj || null);
+        itens.push({
+          uf: cols[0] || null,
+          municipio: cols[1] || null,
+          rede: cols[2] || null,
+          programa: cols[3] || null,
+          acao: cols[4] || null,
+          cnpj_uex: cnpjFmt,
+          razao_social_uex: cols[8] || null,
+          motivo: cols[9] || null,
+        });
+      }
+    });
+    return { ok: true, disponivel: true, co_escola, ano, itens };
+  } catch (err: any) {
+    console.error(`[PDDE Suspensão-Escola] Error:`, err.message);
+    return { ok: false, disponivel: false, co_escola, ano, itens: [], error: err.message };
+  }
+}
+
 export async function getMunicipiosPorUf(sg_uf: string): Promise<{ ok: boolean; municipios: { codigo: string; nome: string }[]; error?: string }> {
   const url = `${BASE}/pddeinfo/corp/get-municipio/sg_uf/${encodeURIComponent(sg_uf.toUpperCase())}`;
   console.log(`[PDDE Municípios] Fetching: ${url}`);

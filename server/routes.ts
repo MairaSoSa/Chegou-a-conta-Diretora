@@ -21,6 +21,7 @@ import {
   getPddeInfo, getPddeUexSaldo,
   getSituacaoCadastral, getMunicipiosPorUf,
   getSituacaoPrestacaoConta, getSituacaoAtendimento, getRelatorioSuspensao,
+  getRelatorioSuspensaoPorEscola,
 } from "./scraper/pdde";
 import { searchDOU, searchDOUForNorma } from "./scraper/dou";
 import {
@@ -1157,6 +1158,31 @@ export async function registerRoutes(
     } catch (err: any) {
       console.error("PDDE suspensão error:", err.message);
       res.status(500).json({ ok: false, disponivel: false, total_registros: null, pagina_atual: 1, itens: [], error: "Erro ao consultar relatório de suspensão" });
+    }
+  });
+
+  app.get("/api/pdde/suspensao/escola/:inep", async (req, res) => {
+    try {
+      const co_escola = req.params.inep;
+      const ano = Number(req.query.ano) || new Date().getFullYear();
+      const sg_uf = (req.query.sg_uf as string || "").toUpperCase();
+      if (!sg_uf) return res.status(400).json({ ok: false, error: "sg_uf obrigatório" });
+
+      const CACHE_KEY = `pdde_susp_escola_${co_escola}_${sg_uf}_${ano}`;
+      const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4h
+      const cached = sqlite.prepare(
+        `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`
+      ).get(CACHE_KEY) as any;
+      if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) {
+        return res.json(JSON.parse(cached.data));
+      }
+
+      const result = await getRelatorioSuspensaoPorEscola(co_escola, sg_uf, ano);
+      safeCacheWrite(CACHE_KEY, result);
+      res.json(result);
+    } catch (err: any) {
+      console.error("PDDE suspensão-escola error:", err.message);
+      res.status(500).json({ ok: false, disponivel: false, co_escola: req.params.inep, ano: 0, itens: [], error: "Erro ao consultar suspensão" });
     }
   });
 

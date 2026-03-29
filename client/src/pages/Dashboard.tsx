@@ -21,7 +21,7 @@ import {
   Folder, Pin, Ruler, Printer,
 } from "@/components/Icons";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico, useEscolaMicroregiao, useUfStats, useSimilarSchools } from "@/hooks/use-schools";
-import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento, usePddeSuspensaoHistorico } from "@/hooks/use-pdde";
+import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento, usePddeSuspensaoHistorico, usePddeSuspensaoEscola } from "@/hooks/use-pdde";
 import { useSigpcLocalizar } from "@/hooks/use-sigpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -262,6 +262,8 @@ export default function Dashboard() {
   const { data: atendimentoPcData } = usePddeAtendimento(selectedInep, prestacaoContaAnoEfetivo);
   const [showSuspHist, setShowSuspHist] = useState(false);
   const suspHist = usePddeSuspensaoHistorico(selectedInep, showSuspHist);
+  const suspEscolaUf = pddeData?.uf || null;
+  const suspEscola = usePddeSuspensaoEscola(selectedInep, suspEscolaUf, [pddeAno, pddeAno === new Date().getFullYear() ? pddeAno - 1 : pddeAno]);
   const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined, pddeAno);
   const listFilters = useMemo(() => {
     const f: Record<string, string> = {};
@@ -5329,6 +5331,83 @@ out center tags 100;`;
                       <span className="text-sm text-muted-foreground">Carregando dados do FNDE...</span>
                     </div>
                   )}
+
+                  {/* ── BLOCO: SUSPENSÃO REAL FNDE (Relatório de Suspensão) ── */}
+                  {pddeData?.ok && suspEscola.loading && (
+                    <div style={{display:'flex',alignItems:'center',gap:'8px',padding:'10px 14px',background:'#fef9f0',border:'1px solid #fde68a',borderRadius:'8px',marginBottom:'12px',fontSize:'12px',color:'#92400e'}}>
+                      <Loader2 className="w-3 h-3 animate-spin" style={{color:'#b45309'}} />
+                      Consultando Relatório de Suspensão do FNDE...
+                    </div>
+                  )}
+                  {pddeData?.ok && !suspEscola.loading && suspEscola.itens.length > 0 && (() => {
+                    const MOTIVO_MAP: Record<string, { label: string; acao: string }> = {
+                      'Escola sem UEX (escola)':           { label: 'Escola sem UEx cadastrada', acao: 'Constituir e cadastrar uma Unidade Executora (conselho escolar ou APM) no PDDEweb.' },
+                      'Inadimplente (UEX)':                { label: 'UEx inadimplente com prestação de contas', acao: 'Regularizar a prestação de contas pendente no PDDE. Prazo final: 31 de outubro.' },
+                      'Prazo para resolução de pendências vencido (UEX)': { label: 'Prazo de regularização vencido (UEx)', acao: 'Entrar em contato com o FNDE urgentemente — o prazo legal para regularização foi ultrapassado.' },
+                      'Prazo para resolução de pendências vencido (escola)': { label: 'Prazo de regularização vencido (escola)', acao: 'Entrar em contato com o FNDE urgentemente — o prazo legal foi ultrapassado.' },
+                      'UEX sem dirigente ativo (UEX)':     { label: 'UEx sem dirigente ativo', acao: 'Eleger novo presidente da UEx e atualizar o cadastro no PDDEweb com ata de eleição e mandato vigente.' },
+                      'CNPJ inválido na Receita Federal (UEX)': { label: 'CNPJ da UEx irregular na Receita Federal', acao: 'Regularizar o CNPJ da UEx junto à Receita Federal e atualizar os dados no PDDEweb.' },
+                      'Credor sem conta corrente ativa':   { label: 'Conta corrente inativa', acao: 'Verificar se a conta bancária da UEx está ativa. Pode ser necessário reativar a conta ou cadastrar nova conta no PDDEweb.' },
+                      'Sem conta ativa dentro do prazo de pagamento': { label: 'Sem conta ativa no prazo de pagamento', acao: 'Garantir que a conta bancária da UEx esteja ativa e regularizada no PDDEweb antes do prazo de pagamento.' },
+                      'Credor de ação integrada é uma EEX': { label: 'Ação integrada: credora deve ser UEx', acao: 'Para esta ação integrada o FNDE exige UEx como credora. A escola precisa cadastrar uma UEx própria no PDDEweb.' },
+                      'Omissão na prestação de contas (proponente)': { label: 'Omissão na prestação de contas', acao: 'A prestação de contas não foi submetida. Submeter a PC no PDDE/SIGPC imediatamente.' },
+                      'O banco sugerido do cadastro da UEX não é o Banco do Brasil (UEX)': { label: 'Banco cadastrado não é o Banco do Brasil', acao: 'Atualizar o cadastro bancário da UEx no PDDEweb com uma conta no Banco do Brasil (PDDE exige Banco do Brasil).' },
+                      'Bloqueio CODDE - UEX/Credor (UEX)': { label: 'Bloqueio CODDE', acao: 'Entrar em contato com o FNDE para obter informações sobre o bloqueio CODDE.' },
+                      'Entidade não habilitada no exercício atual (EM)': { label: 'Entidade não habilitada no exercício atual', acao: 'Verificar junto ao FNDE os requisitos de habilitação para o exercício corrente.' },
+                      'UEX localizada em domicílio diferente do domicílio da escola': { label: 'UEx com endereço divergente', acao: 'Atualizar o endereço cadastrado da UEx no PDDEweb para que coincida com o endereço da escola.' },
+                    };
+                    const byMotivo = new Map<string, typeof suspEscola.itens>();
+                    suspEscola.itens.forEach((it: any) => {
+                      const m = it.motivo || 'Desconhecido';
+                      if (!byMotivo.has(m)) byMotivo.set(m, []);
+                      byMotivo.get(m)!.push(it);
+                    });
+                    const isRed = Array.from(byMotivo.keys()).some(m =>
+                      m.includes('sem UEX') || m.includes('Prazo') || m.includes('CNPJ') || m.includes('Bloqueio')
+                    );
+                    const borderColor = isRed ? '#fca5a5' : '#fed7aa';
+                    const bgColor = isRed ? '#fef2f2' : '#fff7ed';
+                    const titleColor = isRed ? '#991b1b' : '#7c2d12';
+                    const iconColor = isRed ? '#dc2626' : '#c2410c';
+                    const tagBg = isRed ? '#fecaca' : '#fed7aa';
+                    const subBg = isRed ? '#fee2e2' : '#ffedd5';
+                    return (
+                      <div style={{background:bgColor,border:`1.5px solid ${borderColor}`,borderRadius:'10px',padding:'14px 16px',marginBottom:'16px',display:'flex',flexDirection:'column',gap:'8px'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                          <AlertTriangle className="w-4 h-4" style={{color:iconColor,flexShrink:0}} />
+                          <span style={{fontSize:'13px',fontWeight:800,color:titleColor}}>
+                            Suspensão ativa — dados do Relatório FNDE
+                          </span>
+                          <span style={{fontSize:'10px',fontWeight:700,color:iconColor,background:tagBg,borderRadius:'9999px',padding:'1px 8px',marginLeft:'auto',whiteSpace:'nowrap'}}>
+                            ⚠ {suspEscola.itens.length > 1 ? `${new Set(suspEscola.itens.map((i:any)=>i.motivo)).size} motivo(s)` : 'Ativo'}
+                          </span>
+                        </div>
+                        {Array.from(byMotivo.entries()).map(([motivo, itens]) => {
+                          const info = MOTIVO_MAP[motivo] || { label: motivo, acao: 'Consulte o PDDEweb ou entre em contato com o FNDE para regularização.' };
+                          const programas = [...new Set((itens as any[]).map((i:any) => i.programa).filter(Boolean))];
+                          const acoes = [...new Set((itens as any[]).map((i:any) => i.acao).filter(Boolean))];
+                          return (
+                            <div key={motivo} style={{display:'flex',alignItems:'flex-start',gap:'8px',background:subBg,borderRadius:'6px',padding:'8px 10px'}}>
+                              <span style={{fontSize:'11px',fontWeight:700,color:titleColor,background:tagBg,borderRadius:'4px',padding:'1px 6px',whiteSpace:'nowrap',flexShrink:0,marginTop:'1px'}}>FNDE</span>
+                              <span style={{fontSize:'12px',color:titleColor,fontWeight:500,display:'flex',flexDirection:'column',gap:'3px'}}>
+                                <strong>{info.label}</strong>
+                                {programas.length > 0 && (
+                                  <span style={{fontSize:'11px',opacity:0.85}}>
+                                    Programa(s): {programas.join(', ')}
+                                    {acoes.length > 0 && ` — ações: ${acoes.slice(0,3).join(', ')}${acoes.length > 3 ? '...' : ''}`}
+                                  </span>
+                                )}
+                                <span style={{fontSize:'11px',color:isRed?'#7f1d1d':'#92400e',marginTop:'2px'}}>→ {info.acao}</span>
+                              </span>
+                            </div>
+                          );
+                        })}
+                        <p style={{fontSize:'10px',color:'#9ca3af',margin:0}}>
+                          Fonte: Relatório de Suspensão FNDE — consultado em tempo real para {pddeAno}{suspEscola.anosConsultados.length > 1 ? ` e ${suspEscola.anosConsultados.filter(a => a !== pddeAno)[0]}` : ''}.
+                        </p>
+                      </div>
+                    );
+                  })()}
 
                   {/* ── ALERTA: ESCOLA SEM UEx ── */}
                   {pddeData?.ok && !pddeData?.uex &&

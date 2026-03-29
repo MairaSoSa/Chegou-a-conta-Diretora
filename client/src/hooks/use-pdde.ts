@@ -464,3 +464,48 @@ export function usePddeSuspensaoHistorico(inep: string | null, enabled: boolean)
 
   return { loading, itens: suspItems, anosConsultados: SUSP_HIST_YEARS, anosComSuspensao };
 }
+
+export interface SuspensaoEscolaItem {
+  uf: string | null;
+  municipio: string | null;
+  rede: string | null;
+  programa: string | null;
+  acao: string | null;
+  cnpj_uex: string | null;
+  razao_social_uex: string | null;
+  motivo: string | null;
+}
+
+export interface SuspensaoEscolaResult {
+  ok: boolean;
+  disponivel: boolean;
+  co_escola: string;
+  ano: number;
+  itens: SuspensaoEscolaItem[];
+  error?: string;
+}
+
+export function usePddeSuspensaoEscola(
+  inep: string | null,
+  sg_uf: string | null,
+  anos: number[]
+): { loading: boolean; itens: SuspensaoEscolaItem[]; anosConsultados: number[] } {
+  const results = useQueries({
+    queries: anos.map(ano => ({
+      queryKey: ["pdde-suspensao-escola", inep, sg_uf, ano],
+      queryFn: async (): Promise<SuspensaoEscolaResult> => {
+        if (!inep || !sg_uf) return { ok: false, disponivel: false, co_escola: inep || '', ano, itens: [] };
+        const res = await fetch(`/api/pdde/suspensao/escola/${inep}?ano=${ano}&sg_uf=${sg_uf}`);
+        if (!res.ok) throw new Error("erro");
+        return await res.json();
+      },
+      enabled: !!inep && !!sg_uf && /^\d{8}$/.test(inep),
+      staleTime: 4 * 60 * 60 * 1000,
+      retry: 1,
+    })),
+  });
+
+  const loading = results.some(r => r.isLoading || r.isFetching);
+  const itens: SuspensaoEscolaItem[] = results.flatMap(r => r.data?.itens || []);
+  return { loading, itens, anosConsultados: anos };
+}
