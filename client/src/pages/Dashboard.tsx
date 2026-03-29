@@ -1471,9 +1471,6 @@ export default function Dashboard() {
                               <div style={{ display: "flex", gap: 7 }}>
                                 {essenciais.map((cam: any) => <EssentialCard key={cam.key} cam={cam} />)}
                               </div>
-                              <p style={{ margin: "7px 0 0", fontSize: 10, color: "#475569" }}>
-                                Priorize os itens com maior ausência para garantir funcionamento básico, salubridade e segurança escolar.
-                              </p>
                             </div>
                           )}
                         </div>
@@ -1488,9 +1485,6 @@ export default function Dashboard() {
                           </div>
                         </div>
                       )}
-                      <p style={{ fontSize: 10, color: "#94a3b8", margin: 0 }}>
-                        Fonte: Censo Escolar INEP/MEC. p.p. = pontos percentuais.
-                      </p>
                     </div>
                   );
                 })()}
