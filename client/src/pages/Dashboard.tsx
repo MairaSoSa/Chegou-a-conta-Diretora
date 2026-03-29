@@ -5831,8 +5831,7 @@ out center tags 100;`;
                             </div>
                           </div>
                           );
-                        })
-                        ))}
+                        })}
                       </div>
                     </div>
                   )}
