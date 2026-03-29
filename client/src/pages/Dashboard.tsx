@@ -2530,23 +2530,36 @@ out center tags 100;`;
                           })}
                         </div>
 
-                        {/* Observação contextual — sem alarme */}
-                        <div style={{margin:'20px 0 0', padding:'14px 18px', background:'#faf7f2', border:'1px solid #e8dfc8', borderRadius:12, display:'flex', alignItems:'flex-start', gap:12}}>
-                          <span style={{fontSize:22, lineHeight:1, flexShrink:0}}>{total === 0 ? '✅' : '📋'}</span>
-                          <div>
-                            <div style={{fontSize:13, fontWeight:700, color:'#5d4037', marginBottom:3}}>
-                              {total === 0 ? 'Tudo dentro do esperado' : 'Indicadores em observação'}
+                        {/* Indicadores em observação — lista de observações por indicador */}
+                        {(() => {
+                          const obs = alertasPreocupantes;
+                          if (obs.length === 0) {
+                            return (
+                              <div style={{margin:'20px 0 0', padding:'14px 18px', background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:12, display:'flex', alignItems:'center', gap:12}}>
+                                <span style={{fontSize:20, flexShrink:0}}>✅</span>
+                                <p style={{fontSize:13, color:'#166534', margin:0, lineHeight:1.5}}>Os indicadores desta escola estão dentro das faixas de referência.</p>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div style={{margin:'20px 0 0', padding:'14px 18px', background:'#faf7f2', border:'1px solid #e8dfc8', borderRadius:12}}>
+                              <div style={{fontSize:11, fontWeight:800, color:'#9a7a5a', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:12}}>
+                                📋 Indicadores em observação
+                              </div>
+                              <div style={{display:'flex', flexDirection:'column', gap:10}}>
+                                {obs.map((alerta: any, i: number) => (
+                                  <div key={i} style={{display:'flex', gap:10, alignItems:'flex-start'}}>
+                                    <span style={{fontSize:13, marginTop:1, flexShrink:0}}>◌</span>
+                                    <div>
+                                      <div style={{fontSize:12, fontWeight:700, color:'#5d4037', marginBottom:2}}>{alerta.titulo.replace(/:\s*[\d,.]+$/, '').replace(/:\s*[\d,.]+\s*$/, '')}</div>
+                                      <p style={{fontSize:12, color:'#8a7a6a', margin:0, lineHeight:1.5}}>{alerta.descricao}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                            <p style={{fontSize:12, color:'#8a7a6a', margin:0, lineHeight:1.6}}>
-                              {total === 0
-                                ? 'Os indicadores desta escola estão dentro das faixas de referência. Continue acompanhando a evolução nos cards abaixo.'
-                                : total === 1
-                                  ? 'Um indicador merece acompanhamento ao longo do tempo. Veja o contexto completo e a comparação com outras escolas nos cards abaixo.'
-                                  : `${total} indicadores merecem acompanhamento ao longo do tempo. Veja o contexto completo e a comparação com outras escolas nos cards abaixo.`
-                              }
-                            </p>
-                          </div>
-                        </div>
+                          );
+                        })()}
 
                         {/* Indicadores com comparação nacional */}
                         {Object.keys(indicadoresLatest).length > 0 && (
