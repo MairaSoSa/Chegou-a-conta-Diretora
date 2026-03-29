@@ -2451,53 +2451,47 @@ out center tags 100;`;
                   );
                 })()}
 
-                {/* ── FICHA GERAL + PAINEL DA ESCOLA — lado a lado ── */}
+                {/* ── FICHA GERAL + CARDS COLORIDOS — lado a lado ── */}
                 <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap', marginTop: '22px' }}>
 
-                {/* FICHA GERAL */}
-                <section className="section" style={{ flex: '0 0 270px', width: '270px', minWidth: '220px', marginTop: 0 }}>
-                  <div className="section-title">
-                    <div><h2>Ficha geral da escola</h2><p>Identidade e vida organizacional</p></div>
-                  </div>
-                  <div className="organic-divider" />
-                  <div className="soft-card theme-blue" style={{ margin: 0 }}>
-                    <div className="attention-head"><span>🏫</span><strong>Identidade</strong></div>
-                    <div className="row-list" style={{marginTop:'8px'}}>
-                      {[
-                        ['Situação', censoLatest.ds_situacao],
-                        ['Dependência', censoLatest.ds_dependencia],
-                        ['Localização', censoLatest.ds_localizacao],
-                        ['Localização diferenciada', (() => {
-                          const d = censoLatest.tp_localizacao_diferenciada;
-                          if (d == null || d === 0) return null;
-                          const dMap: Record<number,string> = { 1: 'Área indígena', 2: 'Quilombola', 3: 'Assentamento', 4: 'Área rural diferenciada', 5: 'Área de ilha', 6: 'Reserva extrativista' };
-                          return dMap[d] ?? null;
-                        })()],
-                        ['Região', censoLatest.no_regiao],
-                        ['Município', censoLatest.no_municipio],
-                        ['UF', censoLatest.sg_uf],
-                        ['Código IBGE', censoLatest.co_municipio],
-                        ['Regulamentação', censoLatest.tp_regulamentacao === 1 ? 'Sim' : censoLatest.tp_regulamentacao === 2 ? 'Em tramitação' : censoLatest.tp_regulamentacao === 3 ? 'Não' : null],
-                        ['Prédio escolar', censoLatest.in_local_func_predio_escolar === 1 ? 'Sim' : censoLatest.in_local_func_predio_escolar === 0 ? 'Não' : null],
-                        ['Início do ano letivo', censoLatest.dt_ano_letivo_inicio ?? null],
-                        ['Término do ano letivo', censoLatest.dt_ano_letivo_termino ?? null],
-                      ].filter(([,v]) => v != null).map(([k, v], i) => (
-                        <div key={i} className="row-item" style={{padding:'7px 14px'}}>
-                          <span style={{color:'var(--m-muted)',fontSize:'12px'}}>{k}</span>
-                          <strong style={{fontSize:'12px'}}>{String(v)}</strong>
-                        </div>
-                      ))}
+                  {/* FICHA GERAL */}
+                  <section className="section" style={{ flex: '0 0 270px', width: '270px', minWidth: '220px', marginTop: 0 }}>
+                    <div className="section-title">
+                      <div><h2>Ficha geral da escola</h2><p>Identidade e vida organizacional</p></div>
                     </div>
-                  </div>
-                </section>
+                    <div className="organic-divider" />
+                    <div className="soft-card theme-blue" style={{ margin: 0 }}>
+                      <div className="attention-head"><span>🏫</span><strong>Identidade</strong></div>
+                      <div className="row-list" style={{marginTop:'8px'}}>
+                        {[
+                          ['Situação', censoLatest.ds_situacao],
+                          ['Dependência', censoLatest.ds_dependencia],
+                          ['Localização', censoLatest.ds_localizacao],
+                          ['Localização diferenciada', (() => {
+                            const d = censoLatest.tp_localizacao_diferenciada;
+                            if (d == null || d === 0) return null;
+                            const dMap: Record<number,string> = { 1: 'Área indígena', 2: 'Quilombola', 3: 'Assentamento', 4: 'Área rural diferenciada', 5: 'Área de ilha', 6: 'Reserva extrativista' };
+                            return dMap[d] ?? null;
+                          })()],
+                          ['Região', censoLatest.no_regiao],
+                          ['Município', censoLatest.no_municipio],
+                          ['UF', censoLatest.sg_uf],
+                          ['Código IBGE', censoLatest.co_municipio],
+                          ['Regulamentação', censoLatest.tp_regulamentacao === 1 ? 'Sim' : censoLatest.tp_regulamentacao === 2 ? 'Em tramitação' : censoLatest.tp_regulamentacao === 3 ? 'Não' : null],
+                          ['Prédio escolar', censoLatest.in_local_func_predio_escolar === 1 ? 'Sim' : censoLatest.in_local_func_predio_escolar === 0 ? 'Não' : null],
+                          ['Início do ano letivo', censoLatest.dt_ano_letivo_inicio ?? null],
+                          ['Término do ano letivo', censoLatest.dt_ano_letivo_termino ?? null],
+                        ].filter(([,v]) => v != null).map(([k, v], i) => (
+                          <div key={i} className="row-item" style={{padding:'7px 14px'}}>
+                            <span style={{color:'var(--m-muted)',fontSize:'12px'}}>{k}</span>
+                            <strong style={{fontSize:'12px'}}>{String(v)}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </section>
 
-                {/* PAINEL DA ESCOLA */}
-                <section className="section" style={{ flex: 1, minWidth: '300px', marginTop: 0 }}>
-                  <div className="section-title">
-                    <div><h2>Painel da escola</h2><p>Números essenciais, alertas e indicadores com comparação nacional</p></div>
-                    <div className="hint-chip">Gestão · Desempenho · Comparação</div>
-                  </div>
-                  <div className="organic-divider" />
+                  {/* CARDS COLORIDOS — ao lado da ficha */}
                   {(() => {
                     const THEMES = ['theme-blue','theme-yellow','theme-green','theme-purple','theme-pink','theme-teal'];
                     const temComparacaoHistorica = !!censoBaseComparacao && !!baseAnoComparacao && baseAnoComparacao < latestAno;
@@ -2509,8 +2503,12 @@ out center tags 100;`;
                       { label: 'Status PDDE', val: pddeData?.ok ? (prestacaoContaData?.ok && prestacaoContaData.itens.every((it:any)=>it.situacao_pc_uex?.toLowerCase().includes('adimpl')) ? '✅' : 'Ver') : '—', prev: null, icon: '💸', extra: prestacaoContaData?.ok && prestacaoContaData.itens.length > 0 ? `${prestacaoContaData.itens.length} programa(s)` : pddeData?.ok ? 'Ativo' : 'Sem dados' },
                     ];
                     return (
-                      <>
-                        {/* Métricas rápidas */}
+                      <div style={{ flex: 1, minWidth: '260px', marginTop: 0 }}>
+                        <div className="section-title" style={{ marginBottom: 0 }}>
+                          <div><h2>Painel da escola</h2><p>Números essenciais</p></div>
+                          <div className="hint-chip">Gestão · Desempenho</div>
+                        </div>
+                        <div className="organic-divider" />
                         <div className="summary-grid">
                           {METRICS.map((m, i) => {
                             const delta = m.prev !== null && typeof m.val === 'number' ? (m.val as number) - (m.prev as number) : null;
@@ -2538,39 +2536,42 @@ out center tags 100;`;
                             );
                           })}
                         </div>
+                      </div>
+                    );
+                  })()}
 
-                        {/* Indicadores em observação — lista de observações por indicador */}
-                        {(() => {
-                          const obs = alertasPreocupantes;
-                          if (obs.length === 0) {
-                            return (
-                              <div style={{margin:'20px 0 0', padding:'14px 18px', background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:12, display:'flex', alignItems:'center', gap:12}}>
-                                <span style={{fontSize:20, flexShrink:0}}>✅</span>
-                                <p style={{fontSize:13, color:'#166534', margin:0, lineHeight:1.5}}>Os indicadores desta escola estão dentro das faixas de referência.</p>
-                              </div>
-                            );
-                          }
-                          return (
-                            <div style={{margin:'20px 0 0', padding:'14px 18px', background:'#faf7f2', border:'1px solid #e8dfc8', borderRadius:12}}>
-                              <div style={{fontSize:11, fontWeight:800, color:'#9a7a5a', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:12}}>
-                                📋 Indicadores em observação
-                              </div>
-                              <div style={{display:'flex', flexDirection:'column', gap:10}}>
-                                {obs.map((alerta: any, i: number) => (
-                                  <div key={i} style={{display:'flex', gap:10, alignItems:'flex-start'}}>
-                                    <span style={{fontSize:13, marginTop:1, flexShrink:0}}>◌</span>
-                                    <div>
-                                      <div style={{fontSize:12, fontWeight:700, color:'#5d4037', marginBottom:2}}>{alerta.titulo.replace(/:\s*[\d,.]+$/, '').replace(/:\s*[\d,.]+\s*$/, '')}</div>
-                                      <p style={{fontSize:12, color:'#8a7a6a', margin:0, lineHeight:1.5}}>{alerta.descricao}</p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
+                </div>{/* fim flex ficha+cards */}
+
+                {/* ── INDICADORES + DIAGNÓSTICO — largura total ── */}
+                <section className="section">
+                  {(() => {
+                    const obs = alertasPreocupantes;
+                    return (
+                      <>
+                        {obs.length === 0 ? (
+                          <div style={{padding:'14px 18px', background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:12, display:'flex', alignItems:'center', gap:12}}>
+                            <span style={{fontSize:20, flexShrink:0}}>✅</span>
+                            <p style={{fontSize:13, color:'#166534', margin:0, lineHeight:1.5}}>Os indicadores desta escola estão dentro das faixas de referência.</p>
+                          </div>
+                        ) : (
+                          <div style={{padding:'14px 18px', background:'#faf7f2', border:'1px solid #e8dfc8', borderRadius:12}}>
+                            <div style={{fontSize:11, fontWeight:800, color:'#9a7a5a', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:12}}>
+                              📋 Indicadores em observação
                             </div>
-                          );
-                        })()}
+                            <div style={{display:'flex', flexDirection:'column', gap:10}}>
+                              {obs.map((alerta: any, i: number) => (
+                                <div key={i} style={{display:'flex', gap:10, alignItems:'flex-start'}}>
+                                  <span style={{fontSize:13, marginTop:1, flexShrink:0}}>◌</span>
+                                  <div>
+                                    <div style={{fontSize:12, fontWeight:700, color:'#5d4037', marginBottom:2}}>{alerta.titulo.replace(/:\s*[\d,.]+$/, '').replace(/:\s*[\d,.]+\s*$/, '')}</div>
+                                    <p style={{fontSize:12, color:'#8a7a6a', margin:0, lineHeight:1.5}}>{alerta.descricao}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
-                        {/* Indicadores com comparação nacional */}
                         {Object.keys(indicadoresLatest).length > 0 && (
                           <div style={{marginTop:24}}>
                             <div style={{fontSize:11,fontWeight:800,color:'#9a7a5a',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:14}}>
@@ -2580,7 +2581,6 @@ out center tags 100;`;
                           </div>
                         )}
 
-                        {/* Diagnóstico */}
                         {diagnosticoData && (diagnosticoData.pontos_fortes.length > 0 || diagnosticoData.leituras.length > 0) && (
                           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:'14px',marginTop:'16px'}}>
                             {diagnosticoData.pontos_fortes.length > 0 && (
@@ -2609,8 +2609,6 @@ out center tags 100;`;
                     );
                   })()}
                 </section>
-
-                </div>{/* fim flex ficha+painel */}
 
                 {/* ── DESEMPENHO ESCOLAR: SAEB + RENDIMENTO ── */}
                 {(() => {
