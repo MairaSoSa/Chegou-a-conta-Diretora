@@ -989,9 +989,71 @@ export default function Dashboard() {
 
   const hasMultipleYears = (evolucaoData?.anos_disponiveis?.length || 0) > 1;
 
+  const secNavItems = [
+    { id: 'sec-ficha',      icon: <School size={12} />,        title: 'Ficha',        bg: '#e6eef8', border: '#b8cfe8', color: '#1e4a78' },
+    { id: 'sec-desempenho', icon: <BarChart3 size={12} />,     title: 'Desempenho',   bg: '#fdf3e0', border: '#f0ddb5', color: '#7a4a10' },
+    { id: 'sec-tnr',        icon: <AlertTriangle size={12} />, title: 'Não Resposta', bg: '#fdf0f0', border: '#f5c6c6', color: '#b74f42' },
+    { id: 'sec-inse',       icon: <Scale size={12} />,         title: 'INSE',         bg: '#f3eeff', border: '#d4c4f5', color: '#5b3fa8' },
+    { id: 'sec-tdi',        icon: <CalendarDays size={12} />,  title: 'Distorção',    bg: '#e8f5ee', border: '#b8dfc8', color: '#2f7a58' },
+    { id: 'sec-matriculas', icon: <Users size={12} />,         title: 'Matrículas',   bg: '#f0fdf4', border: '#bbf7d0', color: '#166534' },
+    { id: 'sec-estrutura',  icon: <Building2 size={12} />,     title: 'Estrutura',    bg: '#f1f5f9', border: '#cbd5e1', color: '#334155' },
+    { id: 'sec-ied',        icon: <Wrench size={12} />,        title: 'Esforço',      bg: '#fefce8', border: '#fde68a', color: '#854d0e' },
+    { id: 'sec-afd',        icon: <GraduationCap size={12} />, title: 'Formação',     bg: '#e6eef8', border: '#b8cfe8', color: '#1e4a78' },
+    { id: 'sec-atu',        icon: <Users size={12} />,         title: 'Turma',        bg: '#fdf3e0', border: '#f0ddb5', color: '#9b6a16' },
+    { id: 'sec-had',        icon: <Clock size={12} />,         title: 'Horas-aula',   bg: '#fff7ed', border: '#fed7aa', color: '#9a3412' },
+    { id: 'sec-retrato',    icon: <BookOpen size={12} />,      title: 'Retrato',      bg: '#faf7f2', border: '#e8dfc8', color: '#5d4037' },
+    { id: 'sec-pdde',       icon: <DollarSign size={12} />,    title: 'PDDE',         bg: '#e8f5ee', border: '#b8dfc8', color: '#1f6b45' },
+  ] as const;
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
+
+      {/* ── LINGUINHAS DE FICHÁRIO ── */}
+      {selectedInep && (
+        <div style={{
+          position: 'fixed', left: 0, top: '50%', transform: 'translateY(-50%)',
+          zIndex: 200, display: 'flex', flexDirection: 'column', gap: 2,
+          pointerEvents: 'auto',
+        }}>
+          {secNavItems.map(tab => (
+            <button
+              key={tab.id}
+              title={tab.title}
+              onClick={() => { const el = document.getElementById(tab.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '5px 8px 5px 5px',
+                background: tab.bg,
+                border: `1px solid ${tab.border}`,
+                borderLeft: 'none',
+                borderRadius: '0 7px 7px 0',
+                cursor: 'pointer',
+                boxShadow: '2px 1px 5px rgba(0,0,0,0.13)',
+                transform: 'translateX(-2px)',
+                transition: 'transform 0.15s, box-shadow 0.15s, max-width 0.18s',
+                overflow: 'hidden',
+                maxWidth: 28,
+              }}
+              onMouseEnter={e => {
+                const btn = e.currentTarget;
+                btn.style.transform = 'translateX(0)';
+                btn.style.maxWidth = '120px';
+                btn.style.boxShadow = '3px 2px 8px rgba(0,0,0,0.18)';
+              }}
+              onMouseLeave={e => {
+                const btn = e.currentTarget;
+                btn.style.transform = 'translateX(-2px)';
+                btn.style.maxWidth = '28px';
+                btn.style.boxShadow = '2px 1px 5px rgba(0,0,0,0.13)';
+              }}
+            >
+              <span style={{ color: tab.color, display: 'flex', flexShrink: 0 }}>{tab.icon}</span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: tab.color, whiteSpace: 'nowrap', overflow: 'hidden' }}>{tab.title}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <main className="flex-1 container mx-auto px-4 py-6">
         <div className="relative overflow-hidden rounded-[34px] border border-[#d9ceb8] bg-[#fbf7ee] shadow-[0_20px_60px_rgba(90,80,50,0.10)] p-6 space-y-6">
@@ -1807,52 +1869,6 @@ export default function Dashboard() {
                   </div>
                 </section>
 
-                {/* ── NAVEGAÇÃO DE SEÇÕES ── */}
-                <div style={{ margin: '20px 0 8px' }}>
-                  <div style={{ fontWeight: 800, fontSize: 11, color: '#9a7a5a', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 12 }}>
-                    Seções do painel
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))', gap: 9 }}>
-                    {([
-                      { id: 'sec-ficha',      icon: <School size={15} />,        title: 'Ficha da escola',    desc: 'Identidade e organização',            bg: '#e6eef8', border: '#b8cfe8', color: '#1e4a78' },
-                      { id: 'sec-desempenho', icon: <BarChart3 size={15} />,      title: 'Desempenho',         desc: 'SAEB, aprovação e abandono',          bg: '#fdf3e0', border: '#f0ddb5', color: '#7a4a10' },
-                      { id: 'sec-tnr',        icon: <AlertTriangle size={15} />,  title: 'Não Resposta',       desc: 'Taxa de não resposta ao SAEB',        bg: '#fdf0f0', border: '#f5c6c6', color: '#b74f42' },
-                      { id: 'sec-inse',       icon: <Scale size={15} />,          title: 'INSE',               desc: 'Nível socioeconômico',                bg: '#f3eeff', border: '#d4c4f5', color: '#5b3fa8' },
-                      { id: 'sec-tdi',        icon: <CalendarDays size={15} />,   title: 'Distorção Idade-Série', desc: 'Defasagem escolar',               bg: '#e8f5ee', border: '#b8dfc8', color: '#2f7a58' },
-                      { id: 'sec-matriculas', icon: <Users size={15} />,          title: 'Matrículas',         desc: 'Por etapa de ensino',                 bg: '#f0fdf4', border: '#bbf7d0', color: '#166534' },
-                      { id: 'sec-estrutura',  icon: <Building2 size={15} />,      title: 'Estrutura',          desc: 'Turmas, espaços e equipe',            bg: '#f1f5f9', border: '#cbd5e1', color: '#334155' },
-                      { id: 'sec-ied',        icon: <Wrench size={15} />,         title: 'Esforço Docente',    desc: 'Índice de esforço (IED)',             bg: '#fefce8', border: '#fde68a', color: '#854d0e' },
-                      { id: 'sec-afd',        icon: <GraduationCap size={15} />,  title: 'Formação Docente',   desc: 'Adequação da formação (AFD)',         bg: '#e6eef8', border: '#b8cfe8', color: '#1e4a78' },
-                      { id: 'sec-atu',        icon: <Users size={15} />,          title: 'Alunos por Turma',   desc: 'Média de alunos (ATU)',               bg: '#fdf3e0', border: '#f0ddb5', color: '#9b6a16' },
-                      { id: 'sec-had',        icon: <Clock size={15} />,          title: 'Horas-Aula',         desc: 'Horas-aula diárias (HAD)',            bg: '#fff7ed', border: '#fed7aa', color: '#9a3412' },
-                      { id: 'sec-retrato',    icon: <BookOpen size={15} />,       title: 'Retrato da escola',  desc: 'Evolução histórica do Censo',         bg: '#faf7f2', border: '#e8dfc8', color: '#5d4037' },
-                      { id: 'sec-pdde',       icon: <DollarSign size={15} />,     title: 'PDDE',               desc: 'Dados financeiros',                   bg: '#e8f5ee', border: '#b8dfc8', color: '#1f6b45' },
-                    ] as const).map(card => (
-                      <button
-                        key={card.id}
-                        onClick={() => { const el = document.getElementById(card.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
-                        style={{
-                          display: 'flex', flexDirection: 'column', gap: 4,
-                          padding: '11px 13px',
-                          background: card.bg,
-                          border: `1.5px solid ${card.border}`,
-                          borderRadius: 13,
-                          cursor: 'pointer', textAlign: 'left',
-                          transition: 'box-shadow 0.15s, transform 0.15s',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                        }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 5px 14px rgba(0,0,0,0.11)'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ''; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'; }}
-                      >
-                        <div style={{ color: card.color, display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {card.icon}
-                          <span style={{ fontSize: 11, fontWeight: 800, color: card.color, lineHeight: 1.2 }}>{card.title}</span>
-                        </div>
-                        <p style={{ fontSize: 10, color: card.color, opacity: 0.65, margin: 0, lineHeight: 1.35 }}>{card.desc}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
                 {/* ── PAINÉIS DE CONTEXTO: EQUIPAMENTOS PÚBLICOS + SUPORTE INSTITUCIONAL ── */}
                 {(() => {
