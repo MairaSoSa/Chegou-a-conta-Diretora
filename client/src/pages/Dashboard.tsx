@@ -2472,7 +2472,6 @@ out center tags 100;`;
                     const temComparacaoHistorica = !!censoBaseComparacao && !!baseAnoComparacao && baseAnoComparacao < latestAno;
                     const METRICS = [
                       { label: `Matrículas ${latestAno ?? ''}`, val: censoLatest.qt_mat_bas || 0, prev: temComparacaoHistorica ? (censoBaseComparacao?.qt_mat_bas || 0) : null, icon: '👩‍🎓' },
-                      { label: 'Pontos de atenção', val: total, prev: null, icon: criticals.length > 0 ? '⚠️' : total > 0 ? '◌' : '✅', extra: total === 0 ? '' : criticals.length > 0 ? `${criticals.length} ${criticals.length !== 1 ? 'precisam' : 'precisa'} de atenção` : `${warnings.length} aviso${warnings.length !== 1 ? 's' : ''}` },
                       { label: `Docentes ${latestAno}`, val: censoLatest.qt_doc_bas || censoLatest.qt_docentes || 0, prev: temComparacaoHistorica ? (censoBaseComparacao ? (censoBaseComparacao.qt_doc_bas || censoBaseComparacao.qt_docentes || 0) : 0) : null, icon: '🧑‍🏫' },
                       { label: `Turmas ${latestAno}`, val: censoLatest.qt_tur_bas || censoLatest.qt_turmas || 0, prev: temComparacaoHistorica ? (censoBaseComparacao ? (censoBaseComparacao.qt_tur_bas || censoBaseComparacao.qt_turmas || 0) : 0) : null, icon: '🏫' },
                       { label: 'Salas utilizadas', val: censoLatest.qt_salas_utilizadas || 0, prev: temComparacaoHistorica ? (censoBaseComparacao?.qt_salas_utilizadas || 0) : null, icon: '🚪' },
@@ -2509,32 +2508,23 @@ out center tags 100;`;
                           })}
                         </div>
 
-                        {/* Alertas compactos */}
-                        {total > 0 ? (
-                          <div style={{margin:'20px 0 0',padding:'14px 16px',background: criticals.length > 0 ? '#fff9f0' : '#fffdf0',border:`1px solid ${criticals.length > 0 ? '#fcd34d' : '#fde68a'}`,borderRadius:12}}>
-                            <div style={{fontSize:11,fontWeight:800,color:'#9a7a3a',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10}}>
-                              {criticals.length > 0 ? '⚠️ Indicadores que precisam de atenção' : '◌ Indicadores em observação'}
+                        {/* Observação contextual — sem alarme */}
+                        <div style={{margin:'20px 0 0', padding:'14px 18px', background:'#faf7f2', border:'1px solid #e8dfc8', borderRadius:12, display:'flex', alignItems:'flex-start', gap:12}}>
+                          <span style={{fontSize:22, lineHeight:1, flexShrink:0}}>{total === 0 ? '✅' : '📋'}</span>
+                          <div>
+                            <div style={{fontSize:13, fontWeight:700, color:'#5d4037', marginBottom:3}}>
+                              {total === 0 ? 'Tudo dentro do esperado' : 'Indicadores em observação'}
                             </div>
-                            <div style={{display:'flex',flexWrap:'wrap',gap:'8px'}}>
-                              {[...criticals, ...warnings].map((alerta, i) => {
-                                const ct = cleanTitle(alerta.titulo);
-                                const mv = extractVal(alerta.titulo);
-                                const isCritical = alerta.tipo === 'critical';
-                                return (
-                                  <div key={i} style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'7px 13px',borderRadius:'20px',background: isCritical ? '#fff1f0' : '#fffbeb',border:`1.5px solid ${isCritical ? '#fca5a5' : '#fcd34d'}`}}>
-                                    <span style={{fontSize:'13px'}}>{isCritical ? '🔴' : '🟡'}</span>
-                                    <span style={{fontSize:'12px',fontWeight:700,color: isCritical ? '#b91c1c' : '#92400e'}}>{ct}{mv ? ` — ${mv}` : ''}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
+                            <p style={{fontSize:12, color:'#8a7a6a', margin:0, lineHeight:1.6}}>
+                              {total === 0
+                                ? 'Os indicadores desta escola estão dentro das faixas de referência. Continue acompanhando a evolução nos cards abaixo.'
+                                : total === 1
+                                  ? 'Um indicador merece acompanhamento ao longo do tempo. Veja o contexto completo e a comparação com outras escolas nos cards abaixo.'
+                                  : `${total} indicadores merecem acompanhamento ao longo do tempo. Veja o contexto completo e a comparação com outras escolas nos cards abaixo.`
+                              }
+                            </p>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-3 p-4 rounded-xl" style={{margin:'20px 0 0',background:'#eef7f1',border:'1px solid #c7e8d6'}}>
-                            <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
-                            <p style={{fontSize:'13px',color:'#2f7a58',margin:0}}>Diretora, os indicadores desta escola estão dentro das faixas esperadas!</p>
-                          </div>
-                        )}
+                        </div>
 
                         {/* Indicadores com comparação nacional */}
                         {Object.keys(indicadoresLatest).length > 0 && (
