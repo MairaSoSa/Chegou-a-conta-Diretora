@@ -836,24 +836,34 @@ export default function Dashboard() {
       }).filter(Boolean) as any[],
       inse: anos.map((a: number) => {
         const ins = indicadores[a]?.inse;
-        if (!ins) return { ano: a };
+        if (!ins) return null;
+        const media = ins.media_inse ?? ins.valor ?? null;
+        // INSE não é anual — só incluir anos com dado real publicado
+        if (media == null) return null;
         return {
           ano: a,
-          media: ins.media_inse ?? ins.valor ?? null,
+          media,
           classificacao: ins.inse_classificacao ?? ins.nivel_inse ?? null,
           qtd_alunos: ins.qtd_alunos_inse ?? null,
-          // distribuição pelos 8 níveis INSE (% dos alunos)
           n1: ins.pc_nivel_1 ?? null, n2: ins.pc_nivel_2 ?? null,
           n3: ins.pc_nivel_3 ?? null, n4: ins.pc_nivel_4 ?? null,
           n5: ins.pc_nivel_5 ?? null, n6: ins.pc_nivel_6 ?? null,
           n7: ins.pc_nivel_7 ?? null, n8: ins.pc_nivel_8 ?? null,
         };
-      }),
+      }).filter(Boolean) as any[],
       saeb: anos.map((a: number) => {
         const s = indicadores[a]?.saeb;
-        if (!s) return { ano: a };
-        return { ano: a, mt_ai: s.nota_mt_ai ?? null, lp_ai: s.nota_lp_ai ?? null, mt_af: s.nota_mt_af ?? null, lp_af: s.nota_lp_af ?? null, mt_em: s.nota_mt_em ?? null, lp_em: s.nota_lp_em ?? null };
-      }),
+        if (!s) return null;
+        const mt_ai = s.nota_mt_ai ?? null;
+        const lp_ai = s.nota_lp_ai ?? null;
+        const mt_af = s.nota_mt_af ?? null;
+        const lp_af = s.nota_lp_af ?? null;
+        const mt_em = s.nota_mt_em ?? null;
+        const lp_em = s.nota_lp_em ?? null;
+        // SAEB é bienal — só incluir anos com proficiência real publicada
+        if (mt_ai == null && lp_ai == null && mt_af == null && lp_af == null && mt_em == null && lp_em == null) return null;
+        return { ano: a, mt_ai, lp_ai, mt_af, lp_af, mt_em, lp_em };
+      }).filter(Boolean) as any[],
       ied: anos.map((a: number) => {
         const ie = indicadores[a]?.ied;
         if (!ie) return { ano: a };
