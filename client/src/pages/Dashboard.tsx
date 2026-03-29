@@ -1803,6 +1803,52 @@ export default function Dashboard() {
                   </div>
                 </section>
 
+                {/* ── NAVEGAÇÃO DE SEÇÕES ── */}
+                <div style={{ margin: '20px 0 8px' }}>
+                  <div style={{ fontWeight: 800, fontSize: 11, color: '#9a7a5a', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 12 }}>
+                    Seções do painel
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))', gap: 9 }}>
+                    {([
+                      { id: 'sec-ficha',      icon: <School size={15} />,        title: 'Ficha da escola',    desc: 'Identidade e organização',            bg: '#e6eef8', border: '#b8cfe8', color: '#1e4a78' },
+                      { id: 'sec-desempenho', icon: <BarChart3 size={15} />,      title: 'Desempenho',         desc: 'SAEB, aprovação e abandono',          bg: '#fdf3e0', border: '#f0ddb5', color: '#7a4a10' },
+                      { id: 'sec-tnr',        icon: <AlertTriangle size={15} />,  title: 'Não Resposta',       desc: 'Taxa de não resposta ao SAEB',        bg: '#fdf0f0', border: '#f5c6c6', color: '#b74f42' },
+                      { id: 'sec-inse',       icon: <Scale size={15} />,          title: 'INSE',               desc: 'Nível socioeconômico',                bg: '#f3eeff', border: '#d4c4f5', color: '#5b3fa8' },
+                      { id: 'sec-tdi',        icon: <CalendarDays size={15} />,   title: 'Distorção Idade-Série', desc: 'Defasagem escolar',               bg: '#e8f5ee', border: '#b8dfc8', color: '#2f7a58' },
+                      { id: 'sec-matriculas', icon: <Users size={15} />,          title: 'Matrículas',         desc: 'Por etapa de ensino',                 bg: '#f0fdf4', border: '#bbf7d0', color: '#166534' },
+                      { id: 'sec-estrutura',  icon: <Building2 size={15} />,      title: 'Estrutura',          desc: 'Turmas, espaços e equipe',            bg: '#f1f5f9', border: '#cbd5e1', color: '#334155' },
+                      { id: 'sec-ied',        icon: <Wrench size={15} />,         title: 'Esforço Docente',    desc: 'Índice de esforço (IED)',             bg: '#fefce8', border: '#fde68a', color: '#854d0e' },
+                      { id: 'sec-afd',        icon: <GraduationCap size={15} />,  title: 'Formação Docente',   desc: 'Adequação da formação (AFD)',         bg: '#e6eef8', border: '#b8cfe8', color: '#1e4a78' },
+                      { id: 'sec-atu',        icon: <Users size={15} />,          title: 'Alunos por Turma',   desc: 'Média de alunos (ATU)',               bg: '#fdf3e0', border: '#f0ddb5', color: '#9b6a16' },
+                      { id: 'sec-had',        icon: <Clock size={15} />,          title: 'Horas-Aula',         desc: 'Horas-aula diárias (HAD)',            bg: '#fff7ed', border: '#fed7aa', color: '#9a3412' },
+                      { id: 'sec-retrato',    icon: <BookOpen size={15} />,       title: 'Retrato da escola',  desc: 'Evolução histórica do Censo',         bg: '#faf7f2', border: '#e8dfc8', color: '#5d4037' },
+                      { id: 'sec-pdde',       icon: <DollarSign size={15} />,     title: 'PDDE',               desc: 'Dados financeiros',                   bg: '#e8f5ee', border: '#b8dfc8', color: '#1f6b45' },
+                    ] as const).map(card => (
+                      <button
+                        key={card.id}
+                        onClick={() => { const el = document.getElementById(card.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                        style={{
+                          display: 'flex', flexDirection: 'column', gap: 4,
+                          padding: '11px 13px',
+                          background: card.bg,
+                          border: `1.5px solid ${card.border}`,
+                          borderRadius: 13,
+                          cursor: 'pointer', textAlign: 'left',
+                          transition: 'box-shadow 0.15s, transform 0.15s',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 5px 14px rgba(0,0,0,0.11)'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ''; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'; }}
+                      >
+                        <div style={{ color: card.color, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {card.icon}
+                          <span style={{ fontSize: 11, fontWeight: 800, color: card.color, lineHeight: 1.2 }}>{card.title}</span>
+                        </div>
+                        <p style={{ fontSize: 10, color: card.color, opacity: 0.65, margin: 0, lineHeight: 1.35 }}>{card.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 {/* ── PAINÉIS DE CONTEXTO: EQUIPAMENTOS PÚBLICOS + SUPORTE INSTITUCIONAL ── */}
                 {(() => {
@@ -2491,7 +2537,7 @@ out center tags 100;`;
                 <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap', marginTop: '22px' }}>
 
                   {/* FICHA GERAL */}
-                  <section className="section" style={{ flex: '1 1 0', minWidth: '220px', marginTop: 0 }}>
+                  <section id="sec-ficha" className="section" style={{ flex: '1 1 0', minWidth: '220px', marginTop: 0, scrollMarginTop: 70 }}>
                     <div className="section-title">
                       <div><h2>Ficha geral da escola</h2><p>Identidade e vida organizacional</p></div>
                     </div>
@@ -2672,7 +2718,7 @@ out center tags 100;`;
                     { key: 'lp_em', label: 'Língua Port.', sub: 'Ens. Médio', color: '#9b6a16' },
                   ].filter(m => saebLatest && saebLatest[m.key] != null);
                   return (
-                    <section className="section">
+                    <section id="sec-desempenho" className="section" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div><h2>Desempenho escolar</h2><p>Notas do SAEB e taxas de aprovação, reprovação e abandono</p></div>
                       </div>
@@ -2888,7 +2934,7 @@ out center tags 100;`;
                   const gradesDisponiveis = seg ? seg.grades.filter(g => latest[g.key] != null) : [];
 
                   return (
-                    <section className="section">
+                    <section id="sec-tnr" className="section" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Taxa de Não Resposta</h2>
@@ -3025,7 +3071,7 @@ out center tags 100;`;
                   if (niveis.length === 0) return null;
 
                   return (
-                    <section className="section">
+                    <section id="sec-inse" className="section" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>INSE — Distribuição dos Estudantes por Nível Socioeconômico</h2>
@@ -3131,7 +3177,7 @@ out center tags 100;`;
                   const gradesDisponiveis = seg ? seg.grades.filter(g => latest[g.key] != null) : [];
 
                   return (
-                    <section className="section">
+                    <section id="sec-tdi" className="section" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Distorção Idade-Série</h2>
@@ -3258,7 +3304,7 @@ out center tags 100;`;
                   const anosDisp = (evolucaoData.anos_disponiveis as number[]).filter((a: number) => a >= 2020).sort((a, b) => a - b);
                   const hasHistorico = anosDisp.length > 1;
                   return (
-                    <section className="section">
+                    <section id="sec-matriculas" className="section" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Matrículas por etapa</h2>
@@ -3439,7 +3485,7 @@ out center tags 100;`;
                     );
                   };
                   return (
-                    <section className="section">
+                    <section id="sec-estrutura" className="section" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div><h2>Estrutura e recursos</h2><p>Turmas, equipe docente e espaços físicos por etapa</p></div>
                       </div>
@@ -3521,7 +3567,7 @@ out center tags 100;`;
                   const pct = (v: any) => v != null ? `${Number(v).toFixed(1)}%` : '—';
 
                   return (
-                    <section className="section">
+                    <section id="sec-ied" className="section" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Esforço Docente (IED)</h2>
@@ -3687,7 +3733,7 @@ out center tags 100;`;
                   ].filter(e => e.hasData);
 
                   return (
-                    <section className="section">
+                    <section id="sec-afd" className="section" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Adequação da Formação Docente (AFD)</h2>
@@ -3908,7 +3954,7 @@ out center tags 100;`;
                   const atuAlert = (v: any) => v != null && Number(v) > 35;
 
                   return (
-                    <section className="section">
+                    <section id="sec-atu" className="section" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Média de Alunos por Turma (ATU)</h2>
@@ -4123,7 +4169,7 @@ out center tags 100;`;
                   const allCols = grupos.flatMap(g => g.cols);
 
                   return (
-                    <section className="section">
+                    <section id="sec-had" className="section" style={{ scrollMarginTop: 70 }}>
                       <div className="section-title">
                         <div>
                           <h2>Horas-Aula Diárias (HAD)</h2>
@@ -4258,7 +4304,7 @@ out center tags 100;`;
                 })()}
 
                 {/* ── RETRATO DA ESCOLA — GRÁFICOS + 3 CAMADAS × 10 DIMENSÕES ── */}
-                <section className="section">
+                <section id="sec-retrato" className="section" style={{ scrollMarginTop: 70 }}>
                   <div className="section-title">
                     <div><h2>Retrato da escola</h2><p>Evolução visual e dados detalhados do Censo Escolar ao longo dos anos</p></div>
                   </div>
@@ -5245,7 +5291,7 @@ out center tags 100;`;
                 </section>
 
                 {/* ── DADOS FINANCEIROS PDDE ── */}
-                <section className="section">
+                <section id="sec-pdde" className="section" style={{ scrollMarginTop: 70 }}>
                   <div className="section-title">
                     <div><h2>Dados financeiros PDDE</h2><p>Situação financeira e repasses do Programa Dinheiro Direto na Escola</p></div>
                   </div>
