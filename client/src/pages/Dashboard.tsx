@@ -5418,26 +5418,91 @@ out center tags 100;`;
                         )}
                         {pddeData?.ok && pddeData.matriculas_total != null && (() => {
                           const pddeAlunos = Number(pddeData.matriculas_total);
-                          const censoAlunos = censoLatest ? (Number((censoLatest as any).qt_mat_bas) || null) : null;
-                          const diff = censoAlunos != null ? pddeAlunos - censoAlunos : null;
+                          const cens = censoLatest as any;
+                          const censoAlunos = cens ? (Number(cens.qt_mat_bas) || null) : null;
+                          const totalDiff = censoAlunos != null ? pddeAlunos - censoAlunos : null;
+                          // Mapeamento nível PDDE → campo censo
+                          const nivelCenso: Record<string, string | null> = {
+                            'ENSINO FUNDAMENTAL': 'qt_mat_fund',
+                            'ENSINO MÉDIO':       'qt_mat_med',
+                            'EJA':                'qt_mat_eja',
+                            'PRÉ-ESCOLAR':        'qt_mat_inf',
+                            'CRECHE':             'qt_mat_inf',
+                          };
+                          const niveis: [string, number][] = pddeData.matriculas_por_nivel
+                            ? Object.entries(pddeData.matriculas_por_nivel as Record<string, number>)
+                            : [];
                           return (
-                            <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #9b6a16',display:'flex',flexDirection:'column',gap:'4px'}}>
+                            <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #9b6a16',display:'flex',flexDirection:'column',gap:'4px',gridColumn: niveis.length > 0 ? 'span 2' : undefined}}>
                               <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#9b6a16'}}>Alunos (PDDE)</span>
-                              <span style={{fontSize:'20px',fontWeight:800,color:'#9b6a16',fontVariantNumeric:'tabular-nums'}}>{pddeAlunos.toLocaleString('pt-BR')}</span>
-                              <span style={{fontSize:'11px',color:'var(--m-muted)'}}>base de cálculo {pddeData.ano}</span>
-                              {censoAlunos != null && (
+                              <div style={{display:'flex',alignItems:'baseline',gap:'8px'}}>
+                                <span style={{fontSize:'20px',fontWeight:800,color:'#9b6a16',fontVariantNumeric:'tabular-nums'}}>{pddeAlunos.toLocaleString('pt-BR')}</span>
+                                <span style={{fontSize:'11px',color:'var(--m-muted)'}}>base de cálculo {pddeData.ano}</span>
+                              </div>
+                              {/* Breakdown por nível com comparação Censo */}
+                              {niveis.length > 0 && (
+                                <div style={{marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #f0e8d8'}}>
+                                  <table style={{width:'100%',borderCollapse:'collapse',fontSize:'11px'}}>
+                                    <thead>
+                                      <tr>
+                                        <th style={{textAlign:'left',fontWeight:700,fontSize:'9px',textTransform:'uppercase',color:'#9b6a16',paddingBottom:'4px',letterSpacing:'0.06em'}}>Nível</th>
+                                        <th style={{textAlign:'right',fontWeight:700,fontSize:'9px',textTransform:'uppercase',color:'#9b6a16',paddingBottom:'4px',letterSpacing:'0.06em'}}>PDDE</th>
+                                        <th style={{textAlign:'right',fontWeight:700,fontSize:'9px',textTransform:'uppercase',color:'#7a7a7a',paddingBottom:'4px',letterSpacing:'0.06em'}}>Censo INEP</th>
+                                        <th style={{textAlign:'right',fontWeight:700,fontSize:'9px',textTransform:'uppercase',color:'#7a7a7a',paddingBottom:'4px',letterSpacing:'0.06em'}}>Dif.</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {niveis.map(([key, val]) => {
+                                        const censoKey = nivelCenso[key.toUpperCase()] ?? null;
+                                        const censoVal = (censoKey && cens) ? (Number(cens[censoKey]) || null) : null;
+                                        const d = censoVal != null ? val - censoVal : null;
+                                        const dColor = d == null ? '#aaa' : d === 0 ? '#2f7a58' : Math.abs(d) > 15 ? '#b74f42' : '#9b6a16';
+                                        return (
+                                          <tr key={key} style={{borderTop:'1px solid #f5edd8'}}>
+                                            <td style={{padding:'3px 0',color:'var(--m-muted)',fontWeight:500}}>{key.replace('ENSINO ','')}</td>
+                                            <td style={{textAlign:'right',fontWeight:700,color:'#555',fontVariantNumeric:'tabular-nums',padding:'3px 0'}}>{Number(val).toLocaleString('pt-BR')}</td>
+                                            <td style={{textAlign:'right',color:'#555',fontVariantNumeric:'tabular-nums',padding:'3px 0 3px 8px'}}>
+                                              {censoVal != null ? censoVal.toLocaleString('pt-BR') : <span style={{color:'#ccc'}}>—</span>}
+                                            </td>
+                                            <td style={{textAlign:'right',fontWeight:700,color:dColor,fontVariantNumeric:'tabular-nums',padding:'3px 0 3px 8px'}}>
+                                              {d != null ? (d === 0 ? '=' : (d > 0 ? `+${d}` : d)) : '—'}
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                      {/* Linha de total */}
+                                      <tr style={{borderTop:'2px solid #e8d8c0'}}>
+                                        <td style={{padding:'4px 0',fontWeight:700,color:'#9b6a16',fontSize:'11px'}}>TOTAL</td>
+                                        <td style={{textAlign:'right',fontWeight:800,color:'#9b6a16',fontVariantNumeric:'tabular-nums',padding:'4px 0'}}>{pddeAlunos.toLocaleString('pt-BR')}</td>
+                                        <td style={{textAlign:'right',fontWeight:700,color:'#555',fontVariantNumeric:'tabular-nums',padding:'4px 0 4px 8px'}}>
+                                          {censoAlunos != null ? censoAlunos.toLocaleString('pt-BR') : <span style={{color:'#ccc'}}>—</span>}
+                                        </td>
+                                        <td style={{textAlign:'right',fontWeight:800,fontVariantNumeric:'tabular-nums',padding:'4px 0 4px 8px',
+                                            color: totalDiff == null ? '#aaa' : totalDiff === 0 ? '#2f7a58' : Math.abs(totalDiff) > 20 ? '#b74f42' : '#9b6a16'}}>
+                                          {totalDiff != null ? (totalDiff === 0 ? '=' : totalDiff > 0 ? `+${totalDiff}` : totalDiff) : '—'}
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                  {totalDiff != null && Math.abs(totalDiff) > 20 && (
+                                    <p style={{fontSize:'10px',color:'#b74f42',marginTop:'6px',marginBottom:0}}>
+                                      Diferença expressiva — verifique o Censo e o cadastro FNDE
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                              {/* Fallback sem breakdown */}
+                              {niveis.length === 0 && censoAlunos != null && (
                                 <div style={{marginTop:'6px',paddingTop:'6px',borderTop:'1px solid #f0e8d8',display:'flex',flexDirection:'column',gap:'2px'}}>
                                   <span style={{fontSize:'10px',color:'var(--m-muted)'}}>
                                     Censo INEP: <strong style={{color:'#555'}}>{censoAlunos.toLocaleString('pt-BR')}</strong> alunos
                                   </span>
-                                  {diff !== null && diff !== 0 && (
-                                    <span style={{fontSize:'10px',color: Math.abs(diff) > 20 ? '#b74f42' : '#9b6a16'}}>
-                                      {diff > 0 ? `+${diff}` : diff} em relação ao Censo{Math.abs(diff) > 20 ? ' — verifique' : ''}
+                                  {totalDiff !== null && totalDiff !== 0 && (
+                                    <span style={{fontSize:'10px',color: Math.abs(totalDiff) > 20 ? '#b74f42' : '#9b6a16'}}>
+                                      {totalDiff > 0 ? `+${totalDiff}` : totalDiff} em relação ao Censo{Math.abs(totalDiff) > 20 ? ' — verifique' : ''}
                                     </span>
                                   )}
-                                  {diff === 0 && (
-                                    <span style={{fontSize:'10px',color:'#2f7a58'}}>coincide com o Censo</span>
-                                  )}
+                                  {totalDiff === 0 && <span style={{fontSize:'10px',color:'#2f7a58'}}>coincide com o Censo</span>}
                                 </div>
                               )}
                             </div>
