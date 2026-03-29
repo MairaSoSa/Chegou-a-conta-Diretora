@@ -362,6 +362,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
+    if (pddeData?.ok) return; // ano atual tem dados — mantém
     const anos = new Set<number>();
     pddeSaldosData?.saldos?.forEach((s: any) => { if (s.an_exercicio) anos.add(Number(s.an_exercicio)); });
     pddeExecFinData?.anosDisponiveis?.forEach((a: number) => anos.add(a));
@@ -369,7 +370,7 @@ export default function Dashboard() {
       const melhor = Math.max(...Array.from(anos));
       setPddeAno(melhor);
     }
-  }, [pddeSaldosData, pddeExecFinData]);
+  }, [pddeSaldosData, pddeExecFinData, pddeData]);
 
   useEffect(() => {
     setPddeAno(new Date().getFullYear());
