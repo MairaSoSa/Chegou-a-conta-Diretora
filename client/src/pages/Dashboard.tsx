@@ -2572,23 +2572,13 @@ out center tags 100;`;
                         )}
 
                         {/* Diagnóstico */}
-                        {diagnosticoData && (diagnosticoData.pontos_fortes.length > 0 || diagnosticoData.pontos_atencao.length > 0 || diagnosticoData.leituras.length > 0) && (
+                        {diagnosticoData && (diagnosticoData.pontos_fortes.length > 0 || diagnosticoData.leituras.length > 0) && (
                           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:'14px',marginTop:'16px'}}>
                             {diagnosticoData.pontos_fortes.length > 0 && (
                               <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #2f7a58'}}>
                                 <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#2f7a58'}}>✅ Pontos fortes</div>
                                 <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
                                   {diagnosticoData.pontos_fortes.map((p: string, i: number) => (
-                                    <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            {diagnosticoData.pontos_atencao.length > 0 && (
-                              <div className="soft-card" style={{padding:'16px 18px',borderLeft:'3px solid #c0392b'}}>
-                                <div style={{fontWeight:700,fontSize:'13px',marginBottom:'10px',color:'#c0392b'}}>⚠️ Pontos de atenção</div>
-                                <ul style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:'7px'}}>
-                                  {diagnosticoData.pontos_atencao.map((p: string, i: number) => (
                                     <li key={i} style={{fontSize:'13px',lineHeight:1.4,color:'var(--m-text)'}}>{p}</li>
                                   ))}
                                 </ul>
