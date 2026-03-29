@@ -5804,19 +5804,27 @@ out center tags 100;`;
                                 <span className="text-xs font-semibold font-mono">{c.conta || '—'}</span>
                               </div>
                               {c.saldo != null && (
-                                <div style={{marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #f0ece4'}}>
-                                  <span className="text-xs text-muted-foreground">
-                                    {modalidades.length === 1 ? `Saldo em ${modalidades[0].label}` : 'Saldo total'}
-                                  </span>
-                                  <p style={{fontSize:'16px',fontWeight:800,color: c.saldo > 0 ? '#16a34a' : 'var(--m-muted)'}}>{brl(c.saldo)}</p>
-                                  {modalidades.length > 1 && (
-                                    <div style={{display:'flex',flexWrap:'wrap',gap:'6px',marginTop:'6px'}}>
+                                <div style={{marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #f0ece4',display:'flex',flexDirection:'column',gap:'3px'}}>
+                                  {modalidades.length > 1 ? (
+                                    <>
                                       {modalidades.map(m => (
-                                        <span key={m.label} style={{fontSize:'10px',background:'#e8f5ee',color:'#1a5c38',borderRadius:'6px',padding:'2px 7px',fontWeight:600}}>
-                                          {m.label}: {brl(m.value)}
-                                        </span>
+                                        <div key={m.label} className="row-item" style={{padding:0}}>
+                                          <span className="text-xs text-muted-foreground">{m.label}</span>
+                                          <span className="text-xs font-semibold font-mono" style={{color:'#16a34a'}}>{brl(m.value)}</span>
+                                        </div>
                                       ))}
-                                    </div>
+                                      <div style={{borderTop:'1px solid #f0ece4',paddingTop:'4px',marginTop:'2px'}}>
+                                        <span className="text-xs text-muted-foreground">Total</span>
+                                        <p style={{fontSize:'16px',fontWeight:800,color:'#16a34a',margin:0}}>{brl(c.saldo)}</p>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="text-xs text-muted-foreground">
+                                        {modalidades.length === 1 ? `Saldo em ${modalidades[0].label}` : 'Saldo'}
+                                      </span>
+                                      <p style={{fontSize:'16px',fontWeight:800,color: c.saldo > 0 ? '#16a34a' : 'var(--m-muted)',margin:0}}>{brl(c.saldo)}</p>
+                                    </>
                                   )}
                                 </div>
                               )}
