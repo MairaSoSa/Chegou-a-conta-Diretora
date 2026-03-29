@@ -2509,7 +2509,7 @@ out center tags 100;`;
                           <div className="hint-chip">Gestão · Desempenho</div>
                         </div>
                         <div className="organic-divider" />
-                        <div className="summary-grid">
+                        <div className="summary-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
                           {METRICS.map((m, i) => {
                             const delta = m.prev !== null && typeof m.val === 'number' ? (m.val as number) - (m.prev as number) : null;
                             const pctDelta = delta !== null && typeof m.prev === 'number' && m.prev > 0
