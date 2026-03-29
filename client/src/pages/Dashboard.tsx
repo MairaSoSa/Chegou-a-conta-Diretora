@@ -5407,8 +5407,9 @@ out center tags 100;`;
                     );
                   })()}
 
-                  {/* ── ALERTA: ESCOLA SEM UEx ── */}
+                  {/* ── ALERTA: ESCOLA SEM UEx (só exibe se o FNDE não trouxe dados reais) ── */}
                   {pddeData?.ok && !pddeData?.uex &&
+                   !suspEscola.loading && suspEscola.itens.length === 0 &&
                    (pddeData?.destinacoes?.length ?? 0) > 0 &&
                    pddeData.destinacoes!.every((d: any) => (d.pago_total ?? 0) === 0) && (() => {
                     const totalDevido = pddeData.destinacoes!.reduce((s: number, d: any) => s + (d.devido_total ?? 0), 0);
@@ -5449,8 +5450,8 @@ out center tags 100;`;
                     );
                   })()}
 
-                  {/* ── ALERTA: UEx COM PENDÊNCIAS (tem UEx mas tem problemas) ── */}
-                  {pddeData?.ok && pddeData?.uex && (() => {
+                  {/* ── ALERTA: UEx COM PENDÊNCIAS (só exibe se o FNDE não trouxe dados reais) ── */}
+                  {pddeData?.ok && pddeData?.uex && !suspEscola.loading && suspEscola.itens.length === 0 && (() => {
                     const mandatoFimStr = cadastralData?.itens?.[0]?.data_fim_mandato || pddeData?.situacao_uex?.mandato_fim || null;
                     const fimDate = mandatoFimStr ? (() => {
                       const [dd, mm, aaaa] = mandatoFimStr.split('/');
