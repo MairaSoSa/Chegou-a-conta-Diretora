@@ -5773,11 +5773,15 @@ out center tags 100;`;
                     <div style={{marginBottom:'16px'}}>
                       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'8px',flexWrap:'wrap',gap:'4px'}}>
                         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1" style={{margin:0}}>
-                          <BanknoteIcon className="w-3.5 h-3.5" /> Contas bancárias — {pddeData.ano}
+                          <BanknoteIcon className="w-3.5 h-3.5" /> Contas bancárias
                         </p>
-                        {pddeData._cached_at && (
+                        {pddeUexSaldoData?.ok && pddeUexSaldoData.mes && (
                           <span style={{fontSize:'10px',color:'#9b8877',fontStyle:'italic'}}>
-                            Última atualização: {new Date(pddeData._cached_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+                            Posição FNDE: {(() => {
+                              const [mm, aaaa] = (pddeUexSaldoData.mes as string).split('-');
+                              const meses = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+                              return `${meses[parseInt(mm)] || mm}/${aaaa}`;
+                            })()}
                           </span>
                         )}
                       </div>
