@@ -4695,11 +4695,19 @@ out center tags 100;`;
                           </div>
                         );
                         const hasData = enriched.some(er => er.kind === 'data');
+                        const semLabels = enriched.filter(er => er.kind === 'sem').flatMap((er: any) => er.labels as string[]);
                         if (title) {
                           if (!hasData) return (
-                            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 20px', background:'#f7f6f3', borderBottom:'1px dashed #ddd6c8', marginBottom:4, opacity:0.6, cursor:'default' }}>
-                              <span style={{ fontWeight:700, fontSize:13, color:'#c0b8ae' }}>{title}</span>
-                              <span style={{ fontSize:10, fontWeight:700, color:'#c8c0b8', background:'#eae8e4', padding:'2px 9px', borderRadius:20, letterSpacing:'0.05em', textTransform:'uppercase' }}>sem dados</span>
+                            <div style={{ padding:'10px 20px', background:'#f7f6f3', borderBottom:'1px dashed #ddd6c8', marginBottom:4, opacity:0.6, cursor:'default' }}>
+                              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: semLabels.length > 0 ? 5 : 0 }}>
+                                <span style={{ fontWeight:700, fontSize:13, color:'#c0b8ae' }}>{title}</span>
+                                <span style={{ fontSize:10, fontWeight:700, color:'#c8c0b8', background:'#eae8e4', padding:'2px 9px', borderRadius:20, letterSpacing:'0.05em', textTransform:'uppercase' }}>sem dados</span>
+                              </div>
+                              {semLabels.length > 0 && (
+                                <p style={{ margin:0, fontSize:11, color:'#c0b8ae', lineHeight:'1.6' }}>
+                                  <span style={{ fontWeight:700 }}>Sem: </span>{semLabels.join(' · ')}
+                                </p>
+                              )}
                             </div>
                           );
                           return (
