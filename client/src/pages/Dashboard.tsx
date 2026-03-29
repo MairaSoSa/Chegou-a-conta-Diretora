@@ -5624,45 +5624,6 @@ out center tags 100;`;
                     </div>
                   )}
 
-                  {/* ── 4. REPASSES POR PROGRAMA ── */}
-                  {atendimentoData?.ok && atendimentoData.itens.length > 0 && (
-                    <div style={{marginBottom:'16px'}}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <Wallet className="w-3.5 h-3.5" /> Repasses por Programa — {atendimentoData.itens[0]?.ano || pddeAno}
-                      </p>
-                      <div className="table-card" style={{overflowX:'auto'}}>
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Destinação</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Alunos</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Custeio</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Capital</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Pgto.</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {atendimentoData.itens.map((item: any, i: number) => {
-                              const t = (item.vl_repasse_custeio || 0) + (item.vl_repasse_capital || 0);
-                              return (
-                                <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                  <td className="py-2 px-3 text-xs font-medium">{item.ds_programa || item.programa}</td>
-                                  <td className="py-2 px-3 text-xs">{item.destinacao || '—'}</td>
-                                  <td className="py-2 px-3 text-xs text-right">{item.qtd_alunos ? Number(item.qtd_alunos).toLocaleString('pt-BR') : '—'}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono">{brl(item.vl_repasse_custeio || 0)}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono">{brl(item.vl_repasse_capital || 0)}</td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{brl(t)}</td>
-                                  <td className="py-2 px-3 text-xs text-muted-foreground">{item.data_ordem_pgto || '—'}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
 
                   {/* ── 4b. DESTINAÇÕES (TABELA) ── */}
                   {pddeData?.ok && pddeData.destinacoes && pddeData.destinacoes.length > 0 && (() => {
