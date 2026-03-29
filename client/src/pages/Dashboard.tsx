@@ -5658,12 +5658,6 @@ out center tags 100;`;
                             <span style={{fontSize:'11px',color:'var(--m-muted)'}}>repasses {atendimentoData?.itens?.[0]?.ano || pddeAno}</span>
                           </div>
                         )}
-                        {totalSaldo != null && (
-                          <div className="soft-card" style={{padding:'16px',borderLeft:'3px solid #2d5a88',display:'flex',flexDirection:'column',gap:'4px'}}>
-                            <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:'#2d5a88'}}>Saldo Atual</span>
-                            <span style={{fontSize:'20px',fontWeight:800,color:'#2d5a88',fontVariantNumeric:'tabular-nums'}}>{brl(totalSaldo)}</span>
-                          </div>
-                        )}
                         {pddeData?.ok && pddeData.matriculas_total != null && (() => {
                           const pddeAlunos = Number(pddeData.matriculas_total);
                           const cens = censoLatest as any;
