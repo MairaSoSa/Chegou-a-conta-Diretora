@@ -5769,7 +5769,7 @@ out center tags 100;`;
                           {(() => {
                             const [mm, aaaa] = (pddeUexSaldoData.mes as string).split('-');
                             const meses = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-                            return `posição ${meses[parseInt(mm)] || mm}/${aaaa}`;
+                            return `atualizado em ${meses[parseInt(mm)] || mm}/${aaaa}`;
                           })()}
                         </span>
                       )}
