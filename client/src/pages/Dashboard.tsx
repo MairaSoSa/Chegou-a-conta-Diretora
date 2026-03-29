@@ -4596,12 +4596,22 @@ out center tags 100;`;
                           return !vals.every((v: any) => v == null || v === 0);
                         });
                         if (title) {
-                          if (!hasData) return (
-                            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 20px', background:'#f7f6f3', borderBottom:'1px dashed #ddd6c8', marginBottom:4, opacity:0.6, cursor:'default' }}>
-                              <span style={{ fontWeight:700, fontSize:13, color:'#c0b8ae' }}>{title}</span>
-                              <span style={{ fontSize:10, fontWeight:700, color:'#c8c0b8', background:'#eae8e4', padding:'2px 9px', borderRadius:20, letterSpacing:'0.05em', textTransform:'uppercase' }}>sem dados</span>
-                            </div>
-                          );
+                          if (!hasData) {
+                            const noDataLabels = rows.filter(r => !r.header).map(r => r.label);
+                            return (
+                              <div style={{ padding:'10px 20px', background:'#f7f6f3', borderBottom:'1px dashed #ddd6c8', marginBottom:4, opacity:0.6, cursor:'default' }}>
+                                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: noDataLabels.length > 0 ? 5 : 0 }}>
+                                  <span style={{ fontWeight:700, fontSize:13, color:'#c0b8ae' }}>{title}</span>
+                                  <span style={{ fontSize:10, fontWeight:700, color:'#c8c0b8', background:'#eae8e4', padding:'2px 9px', borderRadius:20, letterSpacing:'0.05em', textTransform:'uppercase' }}>sem dados</span>
+                                </div>
+                                {noDataLabels.length > 0 && (
+                                  <p style={{ margin:0, fontSize:11, color:'#c0b8ae', lineHeight:'1.6' }}>
+                                    {noDataLabels.join(' · ')}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          }
                           return (
                             <details style={{ borderBottom:'1px solid #ede8df', marginBottom:4 }}>
                               <summary style={summaryStyle}><span>{title}</span><span style={{ fontSize:11, color:'#94a3b8', fontWeight:500 }}>clique para ver ▾</span></summary>
@@ -4757,12 +4767,22 @@ out center tags 100;`;
                           return !vals.every((v: any) => v == null);
                         });
                         if (title) {
-                          if (!hasData) return (
-                            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 20px', background:'#f7f6f3', borderBottom:'1px dashed #ddd6c8', marginBottom:4, opacity:0.6, cursor:'default' }}>
-                              <span style={{ fontWeight:700, fontSize:13, color:'#c0b8ae' }}>{title}</span>
-                              <span style={{ fontSize:10, fontWeight:700, color:'#c8c0b8', background:'#eae8e4', padding:'2px 9px', borderRadius:20, letterSpacing:'0.05em', textTransform:'uppercase' }}>sem dados</span>
-                            </div>
-                          );
+                          if (!hasData) {
+                            const noDataLabels = rows.map(r => r.label);
+                            return (
+                              <div style={{ padding:'10px 20px', background:'#f7f6f3', borderBottom:'1px dashed #ddd6c8', marginBottom:4, opacity:0.6, cursor:'default' }}>
+                                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: noDataLabels.length > 0 ? 5 : 0 }}>
+                                  <span style={{ fontWeight:700, fontSize:13, color:'#c0b8ae' }}>{title}</span>
+                                  <span style={{ fontSize:10, fontWeight:700, color:'#c8c0b8', background:'#eae8e4', padding:'2px 9px', borderRadius:20, letterSpacing:'0.05em', textTransform:'uppercase' }}>sem dados</span>
+                                </div>
+                                {noDataLabels.length > 0 && (
+                                  <p style={{ margin:0, fontSize:11, color:'#c0b8ae', lineHeight:'1.6' }}>
+                                    {noDataLabels.join(' · ')}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          }
                           return (
                             <details style={{ borderBottom:'1px solid #ede8df', marginBottom:4 }}>
                               <summary style={summaryStyle}><span>{title}</span><span style={{ fontSize:11, color:'#94a3b8', fontWeight:500 }}>clique para ver ▾</span></summary>
