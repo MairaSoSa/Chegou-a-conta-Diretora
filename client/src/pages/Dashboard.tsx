@@ -5628,11 +5628,12 @@ out center tags 100;`;
                   {/* ── 4b. DESTINAÇÕES (TABELA) ── */}
                   {pddeData?.ok && pddeData.destinacoes && pddeData.destinacoes.length > 0 && (() => {
                     const rows: any[] = pddeData.destinacoes;
-                    // Identifica linhas de subtotal/total
                     const isAgg = (nome: string) => {
                       const n = (nome || '').trim().toLowerCase();
                       return n === 'subtotal' || n === 'total geral';
                     };
+                    const hasAjuste = rows.some((d: any) => !isAgg(d.destinacao || '') && ((d.ajuste_custeio || 0) !== 0 || (d.ajuste_capital || 0) !== 0 || (d.ajuste_total || 0) !== 0));
+                    const hasDevidoDetalhado = rows.some((d: any) => !isAgg(d.destinacao || '') && ((d.devido_custeio || 0) !== 0 || (d.devido_capital || 0) !== 0));
                     return (
                       <div style={{marginBottom:'16px'}}>
                         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
@@ -5643,7 +5644,12 @@ out center tags 100;`;
                             <thead>
                               <tr style={{borderBottom:'2px solid #e8ddd2',background:'#f9f6f0'}}>
                                 <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground" style={{minWidth:'200px'}}>Destinação / Programa</th>
+                                {hasDevidoDetalhado && <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Dev. Custeio</th>}
+                                {hasDevidoDetalhado && <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Dev. Capital</th>}
                                 <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Devido Total</th>
+                                {hasAjuste && <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Aj. Custeio</th>}
+                                {hasAjuste && <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Aj. Capital</th>}
+                                {hasAjuste && <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Aj. Total</th>}
                                 <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Custeio</th>
                                 <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Capital</th>
                                 <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Total</th>
@@ -5670,7 +5676,12 @@ out center tags 100;`;
                                       <td className="py-2 px-3 text-xs font-bold" style={{color: isTotal ? '#2f7a58' : '#6b5e4e',textTransform:'uppercase',letterSpacing:'0.04em'}}>
                                         {isTotal ? 'Total Geral' : 'Subtotal'}
                                       </td>
+                                      {hasDevidoDetalhado && <td className="py-2 px-3 text-xs text-right font-mono" style={{color:'#555'}}>{brl(d.devido_custeio ?? 0)}</td>}
+                                      {hasDevidoDetalhado && <td className="py-2 px-3 text-xs text-right font-mono" style={{color:'#555'}}>{brl(d.devido_capital ?? 0)}</td>}
                                       <td className="py-2 px-3 text-xs text-right font-mono font-semibold" style={{color:'#555'}}>{devido != null ? brl(devido) : '—'}</td>
+                                      {hasAjuste && <td className="py-2 px-3 text-xs text-right font-mono" style={{color:'#555'}}>{brl(d.ajuste_custeio ?? 0)}</td>}
+                                      {hasAjuste && <td className="py-2 px-3 text-xs text-right font-mono" style={{color:'#555'}}>{brl(d.ajuste_capital ?? 0)}</td>}
+                                      {hasAjuste && <td className="py-2 px-3 text-xs text-right font-mono" style={{color:'#555'}}>{brl(d.ajuste_total ?? 0)}</td>}
                                       <td className="py-2 px-3 text-xs text-right font-mono" style={{color:'#555'}}>{pagoCusteio != null ? brl(pagoCusteio) : '—'}</td>
                                       <td className="py-2 px-3 text-xs text-right font-mono" style={{color:'#555'}}>{pagoCapital != null ? brl(pagoCapital) : '—'}</td>
                                       <td className="py-2 px-3 text-xs text-right font-mono font-bold" style={{color: isTotal ? '#2f7a58' : '#555'}}>{pagoTotal != null ? brl(pagoTotal) : '—'}</td>
@@ -5678,7 +5689,6 @@ out center tags 100;`;
                                     </tr>
                                   );
                                 }
-                                // Linha normal — extrair programa e ação
                                 const partes = nome.split(' / ');
                                 const programa = partes[0] || nome;
                                 const acao = partes.slice(1).join(' / ') || null;
@@ -5688,7 +5698,12 @@ out center tags 100;`;
                                       <span style={{fontWeight:600,color:'#3a3028',display:'block'}}>{acao || programa}</span>
                                       {acao && <span style={{fontSize:'10px',color:'#9b6a16',fontWeight:600,display:'block',marginTop:'1px'}}>{programa}</span>}
                                     </td>
+                                    {hasDevidoDetalhado && <td className="py-2 px-3 text-xs text-right font-mono text-muted-foreground">{brl(d.devido_custeio ?? 0)}</td>}
+                                    {hasDevidoDetalhado && <td className="py-2 px-3 text-xs text-right font-mono text-muted-foreground">{brl(d.devido_capital ?? 0)}</td>}
                                     <td className="py-2 px-3 text-xs text-right font-mono" style={{color: pendente ? '#b74f42' : '#888'}}>{devido != null ? brl(devido) : '—'}</td>
+                                    {hasAjuste && <td className="py-2 px-3 text-xs text-right font-mono text-muted-foreground">{brl(d.ajuste_custeio ?? 0)}</td>}
+                                    {hasAjuste && <td className="py-2 px-3 text-xs text-right font-mono text-muted-foreground">{brl(d.ajuste_capital ?? 0)}</td>}
+                                    {hasAjuste && <td className="py-2 px-3 text-xs text-right font-mono text-muted-foreground">{brl(d.ajuste_total ?? 0)}</td>}
                                     <td className="py-2 px-3 text-xs text-right font-mono text-muted-foreground">{brl(pagoCusteio)}</td>
                                     <td className="py-2 px-3 text-xs text-right font-mono text-muted-foreground">{brl(pagoCapital)}</td>
                                     <td className="py-2 px-3 text-xs text-right font-mono font-bold" style={{color: pagoTotal > 0 ? '#16a34a' : 'var(--m-muted)'}}>{brl(pagoTotal)}</td>
