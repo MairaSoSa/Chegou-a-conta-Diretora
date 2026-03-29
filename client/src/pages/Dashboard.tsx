@@ -203,6 +203,16 @@ export default function Dashboard() {
   const [activeTabId, setActiveTabId] = useState<string>("overview");
   const [selectedAno, setSelectedAno] = useState(2025);
   const selectedInep = activeTabId === "overview" ? null : (schoolTabs.find(t => t.id === activeTabId)?.inep || null);
+  const [visibleSecIds, setVisibleSecIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!selectedInep) { setVisibleSecIds(new Set()); return; }
+    const allIds = ['sec-ficha','sec-desempenho','sec-tnr','sec-inse','sec-tdi','sec-matriculas','sec-estrutura','sec-ied','sec-afd','sec-atu','sec-had','sec-retrato','sec-pdde'];
+    const scan = () => setVisibleSecIds(new Set(allIds.filter(id => !!document.getElementById(id))));
+    const timers = [200, 1500, 3500, 7000].map(ms => setTimeout(scan, ms));
+    return () => timers.forEach(clearTimeout);
+  }, [selectedInep]);
+
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [selectedChart, setSelectedChart] = useState("matriculas");
   const [chartEtapa, setChartEtapa] = useState<string>('total');
@@ -1016,7 +1026,7 @@ export default function Dashboard() {
           zIndex: 200, display: 'flex', flexDirection: 'column', gap: 2,
           pointerEvents: 'auto',
         }}>
-          {secNavItems.map(tab => (
+          {secNavItems.filter(tab => visibleSecIds.size === 0 || visibleSecIds.has(tab.id)).map(tab => (
             <button
               key={tab.id}
               title={tab.title}
