@@ -5757,6 +5757,11 @@ out center tags 100;`;
                     <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
                       <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#2d5a88',background:'#e6eef8',padding:'3px 10px',borderRadius:'20px'}}>Contas e saldos</span>
                       <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#b8cfe8,transparent)'}} />
+                      {pddeUexSaldoData?.ok && pddeUexSaldoData.total_saldo_geral > 0 && (
+                        <span style={{fontSize:'13px',fontWeight:800,color:'#16a34a',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>
+                          {brl(pddeUexSaldoData.total_saldo_geral)}
+                        </span>
+                      )}
                       {pddeUexSaldoData?.mes && (
                         <span style={{fontSize:'10px',color:'#9b8877',fontStyle:'italic',whiteSpace:'nowrap'}}>
                           {(() => {
@@ -6086,12 +6091,6 @@ out center tags 100;`;
                                 <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{s.saldo_total != null ? brl(s.saldo_total) : '—'}</td>
                               </tr>
                             ))}
-                            {pddeUexSaldoData.saldos.length > 1 && (
-                              <tr style={{background:'#f9f6f0',fontWeight:700}}>
-                                <td colSpan={7} className="py-2 px-3 text-xs text-right font-semibold">Total Geral</td>
-                                <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">{brl(pddeUexSaldoData.total_saldo_geral)}</td>
-                              </tr>
-                            )}
                           </tbody>
                         </table>
                       </div>
