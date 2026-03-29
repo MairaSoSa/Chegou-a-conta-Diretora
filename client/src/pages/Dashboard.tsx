@@ -5244,32 +5244,6 @@ out center tags 100;`;
                 <section className="section">
                   <div className="section-title">
                     <div><h2>Dados financeiros PDDE</h2><p>Situação financeira e repasses do Programa Dinheiro Direto na Escola</p></div>
-                    <div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}>
-                      {/* Seletor de ano — apenas anos com dados reais */}
-                      {(() => {
-                        const anosSet = new Set<number>();
-                        pddeSaldosData?.saldos?.forEach((s: any) => { if (s.an_exercicio) anosSet.add(Number(s.an_exercicio)); });
-                        pddeExecFinData?.anosDisponiveis?.forEach((a: number) => anosSet.add(a));
-                        if (pddeData?.ok && pddeData.ano) anosSet.add(Number(pddeData.ano));
-                        const disponiveis = Array.from(anosSet).sort((a, b) => b - a);
-                        if (disponiveis.length === 0) return (
-                          <span style={{padding:'5px 14px',fontWeight:700,fontSize:'13px',color:'var(--m-blue)',background:'#f8f4ec',border:'1.5px solid #e0d5c0',borderRadius:'20px'}}>
-                            {pddeAno}
-                          </span>
-                        );
-                        return (
-                          <select
-                            value={pddeAno}
-                            onChange={e => setPddeAno(Number(e.target.value))}
-                            style={{padding:'5px 12px',background:'#f8f4ec',border:'1.5px solid #e0d5c0',borderRadius:'20px',fontWeight:700,fontSize:'13px',color:'var(--m-blue)',cursor:'pointer',outline:'none'}}
-                          >
-                            {disponiveis.map(a => (
-                              <option key={a} value={a}>{a}</option>
-                            ))}
-                          </select>
-                        );
-                      })()}
-                    </div>
                   </div>
                   <div className="organic-divider" />
                   {/* loading state */}
