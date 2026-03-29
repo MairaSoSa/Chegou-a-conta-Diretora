@@ -4,7 +4,7 @@ import {
   ExternalLink, Scale, FileText, Search, Landmark,
   Loader2, AlertCircle, Newspaper, BookMarked,
   Info, MapPin, Globe
-} from "lucide-react";
+} from "@/components/Icons";
 import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useMecNormasAll, useMecNormasTipos } from "@/hooks/use-mecnormas";

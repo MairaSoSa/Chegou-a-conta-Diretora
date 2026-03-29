@@ -9,7 +9,7 @@ import {
   Sparkles, PenLine, CheckSquare, AlertTriangle, SpellCheck,
   RefreshCw, ChevronLeft, ChevronRight, Clock, Menu, X,
   School, Loader2, Download
-} from "lucide-react";
+} from "@/components/Icons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

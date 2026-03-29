@@ -14,12 +14,12 @@ import {
   School, Loader2, BarChart3, TrendingUp,
   BookOpen, Award, ChevronDown, ChevronUp,
   Globe, Building2, TreePine, Filter, X, Clock, Heart,
-  CheckCircle, CircleAlert, Hash, CalendarDays
-} from "lucide-react";
+  CheckCircle, CircleAlert, Hash, CalendarDays,
+  DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon
+} from "@/components/Icons";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico, useEscolaMicroregiao, useUfStats, useSimilarSchools } from "@/hooks/use-schools";
 import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento } from "@/hooks/use-pdde";
 import { useSigpcLocalizar } from "@/hooks/use-sigpc";
-import { DollarSign, Wallet, FileText, AlertTriangle, Landmark, BanknoteIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {

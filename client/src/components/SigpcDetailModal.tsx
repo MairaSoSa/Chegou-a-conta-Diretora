@@ -10,7 +10,7 @@ import {
   Download, CheckCircle2, Clock, AlertCircle, TrendingUp,
   Banknote, CreditCard, User, Shield, FileCheck, ChevronRight,
   BarChart3, PieChart, Hash, ExternalLink
-} from "lucide-react";
+} from "@/components/Icons";
 import { useSigpcDetalhar, useSigpcHistorico, type SigpcPrestacaoListItem } from "@/hooks/use-sigpc";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from "recharts";
 

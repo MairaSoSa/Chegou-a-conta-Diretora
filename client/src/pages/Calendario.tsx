@@ -9,7 +9,7 @@ import {
   Search, Sparkles, CheckCircle2, Clock3,
   X, Loader2, RefreshCw, AlertTriangle, AlertCircle,
   ExternalLink, Landmark, BookOpen,
-} from "lucide-react";
+} from "@/components/Icons";
 
 interface PrazoEducacional {
   titulo: string;

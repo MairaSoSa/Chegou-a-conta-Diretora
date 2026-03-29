@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Accessibility } from "lucide-react";
+import { Accessibility } from "@/components/Icons";
 import { useAccessibility } from "@/App";
 
 export function Footer() {

@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, Heart, ShieldCheck } from "lucide-react";
+import { Users, Heart, ShieldCheck } from "@/components/Icons";
 
 export default function QuemSomos() {
   return (

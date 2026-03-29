@@ -10,7 +10,7 @@ import {
   ChevronRight, ChevronLeft, ClipboardCopy, Plus, X, Download,
   FileText, Mail, Search, BarChart3, Bold, Italic,
   Underline, Highlighter, RefreshCw, MessageCircle, PenTool,
-} from "lucide-react";
+} from "@/components/Icons";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 

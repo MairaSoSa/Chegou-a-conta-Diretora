@@ -1,7 +1,7 @@
 import { School } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Users, Building, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { MapPin, Users, Building, AlertTriangle, CheckCircle2 } from "@/components/Icons";
 
 export function SchoolCard({ school }: { school: School }) {
   const isDataComplete = school.dataStatus === "Completo";

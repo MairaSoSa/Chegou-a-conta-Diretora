@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   GraduationCap, Scale, CalendarDays,
   Landmark, Wrench, BookOpen, type LucideIcon, Accessibility,
-} from "lucide-react";
+} from "@/components/Icons";
 import { useAccessibility } from "@/App";
 import type { TrilhaUnit } from "@shared/schema";
 import "./home-landing.css";

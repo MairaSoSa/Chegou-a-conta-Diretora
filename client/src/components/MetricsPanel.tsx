@@ -1,4 +1,4 @@
-import { Users, School, BarChart3, Award, BookOpen, TrendingUp } from "lucide-react";
+import { Users, School, BarChart3, Award, BookOpen, TrendingUp } from "@/components/Icons";
 import clsx from "clsx";
 
 const metricsConfig = [

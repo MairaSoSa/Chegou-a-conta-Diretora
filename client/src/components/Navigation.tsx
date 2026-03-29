@@ -4,7 +4,7 @@ import {
   BarChart3, GraduationCap, MessagesSquare, Wrench,
   BookOpen, Building2, Scale, Calendar,
   X, Menu, Accessibility,
-} from "lucide-react";
+} from "@/components/Icons";
 import { useState, useEffect } from "react";
 import { useAccessibility } from "@/App";
 import { motion, AnimatePresence } from "framer-motion";

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Pause, Play, X, Volume2 } from "lucide-react";
+import { Pause, Play, X, Volume2 } from "@/components/Icons";
 import { useTTS } from "@/contexts/TTSContext";
 
 function WaveBars() {

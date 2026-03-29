@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/Icons";
 import type { TrilhaUnit } from "@shared/schema";
 
 const toneMap = {

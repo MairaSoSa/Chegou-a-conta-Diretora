@@ -9,7 +9,7 @@ import {
   X,
   Volume2,
   MousePointer2,
-} from "lucide-react";
+} from "@/components/Icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTTS } from "@/contexts/TTSContext";
 

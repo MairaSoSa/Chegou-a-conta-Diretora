@@ -13,7 +13,7 @@ import {
   ChevronDown, ChevronUp, Settings,
   Building2, BarChart3, Brain, Upload, Download, Check,
   HelpCircle, Loader2, Paperclip
-} from "lucide-react";
+} from "@/components/Icons";
 import { cn } from "@/lib/utils";
 import type { GlossaryItem, Tool, TrilhaUnit, Program, ProgramDetail, DashboardDataset, AiDocument, UnansweredQuestion } from "@shared/schema";
 

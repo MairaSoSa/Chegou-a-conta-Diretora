@@ -13,7 +13,7 @@ import {
   Utensils, Bus, Accessibility, Palette, TreePine,
   Percent, Truck, CalendarDays, Folder, Clock,
   AlertCircle, CheckCircle2, HelpCircle, Landmark,
-} from "lucide-react";
+} from "@/components/Icons";
 import { Link } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import type { GlossaryItem } from "@shared/schema";

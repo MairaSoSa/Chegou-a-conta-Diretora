@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/Icons";
 import type { TrilhaUnit } from "@shared/schema";
 
 // Magnetic pin disc — round, flat, like a fridge magnet / whiteboard pin
