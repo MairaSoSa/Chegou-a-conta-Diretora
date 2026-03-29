@@ -4619,6 +4619,7 @@ out center tags 100;`;
                             </details>
                           );
                         }
+                        if (!hasData) return null;
                         return <div style={{ borderBottom:'1px solid #ede8df', marginBottom:4 }}>{tableBody}</div>;
                       };
 
@@ -4727,6 +4728,7 @@ out center tags 100;`;
                             </details>
                           );
                         }
+                        if (!hasData) return null;
                         return <div style={{ borderBottom:'1px solid #ede8df', marginBottom:4 }}>{tableBody}</div>;
                       };
 
@@ -4790,6 +4792,7 @@ out center tags 100;`;
                             </details>
                           );
                         }
+                        if (!hasData) return null;
                         return <div style={{ borderBottom:'1px solid #ede8df', marginBottom:4 }}>{tableBody}</div>;
                       };
 
