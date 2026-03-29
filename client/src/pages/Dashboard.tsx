@@ -5559,27 +5559,62 @@ out center tags 100;`;
                   )}
 
                   {/* ── 2c. SITUAÇÃO DA EEx ── */}
-                  {pddeData?.ok && pddeData.situacao_eex && (pddeData.situacao_eex.adesao || pddeData.situacao_eex.prestacao_contas) && (
-                    <div style={{marginBottom:'16px'}}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <FileText className="w-3.5 h-3.5" /> Situação da Entidade Executora (EEx)
-                      </p>
-                      <div className="soft-card" style={{padding:'14px',display:'flex',gap:'24px',flexWrap:'wrap'}}>
-                        {pddeData.situacao_eex.adesao && (
-                          <div>
-                            <span className="text-xs text-muted-foreground block mb-1">Adesão</span>
-                            <span className={`badge ${pddeData.situacao_eex.adesao.toLowerCase().includes('adimpl') ? 'badge-good' : 'badge-attn'}`}>{pddeData.situacao_eex.adesao}</span>
-                          </div>
-                        )}
-                        {pddeData.situacao_eex.prestacao_contas && (
-                          <div>
-                            <span className="text-xs text-muted-foreground block mb-1">Prestação de Contas EEx</span>
-                            <span className={`badge ${pddeData.situacao_eex.prestacao_contas.toLowerCase().includes('adimpl') ? 'badge-good' : 'badge-attn'}`}>{pddeData.situacao_eex.prestacao_contas}</span>
-                          </div>
-                        )}
+                  {pddeData?.ok && pddeData.situacao_eex && (pddeData.situacao_eex.adesao || pddeData.situacao_eex.prestacao_contas) && (() => {
+                    const rawAdesao = pddeData.situacao_eex!.adesao ?? '';
+                    const rawPc    = pddeData.situacao_eex!.prestacao_contas ?? '';
+                    // ── Parsear Adesão ──
+                    const aderiu = rawAdesao.toLowerCase().includes('aderiu');
+                    const naoAderiu = rawAdesao.toLowerCase().includes('não aderiu') || rawAdesao.toLowerCase().includes('nao aderiu');
+                    const dataAdesaoMatch = rawAdesao.match(/(\d{2}\/\d{2}\/\d{4})/);
+                    const dataAdesao = dataAdesaoMatch ? dataAdesaoMatch[1] : null;
+                    // ── Parsear Prestação de Contas ──
+                    const semPendencia = rawPc.toLowerCase().includes('não consta') || rawPc.toLowerCase().includes('nao consta');
+                    const comPendencia = rawPc.toLowerCase().includes('pendência') && !semPendencia;
+                    return (
+                      <div style={{marginBottom:'16px'}}>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+                          <FileText className="w-3.5 h-3.5" /> Situação da Entidade Executora (EEx)
+                        </p>
+                        <div className="soft-card" style={{padding:'14px',display:'flex',gap:'12px',flexWrap:'wrap'}}>
+                          {rawAdesao && (
+                            <div style={{display:'flex',alignItems:'center',gap:'8px',padding:'8px 12px',borderRadius:'8px',
+                              background: aderiu ? '#e8f5ee' : naoAderiu ? '#fdf0ee' : '#f5f5f5',
+                              border: `1px solid ${aderiu ? '#b8dfc8' : naoAderiu ? '#f0c8c0' : '#e0e0e0'}`}}>
+                              <CheckCircle size={14} style={{color: aderiu ? '#2f7a58' : naoAderiu ? '#b74f42' : '#aaa', flexShrink:0}} />
+                              <div>
+                                <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',
+                                  color: aderiu ? '#2f7a58' : naoAderiu ? '#b74f42' : '#888', display:'block'}}>
+                                  Adesão ao PDDE
+                                </span>
+                                <span style={{fontSize:'12px',fontWeight:600,
+                                  color: aderiu ? '#1a5c3a' : naoAderiu ? '#9b2c1a' : '#555'}}>
+                                  {aderiu ? 'Aderiu' : naoAderiu ? 'Não aderiu' : 'Verificar'}
+                                  {dataAdesao && <span style={{fontWeight:400,color:'#777',marginLeft:'6px'}}>{dataAdesao}</span>}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          {rawPc && (
+                            <div style={{display:'flex',alignItems:'center',gap:'8px',padding:'8px 12px',borderRadius:'8px',
+                              background: semPendencia ? '#e8f5ee' : comPendencia ? '#fdf0ee' : '#f5f5f5',
+                              border: `1px solid ${semPendencia ? '#b8dfc8' : comPendencia ? '#f0c8c0' : '#e0e0e0'}`}}>
+                              <FileText size={14} style={{color: semPendencia ? '#2f7a58' : comPendencia ? '#b74f42' : '#aaa', flexShrink:0}} />
+                              <div>
+                                <span style={{fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',
+                                  color: semPendencia ? '#2f7a58' : comPendencia ? '#b74f42' : '#888', display:'block'}}>
+                                  Prestação de Contas
+                                </span>
+                                <span style={{fontSize:'12px',fontWeight:600,
+                                  color: semPendencia ? '#1a5c3a' : comPendencia ? '#9b2c1a' : '#555'}}>
+                                  {semPendencia ? 'Sem pendências' : comPendencia ? 'Com pendências' : 'Verificar'}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* ── GRUPO: REPASSES E EXECUÇÃO ── */}
                   {(atendimentoData?.ok || pddeExecFinData?.ok || (pddeData?.destinacoes?.length ?? 0) > 0) && (
