@@ -4590,14 +4590,14 @@ out center tags 100;`;
 
                     // ── 2. COR/RAÇA (excluindo não declarada) ──
                     const racaRaw = [
-                      { name:'Branca', v: cd.qt_mat_bas_branca ?? 0, cor:'#f5c842' },
-                      { name:'Parda', v: cd.qt_mat_bas_parda ?? 0, cor:'#c0855a' },
-                      { name:'Preta', v: cd.qt_mat_bas_preta ?? 0, cor:'#6b3a2a' },
-                      { name:'Amarela', v: cd.qt_mat_bas_amarela ?? 0, cor:'#e8a030' },
-                      { name:'Indígena', v: cd.qt_mat_bas_indigena ?? 0, cor:'#4a7c59' },
+                      { name:'Branca',   v: cd.qt_mat_bas_branca  ?? cd.qt_mat_branca  ?? 0, cor:'#f5c842' },
+                      { name:'Parda',    v: cd.qt_mat_bas_parda   ?? cd.qt_mat_parda   ?? 0, cor:'#c0855a' },
+                      { name:'Preta',    v: cd.qt_mat_bas_preta   ?? cd.qt_mat_preta   ?? 0, cor:'#6b3a2a' },
+                      { name:'Amarela',  v: cd.qt_mat_bas_amarela ?? cd.qt_mat_amarela ?? 0, cor:'#e8a030' },
+                      { name:'Indígena', v: cd.qt_mat_bas_indigena ?? cd.qt_mat_indigena ?? 0, cor:'#4a7c59' },
                     ].filter(x => x.v > 0);
                     const racaTotal = racaRaw.reduce((s,x)=>s+x.v, 0);
-                    const racaNd = cd.qt_mat_bas_nd ?? 0;
+                    const racaNd = cd.qt_mat_bas_nd ?? cd.qt_mat_nd ?? 0;
                     const racaData = racaRaw.map(x=>({...x, pct:pct(x.v,racaTotal)}));
 
                     // ── 3. SEXO ──

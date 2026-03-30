@@ -103,9 +103,16 @@ const NUMERIC_FIELDS = [
   'qt_mat_bas_fem','qt_mat_bas_masc','qt_mat_bas_nd',
   'qt_mat_bas_branca','qt_mat_bas_preta','qt_mat_bas_parda',
   'qt_mat_bas_amarela','qt_mat_bas_indigena',
+  // versão sem _bas_ (alguns anos do INEP usam nome curto)
+  'qt_mat_branca','qt_mat_preta','qt_mat_parda',
+  'qt_mat_amarela','qt_mat_indigena','qt_mat_nd',
   'qt_mat_bas_0_3','qt_mat_bas_4_5','qt_mat_bas_6_10',
   'qt_mat_bas_11_14','qt_mat_bas_15_17','qt_mat_bas_18_mais',
   'qt_mat_bas_d','qt_mat_bas_n','qt_mat_bas_ead',
+  // zona de residência do aluno
+  'qt_mat_zr_urba','qt_mat_zr_rura',
+  // tempo integral (total + por etapa)
+  'qt_mat_int','qt_mat_int_fund','qt_mat_int_med',
   'qt_mat_inf_int','qt_mat_inf_cre_int','qt_mat_inf_pre_int',
   'qt_mat_fund_int','qt_mat_fund_ai_int','qt_mat_fund_af_int',
   'qt_mat_med_int',
