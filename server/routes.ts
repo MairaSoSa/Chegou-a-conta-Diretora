@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import type { Server } from "http";
 import crypto from "crypto";
 import { readFileSync, existsSync } from "fs";
+import { spawn } from "child_process";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { Worker } from "worker_threads";
@@ -1645,6 +1646,30 @@ export async function registerRoutes(
 
   app.get("/api/admin/importar-drive-status", adminAuth, (_req, res) => {
     res.json(driveProgress);
+  });
+
+  // ── Import Censo 2025 (Python script) ─────────────────────────────────────
+  const censo2025Status = { running: false, log: [] as string[], exitCode: null as number | null };
+  app.post("/api/admin/importar-censo-2025", adminAuth, (_req, res) => {
+    if (censo2025Status.running) {
+      return res.status(409).json({ error: "Import 2025 já em andamento" });
+    }
+    censo2025Status.running = true;
+    censo2025Status.log = [];
+    censo2025Status.exitCode = null;
+    const py = spawn("python3", ["-u", "server/import-censo-2025.py"], { cwd: process.cwd() });
+    py.stdout.on("data", (d: Buffer) => { censo2025Status.log.push(d.toString()); });
+    py.stderr.on("data", (d: Buffer) => { censo2025Status.log.push("[ERR] " + d.toString()); });
+    py.on("close", (code: number) => {
+      censo2025Status.running = false;
+      censo2025Status.exitCode = code;
+      if (code === 0) invalidateStatsCache();
+      console.log(`[censo-2025] Python import finished with code ${code}`);
+    });
+    res.json({ mensagem: "Import Censo 2025 iniciado em background" });
+  });
+  app.get("/api/admin/importar-censo-2025-status", adminAuth, (_req, res) => {
+    res.json({ ...censo2025Status, log: censo2025Status.log.slice(-50) });
   });
 
   app.post("/api/:tipo/importar", adminAuth, async (req, res) => {

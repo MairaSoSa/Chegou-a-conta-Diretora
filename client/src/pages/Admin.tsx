@@ -12,7 +12,7 @@ import {
   BookText, Wrench, Ship, ChevronLeft,
   ChevronDown, ChevronUp, Settings,
   Building2, BarChart3, Brain, Upload, Download, Check,
-  HelpCircle, Loader2, Paperclip, Folder, CheckCircle
+  HelpCircle, Loader2, Paperclip, Folder, CheckCircle, FileText
 } from "@/components/Icons";
 import { cn } from "@/lib/utils";
 import type { GlossaryItem, Tool, TrilhaUnit, Program, ProgramDetail, DashboardDataset, AiDocument, UnansweredQuestion } from "@shared/schema";
@@ -1798,6 +1798,80 @@ function UnansweredQuestionsManager({ token }: { token: string }) {
   );
 }
 
+function Censo2025ImportPanel({ token }: { token: string }) {
+  const { toast } = useToast();
+  const statusQuery = useQuery({
+    queryKey: ["/api/admin/importar-censo-2025-status"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/importar-censo-2025-status", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.json();
+    },
+    refetchInterval: 3000,
+  });
+  const importMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/importar-censo-2025", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.error) {
+        toast({ title: "Erro", description: data.error, variant: "destructive" });
+      } else {
+        toast({ title: "Import Censo 2025 iniciado!", description: "Acompanhe o progresso abaixo." });
+      }
+      statusQuery.refetch();
+    },
+  });
+  const s = statusQuery.data as any;
+  return (
+    <Card className="border-2 border-green-200 bg-green-50">
+      <CardContent className="p-6">
+        <h2 className="text-lg font-bold mb-1 text-green-900 flex items-center gap-2">
+          <FileText size={18} /> Importar Censo Escolar 2025 (INEP)
+        </h2>
+        <p className="text-sm text-green-700 mb-4">
+          Importa os arquivos CSV do INEP 2025 (Escola, Matrícula, Docente, Turma, Gestor)
+          que já foram copiados para <code>Dados/Censo Escolar 2025/</code>.
+        </p>
+        {s?.running && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+              <span className="font-medium text-blue-800">Importando 2025...</span>
+            </div>
+            <pre className="text-xs text-blue-700 max-h-32 overflow-auto whitespace-pre-wrap">
+              {(s.log as string[]).join("")}
+            </pre>
+          </div>
+        )}
+        {!s?.running && s?.exitCode === 0 && (
+          <div className="bg-green-100 border border-green-300 rounded-lg p-3 mb-4">
+            <p className="font-medium text-green-800 flex items-center gap-2"><CheckCircle size={16} /> Concluído com sucesso!</p>
+          </div>
+        )}
+        {!s?.running && s?.exitCode != null && s?.exitCode !== 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-red-700">Saiu com código {s.exitCode}</p>
+            <pre className="text-xs text-red-600 max-h-32 overflow-auto whitespace-pre-wrap">{(s.log as string[]).join("")}</pre>
+          </div>
+        )}
+        <Button
+          onClick={() => importMutation.mutate()}
+          disabled={s?.running || importMutation.isPending}
+          className="bg-green-700 hover:bg-green-800 text-white"
+        >
+          {s?.running ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Importando...</> : "Importar Censo 2025"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 function DriveImportPanel({ token }: { token: string }) {
   const { toast } = useToast();
   const [selectedAnos, setSelectedAnos] = useState<number[]>([2020, 2021, 2022, 2023, 2024]);
@@ -2062,6 +2136,8 @@ function ImportManager({ token }: { token: string }) {
           </div>
         </CardContent>
       </Card>
+
+      <Censo2025ImportPanel token={token} />
 
       <DriveImportPanel token={token} />
 

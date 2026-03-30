@@ -146,15 +146,15 @@ def main():
             "qt_mat_fund_af": num(m.get("QT_MAT_FUND_AF")), "qt_mat_med": num(m.get("QT_MAT_MED")),
             "qt_mat_eja": num(m.get("QT_MAT_EJA")), "qt_mat_esp": num(m.get("QT_MAT_ESP")),
             "qt_mat_bas_fem": num(m.get("QT_MAT_BAS_FEM")), "qt_mat_bas_masc": num(m.get("QT_MAT_BAS_MASC")),
-            "qt_mat_zr_urba": num(m.get("QT_MAT_ZR_URBA")), "qt_mat_zr_rura": num(m.get("QT_MAT_ZR_RURA")),
-            "qt_mat_branca":   num(m.get("QT_MAT_BRANCA")),  "qt_mat_preta":   num(m.get("QT_MAT_PRETA")),
-            "qt_mat_parda":    num(m.get("QT_MAT_PARDA")),   "qt_mat_amarela": num(m.get("QT_MAT_AMARELA")),
-            "qt_mat_indigena": num(m.get("QT_MAT_INDIGENA")), "qt_mat_nd":     num(m.get("QT_MAT_ND")),
+            "qt_mat_zr_urba": num(m.get("QT_MAT_ZR_URB")),  "qt_mat_zr_rura": num(m.get("QT_MAT_ZR_RUR")),
+            "qt_mat_bas_branca":   num(m.get("QT_MAT_BAS_BRANCA")),  "qt_mat_bas_preta":   num(m.get("QT_MAT_BAS_PRETA")),
+            "qt_mat_bas_parda":    num(m.get("QT_MAT_BAS_PARDA")),   "qt_mat_bas_amarela": num(m.get("QT_MAT_BAS_AMARELA")),
+            "qt_mat_bas_indigena": num(m.get("QT_MAT_BAS_INDIGENA")), "qt_mat_bas_nd":     num(m.get("QT_MAT_BAS_ND")),
             "qt_mat_eja_fund": num(m.get("QT_MAT_EJA_FUND")), "qt_mat_eja_med": num(m.get("QT_MAT_EJA_MED")),
             "qt_mat_esp_cc":   num(m.get("QT_MAT_ESP_CC")),  "qt_mat_esp_ce":  num(m.get("QT_MAT_ESP_CE")),
             "qt_mat_prof":     num(m.get("QT_MAT_PROF")),    "qt_mat_prof_tec": num(m.get("QT_MAT_PROF_TEC")),
-            "qt_mat_int":      num(m.get("QT_MAT_INT")),     "qt_mat_int_fund": num(m.get("QT_MAT_INT_FUND")),
-            "qt_mat_int_med":  num(m.get("QT_MAT_INT_MED")),
+            "qt_mat_int":      num(m.get("QT_MAT_BAS_INT")), "qt_mat_int_fund": num(m.get("QT_MAT_FUND_INT")),
+            "qt_mat_int_med":  num(m.get("QT_MAT_MED_INT")),
         }
         batch.append((num(m.get("QT_MAT_BAS")) or 0, json.dumps(patch, ensure_ascii=False), ts, inep))
         count += 1
