@@ -6409,8 +6409,14 @@ out center tags 100;`;
                                           </div>
                                           <div style={{color:'#ccc',fontSize:'12px'}}>→</div>
                                           <div style={{textAlign:'right'}}>
-                                            <div style={{fontSize:'9px',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.04em'}}>Pago</div>
+                                            <div style={{fontSize:'9px',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.04em'}}>Pago Total</div>
                                             <div style={{fontSize:'12px',fontFamily:'monospace',fontWeight:700,color: pagoTotal > 0 ? '#16a34a' : '#999'}}>{brl(pagoTotal)}</div>
+                                            {(pagoCusteio > 0 || pagoCapital > 0) && (
+                                              <div style={{display:'flex',gap:'6px',marginTop:'2px',justifyContent:'flex-end'}}>
+                                                <span style={{fontSize:'9px',color:'#6b9e82',fontFamily:'monospace',background:'#f0f9f4',borderRadius:'4px',padding:'1px 4px'}}>C: {brl(pagoCusteio)}</span>
+                                                <span style={{fontSize:'9px',color:'#3b82c4',fontFamily:'monospace',background:'#eff6ff',borderRadius:'4px',padding:'1px 4px'}}>K: {brl(pagoCapital)}</span>
+                                              </div>
+                                            )}
                                           </div>
                                           {d.data_ordem_pgto && d.data_ordem_pgto !== '-' && (
                                             <div style={{textAlign:'right'}}>
@@ -6455,38 +6461,6 @@ out center tags 100;`;
                     );
                   })()}
 
-                  {/* ── 6. EXECUÇÃO FINANCEIRA ── */}
-                  {pddeExecFinData?.ok && pddeExecFinData.repasses.length > 0 && (
-                    <div style={{marginBottom:'16px'}}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                        <Wallet className="w-3.5 h-3.5" /> Execução Financeira PDDE ({pddeExecFinData.anosDisponiveis.join(', ')})
-                      </p>
-                      <div className="table-card" style={{overflowX:'auto'}}>
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Destinação</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Custeio</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Pago Capital</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Total Pago</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[...pddeExecFinData.repasses].sort((a: any, b: any) => b.an_exercicio - a.an_exercicio).map((r: any, i: number) => (
-                              <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                <td className="py-2 px-3 text-xs font-medium">{r.an_exercicio}</td>
-                                <td className="py-2 px-3 text-xs">{r.sg_destinacao || r.destinacao || '—'}</td>
-                                <td className="py-2 px-3 text-xs text-right font-mono">{r.vl_pago_custeio != null ? brl(r.vl_pago_custeio) : '—'}</td>
-                                <td className="py-2 px-3 text-xs text-right font-mono">{r.vl_pago_capital != null ? brl(r.vl_pago_capital) : '—'}</td>
-                                <td className={`py-2 px-3 text-xs text-right font-mono ${r.vl_pago_total > 0 ? 'font-bold text-emerald-700' : ''}`}>{brl(r.vl_pago_total)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
 
                   {/* ── GRUPO: PRESTAÇÃO DE CONTAS ── */}
                   {(prestacaoContaLoading || prestacaoContaData?.ok) && (
