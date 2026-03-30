@@ -204,6 +204,7 @@ export default function Dashboard() {
   const [selectedAno, setSelectedAno] = useState(2025);
   const selectedInep = activeTabId === "overview" ? null : (schoolTabs.find(t => t.id === activeTabId)?.inep || null);
   const [visibleSecIds, setVisibleSecIds] = useState<Set<string>>(new Set());
+  const [hiddenSecs, setHiddenSecs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!selectedInep) { setVisibleSecIds(new Set()); return; }
@@ -1047,42 +1048,65 @@ export default function Dashboard() {
             <span style={{ fontSize: 11, fontWeight: 700, color: '#2d5a88', whiteSpace: 'nowrap' }}>Visão geral</span>
           </button>
 
-          {secNavItems.filter(tab => visibleSecIds.size === 0 || visibleSecIds.has(tab.id)).map(tab => (
-            <button
-              key={tab.id}
-              title={tab.title}
-              onClick={() => { const el = document.getElementById(tab.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '5px 8px 5px 5px',
-                background: tab.bg,
-                border: `1px solid ${tab.border}`,
-                borderLeft: 'none',
-                borderRadius: '0 7px 7px 0',
-                cursor: 'pointer',
-                boxShadow: '2px 1px 5px rgba(0,0,0,0.13)',
-                transform: 'translateX(-2px)',
-                transition: 'transform 0.15s, box-shadow 0.15s, max-width 0.18s',
-                overflow: 'hidden',
-                maxWidth: 28,
-              }}
-              onMouseEnter={e => {
-                const btn = e.currentTarget;
-                btn.style.transform = 'translateX(0)';
-                btn.style.maxWidth = '120px';
-                btn.style.boxShadow = '3px 2px 8px rgba(0,0,0,0.18)';
-              }}
-              onMouseLeave={e => {
-                const btn = e.currentTarget;
-                btn.style.transform = 'translateX(-2px)';
-                btn.style.maxWidth = '28px';
-                btn.style.boxShadow = '2px 1px 5px rgba(0,0,0,0.13)';
-              }}
-            >
-              <span style={{ color: tab.color, display: 'flex', flexShrink: 0 }}>{tab.icon}</span>
-              <span style={{ fontSize: 9, fontWeight: 700, color: tab.color, whiteSpace: 'nowrap', overflow: 'hidden' }}>{tab.title}</span>
-            </button>
-          ))}
+          {secNavItems.filter(tab => visibleSecIds.size === 0 || visibleSecIds.has(tab.id)).map(tab => {
+            const isHidden = hiddenSecs.has(tab.id);
+            return (
+              <button
+                key={tab.id}
+                title={isHidden ? `Mostrar: ${tab.title}` : `Ir para: ${tab.title}`}
+                onClick={() => {
+                  if (isHidden) {
+                    setHiddenSecs(prev => { const n = new Set(prev); n.delete(tab.id); return n; });
+                    setTimeout(() => { const el = document.getElementById(tab.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+                  } else {
+                    const el = document.getElementById(tab.id);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '5px 8px 5px 5px',
+                  background: isHidden ? '#f0f0ee' : tab.bg,
+                  border: `1px solid ${isHidden ? '#ccc' : tab.border}`,
+                  borderLeft: 'none',
+                  borderRadius: '0 7px 7px 0',
+                  cursor: 'pointer',
+                  boxShadow: '2px 1px 5px rgba(0,0,0,0.13)',
+                  transform: 'translateX(-2px)',
+                  transition: 'transform 0.15s, box-shadow 0.15s, max-width 0.18s',
+                  overflow: 'hidden',
+                  maxWidth: 28,
+                  opacity: isHidden ? 0.55 : 1,
+                }}
+                onMouseEnter={e => {
+                  const btn = e.currentTarget;
+                  btn.style.transform = 'translateX(0)';
+                  btn.style.maxWidth = '150px';
+                  btn.style.boxShadow = '3px 2px 8px rgba(0,0,0,0.18)';
+                }}
+                onMouseLeave={e => {
+                  const btn = e.currentTarget;
+                  btn.style.transform = 'translateX(-2px)';
+                  btn.style.maxWidth = '28px';
+                  btn.style.boxShadow = '2px 1px 5px rgba(0,0,0,0.13)';
+                }}
+              >
+                <span style={{ color: isHidden ? '#999' : tab.color, display: 'flex', flexShrink: 0, fontSize: 10, fontWeight: 900 }}>
+                  {isHidden ? '+' : tab.icon}
+                </span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: isHidden ? '#999' : tab.color, whiteSpace: 'nowrap', overflow: 'hidden', textDecoration: isHidden ? 'line-through' : 'none' }}>
+                  {tab.title}
+                </span>
+                {!isHidden && (
+                  <span
+                    onClick={e => { e.stopPropagation(); setHiddenSecs(prev => { const n = new Set(prev); n.add(tab.id); return n; }); }}
+                    title="Fechar seção"
+                    style={{ fontSize: 11, color: tab.color, marginLeft: 2, paddingLeft: 2, flexShrink: 0, opacity: 0.6, fontWeight: 900, lineHeight: 1 }}
+                  >×</span>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -1355,8 +1379,7 @@ export default function Dashboard() {
             )}
             {!selectedInep && statsLoading ? (
               <div className="py-20 text-center">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto text-accent mb-3" />
-                <p className="text-muted-foreground">Carregando estatísticas...</p>
+                <p className="text-muted-foreground" style={{ fontSize: 15 }}>Carregando dados nacionais...</p>
               </div>
             ) : !selectedInep && stats ? (
               <>
@@ -2790,7 +2813,7 @@ out center tags 100;`;
                     { key: 'lp_em', label: 'Língua Port.', sub: 'Ens. Médio', color: '#9b6a16' },
                   ].filter(m => saebLatest && saebLatest[m.key] != null);
                   return (
-                    <section id="sec-desempenho" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-desempenho" className="section section-pauta" style={{ scrollMarginTop: 70, display: hiddenSecs.has('sec-desempenho') ? 'none' : undefined }}>
                       <div className="section-title">
                         <div><h2>Desempenho escolar</h2><p>Notas do SAEB e taxas de aprovação, reprovação e abandono</p></div>
                       </div>
@@ -3006,7 +3029,7 @@ out center tags 100;`;
                   const gradesDisponiveis = seg ? seg.grades.filter(g => latest[g.key] != null) : [];
 
                   return (
-                    <section id="sec-tnr" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-tnr" className="section section-pauta" style={{ scrollMarginTop: 70, display: hiddenSecs.has('sec-tnr') ? 'none' : undefined }}>
                       <div className="section-title">
                         <div>
                           <h2>Taxa de Não Resposta</h2>
@@ -3143,7 +3166,7 @@ out center tags 100;`;
                   if (niveis.length === 0) return null;
 
                   return (
-                    <section id="sec-inse" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-inse" className="section section-pauta" style={{ scrollMarginTop: 70, display: hiddenSecs.has('sec-inse') ? 'none' : undefined }}>
                       <div className="section-title">
                         <div>
                           <h2>INSE — Distribuição dos Estudantes por Nível Socioeconômico</h2>
@@ -3249,7 +3272,7 @@ out center tags 100;`;
                   const gradesDisponiveis = seg ? seg.grades.filter(g => latest[g.key] != null) : [];
 
                   return (
-                    <section id="sec-tdi" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-tdi" className="section section-pauta" style={{ scrollMarginTop: 70, display: hiddenSecs.has('sec-tdi') ? 'none' : undefined }}>
                       <div className="section-title">
                         <div>
                           <h2>Distorção Idade-Série</h2>
@@ -3376,7 +3399,7 @@ out center tags 100;`;
                   const anosDisp = (evolucaoData.anos_disponiveis as number[]).filter((a: number) => a >= 2020).sort((a, b) => a - b);
                   const hasHistorico = anosDisp.length > 1;
                   return (
-                    <section id="sec-matriculas" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-matriculas" className="section section-pauta" style={{ scrollMarginTop: 70, display: hiddenSecs.has('sec-matriculas') ? 'none' : undefined }}>
                       <div className="section-title">
                         <div>
                           <h2>Matrículas por etapa</h2>
@@ -3557,7 +3580,7 @@ out center tags 100;`;
                     );
                   };
                   return (
-                    <section id="sec-estrutura" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-estrutura" className="section section-pauta" style={{ scrollMarginTop: 70, display: hiddenSecs.has('sec-estrutura') ? 'none' : undefined }}>
                       <div className="section-title">
                         <div><h2>Estrutura e recursos</h2><p>Turmas, equipe docente e espaços físicos por etapa</p></div>
                       </div>
@@ -3639,7 +3662,7 @@ out center tags 100;`;
                   const pct = (v: any) => v != null ? `${Number(v).toFixed(1)}%` : '—';
 
                   return (
-                    <section id="sec-ied" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-ied" className="section section-pauta" style={{ scrollMarginTop: 70, display: hiddenSecs.has('sec-ied') ? 'none' : undefined }}>
                       <div className="section-title">
                         <div>
                           <h2>Esforço Docente (IED)</h2>
@@ -3805,7 +3828,7 @@ out center tags 100;`;
                   ].filter(e => e.hasData);
 
                   return (
-                    <section id="sec-afd" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-afd" className="section section-pauta" style={{ scrollMarginTop: 70, display: hiddenSecs.has('sec-afd') ? 'none' : undefined }}>
                       <div className="section-title">
                         <div>
                           <h2>Adequação da Formação Docente (AFD)</h2>
@@ -4026,7 +4049,7 @@ out center tags 100;`;
                   const atuAlert = (v: any) => v != null && Number(v) > 35;
 
                   return (
-                    <section id="sec-atu" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-atu" className="section section-pauta" style={{ scrollMarginTop: 70, display: hiddenSecs.has('sec-atu') ? 'none' : undefined }}>
                       <div className="section-title">
                         <div>
                           <h2>Média de Alunos por Turma (ATU)</h2>
@@ -4241,7 +4264,7 @@ out center tags 100;`;
                   const allCols = grupos.flatMap(g => g.cols);
 
                   return (
-                    <section id="sec-had" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
+                    <section id="sec-had" className="section section-pauta" style={{ scrollMarginTop: 70, display: hiddenSecs.has('sec-had') ? 'none' : undefined }}>
                       <div className="section-title">
                         <div>
                           <h2>Horas-Aula Diárias (HAD)</h2>
@@ -4378,7 +4401,7 @@ out center tags 100;`;
                 {/* ── WRAPPER FLEX para ordenação visual (Evolução antes de Retrato) ── */}
                 <div style={{display:'flex', flexDirection:'column'}}>
                 {/* ── RETRATO DA ESCOLA — GRÁFICOS ── */}
-                <section id="sec-retrato" className="section section-pauta" style={{ scrollMarginTop: 70, order: 2 }}>
+                <section id="sec-retrato" className="section section-pauta" style={{ scrollMarginTop: 70, order: 2, display: hiddenSecs.has('sec-retrato') ? 'none' : undefined }}>
                   <div className="section-title">
                     <div><h2>Retrato da escola</h2><p>Perfil visual dos estudantes e evolução dos indicadores</p></div>
                   </div>
@@ -4831,7 +4854,7 @@ out center tags 100;`;
                 </section>
 
                 {/* ── EVOLUÇÃO DO CENSO ESCOLAR ── */}
-                <section id="sec-evolucao-censo" className="section section-pauta" style={{ scrollMarginTop: 70, order: 1 }}>
+                <section id="sec-evolucao-censo" className="section section-pauta" style={{ scrollMarginTop: 70, order: 1, display: hiddenSecs.has('sec-evolucao-censo') ? 'none' : undefined }}>
                   <div className="section-title">
                     <div><h2>Evolução do Censo Escolar</h2><p>Dados detalhados por dimensão — infraestrutura, tecnologia, equidade e mais</p></div>
                   </div>
@@ -5641,7 +5664,7 @@ out center tags 100;`;
                 </div>{/* ── fim wrapper flex ── */}
 
                 {/* ── DADOS FINANCEIROS PDDE ── */}
-                <section id="sec-pdde" className="section section-pauta" style={{ scrollMarginTop: 70 }}>
+                <section id="sec-pdde" className="section section-pauta" style={{ scrollMarginTop: 70, display: hiddenSecs.has('sec-pdde') ? 'none' : undefined }}>
                   <div className="section-title">
                     <div><h2>Dados financeiros PDDE</h2><p>Situação financeira e repasses do Programa Dinheiro Direto na Escola</p></div>
                   </div>
