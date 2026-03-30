@@ -4588,16 +4588,17 @@ out center tags 100;`;
                     const etapasTotal = etapasRaw.reduce((s,x)=>s+x.v, 0);
                     const etapasData = etapasRaw.map(x=>({...x, pct:pct(x.v,etapasTotal)}));
 
-                    // ── 2. COR/RAÇA (excluindo não declarada) ──
+                    // ── 2. COR/RAÇA (incluindo não declarada) ──
+                    const racaNd = cd.qt_mat_bas_nd ?? cd.qt_mat_nd ?? 0;
                     const racaRaw = [
-                      { name:'Branca',   v: cd.qt_mat_bas_branca  ?? cd.qt_mat_branca  ?? 0, cor:'#f5c842' },
-                      { name:'Parda',    v: cd.qt_mat_bas_parda   ?? cd.qt_mat_parda   ?? 0, cor:'#c0855a' },
-                      { name:'Preta',    v: cd.qt_mat_bas_preta   ?? cd.qt_mat_preta   ?? 0, cor:'#6b3a2a' },
-                      { name:'Amarela',  v: cd.qt_mat_bas_amarela ?? cd.qt_mat_amarela ?? 0, cor:'#e8a030' },
-                      { name:'Indígena', v: cd.qt_mat_bas_indigena ?? cd.qt_mat_indigena ?? 0, cor:'#4a7c59' },
+                      { name:'Branca',          v: cd.qt_mat_bas_branca  ?? cd.qt_mat_branca  ?? 0, cor:'#f5c842' },
+                      { name:'Parda',           v: cd.qt_mat_bas_parda   ?? cd.qt_mat_parda   ?? 0, cor:'#c0855a' },
+                      { name:'Preta',           v: cd.qt_mat_bas_preta   ?? cd.qt_mat_preta   ?? 0, cor:'#6b3a2a' },
+                      { name:'Amarela',         v: cd.qt_mat_bas_amarela ?? cd.qt_mat_amarela ?? 0, cor:'#e8a030' },
+                      { name:'Indígena',        v: cd.qt_mat_bas_indigena ?? cd.qt_mat_indigena ?? 0, cor:'#4a7c59' },
+                      { name:'Não Declarado',   v: racaNd, cor:'#aaaaaa' },
                     ].filter(x => x.v > 0);
                     const racaTotal = racaRaw.reduce((s,x)=>s+x.v, 0);
-                    const racaNd = cd.qt_mat_bas_nd ?? cd.qt_mat_nd ?? 0;
                     const racaData = racaRaw.map(x=>({...x, pct:pct(x.v,racaTotal)}));
 
                     // ── 3. SEXO ──
@@ -4804,8 +4805,7 @@ out center tags 100;`;
                         )}
                         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:14 }}>
                           <PizzaCard title="Matrículas por etapa de ensino" data={etapasData} />
-                          <PizzaCard title="Cor / Raça dos estudantes" data={racaData}
-                            nota={racaNd > 0 ? `${racaNd.toLocaleString('pt-BR')} não declarados excluídos do cálculo` : undefined} />
+                          <PizzaCard title="Cor / Raça dos estudantes" data={racaData} />
                           <PizzaCard title="Distribuição por sexo" data={sexoData} />
                           <PizzaCard title="Faixa etária" data={etariaData} />
                           <PizzaCard title="Turno de atendimento" data={turnoData} />
