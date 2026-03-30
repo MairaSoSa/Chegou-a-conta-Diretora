@@ -6402,29 +6402,29 @@ out center tags 100;`;
                                         <div style={{flex:1,minWidth:0}}>
                                           <span style={{fontSize:'12px',fontWeight:600,color:'#2a2018',display:'block',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{acao}</span>
                                         </div>
-                                        <div style={{display:'flex',alignItems:'center',gap:'12px',flexShrink:0}}>
-                                          <div style={{textAlign:'right'}}>
-                                            <div style={{fontSize:'9px',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.04em'}}>Devido</div>
-                                            <div style={{fontSize:'11px',fontFamily:'monospace',color: diverge ? '#b74f42' : '#666'}}>{brl(devido)}</div>
+                                        <div style={{display:'flex',alignItems:'stretch',gap:'0',flexShrink:0,borderLeft:'1px solid #f0ece4'}}>
+                                          {/* Devido */}
+                                          <div style={{textAlign:'right',padding:'4px 10px',borderRight:'1px solid #f0ece4'}}>
+                                            <div style={{fontSize:'9px',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.04em',marginBottom:'2px'}}>Devido</div>
+                                            <div style={{fontSize:'11px',fontFamily:'monospace',color: diverge ? '#b74f42' : '#888'}}>{brl(devido)}</div>
                                           </div>
-                                          <div style={{color:'#ccc',fontSize:'12px'}}>→</div>
-                                          <div style={{textAlign:'right'}}>
-                                            <div style={{fontSize:'9px',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.04em'}}>Pago Total</div>
-                                            <div style={{fontSize:'12px',fontFamily:'monospace',fontWeight:700,color: pagoTotal > 0 ? '#16a34a' : '#999'}}>{brl(pagoTotal)}</div>
-                                            {(pagoCusteio > 0 || pagoCapital > 0) && (
-                                              <div style={{display:'flex',gap:'6px',marginTop:'2px',justifyContent:'flex-end'}}>
-                                                <span style={{fontSize:'9px',color:'#6b9e82',fontFamily:'monospace',background:'#f0f9f4',borderRadius:'4px',padding:'1px 4px'}}>C: {brl(pagoCusteio)}</span>
-                                                <span style={{fontSize:'9px',color:'#3b82c4',fontFamily:'monospace',background:'#eff6ff',borderRadius:'4px',padding:'1px 4px'}}>K: {brl(pagoCapital)}</span>
-                                              </div>
+                                          {/* Pago Custeio */}
+                                          <div style={{textAlign:'right',padding:'4px 10px',borderRight:'1px solid #f0ece4',background:'#f7fdf9'}}>
+                                            <div style={{fontSize:'9px',color:'#6b9e82',textTransform:'uppercase',letterSpacing:'0.04em',fontWeight:600,marginBottom:'2px'}}>Custeio</div>
+                                            <div style={{fontSize:'12px',fontFamily:'monospace',fontWeight:600,color: pagoCusteio > 0 ? '#16a34a' : '#bbb'}}>{brl(pagoCusteio)}</div>
+                                          </div>
+                                          {/* Pago Capital */}
+                                          <div style={{textAlign:'right',padding:'4px 10px',borderRight:'1px solid #f0ece4',background:'#f5f8ff'}}>
+                                            <div style={{fontSize:'9px',color:'#3b6cb0',textTransform:'uppercase',letterSpacing:'0.04em',fontWeight:600,marginBottom:'2px'}}>Capital</div>
+                                            <div style={{fontSize:'12px',fontFamily:'monospace',fontWeight:600,color: pagoCapital > 0 ? '#1d4ed8' : '#bbb'}}>{brl(pagoCapital)}</div>
+                                          </div>
+                                          {/* Status + Data */}
+                                          <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'4px 10px',gap:'4px'}}>
+                                            {statusBadge(devido, pagoTotal)}
+                                            {d.data_ordem_pgto && d.data_ordem_pgto !== '-' && (
+                                              <div style={{fontSize:'10px',color:'#999',whiteSpace:'nowrap'}}>{d.data_ordem_pgto}</div>
                                             )}
                                           </div>
-                                          {d.data_ordem_pgto && d.data_ordem_pgto !== '-' && (
-                                            <div style={{textAlign:'right'}}>
-                                              <div style={{fontSize:'9px',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.04em'}}>Data</div>
-                                              <div style={{fontSize:'11px',color:'#777',whiteSpace:'nowrap'}}>{d.data_ordem_pgto}</div>
-                                            </div>
-                                          )}
-                                          {statusBadge(devido, pagoTotal)}
                                         </div>
                                       </div>
                                     );
