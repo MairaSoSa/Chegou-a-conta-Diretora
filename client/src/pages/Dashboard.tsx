@@ -22,7 +22,6 @@ import {
 } from "@/components/Icons";
 import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico, useEscolaMicroregiao, useUfStats, useSimilarSchools } from "@/hooks/use-schools";
 import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento, usePddeSuspensaoEscola } from "@/hooks/use-pdde";
-import { useSigpcLocalizar } from "@/hooks/use-sigpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -207,7 +206,7 @@ export default function Dashboard() {
   const [hiddenSecs, setHiddenSecs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!selectedInep) { setVisibleSecIds(new Set()); return; }
+    if (!selectedInep) { setVisibleSecIds(new Set()); setHiddenSecs(new Set()); return; }
     const allIds = ['sec-ficha','sec-desempenho','sec-tnr','sec-inse','sec-tdi','sec-matriculas','sec-estrutura','sec-ied','sec-afd','sec-atu','sec-had','sec-evolucao-censo','sec-retrato','sec-pdde'];
     const scan = () => setVisibleSecIds(new Set(allIds.filter(id => !!document.getElementById(id))));
     const timers = [200, 1500, 3500, 7000].map(ms => setTimeout(scan, ms));
@@ -273,7 +272,6 @@ export default function Dashboard() {
   const { data: atendimentoPcData } = usePddeAtendimento(selectedInep, prestacaoContaAno);
   const suspEscolaUf = pddeData?.uf || null;
   const suspEscola = usePddeSuspensaoEscola(selectedInep, suspEscolaUf, [pddeAno, pddeAno === new Date().getFullYear() ? pddeAno - 1 : pddeAno]);
-  const { data: sigpcData, isLoading: sigpcLoading } = useSigpcLocalizar(pddeCnpj || undefined, pddeAno);
   const listFilters = useMemo(() => {
     const f: Record<string, string> = {};
     if (filterUf) f.uf = filterUf;
@@ -2584,8 +2582,7 @@ out center tags 100;`;
                                 {([
                                   { icon: <BarChart3 size={18} />, titulo: 'Painel PDDE — FNDE', desc: 'Execução financeira do PDDE por escola — PowerBI oficial do FNDE', url: 'https://app.powerbi.com/view?r=eyJrIjoiMDU1ODMyMmEtNzMxNi00NGI1LWIwMTctMTc5OWEzYWMwMDY3IiwidCI6ImNmODQ1NGQzLWUwMTItNGE5ZC05NWIzLTcwYmRiNmY0NTlkNSJ9', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
                                   { icon: <BookOpen size={18} />, titulo: 'PDDE Interativo', desc: 'Elaboração do PDE Escola e gestão financeira (MEC)', url: 'https://pddeinterativo.mec.gov.br', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
-                                  { icon: <FileText size={18} />, titulo: 'SIGPC — Prestação de Contas', desc: 'Consulta pública à prestação de contas do PDDE e programas FNDE', url: 'https://www.gov.br/fnde/pt-br/assuntos/sistemas/sigpc-acesso-publico', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
-                                  { icon: <ClipboardList size={18} />, titulo: 'SIMEC / PAR', desc: 'Plano de Ações Articuladas — monitoramento e planejamento municipal', url: 'https://simec.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
+                                                  { icon: <ClipboardList size={18} />, titulo: 'SIMEC / PAR', desc: 'Plano de Ações Articuladas — monitoramento e planejamento municipal', url: 'https://simec.mec.gov.br', cor: '#1e4a78', bg: '#e6eef8', bd: '#b8cfe8' },
                                   { icon: <Link2 size={18} />, titulo: 'Balcão FNDE', desc: 'Atendimento virtual do FNDE — dúvidas sobre programas e repasses', url: 'https://www.gov.br/fnde/pt-br/acesso-a-informacao/acoes-e-programas/acoes/balcao-fnde-1', cor: '#1f6b45', bg: '#e8f5ee', bd: '#b8dfc8' },
                                 ] as const).map((item, i) => (
                                   <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
@@ -4746,6 +4743,13 @@ out center tags 100;`;
                           <span style={{ fontSize:12, color:'#c0b0a0' }}>{noDataMsg ?? 'Sem dados para este ano'}</span>
                         </div>
                       );
+                      // Agrupar fatias < 2% em "Outras"
+                      const SLICE_THRESHOLD = 2;
+                      const main = data.filter(d => d.pct >= SLICE_THRESHOLD);
+                      const small = data.filter(d => d.pct < SLICE_THRESHOLD);
+                      const displayData: PieSlice[] = small.length > 0
+                        ? [...main, { name: 'Outras', v: small.reduce((s,d)=>s+d.v,0), cor: '#cccccc', pct: small.reduce((s,d)=>s+d.pct,0) }]
+                        : main;
                       const RADIAN = Math.PI / 180;
                       const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, pct: p }: any) => {
                         if (p < 4) return null;
@@ -4760,14 +4764,14 @@ out center tags 100;`;
                           <div style={{ display:'flex', gap:12, alignItems:'center', flexWrap:'wrap' }}>
                             <div style={{ flexShrink:0 }}>
                               <PieChart width={150} height={150}>
-                                <Pie data={data} dataKey="v" cx="50%" cy="50%" outerRadius={68} labelLine={false} label={renderLabel}>
-                                  {data.map((entry, i) => <Cell key={i} fill={entry.cor} />)}
+                                <Pie data={displayData} dataKey="v" cx="50%" cy="50%" outerRadius={68} labelLine={false} label={renderLabel}>
+                                  {displayData.map((entry, i) => <Cell key={i} fill={entry.cor} />)}
                                 </Pie>
-                                <Tooltip formatter={(val: any, name: string) => [`${val.toLocaleString('pt-BR')} (${data.find(d=>d.name===name)?.pct}%)`, name]} />
+                                <Tooltip formatter={(val: any, name: string) => [`${val.toLocaleString('pt-BR')} (${displayData.find(d=>d.name===name)?.pct}%)`, name]} />
                               </PieChart>
                             </div>
                             <div style={{ flex:1, minWidth:120, display:'flex', flexDirection:'column', gap:5 }}>
-                              {data.map((d,i) => (
+                              {displayData.map((d,i) => (
                                 <div key={i} style={{ display:'flex', alignItems:'center', gap:7 }}>
                                   <div style={{ width:10, height:10, borderRadius:2, background:d.cor, flexShrink:0 }} />
                                   <span style={{ fontSize:12, color:'#5a4030', flex:1, lineHeight:1.3 }}>{d.name}</span>
@@ -5695,7 +5699,7 @@ out center tags 100;`;
                       'Credor sem conta corrente ativa':   { label: 'Conta corrente inativa', acao: 'Verificar se a conta bancária da UEx está ativa. Pode ser necessário reativar a conta ou cadastrar nova conta no PDDEweb.' },
                       'Sem conta ativa dentro do prazo de pagamento': { label: 'Sem conta ativa no prazo de pagamento', acao: 'Garantir que a conta bancária da UEx esteja ativa e regularizada no PDDEweb antes do prazo de pagamento.' },
                       'Credor de ação integrada é uma EEX': { label: 'Ação integrada: credora deve ser UEx', acao: 'Para esta ação integrada o FNDE exige UEx como credora. A escola precisa cadastrar uma UEx própria no PDDEweb.' },
-                      'Omissão na prestação de contas (proponente)': { label: 'Omissão na prestação de contas', acao: 'A prestação de contas não foi submetida. Submeter a PC no PDDE/SIGPC imediatamente.' },
+                      'Omissão na prestação de contas (proponente)': { label: 'Omissão na prestação de contas', acao: 'A prestação de contas não foi submetida. Regularizar no sistema de prestação de contas do FNDE imediatamente.' },
                       'O banco sugerido do cadastro da UEX não é o Banco do Brasil (UEX)': { label: 'Banco cadastrado não é o Banco do Brasil', acao: 'Atualizar o cadastro bancário da UEx no PDDEweb com uma conta no Banco do Brasil (PDDE exige Banco do Brasil).' },
                       'Bloqueio CODDE - UEX/Credor (UEX)': { label: 'Bloqueio CODDE', acao: 'Entrar em contato com o FNDE para obter informações sobre o bloqueio CODDE.' },
                       'Entidade não habilitada no exercício atual (EM)': { label: 'Entidade não habilitada no exercício atual', acao: 'Verificar junto ao FNDE os requisitos de habilitação para o exercício corrente.' },
@@ -6485,7 +6489,7 @@ out center tags 100;`;
                   )}
 
                   {/* ── GRUPO: PRESTAÇÃO DE CONTAS ── */}
-                  {(prestacaoContaLoading || prestacaoContaData?.ok || sigpcData?.ok) && (
+                  {(prestacaoContaLoading || prestacaoContaData?.ok) && (
                     <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',marginTop:'20px'}}>
                       <span style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#9b6a16',background:'#fdf3e0',padding:'3px 10px',borderRadius:'20px'}}>Prestação de contas</span>
                       <div style={{flex:1,height:'1px',background:'linear-gradient(to right,#f0ddb5,transparent)'}} />
@@ -6717,106 +6721,6 @@ out center tags 100;`;
                     );
                   })()}
 
-                  {/* ── 7. SIGPC — PRESTAÇÃO DE CONTAS DETALHADA ── */}
-                  {(pddeCnpj || pddeData?.ok === false) && (<div style={{marginBottom:'16px'}}>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-                      <FileText className="w-3.5 h-3.5" /> SIGPC — Prestação de Contas Detalhada
-                      <a
-                        href={`https://www.fnde.gov.br/sigpcadm/actionPublico.pu?tilesPublico=ConsultarSituacao`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ml-2 inline-flex items-center gap-1 text-xs text-blue-600 hover:underline font-normal"
-                        style={{textTransform:'none',letterSpacing:0}}
-                      >
-                        <ExternalLink className="w-3 h-3" /> Abrir no SIGPC
-                      </a>
-                    </p>
-
-                    {sigpcLoading && (
-                      <div className="flex items-center gap-2 py-3">
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">Consultando SIGPC/FNDE...</span>
-                      </div>
-                    )}
-
-                    {!sigpcLoading && sigpcData?.ok && sigpcData.prestacoes.length > 0 && (
-                      <div className="table-card" style={{overflowX:'auto'}}>
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr style={{borderBottom:'1px solid #eadfcb',background:'#f9f6f0'}}>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Programa</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Ano</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. UEx</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Sit. EEx</th>
-                              <th className="text-right py-2 px-3 text-xs font-semibold text-muted-foreground">Valor</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Susp.</th>
-                              <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground">Exceção</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {sigpcData.prestacoes.map((p: any, i: number) => {
-                              const isAdimpl = p.situacaoNome?.toLowerCase().includes('adimpl');
-                              const isAdimplEex = p.situacaoPcEex?.toLowerCase().includes('adimpl');
-                              const hasSusp = (p.efeitoSuspensivo && !['NÃO','Não',''].includes(String(p.efeitoSuspensivo).trim())) || (p.efeitoSuspensivoEex && !['NÃO','Não',''].includes(String(p.efeitoSuspensivoEex).trim()));
-                              const hasMedExc = p.medidaExcecao && !['NÃO','Não',''].includes(String(p.medidaExcecao).trim());
-                              return (
-                                <tr key={i} style={{borderBottom:'1px solid #f0ece4'}}>
-                                  <td className="py-2 px-3 text-xs font-medium">{p.programaNome || '—'}</td>
-                                  <td className="py-2 px-3 text-xs">{p.anoConcessao || '—'}</td>
-                                  <td className="py-2 px-3">
-                                    {p.situacaoNome
-                                      ? <span className={`badge ${isAdimpl ? 'badge-good' : 'badge-attn'}`}>{p.situacaoNome}</span>
-                                      : <span className="text-muted-foreground text-xs">—</span>}
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    {p.situacaoPcEex
-                                      ? <span className={`badge ${isAdimplEex ? 'badge-good' : 'badge-attn'}`}>{p.situacaoPcEex}</span>
-                                      : <span className="text-muted-foreground text-xs">—</span>}
-                                  </td>
-                                  <td className="py-2 px-3 text-xs text-right font-mono font-bold text-emerald-700">
-                                    {p.valorConcessao ? brl(p.valorConcessao) : '—'}
-                                  </td>
-                                  <td className="py-2 px-3 text-xs">
-                                    {hasSusp ? <span className="badge badge-critical">Sim</span> : <span className="text-muted-foreground">—</span>}
-                                  </td>
-                                  <td className="py-2 px-3 text-xs">
-                                    {hasMedExc ? <span className="badge badge-attn">{p.medidaExcecao}</span> : <span className="text-muted-foreground">—</span>}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-
-                    {!sigpcLoading && (!sigpcData?.ok || sigpcData?.prestacoes?.length === 0) && (
-                      <div className="soft-card" style={{padding:'14px',display:'flex',alignItems:'flex-start',gap:'12px'}}>
-                        <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-xs font-semibold text-amber-700 mb-1">
-                            {sigpcData?.fonte === 'indisponivel'
-                              ? 'SIGPC indisponível na API aberta do FNDE'
-                              : 'Nenhuma prestação de contas encontrada no SIGPC para este ano'}
-                          </p>
-                          <p className="text-xs text-muted-foreground mb-2">
-                            {sigpcData?.fonte === 'indisponivel'
-                              ? 'O serviço OLINDA do FNDE está com instabilidade na consulta de Prestação de Contas (erro interno no banco de dados do FNDE). Os dados ficam disponíveis automaticamente quando o FNDE restaurar o serviço.'
-                              : `Não foram localizados registros para o CNPJ ${pddeCnpj || 'da UEx'} no SIGPC em ${pddeAno}. Tente outro ano ou consulte diretamente pelo site.`}
-                          </p>
-                          <a
-                            href={sigpcData?.sigpcUrl || "https://www.fnde.gov.br/sigpcadm/sistema.pu?operation=localizar"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline font-semibold"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            Consultar diretamente no SIGPC (FNDE)
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                  </div>)}
 
                   {/* ── sem dados ── */}
                   {!pddeLoading && !pddeSaldosLoading && !pddeExecFinLoading && !cadastralLoading && !prestacaoContaLoading && !atendimentoLoading && !pddeData?.ok && !pddeSaldosData?.ok && !pddeExecFinData?.ok && !cadastralData?.ok && !prestacaoContaData?.ok && (
