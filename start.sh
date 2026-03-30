@@ -170,7 +170,7 @@ PYEOF
   ensure_parent_dir
 
   if echo "$DOWNLOAD_URL" | grep -q "drive.google.com"; then
-    if ! python3 -m gdown "$DOWNLOAD_URL" -O "$DB_PATH" --fuzzy; then
+    if ! gdown "$DOWNLOAD_URL" -O "$DB_PATH" --fuzzy; then
       rm -f "$DB_PATH"
       fail_with_status "database_download_failed" "Falha ao baixar banco do Google Drive. O arquivo pode ter excedido a cota de downloads."
     fi
