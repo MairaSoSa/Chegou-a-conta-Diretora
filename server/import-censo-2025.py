@@ -136,6 +136,7 @@ def main():
             "qt_mat_fund_af": num(m.get("QT_MAT_FUND_AF")), "qt_mat_med": num(m.get("QT_MAT_MED")),
             "qt_mat_eja": num(m.get("QT_MAT_EJA")), "qt_mat_esp": num(m.get("QT_MAT_ESP")),
             "qt_mat_bas_fem": num(m.get("QT_MAT_BAS_FEM")), "qt_mat_bas_masc": num(m.get("QT_MAT_BAS_MASC")),
+            "qt_mat_zr_urba": num(m.get("QT_MAT_ZR_URBA")), "qt_mat_zr_rura": num(m.get("QT_MAT_ZR_RURA")),
         }
         batch.append((num(m.get("QT_MAT_BAS")) or 0, json.dumps(patch, ensure_ascii=False), ts, inep))
         count += 1

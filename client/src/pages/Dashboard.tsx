@@ -4686,6 +4686,14 @@ out center tags 100;`;
                     const espData = espRaw.map(x=>({...x, pct:pct(x.v,espTotal)}));
 
 
+                    // ── 12. ZONA DE RESIDÊNCIA DO ALUNO ──
+                    const zonaRaw = [
+                      { name:'Zona urbana', v: cd.qt_mat_zr_urba ?? 0, cor:'#4d9de0' },
+                      { name:'Zona rural',  v: cd.qt_mat_zr_rura ?? 0, cor:'#7b9a6a' },
+                    ].filter(x => x.v > 0);
+                    const zonaTotal = zonaRaw.reduce((s,x)=>s+x.v,0);
+                    const zonaData = zonaRaw.map(x=>({...x, pct:pct(x.v,zonaTotal)}));
+
                     // ── BADGES DE MODALIDADE ESPECIAL ──
                     const isActive = (v: any) => v === 1 || v === true || v === 'Sim';
                     const modalBadges = [
@@ -4813,6 +4821,8 @@ out center tags 100;`;
                             noDataMsg="Escola sem matrícula EJA" />
                           <PizzaCard title="Ed. Especial — modalidade de atendimento" data={espData}
                             noDataMsg="Escola sem dados de Ed. Especial" />
+                          <PizzaCard title="Zona de residência dos alunos" data={zonaData}
+                            noDataMsg="Dado não disponível no Censo importado" />
                         </div>
                       </div>
                     );
