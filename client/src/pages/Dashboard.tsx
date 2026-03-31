@@ -5242,7 +5242,7 @@ out center tags 100;`;
                         }
                         c[2025] = merged;
                       }
-                      type Row = { label: string; key: string; header?: boolean };
+                      type Row = { label: string; key: string; header?: boolean; showZero?: boolean };
 
                       // ── COR DA CAMADA ATIVA ──
                       const dimColorMap: Record<string, string> = {
@@ -5296,7 +5296,10 @@ out center tags 100;`;
                                     </tr>
                                   );
                                   const vals = anos.map((a: number) => c[a]?.[row.key] ?? null);
-                                  if (vals.every((v: any) => v == null || v === 0)) return null;
+                                  const hideCondition = row.showZero
+                                    ? vals.every((v: any) => v == null)
+                                    : vals.every((v: any) => v == null || v === 0);
+                                  if (hideCondition) return null;
                                   return (
                                     <tr key={rowIdx} style={{ borderTop: '1px solid #f0e8d8', background: rowIdx % 2 === 0 ? '#fff' : '#fdf9f4' }}>
                                       <td style={{ padding: '9px 20px', color: '#4a3020', fontWeight: 500, fontSize: 13 }}>{row.label}</td>
@@ -5325,7 +5328,9 @@ out center tags 100;`;
                         const hasData = rows.some(row => {
                           if (row.header) return false;
                           const vals = anos.map((a: number) => c[a]?.[row.key] ?? null);
-                          return !vals.every((v: any) => v == null || v === 0);
+                          return row.showZero
+                            ? !vals.every((v: any) => v == null)
+                            : !vals.every((v: any) => v == null || v === 0);
                         });
                         if (title) {
                           if (!hasData) {
@@ -5618,22 +5623,22 @@ out center tags 100;`;
                             { label: 'Wi-Fi', key: 'in_wifi' },
                           ]} />
                           <NumTable title="Dispositivos — Alunos" rows={[
-                            { label: 'Desktops para alunos', key: 'qt_desktop_aluno' },
-                            { label: 'Notebooks/portáteis para alunos', key: 'qt_comp_portatil_aluno' },
-                            { label: 'Tablets para alunos', key: 'qt_tablet_aluno' },
+                            { label: 'Desktops para alunos', key: 'qt_desktop_aluno', showZero: true },
+                            { label: 'Notebooks/portáteis para alunos', key: 'qt_comp_portatil_aluno', showZero: true },
+                            { label: 'Tablets para alunos', key: 'qt_tablet_aluno', showZero: true },
                           ]} />
                           <NumTable title="Dispositivos — Administrativo" rows={[
-                            { label: 'Desktops administrativos', key: 'qt_desktop_adm' },
-                            { label: 'Notebooks administrativos', key: 'qt_comp_portatil_adm' },
+                            { label: 'Desktops administrativos', key: 'qt_desktop_adm', showZero: true },
+                            { label: 'Notebooks administrativos', key: 'qt_comp_portatil_adm', showZero: true },
                           ]} />
                           <NumTable title="Equipamentos Multimídia" rows={[
-                            { label: 'TVs', key: 'qt_equip_tv' },
-                            { label: 'Projetor/Multimídia', key: 'qt_equip_multimidia' },
-                            { label: 'Lousa digital', key: 'qt_equip_lousa_digital' },
-                            { label: 'Aparelhos de som', key: 'qt_equip_som' },
-                            { label: 'Impressoras', key: 'qt_equip_impressora' },
-                            { label: 'Impressoras multifuncionais', key: 'qt_equip_impressora_mult' },
-                            { label: 'Copiadoras', key: 'qt_equip_copiadora' },
+                            { label: 'TVs', key: 'qt_equip_tv', showZero: true },
+                            { label: 'Projetor/Multimídia', key: 'qt_equip_multimidia', showZero: true },
+                            { label: 'Lousa digital', key: 'qt_equip_lousa_digital', showZero: true },
+                            { label: 'Aparelhos de som', key: 'qt_equip_som', showZero: true },
+                            { label: 'Impressoras', key: 'qt_equip_impressora', showZero: true },
+                            { label: 'Impressoras multifuncionais', key: 'qt_equip_impressora_mult', showZero: true },
+                            { label: 'Copiadoras', key: 'qt_equip_copiadora', showZero: true },
                           ]} />
                           <BinTable title="Materiais Pedagógicos" rows={[
                             { label: 'Material multimídia', key: 'in_material_ped_multimidia' },
@@ -5847,27 +5852,27 @@ out center tags 100;`;
                             { label: 'Gestores Ed. Básica', key: 'qt_gest_bas' },
                           ]} />
                           <NumTable title="Equipe Pedagógica e de Apoio" rows={[
-                            { label: 'Coordenadores pedagógicos', key: 'qt_prof_coordenador' },
-                            { label: 'Secretários escolares', key: 'qt_prof_secretario' },
-                            { label: 'Pedagogos', key: 'qt_prof_pedagogia' },
-                            { label: 'Bibliotecários', key: 'qt_prof_bibliotecario' },
-                            { label: 'Tradutores/Intérpretes de Libras', key: 'qt_prof_trad_libras' },
-                            { label: 'Revisores de Braille', key: 'qt_prof_revisor_braille' },
+                            { label: 'Coordenadores pedagógicos', key: 'qt_prof_coordenador', showZero: true },
+                            { label: 'Secretários escolares', key: 'qt_prof_secretario', showZero: true },
+                            { label: 'Pedagogos', key: 'qt_prof_pedagogia', showZero: true },
+                            { label: 'Bibliotecários', key: 'qt_prof_bibliotecario', showZero: true },
+                            { label: 'Tradutores/Intérpretes de Libras', key: 'qt_prof_trad_libras', showZero: true },
+                            { label: 'Revisores de Braille', key: 'qt_prof_revisor_braille', showZero: true },
                           ]} />
                           <NumTable title="Equipe Administrativa e Serviços" rows={[
-                            { label: 'Administrativos', key: 'qt_prof_administrativos' },
-                            { label: 'Serviços gerais', key: 'qt_prof_servicos_gerais' },
-                            { label: 'Segurança/vigilância', key: 'qt_prof_seguranca' },
-                            { label: 'Monitores/Auxiliares', key: 'qt_prof_monitores' },
-                            { label: 'Gestores de atividades complementares', key: 'qt_prof_gestao' },
+                            { label: 'Administrativos', key: 'qt_prof_administrativos', showZero: true },
+                            { label: 'Serviços gerais', key: 'qt_prof_servicos_gerais', showZero: true },
+                            { label: 'Segurança/vigilância', key: 'qt_prof_seguranca', showZero: true },
+                            { label: 'Monitores/Auxiliares', key: 'qt_prof_monitores', showZero: true },
+                            { label: 'Gestores de atividades complementares', key: 'qt_prof_gestao', showZero: true },
                           ]} />
                           <NumTable title="Equipe de Saúde e Assistência Social" rows={[
-                            { label: 'Psicólogos', key: 'qt_prof_psicologo' },
-                            { label: 'Assistentes sociais', key: 'qt_prof_assist_social' },
-                            { label: 'Nutricionistas', key: 'qt_prof_nutricionista' },
-                            { label: 'Fonoaudiólogos', key: 'qt_prof_fonaudiologo' },
-                            { label: 'Profissionais de saúde', key: 'qt_prof_saude' },
-                            { label: 'Profissionais de alimentação', key: 'qt_prof_alimentacao' },
+                            { label: 'Psicólogos', key: 'qt_prof_psicologo', showZero: true },
+                            { label: 'Assistentes sociais', key: 'qt_prof_assist_social', showZero: true },
+                            { label: 'Nutricionistas', key: 'qt_prof_nutricionista', showZero: true },
+                            { label: 'Fonoaudiólogos', key: 'qt_prof_fonaudiologo', showZero: true },
+                            { label: 'Profissionais de saúde', key: 'qt_prof_saude', showZero: true },
+                            { label: 'Profissionais de alimentação', key: 'qt_prof_alimentacao', showZero: true },
                           ]} />
                           <TextTable title="Ano Letivo 2025" rows={[
                             { label: 'Início do ano letivo', key: 'dt_ano_letivo_inicio' },
