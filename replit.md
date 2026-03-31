@@ -26,7 +26,7 @@ Key Features:
 ### System Design Choices
 -   **Database**: **Railway PostgreSQL** (migrated from SQLite in full). Drizzle ORM for type-safe queries. `server/pg.ts` provides `pgPool` + `pgGet/pgAll/pgRun` helpers. `server/db.ts` uses `drizzle(pgPool)` as primary connection. Includes a `stats_cache` table for persistent caching of expensive aggregations. External API calls use a 15-minute in-memory cache.
 -   **Key Database Tables** (Railway PostgreSQL, 44 tables total):
-    - `censo_escolas` (1.32M rows, 45 cols) — main census data; indexed on `co_entidade`
+    - `censo_escolas` (1.32M rows, 300+ cols) — main census data; indexed on `co_entidade`. 2025 enriched with 300+ campos: geoloc (lat/lon/endereço), água/saneamento detalhado, espaços físicos completos, tecnologia/equipamentos, acessibilidade completa, educação ambiental + subtipos, pessoal de apoio (17 categorias), vínculo institucional, local de funcionamento, modalidades por etapa, materiais pedagógicos.
     - `censo_escolar` (VIEW of censo_escolas) — provides `inep`, `ano`, `nome`, `dados` JSON for SQL queries
     - `ideb_escola`, `tdi_escola`, `inse_escola`, etc. — indicator tables (11 total), indexed on `co_entidade`
     - `escola_busca` — full-text search index with TSVector

@@ -5689,7 +5689,13 @@ out center tags 100;`;
                             { label: 'Tratamento — Inexistente', key: 'in_tratamento_lixo_inexistente' },
                           ]} />
                           <BinTable title="Educação Ambiental" rows={[
-                            { label: 'Ed. Ambiental', key: 'in_educacao_ambiental' },
+                            { label: 'Educação ambiental', key: 'in_educ_ambiental' },
+                            { label: '— Como conteúdo curricular', key: 'in_educ_amb_curricular' },
+                            { label: '— Em projetos', key: 'in_educ_amb_projetos' },
+                            { label: '— Em eventos', key: 'in_educ_amb_eventos' },
+                            { label: '— Como conteúdo de disciplina', key: 'in_educ_amb_conteudo' },
+                            { label: '— Como eixo integrador', key: 'in_educ_amb_eixo' },
+                            { label: '— Não realiza', key: 'in_educ_amb_nenhuma' },
                           ]} />
                         </div>
                       );
@@ -5718,6 +5724,11 @@ out center tags 100;`;
                             { label: 'Enriquecimento curricular', key: 'in_esp_enriquecimento_curricular' },
                             { label: 'Intérprete de Libras', key: 'in_prof_interprete_libras' },
                             { label: 'Profissional de apoio', key: 'in_prof_apoio' },
+                          ]} />
+                          <BinTable title="Atendimento Educacional Especializado (AEE)" rows={[
+                            { label: 'AEE ofertado', key: 'in_sala_atendimento_especial' },
+                            { label: 'Espaço para AEE', key: 'in_espaco_atividade' },
+                            { label: 'Equipamentos para AEE', key: 'in_espaco_equipamento' },
                           ]} />
                           <NumTable title="Educação Especial — Matrículas" rows={[
                             { label: 'Total Ed. Especial', key: 'qt_mat_esp' },
@@ -5835,17 +5846,32 @@ out center tags 100;`;
                           <NumTable title="Quantidade de Gestores" rows={[
                             { label: 'Gestores Ed. Básica', key: 'qt_gest_bas' },
                           ]} />
-                          <NumTable title="Equipe Não Docente" rows={[
+                          <NumTable title="Equipe Pedagógica e de Apoio" rows={[
                             { label: 'Coordenadores pedagógicos', key: 'qt_prof_coordenador' },
                             { label: 'Secretários escolares', key: 'qt_prof_secretario' },
+                            { label: 'Pedagogos', key: 'qt_prof_pedagogia' },
+                            { label: 'Bibliotecários', key: 'qt_prof_bibliotecario' },
+                            { label: 'Tradutores/Intérpretes de Libras', key: 'qt_prof_trad_libras' },
+                            { label: 'Revisores de Braille', key: 'qt_prof_revisor_braille' },
+                          ]} />
+                          <NumTable title="Equipe Administrativa e Serviços" rows={[
                             { label: 'Administrativos', key: 'qt_prof_administrativos' },
                             { label: 'Serviços gerais', key: 'qt_prof_servicos_gerais' },
                             { label: 'Segurança/vigilância', key: 'qt_prof_seguranca' },
                             { label: 'Monitores/Auxiliares', key: 'qt_prof_monitores' },
-                            { label: 'Bibliotecários', key: 'qt_prof_bibliotecario' },
+                            { label: 'Gestores de atividades complementares', key: 'qt_prof_gestao' },
+                          ]} />
+                          <NumTable title="Equipe de Saúde e Assistência Social" rows={[
                             { label: 'Psicólogos', key: 'qt_prof_psicologo' },
                             { label: 'Assistentes sociais', key: 'qt_prof_assist_social' },
                             { label: 'Nutricionistas', key: 'qt_prof_nutricionista' },
+                            { label: 'Fonoaudiólogos', key: 'qt_prof_fonaudiologo' },
+                            { label: 'Profissionais de saúde', key: 'qt_prof_saude' },
+                            { label: 'Profissionais de alimentação', key: 'qt_prof_alimentacao' },
+                          ]} />
+                          <TextTable title="Ano Letivo 2025" rows={[
+                            { label: 'Início do ano letivo', key: 'dt_ano_letivo_inicio' },
+                            { label: 'Término do ano letivo', key: 'dt_ano_letivo_termino' },
                           ]} />
                         </div>
                       );
@@ -5898,7 +5924,7 @@ out center tags 100;`;
                             { label: 'Ed. Indígena', key: 'in_educacao_indigena' },
                             { label: 'Ed. Quilombola', key: 'in_educacao_quilombola' },
                             { label: 'Ed. do Campo', key: 'in_educacao_campo' },
-                            { label: 'Ed. Ambiental', key: 'in_educacao_ambiental' },
+                            { label: 'Ed. Ambiental', key: 'in_educ_ambiental' },
                           ]} />
                           <NumTable title="Matrículas" rows={[
                             { label: 'Total Ed. Básica', key: 'qt_mat_bas' },
