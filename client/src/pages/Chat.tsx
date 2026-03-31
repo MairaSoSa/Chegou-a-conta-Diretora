@@ -778,6 +778,8 @@ function EditorPanel() {
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [rightTab, setRightTab] = useState<"guia" | "chat">("guia");
   const [expandedGuideField, setExpandedGuideField] = useState<string | null>(null);
+  const [aiFieldTip, setAiFieldTip] = useState<{ field: string; loading: boolean; text: string | null }>({ field: "", loading: false, text: null });
+  const aiDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -795,6 +797,40 @@ function EditorPanel() {
   const currentData = activeDoc?.data || TEMPLATE_DEFAULTS["Ata de Reunião"];
   const currentTips = TEMPLATE_GUIDES[currentTemplate] || [];
   const filledCount = currentTips.filter(({ field }) => String(currentData[field] || "").trim()).length;
+
+  // Análise automática do campo ativo — debounce de 1.5s após parar de digitar
+  useEffect(() => {
+    const value = currentData[activeGuideField] || "";
+    const tip = currentTips.find(t => t.field === activeGuideField);
+    if (!tip || value.trim().length < 3) {
+      setAiFieldTip(prev => prev.field === activeGuideField ? { ...prev, text: null, loading: false } : prev);
+      if (aiDebounceRef.current) clearTimeout(aiDebounceRef.current);
+      return;
+    }
+    if (aiDebounceRef.current) clearTimeout(aiDebounceRef.current);
+    aiDebounceRef.current = setTimeout(async () => {
+      setAiFieldTip({ field: activeGuideField, loading: true, text: null });
+      try {
+        const res = await fetch("/api/caderno/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [{
+              role: "user",
+              content: `Campo: "${tip.title}" | Documento: "${currentTemplate}" | Conteúdo escrito: "${value}"`,
+            }],
+            chatContext: "field_review",
+            documentType: templateToType(currentTemplate),
+          }),
+        });
+        const data = await res.json();
+        if (data.ok) setAiFieldTip({ field: activeGuideField, loading: false, text: data.reply });
+        else setAiFieldTip({ field: activeGuideField, loading: false, text: null });
+      } catch {
+        setAiFieldTip({ field: activeGuideField, loading: false, text: null });
+      }
+    }, 1500);
+  }, [currentData[activeGuideField], activeGuideField]);
 
   const updateCurrentDoc = (updater: (doc: OpenDoc) => OpenDoc) => {
     setOpenDocs(prev => prev.map(doc => doc.id === activeDocId ? updater(doc) : doc));
@@ -1373,16 +1409,41 @@ function EditorPanel() {
                       <ChevronRight className={`w-3.5 h-3.5 text-[#b07a6a] shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
                     </button>
 
-                    {/* Dica expandida */}
+                    {/* Dica expandida + feedback da IA */}
                     {isExpanded && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.18 }}
-                        className="mx-2 mb-1 rounded-b-xl rounded-t-sm border border-t-0 border-[#d7c7bb] bg-white px-4 py-3"
+                        className="mx-2 mb-1 rounded-b-xl rounded-t-sm border border-t-0 border-[#d7c7bb] bg-white px-4 py-3 space-y-3"
                       >
+                        {/* Dica genérica */}
                         <p className="text-[12px] text-[#5f4032] leading-relaxed">{item.tip}</p>
+
+                        {/* Feedback da IA para este campo */}
+                        {isActive && (
+                          <div className="border-t border-[#f0e5df] pt-3">
+                            {aiFieldTip.loading && aiFieldTip.field === item.field ? (
+                              <div className="flex items-center gap-2 text-[11px] text-[#a07060]">
+                                <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                                Analisando o que você escreveu…
+                              </div>
+                            ) : aiFieldTip.text && aiFieldTip.field === item.field ? (
+                              <div className="rounded-xl bg-[#fef9f0] border border-[#f0d9b5] px-3 py-2.5">
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                  <Bot className="w-3.5 h-3.5 text-[#8e2f2f] shrink-0" />
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8e2f2f]">Análise da IA</span>
+                                </div>
+                                <p className="text-[12px] text-[#5f4032] leading-relaxed">
+                                  <ReactMarkdown>{aiFieldTip.text}</ReactMarkdown>
+                                </p>
+                              </div>
+                            ) : isFilled ? (
+                              <p className="text-[11px] text-[#a07060] italic">Digite mais para receber análise da IA…</p>
+                            ) : null}
+                          </div>
+                        )}
                       </motion.div>
                     )}
                   </div>
