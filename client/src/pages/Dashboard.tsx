@@ -4452,10 +4452,12 @@ out center tags 100;`;
                     const t = censo2025Data.turmas || {};
                     const d = censo2025Data.docentes || {};
                     const g = censo2025Data.gestor || {};
+                    const ct = (censo2025Data as any).cursos_tecnicos || {};
                     const municipio = evolucaoData?.escola?.no_municipio || '';
                     const uf = evolucaoData?.escola?.sg_uf || '';
                     const microNome = microregiaoData?.micro_nome || '';
                     const nEscolas = microregiaoData?.n_escolas || 0;
+                    const racaLabels: Record<string,string> = { branca:'Branca', preta:'Preta', parda:'Parda', amarela:'Amarela', indigena:'Indígena', nao_declarada:'N.D.' };
                     const racaGestor = g.por_raca ? Object.entries(g.por_raca).filter(([,v]) => (v as number) > 0).map(([k]) => k).join(', ') : '';
                     const faixaGestor = g.por_faixa ? Object.entries(g.por_faixa).find(([,v]) => (v as number) > 0)?.[0]?.replace('ate_24','até 24 anos').replace('de_25_29','25–29 anos').replace('de_30_39','30–39 anos').replace('de_40_49','40–49 anos').replace('de_50_54','50–54 anos').replace('de_55_59','55–59 anos').replace('mais_60','60+ anos') || '' : '';
                     const pctFem = d.total > 0 ? Math.round((d.feminino / d.total) * 100) : 0;
@@ -4551,12 +4553,43 @@ out center tags 100;`;
                             {m.total > 0 && (
                               <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #d0dcf0' }}>
                                 <div style={{ fontSize: 10, color: '#6a7a9a', marginBottom: 4 }}>Turno</div>
-                                <div style={{ display:'flex', gap:6 }}>
+                                <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                                   <span style={{ background:'#fff3cd', color:'#7a5a00', borderRadius:4, padding:'2px 7px', fontSize:10, fontWeight:700 }}>☀ {pctDiurno}% diurno</span>
                                   {(m.noturno ?? 0) > 0 && <span style={{ background:'#e8eaf6', color:'#283593', borderRadius:4, padding:'2px 7px', fontSize:10, fontWeight:700 }}>🌙 {100 - pctDiurno}% noturno</span>}
+                                  {(m.integral ?? 0) > 0 && <span style={{ background:'#e8f5e9', color:'#1b5e20', borderRadius:4, padding:'2px 7px', fontSize:10, fontWeight:700 }}>⏰ {m.integral} integral</span>}
                                 </div>
                               </div>
                             )}
+                            {m.por_genero && (m.por_genero.feminino > 0 || m.por_genero.masculino > 0) && (
+                              <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #d0dcf0' }}>
+                                <div style={{ fontSize: 10, color: '#6a7a9a', marginBottom: 5, fontWeight: 600 }}>Gênero dos alunos</div>
+                                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
+                                  <div style={{ height:7, borderRadius:4, background:'#e91e63', width:`${m.total > 0 ? Math.round(m.por_genero.feminino/m.total*100) : 0}%`, maxWidth:80, minWidth:4 }} />
+                                  <span style={{ fontSize:11, color:'#c0185a' }}>{m.por_genero.feminino} feminino ({m.total > 0 ? Math.round(m.por_genero.feminino/m.total*100) : 0}%)</span>
+                                </div>
+                                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                                  <div style={{ height:7, borderRadius:4, background:'#1565c0', width:`${m.total > 0 ? Math.round(m.por_genero.masculino/m.total*100) : 0}%`, maxWidth:80, minWidth:4 }} />
+                                  <span style={{ fontSize:11, color:'#1040a0' }}>{m.por_genero.masculino} masculino ({m.total > 0 ? Math.round(m.por_genero.masculino/m.total*100) : 0}%)</span>
+                                </div>
+                              </div>
+                            )}
+                            {m.por_raca && Object.values(m.por_raca as Record<string,number>).some(v => v > 0) && (() => {
+                              const racaMax = Math.max(...Object.values(m.por_raca as Record<string,number>));
+                              return (
+                                <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #d0dcf0' }}>
+                                  <div style={{ fontSize: 10, color: '#6a7a9a', marginBottom: 5, fontWeight: 600 }}>Raça/cor dos alunos</div>
+                                  {Object.entries(m.por_raca as Record<string,number>).filter(([,v]) => v > 0).map(([k,v]) => (
+                                    <div key={k} style={{ display:'flex', alignItems:'center', gap:5, marginBottom:3 }}>
+                                      <span style={{ fontSize:9, color:'#6a7a9a', width:34, flexShrink:0 }}>{racaLabels[k] ?? k}</span>
+                                      <div style={{ flex:1, background:'#e8edf8', borderRadius:3, overflow:'hidden', height:8 }}>
+                                        <div style={{ height:'100%', background: v === racaMax ? '#2d5a88' : '#7a9ac8', width:`${Math.round((v/racaMax)*100)}%`, borderRadius:3 }} />
+                                      </div>
+                                      <span style={{ fontSize:10, fontWeight:700, color:'#1a3a6a', width:28, textAlign:'right' }}>{v}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                           </div>
 
                           {/* Turmas */}
@@ -4580,6 +4613,7 @@ out center tags 100;`;
                             {(t.diurno ?? 0) > 0 && (
                               <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #b8e8d0', fontSize: 10, color: '#5a8a6a' }}>
                                 <span style={{ fontWeight: 700 }}>{t.diurno}</span> diurno · <span style={{ fontWeight: 700 }}>{t.noturno ?? 0}</span> noturno
+                                {(t.integral ?? 0) > 0 && <> · <span style={{ fontWeight: 700, color: '#1b5e20' }}>{t.integral}</span> integral</>}
                               </div>
                             )}
                           </div>
@@ -4613,6 +4647,23 @@ out center tags 100;`;
                                 ))}
                               </div>
                             )}
+                            {(d as any).por_raca && Object.values((d as any).por_raca as Record<string,number>).some(v => v > 0) && (() => {
+                              const drMax = Math.max(...Object.values((d as any).por_raca as Record<string,number>));
+                              return (
+                                <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #f0d88a' }}>
+                                  <div style={{ fontSize: 10, color: '#8a6a30', marginBottom: 5, fontWeight: 600 }}>Raça/cor dos docentes</div>
+                                  {Object.entries((d as any).por_raca as Record<string,number>).filter(([,v]) => v > 0).map(([k,v]) => (
+                                    <div key={k} style={{ display:'flex', alignItems:'center', gap:5, marginBottom:3 }}>
+                                      <span style={{ fontSize:9, color:'#8a6a30', width:34, flexShrink:0 }}>{racaLabels[k] ?? k}</span>
+                                      <div style={{ flex:1, background:'#f8e5b5', borderRadius:3, overflow:'hidden', height:8 }}>
+                                        <div style={{ height:'100%', background: v === drMax ? '#b8860b' : '#d4a832', width:`${Math.round((v/drMax)*100)}%`, borderRadius:3 }} />
+                                      </div>
+                                      <span style={{ fontSize:10, fontWeight:700, color:'#6a4a10', width:14, textAlign:'right' }}>{v}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                             {(d.especial ?? 0) > 0 && d.especial === d.total && (
                               <div style={{ marginTop: 8, fontSize: 10, color: '#1b5e20', background: '#e8f5e9', borderRadius: 6, padding: '4px 8px' }}>
                                 Todos os docentes atuam com inclusão
@@ -4633,13 +4684,44 @@ out center tags 100;`;
                               <div style={{ fontSize: 10, color: '#8a6aaa', marginBottom: 10 }}>gestor(es) registrado(s)</div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11 }}>
                                 {(g.diretor ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#666'}}>Diretores</span><strong>{g.diretor}</strong></div>}
+                                {((g as any).vice_diretor ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#666'}}>Vice-diretores</span><strong>{(g as any).vice_diretor}</strong></div>}
+                                {((g as any).coordenador ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#666'}}>Coordenadores</span><strong>{(g as any).coordenador}</strong></div>}
                                 {(g.feminino ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#e91e63'}}>Mulheres</span><strong>{g.feminino}</strong></div>}
                                 {(g.masculino ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#1565c0'}}>Homens</span><strong>{g.masculino}</strong></div>}
                                 {(g.concursado ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#2f7a58'}}>Concursados</span><strong>{g.concursado}</strong></div>}
-                                {(g.com_ensino_superior ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#2d5a88'}}>{g.com_ensino_superior > g.total ? 'Pós-graduação' : 'Sup. completo'}</span><strong>✓</strong></div>}
+                                {((g as any).efetivo ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#2f7a58'}}>Efetivos</span><strong>{(g as any).efetivo}</strong></div>}
+                                {((g as any).pos_graduacao ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#2d5a88'}}>Pós-graduação</span><strong>{(g as any).pos_graduacao}</strong></div>}
+                                {(g.com_ensino_superior ?? 0) > 0 && (g as any).pos_graduacao === 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#2d5a88'}}>Sup. completo</span><strong>✓</strong></div>}
                               </div>
                               {racaGestor && <div style={{ marginTop: 8, fontSize: 10, color: '#8a6aaa' }}>Raça/cor: <strong>{racaGestor}</strong></div>}
                               {faixaGestor && <div style={{ fontSize: 10, color: '#8a6aaa' }}>Faixa etária: <strong>{faixaGestor}</strong></div>}
+                            </div>
+                          )}
+
+                          {/* Cursos Técnicos */}
+                          {ct.total_cursos > 0 && (
+                            <div style={{ background: '#f0fdf8', border: '1px solid #a0dcc0', borderRadius: 10, padding: '14px 16px' }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#065f46', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Cursos Técnicos 2025</div>
+                              <div style={{ fontSize: 24, fontWeight: 800, color: '#064e3b', lineHeight: 1 }}>{ct.total_cursos}</div>
+                              <div style={{ fontSize: 10, color: '#047857', marginBottom: 6 }}>curso(s) técnico(s)</div>
+                              <div style={{ fontSize: 11, color: '#065f46', marginBottom: 10 }}>
+                                <strong>{(ct.total_matriculas ?? 0).toLocaleString('pt-BR')}</strong> matrículas
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                {(ct.cursos ?? []).map((c: any, i: number) => (
+                                  <div key={i} style={{ background: '#ecfdf5', borderRadius: 6, padding: '6px 10px' }}>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#065f46', lineHeight: 1.3 }}>{c.nome}</div>
+                                    {c.area_nome && <div style={{ fontSize: 9, color: '#047857', marginTop: 1 }}>{c.area_nome}</div>}
+                                    <div style={{ display:'flex', gap:8, marginTop:4, flexWrap:'wrap' }}>
+                                      <span style={{ fontSize:10, color:'#047857' }}>📖 {c.qt_matriculas} alunos</span>
+                                      {c.modalidade?.integrado > 0 && <span style={{ fontSize:9, background:'#d1fae5', color:'#065f46', borderRadius:3, padding:'1px 5px' }}>Integrado</span>}
+                                      {c.modalidade?.concomitante > 0 && <span style={{ fontSize:9, background:'#d1fae5', color:'#065f46', borderRadius:3, padding:'1px 5px' }}>Concomitante</span>}
+                                      {c.modalidade?.subsequente > 0 && <span style={{ fontSize:9, background:'#d1fae5', color:'#065f46', borderRadius:3, padding:'1px 5px' }}>Subsequente</span>}
+                                      {c.modalidade?.novo_medio > 0 && <span style={{ fontSize:9, background:'#d1fae5', color:'#065f46', borderRadius:3, padding:'1px 5px' }}>Novo Médio</span>}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
 
