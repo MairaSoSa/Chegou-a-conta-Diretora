@@ -8,8 +8,9 @@ import {
   Plus, Bold, Italic, List, ListOrdered, Heading2,
   Sparkles, PenLine, CheckSquare, AlertTriangle, SpellCheck,
   RefreshCw, ChevronLeft, ChevronRight, Clock, Menu, X,
-  School, Loader2, Download
+  School, Loader2, Download, MessageCircle, Send, Bot
 } from "@/components/Icons";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -280,6 +281,11 @@ export default function DocumentEditor() {
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiTab, setAiTab] = useState<"acoes" | "chat">("acoes");
+  const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
   const [showVersions, setShowVersions] = useState(false);
   const [inepLoading, setInepLoading] = useState(false);
   const [showNewDocDialog, setShowNewDocDialog] = useState(false);
@@ -490,6 +496,42 @@ ${headerHtml}
       editor.commands.setContent(aiSuggestion);
       setAiSuggestion(null);
     }
+  };
+
+  const handleChat = async (overrideMessage?: string) => {
+    const text = (overrideMessage ?? chatInput).trim();
+    if (!text || chatLoading) return;
+    const userMsg = { role: "user" as const, content: text };
+    const newMessages = [...chatMessages, userMsg];
+    setChatMessages(newMessages);
+    setChatInput("");
+    setChatLoading(true);
+    setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    try {
+      const res = await fetch("/api/caderno/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: newMessages,
+          inep: inepCode || (escola?.inep) || undefined,
+          documentType: selectedType,
+        }),
+      });
+      const data = await res.json();
+      const reply = data.ok ? data.reply : (data.message || "Erro ao obter resposta.");
+      setChatMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+    } catch {
+      setChatMessages((prev) => [...prev, { role: "assistant", content: "Erro de conexão. Tente novamente." }]);
+    } finally {
+      setChatLoading(false);
+      setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  };
+
+  const handleChatApplyToEditor = (content: string) => {
+    if (!editor) return;
+    const stripped = content.replace(/^```[a-z]*\n?/i, "").replace(/```$/i, "").trim();
+    editor.commands.setContent(`<p>${stripped.replace(/\n/g, "</p><p>")}</p>`);
   };
 
   const handleSaveVersion = async () => {
@@ -738,11 +780,12 @@ ${headerHtml}
             {aiPanelOpen && (
               <motion.aside
                 initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 280, opacity: 1 }}
+                animate={{ width: 300, opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 className="border-l border-[#8d6e63]/20 bg-[#efebe9]/50 flex flex-col overflow-hidden shrink-0"
               >
+                {/* Header com abas */}
                 <div className="p-3 border-b border-[#8d6e63]/20">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-sm font-semibold text-[#5d4037] flex items-center gap-1.5">
@@ -753,44 +796,165 @@ ${headerHtml}
                       <span className={`w-3 h-3 rounded-full ${qualityColor(selectedDoc.quality_score)}`} title={`Qualidade: ${selectedDoc.quality_score}`} />
                     )}
                   </div>
-                  <p className="text-[10px] text-[#8d6e63]">Selecione uma ação para analisar seu texto</p>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setAiTab("acoes")}
+                      className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg transition-colors ${aiTab === "acoes" ? "bg-[#5d4037] text-white" : "text-[#6d4c41] hover:bg-[#5d4037]/10"}`}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      Ações
+                    </button>
+                    <button
+                      onClick={() => setAiTab("chat")}
+                      className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg transition-colors ${aiTab === "chat" ? "bg-[#5d4037] text-white" : "text-[#6d4c41] hover:bg-[#5d4037]/10"}`}
+                    >
+                      <MessageCircle className="w-3 h-3" />
+                      Chat IA
+                    </button>
+                  </div>
                 </div>
-                <div className="p-3 space-y-1.5">
-                  {AI_ACTIONS.map((a) => {
-                    const Icon = a.icon;
-                    return (
-                      <Button
-                        key={a.action}
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start text-xs border-[#8d6e63]/20 text-[#5d4037] hover:bg-[#5d4037]/10"
-                        onClick={() => handleAiAction(a.action)}
-                        disabled={aiLoading || !selectedDocId}
-                      >
-                        <Icon className="w-3.5 h-3.5 mr-2" />
-                        {a.label}
-                      </Button>
-                    );
-                  })}
-                </div>
-                <div className="flex-1 overflow-y-auto p-3">
-                  {aiLoading && (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-5 h-5 animate-spin text-[#5d4037]" />
+
+                {/* Aba: Ações */}
+                {aiTab === "acoes" && (
+                  <>
+                    <div className="p-3 space-y-1.5">
+                      {AI_ACTIONS.map((a) => {
+                        const Icon = a.icon;
+                        return (
+                          <Button
+                            key={a.action}
+                            variant="outline"
+                            size="sm"
+                            className="w-full justify-start text-xs border-[#8d6e63]/20 text-[#5d4037] hover:bg-[#5d4037]/10"
+                            onClick={() => handleAiAction(a.action)}
+                            disabled={aiLoading || !selectedDocId}
+                          >
+                            <Icon className="w-3.5 h-3.5 mr-2" />
+                            {a.label}
+                          </Button>
+                        );
+                      })}
                     </div>
-                  )}
-                  {aiSuggestion && !aiLoading && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                      <Card className="p-3 border-[#8d6e63]/20 bg-white">
-                        <p className="text-xs text-[#5d4037] whitespace-pre-wrap leading-relaxed">{aiSuggestion}</p>
-                        <Button onClick={handleApplySuggestion} size="sm" className="mt-3 w-full bg-[#5d4037] hover:bg-[#6d4c41] text-white text-xs">
-                          <RefreshCw className="w-3 h-3 mr-1.5" />
-                          Aplicar
-                        </Button>
-                      </Card>
-                    </motion.div>
-                  )}
-                </div>
+                    <div className="flex-1 overflow-y-auto p-3">
+                      {aiLoading && (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="w-5 h-5 animate-spin text-[#5d4037]" />
+                        </div>
+                      )}
+                      {aiSuggestion && !aiLoading && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                          <Card className="p-3 border-[#8d6e63]/20 bg-white">
+                            <p className="text-xs text-[#5d4037] whitespace-pre-wrap leading-relaxed">{aiSuggestion}</p>
+                            <Button onClick={handleApplySuggestion} size="sm" className="mt-3 w-full bg-[#5d4037] hover:bg-[#6d4c41] text-white text-xs">
+                              <RefreshCw className="w-3 h-3 mr-1.5" />
+                              Aplicar ao documento
+                            </Button>
+                          </Card>
+                        </motion.div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Aba: Chat IA */}
+                {aiTab === "chat" && (
+                  <div className="flex flex-col flex-1 min-h-0">
+                    {/* Sugestões rápidas */}
+                    {chatMessages.length === 0 && (
+                      <div className="p-3 space-y-1.5">
+                        <p className="text-[10px] text-[#8d6e63] mb-2">Sugestões rápidas:</p>
+                        {[
+                          "Gere um rascunho de ata de reunião do conselho escolar",
+                          "Como usar os recursos do PDDE Básico?",
+                          "Quais documentos preciso guardar após uma compra?",
+                          `Escreva um ofício solicitando materiais de limpeza`,
+                        ].map((sugestao) => (
+                          <button
+                            key={sugestao}
+                            onClick={() => handleChat(sugestao)}
+                            disabled={chatLoading}
+                            className="w-full text-left text-[11px] text-[#5d4037] bg-white border border-[#8d6e63]/20 rounded-lg px-2.5 py-2 hover:bg-[#5d4037]/5 hover:border-[#5d4037]/30 transition-colors leading-snug"
+                          >
+                            {sugestao}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Histórico */}
+                    {chatMessages.length > 0 && (
+                      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                        {chatMessages.map((msg, i) => (
+                          <div key={i} className={`flex gap-2 items-start ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+                            <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] ${msg.role === "user" ? "bg-[#5d4037]" : "bg-[#8d6e63]"}`}>
+                              {msg.role === "user" ? "D" : <Bot className="w-3 h-3" />}
+                            </div>
+                            <div className={`rounded-xl px-3 py-2 text-xs leading-relaxed max-w-[220px] ${msg.role === "user" ? "bg-[#5d4037] text-white" : "bg-white border border-[#8d6e63]/20 text-[#3d2318]"}`}>
+                              {msg.role === "assistant" ? (
+                                <div className="prose prose-xs max-w-none prose-p:my-0.5 prose-ul:my-0.5 prose-li:my-0 text-[#3d2318]">
+                                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                                </div>
+                              ) : (
+                                msg.content
+                              )}
+                              {msg.role === "assistant" && (
+                                <button
+                                  onClick={() => handleChatApplyToEditor(msg.content)}
+                                  className="mt-1.5 text-[10px] text-[#8d6e63] hover:text-[#5d4037] flex items-center gap-1 transition-colors"
+                                  title="Inserir no documento"
+                                >
+                                  <RefreshCw className="w-2.5 h-2.5" />
+                                  Inserir no doc
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        {chatLoading && (
+                          <div className="flex gap-2 items-start">
+                            <div className="shrink-0 w-6 h-6 rounded-full bg-[#8d6e63] flex items-center justify-center">
+                              <Bot className="w-3 h-3 text-white" />
+                            </div>
+                            <div className="bg-white border border-[#8d6e63]/20 rounded-xl px-3 py-2">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#8d6e63]" />
+                            </div>
+                          </div>
+                        )}
+                        <div ref={chatBottomRef} />
+                      </div>
+                    )}
+
+                    {/* Input */}
+                    <div className="p-3 border-t border-[#8d6e63]/20 bg-white/50">
+                      {chatMessages.length > 0 && (
+                        <button
+                          onClick={() => setChatMessages([])}
+                          className="text-[10px] text-[#8d6e63] hover:text-[#5d4037] mb-2 flex items-center gap-1"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                          Nova conversa
+                        </button>
+                      )}
+                      <div className="flex gap-2">
+                        <input
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleChat(); } }}
+                          placeholder="Pergunte à IA..."
+                          disabled={chatLoading}
+                          className="flex-1 text-xs border border-[#8d6e63]/30 rounded-lg px-3 py-2 bg-white text-[#5d4037] placeholder:text-[#8d6e63]/60 focus:outline-none focus:border-[#5d4037]/50"
+                        />
+                        <button
+                          onClick={() => handleChat()}
+                          disabled={chatLoading || !chatInput.trim()}
+                          className="w-8 h-8 rounded-lg bg-[#5d4037] hover:bg-[#6d4c41] text-white flex items-center justify-center disabled:opacity-40 transition-colors shrink-0"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </motion.aside>
             )}
           </AnimatePresence>

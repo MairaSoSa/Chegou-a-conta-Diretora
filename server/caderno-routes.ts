@@ -199,6 +199,106 @@ export function registerCadernoRoutes(app: Express): void {
     }
   });
 
+  app.post("/api/caderno/chat", async (req, res) => {
+    try {
+      const { messages, inep, documentType } = req.body;
+      if (!messages || !Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({ ok: false, message: "messages é obrigatório" });
+      }
+
+      const contextParts: string[] = [];
+
+      if (inep && String(inep).length >= 7) {
+        const escola = sqlite.prepare(`
+          SELECT inep, nome, municipio, uf, dependencia, localizacao, matriculas, ano
+          FROM censo_escolar WHERE inep = ? ORDER BY ano DESC LIMIT 1
+        `).get(String(inep)) as any;
+
+        if (escola) {
+          contextParts.push(
+            `ESCOLA DA DIRETORA:\n- Nome: ${escola.nome}\n- Município: ${escola.municipio}/${escola.uf}\n- Rede: ${escola.dependencia}\n- Localização: ${escola.localizacao}\n- Matrículas (${escola.ano}): ${escola.matriculas?.toLocaleString("pt-BR") || "—"}`
+          );
+        }
+
+        const indicadores = sqlite.prepare(`
+          SELECT tipo, ano, valor FROM indicadores_educacionais
+          WHERE inep = ? ORDER BY ano DESC LIMIT 30
+        `).all(String(inep)) as any[];
+
+        if (indicadores.length > 0) {
+          const seen = new Set<string>();
+          const linhas: string[] = [];
+          for (const ind of indicadores) {
+            if (!seen.has(ind.tipo)) {
+              seen.add(ind.tipo);
+              linhas.push(`- ${ind.tipo}: ${ind.valor} (${ind.ano})`);
+            }
+          }
+          if (linhas.length > 0) {
+            contextParts.push(`INDICADORES EDUCACIONAIS:\n${linhas.join("\n")}`);
+          }
+        }
+      }
+
+      const notes = sqlite.prepare(
+        "SELECT title, content FROM caderno_notes ORDER BY created_at DESC LIMIT 5"
+      ).all() as any[];
+
+      if (notes.length > 0) {
+        const noteLines = notes.map((n: any) => `- ${n.title}: ${String(n.content).slice(0, 120)}`);
+        contextParts.push(`ANOTAÇÕES RECENTES DO CADERNO:\n${noteLines.join("\n")}`);
+      }
+
+      const contextBlock = contextParts.length > 0
+        ? `\n\n---\nCONTEXTO DISPONÍVEL:\n${contextParts.join("\n\n")}\n---`
+        : "";
+
+      const docTypeMap: Record<string, string> = {
+        ata: "Ata de Reunião",
+        oficio: "Ofício",
+        pesquisa: "Pesquisa de Preços",
+        relatorio: "Relatório de Execução",
+      };
+      const docTypeName = documentType ? (docTypeMap[documentType] || documentType) : null;
+
+      const systemPrompt = `Você é a IA assistente do "Caderno da Diretora", uma plataforma educacional brasileira para gestão escolar chamada "Chegou a Conta, Diretora!".
+
+Você ajuda diretoras e diretores de escola com:
+- Gestão do PDDE (Programa Dinheiro Direto na Escola) e seus programas (Básico, Qualidade, Acessibilidade, etc.)
+- Redação de documentos escolares: Atas de Reunião, Ofícios, Pesquisas de Preços, Relatórios de Execução
+- Prestação de contas, notas fiscais e execução financeira
+- Indicadores educacionais (ICG, IRD, ATU, HAD, etc.) e censo escolar
+- Legislação educacional (Lei nº 11.947/2009, Resolução FNDE nº 15/2021, Lei nº 14.133/2021)
+- Orientações sobre UEx (Unidade Executora) e conselho escolar${docTypeName ? `\n- Documento sendo editado atualmente: ${docTypeName}` : ""}
+
+Regras de resposta:
+- Responda SOMENTE sobre temas de gestão escolar, PDDE e educação pública brasileira
+- Use linguagem simples, clara e objetiva — sem juridiquês
+- Quando gerar documentos completos, use formato markdown bem estruturado
+- Nunca invente dados concretos (valores, datas, nomes) — use "[informar]" como marcador
+- Use dados do contexto quando disponíveis
+- Máximo 350 palavras por resposta, exceto ao gerar documentos completos${contextBlock}`;
+
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const response = await openai.chat.completions.create({
+        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        temperature: 0.4,
+        max_tokens: 1200,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages.slice(-12).map((m: any) => ({ role: m.role, content: m.content })),
+        ],
+      });
+
+      const reply = response.choices?.[0]?.message?.content?.trim() || "Não consegui gerar uma resposta.";
+      res.json({ ok: true, reply });
+    } catch (e: any) {
+      res.status(500).json({ ok: false, message: e.message });
+    }
+  });
+
   app.post("/api/caderno/assistente", async (req, res) => {
     try {
       const { action, text, documentType, context } = req.body;
