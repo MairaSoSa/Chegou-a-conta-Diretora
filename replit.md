@@ -24,10 +24,18 @@ Key Features:
 -   **Expanded Admin Panel**: Provides CRUD operations for managing glossary, tools, learning trail, programs, AI knowledge base documents, and site settings. Includes CSV upload capabilities.
 
 ### System Design Choices
--   **Database**: SQLite with Drizzle ORM for type-safe queries. Uses performance-critical pragmas and includes a `stats_cache` table for persistent 24-hour caching of expensive aggregations, with auto-invalidation and warming. External API calls use a 15-minute in-memory cache.
+-   **Database**: **Railway PostgreSQL** (migrated from SQLite in full). Drizzle ORM for type-safe queries. `server/pg.ts` provides `pgPool` + `pgGet/pgAll/pgRun` helpers. `server/db.ts` uses `drizzle(pgPool)` as primary connection. Includes a `stats_cache` table for persistent caching of expensive aggregations. External API calls use a 15-minute in-memory cache.
+-   **Key Database Tables** (Railway PostgreSQL, 44 tables total):
+    - `censo_escolas` (1.32M rows, 45 cols) — main census data; indexed on `co_entidade`
+    - `censo_escolar` (VIEW of censo_escolas) — provides `inep`, `ano`, `nome`, `dados` JSON for SQL queries
+    - `ideb_escola`, `tdi_escola`, `inse_escola`, etc. — indicator tables (11 total), indexed on `co_entidade`
+    - `escola_busca` — full-text search index with TSVector
+    - `stats_cache` — persistent cache keyed by `cache_key` column
+-   **Performance**: `getEscolaEvolucaoLocal` queries underlying tables directly (not VIEWs) with integer `co_entidade` to use indexes. Response time: ~1s (was 93s with text cast on VIEW).
 -   **Content Management**: All application content is dynamically managed via the admin panel and fetched from the database.
 -   **AI Security**: The AI system prompt enforces strict adherence to the knowledge base, refusing out-of-scope queries and topics not present in the provided content. A low temperature setting (0.3) is used to minimize hallucination.
 -   **Data Management**: Emphasizes local data processing and includes mechanisms for tracking and resolving AI's unanswered questions.
+-   **Data Gap**: Detailed census fields (gender/racial/age breakdowns: `qt_mat_bas_fem`, `qt_mat_bas_masc`, `qt_mat_bas_branca`, etc.) not in Railway — only in old SQLite Google Drive import. "Perfil dos estudantes" pizza charts show "Sem dados" for these. Admin can run `server/importador-drive.ts` to populate via Google Drive CSVs.
 
 ## Demo Data / Codespace Setup
 
@@ -61,31 +69,14 @@ NPM scripts:
 
 ## Deployment
 
-**Autoscale** deployment (Replit). Target: ~3.5MB total container.
+**Autoscale** deployment (Replit). No SQLite — all data lives in Railway PostgreSQL.
 
 ### Strategy
-- `dist/` is pre-compiled locally and committed to the Replit workspace (not git-tracked, but persists in the Replit filesystem)
-- `.dockerignore` excludes source files, `node_modules/`, `.git/`, `.local/` — only `dist/` and `start.sh` are uploaded
-- No build step in deployment config (Replit just runs `bash start.sh`)
-- `start.sh` downloads the SQLite DB from Google Drive (`SQLITE_DB_DOWNLOAD_URL` secret), then runs `node dist/bootstrap.cjs`
-- `dist/bootstrap.cjs` extracts `dist/better_sqlite3.gz` → `/tmp/better_sqlite3.node`, patches `Module._load` to redirect native addon loading to `/tmp`, then decompresses and executes `dist/index.cjs.gz`
-
-### Before publishing
-Run this script to prepare `dist/` with the latest code:
-```bash
-bash scripts/prepare-deploy.sh
-```
-This builds client + server, gzips all assets and the server bundle, embeds the SQLite native binary, and generates the bootstrap launcher. Then publish via the Replit Publish button.
-
-### Container layout (after deployment upload)
-| File | Size |
-|------|------|
-| `dist/index.cjs.gz` | ~1.9 MB |
-| `dist/better_sqlite3.gz` | ~1.1 MB |
-| `dist/public/assets/*.gz` | ~0.6 MB |
-| `dist/bootstrap.cjs` | ~2 KB |
-| `start.sh`, `.replit`, etc. | ~10 KB |
-| **TOTAL** | **~3.6 MB** |
+- `start.sh` starts Node.js directly: `node dist/index.cjs` (no database download step)
+- `dist/bootstrap.cjs` is optional — made SQLite-optional/graceful so it doesn't crash if SQLite missing
+- All 1.3M+ census records are in Railway PostgreSQL (not bundled)
+- Build: `bash scripts/deploy-build.sh` compiles client + server into `dist/`
 
 ### Required secrets for production
-- `SQLITE_DB_DOWNLOAD_URL` — Google Drive URL for the SQLite database (~2.7 GB)
+- `RAILWAY_DATABASE_URL` — Railway PostgreSQL connection string
+- `OPENAI_API_KEY` — OpenAI API key for Caderno da Diretora AI

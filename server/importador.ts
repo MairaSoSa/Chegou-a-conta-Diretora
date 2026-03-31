@@ -404,66 +404,119 @@ export async function getEscolaCompletaLocal(inep: string, ano: number) {
   return Object.keys(result).length > 3 ? result : null;
 }
 
+const DEP_MAP: Record<string, string> = { '1': 'Federal', '2': 'Estadual', '3': 'Municipal', '4': 'Privada' };
+const LOC_MAP: Record<string, string> = { '1': 'Urbana', '2': 'Rural' };
+const SIT_MAP: Record<string, string> = { '1': 'Em Atividade', '2': 'Paralisada', '3': 'Extinta' };
+
 export async function getEscolaEvolucaoLocal(inep: string) {
-  const censoRecords = await db.select().from(censoEscolar)
-    .where(eq(censoEscolar.inep, inep));
+  const coEntidade = parseInt(inep, 10);
+  if (isNaN(coEntidade)) return null;
 
-  if (censoRecords.length === 0) return null;
+  // Query censo_escolas directly (integer co_entidade = uses idx_censo_escolas_co_entidade index)
+  const [censoRows, indicadorRows] = await Promise.all([
+    pgAll(
+      `SELECT ano, co_entidade, no_entidade, no_municipio, sg_uf,
+              tp_dependencia, tp_localizacao, tp_situacao_funcionamento,
+              qt_mat_bas, qt_mat_inf, qt_mat_fund, qt_mat_med, qt_mat_eja,
+              qt_doc_bas, qt_tur_bas, qt_tur_inf, qt_tur_fund, qt_tur_med,
+              qt_salas_utilizadas, in_agua_potavel, in_energia_rede_publica,
+              in_esgoto_rede_publica, in_internet, in_banda_larga,
+              in_laboratorio_informatica, in_biblioteca, in_quadra_esportes,
+              in_alimentacao, no_regiao, co_regiao, no_uf, co_uf, co_municipio
+       FROM censo_escolas WHERE co_entidade = $1 ORDER BY ano`,
+      [coEntidade]
+    ),
+    // Query all indicator tables directly using co_entidade integer (uses per-table indexes)
+    // Uses ? placeholders (converted to $1..$11) so each UNION ALL branch gets its own param
+    pgAll(
+      `SELECT co_entidade::text as inep, ano, 'ied' as tipo, dados_json::text as dados FROM ied_escola WHERE co_entidade=?
+       UNION ALL SELECT co_entidade::text, ano, 'icg', dados_json::text FROM icg_escola WHERE co_entidade=?
+       UNION ALL SELECT co_entidade::text, ano, 'inse', dados_json::text FROM inse_escola WHERE co_entidade=?
+       UNION ALL SELECT co_entidade::text, ano, 'ird', dados_json::text FROM ird_escola WHERE co_entidade=?
+       UNION ALL SELECT co_entidade::text, ano, 'afd', dados_json::text FROM afd_escola WHERE co_entidade=?
+       UNION ALL SELECT co_entidade::text, ano, 'atu', dados_json::text FROM atu_escola WHERE co_entidade=?
+       UNION ALL SELECT co_entidade::text, ano, 'tdi', dados_json::text FROM tdi_escola WHERE co_entidade=?
+       UNION ALL SELECT co_entidade::text, ano, 'rendimento', dados_json::text FROM rendimento_escola WHERE co_entidade=?
+       UNION ALL SELECT co_entidade::text, ano, 'had', dados_json::text FROM had_escola WHERE co_entidade=?
+       UNION ALL SELECT co_entidade::text, ano, 'tnr', dados_json::text FROM tnr_escola WHERE co_entidade=?
+       UNION ALL SELECT co_entidade::text, ano, 'ideb',
+         jsonb_build_object('etapa', etapa, 'ideb', ideb, 'nota_saeb', nota_saeb, 'taxa_aprovacao', taxa_aprovacao)::text
+         FROM ideb_escola WHERE co_entidade=?`,
+      [coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade]
+    ),
+  ]);
 
-  const indicadorRecords = await db.select().from(indicadoresEducacionais)
-    .where(eq(indicadoresEducacionais.inep, inep));
+  if (censoRows.length === 0) return null;
 
   const anosSet = new Set<number>();
-  censoRecords.forEach(r => anosSet.add(Number(r.ano)));
-  indicadorRecords.forEach(r => anosSet.add(r.ano));
+  censoRows.forEach((r: any) => anosSet.add(Number(r.ano)));
+  indicadorRows.forEach((r: any) => anosSet.add(Number(r.ano)));
   const anos = [...anosSet].sort();
 
   const censoByYear: Record<number, any> = {};
-  for (const c of censoRecords) {
-    const dados = c.dados ? JSON.parse(c.dados) : {};
-    censoByYear[Number(c.ano)] = {
-      ...dados,
-      no_entidade: c.nome || dados.no_entidade,
-      // Totais — colunas diretas têm prioridade (mais confiáveis que o JSON)
-      qt_mat_bas: c.matriculas || dados.qt_mat_bas,
-      qt_doc_bas: c.docentes || dados.qt_doc_bas,
-      qt_docentes: c.docentes || dados.qt_doc_bas || dados.qt_docentes,
-      qt_tur_bas: c.turmas || dados.qt_tur_bas,
-      qt_turmas: c.turmas || dados.qt_tur_bas || dados.qt_turmas,
-      qt_salas_utilizadas: dados.qt_salas_utilizadas,
-      qt_salas_utiliza_climatizadas: dados.qt_salas_utiliza_climatizadas,
-      qt_salas_utilizadas_acessiveis: dados.qt_salas_utilizadas_acessiveis,
-      // Internet — plano (2025) ou aninhado (legado)
-      in_internet: dados.in_internet ?? dados.infraestrutura?.in_internet,
-      tp_dependencia_texto: c.dependencia,
-      tp_localizacao_texto: c.localizacao,
-      tp_situacao_texto: c.situacao,
-      no_municipio: c.municipio,
-      sg_uf: c.uf,
-      ds_endereco: dados.ds_endereco,
-      telefone: dados.telefone,
+  for (const c of censoRows as any[]) {
+    const ano = Number(c.ano);
+    const matriculas = c.qt_mat_bas ? Number(c.qt_mat_bas) || 0 : 0;
+    const docentes = c.qt_doc_bas ? Number(c.qt_doc_bas) || 0 : 0;
+    const turmas = c.qt_tur_bas ? Number(c.qt_tur_bas) || 0 : 0;
+    const dependencia = DEP_MAP[c.tp_dependencia] || c.tp_dependencia;
+    const localizacao = LOC_MAP[c.tp_localizacao] || c.tp_localizacao;
+    const situacao = SIT_MAP[c.tp_situacao_funcionamento] || c.tp_situacao_funcionamento;
+
+    censoByYear[ano] = {
+      no_entidade: c.no_entidade,
+      no_municipio: c.no_municipio,
+      sg_uf: c.sg_uf,
+      tp_dependencia_texto: dependencia,
+      tp_localizacao_texto: localizacao,
+      tp_situacao_texto: situacao,
+      qt_mat_bas: matriculas,
+      qt_doc_bas: docentes,
+      qt_docentes: docentes,
+      qt_tur_bas: turmas,
+      qt_turmas: turmas,
+      qt_mat_inf: c.qt_mat_inf ? Number(c.qt_mat_inf) || 0 : 0,
+      qt_mat_fund: c.qt_mat_fund ? Number(c.qt_mat_fund) || 0 : 0,
+      qt_mat_med: c.qt_mat_med ? Number(c.qt_mat_med) || 0 : 0,
+      qt_mat_eja: c.qt_mat_eja ? Number(c.qt_mat_eja) || 0 : 0,
+      qt_tur_inf: c.qt_tur_inf ? Number(c.qt_tur_inf) || 0 : 0,
+      qt_tur_fund: c.qt_tur_fund ? Number(c.qt_tur_fund) || 0 : 0,
+      qt_tur_med: c.qt_tur_med ? Number(c.qt_tur_med) || 0 : 0,
+      qt_salas_utilizadas: c.qt_salas_utilizadas ? Number(c.qt_salas_utilizadas) || 0 : 0,
+      in_internet: c.in_internet,
+      in_agua_potavel: c.in_agua_potavel,
+      in_energia_rede_publica: c.in_energia_rede_publica,
+      in_esgoto_rede_publica: c.in_esgoto_rede_publica,
+      in_banda_larga: c.in_banda_larga,
+      in_laboratorio_informatica: c.in_laboratorio_informatica,
+      in_biblioteca: c.in_biblioteca,
+      in_quadra_esportes: c.in_quadra_esportes,
+      in_alimentacao: c.in_alimentacao,
+      no_regiao: c.no_regiao,
+      co_municipio: c.co_municipio?.toString(),
     };
   }
 
   const indicadoresByYear: Record<number, Record<string, any>> = {};
-  for (const ind of indicadorRecords) {
-    if (!indicadoresByYear[ind.ano]) indicadoresByYear[ind.ano] = {};
-    indicadoresByYear[ind.ano][ind.tipo] = ind.dados ? JSON.parse(ind.dados) : {};
+  for (const ind of indicadorRows as any[]) {
+    const ano = Number(ind.ano);
+    if (!indicadoresByYear[ano]) indicadoresByYear[ano] = {};
+    indicadoresByYear[ano][ind.tipo] = ind.dados ? JSON.parse(ind.dados) : {};
   }
 
   const latestAno = anos[anos.length - 1];
   const latestCenso = censoByYear[latestAno] || censoByYear[anos[0]];
 
   return {
-    co_entidade: parseInt(inep),
+    co_entidade: coEntidade,
     anos_disponiveis: anos,
     escola: {
       no_entidade: latestCenso?.no_entidade,
       no_municipio: latestCenso?.no_municipio,
       sg_uf: latestCenso?.sg_uf,
-      ds_dependencia: latestCenso?.ds_dependencia || latestCenso?.tp_dependencia_texto,
-      ds_localizacao: latestCenso?.ds_localizacao || latestCenso?.tp_localizacao_texto,
-      ds_situacao: latestCenso?.ds_situacao || latestCenso?.tp_situacao_texto,
+      ds_dependencia: latestCenso?.tp_dependencia_texto,
+      ds_localizacao: latestCenso?.tp_localizacao_texto,
+      ds_situacao: latestCenso?.tp_situacao_texto,
     },
     censo_por_ano: censoByYear,
     indicadores_por_ano: indicadoresByYear,
