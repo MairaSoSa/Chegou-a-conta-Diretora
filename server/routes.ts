@@ -190,7 +190,7 @@ export async function registerRoutes(
   });
 
   // Pré-computa médias IDEB locais (municipio/UF/Brasil) em background
-  setTimeout(() => buildLocalMaps(), 0);
+  setTimeout(async () => { try { await buildLocalMaps(); } catch(e: any) { console.warn("[analytics] buildLocalMaps falhou:", e.message); } }, 0);
 
   registerChatRoutes(app);
   registerCadernoRoutes(app);
@@ -383,7 +383,7 @@ export async function registerRoutes(
     }
 
     // 2. Cache miss — buscar local primeiro (Railway como fallback)
-    const localData = getComparativoLocal(inep);
+    const localData = await getComparativoLocal(inep);
     if (localData) {
       safeCacheWrite(CACHE_KEY, localData);
       return res.json(localData);
@@ -494,7 +494,7 @@ export async function registerRoutes(
       return res.json(JSON.parse(cached.data));
     }
 
-    const localDiag = getDiagnosticoLocal(inep);
+    const localDiag = await getDiagnosticoLocal(inep);
     if (localDiag) {
       safeCacheWrite(CACHE_KEY, localDiag);
       return res.json(localDiag);
