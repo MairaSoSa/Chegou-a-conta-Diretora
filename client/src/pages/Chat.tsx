@@ -869,6 +869,7 @@ function EditorPanel() {
         body: JSON.stringify({
           messages: newMessages,
           documentType: templateToType(currentTemplate),
+          chatContext: "editor",
         }),
       });
       const data = await res.json();
@@ -1120,10 +1121,10 @@ function EditorPanel() {
               <div className="flex-1 overflow-y-auto p-3 space-y-2">
                 <p className="text-[10px] text-[#a07060] uppercase tracking-wider mb-1">Sugestões rápidas</p>
                 {[
-                  `Gere um rascunho de ${currentTemplate}`,
-                  "Quais documentos preciso guardar após uma compra?",
-                  "Como usar os recursos do PDDE Básico?",
-                  "Explique o que é a UEx",
+                  `Gere um rascunho completo para ${currentTemplate === "ata" ? "ata de reunião" : currentTemplate === "oficio" ? "ofício" : currentTemplate === "pesquisa" ? "pesquisa de preços" : "relatório de execução"}`,
+                  "Como deve ser o fecho e a assinatura deste documento?",
+                  "Corrija a gramática e a concordância deste trecho: [cole aqui]",
+                  "Qual a estrutura correta deste documento conforme a redação oficial?",
                 ].map((s) => (
                   <button
                     key={s}

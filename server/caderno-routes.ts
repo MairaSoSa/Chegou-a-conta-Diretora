@@ -201,7 +201,7 @@ export function registerCadernoRoutes(app: Express): void {
 
   app.post("/api/caderno/chat", async (req, res) => {
     try {
-      const { messages, inep, documentType } = req.body;
+      const { messages, inep, documentType, chatContext } = req.body;
       if (!messages || !Array.isArray(messages) || messages.length === 0) {
         return res.status(400).json({ ok: false, message: "messages é obrigatório" });
       }
@@ -261,7 +261,33 @@ export function registerCadernoRoutes(app: Express): void {
       };
       const docTypeName = documentType ? (docTypeMap[documentType] || documentType) : null;
 
-      const systemPrompt = `Você é a IA assistente do "Caderno da Diretora", uma plataforma educacional brasileira para gestão escolar chamada "Chegou a Conta, Diretora!".
+      const isEditorContext = chatContext === "editor";
+
+      const systemPrompt = isEditorContext
+        ? `Você é um especialista em redação oficial e documentos escolares do "Caderno da Diretora".${docTypeName ? `\n\nDocumento em edição: **${docTypeName}**` : ""}
+
+Sua única função é ajudar a redigir, revisar e aprimorar documentos escolares, incluindo:
+- Atas de reunião do conselho escolar e UEx
+- Ofícios, memorandos e comunicações oficiais
+- Pesquisas de preços e cotações
+- Relatórios de execução financeira e prestação de contas PDDE
+- Qualquer outro documento formal que a escola precise produzir
+
+Como você ajuda:
+- Sugerir rascunhos e parágrafos prontos para usar
+- Corrigir gramática, concordância, pontuação e ortografia
+- Adequar a linguagem às normas da redação oficial brasileira (Manual de Redação da Presidência da República)
+- Indicar a estrutura correta do documento (preâmbulo, dispositivo, fecho, assinaturas)
+- Reformular trechos confusos ou informais
+- Sinalizar onde faltam informações obrigatórias com [informar]
+
+Regras obrigatórias:
+- Responda SOMENTE sobre redação, revisão e estrutura de documentos escolares
+- Se perguntarem sobre outros temas (finanças, indicadores, legislação geral), diga educadamente que esse chat é exclusivo para redação de documentos e oriente a usar a Folha de Pesquisa para outras dúvidas
+- Nunca invente dados concretos (nomes, datas, valores, CNPJs) — use [informar] como marcador
+- Use linguagem clara, sem juridiquês, mas respeitando a formalidade da redação oficial
+- Ao gerar texto de documento, use markdown estruturado${contextBlock}`
+        : `Você é a IA assistente do "Caderno da Diretora", uma plataforma educacional brasileira para gestão escolar chamada "Chegou a Conta, Diretora!".
 
 Você ajuda diretoras e diretores de escola com:
 - Gestão do PDDE (Programa Dinheiro Direto na Escola) e seus programas (Básico, Qualidade, Acessibilidade, etc.)
