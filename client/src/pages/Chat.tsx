@@ -1436,7 +1436,7 @@ function EditorPanel() {
                                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#8e2f2f]">Análise da IA</span>
                                 </div>
                                 <p className="text-[12px] text-[#5f4032] leading-relaxed">
-                                  <ReactMarkdown>{aiFieldTip.text}</ReactMarkdown>
+                                  {renderAiTip(aiFieldTip.text)}
                                 </p>
                               </div>
                             ) : isFilled ? (
@@ -1625,6 +1625,24 @@ function EditorPanel() {
 }
 
 // ─── HELPER ───────────────────────────────────────────────────────────────────
+
+function renderAiTip(text: string): React.ReactNode {
+  const parts = text.split(/(\{[^}]+\|[^}]+\})/g);
+  return parts.map((part, i) => {
+    const match = part.match(/^\{(.+)\|(.+)\}$/);
+    if (match) {
+      const [, wrong, right] = match;
+      return (
+        <span key={i} className="inline-flex items-baseline gap-1 flex-wrap">
+          <span className="line-through text-[#c0392b] font-medium">{wrong}</span>
+          <span className="text-[10px] text-[#888]">→</span>
+          <span className="text-[#2e7d32] font-semibold">{right}</span>
+        </span>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
 
 function templateToType(t: TemplateName): string {
   const map: Record<TemplateName, string> = {
