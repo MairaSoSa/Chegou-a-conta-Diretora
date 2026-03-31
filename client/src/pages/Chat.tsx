@@ -698,6 +698,11 @@ function EditorPanel() {
   const [isSaving, setIsSaving] = useState(false);
   const [showTipsMobile, setShowTipsMobile] = useState(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [rightTab, setRightTab] = useState<"dicas" | "chat">("dicas");
+  const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
 
   // Persist to localStorage
   useEffect(() => {
@@ -834,6 +839,41 @@ function EditorPanel() {
     a.download = `${activeDoc.title.replace(/[^a-zA-Z0-9À-ÿ\s-]/g, "").replace(/\s+/g, "_")}.html`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleChat = async (overrideMessage?: string) => {
+    const text = (overrideMessage ?? chatInput).trim();
+    if (!text || chatLoading) return;
+    const userMsg = { role: "user" as const, content: text };
+    const newMessages = [...chatMessages, userMsg];
+    setChatMessages(newMessages);
+    setChatInput("");
+    setChatLoading(true);
+    setRightTab("chat");
+    setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    try {
+      const res = await fetch("/api/caderno/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: newMessages,
+          documentType: templateToType(currentTemplate),
+        }),
+      });
+      const data = await res.json();
+      const reply = data.ok ? data.reply : (data.message || "Erro ao obter resposta.");
+      setChatMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+    } catch {
+      setChatMessages((prev) => [...prev, { role: "assistant", content: "Erro de conexão. Tente novamente." }]);
+    } finally {
+      setChatLoading(false);
+      setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  };
+
+  const handleChatApplyToField = (content: string, field: string) => {
+    const stripped = content.replace(/\*\*/g, "").replace(/^#+\s/gm, "").trim();
+    updateField(field, stripped.slice(0, 2000));
   };
 
   // Inline field component
@@ -1041,8 +1081,120 @@ function EditorPanel() {
       </div>
 
       {/* ── Right: guide panel com strip de linguinhas + conteúdo ── */}
-      <aside className="w-[300px] shrink-0 border-l border-[#e0cfc6] hidden lg:flex flex-row">
+      <aside className="w-[300px] shrink-0 border-l border-[#e0cfc6] hidden lg:flex flex-col">
 
+        {/* Abas: Dicas / Chat IA */}
+        <div className="flex border-b border-[#e0cfc6]" style={{ background: "#ede5db" }}>
+          <button
+            onClick={() => setRightTab("dicas")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-colors border-b-2 ${rightTab === "dicas" ? "border-[#8e2f2f] text-[#8e2f2f] bg-[#faf4ee]" : "border-transparent text-[#a07060] hover:text-[#8e2f2f]"}`}
+          >
+            <Info size={12} />
+            Dicas
+          </button>
+          <button
+            onClick={() => setRightTab("chat")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-colors border-b-2 ${rightTab === "chat" ? "border-[#8e2f2f] text-[#8e2f2f] bg-[#faf4ee]" : "border-transparent text-[#a07060] hover:text-[#8e2f2f]"}`}
+          >
+            <MessageCircle size={12} />
+            Chat IA
+            {chatMessages.length > 0 && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-[#8e2f2f] shrink-0" />}
+          </button>
+        </div>
+
+        {/* Conteúdo da aba Chat IA */}
+        {rightTab === "chat" && (
+          <div className="flex flex-col flex-1 min-h-0" style={{ background: "#faf4ee" }}>
+            {chatMessages.length === 0 ? (
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                <p className="text-[10px] text-[#a07060] uppercase tracking-wider mb-1">Sugestões rápidas</p>
+                {[
+                  `Gere um rascunho de ${currentTemplate}`,
+                  "Quais documentos preciso guardar após uma compra?",
+                  "Como usar os recursos do PDDE Básico?",
+                  "Explique o que é a UEx",
+                ].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => handleChat(s)}
+                    disabled={chatLoading}
+                    className="w-full text-left text-[11px] text-[#5f4032] bg-white border border-[#d9bfb5] rounded-xl px-3 py-2.5 hover:bg-[#fff0eb] hover:border-[#c5a898] transition-colors leading-snug"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {chatMessages.map((msg, i) => (
+                  <div key={i} className={`flex gap-2 items-start ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+                    <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold ${msg.role === "user" ? "bg-[#8e2f2f]" : "bg-[#a07060]"}`}>
+                      {msg.role === "user" ? "D" : <Bot className="w-3.5 h-3.5" />}
+                    </div>
+                    <div className={`rounded-2xl px-3 py-2 text-[12px] leading-relaxed max-w-[210px] ${msg.role === "user" ? "bg-[#8e2f2f] text-white" : "bg-white border border-[#d9bfb5] text-[#3d2318]"}`}>
+                      {msg.role === "assistant" ? (
+                        <div className="prose prose-xs max-w-none prose-p:my-0.5 prose-ul:my-0.5 text-[#3d2318]">
+                          <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        </div>
+                      ) : msg.content}
+                      {msg.role === "assistant" && activeGuideField && (
+                        <button
+                          onClick={() => handleChatApplyToField(msg.content, activeGuideField)}
+                          className="mt-1.5 text-[10px] text-[#a07060] hover:text-[#8e2f2f] flex items-center gap-1 transition-colors"
+                        >
+                          <RefreshCw className="w-2.5 h-2.5" />
+                          Inserir em "{currentTips.find(t => t.field === activeGuideField)?.title || activeGuideField}"
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div className="flex gap-2 items-start">
+                    <div className="shrink-0 w-6 h-6 rounded-full bg-[#a07060] flex items-center justify-center">
+                      <Bot className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <div className="bg-white border border-[#d9bfb5] rounded-2xl px-3 py-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#a07060]" />
+                    </div>
+                  </div>
+                )}
+                <div ref={chatBottomRef} />
+              </div>
+            )}
+            <div className="p-3 border-t border-[#e0cfc6] bg-white/60">
+              {chatMessages.length > 0 && (
+                <button
+                  onClick={() => setChatMessages([])}
+                  className="text-[10px] text-[#a07060] hover:text-[#8e2f2f] mb-2 flex items-center gap-1 transition-colors"
+                >
+                  <X className="w-2.5 h-2.5" />
+                  Nova conversa
+                </button>
+              )}
+              <div className="flex gap-2">
+                <input
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleChat(); } }}
+                  placeholder="Pergunte à IA..."
+                  disabled={chatLoading}
+                  className="flex-1 text-[12px] border border-[#d9bfb5] rounded-xl px-3 py-2 bg-white text-[#5f4032] placeholder:text-[#b09080] focus:outline-none focus:border-[#c5a898]"
+                />
+                <button
+                  onClick={() => handleChat()}
+                  disabled={chatLoading || !chatInput.trim()}
+                  className="w-8 h-8 rounded-xl bg-[#8e2f2f] hover:bg-[#6e2020] text-white flex items-center justify-center disabled:opacity-40 transition-colors shrink-0"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Conteúdo da aba Dicas — strip de linguinhas + conteúdo */}
+        {rightTab === "dicas" && <div className="flex flex-row flex-1 min-h-0">
         {/* Strip das linguinhas — coluna esquerda, overflow visível para o efeito de sair */}
         <div className="relative flex flex-col gap-0.5 py-4 pl-1 overflow-visible" style={{ width: 72, background: "#ede5db", zIndex: 1 }}>
           {currentTips.map((item) => {
@@ -1162,6 +1314,8 @@ function EditorPanel() {
             </div>
           </div>
         </div>
+        </div>}
+
       </aside>
 
       {/* ── Mobile Dicas bottom sheet ── */}
