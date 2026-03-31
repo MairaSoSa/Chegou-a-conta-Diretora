@@ -3539,28 +3539,35 @@ out center tags 100;`;
 
                 {/* ── ESTRUTURA E RECURSOS ── */}
                 {(() => {
-                  const turEI  = censoLatest.qt_tur_inf  ?? null;
-                  const turEF  = censoLatest.qt_tur_fund ?? null;
-                  const turEM  = censoLatest.qt_tur_med  ?? null;
-                  const turEJA = censoLatest.qt_tur_eja ?? null;
-                  const turTot = censoLatest.qt_tur_bas  ?? censoLatest.qt_turmas ?? null;
-                  const turESP = censoLatest.qt_tur_esp  ?? null;
+                  // Usa censo2025Data como fallback quando o ano mais recente é 2025
+                  // e os campos detalhados estão ausentes em censoLatest
+                  const c25t = latestAno === 2025 && censo2025Data ? censo2025Data.turmas : null;
+                  const c25d = latestAno === 2025 && censo2025Data ? censo2025Data.docentes : null;
+                  const turEI  = (censoLatest.qt_tur_inf  ?? 0) > 0 ? censoLatest.qt_tur_inf  : (c25t?.infantil     ?? null);
+                  const turEF  = (censoLatest.qt_tur_fund ?? 0) > 0 ? censoLatest.qt_tur_fund : (c25t?.fundamental  ?? null);
+                  const turEM  = (censoLatest.qt_tur_med  ?? 0) > 0 ? censoLatest.qt_tur_med  : (c25t?.medio        ?? null);
+                  const turEJA = (censoLatest.qt_tur_eja  ?? 0) > 0 ? censoLatest.qt_tur_eja  : (c25t?.eja          ?? null);
+                  const turESP = (censoLatest.qt_tur_esp  ?? 0) > 0 ? censoLatest.qt_tur_esp  : (c25t?.especial     ?? null);
+                  const turPROF = c25t?.profissional ?? null;
+                  const turTot = censoLatest.qt_tur_bas  ?? censoLatest.qt_turmas ?? c25t?.total ?? null;
                   const turPctDen = turTot;
                   // Calcula resto para que o total sempre feche
-                  const turSomaEtapas = [turEI, turEF, turEM, turEJA, turESP].reduce((s, v) => s + (v ?? 0), 0);
-                  const turResto = turTot != null && turSomaEtapas < turTot ? turTot - turSomaEtapas : null;
-                  const docEI  = censoLatest.qt_doc_inf  ?? null;
-                  const docEF  = censoLatest.qt_doc_fund ?? null;
-                  const docEM  = censoLatest.qt_doc_med  ?? null;
-                  const docEJA = censoLatest.qt_doc_eja  ?? null;
-                  const docESP = censoLatest.qt_doc_esp  ?? null;
-                  const docTot = censoLatest.qt_doc_bas  ?? censoLatest.qt_docentes ?? null;
+                  // (turmas de Ed. Especial e Profissional podem se sobrepor com outras etapas)
+                  const turSomaEtapas = [turEI, turEF, turEM, turEJA].reduce((s, v) => s + (v ?? 0), 0);
+                  const turResto = turTot != null && turSomaEtapas < turTot && turESP == null && turPROF == null ? turTot - turSomaEtapas : null;
+                  const docEI  = (censoLatest.qt_doc_inf  ?? 0) > 0 ? censoLatest.qt_doc_inf  : (c25d?.infantil     ?? null);
+                  const docEF  = (censoLatest.qt_doc_fund ?? 0) > 0 ? censoLatest.qt_doc_fund : (c25d?.fundamental  ?? null);
+                  const docEM  = (censoLatest.qt_doc_med  ?? 0) > 0 ? censoLatest.qt_doc_med  : (c25d?.medio        ?? null);
+                  const docEJA = (censoLatest.qt_doc_eja  ?? 0) > 0 ? censoLatest.qt_doc_eja  : (c25d?.eja          ?? null);
+                  const docESP = (censoLatest.qt_doc_esp  ?? 0) > 0 ? censoLatest.qt_doc_esp  : (c25d?.especial     ?? null);
+                  const docTot = censoLatest.qt_doc_bas  ?? censoLatest.qt_docentes ?? c25d?.total ?? null;
                   // Docentes: um mesmo professor pode atuar em mais de uma etapa.
                   // Usamos docTot como denominador; se a soma das etapas ultrapassar o total,
                   // não mostramos o resto (a duplicidade é esperada e explicada em nota).
                   const docPctDen = docTot;
                   const docSomaEtapas = [docEI, docEF, docEM, docEJA, docESP].reduce((s, v) => s + (v ?? 0), 0);
                   const docResto = docTot != null && docSomaEtapas < docTot ? docTot - docSomaEtapas : null;
+                  const turmasSobrepoe = turTot != null && (turSomaEtapas + (turESP ?? 0)) > turTot;
                   const salTot    = censoLatest.qt_salas_utilizadas        ?? null;
                   const salDentro = censoLatest.qt_salas_utilizadas_dentro ?? null;
                   const salFora   = censoLatest.qt_salas_utilizadas_fora   ?? null;
@@ -3592,16 +3599,20 @@ out center tags 100;`;
                           <div className="soft-card">
                             <div className="attention-head"><School size={16} /><strong>Turmas por etapa</strong></div>
                             <div style={{marginTop:'14px'}}>
-                              {etapaRow('Infantil',  turEI,  turPctDen)}
-                              {etapaRow('Fundamental', turEF, turPctDen)}
-                              {etapaRow('Médio',     turEM,  turPctDen)}
-                              {etapaRow('EJA',       turEJA, turPctDen)}
-                              {etapaRow('Especial',  turESP, turPctDen)}
+                              {etapaRow('Infantil',     turEI,   turPctDen)}
+                              {etapaRow('Fundamental',  turEF,   turPctDen)}
+                              {etapaRow('Médio',        turEM,   turPctDen)}
+                              {etapaRow('EJA',          turEJA,  turPctDen)}
+                              {turPROF != null && turPROF > 0 && etapaRow('Profissional', turPROF, turPctDen)}
+                              {etapaRow('c/ Ed. Especial', turESP, turPctDen)}
                               {turResto != null && turResto > 0 && etapaRow('Outras', turResto, turPctDen)}
                               <div style={{borderTop:'1px solid #eee',marginTop:'6px',paddingTop:'8px',display:'flex',justifyContent:'space-between',fontSize:'12px'}}>
                                 <span style={{color:'var(--m-muted)',fontWeight:600}}>Total</span>
                                 <strong>{turTot != null ? turTot.toLocaleString('pt-BR') : '—'} turmas</strong>
                               </div>
+                              {turmasSobrepoe && (
+                                <p style={{fontSize:'11px',color:'var(--m-muted)',margin:'6px 0 0',lineHeight:1.4}}>* Uma turma pode ser contada em mais de uma categoria (ex.: Médio + c/ Ed. Especial).</p>
+                              )}
                             </div>
                           </div>
                         )}
