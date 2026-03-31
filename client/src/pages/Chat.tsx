@@ -987,10 +987,17 @@ function EditorPanel() {
     updateField(field, stripped.slice(0, 2000));
   };
 
+  // Ao focar um campo: marca como ativo E abre automaticamente a dica no guia
+  const handleFieldFocus = useCallback((field: string) => {
+    setActiveGuideField(field);
+    setExpandedGuideField(field);
+    setRightTab("guia");
+  }, []);
+
   // renderFields usa InlineField (definido FORA do componente) diretamente,
   // passando os dados como props — sem nenhum componente-wrapper definido aqui dentro.
   const renderFields = () => {
-    const fp = { onChangeValue: updateField, activeField: activeGuideField, onFocus: setActiveGuideField };
+    const fp = { onChangeValue: updateField, activeField: activeGuideField, onFocus: handleFieldFocus };
     const d = currentData;
     switch (currentTemplate) {
       case "Ata de Reunião":
