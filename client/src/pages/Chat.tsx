@@ -295,7 +295,7 @@ function CardRespostaAI({
   msg, onSave, idx,
 }: { msg: { id: number; content: string }; onSave: (t: string, s: string | null) => void; idx: number }) {
   const [saved, setSaved] = useState(false);
-  const { corpo, fontes } = parseMessage(msg.content);
+  const { corpo, fontes } = separarFontes(msg.content);
   const emoji = CARD_EMOJIS[idx % CARD_EMOJIS.length];
   const accent = CARD_ACCENTS[idx % CARD_ACCENTS.length];
   const rotation = idx % 2 === 0 ? "rotate-[-0.5deg]" : "rotate-[0.4deg]";
@@ -735,8 +735,13 @@ function EditorPanel() {
   const [activeGuideField, setActiveGuideField] = useState("titulo");
   const [isSaving, setIsSaving] = useState(false);
   const [showTipsMobile, setShowTipsMobile] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const renameInputRef = useRef<HTMLInputElement>(null);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [rightTab, setRightTab] = useState<"dicas" | "chat">("dicas");
+  const [rightTab, setRightTab] = useState<"guia" | "chat">("guia");
+  const [expandedGuideField, setExpandedGuideField] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -856,20 +861,51 @@ function EditorPanel() {
   };
 
   const handleRename = () => {
-    const next = window.prompt("Novo nome do documento:", activeDoc?.title);
-    if (!next?.trim()) return;
-    updateCurrentDoc(doc => ({ ...doc, title: next.trim(), saved: false }));
-    setSaveStatus("Nome alterado");
+    setRenameValue(activeDoc?.title || "");
+    setIsRenaming(true);
+    setTimeout(() => renameInputRef.current?.select(), 30);
+  };
+
+  const handleRenameSubmit = () => {
+    const next = renameValue.trim();
+    if (next) {
+      updateCurrentDoc(doc => ({ ...doc, title: next, saved: false }));
+      setSaveStatus("Nome alterado");
+    }
+    setIsRenaming(false);
+  };
+
+  const buildPrintHtml = (doc: OpenDoc) => {
+    const d = doc.data;
+    const guides = TEMPLATE_GUIDES[doc.template] || [];
+    const rows = guides.map(({ field, title }) =>
+      d[field] ? `<div class="field"><span class="label">${title}</span><div class="value">${d[field].replace(/\n/g, "<br>")}</div></div>` : ""
+    ).filter(Boolean).join("\n");
+    return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${doc.title}</title>
+<style>
+  body{font-family:Arial,sans-serif;max-width:680px;margin:40px auto;padding:24px;color:#222;line-height:1.75;font-size:13px}
+  h1{font-size:18px;text-align:center;margin-bottom:30px;font-weight:700;border-bottom:2px solid #8e2f2f;padding-bottom:10px;color:#3d2318}
+  .field{margin-bottom:18px}
+  .label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#8e2f2f;margin-bottom:4px}
+  .value{padding:8px 12px;border:1px solid #ddd;border-radius:6px;background:#fafafa;white-space:pre-wrap}
+  @media print{body{margin:20px}h1{page-break-after:avoid}}
+</style></head><body><h1>${doc.title}</h1>${rows}</body></html>`;
+  };
+
+  const handlePrint = () => {
+    if (!activeDoc) return;
+    const html = buildPrintHtml(activeDoc);
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 400);
   };
 
   const handleDownload = () => {
     if (!activeDoc) return;
-    const d = activeDoc.data;
-    const guides = TEMPLATE_GUIDES[activeDoc.template] || [];
-    const rows = guides.map(({ field, title }) =>
-      d[field] ? `<p><strong>${title}:</strong> ${d[field].replace(/\n/g, "<br>")}</p>` : ""
-    ).filter(Boolean).join("\n");
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${activeDoc.title}</title><style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:20px;color:#333;line-height:1.7}h1{font-size:20px;text-align:center;margin-bottom:24px}p{margin:6px 0}</style></head><body><h1>${activeDoc.title}</h1>${rows}</body></html>`;
+    const html = buildPrintHtml(activeDoc);
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -1020,33 +1056,72 @@ function EditorPanel() {
     }
   };
 
+  const templateLabel = currentTemplate;
+
+  const toggleGuideField = (field: string) => {
+    setExpandedGuideField(prev => prev === field ? null : field);
+    setActiveGuideField(field);
+  };
+
   return (
     <div className="flex h-full min-h-[600px]">
 
-      {/* ── Left panel: templates + new doc ── */}
-      <aside className="w-56 shrink-0 border-r border-[#e0cfc6] bg-[#faf5f0] flex flex-col p-4 gap-2 hidden md:flex">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-[#b07a6a] mb-1">Modelos</p>
-        {TEMPLATES.map(t => (
-          <button
-            key={t.title}
-            onClick={() => handleSelectTemplate(t.title)}
-            className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition-all ${currentTemplate === t.title
-              ? "bg-[#8e2f2f] text-white shadow-sm"
-              : "text-[#7d5246] hover:bg-[#f0e8e2]"
-              }`}
-          >
-            <span className={currentTemplate === t.title ? "text-white" : "text-[#8e2f2f]"}>{t.icon}</span>
-            <div>
-              <div className="leading-4">{t.title}</div>
-              <div className={`text-[10px] ${currentTemplate === t.title ? "text-white/70" : "text-[#b07a6a]"}`}>{t.desc}</div>
-            </div>
-          </button>
-        ))}
+      {/* ── Left panel: modelos ── */}
+      <aside className="w-52 shrink-0 border-r border-[#e0cfc6] bg-[#faf5f0] flex flex-col hidden md:flex">
+        <div className="px-4 pt-4 pb-2">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#b07a6a] font-bold mb-3">Tipo de documento</p>
+          <div className="flex flex-col gap-1.5">
+            {TEMPLATES.map(t => (
+              <button
+                key={t.title}
+                onClick={() => handleSelectTemplate(t.title)}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all ${
+                  currentTemplate === t.title
+                    ? "bg-[#8e2f2f] text-white shadow-sm"
+                    : "text-[#7d5246] hover:bg-[#f0e8e2]"
+                }`}
+              >
+                <span className={`shrink-0 ${currentTemplate === t.title ? "text-white" : "text-[#8e2f2f]"}`}>{t.icon}</span>
+                <div className="min-w-0">
+                  <div className="text-[13px] font-semibold leading-tight truncate">{t.title}</div>
+                  <div className={`text-[10px] mt-0.5 ${currentTemplate === t.title ? "text-white/70" : "text-[#b07a6a]"}`}>{t.desc}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
 
-        <div className="mt-auto pt-4 border-t border-[#e0cfc6]">
+        {/* Documentos abertos */}
+        {openDocs.length > 1 && (
+          <div className="px-4 pt-4 border-t border-[#e0cfc6] mt-3">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#b07a6a] font-bold mb-2">Abertos</p>
+            <div className="flex flex-col gap-1">
+              {openDocs.map(doc => (
+                <div
+                  key={doc.id}
+                  className={`group flex items-center gap-1.5 rounded-lg px-2 py-1.5 cursor-pointer transition-all ${
+                    doc.id === activeDocId ? "bg-[#8e2f2f]/10 text-[#8e2f2f]" : "text-[#7d5246] hover:bg-[#f0e8e2]"
+                  }`}
+                  onClick={() => handleOpenDocument(doc.id)}
+                >
+                  <span className="flex-1 text-[11px] font-medium truncate">{doc.title}</span>
+                  {!doc.saved && <span className="w-1.5 h-1.5 rounded-full bg-[#8e2f2f]/50 shrink-0" />}
+                  <button
+                    onClick={e => { e.stopPropagation(); handleCloseDocument(doc.id); }}
+                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[#f0d8d0]"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-auto p-4 border-t border-[#e0cfc6]">
           <button
             onClick={handleNewDocument}
-            className="flex items-center gap-2 w-full rounded-xl border border-dashed border-[#c5a898] px-3 py-2.5 text-[12px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors"
+            className="flex items-center gap-2 w-full rounded-xl border border-dashed border-[#c5a898] px-3 py-2.5 text-[12px] font-medium text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Novo documento
@@ -1054,160 +1129,302 @@ function EditorPanel() {
         </div>
       </aside>
 
-      {/* ── Center: chrome tabs + form editor ── */}
+      {/* ── Center: editor ── */}
       <div className="flex-1 flex flex-col min-w-0">
 
-        {/* Chrome tabs */}
-        <div className="flex items-center gap-0.5 border-b border-[#e0cfc6] bg-[#f3ece6] px-3 pt-2 overflow-x-auto">
-          {openDocs.map(doc => (
-            <div
-              key={doc.id}
-              onClick={() => handleOpenDocument(doc.id)}
-              className={`group flex items-center gap-2 rounded-t-lg px-3 py-2 text-[12px] cursor-pointer shrink-0 transition-all border-b-2 ${doc.id === activeDocId
-                ? "bg-white border-[#8e2f2f] text-[#5a3328] shadow-sm"
-                : "border-transparent text-[#a07060] hover:bg-[#f8f0ea]"
-                }`}
-            >
-              <span className="max-w-[140px] truncate font-medium">{doc.title}</span>
-              {!doc.saved && <span className="w-1.5 h-1.5 rounded-full bg-[#8e2f2f]/60 shrink-0" />}
+        {/* Toolbar principal */}
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#e0cfc6] bg-white">
+          {/* Título / rename inline */}
+          {isRenaming ? (
+            <input
+              ref={renameInputRef}
+              value={renameValue}
+              onChange={e => setRenameValue(e.target.value)}
+              onBlur={handleRenameSubmit}
+              onKeyDown={e => { if (e.key === "Enter") handleRenameSubmit(); if (e.key === "Escape") setIsRenaming(false); }}
+              className="flex-1 min-w-0 text-[14px] font-semibold text-[#5a3328] border border-[#c5a898] rounded-lg px-2 py-0.5 outline-none focus:ring-2 focus:ring-[#ead2c4]"
+            />
+          ) : (
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <span className="text-[14px] font-semibold text-[#3d2318] truncate">{activeDoc?.title || "Documento"}</span>
               <button
-                onClick={e => { e.stopPropagation(); handleCloseDocument(doc.id); }}
-                className="opacity-0 group-hover:opacity-100 rounded p-0.5 hover:bg-[#f0e0d8] transition-all"
+                onClick={handleRename}
+                className="shrink-0 p-1 rounded-md text-[#b07a6a] hover:text-[#8e2f2f] hover:bg-[#f0e8e2] transition-colors"
+                title="Renomear documento"
               >
-                <X className="w-3 h-3" />
+                <PenTool className="w-3.5 h-3.5" />
               </button>
             </div>
-          ))}
-          <button
-            onClick={handleNewDocument}
-            className="ml-1 flex h-7 w-7 items-center justify-center rounded-lg text-[#a07060] hover:bg-[#f0e0d8] hover:text-[#8e2f2f] transition-colors shrink-0"
-            title="Novo documento"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
-        </div>
+          )}
 
-        {/* Toolbar: title + actions */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-[#e0cfc6] bg-white">
-          <button onDoubleClick={handleRename} className="flex-1 truncate text-[14px] font-semibold text-[#5a3328] text-left hover:text-[#8e2f2f] transition-colors" title="Duplo clique para renomear">
-            {activeDoc?.title || "Documento"}
-          </button>
-          <span className="text-[11px] text-[#b07a6a] shrink-0">{saveStatus}</span>
-          {/* Botão Dicas — só aparece no mobile */}
+          {/* Status de salvamento */}
+          <span className={`text-[11px] shrink-0 font-medium ${saveStatus.startsWith("Salvo") ? "text-[#5da56d]" : saveStatus.includes("Erro") ? "text-red-500" : "text-[#b07a6a]"}`}>
+            {saveStatus}
+          </span>
+
+          {/* Botão Guia — mobile */}
           <button onClick={() => setShowTipsMobile(true)}
             className="lg:hidden flex items-center gap-1.5 rounded-lg border border-[#d9bfb5] px-3 py-1.5 text-[12px] text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors shrink-0"
           >
-            <Info size={12} /> Dicas
+            <Info size={12} /> Guia
           </button>
+
+          {/* Prévia */}
+          <button
+            onClick={() => setShowPreview(v => !v)}
+            className={`hidden sm:flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors shrink-0 ${
+              showPreview ? "bg-[#8e2f2f]/10 border-[#8e2f2f]/30 text-[#8e2f2f]" : "border-[#d9bfb5] text-[#7d5246] hover:bg-[#f0e8e2]"
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            {showPreview ? "Editar" : "Prévia"}
+          </button>
+
+          {/* Imprimir */}
+          <button onClick={handlePrint}
+            className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[#d9bfb5] px-3 py-1.5 text-[12px] font-medium text-[#7d5246] hover:bg-[#f0e8e2] transition-colors shrink-0"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Imprimir / PDF
+          </button>
+
+          {/* Salvar */}
           <button onClick={() => handleSave()} disabled={isSaving}
-            className="flex items-center gap-1.5 rounded-lg bg-[#8e2f2f] px-3 py-1.5 text-[12px] text-white hover:bg-[#6e2020] transition-colors disabled:opacity-50 shrink-0"
+            className="flex items-center gap-1.5 rounded-lg bg-[#8e2f2f] px-4 py-1.5 text-[12px] font-semibold text-white hover:bg-[#6e2020] transition-colors disabled:opacity-50 shrink-0"
           >
-            {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+            {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
             Salvar
-          </button>
-          <button onClick={handleDownload}
-            className="flex items-center gap-1.5 rounded-lg border border-[#d9bfb5] px-3 py-1.5 text-[12px] text-[#7d5246] hover:bg-[#f0e8e2] transition-colors shrink-0"
-          >
-            <Download className="w-3 h-3" />
-            Baixar
           </button>
         </div>
 
-        {/* Form fields */}
-        <div className="flex-1 overflow-y-auto px-5 py-5">
-          {renderFields()}
+        {/* Barra de progresso + abas de documento (mobile) */}
+        {openDocs.length > 1 && (
+          <div className="flex items-center gap-0.5 border-b border-[#e0cfc6] bg-[#f3ece6] px-3 pt-1.5 overflow-x-auto md:hidden">
+            {openDocs.map(doc => (
+              <div
+                key={doc.id}
+                onClick={() => handleOpenDocument(doc.id)}
+                className={`group flex items-center gap-1.5 rounded-t-lg px-3 py-1.5 text-[11px] cursor-pointer shrink-0 transition-all border-b-2 ${
+                  doc.id === activeDocId ? "bg-white border-[#8e2f2f] text-[#5a3328]" : "border-transparent text-[#a07060] hover:bg-[#f8f0ea]"
+                }`}
+              >
+                <span className="max-w-[120px] truncate font-medium">{doc.title}</span>
+                {!doc.saved && <span className="w-1 h-1 rounded-full bg-[#8e2f2f]/60" />}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Barra de progresso */}
+        <div className="flex items-center gap-3 px-4 py-2 bg-[#fdf8f4] border-b border-[#f0e5df]">
+          <span className="text-[11px] text-[#a38778] font-medium shrink-0">
+            {filledCount} de {currentTips.length} campos preenchidos
+          </span>
+          <div className="flex-1 h-1.5 rounded-full bg-[#f0e5df] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-[#8e2f2f] transition-all duration-500"
+              style={{ width: `${currentTips.length ? (filledCount / currentTips.length) * 100 : 0}%` }}
+            />
+          </div>
+          {filledCount === currentTips.length && (
+            <span className="text-[11px] text-[#5da56d] font-bold shrink-0">✓ Completo</span>
+          )}
+        </div>
+
+        {/* Área de conteúdo: edição ou prévia */}
+        <div className="flex-1 overflow-y-auto">
+          {showPreview ? (
+            <div className="p-6">
+              <div className="max-w-2xl mx-auto bg-white rounded-2xl border border-[#e0cfc6] shadow-sm p-8">
+                <h2 className="text-[18px] font-bold text-[#3d2318] text-center mb-6 pb-4 border-b-2 border-[#8e2f2f]">{activeDoc?.title}</h2>
+                {(TEMPLATE_GUIDES[currentTemplate] || []).map(({ field, title }) => {
+                  const val = currentData[field];
+                  if (!val?.trim()) return null;
+                  return (
+                    <div key={field} className="mb-5">
+                      <span className="block text-[10px] font-bold uppercase tracking-[.12em] text-[#8e2f2f] mb-1">{title}</span>
+                      <p className="text-[13px] text-[#3d2318] leading-relaxed whitespace-pre-wrap border border-[#ede5db] rounded-lg px-3 py-2 bg-[#fdfaf7]">{val}</p>
+                    </div>
+                  );
+                })}
+                {filledCount === 0 && (
+                  <p className="text-center text-[#b07a6a] text-[13px]">Preencha os campos ao lado para ver a prévia aqui.</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="px-5 py-5">
+              {renderFields()}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── Right: guide panel com strip de linguinhas + conteúdo ── */}
-      <aside className="w-[300px] shrink-0 border-l border-[#e0cfc6] hidden lg:flex flex-col">
+      {/* ── Right: guia + chat ── */}
+      <aside className="w-[290px] shrink-0 border-l border-[#e0cfc6] hidden lg:flex flex-col">
 
-        {/* Abas: Dicas / Chat IA */}
-        <div className="flex border-b border-[#e0cfc6]" style={{ background: "#ede5db" }}>
-          <button
-            onClick={() => setRightTab("dicas")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-colors border-b-2 ${rightTab === "dicas" ? "border-[#8e2f2f] text-[#8e2f2f] bg-[#faf4ee]" : "border-transparent text-[#a07060] hover:text-[#8e2f2f]"}`}
-          >
-            <Info size={12} />
-            Dicas
-          </button>
-          <button
-            onClick={() => setRightTab("chat")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-colors border-b-2 ${rightTab === "chat" ? "border-[#8e2f2f] text-[#8e2f2f] bg-[#faf4ee]" : "border-transparent text-[#a07060] hover:text-[#8e2f2f]"}`}
-          >
-            <MessageCircle size={12} />
-            Chat IA
-            {chatMessages.length > 0 && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-[#8e2f2f] shrink-0" />}
-          </button>
+        {/* Tabs */}
+        <div className="flex border-b border-[#e0cfc6] bg-[#ede5db]">
+          {(["guia", "chat"] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setRightTab(tab)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-[12px] font-bold uppercase tracking-wider transition-colors border-b-2 ${
+                rightTab === tab ? "border-[#8e2f2f] text-[#8e2f2f] bg-[#faf4ee]" : "border-transparent text-[#a07060] hover:text-[#8e2f2f]"
+              }`}
+            >
+              {tab === "guia" ? <><Info size={13} /> Guia</> : <><MessageCircle size={13} /> Chat IA{chatMessages.length > 0 && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-[#8e2f2f]" />}</>}
+            </button>
+          ))}
         </div>
 
-        {/* Conteúdo da aba Chat IA */}
+        {/* ── Guia ── */}
+        {rightTab === "guia" && (
+          <div className="flex-1 overflow-y-auto" style={{ background: "#faf4ee" }}>
+            <div className="p-3 space-y-1.5">
+              {currentTips.map((item, idx) => {
+                const isFilled = !!String(currentData[item.field] || "").trim();
+                const isExpanded = expandedGuideField === item.field;
+                const isActive = activeGuideField === item.field;
+
+                return (
+                  <div key={item.field}>
+                    <button
+                      onClick={() => toggleGuideField(item.field)}
+                      className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all ${
+                        isActive
+                          ? "bg-[#8e2f2f]/8 border border-[#d7c7bb] shadow-sm bg-white"
+                          : "hover:bg-white/70 border border-transparent"
+                      }`}
+                    >
+                      {/* Número */}
+                      <span className={`shrink-0 flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black ${
+                        isFilled ? "bg-[#5da56d] text-white" : "bg-[#e8d8d0] text-[#8e2f2f]"
+                      }`}>
+                        {isFilled ? "✓" : idx + 1}
+                      </span>
+                      {/* Label */}
+                      <span className={`flex-1 text-[13px] font-semibold ${isActive ? "text-[#3d2318]" : "text-[#5f4032]"}`}>
+                        {item.title}
+                      </span>
+                      {/* Status badge */}
+                      <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isFilled ? "bg-[#e7f4ea] text-[#3d7a4e]" : "bg-[#f6e9df] text-[#a15f49]"
+                      }`}>
+                        {isFilled ? "OK" : "vazio"}
+                      </span>
+                      <ChevronRight className={`w-3.5 h-3.5 text-[#b07a6a] shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                    </button>
+
+                    {/* Dica expandida */}
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.18 }}
+                        className="mx-2 mb-1 rounded-b-xl rounded-t-sm border border-t-0 border-[#d7c7bb] bg-white px-4 py-3"
+                      >
+                        <p className="text-[12px] text-[#5f4032] leading-relaxed">{item.tip}</p>
+                      </motion.div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Ações rápidas no rodapé do guia */}
+            <div className="p-3 border-t border-[#e0cfc6] mt-2 space-y-2">
+              <button
+                onClick={handlePrint}
+                className="w-full flex items-center gap-2 justify-center rounded-xl border border-[#d9bfb5] py-2.5 text-[12px] font-semibold text-[#7d5246] hover:bg-[#f0e8e2] transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Imprimir / salvar como PDF
+              </button>
+              <button
+                onClick={() => setRightTab("chat")}
+                className="w-full flex items-center gap-2 justify-center rounded-xl border border-[#d9bfb5] py-2.5 text-[12px] font-semibold text-[#8e2f2f] hover:bg-[#fff0eb] transition-colors"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                Pedir ajuda à IA
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Chat IA ── */}
         {rightTab === "chat" && (
           <div className="flex flex-col flex-1 min-h-0" style={{ background: "#faf4ee" }}>
             {chatMessages.length === 0 ? (
-              <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                <p className="text-[10px] text-[#a07060] uppercase tracking-wider mb-1">Sugestões rápidas</p>
-                {[
-                  `Gere um rascunho completo para ${currentTemplate === "ata" ? "ata de reunião" : currentTemplate === "oficio" ? "ofício" : currentTemplate === "pesquisa" ? "pesquisa de preços" : "relatório de execução"}`,
-                  "Como deve ser o fecho e a assinatura deste documento?",
-                  "Corrija a gramática e a concordância deste trecho: [cole aqui]",
-                  "Qual a estrutura correta deste documento conforme a redação oficial?",
-                ].map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => handleChat(s)}
-                    disabled={chatLoading}
-                    className="w-full text-left text-[11px] text-[#5f4032] bg-white border border-[#d9bfb5] rounded-xl px-3 py-2.5 hover:bg-[#fff0eb] hover:border-[#c5a898] transition-colors leading-snug"
-                  >
-                    {s}
-                  </button>
-                ))}
+              <div className="flex-1 overflow-y-auto p-3">
+                <p className="text-[11px] text-[#a07060] font-semibold uppercase tracking-wider mb-2">Sugestões para este documento</p>
+                <div className="space-y-2">
+                  {[
+                    `Gere um rascunho completo de ${templateLabel.toLowerCase()}`,
+                    `Quais são os requisitos legais para ${templateLabel.toLowerCase()}?`,
+                    "Como deve ser o fecho e assinatura deste documento?",
+                    "Revise a gramática deste texto: [cole aqui]",
+                  ].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => handleChat(s)}
+                      disabled={chatLoading}
+                      className="w-full text-left text-[12px] text-[#5f4032] bg-white border border-[#d9bfb5] rounded-xl px-3 py-2.5 hover:bg-[#fff0eb] hover:border-[#c5a898] transition-colors leading-snug"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto p-3 space-y-3">
                 {chatMessages.map((msg, i) => (
                   <div key={i} className={`flex gap-2 items-start ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-                    <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold ${msg.role === "user" ? "bg-[#8e2f2f]" : "bg-[#a07060]"}`}>
-                      {msg.role === "user" ? "D" : <Bot className="w-3.5 h-3.5" />}
+                    <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold ${msg.role === "user" ? "bg-[#8e2f2f]" : "bg-[#a07060]"}`}>
+                      {msg.role === "user" ? "D" : <Bot className="w-4 h-4" />}
                     </div>
-                    <div className={`rounded-2xl px-3 py-2 text-[12px] leading-relaxed max-w-[210px] ${msg.role === "user" ? "bg-[#8e2f2f] text-white" : "bg-white border border-[#d9bfb5] text-[#3d2318]"}`}>
+                    <div className={`rounded-2xl px-3 py-2.5 text-[12px] leading-relaxed max-w-[200px] ${msg.role === "user" ? "bg-[#8e2f2f] text-white" : "bg-white border border-[#d9bfb5] text-[#3d2318]"}`}>
                       {msg.role === "assistant" ? (
-                        <div className="prose prose-xs max-w-none prose-p:my-0.5 prose-ul:my-0.5 text-[#3d2318]">
-                          <ReactMarkdown>{msg.content}</ReactMarkdown>
-                        </div>
+                        <>
+                          <div className="prose prose-xs max-w-none prose-p:my-0.5 prose-ul:my-0.5 text-[#3d2318]">
+                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          </div>
+                          {activeGuideField && (
+                            <button
+                              onClick={() => handleChatApplyToField(msg.content, activeGuideField)}
+                              className="mt-2 flex items-center gap-1.5 rounded-lg bg-[#8e2f2f]/10 border border-[#8e2f2f]/20 px-2.5 py-1.5 text-[11px] font-semibold text-[#8e2f2f] hover:bg-[#8e2f2f]/20 transition-colors w-full justify-center"
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                              Inserir no campo "{currentTips.find(t => t.field === activeGuideField)?.title || activeGuideField}"
+                            </button>
+                          )}
+                        </>
                       ) : msg.content}
-                      {msg.role === "assistant" && activeGuideField && (
-                        <button
-                          onClick={() => handleChatApplyToField(msg.content, activeGuideField)}
-                          className="mt-1.5 text-[10px] text-[#a07060] hover:text-[#8e2f2f] flex items-center gap-1 transition-colors"
-                        >
-                          <RefreshCw className="w-2.5 h-2.5" />
-                          Inserir em "{currentTips.find(t => t.field === activeGuideField)?.title || activeGuideField}"
-                        </button>
-                      )}
                     </div>
                   </div>
                 ))}
                 {chatLoading && (
                   <div className="flex gap-2 items-start">
-                    <div className="shrink-0 w-6 h-6 rounded-full bg-[#a07060] flex items-center justify-center">
-                      <Bot className="w-3.5 h-3.5 text-white" />
+                    <div className="shrink-0 w-7 h-7 rounded-full bg-[#a07060] flex items-center justify-center">
+                      <Bot className="w-4 h-4 text-white" />
                     </div>
-                    <div className="bg-white border border-[#d9bfb5] rounded-2xl px-3 py-2">
+                    <div className="bg-white border border-[#d9bfb5] rounded-2xl px-3 py-2.5 flex items-center gap-2">
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-[#a07060]" />
+                      <span className="text-[11px] text-[#a07060]">Pensando…</span>
                     </div>
                   </div>
                 )}
                 <div ref={chatBottomRef} />
               </div>
             )}
-            <div className="p-3 border-t border-[#e0cfc6] bg-white/60">
+            <div className="p-3 border-t border-[#e0cfc6] bg-white/70">
               {chatMessages.length > 0 && (
                 <button
                   onClick={() => setChatMessages([])}
-                  className="text-[10px] text-[#a07060] hover:text-[#8e2f2f] mb-2 flex items-center gap-1 transition-colors"
+                  className="text-[11px] text-[#a07060] hover:text-[#8e2f2f] mb-2 flex items-center gap-1 font-medium transition-colors"
                 >
-                  <X className="w-2.5 h-2.5" />
+                  <X className="w-3 h-3" />
                   Nova conversa
                 </button>
               )}
@@ -1216,14 +1433,14 @@ function EditorPanel() {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleChat(); } }}
-                  placeholder="Pergunte à IA..."
+                  placeholder="Pergunte à IA sobre este documento…"
                   disabled={chatLoading}
-                  className="flex-1 text-[12px] border border-[#d9bfb5] rounded-xl px-3 py-2 bg-white text-[#5f4032] placeholder:text-[#b09080] focus:outline-none focus:border-[#c5a898]"
+                  className="flex-1 text-[12px] border border-[#d9bfb5] rounded-xl px-3 py-2 bg-white text-[#5f4032] placeholder:text-[#c0a090] focus:outline-none focus:border-[#c5a898] focus:ring-1 focus:ring-[#ead2c4]"
                 />
                 <button
                   onClick={() => handleChat()}
                   disabled={chatLoading || !chatInput.trim()}
-                  className="w-8 h-8 rounded-xl bg-[#8e2f2f] hover:bg-[#6e2020] text-white flex items-center justify-center disabled:opacity-40 transition-colors shrink-0"
+                  className="w-9 h-9 rounded-xl bg-[#8e2f2f] hover:bg-[#6e2020] text-white flex items-center justify-center disabled:opacity-40 transition-colors shrink-0"
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>
@@ -1232,140 +1449,12 @@ function EditorPanel() {
           </div>
         )}
 
-        {/* Conteúdo da aba Dicas — strip de linguinhas + conteúdo */}
-        {rightTab === "dicas" && <div className="flex flex-row flex-1 min-h-0">
-        {/* Strip das linguinhas — coluna esquerda, overflow visível para o efeito de sair */}
-        <div className="relative flex flex-col gap-0.5 py-4 pl-1 overflow-visible" style={{ width: 72, background: "#ede5db", zIndex: 1 }}>
-          {currentTips.map((item) => {
-            const isFilled = !!String(currentData[item.field] || "").trim();
-            const isActive = activeGuideField === item.field;
-            return (
-              <button
-                key={item.field}
-                onClick={() => setActiveGuideField(item.field)}
-                title={item.title}
-                style={{
-                  transition: "all 0.18s ease",
-                  transform: isActive ? "translateX(6px)" : "translateX(0px)",
-                  background: isActive ? "#faf4ee" : isFilled ? "#e2d8ce" : "#f0e8e0",
-                  border: `1px solid ${isActive ? "#d7c7bb" : "#ccc0b4"}`,
-                  borderRight: isActive ? "1px solid #faf4ee" : undefined,
-                  zIndex: isActive ? 10 : 1,
-                  position: "relative",
-                  boxShadow: isActive ? "-2px 2px 6px rgba(0,0,0,0.10)" : "none",
-                }}
-                className={`flex items-center justify-between w-full rounded-l-lg px-2 py-[7px] text-[8px] font-bold uppercase tracking-[0.1em] overflow-hidden
-                  ${isActive ? "text-[#8e2f2f]" : isFilled ? "text-[#6f4b3b] hover:brightness-95" : "text-[#a07060] hover:brightness-95"}`}
-              >
-                <span className="truncate leading-tight">{item.title}</span>
-                <span className={`shrink-0 h-2 w-2 rounded-full ml-1 ${isFilled ? "bg-[#5da56d]" : "bg-[#d18b6c]"}`} />
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Conteúdo do painel — dica focada no campo ativo */}
-        <div className="flex-1 flex flex-col p-4 pt-5 overflow-hidden" style={{ background: "#faf4ee" }}>
-
-          {/* Cartão de dica focado */}
-          {(() => {
-            const activeIdx = currentTips.findIndex(t => t.field === activeGuideField);
-            const item = activeIdx >= 0 ? currentTips[activeIdx] : currentTips[0];
-            if (!item) return null;
-            const isFilled = !!String(currentData[item.field] || "").trim();
-            const prevItem = activeIdx > 0 ? currentTips[activeIdx - 1] : null;
-            const nextItem = activeIdx < currentTips.length - 1 ? currentTips[activeIdx + 1] : null;
-            return (
-              <motion.div
-                key={item.field}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-                className="rounded-2xl border border-[#d7c7bb] bg-white shadow-sm flex flex-col gap-3 p-4 mb-4"
-              >
-                {/* Campo atual */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#8e2f2f]/10 text-[10px] font-black text-[#8e2f2f]">
-                      {activeIdx + 1}
-                    </span>
-                    <span className="text-[10px] uppercase tracking-[0.16em] text-[#8e2f2f] font-bold">{item.title}</span>
-                  </div>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${isFilled ? "bg-[#e7f4ea] text-[#3d7a4e]" : "bg-[#f6e9df] text-[#a15f49]"}`}>
-                    {isFilled ? "✓ OK" : "pendente"}
-                  </span>
-                </div>
-
-                {/* Texto da dica */}
-                <p className="text-[12px] leading-[1.6] text-[#5f4032] border-t border-[#f0e5df] pt-3">
-                  {item.tip}
-                </p>
-
-                {/* Navegação prev/next */}
-                <div className="flex items-center justify-between pt-1 border-t border-[#f0e5df]">
-                  <button
-                    onClick={() => prevItem && setActiveGuideField(prevItem.field)}
-                    disabled={!prevItem}
-                    className="flex items-center gap-1 text-[10px] text-[#a07060] disabled:opacity-30 hover:text-[#8e2f2f] transition-colors"
-                  >
-                    <ChevronLeft className="w-3 h-3" />
-                    {prevItem ? prevItem.title : ""}
-                  </button>
-                  <button
-                    onClick={() => nextItem && setActiveGuideField(nextItem.field)}
-                    disabled={!nextItem}
-                    className="flex items-center gap-1 text-[10px] text-[#a07060] disabled:opacity-30 hover:text-[#8e2f2f] transition-colors"
-                  >
-                    {nextItem ? nextItem.title : ""}
-                    <ChevronRight className="w-3 h-3" />
-                  </button>
-                </div>
-              </motion.div>
-            );
-          })()}
-
-          {/* Progresso compacto */}
-          <div className="rounded-xl border border-[#eadfd7] bg-white/70 p-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] uppercase tracking-[0.16em] text-[#a38778]">Progresso</span>
-              <span className="text-[11px] font-black text-[#8e2f2f]">{filledCount}/{currentTips.length}</span>
-            </div>
-            <div className="h-1.5 w-full rounded-full bg-[#f0e5df] overflow-hidden mb-3">
-              <div
-                className="h-full rounded-full bg-[#8e2f2f] transition-all duration-500"
-                style={{ width: `${currentTips.length ? (filledCount / currentTips.length) * 100 : 0}%` }}
-              />
-            </div>
-            {/* Dots de progresso por campo */}
-            <div className="flex flex-wrap gap-1.5">
-              {currentTips.map((t, i) => {
-                const filled = !!String(currentData[t.field] || "").trim();
-                const active = activeGuideField === t.field;
-                return (
-                  <button
-                    key={t.field}
-                    onClick={() => setActiveGuideField(t.field)}
-                    title={t.title}
-                    className={`h-3 w-3 rounded-full border transition-all ${active ? "border-[#8e2f2f] scale-125" : "border-transparent"} ${filled ? "bg-[#5da56d]" : "bg-[#d9c4bc]"}`}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </div>
-        </div>}
-
       </aside>
 
-      {/* ── Mobile Dicas bottom sheet ── */}
+      {/* ── Mobile Guia bottom sheet ── */}
       {showTipsMobile && (
         <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
-          {/* Overlay */}
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setShowTipsMobile(false)}
-          />
-          {/* Sheet */}
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowTipsMobile(false)} />
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
@@ -1374,18 +1463,13 @@ function EditorPanel() {
             className="relative z-10 rounded-t-2xl overflow-hidden flex flex-col"
             style={{ background: "#faf4ee", maxHeight: "75vh" }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-[#e0cfc6]" style={{ background: "#ede5db" }}>
-              <span className="text-[13px] font-bold text-[#5a3328] uppercase tracking-[0.15em] flex items-center gap-1.5"><Info size={13} /> Dicas do campo</span>
-              <button
-                onClick={() => setShowTipsMobile(false)}
-                className="rounded-full p-1.5 hover:bg-[#d9cec6] text-[#7d5246] transition-colors"
-              >
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[#e0cfc6] bg-[#ede5db]">
+              <span className="text-[13px] font-bold text-[#5a3328] flex items-center gap-2"><Info size={14} /> Guia de preenchimento</span>
+              <button onClick={() => setShowTipsMobile(false)} className="rounded-full p-1.5 hover:bg-[#d9cec6] text-[#7d5246] transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            {/* Tips list */}
-            <div className="overflow-y-auto flex-1 px-4 py-4 space-y-3">
+            <div className="overflow-y-auto flex-1 px-3 py-3 space-y-1.5">
               {currentTips.map((item, idx) => {
                 const isFilled = !!String(currentData[item.field] || "").trim();
                 const isActive = activeGuideField === item.field;
@@ -1393,20 +1477,24 @@ function EditorPanel() {
                   <button
                     key={item.field}
                     onClick={() => { setActiveGuideField(item.field); setShowTipsMobile(false); }}
-                    className={`w-full text-left rounded-xl border px-4 py-3 flex flex-col gap-1 transition-all
-                      ${isActive
-                        ? "border-[#c5a08a] bg-white shadow-md"
-                        : "border-[#d9cec6] bg-[#f5ede7] hover:bg-white"}`}
+                    className={`w-full text-left rounded-xl border px-4 py-3 flex items-start gap-3 transition-all ${
+                      isActive ? "border-[#c5a08a] bg-white shadow-md" : "border-[#d9cec6] bg-[#f5ede7] hover:bg-white"
+                    }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black"
-                        style={{ background: "#8e2f2f1a", color: "#8e2f2f" }}>
-                        {idx + 1}
-                      </span>
-                      <span className="text-[13px] font-semibold text-[#5a3328]">{item.title}</span>
-                      <span className={`ml-auto h-2.5 w-2.5 rounded-full shrink-0 ${isFilled ? "bg-[#5da56d]" : "bg-[#d18b6c]"}`} />
+                    <span className={`shrink-0 flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black mt-0.5 ${
+                      isFilled ? "bg-[#5da56d] text-white" : "bg-[#e8d8d0] text-[#8e2f2f]"
+                    }`}>
+                      {isFilled ? "✓" : idx + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[13px] font-semibold text-[#5a3328]">{item.title}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isFilled ? "bg-[#e7f4ea] text-[#3d7a4e]" : "bg-[#f6e9df] text-[#a15f49]"}`}>
+                          {isFilled ? "OK" : "vazio"}
+                        </span>
+                      </div>
+                      <p className="text-[12px] text-[#7d5246] leading-relaxed">{item.tip}</p>
                     </div>
-                    <p className="text-[12px] text-[#7d5246] leading-relaxed pl-7">{item.tip}</p>
                   </button>
                 );
               })}
