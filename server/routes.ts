@@ -523,6 +523,63 @@ export async function registerRoutes(
     res.json(data);
   });
 
+  // === PUBLIC: TURMAS POR ESCOLA (dados detalhados por série/turno) ===
+  app.get("/api/escola-turmas/:inep", async (req, res) => {
+    const inep = getParam(req.params, "inep");
+    try {
+      const row = await pgGet(
+        "SELECT dados_json FROM turma_escola WHERE co_entidade = $1 AND ano = 2025 LIMIT 1",
+        [inep]
+      );
+      if (!row) return res.status(404).json({ erro: "Dados de turmas não encontrados para esta escola." });
+      const d = row.dados_json as Record<string, string>;
+      const n = (k: string) => parseInt(d[k] || "0") || 0;
+      const result = {
+        co_entidade: inep,
+        ano: 2025,
+        totais: {
+          bas: n("QT_TUR_BAS"), inf: n("QT_TUR_INF"), fund: n("QT_TUR_FUND"),
+          med: n("QT_TUR_MED"), eja: n("QT_TUR_EJA"), esp: n("QT_TUR_ESP"), prof: n("QT_TUR_PROF"),
+          diurno: n("QT_TUR_BAS_D"), noturno: n("QT_TUR_BAS_N"), ead: n("QT_TUR_BAS_EAD"), integral: n("QT_TUR_BAS_INT"),
+        },
+        fundamental: {
+          total: n("QT_TUR_FUND"), ai: n("QT_TUR_FUND_AI"), af: n("QT_TUR_FUND_AF"),
+          ai_1ano: n("QT_TUR_FUND_AI_1"), ai_2ano: n("QT_TUR_FUND_AI_2"), ai_3ano: n("QT_TUR_FUND_AI_3"),
+          ai_4ano: n("QT_TUR_FUND_AI_4"), ai_5ano: n("QT_TUR_FUND_AI_5"),
+          af_6ano: n("QT_TUR_FUND_AF_6"), af_7ano: n("QT_TUR_FUND_AF_7"),
+          af_8ano: n("QT_TUR_FUND_AF_8"), af_9ano: n("QT_TUR_FUND_AF_9"),
+          diurno: n("QT_TUR_FUND_D"), noturno: n("QT_TUR_FUND_N"), integral: n("QT_TUR_FUND_INT"),
+        },
+        medio: {
+          total: n("QT_TUR_MED"), diurno: n("QT_TUR_MED_D"), noturno: n("QT_TUR_MED_N"),
+          integral: n("QT_TUR_MED_INT"), ead: n("QT_TUR_MED_EAD"),
+          novo_medio: n("QT_TUR_MED_NM"), nm_1serie: n("QT_TUR_MED_NM_1"), nm_2serie: n("QT_TUR_MED_NM_2"),
+          nm_3serie: n("QT_TUR_MED_NM_3"), nm_4serie: n("QT_TUR_MED_NM_4"),
+          ifa: n("QT_TUR_MED_IFA"), ifa_ciencias: n("QT_TUR_MED_IFA_CIENC"), ifa_humanas: n("QT_TUR_MED_IFA_HUMA"),
+          ifa_linguagens: n("QT_TUR_MED_IFA_LING"), ifa_matematica: n("QT_TUR_MED_IFA_MATE"),
+          prop: n("QT_TUR_MED_PROP"),
+        },
+        eja: {
+          total: n("QT_TUR_EJA"), fund: n("QT_TUR_EJA_FUND"), med: n("QT_TUR_EJA_MED"),
+          diurno: n("QT_TUR_EJA_D"), noturno: n("QT_TUR_EJA_N"), ead: n("QT_TUR_EJA_EAD"), integral: n("QT_TUR_EJA_INT"),
+          med_diurno: n("QT_TUR_EJA_MED_D"), med_noturno: n("QT_TUR_EJA_MED_N"),
+        },
+        profissional: {
+          total: n("QT_TUR_PROF"), diurno: n("QT_TUR_PROF_D"), noturno: n("QT_TUR_PROF_N"),
+          ead: n("QT_TUR_PROF_EAD"), integral: n("QT_TUR_PROF_INT"), tecnico: n("QT_TUR_PROF_TEC"),
+        },
+        especial: {
+          total: n("QT_TUR_ESP"), classe_comum: n("QT_TUR_ESP_CC"), classe_especial: n("QT_TUR_ESP_CE"),
+          diurno: n("QT_TUR_ESP_D"), noturno: n("QT_TUR_ESP_N"), ead: n("QT_TUR_ESP_EAD"),
+        },
+      };
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ erro: err.message });
+    }
+  });
+
   // === PUBLIC: ESCOLA BUSCAR (local DB — busca rápida, dados do Railway no painel) ===
   app.get("/api/escola/buscar", async (req, res) => {
     const nome = req.query.nome as string;

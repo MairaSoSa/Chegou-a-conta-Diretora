@@ -20,7 +20,7 @@ import {
   Link2, Cross, Laptop, Mail, Phone, Droplets, ClipboardList, Wrench,
   Folder, Pin, Ruler, Printer,
 } from "@/components/Icons";
-import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico, useEscolaMicroregiao, useUfStats, useSimilarSchools, useEscolaCenso2025 } from "@/hooks/use-schools";
+import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico, useEscolaMicroregiao, useUfStats, useSimilarSchools, useEscolaCenso2025, useEscolaTurmas } from "@/hooks/use-schools";
 import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento, usePddeSuspensaoEscola } from "@/hooks/use-pdde";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -240,6 +240,7 @@ export default function Dashboard() {
   const { data: microregiaoData } = useEscolaMicroregiao(selectedInep || "");
   const { data: diagnosticoData } = useEscolaDiagnostico(selectedInep || "");
   const { data: censo2025Data } = useEscolaCenso2025(selectedInep || "");
+  const { data: turmasData } = useEscolaTurmas(selectedInep || "");
   const [pddeAno, setPddeAno] = useState<number>(new Date().getFullYear());
   const [pieAno, setPieAno] = useState<number>(new Date().getFullYear() - 1);
   const [showEquipamentos, setShowEquipamentos] = useState(false);
@@ -5983,6 +5984,151 @@ out center tags 100;`;
                             { label: 'Turmas Fund. AF integral', key: 'qt_tur_fund_af_int' },
                             { label: 'Turmas Médio integral', key: 'qt_tur_med_int' },
                           ]} />
+
+                          {/* ── PLANILHA POR TURMA 2025 ── */}
+                          {turmasData ? (() => {
+                            const td = turmasData;
+                            const show = (v: number | undefined) => v != null ? v : 0;
+
+                            const sections: { title: string; rows: { label: string; sub?: boolean; vals: (number | undefined)[]; bold?: boolean }[] }[] = [];
+
+                            if (td.totais?.bas > 0) sections.push({
+                              title: 'Resumo — Total de Turmas',
+                              rows: [
+                                { label: 'Total de turmas', vals: [td.totais.bas], bold: true },
+                                ...(td.totais.inf > 0 ? [{ label: 'Ed. Infantil', sub: true, vals: [td.totais.inf] }] : []),
+                                ...(td.totais.fund > 0 ? [{ label: 'Ens. Fundamental', sub: true, vals: [td.totais.fund] }] : []),
+                                ...(td.totais.med > 0 ? [{ label: 'Ensino Médio', sub: true, vals: [td.totais.med] }] : []),
+                                ...(td.totais.eja > 0 ? [{ label: 'EJA', sub: true, vals: [td.totais.eja] }] : []),
+                                ...(td.totais.prof > 0 ? [{ label: 'Ed. Profissional', sub: true, vals: [td.totais.prof] }] : []),
+                                ...(td.totais.esp > 0 ? [{ label: 'Ed. Especial (AEE)', sub: true, vals: [td.totais.esp] }] : []),
+                                { label: 'Turmas diurnas', sub: true, vals: [td.totais.diurno] },
+                                { label: 'Turmas noturnas', sub: true, vals: [td.totais.noturno] },
+                                ...(td.totais.ead > 0 ? [{ label: 'Turmas EaD', sub: true, vals: [td.totais.ead] }] : []),
+                                ...(td.totais.integral > 0 ? [{ label: 'Tempo integral', sub: true, vals: [td.totais.integral] }] : []),
+                              ],
+                            });
+
+                            if (td.fundamental?.total > 0) sections.push({
+                              title: 'Ens. Fundamental — por Ano/Turno',
+                              rows: [
+                                { label: 'Total Fund.', vals: [td.fundamental.total], bold: true },
+                                ...(td.fundamental.ai > 0 ? [
+                                  { label: 'Anos Iniciais (1º–5º)', sub: false, vals: [td.fundamental.ai] },
+                                  ...(td.fundamental.ai_1ano > 0 ? [{ label: '1º ano', sub: true, vals: [td.fundamental.ai_1ano] }] : []),
+                                  ...(td.fundamental.ai_2ano > 0 ? [{ label: '2º ano', sub: true, vals: [td.fundamental.ai_2ano] }] : []),
+                                  ...(td.fundamental.ai_3ano > 0 ? [{ label: '3º ano', sub: true, vals: [td.fundamental.ai_3ano] }] : []),
+                                  ...(td.fundamental.ai_4ano > 0 ? [{ label: '4º ano', sub: true, vals: [td.fundamental.ai_4ano] }] : []),
+                                  ...(td.fundamental.ai_5ano > 0 ? [{ label: '5º ano', sub: true, vals: [td.fundamental.ai_5ano] }] : []),
+                                ] : []),
+                                ...(td.fundamental.af > 0 ? [
+                                  { label: 'Anos Finais (6º–9º)', sub: false, vals: [td.fundamental.af] },
+                                  ...(td.fundamental.af_6ano > 0 ? [{ label: '6º ano', sub: true, vals: [td.fundamental.af_6ano] }] : []),
+                                  ...(td.fundamental.af_7ano > 0 ? [{ label: '7º ano', sub: true, vals: [td.fundamental.af_7ano] }] : []),
+                                  ...(td.fundamental.af_8ano > 0 ? [{ label: '8º ano', sub: true, vals: [td.fundamental.af_8ano] }] : []),
+                                  ...(td.fundamental.af_9ano > 0 ? [{ label: '9º ano', sub: true, vals: [td.fundamental.af_9ano] }] : []),
+                                ] : []),
+                                { label: 'Diurno', sub: true, vals: [td.fundamental.diurno] },
+                                ...(td.fundamental.noturno > 0 ? [{ label: 'Noturno', sub: true, vals: [td.fundamental.noturno] }] : []),
+                                ...(td.fundamental.integral > 0 ? [{ label: 'Tempo integral', sub: true, vals: [td.fundamental.integral] }] : []),
+                              ],
+                            });
+
+                            if (td.medio?.total > 0) sections.push({
+                              title: 'Ensino Médio — por Série/Modalidade',
+                              rows: [
+                                { label: 'Total Médio', vals: [td.medio.total], bold: true },
+                                ...(td.medio.novo_medio > 0 ? [
+                                  { label: 'Novo Médio (NEM)', vals: [td.medio.novo_medio] },
+                                  ...(td.medio.nm_1serie > 0 ? [{ label: '1ª série', sub: true, vals: [td.medio.nm_1serie] }] : []),
+                                  ...(td.medio.nm_2serie > 0 ? [{ label: '2ª série', sub: true, vals: [td.medio.nm_2serie] }] : []),
+                                  ...(td.medio.nm_3serie > 0 ? [{ label: '3ª série', sub: true, vals: [td.medio.nm_3serie] }] : []),
+                                  ...(td.medio.nm_4serie > 0 ? [{ label: '4ª série', sub: true, vals: [td.medio.nm_4serie] }] : []),
+                                ] : []),
+                                ...(td.medio.ifa > 0 ? [
+                                  { label: 'Itinerários Formativos (IFAs)', vals: [td.medio.ifa] },
+                                  ...(td.medio.ifa_ciencias > 0 ? [{ label: 'Ciências da Natureza', sub: true, vals: [td.medio.ifa_ciencias] }] : []),
+                                  ...(td.medio.ifa_humanas > 0 ? [{ label: 'Ciências Humanas', sub: true, vals: [td.medio.ifa_humanas] }] : []),
+                                  ...(td.medio.ifa_linguagens > 0 ? [{ label: 'Linguagens', sub: true, vals: [td.medio.ifa_linguagens] }] : []),
+                                  ...(td.medio.ifa_matematica > 0 ? [{ label: 'Matemática', sub: true, vals: [td.medio.ifa_matematica] }] : []),
+                                ] : []),
+                                ...(td.medio.prop > 0 ? [{ label: 'Médio Propedêutico (antigo)', sub: false, vals: [td.medio.prop] }] : []),
+                                { label: 'Diurno', sub: true, vals: [td.medio.diurno] },
+                                ...(td.medio.noturno > 0 ? [{ label: 'Noturno', sub: true, vals: [td.medio.noturno] }] : []),
+                                ...(td.medio.integral > 0 ? [{ label: 'Tempo integral', sub: true, vals: [td.medio.integral] }] : []),
+                              ],
+                            });
+
+                            if (td.eja?.total > 0) sections.push({
+                              title: 'EJA — por Etapa/Turno',
+                              rows: [
+                                { label: 'Total EJA', vals: [td.eja.total], bold: true },
+                                ...(td.eja.fund > 0 ? [{ label: 'EJA Fundamental', sub: false, vals: [td.eja.fund] }] : []),
+                                ...(td.eja.med > 0 ? [
+                                  { label: 'EJA Médio', sub: false, vals: [td.eja.med] },
+                                  ...(td.eja.med_diurno > 0 ? [{ label: 'Diurno', sub: true, vals: [td.eja.med_diurno] }] : []),
+                                  ...(td.eja.med_noturno > 0 ? [{ label: 'Noturno', sub: true, vals: [td.eja.med_noturno] }] : []),
+                                ] : []),
+                                ...(td.eja.noturno > 0 ? [{ label: 'Total noturno', sub: true, vals: [td.eja.noturno] }] : []),
+                              ],
+                            });
+
+                            if (td.profissional?.total > 0) sections.push({
+                              title: 'Ed. Profissional',
+                              rows: [
+                                { label: 'Total Ed. Profissional', vals: [td.profissional.total], bold: true },
+                                ...(td.profissional.tecnico > 0 ? [{ label: 'Técnico', sub: true, vals: [td.profissional.tecnico] }] : []),
+                                { label: 'Diurno', sub: true, vals: [td.profissional.diurno] },
+                                ...(td.profissional.noturno > 0 ? [{ label: 'Noturno', sub: true, vals: [td.profissional.noturno] }] : []),
+                              ],
+                            });
+
+                            if (td.especial?.total > 0) sections.push({
+                              title: 'Ed. Especial (AEE)',
+                              rows: [
+                                { label: 'Total AEE', vals: [td.especial.total], bold: true },
+                                ...(td.especial.classe_comum > 0 ? [{ label: 'Classe Comum (inclusão)', sub: true, vals: [td.especial.classe_comum] }] : []),
+                                ...(td.especial.classe_especial > 0 ? [{ label: 'Classe Especial', sub: true, vals: [td.especial.classe_especial] }] : []),
+                                { label: 'Diurno', sub: true, vals: [td.especial.diurno] },
+                                ...(td.especial.noturno > 0 ? [{ label: 'Noturno', sub: true, vals: [td.especial.noturno] }] : []),
+                              ],
+                            });
+
+                            return (
+                              <details open style={{ borderBottom: '1px solid #ede8df', marginBottom: 4 }}>
+                                <summary style={{ ...summaryStyle, background: `${dimColor}12` }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <BookOpen size={14} />
+                                    Planilha por Turma — Censo 2025
+                                  </span>
+                                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>clique para ver ▾</span>
+                                </summary>
+                                <div style={{ padding: '12px 16px 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12, paddingBottom: 12 }}>
+                                  {sections.map((sec, si) => (
+                                    <div key={si} style={{ border: `1px solid ${dimColor}25`, borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+                                      <div style={{ padding: '8px 14px', background: `${dimColor}15`, fontWeight: 800, fontSize: 12, color: dimColor, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        {sec.title}
+                                      </div>
+                                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                        <tbody>
+                                          {sec.rows.map((row, ri) => (
+                                            <tr key={ri} style={{ borderTop: ri === 0 ? undefined : '1px solid #f0e8d8', background: row.bold ? `${dimColor}08` : (ri % 2 === 0 ? '#fff' : '#fdf9f4') }}>
+                                              <td style={{ padding: row.sub ? '6px 14px 6px 24px' : '7px 14px', color: row.bold ? dimColor : row.sub ? '#5a4a3a' : '#2c3e50', fontWeight: row.bold ? 800 : row.sub ? 400 : 600, fontSize: row.sub ? 12 : 13 }}>
+                                                {row.sub ? `· ${row.label}` : row.label}
+                                              </td>
+                                              <td style={{ padding: '7px 14px', textAlign: 'right', fontWeight: row.bold ? 800 : 600, color: row.bold ? dimColor : '#2c3e50', fontSize: row.bold ? 15 : 13, minWidth: 40 }}>
+                                                {show(row.vals[0])}
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  ))}
+                                </div>
+                              </details>
+                            );
+                          })() : null}
                         </div>
                       );
 
