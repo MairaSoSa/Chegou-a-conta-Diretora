@@ -4837,7 +4837,29 @@ out center tags 100;`;
                       .filter(a => a >= 2020)
                       .sort((a,b)=>b-a);
                     const anoEfetivo = anosDisp.includes(pieAno) ? pieAno : anosDisp[0];
-                    const cd = (evolucaoData.censo_por_ano as Record<number,any>)[anoEfetivo] ?? {};
+                    const cdRaw = (evolucaoData.censo_por_ano as Record<number,any>)[anoEfetivo] ?? {};
+                    // Patch 2025: preenche campos zerados com dados do censo2025Data
+                    const cd = (anoEfetivo === 2025 && censo2025Data) ? (() => {
+                      const m25 = censo2025Data.matriculas ?? {};
+                      const t25 = censo2025Data.turmas ?? {};
+                      const p: Record<string, number> = {
+                        qt_mat_fund:    m25.fundamental ?? 0,
+                        qt_mat_fund_ai: m25.fund_ai     ?? 0,
+                        qt_mat_fund_af: m25.fund_af     ?? 0,
+                        qt_mat_med:     m25.medio       ?? 0,
+                        qt_mat_eja:     m25.eja         ?? 0,
+                        qt_mat_esp:     m25.especial    ?? 0,
+                        qt_tur_fund:    t25.fundamental ?? 0,
+                        qt_tur_med:     t25.medio       ?? 0,
+                        qt_tur_eja:     t25.eja         ?? 0,
+                        qt_tur_esp:     t25.especial    ?? 0,
+                      };
+                      const merged: Record<string, any> = { ...cdRaw };
+                      for (const [k, v] of Object.entries(p)) {
+                        if (!merged[k] || merged[k] === 0) merged[k] = v;
+                      }
+                      return merged;
+                    })() : cdRaw;
 
                     const pct = (v: number, total: number) => total > 0 ? +((v/total)*100).toFixed(1) : 0;
 
@@ -5190,7 +5212,36 @@ out center tags 100;`;
                     </div>
                     {(() => {
                       const anos = evolucaoData.anos_disponiveis.slice().sort((a: number, b: number) => a - b).filter((a: number) => a >= 2020);
-                      const c = evolucaoData.censo_por_ano;
+                      // Patch c[2025] com dados do Censo 2025 detalhado quando os campos estão zerados
+                      const cRaw = evolucaoData.censo_por_ano as Record<number, any>;
+                      const c: Record<number, any> = { ...cRaw };
+                      if (censo2025Data && cRaw[2025]) {
+                        const m25 = censo2025Data.matriculas ?? {};
+                        const t25 = censo2025Data.turmas ?? {};
+                        const d25 = censo2025Data.docentes ?? {};
+                        const patch25: Record<string, number> = {
+                          qt_mat_fund:    m25.fundamental  ?? 0,
+                          qt_mat_fund_ai: m25.fund_ai      ?? 0,
+                          qt_mat_fund_af: m25.fund_af      ?? 0,
+                          qt_mat_med:     m25.medio        ?? 0,
+                          qt_mat_eja:     m25.eja          ?? 0,
+                          qt_mat_esp:     m25.especial     ?? 0,
+                          qt_tur_fund:    t25.fundamental  ?? 0,
+                          qt_tur_med:     t25.medio        ?? 0,
+                          qt_tur_eja:     t25.eja          ?? 0,
+                          qt_tur_esp:     t25.especial     ?? 0,
+                          qt_doc_fund:    d25.fundamental  ?? 0,
+                          qt_doc_fund_af: d25.fund_af      ?? 0,
+                          qt_doc_med:     d25.medio        ?? 0,
+                          qt_doc_eja:     d25.eja          ?? 0,
+                          qt_doc_esp:     d25.especial     ?? 0,
+                        };
+                        const merged: Record<string, any> = { ...cRaw[2025] };
+                        for (const [k, v] of Object.entries(patch25)) {
+                          if (!merged[k] || merged[k] === 0) merged[k] = v;
+                        }
+                        c[2025] = merged;
+                      }
                       type Row = { label: string; key: string; header?: boolean };
 
                       // ── COR DA CAMADA ATIVA ──
