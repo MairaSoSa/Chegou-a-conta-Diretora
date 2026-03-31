@@ -27,7 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
-  LineChart, Line, ReferenceLine
+  LineChart, Line, ReferenceLine, ReferenceArea
 } from "recharts";
 
 const UF_NAMES: Record<string, string> = {
@@ -1812,8 +1812,8 @@ export default function Dashboard() {
                   { id: 'matriculas', label: 'Matrículas', icon: <Users size={14} />, etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; const c25 = a === 2025 && censo2025Data ? censo2025Data.matriculas : null; return { ano: String(a), 'Total': c?.qt_mat_bas || c25?.total || null, 'E. Infantil': c?.qt_mat_inf || c25?.infantil || null, 'Fundamental': c?.qt_mat_fund || c25?.fundamental || null, 'Médio': c?.qt_mat_med || c25?.medio || null, 'EJA': c?.qt_mat_eja || c25?.eja || null, 'Especial': c25?.especial || null, 'Profissional': c25?.profissional || null }; }), lines: [{ key: 'Total', color: '#2d5a88', name: 'Total', etapa: 'total' }, ...(oferta.inf ? [{ key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }] : []), ...(oferta.fund ? [{ key: 'Fundamental', color: '#2f7a58', name: 'Fundamental', etapa: 'fund' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio', etapa: 'med' }] : []), ...(oferta.eja ? [{ key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }] : []), ...(oferta.especial ? [{ key: 'Especial', color: '#e91e63', name: 'Ed. Especial', etapa: 'especial' }] : []), ...(oferta.prof ? [{ key: 'Profissional', color: '#00796b', name: 'Profissional', etapa: 'prof' }] : [])], desc: 'Total de alunos matriculados por etapa de ensino. Especial e Profissional: dados do Censo 2025.' },
                   { id: 'docentes', label: 'Docentes', icon: <User size={14} />, etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; return { ano: String(a), 'Total': c?.qt_doc_bas || c?.qt_docentes || null, 'E. Infantil': c?.qt_doc_inf || null, 'Fundamental': c?.qt_doc_fund || null, 'Médio': c?.qt_doc_med || null, 'EJA': c?.qt_doc_eja || null }; }), lines: [{ key: 'Total', color: '#9b6a16', name: 'Total', etapa: 'total' }, ...(oferta.inf ? [{ key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }] : []), ...(oferta.fund ? [{ key: 'Fundamental', color: '#2f7a58', name: 'Fundamental', etapa: 'fund' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#c47a1f', name: 'Médio', etapa: 'med' }] : []), ...(oferta.eja ? [{ key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }] : [])], desc: 'Número de docentes atuando por etapa de ensino.' },
                   { id: 'turmas', label: 'Turmas', icon: <School size={14} />, etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; const c25t = a === 2025 && censo2025Data ? censo2025Data.turmas : null; return { ano: String(a), 'Total': c?.qt_tur_bas || c?.qt_turmas || c25t?.total || null, 'E. Infantil': c?.qt_tur_inf || c25t?.infantil || null, 'Fundamental': c?.qt_tur_fund || c25t?.fundamental || null, 'Médio': c?.qt_tur_med || c25t?.medio || null, 'EJA': c?.qt_tur_eja || c25t?.eja || null }; }), lines: [{ key: 'Total', color: '#2f7a58', name: 'Total', etapa: 'total' }, ...(oferta.inf ? [{ key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }] : []), ...(oferta.fund ? [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental', etapa: 'fund' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio', etapa: 'med' }] : []), ...(oferta.eja ? [{ key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }] : [])], desc: 'Total de turmas por etapa de ensino.' },
-                  ...((censo2025Data?.matriculas?.diurno ?? 0) > 0 ? [{ id: 'turno', label: 'Turno 2025', icon: <Sun size={14} />, data: anosVisiveis.map((a: number) => { const c25m = a === 2025 && censo2025Data ? censo2025Data.matriculas : null; return { ano: String(a), 'Diurno': c25m?.diurno || null, 'Noturno': c25m?.noturno || null }; }), lines: [{ key: 'Diurno', color: '#f59e0b', name: 'Diurno' }, { key: 'Noturno', color: '#1e3a5f', name: 'Noturno' }], desc: 'Distribuição de matrículas por turno. Dados do Censo INEP 2025.' }] : []),
-                  ...((censo2025Data?.docentes?.feminino ?? 0) > 0 ? [{ id: 'docgênero', label: 'Doc. Gênero 2025', icon: <User size={14} />, data: anosVisiveis.map((a: number) => { const d25 = a === 2025 && censo2025Data ? censo2025Data.docentes : null; return { ano: String(a), 'Feminino': d25?.feminino || null, 'Masculino': d25?.masculino || null }; }), lines: [{ key: 'Feminino', color: '#e91e63', name: 'Feminino' }, { key: 'Masculino', color: '#1565c0', name: 'Masculino' }], desc: 'Docentes em exercício por gênero. Dados do Censo INEP 2025.' }] : []),
+                  ...((censo2025Data?.matriculas?.diurno ?? 0) > 0 || anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_bas_diurno ?? 0) > 0) ? [{ id: 'turno', label: 'Turno', icon: <Sun size={14} />, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; const c25m = a === 2025 && censo2025Data ? censo2025Data.matriculas : null; return { ano: String(a), 'Diurno': c?.qt_mat_bas_diurno ?? c25m?.diurno ?? null, 'Noturno': c?.qt_mat_bas_noturno ?? c25m?.noturno ?? null }; }), lines: [{ key: 'Diurno', color: '#f59e0b', name: 'Diurno' }, { key: 'Noturno', color: '#1e3a5f', name: 'Noturno' }], desc: 'Distribuição de matrículas por turno de 2020 a 2025. Dados do Censo INEP.' }] : []),
+                  ...((censo2025Data?.docentes?.feminino ?? 0) > 0 ? [{ id: 'docgênero', label: 'Doc. Gênero', icon: <User size={14} />, dataStartYear: 2025, data: anosVisiveis.map((a: number) => { const d25 = a === 2025 && censo2025Data ? censo2025Data.docentes : null; return { ano: String(a), 'Feminino': d25?.feminino || null, 'Masculino': d25?.masculino || null }; }), lines: [{ key: 'Feminino', color: '#e91e63', name: 'Feminino' }, { key: 'Masculino', color: '#1565c0', name: 'Masculino' }], desc: 'Docentes em exercício por gênero. Dados disponíveis a partir do Censo INEP 2025.' }] : []),
                   ...(anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_bas_fem ?? 0) > 0) || (censo2025Data?.matriculas?.por_genero?.feminino ?? 0) > 0 ? [{ id: 'matgenero', label: 'Mat. Gênero', icon: <Users size={14} />, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; const pg = a === 2025 && censo2025Data ? censo2025Data.matriculas?.por_genero : null; return { ano: String(a), 'Feminino': c?.qt_mat_bas_fem ?? pg?.feminino ?? null, 'Masculino': c?.qt_mat_bas_masc ?? pg?.masculino ?? null }; }), lines: [{ key: 'Feminino', color: '#e91e63', name: 'Feminino' }, { key: 'Masculino', color: '#1565c0', name: 'Masculino' }], desc: 'Matrículas por gênero de 2020 a 2025. Dados do Censo INEP.' }] : []),
                   ...(anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_bas_parda ?? 0) > 0) || (censo2025Data?.matriculas?.por_raca?.parda ?? 0) > 0 ? [{ id: 'matraca', label: 'Mat. Raça/Cor', icon: <Users size={14} />, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; const pr = a === 2025 && censo2025Data ? censo2025Data.matriculas?.por_raca : null; return { ano: String(a), 'Parda': c?.qt_mat_bas_parda ?? pr?.parda ?? null, 'Preta': c?.qt_mat_bas_preta ?? pr?.preta ?? null, 'Branca': c?.qt_mat_bas_branca ?? pr?.branca ?? null, 'Amarela': c?.qt_mat_bas_amarela ?? pr?.amarela ?? null, 'Indígena': c?.qt_mat_bas_indigena ?? pr?.indigena ?? null, 'N.D.': c?.qt_mat_bas_nd ?? pr?.nao_declarada ?? null }; }), lines: [{ key: 'Parda', color: '#795548', name: 'Parda' }, { key: 'Preta', color: '#212121', name: 'Preta' }, { key: 'Branca', color: '#90a4ae', name: 'Branca' }, { key: 'Amarela', color: '#f9a825', name: 'Amarela' }, { key: 'Indígena', color: '#4caf50', name: 'Indígena' }, { key: 'N.D.', color: '#bdbdbd', name: 'Não Decl.' }], desc: 'Matrículas por raça/cor de 2020 a 2025. Dados do Censo INEP.' }] : []),
                   ...(ch?.ideb && ch.ideb.length > 0 ? [{ id: 'ideb', label: 'IDEB', icon: <Award size={14} />, cadencia: 'Bienal', referenceLines: [{ y: 6, label: 'Meta 6,0', color: '#c0392b' }], data: ch.ideb.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'AI': d.ideb_ai, 'AF': d.ideb_af, 'Médio': d.ideb_em })), lines: [...(oferta.fundAI ? [{ key: 'AI', color: '#2d5a88', name: 'Anos Iniciais' }] : []), ...(oferta.fundAF ? [{ key: 'AF', color: '#9b6a16', name: 'Anos Finais' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#2f7a58', name: 'Ensino Médio' }] : [])], desc: 'IDEB por etapa de ensino (escala 0–10). A linha tracejada indica a meta nacional de 6,0.' }] : []),
@@ -4903,7 +4903,7 @@ out center tags 100;`;
                             )}
                             {/* Chart area */}
                             <div className="ccc-chart-wrap">
-                              <EvolutionChart data={currentChart.data} lines={filteredLines} referenceLines={refLines} large />
+                              <EvolutionChart data={currentChart.data} lines={filteredLines} referenceLines={refLines} dataStartYear={(currentChart as any).dataStartYear} large />
                             </div>
                             {/* Footer */}
                             <div className="ccc-footer">
@@ -7675,9 +7675,13 @@ out center tags 100;`;
   );
 }
 
-function EvolutionChart({ data, lines, unit, large, referenceLines }: { title?: string; data: any[]; lines: { key: string; color: string; name: string }[]; icon?: React.ReactNode; description?: string; unit?: string; large?: boolean; referenceLines?: Array<{ y: number; label: string; color?: string }> }) {
+function EvolutionChart({ data, lines, unit, large, referenceLines, dataStartYear }: { title?: string; data: any[]; lines: { key: string; color: string; name: string }[]; icon?: React.ReactNode; description?: string; unit?: string; large?: boolean; referenceLines?: Array<{ y: number; label: string; color?: string }>; dataStartYear?: number }) {
   const hasData = data.some(d => lines.some(l => d[l.key] != null && d[l.key] !== 0));
   if (!hasData) return null;
+
+  const ncYears = dataStartYear ? data.filter(d => Number(d.ano) < dataStartYear) : [];
+  const ncFirst = ncYears[0]?.ano as string | undefined;
+  const ncLast  = ncYears[ncYears.length - 1]?.ano as string | undefined;
 
   const unitSuffix = unit || '';
   const multiSeries = lines.length > 1;
@@ -7721,6 +7725,26 @@ function EvolutionChart({ data, lines, unit, large, referenceLines }: { title?: 
             cursor={{ fill: 'rgba(0,0,0,0.04)', radius: 4 }}
           />
           {multiSeries && <Legend iconType="circle" iconSize={large ? 10 : 8} wrapperStyle={{ fontSize: large ? "12px" : "10px", paddingTop: 8 }} />}
+          {ncFirst && ncLast && (
+            <ReferenceArea
+              x1={ncFirst}
+              x2={ncLast}
+              fill="#f0f0ee"
+              fillOpacity={0.85}
+              stroke="#d4d0c8"
+              strokeWidth={1}
+              label={{ value: 'Dado não coletado neste Censo', position: 'insideTop', fontSize: 9, fill: '#b0a898', fontStyle: 'italic' }}
+            />
+          )}
+          {dataStartYear && data.some(d => String(d.ano) === String(dataStartYear)) && (
+            <ReferenceLine
+              x={String(dataStartYear)}
+              stroke="#c8c0b0"
+              strokeDasharray="4 3"
+              strokeWidth={1.5}
+              label={{ value: `↑ ${dataStartYear}`, position: 'insideTopLeft', fontSize: 9, fill: '#a09080' }}
+            />
+          )}
           {(referenceLines || []).map((rl) => (
             <ReferenceLine
               key={`rl-${rl.y}`}
