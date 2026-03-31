@@ -14,31 +14,15 @@ function buscarDadosEscolaParaChat(texto: string, inepParam?: string): string {
     if (match) inep = match[1];
   }
 
-  // 2. Tenta buscar por nome de escola na mensagem
+  // 2. Tenta buscar por nome de escola apenas quando há menção explícita com prefixo
+  // Ex: "escola Dom Mario", "colégio Tiradentes", "EMEF Santos Dumont"
   if (!inep) {
-    // Estratégia A: detecta padrão "escola NOME" e usa as primeiras palavras do nome
-    const nomeMatch = texto.match(/(?:escola|colégio|colegio|emef|emei|eem|eei|eeef|ee\s|em\s|cmei|eja)\s+([A-Za-zÀ-ÿ]{2}[A-Za-zÀ-ÿ\s]{2,40})/i);
+    const nomeMatch = texto.match(/(?:escola|colégio|colegio|emef|emei|eem|eei|eeef|cmei|eja)\s+([A-Za-zÀ-ÿ]{2}[A-Za-zÀ-ÿ\s]{2,40})/i);
     if (nomeMatch) {
-      // Pega apenas as 4 primeiras palavras significativas do nome capturado
+      // Pega apenas as 4 primeiras palavras do nome capturado
       const palavras = nomeMatch[1].trim().split(/\s+/).slice(0, 4).join(" ");
       const resultados = searchSchoolsLocal(palavras, 1);
       if (resultados.length > 0) inep = resultados[0].inep;
-    }
-
-    // Estratégia B: busca livre com termos que parecem nomes de escola (palavras maiúsculas consecutivas)
-    if (!inep) {
-      const nomeProprio = texto.match(/\b([A-ZÁÉÍÓÚÀÃÕÂÊÔÇ][a-záéíóúàãõâêôç]+(?:\s+(?:de|da|do|das|dos|e)\s+)?){2,5}/g);
-      if (nomeProprio && nomeProprio.length > 0) {
-        // Tenta cada candidato de nome próprio
-        for (const candidato of nomeProprio.slice(0, 3)) {
-          if (candidato.trim().length < 5) continue;
-          const resultados = searchSchoolsLocal(candidato.trim(), 1);
-          if (resultados.length > 0) {
-            inep = resultados[0].inep;
-            break;
-          }
-        }
-      }
     }
   }
 
