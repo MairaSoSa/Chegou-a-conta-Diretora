@@ -549,7 +549,11 @@ export async function getEscolaEvolucaoLocal(inep: string) {
         COALESCE((dados_json->>'QT_MAT_BAS_18_MAIS')::int,
           (dados_json->>'QT_MAT_BAS_18_19')::int) AS qt_mat_bas_18_mais,
         (dados_json->>'QT_MAT_ZR_URB')::int AS qt_mat_zr_urba,
-        (dados_json->>'QT_MAT_ZR_RUR')::int AS qt_mat_zr_rura
+        (dados_json->>'QT_MAT_ZR_RUR')::int AS qt_mat_zr_rura,
+        (dados_json->>'QT_MAT_EJA_FUND')::int AS qt_mat_eja_fund,
+        (dados_json->>'QT_MAT_EJA_MED')::int AS qt_mat_eja_med,
+        (dados_json->>'QT_MAT_ESP_CC')::int AS qt_mat_esp_cc,
+        (dados_json->>'QT_MAT_ESP_CE')::int AS qt_mat_esp_ce
        FROM censo_escola_historico
        WHERE co_entidade = $1 ORDER BY ano`,
       [coEntidade]
@@ -836,6 +840,10 @@ export async function getEscolaEvolucaoLocal(inep: string) {
     censoByYear[ano].qt_mat_bas_18_mais  = _hn(h.qt_mat_bas_18_mais);
     censoByYear[ano].qt_mat_zr_urba      = _hn(h.qt_mat_zr_urba);
     censoByYear[ano].qt_mat_zr_rura      = _hn(h.qt_mat_zr_rura);
+    censoByYear[ano].qt_mat_eja_fund     = _hn(h.qt_mat_eja_fund);
+    censoByYear[ano].qt_mat_eja_med      = _hn(h.qt_mat_eja_med);
+    censoByYear[ano].qt_mat_esp_cc       = _hn(h.qt_mat_esp_cc);
+    censoByYear[ano].qt_mat_esp_ce       = _hn(h.qt_mat_esp_ce);
   }
 
   const indicadoresByYear: Record<number, Record<string, any>> = {};
@@ -1571,7 +1579,11 @@ export async function getEscolaCenso2025(inep: string) {
       fund_af:      _n(mat.QT_MAT_FUND_AF),
       medio:        _n(mat.QT_MAT_MED),
       eja:          _n(mat.QT_MAT_EJA),
+      eja_fund:     _n(mat.QT_MAT_EJA_FUND),
+      eja_med:      _n(mat.QT_MAT_EJA_MED),
       especial:     _n(mat.QT_MAT_ESP),
+      esp_cc:       _n(mat.QT_MAT_ESP_CC),
+      esp_ce:       _n(mat.QT_MAT_ESP_CE),
       profissional: _n(mat.QT_MAT_PROF),
       diurno:       _n(mat.QT_MAT_BAS_D),
       noturno:      _n(mat.QT_MAT_BAS_N),
