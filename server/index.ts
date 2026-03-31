@@ -5,7 +5,7 @@ import { ensureAiDocumentsCreatedAtColumn, ensureAiDocumentsLinkColumn, ensureCa
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { startMecNormasScheduler } from "./integrations/mecnormas";
-import { getCensoEstatisticas, getMediasNacionais, getLocalStats } from "./importador";
+import { getCensoEstatisticas, getMediasNacionais, getLocalStats, warmFromDBCache } from "./importador";
 
 const app = express();
 const httpServer = createServer(app);
@@ -119,6 +119,11 @@ app.use((req, res, next) => {
       const warmCache = async () => {
         log("Pre-warming stats cache in background...");
         try {
+          // 1. Carrega cache persistente do banco na memória (evita recalcular 60s após restart)
+          const dbLoaded = await warmFromDBCache();
+          if (dbLoaded > 0) log(`  ${dbLoaded} entradas recuperadas do cache persistente`);
+
+          // 2. Recalcula apenas o que não veio do banco (ou está desatualizado)
           await getLocalStats();
           log("  local stats cached");
           for (const ano of [2025, 2024, 2023, 2022, 2021, 2020]) {

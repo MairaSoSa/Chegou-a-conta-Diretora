@@ -832,9 +832,11 @@ export async function getCensoEscolarDetail(ano: number, inep: string) {
 }
 
 const _statsMemCache: Record<string, { data: any; ts: number }> = {};
+const STATS_MEM_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+
 function getStatsCache(key: string): any | null {
   const entry = _statsMemCache[key];
-  if (entry && (Date.now() - entry.ts) < 24 * 60 * 60 * 1000) return entry.data;
+  if (entry && (Date.now() - entry.ts) < STATS_MEM_TTL_MS) return entry.data;
   return null;
 }
 
@@ -843,6 +845,31 @@ function setStatsCache(key: string, data: any): void {
   pgRun(`INSERT INTO stats_cache (cache_key, data, updated_at) VALUES (?, ?, ?) ON CONFLICT (cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`,
     [key, JSON.stringify(data), Date.now()]
   ).catch(() => {});
+}
+
+// Carrega o stats_cache persistente (banco) na memória ao inicializar.
+// Evita recalcular queries pesadas (60s) após cada restart do servidor.
+export async function warmFromDBCache(): Promise<number> {
+  try {
+    const rows = await pgAll(
+      `SELECT cache_key, data, updated_at FROM stats_cache WHERE cache_key NOT LIKE 'evolucao_%' AND cache_key NOT LIKE 'comparativo_%' AND cache_key NOT LIKE 'diagnostico_%'`,
+      []
+    ) as any[];
+    const now = Date.now();
+    let loaded = 0;
+    for (const row of rows) {
+      if (!row.data) continue;
+      const age = now - (row.updated_at || 0);
+      if (age > STATS_MEM_TTL_MS) continue;
+      try {
+        _statsMemCache[row.cache_key] = { data: JSON.parse(row.data), ts: row.updated_at || now };
+        loaded++;
+      } catch {}
+    }
+    return loaded;
+  } catch {
+    return 0;
+  }
 }
 
 export async function getCensoEstatisticas(ano: number) {

@@ -281,7 +281,7 @@ export async function registerRoutes(
   app.get("/api/escola-evolucao/:inep", async (req, res) => {
     const inep = getParam(req.params, "inep");
     const CACHE_KEY = `evolucao_${inep}`;
-    const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+    const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h (dados do censo são anuais)
 
     // 1. Cache persistente (se disponível e fresco)
     const cached = await pgGet(
