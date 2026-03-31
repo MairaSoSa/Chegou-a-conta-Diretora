@@ -1456,11 +1456,12 @@ const _n = (v: any) => (v !== null && v !== undefined ? Number(v) || 0 : 0);
 export async function getEscolaCenso2025(inep: string) {
   const coEntidade = inep.toString().trim();
 
-  const [matRows, turRows, docRows, gestRows] = await Promise.all([
+  const [matRows, turRows, docRows, gestRows, cursoRows] = await Promise.all([
     pgAll(`SELECT dados_json FROM matricula_escola WHERE co_entidade = $1 AND ano = '2025' LIMIT 1`, [coEntidade]),
     pgAll(`SELECT dados_json FROM turma_escola WHERE co_entidade = $1 AND ano = '2025' LIMIT 1`, [coEntidade]),
     pgAll(`SELECT dados_json FROM docente_escola WHERE co_entidade = $1 AND ano = '2025' LIMIT 1`, [coEntidade]),
     pgAll(`SELECT dados_json FROM gestor_escolar WHERE co_entidade = $1 AND ano = '2025' LIMIT 1`, [coEntidade]),
+    pgAll(`SELECT dados_json FROM curso_tecnico_escola WHERE co_entidade = $1 AND ano = '2025'`, [coEntidade]),
   ]);
 
   if (!matRows.length && !turRows.length && !docRows.length && !gestRows.length) return null;
@@ -1475,6 +1476,32 @@ export async function getEscolaCenso2025(inep: string) {
   const tur  = parse(turRows);
   const doc  = parse(docRows);
   const gest = parse(gestRows);
+
+  const cursos = cursoRows.map((r: any) => {
+    const d = typeof r.dados_json === 'string' ? JSON.parse(r.dados_json) : (r.dados_json ?? {});
+    return {
+      codigo:           d.CO_CURSO_EDUC_PROFISSIONAL ?? null,
+      nome:             d.NO_CURSO_EDUC_PROFISSIONAL ?? null,
+      area_codigo:      d.ID_AREA_CURSO_PROFISSIONAL ?? null,
+      area_nome:        d.NO_AREA_CURSO_PROFISSIONAL ?? null,
+      qt_cursos:        _n(d.QT_CURSO_TEC),
+      qt_matriculas:    _n(d.QT_MAT_CURSO_TEC),
+      modalidade: {
+        integrado:   _n(d.QT_CURSO_TEC_IFTP),
+        concomitante: _n(d.QT_CURSO_TEC_CONC),
+        subsequente:  _n(d.QT_CURSO_TEC_SUBS),
+        eja:          _n(d.QT_CURSO_TEC_EJA),
+        novo_medio:   _n(d.QT_CURSO_TEC_NM),
+      },
+      matriculas_modalidade: {
+        integrado:    _n(d.QT_MAT_CURSO_TEC_IFTP),
+        concomitante: _n(d.QT_MAT_CURSO_TEC_CONC),
+        subsequente:  _n(d.QT_MAT_CURSO_TEC_SUBS),
+        eja:          _n(d.QT_MAT_CURSO_TEC_EJA),
+        novo_medio:   _n(d.QT_MAT_CURSO_TEC_NM),
+      },
+    };
+  });
 
   return {
     co_entidade: coEntidade,
@@ -1495,6 +1522,33 @@ export async function getEscolaCenso2025(inep: string) {
       profissional: _n(mat.QT_MAT_PROF),
       diurno:       _n(mat.QT_MAT_BAS_D),
       noturno:      _n(mat.QT_MAT_BAS_N),
+      integral:     _n(mat.QT_MAT_BAS_INT),
+      por_genero: {
+        feminino:  _n(mat.QT_MAT_BAS_FEM),
+        masculino: _n(mat.QT_MAT_BAS_MASC),
+      },
+      por_raca: {
+        branca:        _n(mat.QT_MAT_BAS_BRANCA),
+        preta:         _n(mat.QT_MAT_BAS_PRETA),
+        parda:         _n(mat.QT_MAT_BAS_PARDA),
+        amarela:       _n(mat.QT_MAT_BAS_AMARELA),
+        indigena:      _n(mat.QT_MAT_BAS_INDIGENA),
+        nao_declarada: _n(mat.QT_MAT_BAS_ND),
+      },
+      por_faixa_etaria: {
+        ate_3_anos:  _n(mat.QT_MAT_BAS_0_3),
+        de_4_5:      _n(mat.QT_MAT_BAS_4_5),
+        de_6_10:     _n(mat.QT_MAT_BAS_6_10),
+        de_11_14:    _n(mat.QT_MAT_BAS_11_14),
+        de_15_17:    _n(mat.QT_MAT_BAS_15_17),
+        de_18_19:    _n(mat.QT_MAT_BAS_18_19),
+        de_20_24:    _n(mat.QT_MAT_BAS_20_24),
+        de_25_29:    _n(mat.QT_MAT_BAS_25_29),
+        de_30_34:    _n(mat.QT_MAT_BAS_30_34),
+        de_35_39:    _n(mat.QT_MAT_BAS_35_39),
+        de_40_49:    _n(mat.QT_MAT_BAS_40_49),
+        mais_50:     _n(mat.QT_MAT_BAS_50_MAIS),
+      },
     },
 
     turmas: {
@@ -1507,6 +1561,7 @@ export async function getEscolaCenso2025(inep: string) {
       profissional: _n(tur.QT_TUR_PROF),
       diurno:       _n(tur.QT_TUR_BAS_D),
       noturno:      _n(tur.QT_TUR_BAS_N),
+      integral:     _n(tur.QT_TUR_BAS_INT),
     },
 
     docentes: {
@@ -1520,6 +1575,14 @@ export async function getEscolaCenso2025(inep: string) {
       especial:    _n(doc.QT_DOC_ESP),
       feminino:    _n(doc.QT_DOC_BAS_FEM),
       masculino:   _n(doc.QT_DOC_BAS_MASC),
+      por_raca: {
+        branca:   _n(doc.QT_DOC_BAS_BRANCA),
+        preta:    _n(doc.QT_DOC_BAS_PRETA),
+        parda:    _n(doc.QT_DOC_BAS_PARDA),
+        amarela:  _n(doc.QT_DOC_BAS_AMARELA),
+        indigena: _n(doc.QT_DOC_BAS_INDIGENA),
+        nao_declarada: _n(doc.QT_DOC_BAS_ND),
+      },
       por_faixa: {
         ate_24:   _n(doc.QT_DOC_BAS_0_24),
         de_25_29: _n(doc.QT_DOC_BAS_25_29),
@@ -1536,14 +1599,19 @@ export async function getEscolaCenso2025(inep: string) {
       feminino:   _n(gest.QT_GEST_BAS_FEM),
       masculino:  _n(gest.QT_GEST_BAS_MASC),
       diretor:    _n(gest.QT_GEST_BAS_DIRETOR),
+      vice_diretor: _n(gest.QT_GEST_BAS_VICE_DIR),
+      coordenador: _n(gest.QT_GEST_BAS_COORD_PED),
       concursado: _n(gest.QT_GEST_BAS_VINCULO_CONCUR),
+      efetivo:    _n(gest.QT_GEST_BAS_VINCULO_EFET),
       com_ensino_superior: _n(gest.QT_GEST_BAS_ESCO_SUP_GRAD) + _n(gest.QT_GEST_BAS_ESCO_SUP_POS_ESPEC),
+      pos_graduacao: _n(gest.QT_GEST_BAS_ESCO_SUP_POS_ESPEC),
       por_raca: {
-        branca:   _n(gest.QT_GEST_BAS_BRANCA),
-        preta:    _n(gest.QT_GEST_BAS_PRETA),
-        parda:    _n(gest.QT_GEST_BAS_PARDA),
-        amarela:  _n(gest.QT_GEST_BAS_AMARELA),
-        indigena: _n(gest.QT_GEST_BAS_INDIGENA),
+        branca:        _n(gest.QT_GEST_BAS_BRANCA),
+        preta:         _n(gest.QT_GEST_BAS_PRETA),
+        parda:         _n(gest.QT_GEST_BAS_PARDA),
+        amarela:       _n(gest.QT_GEST_BAS_AMARELA),
+        indigena:      _n(gest.QT_GEST_BAS_INDIGENA),
+        nao_declarada: _n(gest.QT_GEST_BAS_ND),
       },
       por_faixa: {
         ate_24:   _n(gest.QT_GEST_BAS_0_24),
@@ -1554,6 +1622,12 @@ export async function getEscolaCenso2025(inep: string) {
         de_55_59: _n(gest.QT_GEST_BAS_55_59),
         mais_60:  _n(gest.QT_GEST_BAS_60_MAIS),
       },
+    },
+
+    cursos_tecnicos: {
+      total_cursos:     cursos.reduce((s: number, c: any) => s + c.qt_cursos, 0),
+      total_matriculas: cursos.reduce((s: number, c: any) => s + c.qt_matriculas, 0),
+      cursos,
     },
   };
 }

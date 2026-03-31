@@ -523,6 +523,54 @@ export async function registerRoutes(
     res.json(data);
   });
 
+  // === PUBLIC: CURSOS TÉCNICOS POR ESCOLA (dados detalhados do Censo 2025) ===
+  app.get("/api/escola-cursos-tecnicos/:inep", async (req, res) => {
+    const inep = getParam(req.params, "inep").trim();
+    try {
+      const rows = await pgAll(
+        `SELECT dados_json FROM curso_tecnico_escola WHERE co_entidade = $1 AND ano = '2025' ORDER BY dados_json->>'NO_CURSO_EDUC_PROFISSIONAL'`,
+        [inep]
+      );
+      if (!rows.length) return res.status(404).json({ erro: "Nenhum curso técnico encontrado para esta escola no Censo 2025." });
+      const _n = (v: any) => (v !== null && v !== undefined ? Number(v) || 0 : 0);
+      const cursos = rows.map((r: any) => {
+        const d = typeof r.dados_json === 'string' ? JSON.parse(r.dados_json) : (r.dados_json ?? {});
+        return {
+          codigo:           d.CO_CURSO_EDUC_PROFISSIONAL ?? null,
+          nome:             d.NO_CURSO_EDUC_PROFISSIONAL ?? null,
+          area_codigo:      d.ID_AREA_CURSO_PROFISSIONAL ?? null,
+          area_nome:        d.NO_AREA_CURSO_PROFISSIONAL ?? null,
+          qt_cursos:        _n(d.QT_CURSO_TEC),
+          qt_matriculas:    _n(d.QT_MAT_CURSO_TEC),
+          modalidade: {
+            integrado:    _n(d.QT_CURSO_TEC_IFTP),
+            concomitante: _n(d.QT_CURSO_TEC_CONC),
+            subsequente:  _n(d.QT_CURSO_TEC_SUBS),
+            eja:          _n(d.QT_CURSO_TEC_EJA),
+            novo_medio:   _n(d.QT_CURSO_TEC_NM),
+          },
+          matriculas_modalidade: {
+            integrado:    _n(d.QT_MAT_CURSO_TEC_IFTP),
+            concomitante: _n(d.QT_MAT_CURSO_TEC_CONC),
+            subsequente:  _n(d.QT_MAT_CURSO_TEC_SUBS),
+            eja:          _n(d.QT_MAT_CURSO_TEC_EJA),
+            novo_medio:   _n(d.QT_MAT_CURSO_TEC_NM),
+          },
+        };
+      });
+      res.json({
+        co_entidade: inep,
+        ano: 2025,
+        fonte: 'inep_censo_escolar_2025',
+        total_cursos: cursos.reduce((s: number, c: any) => s + c.qt_cursos, 0),
+        total_matriculas: cursos.reduce((s: number, c: any) => s + c.qt_matriculas, 0),
+        cursos,
+      });
+    } catch (err: any) {
+      res.status(500).json({ erro: "Erro ao buscar cursos técnicos.", detalhe: err.message });
+    }
+  });
+
   // === PUBLIC: TURMAS POR ESCOLA (dados detalhados por série/turno) ===
   app.get("/api/escola-turmas/:inep", async (req, res) => {
     const inep = getParam(req.params, "inep");
