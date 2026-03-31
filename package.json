@@ -14,7 +14,8 @@
     "import:indicadores": "tsx scripts/import-indicators.ts",
     "import:all": "node scripts/import-all-data.mjs",
     "setup:data": "bash scripts/download-inep-data.sh && node scripts/import-all-data.mjs",
-    "seed:demo": "node scripts/seed-demo.mjs"
+    "seed:demo": "node scripts/seed-demo.mjs",
+    "baixar:banco": "bash baixar-banco.sh"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",
