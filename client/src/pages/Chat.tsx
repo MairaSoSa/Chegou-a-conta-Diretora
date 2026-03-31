@@ -704,6 +704,42 @@ function PesquisaPanel() {
   );
 }
 
+// ─── EDITOR FIELD ─────────────────────────────────────────────────────────────
+
+const BASE_FIELD_CLASS = "rounded-xl border border-[#e6dad2] bg-[#fffaf6] px-3 py-2 text-[14px] text-[#5f4032] outline-none focus:border-[#caa798] focus:ring-2 focus:ring-[#ead2c4] transition w-full";
+
+function InlineField({
+  field, placeholder, multiline = false,
+  value, onChangeValue, activeField, onFocus,
+}: {
+  field: string; placeholder: string; multiline?: boolean;
+  value: string; onChangeValue: (field: string, val: string) => void;
+  activeField: string; onFocus: (field: string) => void;
+}) {
+  const isActive = activeField === field;
+  const ringClass = isActive ? "ring-2 ring-[#caa798]" : "";
+  if (multiline) {
+    return (
+      <textarea
+        value={value}
+        onChange={e => onChangeValue(field, e.target.value)}
+        onFocus={() => onFocus(field)}
+        placeholder={placeholder}
+        className={`${BASE_FIELD_CLASS} mt-1 min-h-[100px] resize-y ${ringClass}`}
+      />
+    );
+  }
+  return (
+    <input
+      value={value}
+      onChange={e => onChangeValue(field, e.target.value)}
+      onFocus={() => onFocus(field)}
+      placeholder={placeholder}
+      className={`${BASE_FIELD_CLASS} mt-1 ${ringClass}`}
+    />
+  );
+}
+
 // ─── EDITOR PANEL ─────────────────────────────────────────────────────────────
 
 function EditorPanel() {
@@ -951,106 +987,120 @@ function EditorPanel() {
     updateField(field, stripped.slice(0, 2000));
   };
 
-  // Inline field component
-  const InlineField = ({ field, placeholder, multiline = false }: { field: string; placeholder: string; multiline?: boolean }) => {
-    const baseClass = "rounded-xl border border-[#e6dad2] bg-[#fffaf6] px-3 py-2 text-[14px] text-[#5f4032] outline-none focus:border-[#caa798] focus:ring-2 focus:ring-[#ead2c4] transition w-full";
-    const isActive = activeGuideField === field;
-
-    if (multiline) {
-      return (
-        <textarea
-          value={currentData[field] || ""}
-          onChange={e => updateField(field, e.target.value)}
-          onFocus={() => setActiveGuideField(field)}
-          placeholder={placeholder}
-          className={`${baseClass} mt-1 min-h-[100px] resize-y ${isActive ? "ring-2 ring-[#caa798]" : ""}`}
-        />
-      );
-    }
-    return (
-      <input
-        value={currentData[field] || ""}
-        onChange={e => updateField(field, e.target.value)}
-        onFocus={() => setActiveGuideField(field)}
-        placeholder={placeholder}
-        className={`${baseClass} mt-1 ${isActive ? "ring-2 ring-[#caa798]" : ""}`}
-      />
-    );
-  };
-
+  // renderFields usa InlineField (definido FORA do componente) diretamente,
+  // passando os dados como props — sem nenhum componente-wrapper definido aqui dentro.
   const renderFields = () => {
+    const fp = { onChangeValue: updateField, activeField: activeGuideField, onFocus: setActiveGuideField };
+    const d = currentData;
     switch (currentTemplate) {
       case "Ata de Reunião":
         return (
           <div className="space-y-4">
-            <div><label className="field-label">Título</label><InlineField field="titulo" placeholder="Nome da ata..." /></div>
+            <div><label className="field-label">Título</label>
+              <InlineField field="titulo" placeholder="Nome da ata..." value={d.titulo||""} {...fp} /></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><label className="field-label">Data</label><InlineField field="data" placeholder="dd/mm/aaaa" /></div>
-              <div><label className="field-label">Horário</label><InlineField field="horario" placeholder="08h00 às 10h00" /></div>
+              <div><label className="field-label">Data</label>
+                <InlineField field="data" placeholder="dd/mm/aaaa" value={d.data||""} {...fp} /></div>
+              <div><label className="field-label">Horário</label>
+                <InlineField field="horario" placeholder="08h00 às 10h00" value={d.horario||""} {...fp} /></div>
             </div>
-            <div><label className="field-label">Local</label><InlineField field="local" placeholder="Sala de reuniões..." /></div>
-            <div><label className="field-label">Participantes</label><InlineField field="participantes" placeholder="Nome e função dos participantes..." multiline /></div>
-            <div><label className="field-label">Pauta</label><InlineField field="pauta" placeholder="Assuntos tratados na reunião..." multiline /></div>
-            <div><label className="field-label">Deliberações</label><InlineField field="deliberacoes" placeholder="Decisões tomadas..." multiline /></div>
-            <div><label className="field-label">Encaminhamentos</label><InlineField field="encaminhamentos" placeholder="Próximos passos e responsáveis..." multiline /></div>
-            <div><label className="field-label">Fechamento</label><InlineField field="fechamento" placeholder="Frase de encerramento..." /></div>
+            <div><label className="field-label">Local</label>
+              <InlineField field="local" placeholder="Sala de reuniões..." value={d.local||""} {...fp} /></div>
+            <div><label className="field-label">Participantes</label>
+              <InlineField field="participantes" placeholder="Nome e função dos participantes..." value={d.participantes||""} multiline {...fp} /></div>
+            <div><label className="field-label">Pauta</label>
+              <InlineField field="pauta" placeholder="Assuntos tratados na reunião..." value={d.pauta||""} multiline {...fp} /></div>
+            <div><label className="field-label">Deliberações</label>
+              <InlineField field="deliberacoes" placeholder="Decisões tomadas..." value={d.deliberacoes||""} multiline {...fp} /></div>
+            <div><label className="field-label">Encaminhamentos</label>
+              <InlineField field="encaminhamentos" placeholder="Próximos passos e responsáveis..." value={d.encaminhamentos||""} multiline {...fp} /></div>
+            <div><label className="field-label">Fechamento</label>
+              <InlineField field="fechamento" placeholder="Frase de encerramento..." value={d.fechamento||""} {...fp} /></div>
           </div>
         );
       case "Ofício":
         return (
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><label className="field-label">Número</label><InlineField field="numero" placeholder="Ofício nº ____/2026" /></div>
-              <div><label className="field-label">Data</label><InlineField field="data" placeholder="dd/mm/aaaa" /></div>
+              <div><label className="field-label">Número</label>
+                <InlineField field="numero" placeholder="Ofício nº ____/2026" value={d.numero||""} {...fp} /></div>
+              <div><label className="field-label">Data</label>
+                <InlineField field="data" placeholder="dd/mm/aaaa" value={d.data||""} {...fp} /></div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><label className="field-label">Destinatário</label><InlineField field="destinatario" placeholder="Nome completo..." /></div>
-              <div><label className="field-label">Cargo</label><InlineField field="cargo" placeholder="Cargo do destinatário..." /></div>
+              <div><label className="field-label">Destinatário</label>
+                <InlineField field="destinatario" placeholder="Nome completo..." value={d.destinatario||""} {...fp} /></div>
+              <div><label className="field-label">Cargo</label>
+                <InlineField field="cargo" placeholder="Cargo do destinatário..." value={d.cargo||""} {...fp} /></div>
             </div>
-            <div><label className="field-label">Órgão</label><InlineField field="orgao" placeholder="Secretaria, escola..." /></div>
-            <div><label className="field-label">Assunto</label><InlineField field="assunto" placeholder="Assunto do ofício..." /></div>
-            <div><label className="field-label">Corpo do texto</label><InlineField field="corpo" placeholder="Texto do ofício..." multiline /></div>
-            <div><label className="field-label">Encerramento</label><InlineField field="encerramento" placeholder="Atenciosamente," /></div>
-            <div><label className="field-label">Assinatura</label><InlineField field="assinatura" placeholder="Nome e função..." /></div>
+            <div><label className="field-label">Órgão</label>
+              <InlineField field="orgao" placeholder="Secretaria, escola..." value={d.orgao||""} {...fp} /></div>
+            <div><label className="field-label">Assunto</label>
+              <InlineField field="assunto" placeholder="Assunto do ofício..." value={d.assunto||""} {...fp} /></div>
+            <div><label className="field-label">Corpo do texto</label>
+              <InlineField field="corpo" placeholder="Texto do ofício..." value={d.corpo||""} multiline {...fp} /></div>
+            <div><label className="field-label">Encerramento</label>
+              <InlineField field="encerramento" placeholder="Atenciosamente," value={d.encerramento||""} {...fp} /></div>
+            <div><label className="field-label">Assinatura</label>
+              <InlineField field="assinatura" placeholder="Nome e função..." value={d.assinatura||""} {...fp} /></div>
           </div>
         );
       case "Pesquisa de Preços":
         return (
           <div className="space-y-4">
-            <div><label className="field-label">Objeto da compra</label><InlineField field="objeto" placeholder="O que será adquirido..." /></div>
-            <div><label className="field-label">Descrição do item</label><InlineField field="item" placeholder="Descrição detalhada..." multiline /></div>
+            <div><label className="field-label">Objeto da compra</label>
+              <InlineField field="objeto" placeholder="O que será adquirido..." value={d.objeto||""} {...fp} /></div>
+            <div><label className="field-label">Descrição do item</label>
+              <InlineField field="item" placeholder="Descrição detalhada..." value={d.item||""} multiline {...fp} /></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><label className="field-label">Fornecedor 1</label><InlineField field="fornecedor1" placeholder="Nome ou CNPJ..." /></div>
-              <div><label className="field-label">Valor 1</label><InlineField field="valor1" placeholder="R$ 0,00" /></div>
+              <div><label className="field-label">Fornecedor 1</label>
+                <InlineField field="fornecedor1" placeholder="Nome ou CNPJ..." value={d.fornecedor1||""} {...fp} /></div>
+              <div><label className="field-label">Valor 1</label>
+                <InlineField field="valor1" placeholder="R$ 0,00" value={d.valor1||""} {...fp} /></div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><label className="field-label">Fornecedor 2</label><InlineField field="fornecedor2" placeholder="Nome ou CNPJ..." /></div>
-              <div><label className="field-label">Valor 2</label><InlineField field="valor2" placeholder="R$ 0,00" /></div>
+              <div><label className="field-label">Fornecedor 2</label>
+                <InlineField field="fornecedor2" placeholder="Nome ou CNPJ..." value={d.fornecedor2||""} {...fp} /></div>
+              <div><label className="field-label">Valor 2</label>
+                <InlineField field="valor2" placeholder="R$ 0,00" value={d.valor2||""} {...fp} /></div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><label className="field-label">Fornecedor 3</label><InlineField field="fornecedor3" placeholder="Nome ou CNPJ..." /></div>
-              <div><label className="field-label">Valor 3</label><InlineField field="valor3" placeholder="R$ 0,00" /></div>
+              <div><label className="field-label">Fornecedor 3</label>
+                <InlineField field="fornecedor3" placeholder="Nome ou CNPJ..." value={d.fornecedor3||""} {...fp} /></div>
+              <div><label className="field-label">Valor 3</label>
+                <InlineField field="valor3" placeholder="R$ 0,00" value={d.valor3||""} {...fp} /></div>
             </div>
-            <div><label className="field-label">Justificativa da escolha</label><InlineField field="justificativa" placeholder="Por que este fornecedor foi escolhido..." multiline /></div>
+            <div><label className="field-label">Justificativa da escolha</label>
+              <InlineField field="justificativa" placeholder="Por que este fornecedor foi escolhido..." value={d.justificativa||""} multiline {...fp} /></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><label className="field-label">Responsável</label><InlineField field="responsavel" placeholder="Nome de quem pesquisou..." /></div>
-              <div><label className="field-label">Data</label><InlineField field="data" placeholder="dd/mm/aaaa" /></div>
+              <div><label className="field-label">Responsável</label>
+                <InlineField field="responsavel" placeholder="Nome de quem pesquisou..." value={d.responsavel||""} {...fp} /></div>
+              <div><label className="field-label">Data</label>
+                <InlineField field="data" placeholder="dd/mm/aaaa" value={d.data||""} {...fp} /></div>
             </div>
           </div>
         );
       case "Relatório":
         return (
           <div className="space-y-4">
-            <div><label className="field-label">Título</label><InlineField field="titulo" placeholder="Nome do relatório..." /></div>
+            <div><label className="field-label">Título</label>
+              <InlineField field="titulo" placeholder="Nome do relatório..." value={d.titulo||""} {...fp} /></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><label className="field-label">Período</label><InlineField field="periodo" placeholder="Jan–Dez 2025" /></div>
-              <div><label className="field-label">Responsável</label><InlineField field="responsavel" placeholder="Nome e função..." /></div>
+              <div><label className="field-label">Período</label>
+                <InlineField field="periodo" placeholder="Jan–Dez 2025" value={d.periodo||""} {...fp} /></div>
+              <div><label className="field-label">Responsável</label>
+                <InlineField field="responsavel" placeholder="Nome e função..." value={d.responsavel||""} {...fp} /></div>
             </div>
-            <div><label className="field-label">Objetivo</label><InlineField field="objetivo" placeholder="Propósito do relatório..." multiline /></div>
-            <div><label className="field-label">Atividades realizadas</label><InlineField field="atividades" placeholder="O que foi feito no período..." multiline /></div>
-            <div><label className="field-label">Resultados</label><InlineField field="resultados" placeholder="O que foi alcançado..." multiline /></div>
-            <div><label className="field-label">Dificuldades</label><InlineField field="dificuldades" placeholder="Desafios encontrados..." multiline /></div>
-            <div><label className="field-label">Encaminhamentos</label><InlineField field="encaminhamentos" placeholder="Próximos passos..." multiline /></div>
+            <div><label className="field-label">Objetivo</label>
+              <InlineField field="objetivo" placeholder="Propósito do relatório..." value={d.objetivo||""} multiline {...fp} /></div>
+            <div><label className="field-label">Atividades realizadas</label>
+              <InlineField field="atividades" placeholder="O que foi feito no período..." value={d.atividades||""} multiline {...fp} /></div>
+            <div><label className="field-label">Resultados</label>
+              <InlineField field="resultados" placeholder="O que foi alcançado..." value={d.resultados||""} multiline {...fp} /></div>
+            <div><label className="field-label">Dificuldades</label>
+              <InlineField field="dificuldades" placeholder="Desafios encontrados..." value={d.dificuldades||""} multiline {...fp} /></div>
+            <div><label className="field-label">Encaminhamentos</label>
+              <InlineField field="encaminhamentos" placeholder="Próximos passos..." value={d.encaminhamentos||""} multiline {...fp} /></div>
           </div>
         );
     }
