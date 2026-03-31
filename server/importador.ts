@@ -413,7 +413,7 @@ export async function getEscolaEvolucaoLocal(inep: string) {
   if (isNaN(coEntidade)) return null;
 
   // Query censo_escolas directly (integer co_entidade = uses idx_censo_escolas_co_entidade index)
-  const [censoRows, indicadorRows] = await Promise.all([
+  const [censoRows, indicadorRows, historicoRows] = await Promise.all([
     pgAll(
       `SELECT ano, co_entidade, no_entidade, no_municipio, sg_uf,
               tp_dependencia, tp_localizacao, tp_situacao_funcionamento,
@@ -527,6 +527,23 @@ export async function getEscolaEvolucaoLocal(inep: string) {
          jsonb_build_object('etapa', etapa, 'ideb', ideb, 'nota_saeb', nota_saeb, 'taxa_aprovacao', taxa_aprovacao)::text
          FROM ideb_escola WHERE co_entidade=?`,
       [coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade]
+    ),
+    // Dados de gênero/raça/faixa etária do JSON histórico (2020-2024)
+    pgAll(
+      `SELECT ano,
+        (dados_json->>'QT_MAT_BAS_FEM')::int AS qt_mat_bas_fem,
+        (dados_json->>'QT_MAT_BAS_MASC')::int AS qt_mat_bas_masc,
+        (dados_json->>'QT_MAT_BAS_BRANCA')::int AS qt_mat_bas_branca,
+        (dados_json->>'QT_MAT_BAS_PRETA')::int AS qt_mat_bas_preta,
+        (dados_json->>'QT_MAT_BAS_PARDA')::int AS qt_mat_bas_parda,
+        (dados_json->>'QT_MAT_BAS_AMARELA')::int AS qt_mat_bas_amarela,
+        (dados_json->>'QT_MAT_BAS_INDIGENA')::int AS qt_mat_bas_indigena,
+        (dados_json->>'QT_MAT_BAS_ND')::int AS qt_mat_bas_nd,
+        (dados_json->>'QT_MAT_BAS_D')::int AS qt_mat_bas_diurno,
+        (dados_json->>'QT_MAT_BAS_N')::int AS qt_mat_bas_noturno
+       FROM censo_escola_historico
+       WHERE co_entidade = $1 ORDER BY ano`,
+      [coEntidade]
     ),
   ]);
 
@@ -783,6 +800,22 @@ export async function getEscolaEvolucaoLocal(inep: string) {
       in_local_func_outros: c.in_local_func_outros,
       in_redes_sociais: c.in_redes_sociais,
     };
+  }
+
+  // Mescla dados de gênero/raça históricos (2020-2024) em censoByYear
+  for (const h of historicoRows as any[]) {
+    const ano = Number(h.ano);
+    if (!censoByYear[ano]) continue;
+    censoByYear[ano].qt_mat_bas_fem     = h.qt_mat_bas_fem     != null ? Number(h.qt_mat_bas_fem)     : null;
+    censoByYear[ano].qt_mat_bas_masc    = h.qt_mat_bas_masc    != null ? Number(h.qt_mat_bas_masc)    : null;
+    censoByYear[ano].qt_mat_bas_branca  = h.qt_mat_bas_branca  != null ? Number(h.qt_mat_bas_branca)  : null;
+    censoByYear[ano].qt_mat_bas_preta   = h.qt_mat_bas_preta   != null ? Number(h.qt_mat_bas_preta)   : null;
+    censoByYear[ano].qt_mat_bas_parda   = h.qt_mat_bas_parda   != null ? Number(h.qt_mat_bas_parda)   : null;
+    censoByYear[ano].qt_mat_bas_amarela = h.qt_mat_bas_amarela != null ? Number(h.qt_mat_bas_amarela) : null;
+    censoByYear[ano].qt_mat_bas_indigena= h.qt_mat_bas_indigena!= null ? Number(h.qt_mat_bas_indigena): null;
+    censoByYear[ano].qt_mat_bas_nd      = h.qt_mat_bas_nd      != null ? Number(h.qt_mat_bas_nd)      : null;
+    censoByYear[ano].qt_mat_bas_diurno  = h.qt_mat_bas_diurno  != null ? Number(h.qt_mat_bas_diurno)  : null;
+    censoByYear[ano].qt_mat_bas_noturno = h.qt_mat_bas_noturno != null ? Number(h.qt_mat_bas_noturno) : null;
   }
 
   const indicadoresByYear: Record<number, Record<string, any>> = {};

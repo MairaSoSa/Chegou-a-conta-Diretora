@@ -164,17 +164,67 @@ const INSIGHTS_WORKER_PATH = join(_workerDir, "censo-insights-worker.mjs");
 // Mapa de cálculos em andamento — evita N workers simultâneos para o mesmo scope
 const _pendingInsights = new Map<string, Promise<any>>();
 
-/** Roda o cálculo pesado em Worker Thread para não bloquear o event loop */
-function computeInsightsInWorker(scope: string, campos: Array<{key:string;label:string}>, dbPath: string): Promise<any> {
+/** Computa insights de infraestrutura diretamente no PostgreSQL (Railway) */
+async function computeInsightsPg(scope: string, campos: Array<{key:string;label:string}>): Promise<any> {
   const key = `insights_${scope}`;
   const existing = _pendingInsights.get(key);
   if (existing) return existing;
-  const p = new Promise<any>((resolve, reject) => {
-    const w = new Worker(INSIGHTS_WORKER_PATH, { workerData: { dbPath, campos, scope } });
-    w.once("message", msg => { _pendingInsights.delete(key); if (msg.ok) resolve(msg.payload); else reject(new Error(msg.error)); });
-    w.once("error", err => { _pendingInsights.delete(key); reject(err); });
-    w.once("exit", code => { if (code !== 0) { _pendingInsights.delete(key); reject(new Error(`Worker exited ${code}`)); } });
-  });
+
+  const p = (async () => {
+    try {
+      // Verifica quais colunas existem em censo_escolas
+      const colRows = await pgAll(
+        `SELECT column_name FROM information_schema.columns WHERE table_name = 'censo_escolas'`, []
+      );
+      const existingCols = new Set(colRows.map((r: any) => r.column_name));
+      const validCampos = campos.filter(c => existingCols.has(c.key));
+      if (validCampos.length === 0) return { scope, campos: [] };
+
+      // Sanitiza scope (apenas letras maiúsculas A-Z)
+      const safeScopeFilter = scope === 'BR'
+        ? ''
+        : `AND sg_uf = '${scope.replace(/[^A-Z]/g, '')}'`;
+
+      const selects = validCampos.flatMap(c => [
+        `COUNT(CASE WHEN ano::int = 2024 AND ${c.key}::text = '1' THEN 1 END)::int AS c24_${c.key}`,
+        `COUNT(CASE WHEN ano::int = 2025 AND ${c.key}::text = '1' THEN 1 END)::int AS c25_${c.key}`,
+      ]).join(',\n      ');
+
+      const query = `
+        SELECT
+          COUNT(CASE WHEN ano::int = 2024 THEN 1 END)::int AS escolas_2024,
+          COUNT(CASE WHEN ano::int = 2025 THEN 1 END)::int AS escolas_2025,
+          ${selects}
+        FROM censo_escolas
+        WHERE ano::int IN (2024, 2025) ${safeScopeFilter}
+      `;
+
+      const rows = await pgAll(query, []);
+      const row = rows[0];
+      const e24 = Number(row.escolas_2024) || 1;
+      const e25 = Number(row.escolas_2025) || 1;
+
+      const result = validCampos.map(c => {
+        const t24 = Number(row[`c24_${c.key}`]) || 0;
+        const t25 = Number(row[`c25_${c.key}`]) || 0;
+        const pct_2024 = Math.round(t24 / e24 * 1000) / 10;
+        const pct_2025 = Math.round(t25 / e25 * 1000) / 10;
+        return {
+          key: c.key, label: c.label,
+          pct_2024, pct_2025,
+          diff_pp: Math.round((pct_2025 - pct_2024) * 10) / 10,
+          total_2024: t24, total_2025: t25,
+          escolas_2024: Number(row.escolas_2024),
+          escolas_2025: Number(row.escolas_2025),
+        };
+      });
+
+      return { scope, campos: result };
+    } finally {
+      _pendingInsights.delete(key);
+    }
+  })();
+
   _pendingInsights.set(key, p);
   return p;
 }
@@ -1062,7 +1112,7 @@ export async function registerRoutes(
     ];
 
     try {
-      const payload = await computeInsightsInWorker(scope, CAMPOS, resolvedDbPath);
+      const payload = await computeInsightsPg(scope, CAMPOS);
 
       safeCacheWrite(CACHE_KEY, payload);
 
@@ -2491,7 +2541,7 @@ export async function registerRoutes(
           }
         } catch {}
         console.log(`[censo-insights] Pré-aquecendo cache para ${scope} (worker thread)...`);
-        computeInsightsInWorker(scope, PREWARM_CAMPOS, resolvedDbPath)
+        computeInsightsPg(scope, PREWARM_CAMPOS)
           .then(payload => {
             safeCacheWrite(CACHE_KEY, payload);
             console.log(`[censo-insights] Cache ${scope} salvo (${payload.campos.length} campos).`);
