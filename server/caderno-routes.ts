@@ -2,6 +2,175 @@ import { type Express } from "express";
 import { db, sqlite } from "./db";
 import { cadernoDocuments, cadernoDocumentVersions, cadernoNotes, cadernoSources } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
+import { searchSchoolsLocal } from "./importador";
+
+// ── Detecta e monta contexto rico de uma escola a partir do texto da mensagem ─
+function buscarDadosEscolaParaChat(texto: string, inepParam?: string): string {
+  let inep = inepParam?.trim() || "";
+
+  // 1. Tenta detectar código INEP (7-8 dígitos) na mensagem
+  if (!inep) {
+    const match = texto.match(/\b(\d{7,8})\b/);
+    if (match) inep = match[1];
+  }
+
+  // 2. Tenta buscar por nome de escola na mensagem
+  if (!inep) {
+    // Estratégia A: detecta padrão "escola NOME" e usa as primeiras palavras do nome
+    const nomeMatch = texto.match(/(?:escola|colégio|colegio|emef|emei|eem|eei|eeef|ee\s|em\s|cmei|eja)\s+([A-Za-zÀ-ÿ]{2}[A-Za-zÀ-ÿ\s]{2,40})/i);
+    if (nomeMatch) {
+      // Pega apenas as 4 primeiras palavras significativas do nome capturado
+      const palavras = nomeMatch[1].trim().split(/\s+/).slice(0, 4).join(" ");
+      const resultados = searchSchoolsLocal(palavras, 1);
+      if (resultados.length > 0) inep = resultados[0].inep;
+    }
+
+    // Estratégia B: busca livre com termos que parecem nomes de escola (palavras maiúsculas consecutivas)
+    if (!inep) {
+      const nomeProprio = texto.match(/\b([A-ZÁÉÍÓÚÀÃÕÂÊÔÇ][a-záéíóúàãõâêôç]+(?:\s+(?:de|da|do|das|dos|e)\s+)?){2,5}/g);
+      if (nomeProprio && nomeProprio.length > 0) {
+        // Tenta cada candidato de nome próprio
+        for (const candidato of nomeProprio.slice(0, 3)) {
+          if (candidato.trim().length < 5) continue;
+          const resultados = searchSchoolsLocal(candidato.trim(), 1);
+          if (resultados.length > 0) {
+            inep = resultados[0].inep;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (!inep) return "";
+
+  // ── Dados cadastrais (todos os anos disponíveis) ──────────────────────────
+  const censoRows = sqlite.prepare(`
+    SELECT ano, nome, municipio, uf, dependencia, localizacao, situacao,
+           matriculas, docentes, turmas, dados
+    FROM censo_escolar
+    WHERE inep = ?
+    ORDER BY ano DESC
+  `).all(inep) as any[];
+
+  if (censoRows.length === 0) return "";
+
+  const base = censoRows[0];
+  const nomeEscola = base.nome || "Escola";
+
+  const linhas: string[] = [
+    `DADOS REAIS DA ESCOLA MENCIONADA:`,
+    `- Nome: ${nomeEscola}`,
+    `- Código INEP: ${inep}`,
+    `- Município: ${base.municipio}/${base.uf}`,
+    `- Rede: ${base.dependencia}`,
+    `- Localização: ${base.localizacao}`,
+    `- Situação: ${base.situacao || "Em Atividade"}`,
+  ];
+
+  // Infraestrutura do dado mais recente
+  if (base.dados) {
+    try {
+      const d = JSON.parse(base.dados);
+      const flags: string[] = [];
+      if (d.in_quilombola == 1 || d.in_quilombola === true) flags.push("Escola Quilombola");
+      if (d.in_ribeirinha == 1 || d.in_ribeirinha === true) flags.push("Escola Ribeirinha");
+      if (d.in_campo == 1 || d.in_campo === true) flags.push("Escola do Campo");
+      if (flags.length) linhas.push(`- Tipo especial: ${flags.join(", ")}`);
+
+      const infra: string[] = [];
+      if (d.in_internet == 1) infra.push("internet");
+      if (d.in_biblioteca == 1 || d.in_sala_leitura == 1) infra.push("biblioteca/sala de leitura");
+      if (d.in_quadra_esportes_coberta == 1 || d.in_quadra_esportes_descoberta == 1) infra.push("quadra de esportes");
+      if (d.in_laboratorio_informatica == 1) infra.push("laboratório de informática");
+      if (d.in_laboratorio_ciencias == 1) infra.push("laboratório de ciências");
+      if (d.in_agua_potavel == 1) infra.push("água potável");
+      if (infra.length) linhas.push(`- Infraestrutura (${base.ano}): ${infra.join(", ")}`);
+    } catch {}
+  }
+
+  // Evolução de matrículas, docentes, turmas por ano
+  const evoLinhas: string[] = [];
+  for (const row of censoRows) {
+    const partes: string[] = [];
+    if (row.matriculas != null) partes.push(`${row.matriculas} matrículas`);
+    if (row.docentes != null) partes.push(`${row.docentes} docentes`);
+    if (row.turmas != null) partes.push(`${row.turmas} turmas`);
+    if (partes.length) evoLinhas.push(`  ${row.ano}: ${partes.join(", ")}`);
+  }
+  if (evoLinhas.length) linhas.push(`- Histórico:\n${evoLinhas.join("\n")}`);
+
+  // ── Indicadores educacionais ──────────────────────────────────────────────
+  const indicadores = sqlite.prepare(`
+    SELECT tipo, ano, dados
+    FROM indicadores_educacionais
+    WHERE inep = ?
+    ORDER BY tipo, ano DESC
+  `).all(inep) as any[];
+
+  if (indicadores.length > 0) {
+    const porTipo: Record<string, any[]> = {};
+    for (const ind of indicadores) {
+      if (!porTipo[ind.tipo]) porTipo[ind.tipo] = [];
+      porTipo[ind.tipo].push(ind);
+    }
+
+    const indLinhas: string[] = [];
+
+    // IDEB
+    if (porTipo.ideb) {
+      for (const row of porTipo.ideb.slice(0, 3)) {
+        try {
+          const d = JSON.parse(row.dados || "{}");
+          const partes: string[] = [];
+          if (d.ideb_ai != null) partes.push(`Anos Iniciais: ${d.ideb_ai}`);
+          if (d.ideb_af != null) partes.push(`Anos Finais: ${d.ideb_af}`);
+          if (d.ideb_em != null) partes.push(`Ensino Médio: ${d.ideb_em}`);
+          if (partes.length) indLinhas.push(`  IDEB ${row.ano}: ${partes.join(" | ")}`);
+        } catch {}
+      }
+    }
+
+    // INSE
+    if (porTipo.inse) {
+      const row = porTipo.inse[0];
+      try {
+        const d = JSON.parse(row.dados || "{}");
+        if (d.inse_valor != null || d.media != null) {
+          indLinhas.push(`  INSE ${row.ano}: ${d.inse_valor ?? d.media ?? "—"} (nível socioeconômico)`);
+        }
+      } catch {}
+    }
+
+    // ICG
+    if (porTipo.icg) {
+      const row = porTipo.icg[0];
+      try {
+        const d = JSON.parse(row.dados || "{}");
+        if (d.icg != null || d.valor != null) {
+          indLinhas.push(`  ICG ${row.ano}: ${d.icg ?? d.valor ?? "—"} (complexidade de gestão)`);
+        }
+      } catch {}
+    }
+
+    // TDI
+    if (porTipo.tdi) {
+      const row = porTipo.tdi[0];
+      try {
+        const d = JSON.parse(row.dados || "{}");
+        if (d.tdi != null || d.valor != null || d.tdi_total != null) {
+          indLinhas.push(`  Taxa de Distorção Idade-Série ${row.ano}: ${d.tdi ?? d.tdi_total ?? d.valor ?? "—"}%`);
+        }
+      } catch {}
+    }
+
+    if (indLinhas.length) {
+      linhas.push(`- Indicadores educacionais:\n${indLinhas.join("\n")}`);
+    }
+  }
+
+  return linhas.join("\n");
+}
 
 export function registerCadernoRoutes(app: Express): void {
 
@@ -206,40 +375,20 @@ export function registerCadernoRoutes(app: Express): void {
         return res.status(400).json({ ok: false, message: "messages é obrigatório" });
       }
 
+      // Texto completo das últimas mensagens para detectar escola/INEP
+      const textoConversa = messages.slice(-4)
+        .map((m: any) => m.content || "")
+        .join(" ");
+
       const contextParts: string[] = [];
 
-      if (inep && String(inep).length >= 7) {
-        const escola = sqlite.prepare(`
-          SELECT inep, nome, municipio, uf, dependencia, localizacao, matriculas, ano
-          FROM censo_escolar WHERE inep = ? ORDER BY ano DESC LIMIT 1
-        `).get(String(inep)) as any;
-
-        if (escola) {
-          contextParts.push(
-            `ESCOLA DA DIRETORA:\n- Nome: ${escola.nome}\n- Município: ${escola.municipio}/${escola.uf}\n- Rede: ${escola.dependencia}\n- Localização: ${escola.localizacao}\n- Matrículas (${escola.ano}): ${escola.matriculas?.toLocaleString("pt-BR") || "—"}`
-          );
-        }
-
-        const indicadores = sqlite.prepare(`
-          SELECT tipo, ano, valor FROM indicadores_educacionais
-          WHERE inep = ? ORDER BY ano DESC LIMIT 30
-        `).all(String(inep)) as any[];
-
-        if (indicadores.length > 0) {
-          const seen = new Set<string>();
-          const linhas: string[] = [];
-          for (const ind of indicadores) {
-            if (!seen.has(ind.tipo)) {
-              seen.add(ind.tipo);
-              linhas.push(`- ${ind.tipo}: ${ind.valor} (${ind.ano})`);
-            }
-          }
-          if (linhas.length > 0) {
-            contextParts.push(`INDICADORES EDUCACIONAIS:\n${linhas.join("\n")}`);
-          }
-        }
+      // ── Dados reais da escola (detecta por INEP explícito, ou busca na mensagem) ──
+      const dadosEscola = buscarDadosEscolaParaChat(textoConversa, inep ? String(inep) : undefined);
+      if (dadosEscola) {
+        contextParts.push(dadosEscola);
       }
 
+      // ── Anotações recentes do caderno ────────────────────────────────────────
       const notes = sqlite.prepare(
         "SELECT title, content FROM caderno_notes ORDER BY created_at DESC LIMIT 5"
       ).all() as any[];
@@ -250,7 +399,7 @@ export function registerCadernoRoutes(app: Express): void {
       }
 
       const contextBlock = contextParts.length > 0
-        ? `\n\n---\nCONTEXTO DISPONÍVEL:\n${contextParts.join("\n\n")}\n---`
+        ? `\n\n---\nCONTEXTO DISPONÍVEL (dados reais do sistema):\n${contextParts.join("\n\n")}\n---`
         : "";
 
       const docTypeMap: Record<string, string> = {
@@ -309,7 +458,9 @@ Pense sempre na realidade de quem trabalha nessas escolas: às vezes a cidade fi
 
 Seja acolhedora e encorajadora. A diretora está fazendo um trabalho muito importante.
 
-Nunca invente dados (valores, datas, nomes) — use [informar].
+DADOS REAIS DO SISTEMA:
+Quando o contexto abaixo tiver dados de uma escola, use esses dados para responder. Não invente — se não estiver no contexto, diga que não tem essa informação disponível.
+Nunca invente dados (valores, datas, nomes) — use [informar] quando necessário.
 Responda SOMENTE sobre gestão escolar e PDDE. Máximo 300 palavras, exceto ao gerar documentos.
 
 OBRIGATÓRIO — FINAL DE CADA RESPOSTA:
@@ -333,7 +484,7 @@ Unidades disponíveis (use o link exato):
       const response = await openai.chat.completions.create({
         model: process.env.OPENAI_MODEL || "gpt-4o-mini",
         temperature: 0.4,
-        max_tokens: 1200,
+        max_tokens: 1400,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages.slice(-12).map((m: any) => ({ role: m.role, content: m.content })),
