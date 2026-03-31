@@ -1159,3 +1159,113 @@ export async function getMediasNacionais(ano?: number) {
   setStatsCache(cacheKey, result);
   return result;
 }
+
+// ────────────────────────────────────────────────────────────────
+// CENSO 2025 DETALHADO – dados das 4 tabelas importadas do INEP
+// ────────────────────────────────────────────────────────────────
+const _n = (v: any) => (v !== null && v !== undefined ? Number(v) || 0 : 0);
+
+export async function getEscolaCenso2025(inep: string) {
+  const coEntidade = inep.toString().trim();
+
+  const [matRows, turRows, docRows, gestRows] = await Promise.all([
+    pgAll(`SELECT dados_json FROM matricula_escola WHERE co_entidade = $1 AND ano = '2025' LIMIT 1`, [coEntidade]),
+    pgAll(`SELECT dados_json FROM turma_escola WHERE co_entidade = $1 AND ano = '2025' LIMIT 1`, [coEntidade]),
+    pgAll(`SELECT dados_json FROM docente_escola WHERE co_entidade = $1 AND ano = '2025' LIMIT 1`, [coEntidade]),
+    pgAll(`SELECT dados_json FROM gestor_escolar WHERE co_entidade = $1 AND ano = '2025' LIMIT 1`, [coEntidade]),
+  ]);
+
+  if (!matRows.length && !turRows.length && !docRows.length && !gestRows.length) return null;
+
+  const parse = (rows: any[]) => {
+    if (!rows.length) return {};
+    const d = rows[0].dados_json;
+    return typeof d === 'string' ? JSON.parse(d) : (d ?? {});
+  };
+
+  const mat  = parse(matRows);
+  const tur  = parse(turRows);
+  const doc  = parse(docRows);
+  const gest = parse(gestRows);
+
+  return {
+    co_entidade: coEntidade,
+    ano: 2025,
+    fonte: 'inep_censo_escolar_2025',
+
+    matriculas: {
+      total:        _n(mat.QT_MAT_BAS),
+      infantil:     _n(mat.QT_MAT_INF),
+      creche:       _n(mat.QT_MAT_INF_CRE),
+      pre_escola:   _n(mat.QT_MAT_INF_PRE),
+      fundamental:  _n(mat.QT_MAT_FUND),
+      fund_ai:      _n(mat.QT_MAT_FUND_AI),
+      fund_af:      _n(mat.QT_MAT_FUND_AF),
+      medio:        _n(mat.QT_MAT_MED),
+      eja:          _n(mat.QT_MAT_EJA),
+      especial:     _n(mat.QT_MAT_ESP),
+      profissional: _n(mat.QT_MAT_PROF),
+      diurno:       _n(mat.QT_MAT_BAS_D),
+      noturno:      _n(mat.QT_MAT_BAS_N),
+    },
+
+    turmas: {
+      total:        _n(tur.QT_TUR_BAS),
+      infantil:     _n(tur.QT_TUR_INF),
+      fundamental:  _n(tur.QT_TUR_FUND),
+      medio:        _n(tur.QT_TUR_MED),
+      eja:          _n(tur.QT_TUR_EJA),
+      especial:     _n(tur.QT_TUR_ESP),
+      profissional: _n(tur.QT_TUR_PROF),
+      diurno:       _n(tur.QT_TUR_BAS_D),
+      noturno:      _n(tur.QT_TUR_BAS_N),
+    },
+
+    docentes: {
+      total:       _n(doc.QT_DOC_BAS),
+      infantil:    _n(doc.QT_DOC_INF),
+      fundamental: _n(doc.QT_DOC_FUND),
+      fund_ai:     _n(doc.QT_DOC_FUND_AI),
+      fund_af:     _n(doc.QT_DOC_FUND_AF),
+      medio:       _n(doc.QT_DOC_MED),
+      eja:         _n(doc.QT_DOC_EJA),
+      especial:    _n(doc.QT_DOC_ESP),
+      feminino:    _n(doc.QT_DOC_BAS_FEM),
+      masculino:   _n(doc.QT_DOC_BAS_MASC),
+      por_faixa: {
+        ate_24:   _n(doc.QT_DOC_BAS_0_24),
+        de_25_29: _n(doc.QT_DOC_BAS_25_29),
+        de_30_39: _n(doc.QT_DOC_BAS_30_39),
+        de_40_49: _n(doc.QT_DOC_BAS_40_49),
+        de_50_54: _n(doc.QT_DOC_BAS_50_54),
+        de_55_59: _n(doc.QT_DOC_BAS_55_59),
+        mais_60:  _n(doc.QT_DOC_BAS_60_MAIS),
+      },
+    },
+
+    gestor: {
+      total:      _n(gest.QT_GEST_BAS),
+      feminino:   _n(gest.QT_GEST_BAS_FEM),
+      masculino:  _n(gest.QT_GEST_BAS_MASC),
+      diretor:    _n(gest.QT_GEST_BAS_DIRETOR),
+      concursado: _n(gest.QT_GEST_BAS_VINCULO_CONCUR),
+      com_ensino_superior: _n(gest.QT_GEST_BAS_ESCO_SUP_GRAD) + _n(gest.QT_GEST_BAS_ESCO_SUP_POS_ESPEC),
+      por_raca: {
+        branca:   _n(gest.QT_GEST_BAS_BRANCA),
+        preta:    _n(gest.QT_GEST_BAS_PRETA),
+        parda:    _n(gest.QT_GEST_BAS_PARDA),
+        amarela:  _n(gest.QT_GEST_BAS_AMARELA),
+        indigena: _n(gest.QT_GEST_BAS_INDIGENA),
+      },
+      por_faixa: {
+        ate_24:   _n(gest.QT_GEST_BAS_0_24),
+        de_25_29: _n(gest.QT_GEST_BAS_25_29),
+        de_30_39: _n(gest.QT_GEST_BAS_30_39),
+        de_40_49: _n(gest.QT_GEST_BAS_40_49),
+        de_50_54: _n(gest.QT_GEST_BAS_50_54),
+        de_55_59: _n(gest.QT_GEST_BAS_55_59),
+        mais_60:  _n(gest.QT_GEST_BAS_60_MAIS),
+      },
+    },
+  };
+}

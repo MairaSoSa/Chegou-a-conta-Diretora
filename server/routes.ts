@@ -31,7 +31,7 @@ import {
   importFromExternalApi, getImportStatus, getLocalSchoolCount, getLocalStats,
   listCensoEscolar, getCensoEscolarDetail, getCensoEstatisticas,
   listIndicador, getIndicadorDetail, getEscolaCompleta, getApiInfo,
-  getMediasNacionais, invalidateStatsCache,
+  getMediasNacionais, invalidateStatsCache, getEscolaCenso2025,
 } from "./importador";
 import { importAllDriveYears, importDriveYear, importProgress as driveProgress } from "./importador-drive";
 import {
@@ -513,6 +513,14 @@ export async function registerRoutes(
   // === PUBLIC: API INFO (mirrors api-escolas root) ===
   app.get("/api/info", async (_req, res) => {
     res.json(await getApiInfo());
+  });
+
+  // === PUBLIC: CENSO 2025 DETALHADO (matrículas, turmas, docentes, gestor por escola) ===
+  app.get("/api/escola-censo2025/:inep", async (req, res) => {
+    const inep = getParam(req.params, "inep");
+    const data = await getEscolaCenso2025(inep);
+    if (!data) return res.status(404).json({ erro: "Escola não encontrada no Censo 2025." });
+    res.json(data);
   });
 
   // === PUBLIC: ESCOLA BUSCAR (local DB — busca rápida, dados do Railway no painel) ===
