@@ -2631,7 +2631,7 @@ out center tags 100;`;
                           ['UF', censoLatest.sg_uf],
                           ['Código IBGE', censoLatest.co_municipio],
                           ['Regulamentação', censoLatest.tp_regulamentacao === 1 ? 'Sim' : censoLatest.tp_regulamentacao === 2 ? 'Em tramitação' : censoLatest.tp_regulamentacao === 3 ? 'Não' : null],
-                          ['Prédio escolar', censoLatest.in_local_func_predio_escolar === 1 ? 'Sim' : censoLatest.in_local_func_predio_escolar === 0 ? 'Não' : null],
+                          ['Prédio escolar', Number(censoLatest.in_local_func_predio_escolar) === 1 ? 'Sim' : censoLatest.in_local_func_predio_escolar != null && Number(censoLatest.in_local_func_predio_escolar) === 0 ? 'Não' : null],
                           ['Início do ano letivo', censoLatest.dt_ano_letivo_inicio ?? null],
                           ['Término do ano letivo', censoLatest.dt_ano_letivo_termino ?? null],
                         ].filter(([,v]) => v != null).map(([k, v], i) => (
@@ -4716,7 +4716,7 @@ out center tags 100;`;
                     const zonaData = zonaRaw.map(x=>({...x, pct:pct(x.v,zonaTotal)}));
 
                     // ── BADGES DE MODALIDADE ESPECIAL ──
-                    const isActive = (v: any) => v === 1 || v === true || v === 'Sim';
+                    const isActive = (v: any) => Number(v) === 1 || v === true || v === 'Sim';
                     const modalBadges = [
                       { key: 'in_educacao_indigena',   label: 'Escola Indígena',   cor:'#4a7c59', bg:'#e8f4ec' },
                       { key: 'in_educacao_quilombola', label: 'Escola Quilombola', cor:'#6b3a2a', bg:'#f4ece8' },
@@ -5075,7 +5075,7 @@ out center tags 100;`;
                           const vals = anos.map((a: number) => c[a]?.[row.key] ?? null);
                           if (vals.every((v: any) => v == null)) continue;
                           const latestVal = [...vals].reverse().find((v: any) => v != null);
-                          if (latestVal === 1) {
+                          if (Number(latestVal) === 1) {
                             enriched.push({ kind: 'data', row, vals });
                           } else {
                             semBuf.push(row.label);
@@ -5121,10 +5121,10 @@ out center tags 100;`;
                                       {vals.map((v: any, vi: number) => {
                                         const isLatest = vi === anos.length - 1;
                                         return (
-                                          <td key={vi} style={{ padding: '9px 12px', textAlign: 'center', verticalAlign: 'middle', background: isLatest && v === 1 ? '#f0faf4' : undefined }}>
-                                            {v === 1 ? (
+                                          <td key={vi} style={{ padding: '9px 12px', textAlign: 'center', verticalAlign: 'middle', background: isLatest && Number(v) === 1 ? '#f0faf4' : undefined }}>
+                                            {Number(v) === 1 ? (
                                               <span style={{ fontSize: 18, color: '#16714a', lineHeight: 1 }}>✓</span>
-                                            ) : v === 0 ? (
+                                            ) : v != null && Number(v) === 0 ? (
                                               <span style={{ fontSize: 15, color: '#ddd5c8', lineHeight: 1 }}>✗</span>
                                             ) : (
                                               <span style={{ color: '#ddd', fontSize: 13 }}>—</span>
@@ -7269,9 +7269,9 @@ function InfoItem({ label, value, highlight }: { label: string; value: string | 
   );
 }
 
-function InfraItem({ label, value }: { label: string; value: number | undefined | null }) {
+function InfraItem({ label, value }: { label: string; value: number | string | undefined | null }) {
   if (value === undefined || value === null) return null;
-  const yes = value === 1;
+  const yes = Number(value) === 1;
   return (
     <div className="flex items-center gap-2 py-1 px-2">
       <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${yes ? 'bg-green-500' : 'bg-red-300'}`} />
