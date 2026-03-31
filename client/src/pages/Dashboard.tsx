@@ -3388,6 +3388,31 @@ out center tags 100;`;
 
                 {/* ── MATRÍCULAS POR ETAPA ── */}
                 {(() => {
+                  // Fallback para censo2025Data quando censoLatest não tem os campos detalhados
+                  const c25m = latestAno === 2025 && censo2025Data ? censo2025Data.matriculas : null;
+                  const matFallback: Record<string, number> = {
+                    'qt_mat_inf':     c25m?.infantil     ?? 0,
+                    'qt_mat_fund_ai': c25m?.fund_ai      ?? 0,
+                    'qt_mat_fund_af': c25m?.fund_af      ?? 0,
+                    'qt_mat_fund':    c25m?.fundamental  ?? 0,
+                    'qt_mat_med':     c25m?.medio        ?? 0,
+                    'qt_mat_eja':     c25m?.eja          ?? 0,
+                    'qt_mat_esp':     c25m?.especial     ?? 0,
+                  };
+                  const matVal = (keyMat: string): number => {
+                    const v = Number((censoLatest as any)[keyMat] || 0);
+                    return v > 0 ? v : (matFallback[keyMat] ?? 0);
+                  };
+                  // Para a tabela histórica, usa censo2025Data no ano 2025
+                  const matValHist = (keyMat: string, ano: number): number | null => {
+                    if (ano === 2025) {
+                      const v = (evolucaoData.censo_por_ano[ano] as any)?.[keyMat];
+                      if (v != null && Number(v) > 0) return Number(v);
+                      return matFallback[keyMat] > 0 ? matFallback[keyMat] : null;
+                    }
+                    const v = (evolucaoData.censo_por_ano[ano] as any)?.[keyMat];
+                    return v != null ? Number(v) : null;
+                  };
                   const matEtapas = [
                     { label: 'Ed. Infantil',  keyMat: 'qt_mat_inf',     color: '#7b5ea7' },
                     { label: 'Fund. AI',      keyMat: 'qt_mat_fund_ai', color: '#2d5a88' },
@@ -3395,8 +3420,8 @@ out center tags 100;`;
                     { label: 'Ensino Médio',  keyMat: 'qt_mat_med',     color: '#9b6a16' },
                     { label: 'EJA',           keyMat: 'qt_mat_eja',     color: '#6d4c41' },
                     { label: 'Ed. Especial',  keyMat: 'qt_mat_esp',     color: '#2f7a58' },
-                  ].filter(e => ((censoLatest as any)[e.keyMat] || 0) > 0);
-                  const totalMat = (censoLatest as any).qt_mat_bas || matEtapas.reduce((s, e) => s + Number((censoLatest as any)[e.keyMat] || 0), 0);
+                  ].filter(e => matVal(e.keyMat) > 0);
+                  const totalMat = (censoLatest as any).qt_mat_bas || c25m?.total || matEtapas.reduce((s, e) => s + matVal(e.keyMat), 0);
                   if (!matEtapas.length || !totalMat) return null;
                   const anosDisp = (evolucaoData.anos_disponiveis as number[]).filter((a: number) => a >= 2020).sort((a, b) => a - b);
                   const hasHistorico = anosDisp.length > 1;
@@ -3417,13 +3442,13 @@ out center tags 100;`;
                         </div>
                         <div style={{ display: 'flex', height: 12, borderRadius: 99, overflow: 'hidden', gap: 2, marginBottom: 10 }}>
                           {matEtapas.map(e => {
-                            const pct = totalMat > 0 ? (Number((censoLatest as any)[e.keyMat] || 0) / totalMat) * 100 : 0;
+                            const pct = totalMat > 0 ? (matVal(e.keyMat) / totalMat) * 100 : 0;
                             return <div key={e.keyMat} style={{ flex: pct, background: e.color, minWidth: pct > 0 ? 4 : 0 }} />;
                           })}
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                           {matEtapas.map(e => {
-                            const val = Number((censoLatest as any)[e.keyMat] || 0);
+                            const val = matVal(e.keyMat);
                             const pct = totalMat > 0 ? (val / totalMat * 100).toFixed(1) : '0';
                             return (
                               <div key={e.keyMat} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
@@ -3449,7 +3474,7 @@ out center tags 100;`;
                           </thead>
                           <tbody>
                             {matEtapas.map((e, i) => {
-                              const val = Number((censoLatest as any)[e.keyMat] || 0);
+                              const val = matVal(e.keyMat);
                               const pct = totalMat > 0 ? (val / totalMat * 100).toFixed(1) : '0';
                               return (
                                 <tr key={e.keyMat} style={{ background: i % 2 === 0 ? '#fff' : '#fdf8f2', borderTop: '1px solid #f0e8d8' }}>
@@ -3500,8 +3525,8 @@ out center tags 100;`;
                                         </span>
                                       </td>
                                       {anosDisp.map((a: number, ai: number) => {
-                                        const v = (evolucaoData.censo_por_ano[a] as any)?.[e.keyMat] ?? null;
-                                        const prev = ai > 0 ? ((evolucaoData.censo_por_ano[anosDisp[ai - 1]] as any)?.[e.keyMat] ?? null) : null;
+                                        const v = matValHist(e.keyMat, a);
+                                        const prev = ai > 0 ? matValHist(e.keyMat, anosDisp[ai - 1]) : null;
                                         const delta = v != null && prev != null ? v - prev : null;
                                         return (
                                           <td key={a} style={{ padding: '9px 10px', textAlign: 'right', fontWeight: a === latestAno ? 700 : 500, color: '#2c3e50', background: a === latestAno ? '#fdf5e6' : undefined }}>
