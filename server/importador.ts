@@ -230,7 +230,11 @@ async function importIndicadorFromApi(tipo: string, apiPath: string, ano: number
         };
 
         if (existing) {
-          db.update(indicadoresEducacionais).set(record).where(eq(indicadoresEducacionais.id, existing.id)).run();
+          db.update(indicadoresEducacionais).set(record).where(and(
+            eq(indicadoresEducacionais.inep, inep),
+            eq(indicadoresEducacionais.ano, ano),
+            eq(indicadoresEducacionais.tipo, tipo)
+          )).run();
         } else {
           db.insert(indicadoresEducacionais).values(record).run();
         }
@@ -697,7 +701,11 @@ export async function importSingleSchoolFromApi(inep: string) {
           };
 
           if (existing) {
-            db.update(indicadoresEducacionais).set(record).where(eq(indicadoresEducacionais.id, existing.id)).run();
+            db.update(indicadoresEducacionais).set(record).where(and(
+              eq(indicadoresEducacionais.inep, inep),
+              eq(indicadoresEducacionais.ano, ano),
+              eq(indicadoresEducacionais.tipo, tipo)
+            )).run();
           } else {
             db.insert(indicadoresEducacionais).values(record).run();
           }

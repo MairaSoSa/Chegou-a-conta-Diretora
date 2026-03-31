@@ -148,7 +148,6 @@ export const censoEscolar = sqliteTable("censo_escolar", {
 });
 
 export const indicadoresEducacionais = sqliteTable("indicadores_educacionais", {
-  id: integer("id").primaryKey(),
   inep: text("inep").notNull(),
   ano: integer("ano").notNull(),
   tipo: text("tipo").notNull(),

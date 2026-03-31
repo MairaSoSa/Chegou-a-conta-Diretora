@@ -660,7 +660,11 @@ async function processIdebFile(xlsxPath: string, fileDef: IdebFileDef, anosToPro
         const mergedData = { ...existingData, ...data };
         db.update(indicadoresEducacionais)
           .set({ dados: JSON.stringify(mergedData), updatedAt: Date.now() })
-          .where(eq(indicadoresEducacionais.id, existing.id))
+          .where(and(
+            eq(indicadoresEducacionais.inep, inep),
+            eq(indicadoresEducacionais.ano, ano),
+            eq(indicadoresEducacionais.tipo, "ideb")
+          ))
           .run();
       } else {
         batchValues.push({
