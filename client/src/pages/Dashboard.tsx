@@ -5122,17 +5122,28 @@ out center tags 100;`;
                       const pz = m25.zona ?? {};
                       const pi = m25.integral_por_etapa ?? {};
                       const p: Record<string,any> = {
+                        // Totais por etapa
+                        qt_mat_inf:m25.infantil, qt_mat_fund:m25.fundamental,
+                        qt_mat_fund_ai:m25.fund_ai, qt_mat_fund_af:m25.fund_af,
+                        qt_mat_med:m25.medio, qt_mat_eja:m25.eja,
+                        qt_mat_esp:m25.especial, qt_mat_bas:m25.total,
+                        // Raça/cor
                         qt_mat_bas_branca:pr.branca, qt_mat_bas_preta:pr.preta,
                         qt_mat_bas_parda:pr.parda, qt_mat_bas_amarela:pr.amarela,
                         qt_mat_bas_indigena:pr.indigena, qt_mat_bas_nd:pr.nao_declarada,
+                        // Sexo
                         qt_mat_bas_fem:pg.feminino, qt_mat_bas_masc:pg.masculino,
+                        // Faixa etária
                         qt_mat_bas_0_3:pf.ate_3_anos, qt_mat_bas_4_5:pf.de_4_5,
                         qt_mat_bas_6_10:pf.de_6_10, qt_mat_bas_11_14:pf.de_11_14,
                         qt_mat_bas_15_17:pf.de_15_17, qt_mat_bas_18_mais:pf.de_18_mais,
+                        // Turno e zona
                         qt_mat_bas_d:m25.diurno, qt_mat_bas_n:m25.noturno,
                         qt_mat_zr_urba:pz.urbana, qt_mat_zr_rura:pz.rural,
+                        // Integral por etapa
                         qt_mat_inf_int:pi.infantil, qt_mat_fund_ai_int:pi.fund_ai,
                         qt_mat_fund_af_int:pi.fund_af, qt_mat_med_int:pi.medio,
+                        // EJA e Ed. Especial breakdown
                         qt_mat_eja_fund:m25.eja_fund, qt_mat_eja_med:m25.eja_med,
                         qt_mat_esp_cc:m25.esp_cc, qt_mat_esp_ce:m25.esp_ce,
                       };
