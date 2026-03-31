@@ -716,9 +716,9 @@ export default function Dashboard() {
         };
         return {
           ano: a,
-          aprovacao: r(tr.aprovacao_fund) ?? r(tr.aprovacao_total) ?? null,
-          reprovacao: r(tr.reprovacao_fund) ?? r(tr.reprovacao_total) ?? null,
-          abandono: r(tr.abandono_fund) ?? r(tr.abandono_total) ?? null,
+          aprovacao: r(tr.aprovacao_fund) ?? r(tr.aprovacao_total) ?? r(tr.aprovacao_med) ?? null,
+          reprovacao: r(tr.reprovacao_fund) ?? r(tr.reprovacao_total) ?? r(tr.reprovacao_med) ?? null,
+          abandono: r(tr.abandono_fund) ?? r(tr.abandono_total) ?? r(tr.abandono_med) ?? null,
           aprovacao_ai: r(tr.aprovacao_fund_ai) ?? null,
           reprovacao_ai: r(tr.reprovacao_fund_ai) ?? null,
           abandono_ai: r(tr.abandono_fund_ai) ?? null,
