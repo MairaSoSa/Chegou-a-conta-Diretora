@@ -4405,6 +4405,12 @@ out center tags 100;`;
                   <div className="organic-divider" />
 
                   {/* ── GALERIA DE GRÁFICOS (integrada) ── */}
+                  {available.length === 0 && censoLatest && (
+                    <div style={{ padding: '20px 24px', background: '#f7f5f0', borderRadius: 10, border: '1px dashed #d8d0c4', marginBottom: 24, color: '#8a7a6a', fontSize: 13 }}>
+                      <strong style={{ color: '#5d4037' }}>Sem dados de evolução disponíveis.</strong>
+                      {' '}Esta escola consta no censo escolar, mas não possui matrículas registradas ou indicadores publicados pelo INEP para o período analisado.
+                    </div>
+                  )}
                   {currentChart && available.length > 0 && (
                     <div style={{ marginBottom: 28 }}>
                       {/* Accent color from the first line of the current chart */}
