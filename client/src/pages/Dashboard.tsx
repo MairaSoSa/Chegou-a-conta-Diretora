@@ -5128,14 +5128,9 @@ out center tags 100;`;
 
                     type PieSlice = { name:string; v:number; cor:string; pct:number };
 
-                    const PizzaCard = ({ title, data, noDataMsg, nota }: { title:string; data:PieSlice[]; noDataMsg?:string; nota?:string }) => {
-                      if (data.length === 1) return null;
-                      if (data.length === 0 || data.every(d=>d.v===0)) return (
-                        <div style={{ background:'#faf7f2', border:'1px solid #ede8df', borderRadius:12, padding:'18px 20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:220, gap:8 }}>
-                          <span style={{ fontSize:13, fontWeight:700, color:'#b0a090' }}>{title}</span>
-                          <span style={{ fontSize:12, color:'#c0b0a0' }}>{noDataMsg ?? 'Sem dados para este ano'}</span>
-                        </div>
-                      );
+                    const PizzaCard = ({ title, data, noDataMsg: _noDataMsg, nota }: { title:string; data:PieSlice[]; noDataMsg?:string; nota?:string }) => {
+                      if (data.length <= 1) return null;
+                      if (data.every(d=>d.v===0)) return null;
                       // Agrupar fatias < 2% em "Outras"
                       const SLICE_THRESHOLD = 2;
                       const main = data.filter(d => d.pct >= SLICE_THRESHOLD);
