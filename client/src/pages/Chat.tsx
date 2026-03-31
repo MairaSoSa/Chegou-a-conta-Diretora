@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
-import { useCreateConversation, useSendMessage, useConversation } from "@/hooks/use-chat";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import {
@@ -382,9 +381,9 @@ function getSuggestionsFromConversation(msgs: { role: string; content: string }[
 
 // ── PesquisaPanel principal ───────────────────────────────────────────────
 function PesquisaPanel() {
-  const [conversationId, setConversationId] = useState<number | null>(null);
   const [input, setInput] = useState("");
-  const [pageKey, setPageKey] = useState(0);
+  const [isSending, setIsSending] = useState(false);
+  const [msgs, setMsgs] = useState<{ id: number; role: string; content: string }[]>([]);
   const [apiNotes, setApiNotes] = useState<any[]>([]);
   const convScrollRef = useRef<HTMLDivElement>(null);
   const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings"] });
@@ -393,31 +392,44 @@ function PesquisaPanel() {
     ? settings.chat_chips.split("\n").map(s => s.trim()).filter(Boolean)
     : SUGESTOES;
 
-  const { mutate: createConversation } = useCreateConversation();
-  const { mutate: sendMessage, isPending: isSending } = useSendMessage();
-  const { data: conversationData } = useConversation(conversationId);
-
   useEffect(() => {
-    createConversation("Nova Conversa", { onSuccess: (data) => setConversationId(data.id) });
     fetch("/api/caderno/notas").then(r => r.json()).then(d => { if (d.ok) setApiNotes(d.notes || []); }).catch(() => {});
   }, []);
 
   useEffect(() => {
-    const msgs = conversationData?.messages ?? [];
     if (convScrollRef.current && (msgs.length > 0 || isSending)) {
       convScrollRef.current.scrollTop = convScrollRef.current.scrollHeight;
     }
-  }, [conversationData?.messages, isSending]);
+  }, [msgs, isSending]);
 
-  const handleSend = (texto?: string) => {
+  const handleSend = async (texto?: string) => {
     const msg = texto || input;
-    if (!msg.trim() || !conversationId) return;
-    sendMessage({ conversationId, content: msg });
+    if (!msg.trim() || isSending) return;
     setInput("");
+    const userMsg = { id: Date.now(), role: "user", content: msg };
+    setMsgs(prev => [...prev, userMsg]);
+    setIsSending(true);
+    try {
+      const history = [...msgs, userMsg].map(m => ({ role: m.role, content: m.content }));
+      const res = await fetch("/api/caderno/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history }),
+      });
+      const data = await res.json();
+      if (data.reply) {
+        setMsgs(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: data.reply }]);
+      }
+    } catch {
+      setMsgs(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: "Desculpe, ocorreu um erro. Tente novamente." }]);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleNewChat = () => {
-    createConversation("Nova Conversa", { onSuccess: (data) => { setConversationId(data.id); setPageKey(p => p + 1); } });
+    setMsgs([]);
+    setInput("");
   };
 
   const handleSaveNote = async (text: string, sources: string | null) => {
@@ -425,7 +437,7 @@ function PesquisaPanel() {
       const res = await fetch("/api/caderno/notas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: text.substring(0, 60) + (text.length > 60 ? "..." : ""), content: text, sourceExcerpt: sources || undefined, conversationId }),
+        body: JSON.stringify({ title: text.substring(0, 60) + (text.length > 60 ? "..." : ""), content: text, sourceExcerpt: sources || undefined }),
       });
       if (res.ok) {
         const d = await res.json();
@@ -434,7 +446,6 @@ function PesquisaPanel() {
     } catch {}
   };
 
-  const msgs = conversationData?.messages ?? [];
   const temMensagens = msgs.length > 0;
 
   return (
