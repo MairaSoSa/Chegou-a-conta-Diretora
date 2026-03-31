@@ -383,7 +383,9 @@ export async function registerRoutes(
                                'qt_mat_bas_11_14','qt_mat_bas_15_17','qt_mat_bas_18_mais',
                                'qt_mat_zr_urba','qt_mat_zr_rura',
                                'qt_mat_eja_fund','qt_mat_eja_med',
-                               'qt_mat_esp_cc','qt_mat_esp_ce']) {
+                               'qt_mat_esp_cc','qt_mat_esp_ce',
+                               'qt_mat_inf_int','qt_mat_fund_ai_int','qt_mat_fund_af_int',
+                               'qt_mat_med_int','qt_mat_eja_int','qt_mat_bas_int']) {
             if ((rail[field] == null || rail[field] === undefined) && loc[field] != null) {
               mergedCenso[ano][field] = loc[field];
             }

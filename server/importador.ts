@@ -553,7 +553,12 @@ export async function getEscolaEvolucaoLocal(inep: string) {
         (dados_json->>'QT_MAT_EJA_FUND')::int AS qt_mat_eja_fund,
         (dados_json->>'QT_MAT_EJA_MED')::int AS qt_mat_eja_med,
         (dados_json->>'QT_MAT_ESP_CC')::int AS qt_mat_esp_cc,
-        (dados_json->>'QT_MAT_ESP_CE')::int AS qt_mat_esp_ce
+        (dados_json->>'QT_MAT_ESP_CE')::int AS qt_mat_esp_ce,
+        (dados_json->>'QT_MAT_INF_INT')::int AS qt_mat_inf_int,
+        (dados_json->>'QT_MAT_FUND_AI_INT')::int AS qt_mat_fund_ai_int,
+        (dados_json->>'QT_MAT_FUND_AF_INT')::int AS qt_mat_fund_af_int,
+        (dados_json->>'QT_MAT_MED_INT')::int AS qt_mat_med_int,
+        (dados_json->>'QT_MAT_EJA_INT')::int AS qt_mat_eja_int
        FROM censo_escola_historico
        WHERE co_entidade = $1 ORDER BY ano`,
       [coEntidade]
@@ -844,6 +849,16 @@ export async function getEscolaEvolucaoLocal(inep: string) {
     censoByYear[ano].qt_mat_eja_med      = _hn(h.qt_mat_eja_med);
     censoByYear[ano].qt_mat_esp_cc       = _hn(h.qt_mat_esp_cc);
     censoByYear[ano].qt_mat_esp_ce       = _hn(h.qt_mat_esp_ce);
+    censoByYear[ano].qt_mat_inf_int      = _hn(h.qt_mat_inf_int);
+    censoByYear[ano].qt_mat_fund_ai_int  = _hn(h.qt_mat_fund_ai_int);
+    censoByYear[ano].qt_mat_fund_af_int  = _hn(h.qt_mat_fund_af_int);
+    censoByYear[ano].qt_mat_med_int      = _hn(h.qt_mat_med_int);
+    censoByYear[ano].qt_mat_eja_int      = _hn(h.qt_mat_eja_int);
+    // qt_mat_bas_int (total integral) não existe no historico — derivar da soma das etapas
+    const intSum = (_hn(h.qt_mat_inf_int) ?? 0) + (_hn(h.qt_mat_fund_ai_int) ?? 0) +
+                   (_hn(h.qt_mat_fund_af_int) ?? 0) + (_hn(h.qt_mat_med_int) ?? 0) +
+                   (_hn(h.qt_mat_eja_int) ?? 0);
+    censoByYear[ano].qt_mat_bas_int = intSum > 0 ? intSum : null;
   }
 
   const indicadoresByYear: Record<number, Record<string, any>> = {};
