@@ -54,27 +54,29 @@ const Module = require('module');
 const distDir = __dirname;
 const tmpDir = os.tmpdir();
 
-// ── 1. Extract native SQLite binary ──────────────────────────────────────────
+// ── 1. Extract native SQLite binary (optional — app uses PostgreSQL as primary) ─
 const nativeGz  = path.join(distDir, 'better_sqlite3.gz');
 const nativeTmp = path.join(tmpDir, 'better_sqlite3.node');
-if (!fs.existsSync(nativeTmp)) {
-  fs.writeFileSync(nativeTmp, zlib.gunzipSync(fs.readFileSync(nativeGz)));
+const hasSqlite = fs.existsSync(nativeGz);
+if (hasSqlite && !fs.existsSync(nativeTmp)) {
+  try {
+    fs.writeFileSync(nativeTmp, zlib.gunzipSync(fs.readFileSync(nativeGz)));
+  } catch (e) {
+    console.warn('[bootstrap] SQLite binary extraction skipped:', e.message);
+  }
 }
 
 // ── 2. Patch Module loading so better-sqlite3's `bindings` finds the binary ──
-// bindings resolves the .node file via process.dlopen; we intercept _load for
-// .node files and redirect them to our /tmp copy.
-// IMPORTANT: use origLoad (not require) for the redirect to avoid infinite loop.
-const origLoad = Module._load;
-Module._load = function (request, parent, isMain) {
-  if (request && request.endsWith('.node') && path.basename(request) === 'better_sqlite3.node') {
-    return origLoad.call(this, nativeTmp, parent, isMain);
-  }
-  return origLoad.apply(this, arguments);
-};
-
-// Also expose the path via an env var that some bindings versions check.
-process.env.BETTER_SQLITE3_NODE = nativeTmp;
+if (hasSqlite && fs.existsSync(nativeTmp)) {
+  const origLoad = Module._load;
+  Module._load = function (request, parent, isMain) {
+    if (request && request.endsWith('.node') && path.basename(request) === 'better_sqlite3.node') {
+      return origLoad.call(this, nativeTmp, parent, isMain);
+    }
+    return origLoad.apply(this, arguments);
+  };
+  process.env.BETTER_SQLITE3_NODE = nativeTmp;
+}
 
 // ── 2b. Polyfill browser globals required by pdfjs-dist on Node.js ───────────
 if (typeof globalThis.DOMMatrix === 'undefined') {

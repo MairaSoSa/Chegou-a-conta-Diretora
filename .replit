@@ -42,7 +42,6 @@ externalPort = 3000
 [userenv]
 
 [userenv.shared]
-SQLITE_DATABASE_URL = "file:dev.db"
 
 [deployment]
 deploymentTarget = "autoscale"
