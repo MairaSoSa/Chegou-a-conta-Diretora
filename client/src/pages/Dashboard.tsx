@@ -243,6 +243,7 @@ export default function Dashboard() {
   const { data: turmasData } = useEscolaTurmas(selectedInep || "");
   const [pddeAno, setPddeAno] = useState<number>(new Date().getFullYear());
   const [pieAno, setPieAno] = useState<number>(new Date().getFullYear() - 1);
+  const [selectedPizzaId, setSelectedPizzaId] = useState<string|null>(null);
   const [showEquipamentos, setShowEquipamentos] = useState(false);
   const [showSuporteInstitucional, setShowSuporteInstitucional] = useState(false);
   const [suporteTab, setSuporteTab] = useState<'contatos'|'cecampe'|'sistemas'|'conselhos'>('contatos');
@@ -5108,6 +5109,65 @@ out center tags 100;`;
                     const zonaTotal = zonaRaw.reduce((s,x)=>s+x.v,0);
                     const zonaData = zonaRaw.map(x=>({...x, pct:pct(x.v,zonaTotal)}));
 
+                    // ── HELPER: dados de evolução por ano ──
+                    const cpaAll = evolucaoData.censo_por_ano as Record<number,any>;
+                    const anosAsc = [...anosDisp].sort((a,b)=>a-b);
+                    const getYearCd = (ano: number): Record<string,any> => {
+                      const base = cpaAll[ano] ?? {};
+                      if (ano !== 2025 || !censo2025Data) return base;
+                      const m25 = censo2025Data.matriculas ?? {};
+                      const pr = m25.por_raca ?? {};
+                      const pg = m25.por_genero ?? {};
+                      const pf = m25.por_faixa_etaria ?? {};
+                      const pz = m25.zona ?? {};
+                      const pi = m25.integral_por_etapa ?? {};
+                      const p: Record<string,any> = {
+                        qt_mat_bas_branca:pr.branca, qt_mat_bas_preta:pr.preta,
+                        qt_mat_bas_parda:pr.parda, qt_mat_bas_amarela:pr.amarela,
+                        qt_mat_bas_indigena:pr.indigena, qt_mat_bas_nd:pr.nao_declarada,
+                        qt_mat_bas_fem:pg.feminino, qt_mat_bas_masc:pg.masculino,
+                        qt_mat_bas_0_3:pf.ate_3_anos, qt_mat_bas_4_5:pf.de_4_5,
+                        qt_mat_bas_6_10:pf.de_6_10, qt_mat_bas_11_14:pf.de_11_14,
+                        qt_mat_bas_15_17:pf.de_15_17, qt_mat_bas_18_mais:pf.de_18_mais,
+                        qt_mat_bas_d:m25.diurno, qt_mat_bas_n:m25.noturno,
+                        qt_mat_zr_urba:pz.urbana, qt_mat_zr_rura:pz.rural,
+                        qt_mat_inf_int:pi.infantil, qt_mat_fund_ai_int:pi.fund_ai,
+                        qt_mat_fund_af_int:pi.fund_af, qt_mat_med_int:pi.medio,
+                        qt_mat_eja_fund:m25.eja_fund, qt_mat_eja_med:m25.eja_med,
+                        qt_mat_esp_cc:m25.esp_cc, qt_mat_esp_ce:m25.esp_ce,
+                      };
+                      const merged = { ...base };
+                      for (const [k,v] of Object.entries(p)) {
+                        if (v != null && (!merged[k] || merged[k] === 0)) merged[k] = v;
+                      }
+                      return merged;
+                    };
+                    type EL = { key:string; color:string; name:string };
+                    const cardEvolDefs: Record<string,{lines:EL[];row:(c:Record<string,any>)=>Record<string,any>;dataStartYear?:number}> = {
+                      etapas:   { lines:[{key:'E. Infantil',color:'#7eb8f7',name:'E. Infantil'},{key:'Fundamental',color:'#3a7abf',name:'Fundamental'},{key:'Médio',color:'#1e3d5c',name:'Médio'},{key:'EJA',color:'#e07b39',name:'EJA'},{key:'Ed. Especial',color:'#9b6a16',name:'Ed. Especial'}], row:(c)=>({'E. Infantil':c.qt_mat_inf||null,'Fundamental':c.qt_mat_fund||null,'Médio':c.qt_mat_med||null,'EJA':c.qt_mat_eja||null,'Ed. Especial':c.qt_mat_esp||null}) },
+                      raca:     { lines:[{key:'Parda',color:'#c0855a',name:'Parda'},{key:'Preta',color:'#6b3a2a',name:'Preta'},{key:'Branca',color:'#f5c842',name:'Branca'},{key:'Amarela',color:'#e8a030',name:'Amarela'},{key:'Indígena',color:'#4a7c59',name:'Indígena'}], row:(c)=>({'Parda':c.qt_mat_bas_parda??null,'Preta':c.qt_mat_bas_preta??null,'Branca':c.qt_mat_bas_branca??null,'Amarela':c.qt_mat_bas_amarela??null,'Indígena':c.qt_mat_bas_indigena??null}) },
+                      sexo:     { lines:[{key:'Feminino',color:'#9b6a16',name:'Feminino'},{key:'Masculino',color:'#2f7a58',name:'Masculino'}], row:(c)=>({'Feminino':c.qt_mat_bas_fem??null,'Masculino':c.qt_mat_bas_masc??null}) },
+                      etaria:   { lines:[{key:'0–3',color:'#b5d7f5',name:'0–3 anos'},{key:'4–5',color:'#7eb8f7',name:'4–5 anos'},{key:'6–10',color:'#4d9de0',name:'6–10 anos'},{key:'11–14',color:'#2d70c0',name:'11–14 anos'},{key:'15–17',color:'#1a4a8a',name:'15–17 anos'},{key:'18+',color:'#0f2f5c',name:'18+ anos'}], row:(c)=>({'0–3':c.qt_mat_bas_0_3??null,'4–5':c.qt_mat_bas_4_5??null,'6–10':c.qt_mat_bas_6_10??null,'11–14':c.qt_mat_bas_11_14??null,'15–17':c.qt_mat_bas_15_17??null,'18+':c.qt_mat_bas_18_mais??null}) },
+                      turno:    { lines:[{key:'Diurno',color:'#f5c842',name:'Diurno'},{key:'Noturno',color:'#2d3a70',name:'Noturno'},{key:'EAD',color:'#7b9a6a',name:'EAD'}], row:(c)=>({'Diurno':c.qt_mat_bas_d??null,'Noturno':c.qt_mat_bas_n??null,'EAD':c.qt_mat_bas_ead||null}) },
+                      integral: { lines:[{key:'Integral',color:'#2f7a58',name:'Integral'},{key:'Parcial',color:'#cce4d8',name:'Parcial'}], row:(c)=>{ const ti=(c.qt_mat_inf_int??0)+(c.qt_mat_fund_ai_int??0)+(c.qt_mat_fund_af_int??0)+(c.qt_mat_med_int??0); const tm=c.qt_mat_bas??0; return {'Integral':ti>0?ti:null,'Parcial':tm>ti&&tm>0?tm-ti:null}; } },
+                      intEtapas:{ lines:[{key:'E. Infantil',color:'#b5d7f5',name:'E. Infantil'},{key:'Fund. AI',color:'#4d9de0',name:'Fund. AI'},{key:'Fund. AF',color:'#2d5a88',name:'Fund. AF'},{key:'Médio',color:'#1e3d5c',name:'Médio'}], row:(c)=>({'E. Infantil':c.qt_mat_inf_int??null,'Fund. AI':c.qt_mat_fund_ai_int??null,'Fund. AF':c.qt_mat_fund_af_int??null,'Médio':c.qt_mat_med_int??null}) },
+                      eja:      { lines:[{key:'EJA Fund.',color:'#6d4c41',name:'EJA Fund.'},{key:'EJA Médio',color:'#4e342e',name:'EJA Médio'}], row:(c)=>({'EJA Fund.':c.qt_mat_eja_fund??null,'EJA Médio':c.qt_mat_eja_med??null}) },
+                      esp:      { lines:[{key:'Classes comuns',color:'#5c8a6e',name:'Classes comuns'},{key:'Cl. exclusivas',color:'#9b6a16',name:'Cl. exclusivas'}], row:(c)=>({'Classes comuns':c.qt_mat_esp_cc??null,'Cl. exclusivas':c.qt_mat_esp_ce??null}) },
+                      zona:     { lines:[{key:'Urbana',color:'#4d9de0',name:'Urbana'},{key:'Rural',color:'#7b9a6a',name:'Rural'}], row:(c)=>({'Urbana':c.qt_mat_zr_urba??null,'Rural':c.qt_mat_zr_rura??null}), dataStartYear:2023 },
+                    };
+                    const allPizzaCards: {id:string;title:string;data:PieSlice[]}[] = [
+                      {id:'etapas',   title:'Matrículas por etapa de ensino',            data:etapasData},
+                      {id:'raca',     title:'Cor / Raça dos estudantes',                 data:racaData},
+                      {id:'sexo',     title:'Distribuição por sexo',                     data:sexoData},
+                      {id:'etaria',   title:'Faixa etária',                              data:etariaData},
+                      {id:'turno',    title:'Turno de atendimento',                      data:turnoData},
+                      {id:'integral', title:'Tempo integral vs parcial',                 data:integralData},
+                      {id:'intEtapas',title:'Tempo integral por etapa',                  data:intEtapasData},
+                      {id:'eja',      title:'EJA — Fundamental vs Médio',               data:ejaData},
+                      {id:'esp',      title:'Ed. Especial — modalidade de atendimento', data:espData},
+                      {id:'zona',     title:'Zona de residência dos alunos',             data:zonaData},
+                    ];
+
                     // ── BADGES DE MODALIDADE ESPECIAL ──
                     const isActive = (v: any) => Number(v) === 1 || v === true || v === 'Sim';
                     const modalBadges = [
@@ -5128,7 +5188,7 @@ out center tags 100;`;
 
                     type PieSlice = { name:string; v:number; cor:string; pct:number };
 
-                    const PizzaCard = ({ title, data, noDataMsg: _noDataMsg, nota }: { title:string; data:PieSlice[]; noDataMsg?:string; nota?:string }) => {
+                    const PizzaCard = ({ id, title, data, nota, selected, onToggle }: { id:string; title:string; data:PieSlice[]; nota?:string; selected?:boolean; onToggle?:(id:string)=>void }) => {
                       if (data.length <= 1) return null;
                       if (data.every(d=>d.v===0)) return null;
                       // Agrupar fatias < 2% em "Outras"
@@ -5147,8 +5207,11 @@ out center tags 100;`;
                         return <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={700}>{p}%</text>;
                       };
                       return (
-                        <div style={{ background:'white', border:'1px solid #ede8df', borderRadius:12, padding:'16px 18px 14px', display:'flex', flexDirection:'column', gap:10 }}>
-                          <div style={{ fontSize:13, fontWeight:800, color:'#4a3020', letterSpacing:'-0.01em' }}>{title}</div>
+                        <div onClick={() => onToggle?.(id)} style={{ background:'white', border:`2px solid ${selected ? '#5d4037' : '#ede8df'}`, borderRadius:12, padding:'16px 18px 14px', display:'flex', flexDirection:'column', gap:10, cursor:'pointer', transition:'border-color 0.15s,box-shadow 0.15s', boxShadow: selected ? '0 0 0 3px #5d403722' : 'none' }}>
+                          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                            <div style={{ fontSize:13, fontWeight:800, color:'#4a3020', letterSpacing:'-0.01em' }}>{title}</div>
+                            <span style={{ fontSize:10, color: selected ? '#5d4037' : '#c0b0a0', fontWeight:600, flexShrink:0, marginLeft:6 }}>{selected ? '▲ fechar' : '📈 ver evolução'}</span>
+                          </div>
                           <div style={{ display:'flex', gap:12, alignItems:'center', flexWrap:'wrap' }}>
                             <div style={{ flexShrink:0 }}>
                               <PieChart width={150} height={150}>
@@ -5219,26 +5282,27 @@ out center tags 100;`;
                           </div>
                         )}
                         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:14 }}>
-                          <PizzaCard title="Matrículas por etapa de ensino" data={etapasData} />
-                          <PizzaCard title="Cor / Raça dos estudantes" data={racaData} />
-                          <PizzaCard title="Distribuição por sexo" data={sexoData} />
-                          <PizzaCard title="Faixa etária" data={etariaData} />
-                          <PizzaCard title="Turno de atendimento" data={turnoData} />
-                          <PizzaCard title="Tempo integral vs parcial" data={integralData}
-                            noDataMsg="Escola sem dados de tempo integral" />
-                          <PizzaCard title="Tempo integral por etapa" data={intEtapasData}
-                            noDataMsg="Escola sem alunos em tempo integral" />
-                          <PizzaCard title="Salas de aula — climatização" data={salaClimData}
-                            noDataMsg="Sem dados de salas para este ano" />
-                          <PizzaCard title="Salas de aula — acessibilidade" data={salaAcessData}
-                            noDataMsg="Sem dados de salas para este ano" />
-                          <PizzaCard title="EJA — Fundamental vs Médio" data={ejaData}
-                            noDataMsg="Escola sem matrícula EJA" />
-                          <PizzaCard title="Ed. Especial — modalidade de atendimento" data={espData}
-                            noDataMsg="Escola sem dados de Ed. Especial" />
-                          <PizzaCard title="Zona de residência dos alunos" data={zonaData}
-                            noDataMsg="Dado não disponível no Censo importado" />
+                          {allPizzaCards.map(card => (
+                            <PizzaCard key={card.id} id={card.id} title={card.title} data={card.data}
+                              selected={selectedPizzaId === card.id}
+                              onToggle={id => setSelectedPizzaId(prev => prev === id ? null : id)} />
+                          ))}
                         </div>
+                        {selectedPizzaId && cardEvolDefs[selectedPizzaId] && (() => {
+                          const def = cardEvolDefs[selectedPizzaId];
+                          const evolData = anosAsc.map(ano => ({ ano: String(ano), ...def.row(getYearCd(ano)) }));
+                          const visLines = def.lines.filter(l => evolData.some(d => (d as any)[l.key] != null && (d as any)[l.key] > 0));
+                          const selCard = allPizzaCards.find(c => c.id === selectedPizzaId);
+                          return (
+                            <div style={{ marginTop:14, background:'#faf7f2', border:'2px solid #5d4037', borderRadius:12, padding:'18px 20px' }}>
+                              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                                <span style={{ fontSize:13, fontWeight:800, color:'#4a3020' }}>Evolução: {selCard?.title}</span>
+                                <button onClick={() => setSelectedPizzaId(null)} style={{ background:'none', border:'1px solid #c0a888', borderRadius:8, cursor:'pointer', fontSize:12, color:'#9a7a5a', padding:'3px 10px', fontWeight:600 }}>fechar ✕</button>
+                              </div>
+                              <EvolutionChart data={evolData} lines={visLines} large dataStartYear={def.dataStartYear} />
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })()}
