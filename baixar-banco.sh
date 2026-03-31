@@ -15,7 +15,7 @@
 set -e
 
 # ── 1. Pega a URL ─────────────────────────────────────────────────────────────
-URL="${1:-$SQLITE_DB_DOWNLOAD_URL}"
+URL="${1:-${SQLITE_DB_DOWNLOAD_URL:-https://drive.google.com/file/d/1Dtp04JGoLqB9kIzgRnXi36BRtdH23BK4/view?usp=drive_link}}"
 
 if [ -z "$URL" ]; then
   echo ""
