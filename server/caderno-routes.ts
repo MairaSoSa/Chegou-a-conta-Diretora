@@ -310,7 +310,22 @@ Pense sempre na realidade de quem trabalha nessas escolas: às vezes a cidade fi
 Seja acolhedora e encorajadora. A diretora está fazendo um trabalho muito importante.
 
 Nunca invente dados (valores, datas, nomes) — use [informar].
-Responda SOMENTE sobre gestão escolar e PDDE. Máximo 300 palavras, exceto ao gerar documentos.${contextBlock}`;
+Responda SOMENTE sobre gestão escolar e PDDE. Máximo 300 palavras, exceto ao gerar documentos.
+
+OBRIGATÓRIO — FINAL DE CADA RESPOSTA:
+Sempre termine a resposta com este bloco (adapte ao tema da pergunta):
+
+---
+**Para saber mais:** [cite 1 ou 2 unidades relevantes da lista abaixo com o link correto, e/ou a página de legislação do site]
+
+Unidades disponíveis (use o link exato):
+- [Como funciona o PDDE](/trilha?unit=U03) — regras e funcionamento
+- [O que é a UEx e o conselho escolar](/trilha?unit=U05) — associação e colegiado
+- [Como planejar o uso dos recursos](/trilha?unit=U12) — planejamento de compras
+- [O que pode ser pago com os recursos](/trilha?unit=U13) — itens permitidos e vedados
+- [Como funciona a prestação de contas](/trilha?unit=U16) — documentos e prazos
+- [Notas fiscais e comprovantes](/trilha?unit=U14) — como guardar os documentos
+- [Legislação e normas do PDDE](/legislacao) — leis e resoluções completas${contextBlock}`;
 
       const OpenAI = (await import("openai")).default;
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

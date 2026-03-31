@@ -120,12 +120,12 @@ const TRILHA_DESTAQUES: { id: string; title: string; sub: string; emoji: React.R
   { id: "U14", title: "Notas fiscais e comprovantes", sub: "Como guardar e organizar os documentos", emoji: <FileText size={20} />, accent: "bg-[#ffe4b2]" },
 ];
 
-const LEGISLACAO_BASE: { emoji: React.ReactNode; titulo: string; desc: string }[] = [
-  { emoji: <FileText size={18} />, titulo: "Lei nº 11.947/2009", desc: "Institui o PDDE e define as regras de execução financeira" },
-  { emoji: <ClipboardList size={18} />, titulo: "Resolução FNDE nº 15/2021", desc: "Normas de execução do PDDE — compras, documentos e prestação de contas" },
-  { emoji: <BookOpen size={18} />, titulo: "Manual de Execução do PDDE – FNDE", desc: "Orientações práticas para gestão dos recursos do PDDE" },
-  { emoji: <Scale size={18} />, titulo: "Lei nº 14.133/2021", desc: "Nova Lei de Licitações e Contratos Administrativos" },
-  { emoji: <FileText size={18} />, titulo: "Decreto nº 6.253/2007", desc: "Regulamenta o FUNDEB e o repasse de recursos às escolas" },
+const LEGISLACAO_BASE: { emoji: React.ReactNode; titulo: string; desc: string; href: string }[] = [
+  { emoji: <FileText size={18} />, titulo: "Lei nº 11.947/2009", desc: "Institui o PDDE e define as regras de execução financeira", href: "https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/lei/l11947.htm" },
+  { emoji: <ClipboardList size={18} />, titulo: "Resolução FNDE nº 15/2021", desc: "Normas de execução do PDDE — compras, documentos e prestação de contas", href: "https://www.fnde.gov.br/index.php/legislacao/resolucoes/item/14304-resolucao-n-15-de-16-de-setembro-de-2021" },
+  { emoji: <BookOpen size={18} />, titulo: "Manual de Execução do PDDE – FNDE", desc: "Orientações práticas para gestão dos recursos do PDDE", href: "https://www.fnde.gov.br/programas/pdde" },
+  { emoji: <Scale size={18} />, titulo: "Lei nº 14.133/2021", desc: "Nova Lei de Licitações e Contratos Administrativos", href: "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm" },
+  { emoji: <FileText size={18} />, titulo: "Decreto nº 6.253/2007", desc: "Regulamenta o FUNDEB e o repasse de recursos às escolas", href: "https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2007/decreto/d6253.htm" },
 ];
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -160,10 +160,32 @@ function separarFontes(conteudo: string): { corpo: string; fontes: string | null
   return { corpo: conteudo, fontes: null };
 }
 
+function parsePesquisaReply(conteudo: string): { corpo: string; fontes: string | null; paraSaberMais: string | null } {
+  const saberMaisRe = /\n?---+\s*\n?(?:📚\s*)?\*{0,2}Para saber mais[^:]*:\*{0,2}/i;
+  const saberMaisMatch = saberMaisRe.exec(conteudo);
+  let textoBase = conteudo;
+  let paraSaberMais: string | null = null;
+  if (saberMaisMatch && saberMaisMatch.index !== undefined) {
+    textoBase = conteudo.substring(0, saberMaisMatch.index).trim();
+    paraSaberMais = conteudo.substring(saberMaisMatch.index + saberMaisMatch[0].length).trim();
+  }
+  const { corpo, fontes } = separarFontes(textoBase);
+  return { corpo, fontes, paraSaberMais };
+}
+
 // ─── CHAT COMPONENTS ──────────────────────────────────────────────────────────
 
+const mdLinkComponents = {
+  a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
+    <a href={href} target={href?.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
+      className="text-[#8e2f2f] underline font-medium hover:text-[#6e2020]">
+      {children}
+    </a>
+  ),
+};
+
 function MensagemAssistente({ conteudo, onSaveNote }: { conteudo: string; onSaveNote?: (text: string, sources: string | null) => void }) {
-  const { corpo, fontes } = separarFontes(conteudo);
+  const { corpo, fontes, paraSaberMais } = parsePesquisaReply(conteudo);
   const [fontesExpanded, setFontesExpanded] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -174,18 +196,21 @@ function MensagemAssistente({ conteudo, onSaveNote }: { conteudo: string; onSave
       </div>
       <div className="flex-1 min-w-0 rounded-2xl bg-white border border-[#e8dad2] px-4 py-3 shadow-sm">
         <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 text-[14px] leading-7 text-[#3d2318]">
-          <ReactMarkdown
-            components={{
-              a: ({ href, children }) => (
-                <a href={href} target={href?.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="text-[#8e2f2f] underline">
-                  {children}
-                </a>
-              ),
-            }}
-          >
-            {corpo}
-          </ReactMarkdown>
+          <ReactMarkdown components={mdLinkComponents}>{corpo}</ReactMarkdown>
         </div>
+
+        {/* Para saber mais */}
+        {paraSaberMais && (
+          <div className="mt-3 rounded-xl bg-[#fff8ee] border border-[#f0d9c4] px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#8e6040] mb-1.5">
+              <BookOpen className="w-3 h-3" /> Para saber mais
+            </div>
+            <div className="text-[12px] leading-[1.7] text-[#5f4032] prose prose-sm max-w-none prose-p:my-0">
+              <ReactMarkdown components={mdLinkComponents}>{paraSaberMais}</ReactMarkdown>
+            </div>
+          </div>
+        )}
+
         {fontes && (
           <div className="mt-2 border-t border-[#e8dad2] pt-2">
             <button
@@ -629,13 +654,15 @@ function PesquisaPanel() {
                         </div>
                         <div className="rounded-[16px] border border-dashed border-[#ddc8bc] bg-[#fffaf6] px-4 py-3 space-y-2">
                           {leis.map(lei => (
-                            <div key={lei.titulo} className="flex items-start gap-2.5 rounded-xl bg-white/60 px-3 py-2">
-                              <span className="text-sm shrink-0 mt-0.5">{lei.emoji}</span>
-                              <div>
-                                <div className="font-semibold text-[#5f4032] leading-5" style={{ fontSize: 12 }}>{lei.titulo}</div>
+                            <a key={lei.titulo} href={lei.href} target="_blank" rel="noopener noreferrer"
+                              className="group flex items-start gap-2.5 rounded-xl bg-white/60 px-3 py-2 hover:bg-[#fff0e8] hover:border hover:border-[#e8c8b8] transition-all">
+                              <span className="text-sm shrink-0 mt-0.5 text-[#8e5a3a]">{lei.emoji}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold text-[#5f4032] leading-5 group-hover:text-[#8e2f2f] transition-colors" style={{ fontSize: 12 }}>{lei.titulo}</div>
                                 <div className="text-[#9a7060]" style={{ fontSize: 11 }}>{lei.desc}</div>
                               </div>
-                            </div>
+                              <span className="shrink-0 text-[10px] font-semibold text-[#8e2f2f] opacity-0 group-hover:opacity-100 transition-opacity mt-0.5">Abrir →</span>
+                            </a>
                           ))}
                         </div>
                       </div>
