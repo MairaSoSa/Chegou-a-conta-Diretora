@@ -4423,6 +4423,12 @@ out center tags 100;`;
                     const faixaGestor = g.por_faixa ? Object.entries(g.por_faixa).find(([,v]) => (v as number) > 0)?.[0]?.replace('ate_24','até 24 anos').replace('de_25_29','25–29 anos').replace('de_30_39','30–39 anos').replace('de_40_49','40–49 anos').replace('de_50_54','50–54 anos').replace('de_55_59','55–59 anos').replace('mais_60','60+ anos') || '' : '';
                     const pctFem = d.total > 0 ? Math.round((d.feminino / d.total) * 100) : 0;
                     const pctDiurno = m.total > 0 ? Math.round((m.diurno / m.total) * 100) : 0;
+                    const pctTurmasEspecial = t.total > 0 ? Math.round((t.especial / t.total) * 100) : 0;
+                    const alunosPorTurma = t.total > 0 ? (m.total / t.total).toFixed(1) : null;
+                    const alunosPorDocente = d.total > 0 ? (m.total / d.total).toFixed(1) : null;
+                    const pctInclusao = m.total > 0 ? ((m.especial / m.total) * 100).toFixed(1) : null;
+                    const faixaLabels: Record<string,string> = { ate_24:'≤24', de_25_29:'25–29', de_30_39:'30–39', de_40_49:'40–49', de_50_54:'50–54', de_55_59:'55–59', mais_60:'60+' };
+                    const faixaDocMax = d.por_faixa ? Math.max(...Object.values(d.por_faixa as Record<string,number>)) : 1;
                     return (
                       <div style={{ marginBottom: 28 }}>
                         {/* Cabeçalho territorial */}
@@ -4444,6 +4450,40 @@ out center tags 100;`;
                           <span style={{ fontSize: 11, color: '#9a8a7a' }}>Estado: {uf}</span>
                         </div>
 
+                        {/* KPIs rápidos */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                          {alunosPorTurma && (
+                            <span style={{ background: '#e8f4fd', border: '1px solid #b0d4f0', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#1a4a80', fontWeight: 600 }}>
+                              📊 {alunosPorTurma} alunos/turma
+                            </span>
+                          )}
+                          {alunosPorDocente && (
+                            <span style={{ background: '#e8f4fd', border: '1px solid #b0d4f0', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#1a4a80', fontWeight: 600 }}>
+                              👩‍🏫 {alunosPorDocente} alunos/docente
+                            </span>
+                          )}
+                          {pctInclusao && parseFloat(pctInclusao) > 0 && (
+                            <span style={{ background: '#fce4ec', border: '1px solid #f48fb1', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#880e4f', fontWeight: 600 }}>
+                              ♿ {pctInclusao}% inclusão
+                            </span>
+                          )}
+                          {pctTurmasEspecial >= 50 && (
+                            <span style={{ background: '#e8f5e9', border: '1px solid #81c784', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#1b5e20', fontWeight: 700 }}>
+                              🌟 Escola inclusiva — {pctTurmasEspecial}% das turmas
+                            </span>
+                          )}
+                          {(m.fund_ai === 0 && (m.fund_af ?? 0) > 0) && (
+                            <span style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#5d4037', fontWeight: 600 }}>
+                              📚 Só Anos Finais (AF)
+                            </span>
+                          )}
+                          {(m.fund_ai ?? 0) > 0 && (m.fund_af ?? 0) > 0 && (
+                            <span style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#5d4037', fontWeight: 600 }}>
+                              📚 AI + AF
+                            </span>
+                          )}
+                        </div>
+
                         {/* Grid de cards */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
 
@@ -4453,8 +4493,19 @@ out center tags 100;`;
                             <div style={{ fontSize: 24, fontWeight: 800, color: '#1a3a6a', lineHeight: 1 }}>{(m.total || 0).toLocaleString('pt-BR')}</div>
                             <div style={{ fontSize: 10, color: '#6a7a9a', marginBottom: 10 }}>total de alunos</div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                              {(m.infantil ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#7c5cbf'}}>Ed. Infantil</span><strong>{m.infantil}</strong></div>}
-                              {(m.fundamental ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#2f7a58'}}>Fundamental</span><strong>{m.fundamental}</strong></div>}
+                              {(m.infantil ?? 0) > 0 && <>
+                                <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#7c5cbf'}}>Ed. Infantil</span><strong>{m.infantil}</strong></div>
+                                {(m.creche ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, paddingLeft:8, color:'#9a8ab0' }}><span>↳ Creche</span><span>{m.creche}</span></div>}
+                                {(m.pre_escola ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, paddingLeft:8, color:'#9a8ab0' }}><span>↳ Pré-escola</span><span>{m.pre_escola}</span></div>}
+                              </>}
+                              {(m.fundamental ?? 0) > 0 && <>
+                                <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#2f7a58'}}>Fundamental</span><strong>{m.fundamental}</strong></div>
+                                {((m.fund_ai ?? 0) > 0 || (m.fund_af ?? 0) > 0) && (
+                                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, paddingLeft:8, color:'#5a8a6a' }}>
+                                    <span>↳ AI: {m.fund_ai ?? 0} · AF: {m.fund_af ?? 0}</span>
+                                  </div>
+                                )}
+                              </>}
                               {(m.medio ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#9b6a16'}}>Médio</span><strong>{m.medio}</strong></div>}
                               {(m.eja ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#b74f42'}}>EJA</span><strong>{m.eja}</strong></div>}
                               {(m.especial ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#e91e63'}}>Ed. Especial</span><strong>{m.especial}</strong></div>}
@@ -4481,6 +4532,13 @@ out center tags 100;`;
                               {(t.fundamental ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#2d5a88'}}>Fundamental</span><strong>{t.fundamental}</strong></div>}
                               {(t.medio ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#9b6a16'}}>Médio</span><strong>{t.medio}</strong></div>}
                               {(t.eja ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#b74f42'}}>EJA</span><strong>{t.eja}</strong></div>}
+                              {(t.profissional ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#00796b'}}>Profissional</span><strong>{t.profissional}</strong></div>}
+                              {(t.especial ?? 0) > 0 && (
+                                <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}>
+                                  <span style={{color:'#e91e63'}}>c/ Ed. Especial</span>
+                                  <strong style={{color:'#e91e63'}}>{t.especial} ({pctTurmasEspecial}%)</strong>
+                                </div>
+                              )}
                             </div>
                             {(t.diurno ?? 0) > 0 && (
                               <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #b8e8d0', fontSize: 10, color: '#5a8a6a' }}>
@@ -4505,13 +4563,27 @@ out center tags 100;`;
                               </div>
                             </div>
                             {d.por_faixa && (
-                              <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #f0d88a', fontSize: 10, color: '#8a6a30' }}>
-                                {Object.entries(d.por_faixa as Record<string,number>).filter(([,v]) => v > 0).slice(0,3).map(([k,v]) => (
-                                  <div key={k} style={{ display:'flex', justifyContent:'space-between' }}>
-                                    <span>{k.replace('ate_24','≤24').replace('de_','').replace('_','-').replace('mais_60','60+')}</span>
-                                    <strong>{v}</strong>
+                              <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #f0d88a' }}>
+                                <div style={{ fontSize: 10, color: '#8a6a30', marginBottom: 5, fontWeight: 600 }}>Faixa etária</div>
+                                {Object.entries(d.por_faixa as Record<string,number>).filter(([,v]) => v > 0).map(([k,v]) => (
+                                  <div key={k} style={{ display:'flex', alignItems:'center', gap:5, marginBottom:3 }}>
+                                    <span style={{ fontSize:9, color:'#8a6a30', width:28, flexShrink:0 }}>{faixaLabels[k]}</span>
+                                    <div style={{ flex:1, background:'#f8e5b5', borderRadius:3, overflow:'hidden', height:8 }}>
+                                      <div style={{ height:'100%', background: v === faixaDocMax ? '#b8860b' : '#d4a832', width:`${Math.round((v/faixaDocMax)*100)}%`, borderRadius:3 }} />
+                                    </div>
+                                    <span style={{ fontSize:10, fontWeight:700, color:'#6a4a10', width:14, textAlign:'right' }}>{v}</span>
                                   </div>
                                 ))}
+                              </div>
+                            )}
+                            {(d.especial ?? 0) > 0 && d.especial === d.total && (
+                              <div style={{ marginTop: 8, fontSize: 10, color: '#1b5e20', background: '#e8f5e9', borderRadius: 6, padding: '4px 8px' }}>
+                                Todos os docentes atuam com inclusão
+                              </div>
+                            )}
+                            {(d.especial ?? 0) > 0 && d.especial !== d.total && (
+                              <div style={{ marginTop: 8, fontSize: 10, color: '#2e7d32', background: '#f1f8f1', borderRadius: 6, padding: '4px 8px' }}>
+                                {d.especial} docentes c/ ed. especial
                               </div>
                             )}
                           </div>
@@ -4527,7 +4599,7 @@ out center tags 100;`;
                                 {(g.feminino ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#e91e63'}}>Mulheres</span><strong>{g.feminino}</strong></div>}
                                 {(g.masculino ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#1565c0'}}>Homens</span><strong>{g.masculino}</strong></div>}
                                 {(g.concursado ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#2f7a58'}}>Concursados</span><strong>{g.concursado}</strong></div>}
-                                {(g.com_ensino_superior ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#2d5a88'}}>Com sup. completo</span><strong>{g.com_ensino_superior}</strong></div>}
+                                {(g.com_ensino_superior ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#2d5a88'}}>{g.com_ensino_superior > g.total ? 'Pós-graduação' : 'Sup. completo'}</span><strong>✓</strong></div>}
                               </div>
                               {racaGestor && <div style={{ marginTop: 8, fontSize: 10, color: '#8a6aaa' }}>Raça/cor: <strong>{racaGestor}</strong></div>}
                               {faixaGestor && <div style={{ fontSize: 10, color: '#8a6aaa' }}>Faixa etária: <strong>{faixaGestor}</strong></div>}
