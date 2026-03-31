@@ -528,7 +528,7 @@ export async function getEscolaEvolucaoLocal(inep: string) {
          FROM ideb_escola WHERE co_entidade=?`,
       [coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade, coEntidade]
     ),
-    // Dados de gênero/raça/faixa etária do JSON histórico (2020-2024)
+    // Dados de gênero/raça/faixa etária/turno/zona do JSON histórico (2020-2024)
     pgAll(
       `SELECT ano,
         (dados_json->>'QT_MAT_BAS_FEM')::int AS qt_mat_bas_fem,
@@ -540,7 +540,16 @@ export async function getEscolaEvolucaoLocal(inep: string) {
         (dados_json->>'QT_MAT_BAS_INDIGENA')::int AS qt_mat_bas_indigena,
         (dados_json->>'QT_MAT_BAS_ND')::int AS qt_mat_bas_nd,
         (dados_json->>'QT_MAT_BAS_D')::int AS qt_mat_bas_diurno,
-        (dados_json->>'QT_MAT_BAS_N')::int AS qt_mat_bas_noturno
+        (dados_json->>'QT_MAT_BAS_N')::int AS qt_mat_bas_noturno,
+        (dados_json->>'QT_MAT_BAS_0_3')::int AS qt_mat_bas_0_3,
+        (dados_json->>'QT_MAT_BAS_4_5')::int AS qt_mat_bas_4_5,
+        (dados_json->>'QT_MAT_BAS_6_10')::int AS qt_mat_bas_6_10,
+        (dados_json->>'QT_MAT_BAS_11_14')::int AS qt_mat_bas_11_14,
+        (dados_json->>'QT_MAT_BAS_15_17')::int AS qt_mat_bas_15_17,
+        COALESCE((dados_json->>'QT_MAT_BAS_18_MAIS')::int,
+          (dados_json->>'QT_MAT_BAS_18_19')::int) AS qt_mat_bas_18_mais,
+        (dados_json->>'QT_MAT_ZR_URB')::int AS qt_mat_zr_urba,
+        (dados_json->>'QT_MAT_ZR_RUR')::int AS qt_mat_zr_rura
        FROM censo_escola_historico
        WHERE co_entidade = $1 ORDER BY ano`,
       [coEntidade]
@@ -802,20 +811,31 @@ export async function getEscolaEvolucaoLocal(inep: string) {
     };
   }
 
-  // Mescla dados de gênero/raça históricos (2020-2024) em censoByYear
+  // Mescla dados de gênero/raça/faixa etária/turno/zona históricos (2020-2024) em censoByYear
   for (const h of historicoRows as any[]) {
     const ano = Number(h.ano);
     if (!censoByYear[ano]) continue;
-    censoByYear[ano].qt_mat_bas_fem     = h.qt_mat_bas_fem     != null ? Number(h.qt_mat_bas_fem)     : null;
-    censoByYear[ano].qt_mat_bas_masc    = h.qt_mat_bas_masc    != null ? Number(h.qt_mat_bas_masc)    : null;
-    censoByYear[ano].qt_mat_bas_branca  = h.qt_mat_bas_branca  != null ? Number(h.qt_mat_bas_branca)  : null;
-    censoByYear[ano].qt_mat_bas_preta   = h.qt_mat_bas_preta   != null ? Number(h.qt_mat_bas_preta)   : null;
-    censoByYear[ano].qt_mat_bas_parda   = h.qt_mat_bas_parda   != null ? Number(h.qt_mat_bas_parda)   : null;
-    censoByYear[ano].qt_mat_bas_amarela = h.qt_mat_bas_amarela != null ? Number(h.qt_mat_bas_amarela) : null;
-    censoByYear[ano].qt_mat_bas_indigena= h.qt_mat_bas_indigena!= null ? Number(h.qt_mat_bas_indigena): null;
-    censoByYear[ano].qt_mat_bas_nd      = h.qt_mat_bas_nd      != null ? Number(h.qt_mat_bas_nd)      : null;
-    censoByYear[ano].qt_mat_bas_diurno  = h.qt_mat_bas_diurno  != null ? Number(h.qt_mat_bas_diurno)  : null;
-    censoByYear[ano].qt_mat_bas_noturno = h.qt_mat_bas_noturno != null ? Number(h.qt_mat_bas_noturno) : null;
+    const _hn = (v: any) => v != null ? Number(v) : null;
+    censoByYear[ano].qt_mat_bas_fem      = _hn(h.qt_mat_bas_fem);
+    censoByYear[ano].qt_mat_bas_masc     = _hn(h.qt_mat_bas_masc);
+    censoByYear[ano].qt_mat_bas_branca   = _hn(h.qt_mat_bas_branca);
+    censoByYear[ano].qt_mat_bas_preta    = _hn(h.qt_mat_bas_preta);
+    censoByYear[ano].qt_mat_bas_parda    = _hn(h.qt_mat_bas_parda);
+    censoByYear[ano].qt_mat_bas_amarela  = _hn(h.qt_mat_bas_amarela);
+    censoByYear[ano].qt_mat_bas_indigena = _hn(h.qt_mat_bas_indigena);
+    censoByYear[ano].qt_mat_bas_nd       = _hn(h.qt_mat_bas_nd);
+    censoByYear[ano].qt_mat_bas_diurno   = _hn(h.qt_mat_bas_diurno);
+    censoByYear[ano].qt_mat_bas_noturno  = _hn(h.qt_mat_bas_noturno);
+    censoByYear[ano].qt_mat_bas_d        = _hn(h.qt_mat_bas_diurno);   // alias para o pizza chart
+    censoByYear[ano].qt_mat_bas_n        = _hn(h.qt_mat_bas_noturno);  // alias para o pizza chart
+    censoByYear[ano].qt_mat_bas_0_3      = _hn(h.qt_mat_bas_0_3);
+    censoByYear[ano].qt_mat_bas_4_5      = _hn(h.qt_mat_bas_4_5);
+    censoByYear[ano].qt_mat_bas_6_10     = _hn(h.qt_mat_bas_6_10);
+    censoByYear[ano].qt_mat_bas_11_14    = _hn(h.qt_mat_bas_11_14);
+    censoByYear[ano].qt_mat_bas_15_17    = _hn(h.qt_mat_bas_15_17);
+    censoByYear[ano].qt_mat_bas_18_mais  = _hn(h.qt_mat_bas_18_mais);
+    censoByYear[ano].qt_mat_zr_urba      = _hn(h.qt_mat_zr_urba);
+    censoByYear[ano].qt_mat_zr_rura      = _hn(h.qt_mat_zr_rura);
   }
 
   const indicadoresByYear: Record<number, Record<string, any>> = {};
@@ -1574,13 +1594,18 @@ export async function getEscolaCenso2025(inep: string) {
         de_6_10:     _n(mat.QT_MAT_BAS_6_10),
         de_11_14:    _n(mat.QT_MAT_BAS_11_14),
         de_15_17:    _n(mat.QT_MAT_BAS_15_17),
-        de_18_19:    _n(mat.QT_MAT_BAS_18_19),
-        de_20_24:    _n(mat.QT_MAT_BAS_20_24),
-        de_25_29:    _n(mat.QT_MAT_BAS_25_29),
-        de_30_34:    _n(mat.QT_MAT_BAS_30_34),
-        de_35_39:    _n(mat.QT_MAT_BAS_35_39),
-        de_40_49:    _n(mat.QT_MAT_BAS_40_49),
-        mais_50:     _n(mat.QT_MAT_BAS_50_MAIS),
+        de_18_mais:  _n(mat.QT_MAT_BAS_18_MAIS) || (_n(mat.QT_MAT_BAS_18_19) + _n(mat.QT_MAT_BAS_20_24) + _n(mat.QT_MAT_BAS_25_29) + _n(mat.QT_MAT_BAS_30_34) + _n(mat.QT_MAT_BAS_35_39) + _n(mat.QT_MAT_BAS_40_49) + _n(mat.QT_MAT_BAS_50_MAIS)),
+      },
+      zona: {
+        urbana: _n(mat.QT_MAT_ZR_URB),
+        rural:  _n(mat.QT_MAT_ZR_RUR),
+      },
+      integral_por_etapa: {
+        infantil:  _n(mat.QT_MAT_INF_INT),
+        fund_ai:   _n(mat.QT_MAT_FUND_AI_INT),
+        fund_af:   _n(mat.QT_MAT_FUND_AF_INT),
+        medio:     _n(mat.QT_MAT_MED_INT),
+        eja:       _n(mat.QT_MAT_EJA_INT),
       },
     },
 

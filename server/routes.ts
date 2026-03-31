@@ -373,7 +373,15 @@ export async function registerRoutes(
                                'qt_mat_eja','qt_mat_esp','qt_mat_bas_fem','qt_mat_bas_masc',
                                'in_agua_potavel','in_energia_rede_publica','in_esgoto_rede_publica',
                                'in_biblioteca','in_laboratorio_informatica','in_quadra_esportes',
-                               'in_internet','in_banda_larga','in_alimentacao']) {
+                               'in_internet','in_banda_larga','in_alimentacao',
+                               // campos demográficos (só existem no historico local, não na API externa)
+                               'qt_mat_bas_branca','qt_mat_bas_preta','qt_mat_bas_parda',
+                               'qt_mat_bas_amarela','qt_mat_bas_indigena','qt_mat_bas_nd',
+                               'qt_mat_bas_diurno','qt_mat_bas_noturno',
+                               'qt_mat_bas_d','qt_mat_bas_n',
+                               'qt_mat_bas_0_3','qt_mat_bas_4_5','qt_mat_bas_6_10',
+                               'qt_mat_bas_11_14','qt_mat_bas_15_17','qt_mat_bas_18_mais',
+                               'qt_mat_zr_urba','qt_mat_zr_rura']) {
             if ((rail[field] == null || rail[field] === undefined) && loc[field] != null) {
               mergedCenso[ano][field] = loc[field];
             }

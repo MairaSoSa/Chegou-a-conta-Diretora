@@ -4927,7 +4927,13 @@ out center tags 100;`;
                     const cd = (anoEfetivo === 2025 && censo2025Data) ? (() => {
                       const m25 = censo2025Data.matriculas ?? {};
                       const t25 = censo2025Data.turmas ?? {};
+                      const pr = m25.por_raca ?? {};
+                      const pg = m25.por_genero ?? {};
+                      const pf = m25.por_faixa_etaria ?? {};
+                      const pz = m25.zona ?? {};
+                      const pi = m25.integral_por_etapa ?? {};
                       const p: Record<string, number> = {
+                        // Etapas
                         qt_mat_fund:    m25.fundamental ?? 0,
                         qt_mat_fund_ai: m25.fund_ai     ?? 0,
                         qt_mat_fund_af: m25.fund_af     ?? 0,
@@ -4938,6 +4944,35 @@ out center tags 100;`;
                         qt_tur_med:     t25.medio       ?? 0,
                         qt_tur_eja:     t25.eja         ?? 0,
                         qt_tur_esp:     t25.especial    ?? 0,
+                        // Raça/Cor
+                        qt_mat_bas_branca:   pr.branca        ?? 0,
+                        qt_mat_bas_preta:    pr.preta         ?? 0,
+                        qt_mat_bas_parda:    pr.parda         ?? 0,
+                        qt_mat_bas_amarela:  pr.amarela       ?? 0,
+                        qt_mat_bas_indigena: pr.indigena      ?? 0,
+                        qt_mat_bas_nd:       pr.nao_declarada ?? 0,
+                        // Sexo
+                        qt_mat_bas_fem:  pg.feminino  ?? 0,
+                        qt_mat_bas_masc: pg.masculino ?? 0,
+                        // Faixa etária
+                        qt_mat_bas_0_3:    pf.ate_3_anos ?? 0,
+                        qt_mat_bas_4_5:    pf.de_4_5     ?? 0,
+                        qt_mat_bas_6_10:   pf.de_6_10    ?? 0,
+                        qt_mat_bas_11_14:  pf.de_11_14   ?? 0,
+                        qt_mat_bas_15_17:  pf.de_15_17   ?? 0,
+                        qt_mat_bas_18_mais: pf.de_18_mais ?? 0,
+                        // Turno
+                        qt_mat_bas_d:   m25.diurno  ?? 0,
+                        qt_mat_bas_n:   m25.noturno ?? 0,
+                        qt_mat_bas_ead: 0,
+                        // Zona de residência
+                        qt_mat_zr_urba: pz.urbana ?? 0,
+                        qt_mat_zr_rura: pz.rural  ?? 0,
+                        // Tempo integral por etapa
+                        qt_mat_inf_int:     pi.infantil ?? 0,
+                        qt_mat_fund_ai_int: pi.fund_ai  ?? 0,
+                        qt_mat_fund_af_int: pi.fund_af  ?? 0,
+                        qt_mat_med_int:     pi.medio    ?? 0,
                       };
                       const merged: Record<string, any> = { ...cdRaw };
                       for (const [k, v] of Object.entries(p)) {
