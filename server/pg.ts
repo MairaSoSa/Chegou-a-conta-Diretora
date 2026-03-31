@@ -1,8 +1,27 @@
 import { Pool } from "pg";
 
+const RAILWAY_URL = process.env.RAILWAY_DATABASE_URL;
+
+if (!RAILWAY_URL) {
+  console.error("[pg] AVISO: RAILWAY_DATABASE_URL não definida! Tentando DATABASE_URL como fallback...");
+}
+
+// Remove as variáveis PG* do Replit que apontam para localhost e interferem com Railway
+// (O Replit injeta PGHOST=127.0.0.1 via módulo postgresql-16, que não existe em produção)
+if (RAILWAY_URL) {
+  delete process.env.PGHOST;
+  delete process.env.PGPORT;
+  delete process.env.PGDATABASE;
+  delete process.env.PGUSER;
+  delete process.env.PGPASSWORD;
+}
+
+const connStr = RAILWAY_URL || process.env.DATABASE_URL;
+console.log(`[pg] Conectando ao PostgreSQL via ${RAILWAY_URL ? "RAILWAY_DATABASE_URL" : "DATABASE_URL"} (definida: ${!!connStr})`);
+
 export const pgPool = new Pool({
-  connectionString: process.env.RAILWAY_DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  connectionString: connStr,
+  ssl: connStr ? { rejectUnauthorized: false } : undefined,
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
