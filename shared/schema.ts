@@ -1,13 +1,14 @@
-import { sqliteTable, text, integer, blob } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, bigint, boolean, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
+import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { conversations, messages } from "./models/chat";
 
 export { conversations, messages };
 
 // === SCHOOLS (for Dashboard) ===
-export const schools = sqliteTable("schools", {
-  id: integer("id").primaryKey(),
+export const schools = pgTable("schools", {
+  id: serial("id").primaryKey(),
   inep: text("inep").notNull().unique(),
   name: text("name").notNull(),
   city: text("city").notNull(),
@@ -16,12 +17,12 @@ export const schools = sqliteTable("schools", {
   location: text("location").notNull(),
   enrollmentCount: integer("enrollment_count").notNull(),
   dataStatus: text("data_status").notNull(),
-  lastUpdate: integer("last_update"),
+  lastUpdate: bigint("last_update", { mode: "number" }),
 });
 
 // === PROGRAMS ===
-export const programs = sqliteTable("programs", {
-  id: integer("id").primaryKey(),
+export const programs = pgTable("programs", {
+  id: serial("id").primaryKey(),
   code: text("code").notNull().unique(),
   name: text("name").notNull(),
   description: text("description").notNull(),
@@ -31,8 +32,8 @@ export const programs = sqliteTable("programs", {
 });
 
 // === PROGRAM DETAILS ===
-export const programDetails = sqliteTable("program_details", {
-  id: integer("id").primaryKey(),
+export const programDetails = pgTable("program_details", {
+  id: serial("id").primaryKey(),
   programCode: text("program_code").notNull(),
   type: text("type").notNull(),
   content: text("content").notNull(),
@@ -40,20 +41,20 @@ export const programDetails = sqliteTable("program_details", {
 });
 
 // === TOOLS (Caixa de Ferramentas) ===
-export const tools = sqliteTable("tools", {
-  id: integer("id").primaryKey(),
+export const tools = pgTable("tools", {
+  id: serial("id").primaryKey(),
   title: text("title").notNull(),
   category: text("category").notNull(),
   description: text("description").notNull(),
   downloadUrl: text("download_url"),
   type: text("type").notNull(),
-  featured: integer("featured", { mode: "boolean" }).default(false),
+  featured: boolean("featured").default(false),
   sortOrder: integer("sort_order").default(0),
 });
 
 // === GLOSSARY (Glossário) ===
-export const glossary = sqliteTable("glossary", {
-  id: integer("id").primaryKey(),
+export const glossary = pgTable("glossary", {
+  id: serial("id").primaryKey(),
   term: text("term").notNull(),
   explanation: text("explanation").notNull(),
   letter: text("letter").notNull(),
@@ -62,78 +63,78 @@ export const glossary = sqliteTable("glossary", {
 });
 
 // === SITE SETTINGS ===
-export const siteSettings = sqliteTable("site_settings", {
-  id: integer("id").primaryKey(),
+export const siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
   key: text("key").notNull().unique(),
   value: text("value").notNull(),
   label: text("label"),
 });
 
 // === DASHBOARD DATASETS ===
-export const dashboardDatasets = sqliteTable("dashboard_datasets", {
-  id: integer("id").primaryKey(),
+export const dashboardDatasets = pgTable("dashboard_datasets", {
+  id: serial("id").primaryKey(),
   category: text("category").notNull(),
   label: text("label"),
-  data: blob("data").notNull(),
-  lastUpdated: integer("last_updated"),
+  data: text("data").notNull(),
+  lastUpdated: bigint("last_updated", { mode: "number" }),
 });
 
 // === AI KNOWLEDGE BASE ===
-export const aiDocuments = sqliteTable("ai_documents", {
-  id: integer("id").primaryKey(),
+export const aiDocuments = pgTable("ai_documents", {
+  id: serial("id").primaryKey(),
   title: text("title").notNull(),
   content: text("content").notNull(),
   category: text("category"),
   link: text("link"),
   sortOrder: integer("sort_order").default(0),
-  createdAt: integer("created_at"),
+  createdAt: bigint("created_at", { mode: "number" }),
 });
 
 // === AI DOCUMENT EMBEDDINGS ===
-export const aiDocumentEmbeddings = sqliteTable("ai_document_embeddings", {
-  id: integer("id").primaryKey(),
+export const aiDocumentEmbeddings = pgTable("ai_document_embeddings", {
+  id: serial("id").primaryKey(),
   documentId: integer("document_id").notNull().unique(),
   embedding: text("embedding").notNull(),
-  createdAt: integer("created_at"),
-  updatedAt: integer("updated_at"),
+  createdAt: bigint("created_at", { mode: "number" }),
+  updatedAt: bigint("updated_at", { mode: "number" }),
 });
 
 // === AI API SOURCES ===
-export const aiApiSources = sqliteTable("ai_api_sources", {
-  id: integer("id").primaryKey(),
+export const aiApiSources = pgTable("ai_api_sources", {
+  id: serial("id").primaryKey(),
   title: text("title").notNull(),
   url: text("url").notNull(),
   category: text("category"),
   authHeaderName: text("auth_header_name"),
   authHeaderValue: text("auth_header_value"),
   refreshMinutes: integer("refresh_minutes").default(1440),
-  enabled: integer("enabled", { mode: "boolean" }).default(true),
-  lastFetchedAt: integer("last_fetched_at"),
+  enabled: boolean("enabled").default(true),
+  lastFetchedAt: bigint("last_fetched_at", { mode: "number" }),
   lastStatus: integer("last_status"),
   lastError: text("last_error"),
 });
 
 // === TRILHA UNITS ===
-export const trilhaUnits = sqliteTable("trilha_units", {
-  id: integer("id").primaryKey(),
+export const trilhaUnits = pgTable("trilha_units", {
+  id: serial("id").primaryKey(),
   unitId: text("unit_id").notNull().unique(),
-  part: integer("part").notNull(),
+  part: text("part").notNull(),
   title: text("title").notNull(),
-  subtitle: text("subtitle").notNull(),
-  duration: text("duration").notNull(),
+  subtitle: text("subtitle"),
+  duration: text("duration"),
   intro: text("intro"),
-  sections: blob("sections"),
-  materials: blob("materials"),
+  sections: text("sections"),
+  materials: text("materials"),
   previousUnit: text("previous_unit"),
   nextUnit: text("next_unit"),
   sortOrder: integer("sort_order").default(0),
 });
 
-// === EDUCATIONAL INDICATORS (from INEP) ===
-export const censoEscolar = sqliteTable("censo_escolar", {
-  id: integer("id").primaryKey(),
+// === EDUCATIONAL INDICATORS (from INEP — views in Railway) ===
+export const censoEscolar = pgTable("censo_escolar", {
+  id: bigint("id", { mode: "number" }).primaryKey(),
   inep: text("inep").notNull(),
-  ano: integer("ano").notNull(),
+  ano: text("ano").notNull(),
   nome: text("nome"),
   municipio: text("municipio"),
   uf: text("uf"),
@@ -144,32 +145,32 @@ export const censoEscolar = sqliteTable("censo_escolar", {
   docentes: integer("docentes"),
   turmas: integer("turmas"),
   dados: text("dados"),
-  updatedAt: integer("updated_at"),
+  updatedAt: bigint("updated_at", { mode: "number" }),
 });
 
-export const indicadoresEducacionais = sqliteTable("indicadores_educacionais", {
+export const indicadoresEducacionais = pgTable("indicadores_educacionais", {
   inep: text("inep").notNull(),
   ano: integer("ano").notNull(),
   tipo: text("tipo").notNull(),
   dados: text("dados"),
-  updatedAt: integer("updated_at"),
+  updatedAt: bigint("updated_at", { mode: "number" }),
 });
 
-export const importacaoStatus = sqliteTable("importacao_status", {
-  id: integer("id").primaryKey(),
+export const importacaoStatus = pgTable("importacao_status", {
+  id: serial("id").primaryKey(),
   tipo: text("tipo").notNull(),
   ano: integer("ano").notNull(),
   status: text("status").notNull(),
   totalRegistros: integer("total_registros"),
   registrosImportados: integer("registros_importados"),
   erro: text("erro"),
-  iniciadoEm: integer("iniciado_em"),
-  finalizadoEm: integer("finalizado_em"),
+  iniciadoEm: bigint("iniciado_em", { mode: "number" }),
+  finalizadoEm: bigint("finalizado_em", { mode: "number" }),
 });
 
 // === CADERNO DA DIRETORA: DOCUMENTS ===
-export const cadernoDocuments = sqliteTable("caderno_documents", {
-  id: integer("id").primaryKey(),
+export const cadernoDocuments = pgTable("caderno_documents", {
+  id: serial("id").primaryKey(),
   type: text("type").notNull(),
   title: text("title").notNull(),
   inep: text("inep"),
@@ -178,20 +179,20 @@ export const cadernoDocuments = sqliteTable("caderno_documents", {
   status: text("status").notNull().default("rascunho"),
   qualityScore: text("quality_score").default("red"),
   logoUrl: text("logo_url"),
-  createdAt: integer("created_at"),
-  updatedAt: integer("updated_at"),
+  createdAt: bigint("created_at", { mode: "number" }),
+  updatedAt: bigint("updated_at", { mode: "number" }),
 });
 
-export const cadernoDocumentVersions = sqliteTable("caderno_document_versions", {
-  id: integer("id").primaryKey(),
+export const cadernoDocumentVersions = pgTable("caderno_document_versions", {
+  id: serial("id").primaryKey(),
   documentId: integer("document_id").notNull(),
   bodyHtml: text("body_html").notNull(),
   headerData: text("header_data"),
-  createdAt: integer("created_at"),
+  createdAt: bigint("created_at", { mode: "number" }),
 });
 
-export const cadernoNotes = sqliteTable("caderno_notes", {
-  id: integer("id").primaryKey(),
+export const cadernoNotes = pgTable("caderno_notes", {
+  id: serial("id").primaryKey(),
   title: text("title").notNull(),
   content: text("content").notNull(),
   sourceUrl: text("source_url"),
@@ -200,26 +201,26 @@ export const cadernoNotes = sqliteTable("caderno_notes", {
   tags: text("tags"),
   documentId: integer("document_id"),
   conversationId: integer("conversation_id"),
-  createdAt: integer("created_at"),
+  createdAt: bigint("created_at", { mode: "number" }),
 });
 
-export const cadernoSources = sqliteTable("caderno_sources", {
-  id: integer("id").primaryKey(),
+export const cadernoSources = pgTable("caderno_sources", {
+  id: serial("id").primaryKey(),
   url: text("url"),
   title: text("title").notNull(),
   content: text("content"),
   excerpt: text("excerpt"),
-  fetchedAt: integer("fetched_at"),
-  pinned: integer("pinned", { mode: "boolean" }).default(false),
+  fetchedAt: bigint("fetched_at", { mode: "number" }),
+  pinned: boolean("pinned").default(false),
   category: text("category"),
   conversationId: integer("conversation_id"),
 });
 
 // === UNANSWERED QUESTIONS ===
-export const unansweredQuestions = sqliteTable("unanswered_questions", {
-  id: integer("id").primaryKey(),
+export const unansweredQuestions = pgTable("unanswered_questions", {
+  id: serial("id").primaryKey(),
   question: text("question").notNull(),
-  createdAt: integer("created_at"),
+  createdAt: bigint("created_at", { mode: "number" }),
   status: text("status").notNull().default("pending"),
 });
 
@@ -230,8 +231,8 @@ export const insertProgramDetailSchema = createInsertSchema(programDetails).omit
 export const insertToolSchema = createInsertSchema(tools).omit({ id: true });
 export const insertGlossarySchema = createInsertSchema(glossary).omit({ id: true });
 export const insertTrilhaUnitSchema = createInsertSchema(trilhaUnits).omit({ id: true }).extend({
-  sections: z.array(z.any()).optional().nullable(),
-  materials: z.array(z.any()).optional().nullable(),
+  sections: z.union([z.string(), z.array(z.any()), z.null()]).optional(),
+  materials: z.union([z.string(), z.array(z.any()), z.null()]).optional(),
 });
 export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({ id: true });
 export const insertDashboardDatasetSchema = createInsertSchema(dashboardDatasets).omit({ id: true, lastUpdated: true });

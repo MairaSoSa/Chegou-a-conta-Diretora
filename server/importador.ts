@@ -1,4 +1,5 @@
 import { db, sqlite } from "./db";
+import { pgGet, pgAll, pgRun } from "./pg";
 import { censoEscolar, indicadoresEducacionais, importacaoStatus } from "@shared/schema";
 import { eq, and, like, sql } from "drizzle-orm";
 
@@ -89,10 +90,11 @@ async function importCensoFromApi(ano: number) {
   let totalImported = 0;
   let totalRecords = 0;
 
-  const updateStatus = (tipo: string, ano: number, status: string, imported: number, total: number) => {
-    const existing = db.select().from(importacaoStatus)
+  const updateStatus = async (tipo: string, ano: number, status: string, imported: number, total: number) => {
+    const existingArr = await db.select().from(importacaoStatus)
       .where(and(eq(importacaoStatus.tipo, tipo), eq(importacaoStatus.ano, ano)))
-      .get();
+      .limit(1);
+    const existing = existingArr[0] || null;
     const record = {
       tipo, ano, status,
       registrosImportados: imported,
@@ -102,9 +104,9 @@ async function importCensoFromApi(ano: number) {
       finalizadoEm: status === "completo" ? Date.now() : null,
     };
     if (existing) {
-      db.update(importacaoStatus).set(record).where(eq(importacaoStatus.id, existing.id)).run();
+      await db.update(importacaoStatus).set(record).where(eq(importacaoStatus.id, existing.id));
     } else {
-      db.insert(importacaoStatus).values(record).run();
+      await db.insert(importacaoStatus).values(record);
     }
   };
 
@@ -114,46 +116,48 @@ async function importCensoFromApi(ano: number) {
     );
     totalRecords = firstPage.total || 0;
     if (totalRecords === 0) {
-      updateStatus("censo_escolar", ano, "vazio", 0, 0);
+      await updateStatus("censo_escolar", ano, "vazio", 0, 0);
       return;
     }
 
     const totalPages = firstPage.total_paginas || 1;
-    updateStatus("censo_escolar", ano, "importando", 0, totalRecords);
+    await updateStatus("censo_escolar", ano, "importando", 0, totalRecords);
 
-    const processPage = (dados: any[]) => {
+    const processPage = async (dados: any[]) => {
       for (const d of dados) {
         const inep = String(d.co_entidade);
-        const existing = db.select().from(censoEscolar)
-          .where(and(eq(censoEscolar.inep, inep), eq(censoEscolar.ano, ano)))
-          .get();
+        const existingArr = await db.select().from(censoEscolar)
+          .where(and(eq(censoEscolar.inep, inep), eq(censoEscolar.ano, String(ano))))
+          .limit(1);
+        const existing = existingArr[0] || null;
 
         const record = {
+          id: parseInt(inep),
           inep,
-          ano,
+          ano: String(ano),
           nome: d.no_entidade || null,
           municipio: d.no_municipio || null,
           uf: d.sg_uf || null,
           dependencia: d.ds_dependencia || null,
           localizacao: d.ds_localizacao || null,
           situacao: d.ds_situacao || null,
-          matriculas: d.qt_matriculas || 0,
-          docentes: d.qt_docentes || 0,
-          turmas: d.qt_turmas || 0,
+          matriculas: parseInt(d.qt_matriculas) || 0,
+          docentes: parseInt(d.qt_docentes) || 0,
+          turmas: parseInt(d.qt_turmas) || 0,
           dados: JSON.stringify(d),
           updatedAt: Date.now(),
         };
 
         if (existing) {
-          db.update(censoEscolar).set(record).where(eq(censoEscolar.id, existing.id)).run();
+          await db.update(censoEscolar).set(record).where(eq(censoEscolar.id, existing.id));
         } else {
-          db.insert(censoEscolar).values(record).run();
+          await db.insert(censoEscolar).values(record);
         }
         totalImported++;
       }
     };
 
-    processPage(firstPage.dados || []);
+    await processPage(firstPage.dados || []);
 
     importProgress.progress = importProgress.progress.filter(p => p.tipo !== `censo_escolar_${ano}`);
     importProgress.progress.push({
@@ -169,7 +173,7 @@ async function importCensoFromApi(ano: number) {
         const data = await fetchJson(
           `${EXTERNAL_API}/api/censo-escolar/${ano}/escolas?per_page=100&pagina=${page}`
         );
-        processPage(data.dados || []);
+        await processPage(data.dados || []);
 
         importProgress.progress = importProgress.progress.filter(p => p.tipo !== `censo_escolar_${ano}`);
         importProgress.progress.push({
@@ -182,20 +186,20 @@ async function importCensoFromApi(ano: number) {
 
         if (page % 10 === 0) {
           console.log(`[Import] Censo ${ano}: ${totalImported}/${totalRecords} (page ${page}/${totalPages})`);
-          updateStatus("censo_escolar", ano, "importando", totalImported, totalRecords);
+          await updateStatus("censo_escolar", ano, "importando", totalImported, totalRecords);
         }
       } catch (err: any) {
         console.error(`[Import] Censo ${ano} page ${page} error:`, err.message);
-        updateStatus("censo_escolar", ano, "erro", totalImported, totalRecords);
+        await updateStatus("censo_escolar", ano, "erro", totalImported, totalRecords);
         break;
       }
     }
 
-    updateStatus("censo_escolar", ano, "completo", totalImported, totalRecords);
+    await updateStatus("censo_escolar", ano, "completo", totalImported, totalRecords);
     console.log(`[Import] Censo ${ano}: Completed ${totalImported} records`);
   } catch (err: any) {
     console.error(`[Import] Censo ${ano} failed:`, err.message);
-    updateStatus("censo_escolar", ano, "erro", totalImported, totalRecords);
+    await updateStatus("censo_escolar", ano, "erro", totalImported, totalRecords);
   }
 }
 
@@ -212,16 +216,17 @@ async function importIndicadorFromApi(tipo: string, apiPath: string, ano: number
 
     const totalPages = firstPage.total_paginas || 1;
 
-    const processPage = (dados: any[]) => {
+    const processPage = async (dados: any[]) => {
       for (const d of dados) {
         const inep = String(d.co_entidade);
-        const existing = db.select().from(indicadoresEducacionais)
+        const existingArr = await db.select().from(indicadoresEducacionais)
           .where(and(
             eq(indicadoresEducacionais.inep, inep),
             eq(indicadoresEducacionais.ano, ano),
             eq(indicadoresEducacionais.tipo, tipo)
           ))
-          .get();
+          .limit(1);
+        const existing = existingArr[0] || null;
 
         const record = {
           inep, ano, tipo,
@@ -230,19 +235,19 @@ async function importIndicadorFromApi(tipo: string, apiPath: string, ano: number
         };
 
         if (existing) {
-          db.update(indicadoresEducacionais).set(record).where(and(
+          await db.update(indicadoresEducacionais).set(record).where(and(
             eq(indicadoresEducacionais.inep, inep),
             eq(indicadoresEducacionais.ano, ano),
             eq(indicadoresEducacionais.tipo, tipo)
-          )).run();
+          ));
         } else {
-          db.insert(indicadoresEducacionais).values(record).run();
+          await db.insert(indicadoresEducacionais).values(record);
         }
         totalImported++;
       }
     };
 
-    processPage(firstPage.dados || []);
+    await processPage(firstPage.dados || []);
 
     importProgress.progress = importProgress.progress.filter(p => p.tipo !== `${tipo}_${ano}`);
     importProgress.progress.push({
@@ -258,7 +263,7 @@ async function importIndicadorFromApi(tipo: string, apiPath: string, ano: number
         const data = await fetchJson(
           `${EXTERNAL_API}/api/${apiPath}/${ano}/escolas?per_page=100&pagina=${page}`
         );
-        processPage(data.dados || []);
+        await processPage(data.dados || []);
 
         importProgress.progress = importProgress.progress.filter(p => p.tipo !== `${tipo}_${ano}`);
         importProgress.progress.push({
@@ -279,48 +284,24 @@ async function importIndicadorFromApi(tipo: string, apiPath: string, ano: number
   }
 }
 
-export function searchSchoolsLocal(query: string, limit = 20) {
+export async function searchSchoolsLocal(query: string, limit = 20): Promise<any[]> {
   const isInep = /^\d{7,8}$/.test(query.trim());
-  const rawDb = db.$client as any;
 
   if (isInep) {
-    const results = rawDb.prepare(
-      `SELECT * FROM censo_escolar WHERE inep = ? ORDER BY ano DESC LIMIT 1`
-    ).all(query.trim());
+    const results = await pgAll(
+      `SELECT inep, nome, municipio, uf, dependencia, localizacao, matriculas FROM censo_escolar WHERE inep = ? ORDER BY ano DESC LIMIT 1`,
+      [query.trim()]
+    );
     return results.map(mapCensoToSchool);
   }
 
-  // Tenta FTS5 primeiro (muito mais rápido que LIKE)
-  try {
-    const ftsReady = (rawDb.prepare("SELECT COUNT(*) as n FROM escola_fts").get() as any)?.n > 0;
-    if (ftsReady) {
-      const words = query.trim().split(/\s+/).filter(Boolean);
-      const matchExpr = words.map(w => w.replace(/['"*]/g, "") + "*").join(" ");
-      const results = rawDb.prepare(
-        `SELECT inep, nome, municipio, uf, dependencia, localizacao, matriculas
-         FROM escola_fts WHERE escola_fts MATCH ? ORDER BY rank LIMIT ?`
-      ).all(matchExpr, limit);
-      return results.map((r: any) => ({
-        id: parseInt(r.inep) || 0,
-        inep: r.inep,
-        name: r.nome || "Sem nome",
-        city: r.municipio || "",
-        state: r.uf || "",
-        network: r.dependencia || "",
-        location: r.localizacao || "",
-        enrollmentCount: r.matriculas || 0,
-        dataStatus: "Local",
-      }));
-    }
-  } catch {}
-
-  // Fallback LIKE (lento, usado apenas se FTS não estiver pronto)
-  const upperQuery = query.toUpperCase();
-  const latestAno = rawDb.prepare(`SELECT MAX(ano) as max_ano FROM censo_escolar`).get() as any;
-  const ano = latestAno?.max_ano || 2025;
-  const results = rawDb.prepare(
-    `SELECT * FROM censo_escolar WHERE ano = ? AND upper(nome) LIKE ? LIMIT ?`
-  ).all(ano, '%' + upperQuery + '%', limit);
+  // Busca por nome usando ILIKE (PostgreSQL)
+  const latestAnoRow = await pgGet(`SELECT MAX(ano) as max_ano FROM censo_escolar`, []);
+  const ano = (latestAnoRow as any)?.max_ano || 2025;
+  const results = await pgAll(
+    `SELECT inep, nome, municipio, uf, dependencia, localizacao, matriculas FROM censo_escolar WHERE ano = ? AND UPPER(nome) LIKE ? LIMIT ?`,
+    [ano, '%' + query.trim().toUpperCase() + '%', limit]
+  );
   return results.map(mapCensoToSchool);
 }
 
@@ -338,36 +319,33 @@ function mapCensoToSchool(c: any) {
   };
 }
 
-export function getEscolaCompletaLocal(inep: string, ano: number) {
-  let censo = db.select().from(censoEscolar)
-    .where(and(eq(censoEscolar.inep, inep), eq(censoEscolar.ano, ano)))
-    .get();
+export async function getEscolaCompletaLocal(inep: string, ano: number) {
+  let censoArr = await db.select().from(censoEscolar)
+    .where(and(eq(censoEscolar.inep, inep), eq(censoEscolar.ano, String(ano))))
+    .limit(1);
+  let censo = censoArr[0] || null;
 
   if (!censo) {
-    const anyCenso = db.select().from(censoEscolar)
+    const anyCenso = await db.select().from(censoEscolar)
       .where(eq(censoEscolar.inep, inep))
-      .limit(1)
-      .all();
+      .limit(1);
     if (anyCenso.length > 0) {
       censo = anyCenso[0];
     }
   }
 
-  const allCensoYears = db.select({ ano: censoEscolar.ano }).from(censoEscolar)
-    .where(eq(censoEscolar.inep, inep))
-    .all()
+  const allCensoYears = (await db.select({ ano: censoEscolar.ano }).from(censoEscolar)
+    .where(eq(censoEscolar.inep, inep)))
     .map(r => String(r.ano));
 
-  const allIndicatorYears = db.select({ ano: indicadoresEducacionais.ano }).from(indicadoresEducacionais)
-    .where(eq(indicadoresEducacionais.inep, inep))
-    .all()
+  const allIndicatorYears = (await db.select({ ano: indicadoresEducacionais.ano }).from(indicadoresEducacionais)
+    .where(eq(indicadoresEducacionais.inep, inep)))
     .map(r => String(r.ano));
 
   const anosDisponiveis = [...new Set([...allCensoYears, ...allIndicatorYears])].sort();
 
-  const indicadores = db.select().from(indicadoresEducacionais)
-    .where(and(eq(indicadoresEducacionais.inep, inep), eq(indicadoresEducacionais.ano, ano)))
-    .all();
+  const indicadores = await db.select().from(indicadoresEducacionais)
+    .where(and(eq(indicadoresEducacionais.inep, inep), eq(indicadoresEducacionais.ano, ano)));
 
   const result: any = {
     co_entidade: parseInt(inep),
@@ -426,26 +404,24 @@ export function getEscolaCompletaLocal(inep: string, ano: number) {
   return Object.keys(result).length > 3 ? result : null;
 }
 
-export function getEscolaEvolucaoLocal(inep: string) {
-  const censoRecords = db.select().from(censoEscolar)
-    .where(eq(censoEscolar.inep, inep))
-    .all();
+export async function getEscolaEvolucaoLocal(inep: string) {
+  const censoRecords = await db.select().from(censoEscolar)
+    .where(eq(censoEscolar.inep, inep));
 
   if (censoRecords.length === 0) return null;
 
-  const indicadorRecords = db.select().from(indicadoresEducacionais)
-    .where(eq(indicadoresEducacionais.inep, inep))
-    .all();
+  const indicadorRecords = await db.select().from(indicadoresEducacionais)
+    .where(eq(indicadoresEducacionais.inep, inep));
 
   const anosSet = new Set<number>();
-  censoRecords.forEach(r => anosSet.add(r.ano));
+  censoRecords.forEach(r => anosSet.add(Number(r.ano)));
   indicadorRecords.forEach(r => anosSet.add(r.ano));
   const anos = [...anosSet].sort();
 
   const censoByYear: Record<number, any> = {};
   for (const c of censoRecords) {
     const dados = c.dados ? JSON.parse(c.dados) : {};
-    censoByYear[c.ano] = {
+    censoByYear[Number(c.ano)] = {
       ...dados,
       no_entidade: c.nome || dados.no_entidade,
       // Totais — colunas diretas têm prioridade (mais confiáveis que o JSON)
@@ -507,7 +483,7 @@ async function fetchJsonSafe(url: string, timeout = 8000): Promise<any | null> {
 }
 
 export async function getEscolaEvolucaoCompleta(inep: string) {
-  const localData = getEscolaEvolucaoLocal(inep);
+  const localData = await getEscolaEvolucaoLocal(inep);
 
   const censoByYear: Record<number, any> = localData?.censo_por_ano || {};
   const indicadoresByYear: Record<number, Record<string, any>> = localData?.indicadores_por_ano || {};
@@ -605,27 +581,27 @@ export async function getEscolaEvolucaoCompleta(inep: string) {
   };
 }
 
-export function getLocalSchoolCount() {
-  const result = db.select({ count: sql<number>`count(*)` }).from(censoEscolar).get();
-  return result?.count || 0;
+export async function getLocalSchoolCount() {
+  const result = (await db.select({ count: sql<number>`count(*)` }).from(censoEscolar))[0];
+  return Number(result?.count) || 0;
 }
 
-export function getLocalStats() {
+export async function getLocalStats() {
   const cached = getStatsCache('local_stats');
   if (cached) return cached;
 
-  const censoCount = db.select({ count: sql<number>`count(*)` }).from(censoEscolar).get()?.count || 0;
+  const censoCountRow = (await db.select({ count: sql<number>`count(*)` }).from(censoEscolar))[0];
+  const censoCount = Number(censoCountRow?.count) || 0;
 
   const indicadorCounts: Record<string, number> = {};
   for (const tipo of Object.keys(INDICATOR_CONFIG)) {
     if (tipo === "censo_escolar") continue;
-    const result = db.select({ count: sql<number>`count(*)` }).from(indicadoresEducacionais)
-      .where(eq(indicadoresEducacionais.tipo, tipo))
-      .get();
-    indicadorCounts[tipo] = result?.count || 0;
+    const row = (await db.select({ count: sql<number>`count(*)` }).from(indicadoresEducacionais)
+      .where(eq(indicadoresEducacionais.tipo, tipo)))[0];
+    indicadorCounts[tipo] = Number(row?.count) || 0;
   }
 
-  const importHistory = db.select().from(importacaoStatus).all();
+  const importHistory = await db.select().from(importacaoStatus);
 
   const result = {
     censo_escolar: censoCount,
@@ -638,9 +614,7 @@ export function getLocalStats() {
 }
 
 export function invalidateStatsCache() {
-  try {
-    sqlite.prepare(`DELETE FROM stats_cache`).run();
-  } catch {}
+  pgRun(`DELETE FROM stats_cache`, []).catch(() => {});
 }
 
 export async function importSingleSchoolFromApi(inep: string) {
@@ -656,43 +630,46 @@ export async function importSingleSchoolFromApi(inep: string) {
 
       if (anoData.censo_escolar) {
         const c = anoData.censo_escolar;
-        const existing = db.select().from(censoEscolar)
-          .where(and(eq(censoEscolar.inep, inep), eq(censoEscolar.ano, ano)))
-          .get();
+        const existingArr = await db.select().from(censoEscolar)
+          .where(and(eq(censoEscolar.inep, inep), eq(censoEscolar.ano, String(ano))))
+          .limit(1);
+        const existing = existingArr[0] || null;
 
         const record = {
+          id: parseInt(inep),
           inep,
-          ano,
+          ano: String(ano),
           nome: c.no_entidade || null,
           municipio: c.localizacao?.no_municipio || null,
           uf: c.localizacao?.sg_uf || null,
           dependencia: c.caracteristicas?.ds_dependencia || null,
           localizacao: c.caracteristicas?.ds_localizacao || null,
           situacao: c.caracteristicas?.ds_situacao || null,
-          matriculas: c.quantidades?.qt_matriculas || 0,
-          docentes: c.quantidades?.qt_docentes || 0,
-          turmas: c.quantidades?.qt_turmas || 0,
+          matriculas: parseInt(c.quantidades?.qt_matriculas) || 0,
+          docentes: parseInt(c.quantidades?.qt_docentes) || 0,
+          turmas: parseInt(c.quantidades?.qt_turmas) || 0,
           dados: JSON.stringify(c),
           updatedAt: Date.now(),
         };
 
         if (existing) {
-          db.update(censoEscolar).set(record).where(eq(censoEscolar.id, existing.id)).run();
+          await db.update(censoEscolar).set(record).where(eq(censoEscolar.id, existing.id));
         } else {
-          db.insert(censoEscolar).values(record).run();
+          await db.insert(censoEscolar).values(record);
         }
       }
 
       const indicatorTypes = ["ideb", "icg", "inse", "tdi", "ird", "taxas_rendimento", "taxa_nao_resposta", "saeb"];
       for (const tipo of indicatorTypes) {
         if (anoData[tipo]) {
-          const existing = db.select().from(indicadoresEducacionais)
+          const existingArr = await db.select().from(indicadoresEducacionais)
             .where(and(
               eq(indicadoresEducacionais.inep, inep),
               eq(indicadoresEducacionais.ano, ano),
               eq(indicadoresEducacionais.tipo, tipo)
             ))
-            .get();
+            .limit(1);
+          const existing = existingArr[0] || null;
 
           const record = {
             inep, ano, tipo,
@@ -701,13 +678,13 @@ export async function importSingleSchoolFromApi(inep: string) {
           };
 
           if (existing) {
-            db.update(indicadoresEducacionais).set(record).where(and(
+            await db.update(indicadoresEducacionais).set(record).where(and(
               eq(indicadoresEducacionais.inep, inep),
               eq(indicadoresEducacionais.ano, ano),
               eq(indicadoresEducacionais.tipo, tipo)
-            )).run();
+            ));
           } else {
-            db.insert(indicadoresEducacionais).values(record).run();
+            await db.insert(indicadoresEducacionais).values(record);
           }
         }
       }
@@ -720,12 +697,12 @@ export async function importSingleSchoolFromApi(inep: string) {
   }
 }
 
-export function listCensoEscolar(ano: number, filters: Record<string, string> = {}, page = 1, perPage = 20) {
+export async function listCensoEscolar(ano: number, filters: Record<string, string> = {}, page = 1, perPage = 20) {
   const depMap: Record<string, string> = { "1": "Federal", "2": "Estadual", "3": "Municipal", "4": "Privada" };
   const locMap: Record<string, string> = { "1": "Urbana", "2": "Rural" };
   const sitMap: Record<string, string> = { "1": "Em Atividade", "2": "Paralisada", "3": "Extinta" };
 
-  const conditions: any[] = [eq(censoEscolar.ano, ano)];
+  const conditions: any[] = [eq(censoEscolar.ano, String(ano))];
   if (filters.uf) conditions.push(sql`upper(${censoEscolar.uf}) = ${filters.uf.toUpperCase()}`);
   if (filters.municipio) conditions.push(sql`upper(${censoEscolar.municipio}) LIKE ${'%' + filters.municipio.toUpperCase() + '%'}`);
   if (filters.nome) conditions.push(sql`upper(${censoEscolar.nome}) LIKE ${'%' + filters.nome.toUpperCase() + '%'}`);
@@ -743,16 +720,15 @@ export function listCensoEscolar(ano: number, filters: Record<string, string> = 
   }
 
   const whereClause = and(...conditions);
-  const countResult = db.select({ count: sql<number>`count(*)` }).from(censoEscolar).where(whereClause).get();
-  const total = countResult?.count || 0;
+  const countResultArr = await db.select({ count: sql<number>`count(*)` }).from(censoEscolar).where(whereClause);
+  const total = Number(countResultArr[0]?.count) || 0;
   const totalPages = Math.ceil(total / perPage);
   const offset = (page - 1) * perPage;
 
-  const pageRows = db.select().from(censoEscolar)
+  const pageRows = await db.select().from(censoEscolar)
     .where(whereClause)
     .limit(perPage)
-    .offset(offset)
-    .all();
+    .offset(offset);
 
   return {
     ano,
@@ -787,10 +763,11 @@ export function listCensoEscolar(ano: number, filters: Record<string, string> = 
   };
 }
 
-export function getCensoEscolarDetail(ano: number, inep: string) {
-  const row = db.select().from(censoEscolar)
-    .where(and(eq(censoEscolar.inep, inep), eq(censoEscolar.ano, ano)))
-    .get();
+export async function getCensoEscolarDetail(ano: number, inep: string) {
+  const arr = await db.select().from(censoEscolar)
+    .where(and(eq(censoEscolar.inep, inep), eq(censoEscolar.ano, String(ano))))
+    .limit(1);
+  const row = arr[0] || null;
   if (!row) return null;
   const full = row.dados ? JSON.parse(row.dados) : {};
   return {
@@ -801,50 +778,48 @@ export function getCensoEscolarDetail(ano: number, inep: string) {
   };
 }
 
+const _statsMemCache: Record<string, { data: any; ts: number }> = {};
 function getStatsCache(key: string): any | null {
-  try {
-    const row = sqlite.prepare(`SELECT data, updated_at FROM stats_cache WHERE cache_key = ?`).get(key) as any;
-    if (row && (Date.now() - row.updated_at) < 24 * 60 * 60 * 1000) {
-      return JSON.parse(row.data);
-    }
-  } catch {}
+  const entry = _statsMemCache[key];
+  if (entry && (Date.now() - entry.ts) < 24 * 60 * 60 * 1000) return entry.data;
   return null;
 }
 
 function setStatsCache(key: string, data: any): void {
-  try {
-    sqlite.prepare(`INSERT OR REPLACE INTO stats_cache (cache_key, data, updated_at) VALUES (?, ?, ?)`).run(key, JSON.stringify(data), Date.now());
-  } catch {}
+  _statsMemCache[key] = { data, ts: Date.now() };
+  pgRun(`INSERT INTO stats_cache (cache_key, data, updated_at) VALUES (?, ?, ?) ON CONFLICT (cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`,
+    [key, JSON.stringify(data), Date.now()]
+  ).catch(() => {});
 }
 
-export function getCensoEstatisticas(ano: number) {
+export async function getCensoEstatisticas(ano: number) {
   const cacheKey = `censo_stats_${ano}`;
   const cached = getStatsCache(cacheKey);
   if (cached) return cached;
 
-  const row = sqlite.prepare(`SELECT count(*) as total_escolas, coalesce(sum(matriculas),0) as total_matriculas, coalesce(sum(docentes),0) as total_docentes, coalesce(sum(turmas),0) as total_turmas FROM censo_escolar WHERE ano = ?`).get(ano) as any;
-  const groupByRaw = (col: string) => {
-    const rows = sqlite.prepare(`SELECT ${col} as key, count(*) as count FROM censo_escolar WHERE ano = ? AND ${col} IS NOT NULL GROUP BY ${col}`).all(ano) as any[];
+  const row = await pgGet(`SELECT count(*) as total_escolas, coalesce(sum(matriculas),0) as total_matriculas, coalesce(sum(docentes),0) as total_docentes, coalesce(sum(turmas),0) as total_turmas FROM censo_escolar WHERE ano = ?`, [ano]) as any;
+  const groupByRaw = async (col: string) => {
+    const rows = await pgAll(`SELECT ${col} as key, count(*) as count FROM censo_escolar WHERE ano = ? AND ${col} IS NOT NULL GROUP BY ${col}`, [ano]) as any[];
     const result: Record<string, number> = {};
-    for (const r of rows) result[r.key] = r.count;
+    for (const r of rows) result[r.key] = Number(r.count);
     return result;
   };
   const result = {
     ano,
-    total_escolas: row?.total_escolas || 0,
-    total_matriculas: row?.total_matriculas || 0,
-    total_docentes: row?.total_docentes || 0,
-    total_turmas: row?.total_turmas || 0,
-    por_dependencia: groupByRaw('dependencia'),
-    por_localizacao: groupByRaw('localizacao'),
-    por_uf: groupByRaw('uf'),
-    por_situacao: groupByRaw('situacao'),
+    total_escolas: Number(row?.total_escolas) || 0,
+    total_matriculas: Number(row?.total_matriculas) || 0,
+    total_docentes: Number(row?.total_docentes) || 0,
+    total_turmas: Number(row?.total_turmas) || 0,
+    por_dependencia: await groupByRaw('dependencia'),
+    por_localizacao: await groupByRaw('localizacao'),
+    por_uf: await groupByRaw('uf'),
+    por_situacao: await groupByRaw('situacao'),
   };
   setStatsCache(cacheKey, result);
   return result;
 }
 
-export function listIndicador(tipo: string, ano: number, filters: Record<string, string> = {}, page = 1, perPage = 20) {
+export async function listIndicador(tipo: string, ano: number, filters: Record<string, string> = {}, page = 1, perPage = 20) {
   const conditions: any[] = [
     eq(indicadoresEducacionais.tipo, tipo),
     eq(indicadoresEducacionais.ano, ano),
@@ -865,16 +840,15 @@ export function listIndicador(tipo: string, ano: number, filters: Record<string,
   }
 
   const whereClause = and(...conditions);
-  const countResult = db.select({ count: sql<number>`count(*)` }).from(indicadoresEducacionais).where(whereClause).get();
-  const total = countResult?.count || 0;
+  const countResultArr = await db.select({ count: sql<number>`count(*)` }).from(indicadoresEducacionais).where(whereClause);
+  const total = Number(countResultArr[0]?.count) || 0;
   const totalPages = Math.ceil(total / perPage);
   const offset = (page - 1) * perPage;
 
-  const pageRows = db.select().from(indicadoresEducacionais)
+  const pageRows = await db.select().from(indicadoresEducacionais)
     .where(whereClause)
     .limit(perPage)
-    .offset(offset)
-    .all();
+    .offset(offset);
 
   return {
     ano,
@@ -889,27 +863,26 @@ export function listIndicador(tipo: string, ano: number, filters: Record<string,
   };
 }
 
-export function getIndicadorDetail(tipo: string, ano: number, inep: string) {
-  const row = db.select().from(indicadoresEducacionais)
+export async function getIndicadorDetail(tipo: string, ano: number, inep: string) {
+  const arr = await db.select().from(indicadoresEducacionais)
     .where(and(
       eq(indicadoresEducacionais.tipo, tipo),
       eq(indicadoresEducacionais.ano, ano),
       eq(indicadoresEducacionais.inep, inep)
     ))
-    .get();
+    .limit(1);
+  const row = arr[0] || null;
   if (!row) return null;
   const dados = row.dados ? JSON.parse(row.dados) : {};
   return { co_entidade: parseInt(row.inep), ano: row.ano, ...dados };
 }
 
-export function getEscolaCompleta(inep: string) {
-  const censoRows = db.select().from(censoEscolar)
-    .where(eq(censoEscolar.inep, inep))
-    .all();
+export async function getEscolaCompleta(inep: string) {
+  const censoRows = await db.select().from(censoEscolar)
+    .where(eq(censoEscolar.inep, inep));
 
-  const indRows = db.select().from(indicadoresEducacionais)
-    .where(eq(indicadoresEducacionais.inep, inep))
-    .all();
+  const indRows = await db.select().from(indicadoresEducacionais)
+    .where(eq(indicadoresEducacionais.inep, inep));
 
   if (censoRows.length === 0 && indRows.length === 0) return null;
 
@@ -924,7 +897,7 @@ export function getEscolaCompleta(inep: string) {
     const ano = parseInt(anoStr);
     const anoData: any = {};
 
-    const censo = censoRows.find(r => r.ano === ano);
+    const censo = censoRows.find(r => Number(r.ano) === ano);
     if (censo) {
       anoData.censo_escolar = censo.dados ? JSON.parse(censo.dados) : {};
     }
@@ -946,8 +919,8 @@ export function getEscolaCompleta(inep: string) {
   };
 }
 
-export function getApiInfo() {
-  const stats = getLocalStats();
+export async function getApiInfo() {
+  const stats = await getLocalStats();
   return {
     name: "api-escolas",
     version: "2.0.0-local",
@@ -1064,7 +1037,7 @@ export function getApiInfo() {
   };
 }
 
-export function getMediasNacionais(ano?: number) {
+export async function getMediasNacionais(ano?: number) {
   const cacheKey = `medias_nacionais_${ano || 'latest'}`;
   const cached = getStatsCache(cacheKey);
   if (cached) return cached;
@@ -1074,8 +1047,8 @@ export function getMediasNacionais(ano?: number) {
 
   for (const tipo of tiposParaMedias) {
     const anoQuery = ano
-      ? sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo = ? AND ano = ?`).all(tipo, ano) as any[]
-      : sqlite.prepare(`SELECT dados FROM indicadores_educacionais WHERE tipo = ? AND ano = (SELECT MAX(ano) FROM indicadores_educacionais WHERE tipo = ?)`).all(tipo, tipo) as any[];
+      ? await pgAll(`SELECT dados FROM indicadores_educacionais WHERE tipo = ? AND ano = ?`, [tipo, ano]) as any[]
+      : await pgAll(`SELECT dados FROM indicadores_educacionais WHERE tipo = ? AND ano = (SELECT MAX(ano) FROM indicadores_educacionais WHERE tipo = ?)`, [tipo, tipo]) as any[];
 
     if (anoQuery.length === 0) continue;
 

@@ -12,6 +12,7 @@ import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 import { storage } from "./storage";
 import { sqlite, resolvedDbPath } from "./db";
+import { pgGet, pgAll, pgRun } from "./pg";
 import { api } from "@shared/routes";
 import { registerChatRoutes } from "./integrations/chat";
 import { registerCadernoRoutes } from "./caderno-routes";
@@ -67,16 +68,13 @@ const MUNICIPIO_CENTROIDES: Record<number, [number, number]> = JSON.parse(
   readFileSync(resolveServerJson("municipio-centroides.json"), "utf-8")
 );
 
-// Helper: grava no cache sem travar a rota se o DB for somente-leitura (produção)
+// Helper: grava no cache (fire-and-forget, nunca trava a rota)
 function safeCacheWrite(key: string, data: any) {
-  try {
-    sqlite.prepare(
-      `INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?)
-       ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`
-    ).run(key, JSON.stringify(data), Date.now());
-  } catch {
-    // DB somente-leitura em produção — ignora, continua servindo os dados
-  }
+  pgRun(
+    `INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?)
+     ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`,
+    [key, JSON.stringify(data), Date.now()]
+  ).catch(() => {});
 }
 
 const settingsEntrySchema = z.object({
@@ -255,15 +253,15 @@ export async function registerRoutes(
   );
 
   // === PUBLIC: SCHOOLS (100% local) ===
-  app.get(api.schools.search.path, (req, res) => {
+  app.get(api.schools.search.path, async (req, res) => {
     const query = req.query.q as string | undefined;
     if (!query || query.length < 2) return res.json([]);
-    res.json(searchSchoolsLocal(query));
+    res.json(await searchSchoolsLocal(query));
   });
 
-  app.get(api.schools.get.path, (req, res) => {
+  app.get(api.schools.get.path, async (req, res) => {
     const inep = getParam(req.params, "inep");
-    const localResults = searchSchoolsLocal(inep);
+    const localResults = await searchSchoolsLocal(inep);
     if (localResults.length > 0) return res.json(localResults[0]);
     res.status(404).json({ message: "Escola não encontrada. Importe os dados pelo painel admin." });
   });
@@ -274,7 +272,7 @@ export async function registerRoutes(
     const ano = parseInt(req.query.ano as string) || new Date().getFullYear();
     const railwayData = await getEscolaCompletaRailway(inep, ano);
     if (railwayData) return res.json(railwayData);
-    const localData = getEscolaCompletaLocal(inep, ano);
+    const localData = await getEscolaCompletaLocal(inep, ano);
     if (localData) return res.json(localData);
     res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], ano_selecionado: ano });
   });
@@ -286,15 +284,16 @@ export async function registerRoutes(
     const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
 
     // 1. Cache persistente (se disponível e fresco)
-    const cached = sqlite.prepare(
-      `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`
-    ).get(CACHE_KEY) as any;
+    const cached = await pgGet(
+      `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`,
+      [CACHE_KEY]
+    ) as any;
     if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) {
       return res.json(JSON.parse(cached.data));
     }
 
     // 2. Dados locais servidos imediatamente (sem esperar Railway)
-    const localData = getEscolaEvolucaoLocal(inep);
+    const localData = await getEscolaEvolucaoLocal(inep);
     if (!localData) {
       return res.json({ co_entidade: parseInt(inep), anos_disponiveis: [], escola: null, censo_por_ano: {}, indicadores_por_ano: {} });
     }
@@ -371,9 +370,10 @@ export async function registerRoutes(
     const CACHE_TTL_DAYS = 7;
 
     // 1. Checar cache persistente no banco
-    const cached = sqlite.prepare(
-      `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`
-    ).get(CACHE_KEY) as any;
+    const cached = await pgGet(
+      `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`,
+      [CACHE_KEY]
+    ) as any;
 
     if (cached) {
       const ageMs = Date.now() - cached.updated_at;
@@ -399,77 +399,84 @@ export async function registerRoutes(
     readFileSync(resolveServerJson("municipio-microregiao.json"), "utf8")
   );
 
-  app.get("/api/escola-microregiao/:inep", (req, res) => {
-    const inep = getParam(req.params, "inep");
+  app.get("/api/escola-microregiao/:inep", async (req, res) => {
+    try {
+      const inep = getParam(req.params, "inep");
 
-    // 1. Buscar co_municipio via tabela auxiliar indexada (muito rápido)
-    const munRow = sqlite.prepare(
-      `SELECT co_municipio FROM escola_municipio WHERE inep=? LIMIT 1`
-    ).get(inep) as any;
-    if (!munRow) return res.json(null);
-    const co_municipio = String(munRow.co_municipio);
+      // 1. Buscar co_municipio via tabela auxiliar indexada
+      const munRow = await pgGet(
+        `SELECT co_municipio FROM escola_municipio WHERE inep=? LIMIT 1`,
+        [inep]
+      ) as any;
+      if (!munRow) return res.json(null);
+      const co_municipio = String(munRow.co_municipio);
 
-    // 2. Descobrir microrregião a partir do lookup em memória
-    const entry = microlookup[co_municipio];
-    if (!entry) return res.json(null);
-    const [micro_cod, micro_nome] = entry;
+      // 2. Descobrir microrregião a partir do lookup em memória
+      const entry = microlookup[co_municipio];
+      if (!entry) return res.json(null);
+      const [micro_cod, micro_nome] = entry;
 
-    // 3. Checar cache por microrregião (resultado é o mesmo para toda escola da região)
-    const CACHE_KEY = `micro_${micro_cod}`;
-    const CACHE_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 dias
-    const cached = sqlite.prepare(
-      `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`
-    ).get(CACHE_KEY) as any;
-    if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) {
-      return res.json(JSON.parse(cached.data));
-    }
+      // 3. Checar cache por microrregião
+      const CACHE_KEY = `micro_${micro_cod}`;
+      const CACHE_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 dias
+      const cached = await pgGet(
+        `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`,
+        [CACHE_KEY]
+      ) as any;
+      if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) {
+        return res.json(JSON.parse(cached.data));
+      }
 
-    // 4. Cache miss — calcular médias via tabela escola_municipio + indicadores
-    const municsMicro = Object.entries(microlookup)
-      .filter(([, v]) => v[0] === micro_cod)
-      .map(([k]) => k);
-    if (municsMicro.length === 0) return res.json(null);
+      // 4. Cache miss — calcular médias via tabela escola_municipio + indicadores
+      const municsMicro = Object.entries(microlookup)
+        .filter(([, v]) => v[0] === micro_cod)
+        .map(([k]) => k);
+      if (municsMicro.length === 0) return res.json(null);
 
-    // Buscar ineps da microrregião pela tabela indexada (rápido)
-    const ph = municsMicro.map(() => '?').join(',');
-    const inepsRegiao = sqlite.prepare(
-      `SELECT inep FROM escola_municipio WHERE co_municipio IN (${ph})`
-    ).all(...municsMicro) as { inep: string }[];
+      // Buscar ineps da microrregião
+      const ph = municsMicro.map(() => '?').join(',');
+      const inepsRegiao = await pgAll(
+        `SELECT inep FROM escola_municipio WHERE co_municipio IN (${ph})`,
+        municsMicro
+      ) as { inep: string }[];
 
-    if (inepsRegiao.length === 0) return res.json(null);
+      if (inepsRegiao.length === 0) return res.json(null);
 
-    // Buscar IDEB em lotes de 900 para respeitar limite SQLite
-    const allIneps = inepsRegiao.map(r => r.inep);
-    const sums: Record<string, number> = { ai: 0, af: 0, em: 0 };
-    const cnts: Record<string, number> = { ai: 0, af: 0, em: 0 };
-    const BATCH = 900;
-    for (let i = 0; i < allIneps.length; i += BATCH) {
-      const batch = allIneps.slice(i, i + BATCH);
-      const ph2 = batch.map(() => '?').join(',');
-      const rows = sqlite.prepare(
-        `SELECT dados FROM indicadores_educacionais WHERE tipo='ideb' AND inep IN (${ph2})`
-      ).all(...batch) as { dados: string }[];
-      for (const row of rows) {
-        const d = JSON.parse(row.dados);
-        for (const etapa of ['ai','af','em'] as const) {
-          const v = d[`ideb_${etapa}`];
-          if (v != null && v > 0) { sums[etapa] += v; cnts[etapa]++; }
+      // Buscar IDEB em lotes de 900
+      const allIneps = inepsRegiao.map(r => r.inep);
+      const sums: Record<string, number> = { ai: 0, af: 0, em: 0 };
+      const cnts: Record<string, number> = { ai: 0, af: 0, em: 0 };
+      const BATCH = 900;
+      for (let i = 0; i < allIneps.length; i += BATCH) {
+        const batch = allIneps.slice(i, i + BATCH);
+        const ph2 = batch.map(() => '?').join(',');
+        const rows = await pgAll(
+          `SELECT dados FROM indicadores_educacionais WHERE tipo='ideb' AND inep IN (${ph2})`,
+          batch
+        ) as { dados: string }[];
+        for (const row of rows) {
+          const d = typeof row.dados === "string" ? JSON.parse(row.dados) : (row.dados || {});
+          for (const etapa of ['ai','af','em'] as const) {
+            const v = d[`ideb_${etapa}`];
+            if (v != null && v > 0) { sums[etapa] += Number(v); cnts[etapa]++; }
+          }
         }
       }
+
+      const resultado = {
+        micro_nome,
+        micro_cod,
+        n_escolas: allIneps.length,
+        ideb_ai: cnts.ai > 0 ? Math.round(sums.ai / cnts.ai * 10) / 10 : null,
+        ideb_af: cnts.af > 0 ? Math.round(sums.af / cnts.af * 10) / 10 : null,
+        ideb_em: cnts.em > 0 ? Math.round(sums.em / cnts.em * 10) / 10 : null,
+      };
+
+      safeCacheWrite(CACHE_KEY, resultado);
+      res.json(resultado);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
     }
-
-    const resultado = {
-      micro_nome,
-      micro_cod,
-      n_escolas: allIneps.length,
-      ideb_ai: cnts.ai > 0 ? Math.round(sums.ai / cnts.ai * 10) / 10 : null,
-      ideb_af: cnts.af > 0 ? Math.round(sums.af / cnts.af * 10) / 10 : null,
-      ideb_em: cnts.em > 0 ? Math.round(sums.em / cnts.em * 10) / 10 : null,
-    };
-
-    // 5. Salvar no cache
-    safeCacheWrite(CACHE_KEY, resultado);
-    res.json(resultado);
   });
 
   // === PUBLIC: DIAGNÓSTICO (pontos fortes, pontos de atenção, leituras) ===
@@ -478,9 +485,10 @@ export async function registerRoutes(
     const CACHE_KEY = `diagnostico_${inep}`;
     const CACHE_TTL_DAYS = 7;
 
-    const cached = sqlite.prepare(
-      `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`
-    ).get(CACHE_KEY) as any;
+    const cached = await pgGet(
+      `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`,
+      [CACHE_KEY]
+    ) as any;
 
     if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_DAYS * 86400000) {
       return res.json(JSON.parse(cached.data));
@@ -497,14 +505,14 @@ export async function registerRoutes(
     res.json(railwayDiag);
   });
 
-  app.get("/api/medias-nacionais", (req, res) => {
+  app.get("/api/medias-nacionais", async (req, res) => {
     const ano = req.query.ano ? parseInt(req.query.ano as string) : undefined;
-    res.json(getMediasNacionais(ano));
+    res.json(await getMediasNacionais(ano));
   });
 
   // === PUBLIC: API INFO (mirrors api-escolas root) ===
-  app.get("/api/info", (_req, res) => {
-    res.json(getApiInfo());
+  app.get("/api/info", async (_req, res) => {
+    res.json(await getApiInfo());
   });
 
   // === PUBLIC: ESCOLA BUSCAR (local DB — busca rápida, dados do Railway no painel) ===
@@ -513,7 +521,7 @@ export async function registerRoutes(
     const perPage = parseInt(req.query.per_page as string) || 20;
     if (!nome || nome.length < 2) return res.json({ dados: [], total: 0 });
 
-    const localResults = searchSchoolsLocal(nome, perPage);
+    const localResults = await searchSchoolsLocal(nome, perPage);
     if (localResults.length > 0) {
       return res.json({
         dados: localResults.map(s => ({
@@ -537,15 +545,15 @@ export async function registerRoutes(
     const inep = getParam(req.params, "inep");
     const railwayData = await getEscolaBasicaRailway(inep);
     if (railwayData) return res.json(railwayData);
-    const localData = getEscolaCompleta(inep);
+    const localData = await getEscolaCompleta(inep);
     if (localData) return res.json(localData);
     res.status(404).json({ erro: "Escola não encontrada." });
   });
 
   // === PUBLIC: CENSO ESCOLAR ROUTES ===
-  app.get("/api/censo-escolar/:ano/escolas/estatisticas", (req, res) => {
+  app.get("/api/censo-escolar/:ano/escolas/estatisticas", async (req, res) => {
     const ano = parseInt(req.params.ano);
-    const local = getCensoEstatisticas(ano);
+    const local = await getCensoEstatisticas(ano);
 
     // Se o banco local tem muito poucos dados (ambiente sem carga completa),
     // retorna os dados oficiais do Censo Escolar INEP/MEC como fallback.
@@ -599,18 +607,18 @@ export async function registerRoutes(
     const inep = req.params.inep;
     const ano = parseInt(req.query.ano as string) || 2025;
     try {
-      // 1ª query: escola base com modalidades + municipio (json_extract em 1 linha — rápido)
-      const escola = sqlite.prepare(`
+      // 1ª query: escola base com modalidades + municipio
+      const escola = await pgGet(`
         SELECT inep, uf, dependencia, localizacao,
-          CAST(matriculas as INTEGER) as matriculas,
-          CAST(COALESCE(json_extract(dados, '$.co_municipio'), 0) as INTEGER) as co_municipio,
-          CAST(COALESCE(json_extract(dados, '$.qt_mat_inf'),  0) as INTEGER) as qt_mat_inf,
-          CAST(COALESCE(json_extract(dados, '$.qt_mat_fund'), 0) as INTEGER) as qt_mat_fund,
-          CAST(COALESCE(json_extract(dados, '$.qt_mat_med'),  0) as INTEGER) as qt_mat_med,
-          CAST(COALESCE(json_extract(dados, '$.qt_mat_eja'),  0) as INTEGER) as qt_mat_eja,
-          CAST(COALESCE(json_extract(dados, '$.qt_mat_prof'), 0) as INTEGER) as qt_mat_prof
+          CAST(COALESCE(matriculas, '0') AS BIGINT) as matriculas,
+          CAST(COALESCE((dados::jsonb)->>'co_municipio', '0') AS BIGINT) as co_municipio,
+          CAST(COALESCE((dados::jsonb)->>'qt_mat_inf',  '0') AS BIGINT) as qt_mat_inf,
+          CAST(COALESCE((dados::jsonb)->>'qt_mat_fund', '0') AS BIGINT) as qt_mat_fund,
+          CAST(COALESCE((dados::jsonb)->>'qt_mat_med',  '0') AS BIGINT) as qt_mat_med,
+          CAST(COALESCE((dados::jsonb)->>'qt_mat_eja',  '0') AS BIGINT) as qt_mat_eja,
+          CAST(COALESCE((dados::jsonb)->>'qt_mat_prof', '0') AS BIGINT) as qt_mat_prof
         FROM censo_escolar WHERE inep=? AND ano=? LIMIT 1
-      `).get(inep, ano) as any;
+      `, [inep, ano]) as any;
       if (!escola) return res.status(404).json({ erro: "Escola não encontrada" });
 
       const minMat = Math.floor((escola.matriculas || 50) * 0.33);
@@ -632,20 +640,21 @@ export async function registerRoutes(
       const fingerprintBase = [...modalidadesBase].sort().join("+");
 
       // ICG da escola base
-      const icgBase = (sqlite.prepare(`
-        SELECT json_extract(dados, '$.nivel') as nivel
+      const icgBaseRow = await pgGet(`
+        SELECT (dados::jsonb)->>'nivel' as nivel
         FROM indicadores_educacionais WHERE inep=? AND ano=? AND tipo='icg' LIMIT 1
-      `).get(inep, ano) as any)?.nivel ?? null;
+      `, [inep, ano]) as any;
+      const icgBase = icgBaseRow?.nivel ?? null;
 
       const ufBase = escola.uf?.toUpperCase() || "";
 
       // 2ª query: leve — campos indexados, mesmo estado
-      const candidatos = sqlite.prepare(`
+      const candidatos = await pgAll(`
         SELECT inep, nome, municipio, uf, dependencia, localizacao,
-          CAST(matriculas as INTEGER) as matriculas
+          CAST(COALESCE(matriculas, '0') AS BIGINT) as matriculas
         FROM censo_escolar
-        WHERE ano=? AND dependencia=? AND uf=? AND situacao='Em Atividade' AND inep!=?
-      `).all(ano, escola.dependencia, ufBase, inep) as any[];
+        WHERE ano=? AND dependencia=? AND UPPER(uf)=? AND situacao='Em Atividade' AND inep!=?
+      `, [ano, escola.dependencia, ufBase, inep]) as any[];
 
       // Filtro leve: faixa de matrículas (sem JSON ainda)
       const prefiltrados = candidatos.filter(s => {
@@ -676,24 +685,24 @@ export async function registerRoutes(
         for (let i = 0; i < prefIneps.length; i += BATCH) {
           const batch = prefIneps.slice(i, i + BATCH);
           const placeholders = batch.map(() => "?").join(",");
-          const detalhes = sqlite.prepare(`
+          const detalhes = await pgAll(`
             SELECT c.inep,
-              json_extract(c.dados, '$.telefone')    as telefone,
-              json_extract(c.dados, '$.ds_endereco') as ds_endereco,
-              json_extract(c.dados, '$.no_bairro')   as no_bairro,
-              json_extract(c.dados, '$.co_cep')      as co_cep,
-              CAST(COALESCE(json_extract(c.dados, '$.co_municipio'), 0) as INTEGER) as co_municipio,
-              CAST(COALESCE(json_extract(c.dados, '$.qt_mat_inf'),  0) as INTEGER) as qt_mat_inf,
-              CAST(COALESCE(json_extract(c.dados, '$.qt_mat_fund'), 0) as INTEGER) as qt_mat_fund,
-              CAST(COALESCE(json_extract(c.dados, '$.qt_mat_med'),  0) as INTEGER) as qt_mat_med,
-              CAST(COALESCE(json_extract(c.dados, '$.qt_mat_eja'),  0) as INTEGER) as qt_mat_eja,
-              CAST(COALESCE(json_extract(c.dados, '$.qt_mat_prof'), 0) as INTEGER) as qt_mat_prof,
-              CAST(json_extract(ie.dados, '$.nivel') as INTEGER) as icg_nivel
+              (c.dados::jsonb)->>'telefone'    as telefone,
+              (c.dados::jsonb)->>'ds_endereco' as ds_endereco,
+              (c.dados::jsonb)->>'no_bairro'   as no_bairro,
+              (c.dados::jsonb)->>'co_cep'      as co_cep,
+              CAST(COALESCE((c.dados::jsonb)->>'co_municipio', '0') AS BIGINT) as co_municipio,
+              CAST(COALESCE((c.dados::jsonb)->>'qt_mat_inf',  '0') AS BIGINT) as qt_mat_inf,
+              CAST(COALESCE((c.dados::jsonb)->>'qt_mat_fund', '0') AS BIGINT) as qt_mat_fund,
+              CAST(COALESCE((c.dados::jsonb)->>'qt_mat_med',  '0') AS BIGINT) as qt_mat_med,
+              CAST(COALESCE((c.dados::jsonb)->>'qt_mat_eja',  '0') AS BIGINT) as qt_mat_eja,
+              CAST(COALESCE((c.dados::jsonb)->>'qt_mat_prof', '0') AS BIGINT) as qt_mat_prof,
+              CAST(COALESCE((ie.dados::jsonb)->>'nivel', '0') AS BIGINT) as icg_nivel
             FROM censo_escolar c
             LEFT JOIN indicadores_educacionais ie
               ON ie.inep = c.inep AND ie.ano = ? AND ie.tipo = 'icg'
             WHERE c.ano=? AND c.inep IN (${placeholders})
-          `).all(ano, ano, ...batch) as any[];
+          `, [ano, ano, ...batch]) as any[];
           for (const d of detalhes) detalheMap[d.inep] = d;
         }
 
@@ -737,13 +746,16 @@ export async function registerRoutes(
         try {
           const destMuns = [...new Set(similares.map((s: any) => s.co_municipio).filter(Boolean))] as number[];
 
-          // 1. Busca do cache SQLite (instant)
+          // 1. Busca do cache PG (instant)
           if (destMuns.length > 0) {
             const placeholders = destMuns.map(() => "?").join(",");
-            const cached = sqlite.prepare(
-              `SELECT co_mun_dest, km FROM mun_road_dist WHERE co_mun_orig=? AND co_mun_dest IN (${placeholders})`
-            ).all(coMunBase, ...destMuns) as { co_mun_dest: number; km: number }[];
-            for (const row of cached) munToRoadKm[row.co_mun_dest] = row.km;
+            try {
+              const cachedRows = await pgAll(
+                `SELECT co_mun_dest, km FROM mun_road_dist WHERE co_mun_orig=? AND co_mun_dest IN (${placeholders})`,
+                [coMunBase, ...destMuns]
+              ) as { co_mun_dest: number; km: number }[];
+              for (const row of cachedRows) munToRoadKm[row.co_mun_dest] = row.km;
+            } catch {}
           }
 
           // 2. Chama OSRM apenas para municípios não cacheados
@@ -763,18 +775,15 @@ export async function registerRoutes(
                 const osrmData = await osrmRes.json() as any;
                 if (osrmData.code === "Ok" && Array.isArray(osrmData.distances?.[0])) {
                   const row = osrmData.distances[0] as (number | null)[];
-                  const insertStmt = sqlite.prepare(
-                    `INSERT OR REPLACE INTO mun_road_dist (co_mun_orig, co_mun_dest, km) VALUES (?, ?, ?)`
-                  );
                   // Usar uncachedWithCoord (alinhado com destCoords) — evita deslocamento de índice
+                  const roadInsertSql = `INSERT INTO mun_road_dist (co_mun_orig, co_mun_dest, km) VALUES (?, ?, ?) ON CONFLICT (co_mun_orig, co_mun_dest) DO UPDATE SET km=excluded.km`;
                   for (let i = 0; i < uncachedWithCoord.length; i++) {
                     const meters = row[i + 1];
                     if (meters != null && isFinite(meters)) {
                       const km = Math.round(meters / 1000);
                       munToRoadKm[uncachedWithCoord[i].mun] = km;
-                      insertStmt.run(coMunBase, uncachedWithCoord[i].mun, km);
-                      // Cache bidirecional
-                      insertStmt.run(uncachedWithCoord[i].mun, coMunBase, km);
+                      pgRun(roadInsertSql, [coMunBase, uncachedWithCoord[i].mun, km]).catch(() => {});
+                      pgRun(roadInsertSql, [uncachedWithCoord[i].mun, coMunBase, km]).catch(() => {});
                     }
                   }
                 }
@@ -845,44 +854,49 @@ export async function registerRoutes(
   });
 
   // === STATS POR UF ===
-  app.get("/api/censo-escolar/:ano/uf/:uf/stats", (req, res) => {
+  app.get("/api/censo-escolar/:ano/uf/:uf/stats", async (req, res) => {
     const ano = parseInt(req.params.ano);
     const uf = (req.params.uf || "").toUpperCase();
 
     try {
-      const total = sqlite.prepare(
-        `SELECT COUNT(*) as escolas, SUM(CAST(matriculas as INTEGER)) as matriculas
-         FROM censo_escolar WHERE ano=? AND upper(uf)=?`
-      ).get(ano, uf) as any;
-      const totalComDocentes = sqlite.prepare(
+      const total = await pgGet(
+        `SELECT COUNT(*) as escolas, COALESCE(SUM(CAST(matriculas AS BIGINT)),0) as matriculas
+         FROM censo_escolar WHERE ano=? AND UPPER(uf)=?`,
+        [ano, uf]
+      ) as any;
+      const totalComDocentes = await pgGet(
         `SELECT COUNT(*) as escolas,
-                COALESCE(SUM(CAST(matriculas as INTEGER)),0) as matriculas,
-                COALESCE(SUM(CAST(docentes as INTEGER)),0) as docentes,
-                COALESCE(SUM(CAST(turmas as INTEGER)),0) as turmas
-         FROM censo_escolar WHERE ano=? AND upper(uf)=?`
-      ).get(ano, uf) as any;
-      const porDep = sqlite.prepare(
-        `SELECT dependencia, COUNT(*) as n FROM censo_escolar WHERE ano=? AND upper(uf)=? GROUP BY dependencia`
-      ).all(ano, uf) as any[];
-      const porLoc = sqlite.prepare(
-        `SELECT localizacao, COUNT(*) as n FROM censo_escolar WHERE ano=? AND upper(uf)=? GROUP BY localizacao`
-      ).all(ano, uf) as any[];
-      const topMun = sqlite.prepare(
-        `SELECT municipio, COUNT(*) as escolas, SUM(CAST(matriculas as INTEGER)) as matriculas
-         FROM censo_escolar WHERE ano=? AND upper(uf)=? AND situacao='Em Atividade'
-         GROUP BY municipio ORDER BY escolas DESC LIMIT 8`
-      ).all(ano, uf) as any[];
+                COALESCE(SUM(CAST(matriculas AS BIGINT)),0) as matriculas,
+                COALESCE(SUM(CAST(docentes AS BIGINT)),0) as docentes,
+                COALESCE(SUM(CAST(turmas AS BIGINT)),0) as turmas
+         FROM censo_escolar WHERE ano=? AND UPPER(uf)=?`,
+        [ano, uf]
+      ) as any;
+      const porDep = await pgAll(
+        `SELECT dependencia, COUNT(*) as n FROM censo_escolar WHERE ano=? AND UPPER(uf)=? GROUP BY dependencia`,
+        [ano, uf]
+      ) as any[];
+      const porLoc = await pgAll(
+        `SELECT localizacao, COUNT(*) as n FROM censo_escolar WHERE ano=? AND UPPER(uf)=? GROUP BY localizacao`,
+        [ano, uf]
+      ) as any[];
+      const topMun = await pgAll(
+        `SELECT municipio, COUNT(*) as escolas, COALESCE(SUM(CAST(matriculas AS BIGINT)),0) as matriculas
+         FROM censo_escolar WHERE ano=? AND UPPER(uf)=? AND situacao='Em Atividade'
+         GROUP BY municipio ORDER BY escolas DESC LIMIT 8`,
+        [ano, uf]
+      ) as any[];
 
       res.json({
         uf,
         ano,
-        total_escolas: total?.escolas || 0,
-        total_matriculas: total?.matriculas || 0,
-        total_docentes: totalComDocentes?.docentes || 0,
-        total_turmas: totalComDocentes?.turmas || 0,
-        por_dependencia: Object.fromEntries(porDep.map((r: any) => [r.dependencia || "Outro", r.n])),
-        por_localizacao: Object.fromEntries(porLoc.map((r: any) => [r.localizacao || "Outro", r.n])),
-        top_municipios: topMun.map((r: any) => ({ municipio: r.municipio, escolas: r.escolas, matriculas: r.matriculas || 0 })),
+        total_escolas: Number(total?.escolas || 0),
+        total_matriculas: Number(total?.matriculas || 0),
+        total_docentes: Number(totalComDocentes?.docentes || 0),
+        total_turmas: Number(totalComDocentes?.turmas || 0),
+        por_dependencia: Object.fromEntries(porDep.map((r: any) => [r.dependencia || "Outro", Number(r.n)])),
+        por_localizacao: Object.fromEntries(porLoc.map((r: any) => [r.localizacao || "Outro", Number(r.n)])),
+        top_municipios: topMun.map((r: any) => ({ municipio: r.municipio, escolas: Number(r.escolas), matriculas: Number(r.matriculas) || 0 })),
       });
     } catch (e: any) {
       res.status(500).json({ erro: e.message });
@@ -898,11 +912,12 @@ export async function registerRoutes(
 
     // Verifica cache primeiro
     try {
-      const cached = sqlite.prepare(
-        `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`
-      ).get(CACHE_KEY) as any;
+      const cached = await pgGet(
+        `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`,
+        [CACHE_KEY]
+      ) as any;
       if (cached) {
-        const ageH = (Date.now() - new Date(cached.updated_at).getTime()) / 3600000;
+        const ageH = (Date.now() - Number(cached.updated_at)) / 3600000;
         if (ageH < CACHE_TTL_H) {
           return res.json(JSON.parse(cached.data));
         }
@@ -936,12 +951,7 @@ export async function registerRoutes(
     try {
       const payload = await computeInsightsInWorker(scope, CAMPOS, resolvedDbPath);
 
-      // Salva no cache
-      try {
-        sqlite.prepare(
-          `INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?) ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at`
-        ).run(CACHE_KEY, JSON.stringify(payload), new Date().toISOString());
-      } catch {}
+      safeCacheWrite(CACHE_KEY, payload);
 
       res.json(payload);
     } catch (e: any) {
@@ -949,15 +959,15 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/censo-escolar/:ano/escolas/:inep", (req, res) => {
+  app.get("/api/censo-escolar/:ano/escolas/:inep", async (req, res) => {
     const ano = parseInt(req.params.ano);
     const inep = getParam(req.params, "inep");
-    const data = getCensoEscolarDetail(ano, inep);
+    const data = await getCensoEscolarDetail(ano, inep);
     if (!data) return res.status(404).json({ erro: "Escola não encontrada" });
     res.json(data);
   });
 
-  app.get("/api/censo-escolar/:ano/escolas", (req, res) => {
+  app.get("/api/censo-escolar/:ano/escolas", async (req, res) => {
     const ano = parseInt(req.params.ano);
     const page = parseInt(req.query.pagina as string) || 1;
     const perPage = parseInt(req.query.per_page as string) || 20;
@@ -965,7 +975,7 @@ export async function registerRoutes(
     for (const key of ["uf", "municipio", "nome", "tp_dependencia", "tp_localizacao", "tp_situacao"]) {
       if (req.query[key]) filters[key] = req.query[key] as string;
     }
-    res.json(listCensoEscolar(ano, filters, page, perPage));
+    res.json(await listCensoEscolar(ano, filters, page, perPage));
   });
 
   // === PUBLIC: INDICATOR ROUTES (local-first) ===
@@ -987,15 +997,15 @@ export async function registerRoutes(
   };
 
   for (const [apiPath, tipoDb] of Object.entries(INDICATOR_TIPO_MAP)) {
-    app.get(`/api/${apiPath}/:ano/escolas/:inep`, (req, res) => {
+    app.get(`/api/${apiPath}/:ano/escolas/:inep`, async (req, res) => {
       const ano = parseInt(req.params.ano);
       const inep = getParam(req.params, "inep");
-      const data = getIndicadorDetail(tipoDb, ano, inep);
+      const data = await getIndicadorDetail(tipoDb, ano, inep);
       if (!data) return res.status(404).json({ erro: "Não encontrado" });
       res.json(data);
     });
 
-    app.get(`/api/${apiPath}/:ano/escolas`, (req, res) => {
+    app.get(`/api/${apiPath}/:ano/escolas`, async (req, res) => {
       const ano = parseInt(req.params.ano);
       const page = parseInt(req.query.pagina as string) || 1;
       const perPage = parseInt(req.query.per_page as string) || 20;
@@ -1003,16 +1013,16 @@ export async function registerRoutes(
       for (const key of ["uf", "municipio", "nome", "etapa", "rede"]) {
         if (req.query[key]) filters[key] = req.query[key] as string;
       }
-      res.json(listIndicador(tipoDb, ano, filters, page, perPage));
+      res.json(await listIndicador(tipoDb, ano, filters, page, perPage));
     });
   }
 
   // === LEGACY: /api/indicador/* routes (backward compat) ===
   for (const [apiPath, tipoDb] of Object.entries(INDICATOR_TIPO_MAP)) {
-    app.get(`/api/indicador/${apiPath}/:ano/escolas/:inep`, (req, res) => {
+    app.get(`/api/indicador/${apiPath}/:ano/escolas/:inep`, async (req, res) => {
       const ano = parseInt(req.params.ano);
       const inep = getParam(req.params, "inep");
-      const data = getIndicadorDetail(tipoDb, ano, inep);
+      const data = await getIndicadorDetail(tipoDb, ano, inep);
       if (!data) return res.status(404).json({ erro: "Não encontrado" });
       res.json(data);
     });
@@ -1028,7 +1038,7 @@ export async function registerRoutes(
       }
       const CACHE_KEY = `pdde_info_${inep}_${ano}`;
       const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4h
-      const cached = sqlite.prepare(`SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`).get(CACHE_KEY) as any;
+      const cached = await pgGet(`SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`, [CACHE_KEY]) as any;
       if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) {
         const parsed = JSON.parse(cached.data);
         return res.json({ ...parsed, _cached_at: cached.updated_at });
@@ -1053,7 +1063,7 @@ export async function registerRoutes(
       }
       const CACHE_KEY = `pdde_execfin_${coEscola}`;
       const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-      const cached = sqlite.prepare(`SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`).get(CACHE_KEY) as any;
+      const cached = await pgGet(`SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`, [CACHE_KEY]) as any;
       if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) return res.json(JSON.parse(cached.data));
       const result = await consultarExecFinPdde(coEscola);
       if (result?.ok) safeCacheWrite(CACHE_KEY, result);
@@ -1072,7 +1082,7 @@ export async function registerRoutes(
       }
       const CACHE_KEY = `pdde_saldos_${coEscola}`;
       const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-      const cached = sqlite.prepare(`SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`).get(CACHE_KEY) as any;
+      const cached = await pgGet(`SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`, [CACHE_KEY]) as any;
       if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) return res.json(JSON.parse(cached.data));
       const result = await consultarSaldosPdde(coEscola);
       if (result?.ok) safeCacheWrite(CACHE_KEY, result);
@@ -1214,9 +1224,10 @@ export async function registerRoutes(
 
       const CACHE_KEY = `pdde_susp_escola_${co_escola}_${sg_uf}_${ano}`;
       const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4h
-      const cached = sqlite.prepare(
-        `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`
-      ).get(CACHE_KEY) as any;
+      const cached = await pgGet(
+        `SELECT data, updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`,
+        [CACHE_KEY]
+      ) as any;
       if (cached && (Date.now() - cached.updated_at) < CACHE_TTL_MS) {
         return res.json(JSON.parse(cached.data));
       }
@@ -1571,11 +1582,11 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/importar-status", adminAuth, async (_req, res) => {
-    res.json({ ...getImportStatus(), stats: getLocalStats() });
+    res.json({ ...getImportStatus(), stats: await getLocalStats() });
   });
 
   app.get("/api/importar-status", async (_req, res) => {
-    res.json({ ...getImportStatus(), stats: getLocalStats() });
+    res.json({ ...getImportStatus(), stats: await getLocalStats() });
   });
 
   app.post("/api/admin/importar-indicadores", adminAuth, async (req, res) => {
@@ -1713,7 +1724,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/indicadores-status", adminAuth, async (_req, res) => {
-    const stats = getLocalStats();
+    const stats = await getLocalStats();
     res.json({ running: getIndicatorImportRunning(), disponíveis: getAvailableIndicators(), stats });
   });
 
@@ -2356,26 +2367,25 @@ export async function registerRoutes(
       { key: "in_educacao_campo",          label: "Ed. do Campo" },
       { key: "in_ppp",                     label: "Projeto Político-Pedagógico" },
     ];
-    for (const scope of ["BR"]) {
-      const CACHE_KEY = `censo_insights_${scope}`;
-      try {
-        const existing = sqlite.prepare(`SELECT updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`).get(CACHE_KEY) as any;
-        if (existing) {
-          const ageH = (Date.now() - new Date(existing.updated_at).getTime()) / 3600000;
-          if (ageH < 7 * 24) { continue; }  // cache ainda válido (7 dias)
-        }
-      } catch {}
-      console.log(`[censo-insights] Pré-aquecendo cache para ${scope} (worker thread)...`);
-      computeInsightsInWorker(scope, PREWARM_CAMPOS, resolvedDbPath)
-        .then(payload => {
-          try {
-            sqlite.prepare(`INSERT INTO stats_cache(cache_key,data,updated_at) VALUES(?,?,?) ON CONFLICT(cache_key) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at`)
-              .run(CACHE_KEY, JSON.stringify(payload), new Date().toISOString());
+    (async () => {
+      for (const scope of ["BR"]) {
+        const CACHE_KEY = `censo_insights_${scope}`;
+        try {
+          const existing = await pgGet(`SELECT updated_at FROM stats_cache WHERE cache_key=? LIMIT 1`, [CACHE_KEY]) as any;
+          if (existing) {
+            const ageH = (Date.now() - Number(existing.updated_at)) / 3600000;
+            if (ageH < 7 * 24) { continue; }
+          }
+        } catch {}
+        console.log(`[censo-insights] Pré-aquecendo cache para ${scope} (worker thread)...`);
+        computeInsightsInWorker(scope, PREWARM_CAMPOS, resolvedDbPath)
+          .then(payload => {
+            safeCacheWrite(CACHE_KEY, payload);
             console.log(`[censo-insights] Cache ${scope} salvo (${payload.campos.length} campos).`);
-          } catch {}
-        })
-        .catch((e: any) => console.error(`[censo-insights] Erro ao pré-aquecer ${scope}:`, e.message));
-    }
+          })
+          .catch((e: any) => console.error(`[censo-insights] Erro ao pré-aquecer ${scope}:`, e.message));
+      }
+    })();
   }, 3000);
 
   // ── EQUIPAMENTOS PÚBLICOS (SUAS / IBGE MUNIC) ──

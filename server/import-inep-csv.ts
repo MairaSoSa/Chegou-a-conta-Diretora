@@ -11,7 +11,7 @@ const SIT_MAP: Record<string, string> = { "1": "Em Atividade", "2": "Paralisada"
 export async function importCensoCsvFromFile(filePath: string, ano: number) {
   console.log(`[INEP CSV] Starting import from ${filePath} for year ${ano}`);
 
-  db.run(sql`DELETE FROM censo_escolar WHERE ano = ${ano}`);
+  await db.execute(sql`DELETE FROM censo_escolar WHERE ano = ${String(ano)}`);
   console.log(`[INEP CSV] Cleared existing data for year ${ano}`);
 
   const fileStream = fs.createReadStream(filePath, { encoding: "latin1" });
@@ -23,10 +23,10 @@ export async function importCensoCsvFromFile(filePath: string, ano: number) {
   let batchValues: any[] = [];
   const BATCH_SIZE = 1000;
 
-  const updateImportStatus = (status: string, importedCount: number, total: number) => {
-    const existing = db.select().from(importacaoStatus)
-      .where(and(eq(importacaoStatus.tipo, "censo_escolar_csv"), eq(importacaoStatus.ano, ano)))
-      .get();
+  const updateImportStatus = async (status: string, importedCount: number, total: number) => {
+    const rows = await db.select().from(importacaoStatus)
+      .where(and(eq(importacaoStatus.tipo, "censo_escolar_csv"), eq(importacaoStatus.ano, ano)));
+    const existing = rows[0];
     const record = {
       tipo: "censo_escolar_csv", ano, status,
       registrosImportados: importedCount, totalRegistros: total, erro: null,
@@ -34,20 +34,17 @@ export async function importCensoCsvFromFile(filePath: string, ano: number) {
       finalizadoEm: status === "completo" ? Date.now() : null,
     };
     if (existing) {
-      db.update(importacaoStatus).set(record).where(eq(importacaoStatus.id, existing.id)).run();
+      await db.update(importacaoStatus).set(record).where(eq(importacaoStatus.id, existing.id));
     } else {
-      db.insert(importacaoStatus).values(record).run();
+      await db.insert(importacaoStatus).values(record);
     }
   };
 
-  updateImportStatus("importando", 0, 0);
+  await updateImportStatus("importando", 0, 0);
 
-  function insertMany(records: any[]) {
-    db.transaction((tx) => {
-      for (const rec of records) {
-        tx.insert(censoEscolar).values(rec).run();
-      }
-    });
+  async function insertMany(records: any[]) {
+    if (records.length === 0) return;
+    await db.insert(censoEscolar).values(records);
   }
 
   for await (const line of rl) {
@@ -110,7 +107,7 @@ export async function importCensoCsvFromFile(filePath: string, ano: number) {
 
     batchValues.push({
       inep: String(inep),
-      ano,
+      ano: String(ano),
       nome: get("NO_ENTIDADE") || null,
       municipio: get("NO_MUNICIPIO") || null,
       uf: get("SG_UF") || null,
@@ -125,23 +122,23 @@ export async function importCensoCsvFromFile(filePath: string, ano: number) {
     });
 
     if (batchValues.length >= BATCH_SIZE) {
-      insertMany(batchValues);
+      await insertMany(batchValues);
       imported += batchValues.length;
       batchValues = [];
 
       if (imported % 50000 === 0) {
         console.log(`[INEP CSV] Imported ${imported} schools...`);
-        updateImportStatus("importando", imported, lineCount - 1);
+        await updateImportStatus("importando", imported, lineCount - 1);
       }
     }
   }
 
   if (batchValues.length > 0) {
-    insertMany(batchValues);
+    await insertMany(batchValues);
     imported += batchValues.length;
   }
 
-  updateImportStatus("completo", imported, imported);
+  await updateImportStatus("completo", imported, imported);
   console.log(`[INEP CSV] Completed: ${imported} schools imported for year ${ano}`);
   return { imported, total: lineCount - 1 };
 }

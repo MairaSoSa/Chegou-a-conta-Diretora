@@ -296,7 +296,7 @@ async function updateFromCsv(
   buildUpdate: (row: Record<string, string>) => { inep: string; sql: string; params: any[] } | null
 ) {
   console.log(`\n[${step}] ${file}`);
-  const stmts = new Map<string, Database.Statement>();
+  const stmts = new Map<string, any>();
 
   const getStmt = (sql: string) => {
     if (!stmts.has(sql)) stmts.set(sql, db.prepare(sql));

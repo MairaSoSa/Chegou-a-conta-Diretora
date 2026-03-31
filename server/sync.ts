@@ -1,5 +1,4 @@
 
-import fetch from "node-fetch";
 import { storage } from "./storage";
 
 const BASE_URL = "https://planilha-competencias--msoaressales12.replit.app/api";

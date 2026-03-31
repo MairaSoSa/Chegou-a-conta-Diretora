@@ -237,7 +237,7 @@ export class DatabaseStorage implements IStorage {
       ...(unit.sections && { sections: JSON.stringify(unit.sections) }),
       ...(unit.materials && { materials: JSON.stringify(unit.materials) }),
     };
-    const [updated] = await db.update(trilhaUnits).set(serialized).where(eq(trilhaUnits.id, id)).returning();
+    const [updated] = await db.update(trilhaUnits).set(serialized as any).where(eq(trilhaUnits.id, id)).returning();
     if (!updated) return undefined;
     return {
       ...updated,
@@ -287,14 +287,14 @@ export class DatabaseStorage implements IStorage {
   async upsertDashboardDataset(category: string, data: unknown, label?: string): Promise<DashboardDataset> {
     const existing = await this.getDashboardDatasetByCategory(category);
     // Ensure data is serialized for blob storage if it's an object/array
-    const serializedData = typeof data === 'object' ? JSON.stringify(data) : data;
+    const serializedData: string = typeof data === 'object' ? JSON.stringify(data) : String(data);
     
     if (existing) {
       const updateData: Record<string, unknown> = { data: serializedData, lastUpdated: Date.now() };
       if (label !== undefined) {
         updateData.label = label;
       }
-      const [updated] = await db.update(dashboardDatasets).set(updateData).where(eq(dashboardDatasets.id, existing.id)).returning();
+      const [updated] = await db.update(dashboardDatasets).set(updateData as any).where(eq(dashboardDatasets.id, existing.id)).returning();
       return updated;
     }
     const [created] = await db.insert(dashboardDatasets).values({ category, data: serializedData, label, lastUpdated: Date.now() }).returning();

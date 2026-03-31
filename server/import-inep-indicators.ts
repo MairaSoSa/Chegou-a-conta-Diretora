@@ -277,10 +277,10 @@ const INDICATORS: IndicatorDef[] = [
 
 const TMP_DIR = "/tmp/inep_indicators";
 
-function updateStatus(tipo: string, ano: number, status: string, imported: number, total: number, erro?: string | null) {
-  const existing = db.select().from(importacaoStatus)
-    .where(and(eq(importacaoStatus.tipo, tipo), eq(importacaoStatus.ano, ano)))
-    .get();
+async function updateStatus(tipo: string, ano: number, status: string, imported: number, total: number, erro?: string | null) {
+  const rows = await db.select().from(importacaoStatus)
+    .where(and(eq(importacaoStatus.tipo, tipo), eq(importacaoStatus.ano, ano)));
+  const existing = rows[0];
   const record = {
     tipo, ano, status,
     registrosImportados: imported,
@@ -290,9 +290,9 @@ function updateStatus(tipo: string, ano: number, status: string, imported: numbe
     finalizadoEm: status === "completo" || status === "erro" ? Date.now() : null,
   };
   if (existing) {
-    db.update(importacaoStatus).set(record).where(eq(importacaoStatus.id, existing.id)).run();
+    await db.update(importacaoStatus).set(record).where(eq(importacaoStatus.id, existing.id));
   } else {
-    db.insert(importacaoStatus).values(record).run();
+    await db.insert(importacaoStatus).values(record);
   }
 }
 
@@ -336,22 +336,22 @@ function findXlsx(dir: string, pattern: RegExp): string | null {
 async function importIndicatorFile(def: IndicatorDef, ano: number): Promise<{ imported: number; error?: string }> {
   const url = def.zipUrl(ano);
   console.log(`[INEP] Starting import of ${def.tipo} ${ano}`);
-  updateStatus(def.tipo, ano, "baixando", 0, 0);
+  await updateStatus(def.tipo, ano, "baixando", 0, 0);
 
   const dir = await downloadAndExtract(url, def.tipo, ano);
   if (!dir) {
-    updateStatus(def.tipo, ano, "erro", 0, 0, "Falha no download");
+    await updateStatus(def.tipo, ano, "erro", 0, 0, "Falha no download");
     return { imported: 0, error: "Download failed" };
   }
 
   const xlsxPath = findXlsx(dir, def.xlsxPattern);
   if (!xlsxPath) {
-    updateStatus(def.tipo, ano, "erro", 0, 0, "XLSX não encontrado no ZIP");
+    await updateStatus(def.tipo, ano, "erro", 0, 0, "XLSX não encontrado no ZIP");
     return { imported: 0, error: "XLSX not found" };
   }
 
   console.log(`[INEP] Reading ${xlsxPath}...`);
-  updateStatus(def.tipo, ano, "processando", 0, 0);
+  await updateStatus(def.tipo, ano, "processando", 0, 0);
 
   const XLSX = await XLSX_IMPORT();
   const wb = XLSX.readFile(xlsxPath);
@@ -370,7 +370,7 @@ async function importIndicatorFile(def: IndicatorDef, ano: number): Promise<{ im
   }
 
   if (headerRowIdx < 0) {
-    updateStatus(def.tipo, ano, "erro", 0, 0, "Cabeçalho CO_ENTIDADE não encontrado");
+    await updateStatus(def.tipo, ano, "erro", 0, 0, "Cabeçalho CO_ENTIDADE não encontrado");
     return { imported: 0, error: "Header row not found" };
   }
 
@@ -381,19 +381,15 @@ async function importIndicatorFile(def: IndicatorDef, ano: number): Promise<{ im
   if (catHeaders.length > 0) console.log(`[INEP] TNR/Abandono headers: ${catHeaders.join(', ')}`);
   console.log(`[INEP] Total rows: ${allData.length - headerRowIdx - 1}`);
 
-  db.run(sql`DELETE FROM indicadores_educacionais WHERE tipo = ${def.tipo} AND ano = ${ano}`);
+  await db.execute(sql`DELETE FROM indicadores_educacionais WHERE tipo = ${def.tipo} AND ano = ${ano}`);
 
   let imported = 0;
   let batchValues: any[] = [];
   const BATCH_SIZE = 1000;
 
-  const flushBatch = () => {
+  const flushBatch = async () => {
     if (batchValues.length === 0) return;
-    db.transaction((tx) => {
-      for (const rec of batchValues) {
-        tx.insert(indicadoresEducacionais).values(rec).run();
-      }
-    });
+    await db.insert(indicadoresEducacionais).values(batchValues);
     batchValues = [];
   };
 
@@ -422,24 +418,24 @@ async function importIndicatorFile(def: IndicatorDef, ano: number): Promise<{ im
     });
 
     if (batchValues.length >= BATCH_SIZE) {
-      flushBatch();
+      await flushBatch();
       imported += BATCH_SIZE;
       if (imported % 10000 === 0) {
         console.log(`[INEP] ${def.tipo} ${ano}: imported ${imported} records`);
-        updateStatus(def.tipo, ano, "importando", imported, allData.length - headerRowIdx - 1);
+        await updateStatus(def.tipo, ano, "importando", imported, allData.length - headerRowIdx - 1);
       }
     }
   }
 
-  flushBatch();
+  await flushBatch();
   imported += batchValues.length;
 
-  const totalCount = db.select({ count: sql<number>`count(*)` }).from(indicadoresEducacionais)
-    .where(and(eq(indicadoresEducacionais.tipo, def.tipo), eq(indicadoresEducacionais.ano, ano)))
-    .get()?.count || 0;
+  const countRows = await db.select({ count: sql<number>`count(*)` }).from(indicadoresEducacionais)
+    .where(and(eq(indicadoresEducacionais.tipo, def.tipo), eq(indicadoresEducacionais.ano, ano)));
+  const totalCount = Number(countRows[0]?.count) || 0;
 
   console.log(`[INEP] ${def.tipo} ${ano}: completed with ${totalCount} records`);
-  updateStatus(def.tipo, ano, "completo", totalCount, totalCount);
+  await updateStatus(def.tipo, ano, "completo", totalCount, totalCount);
 
   try {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -472,7 +468,7 @@ export async function importAllIndicators(tipos?: string[], anos?: number[]) {
         } catch (err: any) {
           console.error(`[INEP] Error importing ${def.tipo} ${ano}:`, err.message);
           errors.push(`${def.tipo} ${ano}: ${err.message}`);
-          updateStatus(def.tipo, ano, "erro", 0, 0, err.message);
+          await updateStatus(def.tipo, ano, "erro", 0, 0, err.message);
         }
       }
     }
@@ -536,12 +532,12 @@ export async function importIdeb(anos?: number[]) {
     for (const fileDef of IDEB_FILES) {
       const url = fileDef.zipUrl(latestIdebYear);
       console.log(`[INEP] Downloading IDEB ${fileDef.etapa}...`);
-      updateStatus(`ideb_${fileDef.etapa}`, latestIdebYear, "baixando", 0, 0);
+      await updateStatus(`ideb_${fileDef.etapa}`, latestIdebYear, "baixando", 0, 0);
 
       const dir = await downloadAndExtract(url, `ideb_${fileDef.etapa}`, latestIdebYear);
       if (!dir) {
         errors.push(`ideb_${fileDef.etapa}: Download failed`);
-        updateStatus(`ideb_${fileDef.etapa}`, latestIdebYear, "erro", 0, 0, "Falha no download");
+        await updateStatus(`ideb_${fileDef.etapa}`, latestIdebYear, "erro", 0, 0, "Falha no download");
         continue;
       }
 
@@ -554,7 +550,7 @@ export async function importIdeb(anos?: number[]) {
           await processIdebFile(firstXlsx, fileDef, anos || IDEB_YEARS, results, errors);
         } else {
           errors.push(`ideb_${fileDef.etapa}: XLSX not found`);
-          updateStatus(`ideb_${fileDef.etapa}`, latestIdebYear, "erro", 0, 0, "XLSX não encontrado");
+          await updateStatus(`ideb_${fileDef.etapa}`, latestIdebYear, "erro", 0, 0, "XLSX não encontrado");
         }
       } else {
         await processIdebFile(xlsxPath, fileDef, anos || IDEB_YEARS, results, errors);
@@ -647,25 +643,24 @@ async function processIdebFile(xlsxPath: string, fileDef: IdebFileDef, anosToPro
         [`projecao_${fileDef.prefix}`]: getValue(projCol),
       };
 
-      const existing = db.select().from(indicadoresEducacionais)
+      const existingRows = await db.select().from(indicadoresEducacionais)
         .where(and(
           eq(indicadoresEducacionais.inep, inep),
           eq(indicadoresEducacionais.ano, ano),
           eq(indicadoresEducacionais.tipo, "ideb")
-        ))
-        .get();
+        ));
+      const existing = existingRows[0];
 
       if (existing) {
         const existingData = existing.dados ? JSON.parse(existing.dados) : {};
         const mergedData = { ...existingData, ...data };
-        db.update(indicadoresEducacionais)
+        await db.update(indicadoresEducacionais)
           .set({ dados: JSON.stringify(mergedData), updatedAt: Date.now() })
           .where(and(
             eq(indicadoresEducacionais.inep, inep),
             eq(indicadoresEducacionais.ano, ano),
             eq(indicadoresEducacionais.tipo, "ideb")
-          ))
-          .run();
+          ));
       } else {
         batchValues.push({
           inep, ano, tipo: "ideb",
@@ -676,21 +671,17 @@ async function processIdebFile(xlsxPath: string, fileDef: IdebFileDef, anosToPro
 
       imported++;
       if (batchValues.length >= 1000) {
-        db.transaction((tx) => {
-          for (const rec of batchValues) tx.insert(indicadoresEducacionais).values(rec).run();
-        });
+        await db.insert(indicadoresEducacionais).values(batchValues);
         batchValues.length = 0;
       }
     }
 
     if (batchValues.length > 0) {
-      db.transaction((tx) => {
-        for (const rec of batchValues) tx.insert(indicadoresEducacionais).values(rec).run();
-      });
+      await db.insert(indicadoresEducacionais).values(batchValues);
     }
 
     console.log(`[INEP] IDEB ${fileDef.etapa} ${ano}: ${imported} records`);
-    updateStatus(`ideb_${fileDef.etapa}`, ano, "completo", imported, imported);
+    await updateStatus(`ideb_${fileDef.etapa}`, ano, "completo", imported, imported);
     results[`ideb_${fileDef.etapa}_${ano}`] = { imported };
   }
 }
@@ -779,7 +770,7 @@ export async function importInse(anos?: number[]) {
         return typeof v === "string" ? (isNaN(Number(v)) ? v : Number(v)) : v;
       };
 
-      db.run(sql`DELETE FROM indicadores_educacionais WHERE tipo = 'inse' AND ano = ${ano}`);
+      await db.execute(sql`DELETE FROM indicadores_educacionais WHERE tipo = 'inse' AND ano = ${ano}`);
 
       let imported = 0;
       let batchValues: any[] = [];
@@ -813,27 +804,23 @@ export async function importInse(anos?: number[]) {
         });
 
         if (batchValues.length >= 1000) {
-          db.transaction((tx) => {
-            for (const rec of batchValues) tx.insert(indicadoresEducacionais).values(rec).run();
-          });
+          await db.insert(indicadoresEducacionais).values(batchValues);
           imported += batchValues.length;
           batchValues = [];
           if (imported % 10000 === 0) {
             console.log(`[INEP] INSE ${ano}: ${imported} records`);
-            updateStatus("inse", ano, "importando", imported, allData.length);
+            await updateStatus("inse", ano, "importando", imported, allData.length);
           }
         }
       }
 
       if (batchValues.length > 0) {
-        db.transaction((tx) => {
-          for (const rec of batchValues) tx.insert(indicadoresEducacionais).values(rec).run();
-        });
+        await db.insert(indicadoresEducacionais).values(batchValues);
         imported += batchValues.length;
       }
 
       console.log(`[INEP] INSE ${ano}: completed with ${imported} records`);
-      updateStatus("inse", ano, "completo", imported, imported);
+      await updateStatus("inse", ano, "completo", imported, imported);
       results[`inse_${ano}`] = { imported };
 
       try { fs.unlinkSync(xlsxPath); } catch {}
@@ -853,9 +840,8 @@ export async function generateSaebFromIdeb() {
   const errors: string[] = [];
 
   try {
-    const idebRecords = db.select().from(indicadoresEducacionais)
-      .where(eq(indicadoresEducacionais.tipo, "ideb"))
-      .all();
+    const idebRecords = await db.select().from(indicadoresEducacionais)
+      .where(eq(indicadoresEducacionais.tipo, "ideb"));
 
     console.log(`[INEP] Generating SAEB from ${idebRecords.length} IDEB records...`);
 
@@ -885,7 +871,7 @@ export async function generateSaebFromIdeb() {
 
     const anoSet = new Set(entries.map(e => e.ano));
     for (const ano of anoSet) {
-      db.run(sql`DELETE FROM indicadores_educacionais WHERE tipo = 'saeb' AND ano = ${ano}`);
+      await db.execute(sql`DELETE FROM indicadores_educacionais WHERE tipo = 'saeb' AND ano = ${ano}`);
     }
 
     let imported = 0;
@@ -901,24 +887,20 @@ export async function generateSaebFromIdeb() {
       });
 
       if (batchValues.length >= 1000) {
-        db.transaction((tx) => {
-          for (const rec of batchValues) tx.insert(indicadoresEducacionais).values(rec).run();
-        });
+        await db.insert(indicadoresEducacionais).values(batchValues);
         imported += batchValues.length;
         batchValues = [];
       }
     }
 
     if (batchValues.length > 0) {
-      db.transaction((tx) => {
-        for (const rec of batchValues) tx.insert(indicadoresEducacionais).values(rec).run();
-      });
+      await db.insert(indicadoresEducacionais).values(batchValues);
       imported += batchValues.length;
     }
 
     console.log(`[INEP] SAEB generation completed: ${imported} records from IDEB data`);
     for (const ano of anoSet) {
-      updateStatus("saeb", ano, "completo", imported, imported);
+      await updateStatus("saeb", ano, "completo", imported, imported);
     }
     results.saeb = { imported, anos: [...anoSet] };
   } finally {

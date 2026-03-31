@@ -383,6 +383,8 @@ export function registerChatRoutes(app: Express): void {
         return true;
       };
 
+      let assistantMessage = "";
+
       if (query && (isFollowUpRequest(query) || isShortContinuation(query)) && lastAssistantWithSources) {
         const baseText = extractAssistantBody(lastAssistantWithSources.content);
         const exampleSeed = extractFirstSentence(baseText);
@@ -483,8 +485,6 @@ export function registerChatRoutes(app: Express): void {
       
       const topDocs = Array.from(allDocs.values()).slice(0, 5);
 
-      let assistantMessage = "";
-      
       // Check if we have relevant results
       if (!topDocs || topDocs.length === 0) {
         // No results found - inform user politely

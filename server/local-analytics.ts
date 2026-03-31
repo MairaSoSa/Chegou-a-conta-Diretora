@@ -63,9 +63,9 @@ export function buildLocalMaps() {
     `).get() as any;
 
     brasilIdeb = {
-      ai: br.ai != null ? Math.round(br.ai * 100) / 100 : null,
-      af: br.af != null ? Math.round(br.af * 100) / 100 : null,
-      em: br.em != null ? Math.round(br.em * 100) / 100 : null,
+      ai: br?.ai != null ? Math.round(br.ai * 100) / 100 : null,
+      af: br?.af != null ? Math.round(br.af * 100) / 100 : null,
+      em: br?.em != null ? Math.round(br.em * 100) / 100 : null,
     };
 
     mapsReady = true;

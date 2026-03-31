@@ -1,11 +1,12 @@
 import { type Express } from "express";
-import { db, sqlite } from "./db";
-import { cadernoDocuments, cadernoDocumentVersions, cadernoNotes, cadernoSources } from "@shared/schema";
+import { db } from "./db";
+import { pgGet, pgAll, pgRun } from "./pg";
+import { cadernoDocuments, cadernoNotes } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { searchSchoolsLocal } from "./importador";
 
 // ── Detecta e monta contexto rico de uma escola a partir do texto da mensagem ─
-function buscarDadosEscolaParaChat(texto: string, inepParam?: string): string {
+async function buscarDadosEscolaParaChat(texto: string, inepParam?: string): Promise<string> {
   let inep = inepParam?.trim() || "";
 
   // 1. Tenta detectar código INEP (7-8 dígitos) na mensagem
@@ -15,27 +16,25 @@ function buscarDadosEscolaParaChat(texto: string, inepParam?: string): string {
   }
 
   // 2. Tenta buscar por nome de escola apenas quando há menção explícita com prefixo
-  // Ex: "escola Dom Mario", "colégio Tiradentes", "EMEF Santos Dumont"
   if (!inep) {
     const nomeMatch = texto.match(/(?:escola|colégio|colegio|emef|emei|eem|eei|eeef|cmei|eja)\s+([A-Za-zÀ-ÿ]{2}[A-Za-zÀ-ÿ\s]{2,40})/i);
     if (nomeMatch) {
-      // Pega apenas as 4 primeiras palavras do nome capturado
       const palavras = nomeMatch[1].trim().split(/\s+/).slice(0, 4).join(" ");
-      const resultados = searchSchoolsLocal(palavras, 1);
+      const resultados = await searchSchoolsLocal(palavras, 1);
       if (resultados.length > 0) inep = resultados[0].inep;
     }
   }
 
   if (!inep) return "";
 
-  // ── Dados cadastrais (todos os anos disponíveis) ──────────────────────────
-  const censoRows = sqlite.prepare(`
+  // ── Dados cadastrais ──────────────────────────────────────────────────────
+  const censoRows = await pgAll(`
     SELECT ano, nome, municipio, uf, dependencia, localizacao, situacao,
            matriculas, docentes, turmas, dados
     FROM censo_escolar
     WHERE inep = ?
     ORDER BY ano DESC
-  `).all(inep) as any[];
+  `, [inep]);
 
   if (censoRows.length === 0) return "";
 
@@ -55,7 +54,7 @@ function buscarDadosEscolaParaChat(texto: string, inepParam?: string): string {
   // Infraestrutura do dado mais recente
   if (base.dados) {
     try {
-      const d = JSON.parse(base.dados);
+      const d = typeof base.dados === "string" ? JSON.parse(base.dados) : base.dados;
       const flags: string[] = [];
       if (d.in_quilombola == 1 || d.in_quilombola === true) flags.push("Escola Quilombola");
       if (d.in_ribeirinha == 1 || d.in_ribeirinha === true) flags.push("Escola Ribeirinha");
@@ -85,12 +84,12 @@ function buscarDadosEscolaParaChat(texto: string, inepParam?: string): string {
   if (evoLinhas.length) linhas.push(`- Histórico:\n${evoLinhas.join("\n")}`);
 
   // ── Indicadores educacionais ──────────────────────────────────────────────
-  const indicadores = sqlite.prepare(`
+  const indicadores = await pgAll(`
     SELECT tipo, ano, dados
     FROM indicadores_educacionais
     WHERE inep = ?
     ORDER BY tipo, ano DESC
-  `).all(inep) as any[];
+  `, [inep]);
 
   if (indicadores.length > 0) {
     const porTipo: Record<string, any[]> = {};
@@ -101,11 +100,10 @@ function buscarDadosEscolaParaChat(texto: string, inepParam?: string): string {
 
     const indLinhas: string[] = [];
 
-    // IDEB
     if (porTipo.ideb) {
       for (const row of porTipo.ideb.slice(0, 3)) {
         try {
-          const d = JSON.parse(row.dados || "{}");
+          const d = typeof row.dados === "string" ? JSON.parse(row.dados || "{}") : (row.dados || {});
           const partes: string[] = [];
           if (d.ideb_ai != null) partes.push(`Anos Iniciais: ${d.ideb_ai}`);
           if (d.ideb_af != null) partes.push(`Anos Finais: ${d.ideb_af}`);
@@ -115,33 +113,30 @@ function buscarDadosEscolaParaChat(texto: string, inepParam?: string): string {
       }
     }
 
-    // INSE
     if (porTipo.inse) {
       const row = porTipo.inse[0];
       try {
-        const d = JSON.parse(row.dados || "{}");
+        const d = typeof row.dados === "string" ? JSON.parse(row.dados || "{}") : (row.dados || {});
         if (d.inse_valor != null || d.media != null) {
           indLinhas.push(`  INSE ${row.ano}: ${d.inse_valor ?? d.media ?? "—"} (nível socioeconômico)`);
         }
       } catch {}
     }
 
-    // ICG
     if (porTipo.icg) {
       const row = porTipo.icg[0];
       try {
-        const d = JSON.parse(row.dados || "{}");
+        const d = typeof row.dados === "string" ? JSON.parse(row.dados || "{}") : (row.dados || {});
         if (d.icg != null || d.valor != null) {
           indLinhas.push(`  ICG ${row.ano}: ${d.icg ?? d.valor ?? "—"} (complexidade de gestão)`);
         }
       } catch {}
     }
 
-    // TDI
     if (porTipo.tdi) {
       const row = porTipo.tdi[0];
       try {
-        const d = JSON.parse(row.dados || "{}");
+        const d = typeof row.dados === "string" ? JSON.parse(row.dados || "{}") : (row.dados || {});
         if (d.tdi != null || d.valor != null || d.tdi_total != null) {
           indLinhas.push(`  Taxa de Distorção Idade-Série ${row.ano}: ${d.tdi ?? d.tdi_total ?? d.valor ?? "—"}%`);
         }
@@ -164,13 +159,13 @@ export function registerCadernoRoutes(app: Express): void {
       if (!inep || inep.length < 7) {
         return res.status(400).json({ ok: false, message: "Código INEP inválido" });
       }
-      const row = sqlite.prepare(`
+      const row = await pgGet(`
         SELECT inep, nome, municipio, uf, dependencia, localizacao, matriculas
         FROM censo_escolar
         WHERE inep = ?
         ORDER BY ano DESC
         LIMIT 1
-      `).get(inep) as any;
+      `, [inep]);
 
       if (!row) {
         return res.json({ ok: false, message: "Escola não encontrada" });
@@ -208,12 +203,12 @@ export function registerCadernoRoutes(app: Express): void {
         return res.status(400).json({ ok: false, message: "Tipo e título são obrigatórios" });
       }
       const now = Date.now();
-      const result = sqlite.prepare(`
+      const doc = await pgGet(`
         INSERT INTO caderno_documents (type, title, inep, header_data, body_html, status, quality_score, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, 'rascunho', 'red', ?, ?)
-      `).run(type, title, inep || null, headerData ? JSON.stringify(headerData) : null, bodyHtml || "", now, now);
+        RETURNING *
+      `, [type, title, inep || null, headerData ? JSON.stringify(headerData) : null, bodyHtml || "", now, now]);
 
-      const doc = sqlite.prepare("SELECT * FROM caderno_documents WHERE id = ?").get(result.lastInsertRowid) as any;
       res.status(201).json({ ok: true, document: doc });
     } catch (e: any) {
       res.status(500).json({ ok: false, message: e.message });
@@ -223,7 +218,7 @@ export function registerCadernoRoutes(app: Express): void {
   app.get("/api/caderno/documentos/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const doc = sqlite.prepare("SELECT * FROM caderno_documents WHERE id = ?").get(id) as any;
+      const doc = await pgGet("SELECT * FROM caderno_documents WHERE id = ?", [id]);
       if (!doc) {
         return res.status(404).json({ ok: false, message: "Documento não encontrado" });
       }
@@ -254,9 +249,9 @@ export function registerCadernoRoutes(app: Express): void {
       vals.push(now);
       vals.push(id);
 
-      sqlite.prepare(`UPDATE caderno_documents SET ${sets.join(", ")} WHERE id = ?`).run(...vals);
+      await pgRun(`UPDATE caderno_documents SET ${sets.join(", ")} WHERE id = ?`, vals);
 
-      const doc = sqlite.prepare("SELECT * FROM caderno_documents WHERE id = ?").get(id) as any;
+      const doc = await pgGet("SELECT * FROM caderno_documents WHERE id = ?", [id]);
       res.json({ ok: true, document: doc });
     } catch (e: any) {
       res.status(500).json({ ok: false, message: e.message });
@@ -266,23 +261,24 @@ export function registerCadernoRoutes(app: Express): void {
   app.post("/api/caderno/documentos/:id/versao", async (req, res) => {
     try {
       const docId = parseInt(req.params.id);
-      const doc = sqlite.prepare("SELECT * FROM caderno_documents WHERE id = ?").get(docId) as any;
+      const doc = await pgGet("SELECT * FROM caderno_documents WHERE id = ?", [docId]);
       if (!doc) {
         return res.status(404).json({ ok: false, message: "Documento não encontrado" });
       }
       const now = Date.now();
-      sqlite.prepare(`
+      await pgRun(`
         INSERT INTO caderno_document_versions (document_id, body_html, header_data, created_at)
         VALUES (?, ?, ?, ?)
-      `).run(docId, doc.body_html || "", doc.header_data || null, now);
+      `, [docId, doc.body_html || "", doc.header_data || null, now]);
 
-      const count = (sqlite.prepare("SELECT COUNT(*) as c FROM caderno_document_versions WHERE document_id = ?").get(docId) as any).c;
+      const countRow = await pgGet("SELECT COUNT(*) as c FROM caderno_document_versions WHERE document_id = ?", [docId]);
+      const count = parseInt(countRow?.c || "0");
       if (count > 10) {
-        sqlite.prepare(`
+        await pgRun(`
           DELETE FROM caderno_document_versions WHERE id IN (
             SELECT id FROM caderno_document_versions WHERE document_id = ? ORDER BY created_at ASC LIMIT ?
           )
-        `).run(docId, count - 10);
+        `, [docId, count - 10]);
       }
 
       res.json({ ok: true });
@@ -294,9 +290,10 @@ export function registerCadernoRoutes(app: Express): void {
   app.get("/api/caderno/documentos/:id/versoes", async (req, res) => {
     try {
       const docId = parseInt(req.params.id);
-      const versions = sqlite.prepare(
-        "SELECT id, document_id, created_at FROM caderno_document_versions WHERE document_id = ? ORDER BY created_at DESC LIMIT 10"
-      ).all(docId);
+      const versions = await pgAll(
+        "SELECT id, document_id, created_at FROM caderno_document_versions WHERE document_id = ? ORDER BY created_at DESC LIMIT 10",
+        [docId]
+      );
       res.json({ ok: true, versions });
     } catch (e: any) {
       res.status(500).json({ ok: false, message: e.message });
@@ -306,8 +303,8 @@ export function registerCadernoRoutes(app: Express): void {
   app.delete("/api/caderno/documentos/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      sqlite.prepare("DELETE FROM caderno_document_versions WHERE document_id = ?").run(id);
-      sqlite.prepare("DELETE FROM caderno_documents WHERE id = ?").run(id);
+      await pgRun("DELETE FROM caderno_document_versions WHERE document_id = ?", [id]);
+      await pgRun("DELETE FROM caderno_documents WHERE id = ?", [id]);
       res.json({ ok: true });
     } catch (e: any) {
       res.status(500).json({ ok: false, message: e.message });
@@ -330,12 +327,12 @@ export function registerCadernoRoutes(app: Express): void {
         return res.status(400).json({ ok: false, message: "Título e conteúdo são obrigatórios" });
       }
       const now = Date.now();
-      const result = sqlite.prepare(`
+      const note = await pgGet(`
         INSERT INTO caderno_notes (title, content, source_url, source_title, source_excerpt, tags, document_id, conversation_id, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(title, content, sourceUrl || null, sourceTitle || null, sourceExcerpt || null, tags || null, documentId || null, conversationId || null, now);
+        RETURNING *
+      `, [title, content, sourceUrl || null, sourceTitle || null, sourceExcerpt || null, tags || null, documentId || null, conversationId || null, now]);
 
-      const note = sqlite.prepare("SELECT * FROM caderno_notes WHERE id = ?").get(result.lastInsertRowid);
       res.status(201).json({ ok: true, note });
     } catch (e: any) {
       res.status(500).json({ ok: false, message: e.message });
@@ -345,7 +342,7 @@ export function registerCadernoRoutes(app: Express): void {
   app.delete("/api/caderno/notas/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      sqlite.prepare("DELETE FROM caderno_notes WHERE id = ?").run(id);
+      await pgRun("DELETE FROM caderno_notes WHERE id = ?", [id]);
       res.json({ ok: true });
     } catch (e: any) {
       res.status(500).json({ ok: false, message: e.message });
@@ -359,23 +356,21 @@ export function registerCadernoRoutes(app: Express): void {
         return res.status(400).json({ ok: false, message: "messages é obrigatório" });
       }
 
-      // Texto completo das últimas mensagens para detectar escola/INEP
       const textoConversa = messages.slice(-4)
         .map((m: any) => m.content || "")
         .join(" ");
 
       const contextParts: string[] = [];
 
-      // ── Dados reais da escola (detecta por INEP explícito, ou busca na mensagem) ──
-      const dadosEscola = buscarDadosEscolaParaChat(textoConversa, inep ? String(inep) : undefined);
+      const dadosEscola = await buscarDadosEscolaParaChat(textoConversa, inep ? String(inep) : undefined);
       if (dadosEscola) {
         contextParts.push(dadosEscola);
       }
 
-      // ── Anotações recentes do caderno ────────────────────────────────────────
-      const notes = sqlite.prepare(
-        "SELECT title, content FROM caderno_notes ORDER BY created_at DESC LIMIT 5"
-      ).all() as any[];
+      const notes = await pgAll(
+        "SELECT title, content FROM caderno_notes ORDER BY created_at DESC LIMIT 5",
+        []
+      );
 
       if (notes.length > 0) {
         const noteLines = notes.map((n: any) => `- ${n.title}: ${String(n.content).slice(0, 120)}`);
@@ -501,12 +496,12 @@ Unidades disponíveis (use o link exato):
 
   app.post("/api/caderno/assistente", async (req, res) => {
     try {
-      const { action, text, documentType, context } = req.body;
+      const { action, text, documentType } = req.body;
       if (!action || !text) {
         return res.status(400).json({ ok: false, message: "Ação e texto são obrigatórios" });
       }
 
-      const { isOpenAIAvailable, reformulateWithOpenAI } = await import("./integrations/openai/chat.js");
+      const { isOpenAIAvailable } = await import("./integrations/openai/chat.js");
       if (!isOpenAIAvailable()) {
         return res.json({ ok: false, message: "Assistente de IA não configurado (falta chave OpenAI)" });
       }
