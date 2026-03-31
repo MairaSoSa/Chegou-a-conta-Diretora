@@ -20,7 +20,7 @@ import {
   Link2, Cross, Laptop, Mail, Phone, Droplets, ClipboardList, Wrench,
   Folder, Pin, Ruler, Printer,
 } from "@/components/Icons";
-import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico, useEscolaMicroregiao, useUfStats, useSimilarSchools } from "@/hooks/use-schools";
+import { useSchoolSearch, useSchool, useEscolaEvolucao, useEstatisticas, useListaEscolas, useMediasNacionais, useEscolaComparativo, useEscolaDiagnostico, useEscolaMicroregiao, useUfStats, useSimilarSchools, useEscolaCenso2025 } from "@/hooks/use-schools";
 import { usePddeInfo, usePddeSaldos, usePddeExecFin, usePddeUexSaldo, usePddeSituacaoCadastral, usePddePrestacaoConta, usePddeAtendimento, usePddeSuspensaoEscola } from "@/hooks/use-pdde";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -239,6 +239,7 @@ export default function Dashboard() {
   const { data: comparativoData } = useEscolaComparativo(selectedInep || "");
   const { data: microregiaoData } = useEscolaMicroregiao(selectedInep || "");
   const { data: diagnosticoData } = useEscolaDiagnostico(selectedInep || "");
+  const { data: censo2025Data } = useEscolaCenso2025(selectedInep || "");
   const [pddeAno, setPddeAno] = useState<number>(new Date().getFullYear());
   const [pieAno, setPieAno] = useState<number>(new Date().getFullYear() - 1);
   const [showEquipamentos, setShowEquipamentos] = useState(false);
@@ -1796,18 +1797,22 @@ export default function Dashboard() {
                 // Detectar etapas que a escola efetivamente oferta
                 const _cens = censoLatest as any;
                 const oferta = {
-                  inf:    (_cens?.qt_mat_inf  ?? 0) > 0 || anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_inf  ?? 0) > 0),
-                  fund:   (_cens?.qt_mat_fund ?? 0) > 0 || anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_fund ?? 0) > 0),
-                  med:    (_cens?.qt_mat_med  ?? 0) > 0 || anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_med  ?? 0) > 0),
-                  eja:    (_cens?.qt_mat_eja  ?? 0) > 0 || anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_eja  ?? 0) > 0),
+                  inf:      (_cens?.qt_mat_inf  ?? 0) > 0 || anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_inf  ?? 0) > 0),
+                  fund:     (_cens?.qt_mat_fund ?? 0) > 0 || anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_fund ?? 0) > 0),
+                  med:      (_cens?.qt_mat_med  ?? 0) > 0 || anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_med  ?? 0) > 0),
+                  eja:      (_cens?.qt_mat_eja  ?? 0) > 0 || anosVisiveis.some((a: number) => (evolucaoData.censo_por_ano[a]?.qt_mat_eja  ?? 0) > 0),
+                  especial: (censo2025Data?.matriculas?.especial ?? 0) > 0,
+                  prof:     (censo2025Data?.matriculas?.profissional ?? 0) > 0,
                   fundAI: !!(ch?.ideb?.some((d: any) => d.ideb_ai != null) || ch?.taxasRendimento?.some((d: any) => d.aprovacao_ai != null) || ch?.saeb?.some((d: any) => d.mt_ai != null)),
                   fundAF: !!(ch?.ideb?.some((d: any) => d.ideb_af != null) || ch?.taxasRendimento?.some((d: any) => d.aprovacao_af != null) || ch?.saeb?.some((d: any) => d.mt_af != null)),
                 };
                 if (oferta.fund && !oferta.fundAI && !oferta.fundAF) { oferta.fundAI = true; oferta.fundAF = true; }
                 const available = [
-                  { id: 'matriculas', label: 'Matrículas', icon: <Users size={14} />, etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; return { ano: String(a), 'Total': c?.qt_mat_bas || null, 'E. Infantil': c?.qt_mat_inf || null, 'Fundamental': c?.qt_mat_fund || null, 'Médio': c?.qt_mat_med || null, 'EJA': c?.qt_mat_eja || null }; }), lines: [{ key: 'Total', color: '#2d5a88', name: 'Total', etapa: 'total' }, ...(oferta.inf ? [{ key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }] : []), ...(oferta.fund ? [{ key: 'Fundamental', color: '#2f7a58', name: 'Fundamental', etapa: 'fund' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio', etapa: 'med' }] : []), ...(oferta.eja ? [{ key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }] : [])], desc: 'Total de alunos matriculados por etapa de ensino.' },
+                  { id: 'matriculas', label: 'Matrículas', icon: <Users size={14} />, etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; const c25 = a === 2025 && censo2025Data ? censo2025Data.matriculas : null; return { ano: String(a), 'Total': c?.qt_mat_bas || c25?.total || null, 'E. Infantil': c?.qt_mat_inf || c25?.infantil || null, 'Fundamental': c?.qt_mat_fund || c25?.fundamental || null, 'Médio': c?.qt_mat_med || c25?.medio || null, 'EJA': c?.qt_mat_eja || c25?.eja || null, 'Especial': c25?.especial || null, 'Profissional': c25?.profissional || null }; }), lines: [{ key: 'Total', color: '#2d5a88', name: 'Total', etapa: 'total' }, ...(oferta.inf ? [{ key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }] : []), ...(oferta.fund ? [{ key: 'Fundamental', color: '#2f7a58', name: 'Fundamental', etapa: 'fund' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio', etapa: 'med' }] : []), ...(oferta.eja ? [{ key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }] : []), ...(oferta.especial ? [{ key: 'Especial', color: '#e91e63', name: 'Ed. Especial', etapa: 'especial' }] : []), ...(oferta.prof ? [{ key: 'Profissional', color: '#00796b', name: 'Profissional', etapa: 'prof' }] : [])], desc: 'Total de alunos matriculados por etapa de ensino. Especial e Profissional: dados do Censo 2025.' },
                   { id: 'docentes', label: 'Docentes', icon: <User size={14} />, etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; return { ano: String(a), 'Total': c?.qt_doc_bas || c?.qt_docentes || null, 'E. Infantil': c?.qt_doc_inf || null, 'Fundamental': c?.qt_doc_fund || null, 'Médio': c?.qt_doc_med || null, 'EJA': c?.qt_doc_eja || null }; }), lines: [{ key: 'Total', color: '#9b6a16', name: 'Total', etapa: 'total' }, ...(oferta.inf ? [{ key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }] : []), ...(oferta.fund ? [{ key: 'Fundamental', color: '#2f7a58', name: 'Fundamental', etapa: 'fund' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#c47a1f', name: 'Médio', etapa: 'med' }] : []), ...(oferta.eja ? [{ key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }] : [])], desc: 'Número de docentes atuando por etapa de ensino.' },
-                  { id: 'turmas', label: 'Turmas', icon: <School size={14} />, etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; return { ano: String(a), 'Total': c?.qt_tur_bas || c?.qt_turmas || null, 'E. Infantil': c?.qt_tur_inf || null, 'Fundamental': c?.qt_tur_fund || null, 'Médio': c?.qt_tur_med || null, 'EJA': c?.qt_tur_eja || null }; }), lines: [{ key: 'Total', color: '#2f7a58', name: 'Total', etapa: 'total' }, ...(oferta.inf ? [{ key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }] : []), ...(oferta.fund ? [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental', etapa: 'fund' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio', etapa: 'med' }] : []), ...(oferta.eja ? [{ key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }] : [])], desc: 'Total de turmas por etapa de ensino.' },
+                  { id: 'turmas', label: 'Turmas', icon: <School size={14} />, etapas: true, data: anosVisiveis.map((a: number) => { const c = evolucaoData.censo_por_ano[a]; const c25t = a === 2025 && censo2025Data ? censo2025Data.turmas : null; return { ano: String(a), 'Total': c?.qt_tur_bas || c?.qt_turmas || c25t?.total || null, 'E. Infantil': c?.qt_tur_inf || c25t?.infantil || null, 'Fundamental': c?.qt_tur_fund || c25t?.fundamental || null, 'Médio': c?.qt_tur_med || c25t?.medio || null, 'EJA': c?.qt_tur_eja || c25t?.eja || null }; }), lines: [{ key: 'Total', color: '#2f7a58', name: 'Total', etapa: 'total' }, ...(oferta.inf ? [{ key: 'E. Infantil', color: '#7c5cbf', name: 'E. Infantil', etapa: 'inf' }] : []), ...(oferta.fund ? [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental', etapa: 'fund' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio', etapa: 'med' }] : []), ...(oferta.eja ? [{ key: 'EJA', color: '#b74f42', name: 'EJA', etapa: 'eja' }] : [])], desc: 'Total de turmas por etapa de ensino.' },
+                  ...((censo2025Data?.matriculas?.diurno ?? 0) > 0 ? [{ id: 'turno', label: 'Turno 2025', icon: <Sun size={14} />, data: anosVisiveis.map((a: number) => { const c25m = a === 2025 && censo2025Data ? censo2025Data.matriculas : null; return { ano: String(a), 'Diurno': c25m?.diurno || null, 'Noturno': c25m?.noturno || null }; }), lines: [{ key: 'Diurno', color: '#f59e0b', name: 'Diurno' }, { key: 'Noturno', color: '#1e3a5f', name: 'Noturno' }], desc: 'Distribuição de matrículas por turno. Dados do Censo INEP 2025.' }] : []),
+                  ...((censo2025Data?.docentes?.feminino ?? 0) > 0 ? [{ id: 'docgênero', label: 'Doc. Gênero 2025', icon: <User size={14} />, data: anosVisiveis.map((a: number) => { const d25 = a === 2025 && censo2025Data ? censo2025Data.docentes : null; return { ano: String(a), 'Feminino': d25?.feminino || null, 'Masculino': d25?.masculino || null }; }), lines: [{ key: 'Feminino', color: '#e91e63', name: 'Feminino' }, { key: 'Masculino', color: '#1565c0', name: 'Masculino' }], desc: 'Docentes em exercício por gênero. Dados do Censo INEP 2025.' }] : []),
                   ...(ch?.ideb && ch.ideb.length > 0 ? [{ id: 'ideb', label: 'IDEB', icon: <Award size={14} />, cadencia: 'Bienal', referenceLines: [{ y: 6, label: 'Meta 6,0', color: '#c0392b' }], data: ch.ideb.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'AI': d.ideb_ai, 'AF': d.ideb_af, 'Médio': d.ideb_em })), lines: [...(oferta.fundAI ? [{ key: 'AI', color: '#2d5a88', name: 'Anos Iniciais' }] : []), ...(oferta.fundAF ? [{ key: 'AF', color: '#9b6a16', name: 'Anos Finais' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#2f7a58', name: 'Ensino Médio' }] : [])], desc: 'IDEB por etapa de ensino (escala 0–10). A linha tracejada indica a meta nacional de 6,0.' }] : []),
                   ...(ch?.taxasRendimento ? [{ id: 'rendimento', label: 'Rendimento', icon: <TrendingUp size={14} />, data: ch.taxasRendimento.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Aprovação': d.aprovacao, 'Reprovação': d.reprovacao, 'Abandono': d.abandono })), lines: [{ key: 'Aprovação', color: '#2f7a58', name: 'Aprovação' },{ key: 'Reprovação', color: '#b74f42', name: 'Reprovação' },{ key: 'Abandono', color: '#c47a1f', name: 'Abandono' }], desc: 'Taxas de aprovação, reprovação e abandono escolar (%).' }] : []),
                   ...(ch?.tdi ? [{ id: 'tdi', label: 'Dist. Idade', icon: <CalendarDays size={14} />, data: ch.tdi.slice().sort((a:any,b:any)=>a.ano-b.ano).map((d:any)=>({ ano: String(d.ano), 'Fundamental': d.fund_total, 'Médio': d.medio })), lines: [...(oferta.fund ? [{ key: 'Fundamental', color: '#2d5a88', name: 'Fundamental' }] : []), ...(oferta.med ? [{ key: 'Médio', color: '#9b6a16', name: 'Médio' }] : [])], desc: 'TDI — % de alunos com 2 ou mais anos de defasagem idade-série.' }] : []),
@@ -4404,6 +4409,140 @@ out center tags 100;`;
                   </div>
                   <div className="organic-divider" />
 
+                  {/* ── PERFIL CENSO 2025 — contexto territorial ── */}
+                  {censo2025Data && (() => {
+                    const m = censo2025Data.matriculas || {};
+                    const t = censo2025Data.turmas || {};
+                    const d = censo2025Data.docentes || {};
+                    const g = censo2025Data.gestor || {};
+                    const municipio = evolucaoData?.escola?.no_municipio || '';
+                    const uf = evolucaoData?.escola?.sg_uf || '';
+                    const microNome = microregiaoData?.micro_nome || '';
+                    const nEscolas = microregiaoData?.n_escolas || 0;
+                    const racaGestor = g.por_raca ? Object.entries(g.por_raca).filter(([,v]) => (v as number) > 0).map(([k]) => k).join(', ') : '';
+                    const faixaGestor = g.por_faixa ? Object.entries(g.por_faixa).find(([,v]) => (v as number) > 0)?.[0]?.replace('ate_24','até 24 anos').replace('de_25_29','25–29 anos').replace('de_30_39','30–39 anos').replace('de_40_49','40–49 anos').replace('de_50_54','50–54 anos').replace('de_55_59','55–59 anos').replace('mais_60','60+ anos') || '' : '';
+                    const pctFem = d.total > 0 ? Math.round((d.feminino / d.total) * 100) : 0;
+                    const pctDiurno = m.total > 0 ? Math.round((m.diurno / m.total) * 100) : 0;
+                    return (
+                      <div style={{ marginBottom: 28 }}>
+                        {/* Cabeçalho territorial */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#8a7a6a' }}>Censo INEP 2025</span>
+                          <span style={{ fontSize: 11, color: '#c8b89a' }}>·</span>
+                          <span style={{ fontSize: 11, color: '#5d4037', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <MapPin size={10} style={{ flexShrink: 0 }} /> {municipio}/{uf}
+                          </span>
+                          {microNome && (
+                            <>
+                              <span style={{ fontSize: 11, color: '#c8b89a' }}>·</span>
+                              <span style={{ fontSize: 11, color: '#5d4037' }}>
+                                Microrregião {microNome} {nEscolas > 0 && <span style={{ color: '#9a8a7a' }}>({nEscolas.toLocaleString('pt-BR')} escolas)</span>}
+                              </span>
+                            </>
+                          )}
+                          <span style={{ fontSize: 11, color: '#c8b89a' }}>·</span>
+                          <span style={{ fontSize: 11, color: '#9a8a7a' }}>Estado: {uf}</span>
+                        </div>
+
+                        {/* Grid de cards */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+
+                          {/* Matrículas por nível */}
+                          <div style={{ background: '#f0f4ff', border: '1px solid #c5d5f5', borderRadius: 10, padding: '14px 16px' }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#2d5a88', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Matrículas 2025</div>
+                            <div style={{ fontSize: 24, fontWeight: 800, color: '#1a3a6a', lineHeight: 1 }}>{(m.total || 0).toLocaleString('pt-BR')}</div>
+                            <div style={{ fontSize: 10, color: '#6a7a9a', marginBottom: 10 }}>total de alunos</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              {(m.infantil ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#7c5cbf'}}>Ed. Infantil</span><strong>{m.infantil}</strong></div>}
+                              {(m.fundamental ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#2f7a58'}}>Fundamental</span><strong>{m.fundamental}</strong></div>}
+                              {(m.medio ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#9b6a16'}}>Médio</span><strong>{m.medio}</strong></div>}
+                              {(m.eja ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#b74f42'}}>EJA</span><strong>{m.eja}</strong></div>}
+                              {(m.especial ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#e91e63'}}>Ed. Especial</span><strong>{m.especial}</strong></div>}
+                              {(m.profissional ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#00796b'}}>Profissional</span><strong>{m.profissional}</strong></div>}
+                            </div>
+                            {m.total > 0 && (
+                              <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #d0dcf0' }}>
+                                <div style={{ fontSize: 10, color: '#6a7a9a', marginBottom: 4 }}>Turno</div>
+                                <div style={{ display:'flex', gap:6 }}>
+                                  <span style={{ background:'#fff3cd', color:'#7a5a00', borderRadius:4, padding:'2px 7px', fontSize:10, fontWeight:700 }}>☀ {pctDiurno}% diurno</span>
+                                  {(m.noturno ?? 0) > 0 && <span style={{ background:'#e8eaf6', color:'#283593', borderRadius:4, padding:'2px 7px', fontSize:10, fontWeight:700 }}>🌙 {100 - pctDiurno}% noturno</span>}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Turmas */}
+                          <div style={{ background: '#f0fff8', border: '1px solid #b8e8d0', borderRadius: 10, padding: '14px 16px' }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#2f7a58', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Turmas 2025</div>
+                            <div style={{ fontSize: 24, fontWeight: 800, color: '#1a4a30', lineHeight: 1 }}>{(t.total || 0).toLocaleString('pt-BR')}</div>
+                            <div style={{ fontSize: 10, color: '#5a8a6a', marginBottom: 10 }}>turmas ativas</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              {(t.infantil ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#7c5cbf'}}>Ed. Infantil</span><strong>{t.infantil}</strong></div>}
+                              {(t.fundamental ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#2d5a88'}}>Fundamental</span><strong>{t.fundamental}</strong></div>}
+                              {(t.medio ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#9b6a16'}}>Médio</span><strong>{t.medio}</strong></div>}
+                              {(t.eja ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}><span style={{color:'#b74f42'}}>EJA</span><strong>{t.eja}</strong></div>}
+                            </div>
+                            {(t.diurno ?? 0) > 0 && (
+                              <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #b8e8d0', fontSize: 10, color: '#5a8a6a' }}>
+                                <span style={{ fontWeight: 700 }}>{t.diurno}</span> diurno · <span style={{ fontWeight: 700 }}>{t.noturno ?? 0}</span> noturno
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Docentes */}
+                          <div style={{ background: '#fffbf0', border: '1px solid #f0d88a', borderRadius: 10, padding: '14px 16px' }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#9b6a16', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Docentes 2025</div>
+                            <div style={{ fontSize: 24, fontWeight: 800, color: '#5a3a00', lineHeight: 1 }}>{(d.total || 0).toLocaleString('pt-BR')}</div>
+                            <div style={{ fontSize: 10, color: '#8a6a30', marginBottom: 10 }}>em exercício</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                                <div style={{ height:7, borderRadius:4, background:'#e91e63', width: `${pctFem}%`, maxWidth: 80, minWidth: 4 }} />
+                                <span style={{ fontSize:11, color:'#c0185a' }}>{d.feminino} mulheres ({pctFem}%)</span>
+                              </div>
+                              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                                <div style={{ height:7, borderRadius:4, background:'#1565c0', width: `${100 - pctFem}%`, maxWidth: 80, minWidth: 4 }} />
+                                <span style={{ fontSize:11, color:'#1040a0' }}>{d.masculino} homens ({100 - pctFem}%)</span>
+                              </div>
+                            </div>
+                            {d.por_faixa && (
+                              <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #f0d88a', fontSize: 10, color: '#8a6a30' }}>
+                                {Object.entries(d.por_faixa as Record<string,number>).filter(([,v]) => v > 0).slice(0,3).map(([k,v]) => (
+                                  <div key={k} style={{ display:'flex', justifyContent:'space-between' }}>
+                                    <span>{k.replace('ate_24','≤24').replace('de_','').replace('_','-').replace('mais_60','60+')}</span>
+                                    <strong>{v}</strong>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Gestão */}
+                          {g.total > 0 && (
+                            <div style={{ background: '#fdf5ff', border: '1px solid #e0c8f0', borderRadius: 10, padding: '14px 16px' }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#7c5cbf', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Gestão 2025</div>
+                              <div style={{ fontSize: 24, fontWeight: 800, color: '#3a1a6a', lineHeight: 1 }}>{g.total}</div>
+                              <div style={{ fontSize: 10, color: '#8a6aaa', marginBottom: 10 }}>gestor(es) registrado(s)</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11 }}>
+                                {(g.diretor ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#666'}}>Diretores</span><strong>{g.diretor}</strong></div>}
+                                {(g.feminino ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#e91e63'}}>Mulheres</span><strong>{g.feminino}</strong></div>}
+                                {(g.masculino ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#1565c0'}}>Homens</span><strong>{g.masculino}</strong></div>}
+                                {(g.concursado ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#2f7a58'}}>Concursados</span><strong>{g.concursado}</strong></div>}
+                                {(g.com_ensino_superior ?? 0) > 0 && <div style={{ display:'flex', justifyContent:'space-between' }}><span style={{color:'#2d5a88'}}>Com sup. completo</span><strong>{g.com_ensino_superior}</strong></div>}
+                              </div>
+                              {racaGestor && <div style={{ marginTop: 8, fontSize: 10, color: '#8a6aaa' }}>Raça/cor: <strong>{racaGestor}</strong></div>}
+                              {faixaGestor && <div style={{ fontSize: 10, color: '#8a6aaa' }}>Faixa etária: <strong>{faixaGestor}</strong></div>}
+                            </div>
+                          )}
+
+                        </div>
+
+                        <div style={{ marginTop: 8, fontSize: 10, color: '#b0a090', textAlign: 'right' }}>
+                          Fonte: INEP — Censo Escolar 2025 · {municipio}/{uf} · Microrregião {microNome}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* ── GALERIA DE GRÁFICOS (integrada) ── */}
                   {currentChart && available.length > 0 && (
                     <div style={{ marginBottom: 28 }}>
@@ -4413,7 +4552,7 @@ out center tags 100;`;
                         const _chartAccent: string = _firstLine?.color || '#2d5a88';
 
                         const pillGroups = [
-                          { label: 'Censo', ids: ['matriculas', 'docentes', 'turmas'] },
+                          { label: 'Censo', ids: ['matriculas', 'docentes', 'turmas', 'turno', 'docgênero'] },
                           { label: 'Qualidade', ids: ['ideb', 'saeb', 'rendimento', 'tdi', 'inse'] },
                           { label: 'Condições', ids: ['atu', 'had', 'dsu', 'icg', 'ird', 'tnr'] },
                         ];

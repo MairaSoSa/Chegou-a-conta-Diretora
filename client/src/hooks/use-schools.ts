@@ -112,6 +112,21 @@ export function useEscolaDiagnostico(inep: string) {
   });
 }
 
+export function useEscolaCenso2025(inep: string) {
+  return useQuery({
+    queryKey: ["escola-censo2025", inep],
+    queryFn: async () => {
+      if (!inep) return null;
+      const res = await fetch(`/api/escola-censo2025/${inep}`);
+      if (!res.ok) return null;
+      return await res.json();
+    },
+    enabled: !!inep,
+    retry: false,
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+}
+
 export function useUfStats(uf: string | null, ano = 2025) {
   return useQuery({
     queryKey: ["uf-stats", uf, ano],

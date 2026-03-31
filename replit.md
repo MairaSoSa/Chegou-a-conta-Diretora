@@ -35,6 +35,7 @@ Key Features:
 -   **Content Management**: All application content is dynamically managed via the admin panel and fetched from the database.
 -   **AI Security**: The AI system prompt enforces strict adherence to the knowledge base, refusing out-of-scope queries and topics not present in the provided content. A low temperature setting (0.3) is used to minimize hallucination.
 -   **Data Management**: Emphasizes local data processing and includes mechanisms for tracking and resolving AI's unanswered questions.
+-   **Censo 2025 detalhado**: Tabelas `turma_escola`, `docente_escola`, `gestor_escolar`, `matricula_escola` importadas (~178K escolas cada). Endpoint `/api/escola-censo2025/:inep` retorna breakdown por nível, turno, gênero, faixa etária e raça para matrículas, turmas, docentes e gestor. Frontend usa `useEscolaCenso2025` hook (TTL 24h). Painel "Perfil Censo 2025" no Retrato da escola com contexto territorial (município → microrregião → estado). Novos charts na Evolução: "Turno 2025" (diurno/noturno), "Doc. Gênero 2025" (feminino/masculino), e campos Especial/Profissional integrados ao chart de Matrículas.
 -   **Data Gap**: Detailed census fields (gender/racial/age breakdowns: `qt_mat_bas_fem`, `qt_mat_bas_masc`, `qt_mat_bas_branca`, etc.) not in Railway — only in old SQLite Google Drive import. "Perfil dos estudantes" pizza charts show "Sem dados" for these. Admin can run `server/importador-drive.ts` to populate via Google Drive CSVs.
 
 ## Demo Data / Codespace Setup
