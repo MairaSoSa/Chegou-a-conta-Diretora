@@ -67,7 +67,20 @@ if (typeof globalThis.Path2D === 'undefined') {
 // ── 3. Decompress and execute the main server bundle ─────────────────────────
 // Module._compile sets __dirname = distDir so paths resolve correctly.
 const gzPath = path.join(distDir, 'index.cjs.gz');
-const source  = zlib.gunzipSync(fs.readFileSync(gzPath)).toString('utf8');
+let source  = zlib.gunzipSync(fs.readFileSync(gzPath)).toString('utf8');
+
+// ── 3b. Patch: add Clear-Site-Data header to index.html responses ─────────────
+// Forces browsers to evict immutable-cached assets when a broken version was
+// stored (e.g. Dashboard-Bm3xp8Y-.js with SyntaxError). One-time nuclear clear.
+const _PATCH_OLD = 'n.setHeader("Pragma","no-cache"),n.setHeader("Expires","0"))}}';
+const _PATCH_NEW = 'n.setHeader("Pragma","no-cache"),n.setHeader("Expires","0"),n.setHeader("Clear-Site-Data",\'"cache"\'))}}';
+const _patched = source.replace(_PATCH_OLD, _PATCH_NEW);
+if (_patched === source) {
+  console.warn('[bootstrap] Clear-Site-Data patch NOT applied — pattern not found (server already updated?)');
+} else {
+  source = _patched;
+}
+
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
