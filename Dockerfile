@@ -4,8 +4,8 @@ WORKDIR /app
 
 COPY . .
 
-RUN chmod +x /start.sh
+RUN chmod +x start.sh
 
 ENV NODE_ENV=production
 
-CMD ["/start.sh"]
+CMD ["node", "dist/bootstrap.cjs"]
