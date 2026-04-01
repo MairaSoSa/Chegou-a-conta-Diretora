@@ -81,6 +81,20 @@ if (_patched === source) {
   source = _patched;
 }
 
+// ── 3c. Patch: redirect direct /dashboard access to / ─────────────────────────
+// The Dashboard requires school context set via React state from the home page.
+// Direct navigation (refresh/bookmark) loses that state and crashes React DOM.
+// Insert a dedicated Express route for /dashboard BEFORE the catch-all handlers
+// so Express's own path-matching redirects cleanly without touching req.path.
+const _REDIR_ANCHOR = 't.use("/{*path}",(n,i,a)=>n.path.startsWith("/assets/")';
+const _REDIR_INSERT = 't.use("/dashboard",(n,i)=>i.redirect(302,"/")),';
+const _redirPatched = source.replace(_REDIR_ANCHOR, _REDIR_INSERT + _REDIR_ANCHOR);
+if (_redirPatched === source) {
+  console.warn('[bootstrap] Dashboard-redirect patch NOT applied — anchor not found');
+} else {
+  source = _redirPatched;
+}
+
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
