@@ -1,0 +1,7 @@
+{
+  "name": "chegou-a-conta-diretora",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "node dist/bootstrap.cjs"
+  }
+}
