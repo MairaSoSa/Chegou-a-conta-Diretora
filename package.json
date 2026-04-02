@@ -3,5 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "node dist/bootstrap.cjs"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.97"
   }
 }
