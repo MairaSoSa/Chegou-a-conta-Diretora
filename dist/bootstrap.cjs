@@ -69,6 +69,18 @@ if (typeof globalThis.Path2D === 'undefined') {
 const gzPath = path.join(distDir, 'index.cjs.gz');
 let source  = zlib.gunzipSync(fs.readFileSync(gzPath)).toString('utf8');
 
+// ── 3a. Patch: guard createRequire input for Node runtime compatibility ─────
+// Some pdfjs code paths call createRequire(gxe.url), but gxe.url may be
+// undefined in this bundled CommonJS runtime, causing ERR_INVALID_ARG_VALUE.
+const _REQ_OLD = 'createRequire(gxe.url)';
+const _REQ_NEW = 'createRequire((typeof gxe!=="undefined"&&gxe&&gxe.url)?gxe.url:__filename)';
+const _reqPatched = source.replace(_REQ_OLD, _REQ_NEW);
+if (_reqPatched === source) {
+  console.warn('[bootstrap] createRequire guard patch NOT applied — pattern not found');
+} else {
+  source = _reqPatched;
+}
+
 // ── 3b. Patch: add Clear-Site-Data header to index.html responses ─────────────
 // Forces browsers to evict immutable-cached assets when a broken version was
 // stored (e.g. Dashboard-Bm3xp8Y-.js with SyntaxError). One-time nuclear clear.
@@ -95,8 +107,44 @@ if (_redirPatched === source) {
   source = _redirPatched;
 }
 
+// ── 3d. Patch: fix PDDE exercise dropdown data consistency ──────────────────
+// The bundled server had a fixed year list and left an_exercicio untyped.
+// This breaks exercise filters/menu behavior when data arrives as strings.
+const _PDDE_YEARS_OLD = '[2026,2025,2024,2023,2022,2021,2020]';
+const _PDDE_YEARS_NEW = 'Array.from({length:new Date().getFullYear()-2013},(_,k)=>new Date().getFullYear()-k)';
+if (source.includes(_PDDE_YEARS_OLD)) {
+  source = source.split(_PDDE_YEARS_OLD).join(_PDDE_YEARS_NEW);
+} else {
+  console.warn('[bootstrap] PDDE dynamic years patch NOT applied — fixed list not found');
+}
+
+const _PDDE_ANO_OLD = 'an_exercicio:o.AN_EXERCICIO';
+const _PDDE_ANO_NEW = 'an_exercicio:Number(o.AN_EXERCICIO)||Number(t)||null';
+if (source.includes(_PDDE_ANO_OLD)) {
+  source = source.replace(_PDDE_ANO_OLD, _PDDE_ANO_NEW);
+} else {
+  console.warn('[bootstrap] PDDE an_exercicio type patch NOT applied — mapper not found');
+}
+
+// execfin year filtering is handled in the frontend bundle to avoid altering
+// the server's cached aggregate payload and causing empty results.
+
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
 m._compile(source, path.join(distDir, 'index.cjs'));
+
+// ── 4. Load PDDE Fields Extension after server initialization ──────────────────
+try {
+  const setupPDDEExtension = require(path.join(distDir, 'pdde-fields-extension.cjs'));
+  if (typeof setupPDDEExtension === 'function') {
+    // Delay extension setup to allow server to fully initialize
+    setImmediate(() => {
+      setupPDDEExtension(m.exports);
+    });
+  }
+} catch (err) {
+  console.warn('[bootstrap] PDDE Fields Extension not loaded:', err.message);
+}
+
 module.exports = m.exports;
