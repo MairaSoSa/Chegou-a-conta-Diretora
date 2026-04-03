@@ -1,5 +1,0 @@
-Dados/Censo[[:space:]]Escolar[[:space:]]2025/Tabela_Docente_2025.csv filter=lfs diff=lfs merge=lfs -text
-Dados/Censo[[:space:]]Escolar[[:space:]]2025/Tabela_Escola_2025.csv filter=lfs diff=lfs merge=lfs -text
-Dados/Censo[[:space:]]Escolar[[:space:]]2025/Tabela_Matricula_2025.csv filter=lfs diff=lfs merge=lfs -text
-Dados/Censo[[:space:]]Escolar[[:space:]]2025/Tabela_Turma_2025.csv filter=lfs diff=lfs merge=lfs -text
-attached_assets/Tabela_Escola_2025_1774216975832.csv filter=lfs diff=lfs merge=lfs -text
