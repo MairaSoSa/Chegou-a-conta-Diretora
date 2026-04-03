@@ -81,11 +81,20 @@ if (_reqPatched === source) {
   source = _reqPatched;
 }
 
-// ── 3b. Clear-Site-Data patch DISABLED ────────────────────────────────────────
-// Was used as emergency measure to bust broken cached assets (Dashboard-Bm3xp8Y-.js).
-// Removed because it clears lazy-loaded chunks on every page load, causing the
-// dashboard to show a blank page on first visit (chunks evicted before render).
-// All assets are now correct — no cache busting needed.
+// ── 3b. Clear-Site-Data patch — fires for first 3 HTML requests after restart ──
+// Clears stale cached JS chunks (e.g. old Dashboard version) after a deploy.
+// Counter resets on every server restart. After 3 requests the header is omitted
+// so long-running sessions are not penalised.
+globalThis._cacheBustCount = 3;
+const _CACHE_BUST_ANCHOR = 'i.setHeader("Cache-Control","no-store, no-cache, must-revalidate"),i.setHeader("Pragma","no-cache"),i.setHeader("Expires","0"),i.sendFile(';
+const _CACHE_BUST_REPLACE = '(()=>{if(globalThis._cacheBustCount>0){globalThis._cacheBustCount--;i.setHeader("Clear-Site-Data","\\"cache\\"");}})(),i.setHeader("Cache-Control","no-store, no-cache, must-revalidate"),i.setHeader("Pragma","no-cache"),i.setHeader("Expires","0"),i.sendFile(';
+const _cacheBustPatched = source.replace(_CACHE_BUST_ANCHOR, _CACHE_BUST_REPLACE);
+if (_cacheBustPatched !== source) {
+  source = _cacheBustPatched;
+  console.log('[bootstrap] Clear-Site-Data cache-bust patch applied (first 3 loads)');
+} else {
+  console.warn('[bootstrap] Clear-Site-Data patch NOT applied — anchor not found');
+}
 
 // ── 3c. Patch: redirect direct /dashboard access to / ─────────────────────────
 // The Dashboard requires school context set via React state from the home page.
