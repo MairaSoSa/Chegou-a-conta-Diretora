@@ -81,17 +81,11 @@ if (_reqPatched === source) {
   source = _reqPatched;
 }
 
-// ── 3b. Patch: add Clear-Site-Data header to index.html responses ─────────────
-// Forces browsers to evict immutable-cached assets when a broken version was
-// stored (e.g. Dashboard-Bm3xp8Y-.js with SyntaxError). One-time nuclear clear.
-const _PATCH_OLD = 'n.setHeader("Pragma","no-cache"),n.setHeader("Expires","0"))}}';
-const _PATCH_NEW = 'n.setHeader("Pragma","no-cache"),n.setHeader("Expires","0"),n.setHeader("Clear-Site-Data",\'"cache"\'))}}';
-const _patched = source.replace(_PATCH_OLD, _PATCH_NEW);
-if (_patched === source) {
-  console.warn('[bootstrap] Clear-Site-Data patch NOT applied — pattern not found (server already updated?)');
-} else {
-  source = _patched;
-}
+// ── 3b. Clear-Site-Data patch DISABLED ────────────────────────────────────────
+// Was used as emergency measure to bust broken cached assets (Dashboard-Bm3xp8Y-.js).
+// Removed because it clears lazy-loaded chunks on every page load, causing the
+// dashboard to show a blank page on first visit (chunks evicted before render).
+// All assets are now correct — no cache busting needed.
 
 // ── 3c. Patch: redirect direct /dashboard access to / ─────────────────────────
 // The Dashboard requires school context set via React state from the home page.
