@@ -140,7 +140,7 @@ if (source.includes(_PDDE_FALLBACK_OLD)) {
 // The repasses card header already shows the council, CNPJ and role.
 // The extra ds_programa_fnde chip (for example, "PDDE") adds redundant noise
 // between the destinações and repasses blocks, so remove only that badge.
-const dashboardAssetPath = path.join(distDir, 'public/assets/Dashboard-v4.js');
+const dashboardAssetPath = path.join(distDir, 'public/assets/Dashboard-v8.js');
 const _PDDE_REPASSE_CHIP_REGEX = /,uex0\.ds_programa_fnde&&e\.jsx\("div",\{style:\{display:"flex",alignItems:"center",background:"#f3e8ff",border:"1px solid #d8b4fe",borderRadius:"20px",padding:"4px 12px",fontSize:"11px",color:"#6b21a8",fontWeight:600,whiteSpace:"nowrap"\},children:"(?:\\uD83D\\uDCCC |📌 )"\+uex0\.ds_programa_fnde\}\)/;
 if (fs.existsSync(dashboardAssetPath)) {
   const dashboardSource = fs.readFileSync(dashboardAssetPath, 'utf8');
