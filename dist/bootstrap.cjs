@@ -85,7 +85,7 @@ if (_reqPatched === source) {
 // Clears stale cached JS chunks (e.g. old Dashboard version) after a deploy.
 // Counter resets on every server restart. After 3 requests the header is omitted
 // so long-running sessions are not penalised.
-globalThis._cacheBustCount = 3;
+globalThis._cacheBustCount = 20;
 const _CACHE_BUST_ANCHOR = 'i.setHeader("Cache-Control","no-store, no-cache, must-revalidate"),i.setHeader("Pragma","no-cache"),i.setHeader("Expires","0"),i.sendFile(';
 const _CACHE_BUST_REPLACE = '(()=>{if(globalThis._cacheBustCount>0){globalThis._cacheBustCount--;i.setHeader("Clear-Site-Data","\\"cache\\"");}})(),i.setHeader("Cache-Control","no-store, no-cache, must-revalidate"),i.setHeader("Pragma","no-cache"),i.setHeader("Expires","0"),i.sendFile(';
 const _cacheBustPatched = source.replace(_CACHE_BUST_ANCHOR, _CACHE_BUST_REPLACE);
