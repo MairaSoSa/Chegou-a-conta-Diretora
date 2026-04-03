@@ -123,6 +123,19 @@ if (source.includes(_PDDE_ANO_OLD)) {
 // execfin year filtering is handled in the frontend bundle to avoid altering
 // the server's cached aggregate payload and causing empty results.
 
+// ── 3e. Patch: PDDE year fallback ─────────────────────────────────────────────
+// When the current year (2026) has no PDDE data yet, the handler returns ok:false
+// and the dashboard shows a blank page. This patch makes the handler automatically
+// retry with the previous year (2025) when no explicit ?ano= was requested.
+const _PDDE_FALLBACK_OLD = 'let I=await Yrt(v,E);I?.ok&&_u(x,I);let D=Date.now();g.json({...I,_cached_at:D})';
+const _PDDE_FALLBACK_NEW = 'let I=await Yrt(v,E);if(!I?.ok&&!A.query.ano){try{const _fb=await Yrt(v-1,E);if(_fb?.ok){const _fk=`pdde_info_${E}_${v-1}`;_u(_fk,_fb);I=_fb;}}catch(_){}}I?.ok&&_u(x,I);let D=Date.now();g.json({...I,_cached_at:D})';
+if (source.includes(_PDDE_FALLBACK_OLD)) {
+  source = source.replace(_PDDE_FALLBACK_OLD, _PDDE_FALLBACK_NEW);
+  console.log('[bootstrap] PDDE year fallback patch applied');
+} else {
+  console.warn('[bootstrap] PDDE year fallback patch NOT applied — pattern not found');
+}
+
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
