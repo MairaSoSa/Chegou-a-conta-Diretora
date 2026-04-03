@@ -1,22 +1,72 @@
+# Dependencies
 node_modules
-dist/*.bak
-dist/public/assets/*.bak
-.DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+package-lock.json
+
+# Environment
 .env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.db-shm
+*.db-wal
 dev.db
 dev.db-shm
 dev.db-wal
 dev_trimmed.db-shm
 dev_trimmed.db-wal
+
+# Build artifacts - keep only current versions
+dist/*.bak
+dist/*.bak*
+dist/**/index.cjs.bak*
+dist/public/*.bak
+dist/public/assets/*.bak
+dist/public/assets/*-v[0-9].* # Remove old versioned assets
+dist/public/assets/*-v[0-9]r*.* # Remove versioned patches
+dist/public/assets/*-final.*
+dist/public/assets/*-fix-r*.* # Remove patch versions
+
+# Logs
 *.log
-.replit
-replit.nix
+*.log.*
+nohup.out
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+.code-workspace
+
+# System
 .config/
 .cache/
 .local/
 .upm/
+.replit
+replit.nix
+server/public
+
+# Config backups
+vite.config.ts.*
+tsconfig.*.json
+
+# Archives
+*.tar.gz
+*.zip
+
+# Project-specific
 Dados/
 attached_assets/
+dist/dev.db.backup*

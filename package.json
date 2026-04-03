@@ -1,10 +1,29 @@
 {
   "name": "chegou-a-conta-diretora",
   "version": "1.0.0",
+  "description": "Dashboard de gestão financeira para escolas públicas brasileiras",
+  "license": "MIT",
   "scripts": {
-    "dev": "node dist/bootstrap.cjs"
+    "dev": "node dist/bootstrap.cjs",
+    "start": "bash start.sh",
+    "preflight": "npm run validate:config && npm run validate:structure",
+    "validate:config": "node -e \"const env = require('./.env'); console.log('✓ .env válido')\"",
+    "validate:structure": "node scripts/validate-build.mjs"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.97"
-  }
+  },
+  "devDependencies": {
+    "zod": "^3.22.0"
+  },
+  "keywords": [
+    "educação",
+    "brasil",
+    "financeiro",
+    "escolas",
+    "gestão"
+  ]
 }
