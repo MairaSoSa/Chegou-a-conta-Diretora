@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     librsvg2-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN npm ci
+RUN npm install
 
 ENV NODE_ENV=production
 
