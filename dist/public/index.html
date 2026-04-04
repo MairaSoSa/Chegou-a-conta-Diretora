@@ -50,14 +50,48 @@
           if (m && m.message && m.message.indexOf('removeChild') !== -1) return;
           return _ce.apply(console, arguments);
         };
+        function showReloadPrompt() {
+          try {
+            if (document.getElementById('__reload_prompt__')) return;
+            var bar = document.createElement('div');
+            bar.id = '__reload_prompt__';
+            bar.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;z-index:2147483647;background:#fff8e1;color:#5d4037;border:1.5px solid #f9a825;border-radius:10px;padding:10px 16px;font:13px/1.5 sans-serif;display:flex;align-items:center;justify-content:space-between;gap:12px;';
+            var msg = document.createElement('span');
+            msg.textContent = 'Não foi possível carregar uma parte do painel. Tente atualizar a página.';
+            var btn = document.createElement('button');
+            btn.textContent = 'Atualizar';
+            btn.style.cssText = 'background:#f9a825;color:#fff;border:none;border-radius:6px;padding:6px 14px;font:13px/1 sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0;';
+            btn.onclick = function() { window.location.reload(); };
+            bar.appendChild(msg);
+            bar.appendChild(btn);
+            document.body.appendChild(bar);
+          } catch (_) {}
+        }
+
+        function isModuleLoadError(e) {
+          var msg = (e && e.message) || '';
+          var src = (e && e.filename) || '';
+          if (msg.indexOf("reading 'default'") !== -1) return true;
+          if (msg.indexOf("Unexpected token 'const'") !== -1) return true;
+          if (msg.indexOf('vite:preloadError') !== -1) return true;
+          if (src.indexOf('/assets/') !== -1 && (msg.indexOf('SyntaxError') !== -1 || msg.indexOf('Unexpected token') !== -1)) return true;
+          return false;
+        }
+
         window.addEventListener('vite:preloadError', function(e) {
-          e.preventDefault();
-          console.warn('[dashboard] vite:preloadError suprimido:', e.payload && e.payload.message);
+          console.warn('[dashboard] vite:preloadError:', e.payload && e.payload.message);
+          showReloadPrompt();
         });
 
         window.addEventListener('error', function(e) {
           if (e.message && e.message.indexOf('removeChild') !== -1) {
             e.preventDefault(); e.stopImmediatePropagation(); return true;
+          }
+          if (isModuleLoadError(e)) {
+            e.preventDefault();
+            console.warn('[dashboard] Erro de carregamento de módulo suprimido:', e.message);
+            showReloadPrompt();
+            return true;
           }
           var details =
             'message: ' + (e.message || '(vazio)') + '\n' +
@@ -68,9 +102,13 @@
 
         window.addEventListener('unhandledrejection', function(e) {
           var reason = e && e.reason;
-          if (reason instanceof SyntaxError && reason.message && reason.message.indexOf("'const'") !== -1) {
+          if (reason && reason.message && (
+            reason.message.indexOf("'const'") !== -1 ||
+            reason.message.indexOf("reading 'default'") !== -1
+          )) {
             e.preventDefault();
-            console.warn('[dashboard] SyntaxError de preload suprimida:', reason.message);
+            console.warn('[dashboard] Rejeição de carregamento de módulo suprimida:', reason.message);
+            showReloadPrompt();
             return;
           }
           var details = '';
