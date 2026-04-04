@@ -12,6 +12,29 @@
     <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Geist+Mono:wght@100..900&family=Geist:wght@100..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Outfit:wght@100..900&family=Oxanium:wght@200..800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=Space+Grotesk:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
     <script>
       (function() {
+        // One-time recovery for forwarded hosts where stale SW/cache can serve corrupted JS assets.
+        try {
+          var isForwardedHost = /\.app\.github\.dev$/i.test(location.hostname || '');
+          var recoverKey = '__asset_recover_once__';
+          if (isForwardedHost && !sessionStorage.getItem(recoverKey)) {
+            sessionStorage.setItem(recoverKey, '1');
+            if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations) {
+              navigator.serviceWorker.getRegistrations().then(function(regs) {
+                (regs || []).forEach(function(r) { try { r.unregister(); } catch (_) {} });
+              });
+            }
+            if ('caches' in window && caches.keys) {
+              caches.keys().then(function(keys) {
+                (keys || []).forEach(function(k) { try { caches.delete(k); } catch (_) {} });
+              });
+            }
+            var u = new URL(location.href);
+            u.searchParams.set('asset_recover', String(Date.now()));
+            location.replace(u.toString());
+            return;
+          }
+        } catch (_) {}
+
         function showRuntimeError(title, details) {
           try {
             if (document.getElementById('__runtime_error_overlay__')) return;
@@ -54,10 +77,18 @@
           if (e.message && e.message.indexOf('removeChild') !== -1) {
             e.preventDefault(); e.stopImmediatePropagation(); return true;
           }
+          var target = e && e.target;
+          var resourceHint = '';
+          if (target && target !== window) {
+            resourceHint =
+              '\nresourceTag: ' + (target.tagName || '(sem tag)') +
+              '\nresourceUrl: ' + (target.src || target.href || '(sem url)');
+          }
           var details =
             'message: ' + (e.message || '(vazio)') + '\n' +
             'source: ' + (e.filename || '(sem arquivo)') + ':' + (e.lineno || 0) + ':' + (e.colno || 0) + '\n' +
-            'stack: ' + ((e.error && e.error.stack) ? e.error.stack : '(sem stack)');
+            'stack: ' + ((e.error && e.error.stack) ? e.error.stack : '(sem stack)') +
+            resourceHint;
           showRuntimeError('Erro de JavaScript em runtime (dashboard):', details);
         }, true);
 
@@ -69,8 +100,44 @@
           else {
             try { details = JSON.stringify(reason); } catch (_) { details = String(reason); }
           }
+
+          // Avoid hard crash loop when upstream returns JS/HTML where JSON was expected.
+          if (reason && reason.name === 'SyntaxError' && /Unexpected token 'const'/.test(reason.message || '')) {
+            e.preventDefault();
+            return;
+          }
+
           showRuntimeError('Promise rejeitada sem tratamento (dashboard):', details || '(sem detalhes)');
         });
+
+        // Global protection for any Response.json() call, including cloned responses.
+        var _origResponseJson = window.Response && window.Response.prototype && window.Response.prototype.json;
+        if (typeof _origResponseJson === 'function' && !window.__globalSafeJsonPatched) {
+          window.Response.prototype.json = function() {
+            var resp = this;
+            return _origResponseJson.call(resp).catch(async function(err) {
+              try {
+                var txt = await resp.clone().text();
+                var snippet = (txt || '').slice(0, 280);
+                var looksLikeScript = /^\s*const\s+/i.test(txt || '');
+                var looksLikeHtml = /^\s*</.test(txt || '');
+                if (looksLikeScript || looksLikeHtml) {
+                  return {
+                    ok: false,
+                    error: 'Resposta nao-JSON recebida',
+                    _non_json: true,
+                    _status: resp.status,
+                    _url: resp.url || '',
+                    _snippet: snippet
+                  };
+                }
+                try { return JSON.parse(txt); } catch (_) {}
+              } catch (_) {}
+              throw err;
+            });
+          };
+          window.__globalSafeJsonPatched = true;
+        }
 
         var _origFetch = window.fetch;
         if (typeof _origFetch === 'function') {
@@ -113,8 +180,101 @@
         }
       })();
     </script>
-    <script type="module" crossorigin src="/assets/index-v21.js?v=20260404ak"></script>
-    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CRHowRiP.js">
+    <script>
+      (function() {
+        var ENTRY_URL = '/assets/index-v21.js?v=20260404ak';
+        var REACT_CORE_URL = '/assets/react-core-aq.js?v=20260404av';
+        var VENDOR_URL = '/assets/vendor-react-CRHowRiP-fix2.js?v=20260404av';
+
+        function injectBootError(title, details) {
+          try {
+            var existing = document.getElementById('__runtime_error_overlay__');
+            if (existing) return;
+            var box = document.createElement('div');
+            box.id = '__runtime_error_overlay__';
+            box.style.position = 'fixed';
+            box.style.left = '12px';
+            box.style.right = '12px';
+            box.style.bottom = '12px';
+            box.style.maxHeight = '55vh';
+            box.style.overflow = 'auto';
+            box.style.zIndex = '2147483647';
+            box.style.background = '#fff1f1';
+            box.style.color = '#7a1111';
+            box.style.border = '2px solid #d43f3f';
+            box.style.borderRadius = '10px';
+            box.style.padding = '12px';
+            box.style.font = '12px/1.45 monospace';
+            box.style.whiteSpace = 'pre-wrap';
+            box.textContent = title + '\n\n' + details;
+            document.body.appendChild(box);
+          } catch (_) {}
+        }
+
+        function sanitizeVendorSource(src) {
+          if (!src) return src;
+          var patched = src;
+          // Remove known malicious/accidental injected snippet that breaks `else if (...)` parsing.
+          patched = patched.replace(
+            /else\s+if\s+fetch\("https:\/\/www\.fnde\.gov\.br\/pddeinfo\/js\/fnde\.script\.min\.js"\)[\s\S]*?console\.log\(t\.match\(\/\\\/pddeinfo\\\/\[\^\\"\]\+\/g\)\);\s*/g,
+            'else{if(false){}}'
+          );
+          return patched;
+        }
+
+        function fetchText(url) {
+          return fetch(url, { cache: 'no-store' }).then(function(resp) {
+            if (!resp.ok) {
+              throw new Error('Falha ao baixar asset: ' + url + ' (HTTP ' + resp.status + ')');
+            }
+            return resp.text();
+          });
+        }
+
+        function makeBlobUrl(jsText) {
+          return URL.createObjectURL(new Blob([jsText], { type: 'text/javascript' }));
+        }
+
+        Promise.resolve()
+          .then(function() {
+            return Promise.all([fetchText(VENDOR_URL), fetchText(REACT_CORE_URL)]);
+          })
+          .then(function(pair) {
+            var vendorText = sanitizeVendorSource(pair[0]);
+            var reactCoreText = pair[1];
+
+            var vendorBlobUrl = makeBlobUrl(vendorText);
+            reactCoreText = reactCoreText
+              .replace('./vendor-react-CRHowRiP-fix2.js?v=20260404av', vendorBlobUrl)
+              .replace('/assets/vendor-react-CRHowRiP-fix2.js?v=20260404av', vendorBlobUrl);
+            var reactCoreBlobUrl = makeBlobUrl(reactCoreText);
+
+            var importMap = {
+              imports: {
+                '/assets/react-core-aq.js?v=20260404av': reactCoreBlobUrl,
+                './react-core-aq.js?v=20260404av': reactCoreBlobUrl,
+                '/assets/vendor-react-CRHowRiP-fix2.js?v=20260404av': vendorBlobUrl,
+                './vendor-react-CRHowRiP-fix2.js?v=20260404av': vendorBlobUrl
+              }
+            };
+
+            var mapScript = document.createElement('script');
+            mapScript.type = 'importmap';
+            mapScript.textContent = JSON.stringify(importMap);
+            document.head.appendChild(mapScript);
+
+            var entryScript = document.createElement('script');
+            entryScript.type = 'module';
+            entryScript.crossOrigin = 'anonymous';
+            entryScript.src = ENTRY_URL;
+            document.head.appendChild(entryScript);
+          })
+          .catch(function(err) {
+            injectBootError('Falha no bootstrap de módulos:', (err && (err.stack || err.message)) || String(err));
+          });
+      })();
+    </script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CRHowRiP-fix2.js?v=20260404av">
     <link rel="modulepreload" crossorigin href="/assets/vendor-motion-DwvlWA_f.js">
     <link rel="stylesheet" crossorigin href="/assets/index-v2.css">
   </head>

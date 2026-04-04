@@ -5,6 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "node dist/bootstrap.cjs",
+    "prestart": "npm run prune:assets:apply",
     "start": "bash start.sh",
     "prune:assets": "bash scripts/prune-dist-assets.sh",
     "prune:assets:apply": "bash scripts/prune-dist-assets.sh --apply",

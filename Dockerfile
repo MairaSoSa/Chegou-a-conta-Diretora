@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install -y \
     && pip3 install --break-system-packages --quiet gdown \
     && rm -rf /var/lib/apt/lists/*
 
-RUN npm install
+RUN npm install \
+    && npm run prune:assets:apply
 
 ENV NODE_ENV=production
 
