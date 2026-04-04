@@ -478,6 +478,15 @@
             // Pattern: `,...,const varName=expr` → `,...;const varName=expr`
             // This bug exists at index 337138 of Dashboard-v30.js (`,const _isBasico=`).
             dashboardText = dashboardText.replace(/,const ([a-zA-Z_$][a-zA-Z0-9_$]*)=/g, ';const $1=');
+            // Fix runtime TypeError: undefined.toLocaleString() when PDDE fields are missing.
+            // The currency formatter `c` (and other single-var .toLocaleString calls) must handle
+            // null/undefined values — e.g. c(s.devido) when s.devido is undefined.
+            // Regex matches: IDENTIFIER.toLocaleString( where IDENTIFIER is NOT preceded by . or ?
+            // (i.e. not a chained property) — wraps with (IDENTIFIER??0).toLocaleString(
+            dashboardText = dashboardText.replace(
+              /(?<![?.\w])([a-zA-Z_$][a-zA-Z0-9_$]*)\.toLocaleString\(/g,
+              '($1??0).toLocaleString('
+            );
             var dashboardBlobUrl = makeBlobUrl(dashboardText);
             window.__ccDashboardBlobUrl = dashboardBlobUrl;
 
