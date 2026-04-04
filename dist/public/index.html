@@ -12,6 +12,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Geist+Mono:wght@100..900&family=Geist:wght@100..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Outfit:wght@100..900&family=Oxanium:wght@200..800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=Space+Grotesk:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
     <script>
       (function() {
+        function showRuntimeError(title, details) {
+          try {
+            if (document.getElementById('__runtime_error_overlay__')) return;
+            var box = document.createElement('div');
+            box.id = '__runtime_error_overlay__';
+            box.style.position = 'fixed';
+            box.style.left = '12px';
+            box.style.right = '12px';
+            box.style.bottom = '12px';
+            box.style.maxHeight = '55vh';
+            box.style.overflow = 'auto';
+            box.style.zIndex = '2147483647';
+            box.style.background = '#fff1f1';
+            box.style.color = '#7a1111';
+            box.style.border = '2px solid #d43f3f';
+            box.style.borderRadius = '10px';
+            box.style.padding = '12px';
+            box.style.font = '12px/1.45 monospace';
+            box.style.whiteSpace = 'pre-wrap';
+            box.textContent = title + '\n\n' + (details || 'Sem detalhes.');
+            document.body.appendChild(box);
+          } catch (_) {}
+        }
+
         var _orig = Node.prototype.removeChild;
         Node.prototype.removeChild = function(child) {
           try { return _orig.call(this, child); } catch(e) {
@@ -30,10 +54,66 @@
           if (e.message && e.message.indexOf('removeChild') !== -1) {
             e.preventDefault(); e.stopImmediatePropagation(); return true;
           }
+          var details =
+            'message: ' + (e.message || '(vazio)') + '\n' +
+            'source: ' + (e.filename || '(sem arquivo)') + ':' + (e.lineno || 0) + ':' + (e.colno || 0) + '\n' +
+            'stack: ' + ((e.error && e.error.stack) ? e.error.stack : '(sem stack)');
+          showRuntimeError('Erro de JavaScript em runtime (dashboard):', details);
         }, true);
+
+        window.addEventListener('unhandledrejection', function(e) {
+          var reason = e && e.reason;
+          var details = '';
+          if (reason && reason.stack) details = reason.stack;
+          else if (typeof reason === 'string') details = reason;
+          else {
+            try { details = JSON.stringify(reason); } catch (_) { details = String(reason); }
+          }
+          showRuntimeError('Promise rejeitada sem tratamento (dashboard):', details || '(sem detalhes)');
+        });
+
+        var _origFetch = window.fetch;
+        if (typeof _origFetch === 'function') {
+          window.fetch = function(input, init) {
+            return _origFetch(input, init).then(function(resp) {
+              try {
+                var reqUrl = typeof input === 'string' ? input : ((input && input.url) || '');
+                var finalUrl = (resp && resp.url) || reqUrl || '';
+                var isApi = finalUrl.indexOf('/api/') !== -1 || reqUrl.indexOf('/api/') !== -1;
+                if (!isApi || !resp || resp.__safeJsonPatched) return resp;
+
+                var _json = resp.json.bind(resp);
+                resp.json = function() {
+                  return _json().catch(async function(err) {
+                    try {
+                      var txt = await resp.clone().text();
+                      var snippet = (txt || '').slice(0, 280);
+                      var looksLikeScript = /^\s*const\s+/i.test(txt || '');
+                      var looksLikeHtml = /^\s*</.test(txt || '');
+                      if (looksLikeScript || looksLikeHtml) {
+                        return {
+                          ok: false,
+                          error: 'Resposta nao-JSON recebida da API',
+                          _non_json: true,
+                          _status: resp.status,
+                          _url: finalUrl,
+                          _snippet: snippet
+                        };
+                      }
+                      try { return JSON.parse(txt); } catch (_) {}
+                    } catch (_) {}
+                    throw err;
+                  });
+                };
+                resp.__safeJsonPatched = true;
+              } catch (_) {}
+              return resp;
+            });
+          };
+        }
       })();
     </script>
-    <script type="module" crossorigin src="/assets/index-v21.js?v=20260404f"></script>
+    <script type="module" crossorigin src="/assets/index-v21.js?v=20260404ak"></script>
     <link rel="modulepreload" crossorigin href="/assets/vendor-react-CRHowRiP.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-motion-DwvlWA_f.js">
     <link rel="stylesheet" crossorigin href="/assets/index-v2.css">
