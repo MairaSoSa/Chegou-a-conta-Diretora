@@ -296,6 +296,9 @@
         }
 
         function vendorSyntaxError(jsText) {
+          if (!jsText) return null;
+          // ES modules with export/import statements cannot be validated via new Function() — skip.
+          if (jsText.indexOf('export ') !== -1 || jsText.indexOf('export{') !== -1 || jsText.indexOf('export*') !== -1) return null;
           try {
             // Vendor bundle is plain script, so Function parse is enough to catch syntax corruption.
             // eslint-disable-next-line no-new-func
