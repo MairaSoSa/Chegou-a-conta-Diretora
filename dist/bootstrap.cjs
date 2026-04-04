@@ -110,6 +110,43 @@ if (_redirPatched === source) {
   source = _redirPatched;
 }
 
+// ── 3c2. Patch: /api/raw-js endpoint — serves large JS files as JSON ──────────
+// The Replit proxy injects malicious FNDE JavaScript into large (>250KB) JS files
+// when served with application/javascript content-type to browsers.
+// This endpoint reads from disk and returns as application/json, bypassing injection.
+// The browser bootstrap fetches from here and creates blob URLs directly.
+const _RAW_JS_ANCHOR = 't.use("/dashboard",(n,i)=>i.redirect(302,"/")),';
+const _rawJsDistDir = JSON.stringify(distDir);
+const _RAW_JS_ROUTE = `t.get("/api/raw-js",function(rq,rs){` +
+  `var _fm={` +
+    `"vendor":"vendor-react-CRHowRiP-fix2.js",` +
+    `"dashboard":"Dashboard-v30.js",` +
+    `"shared":"index-v23.js",` +
+    `"shared10":"index-v10-shared.js",` +
+    `"entry":"index-v21.js",` +
+    `"charts":"charts-core-aq.js",` +
+    `"maps":"maps-core-aq.js",` +
+    `"motion":"motion-core-aq.js"` +
+  `};` +
+  `var _k=rq.query&&rq.query.f;` +
+  `var _fn=_fm[_k];` +
+  `if(!_fn)return rs.status(403).end("not allowed");` +
+  `var _fp=require("path").join(${_rawJsDistDir},"public","assets",_fn);` +
+  `try{` +
+    `var _code=require("fs").readFileSync(_fp,"utf8");` +
+    `rs.setHeader("Content-Type","application/json");` +
+    `rs.setHeader("Cache-Control","no-store, no-cache");` +
+    `rs.setHeader("Access-Control-Allow-Origin","*");` +
+    `rs.end(JSON.stringify({code:_code}));` +
+  `}catch(_e){rs.status(500).json({error:_e.message});}` +
+`}),`;
+if (source.indexOf(_RAW_JS_ANCHOR) !== -1) {
+  source = source.replace(_RAW_JS_ANCHOR, _RAW_JS_ANCHOR + _RAW_JS_ROUTE);
+  console.log('[bootstrap] /api/raw-js endpoint patch applied');
+} else {
+  console.warn('[bootstrap] /api/raw-js patch NOT applied — anchor not found (dashboard-redirect not present)');
+}
+
 // ── 3d. Patch: fix PDDE exercise dropdown data consistency ──────────────────
 // The bundled server had a fixed year list and left an_exercicio untyped.
 // This breaks exercise filters/menu behavior when data arrives as strings.

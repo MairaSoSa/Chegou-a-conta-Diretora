@@ -284,6 +284,7 @@
         var CHARTS_URL = '/assets/charts-core-aq.js?v=20260404ar';
         var SHARED_URL = '/assets/index-v23.js';
         var MOTION_URL = '/assets/motion-core-aq.js?v=20260404ar';
+        var REACT_CORE_URL_AR = '/assets/react-core-aq.js?v=20260404ar';
 
         function injectBootError(title, details) {
           try {
@@ -355,20 +356,42 @@
           });
         }
 
+        // fetchRaw: fetches a JS file via the /api/raw-js JSON endpoint.
+        // The Replit proxy injects FNDE into large JS files (>250KB) served with JS content-type.
+        // Fetching as JSON bypasses this injection because the proxy only modifies JS/HTML content.
+        function fetchRaw(fileKey) {
+          return fetch('/api/raw-js?f=' + fileKey, { cache: 'no-store' }).then(function(resp) {
+            if (!resp.ok) {
+              throw new Error('Falha ao baixar raw-js ' + fileKey + ' (HTTP ' + resp.status + ')');
+            }
+            return resp.json();
+          }).then(function(j) {
+            if (!j || typeof j.code !== 'string') {
+              throw new Error('raw-js resposta inválida para ' + fileKey);
+            }
+            return j.code;
+          });
+        }
+
         function makeBlobUrl(jsText) {
           return URL.createObjectURL(new Blob([jsText], { type: 'text/javascript' }));
         }
 
+        window.__ccDashboardBlobUrl = null;
+
         Promise.resolve()
           .then(function() {
+            // Use fetchRaw (JSON endpoint) for all files to bypass FNDE proxy injection.
+            // The proxy only injects into JS/HTML responses; JSON responses pass through clean.
             return Promise.all([
-              fetchText(VENDOR_URL),
+              fetchRaw('vendor'),
               fetchText(REACT_CORE_URL),
-              fetchText(DASHBOARD_URL),
+              fetchRaw('dashboard'),
               fetchText(MAPS_URL),
-              fetchText(CHARTS_URL),
-              fetchText(SHARED_URL),
-              fetchText(MOTION_URL)
+              fetchRaw('charts'),
+              fetchRaw('shared10'),
+              fetchText(MOTION_URL),
+              fetchRaw('entry')
             ]);
           })
           .then(function(results) {
@@ -379,6 +402,7 @@
             var chartsText     = sanitizeVendorSource(results[4]);
             var sharedText     = sanitizeVendorSource(results[5]);
             var motionText     = sanitizeVendorSource(results[6]);
+            var entryText      = sanitizeVendorSource(results[7]);
 
             var parseErr = vendorSyntaxError(vendorText);
             if (parseErr) {
@@ -416,14 +440,27 @@
               .replace('/assets/react-core-aq.js?v=20260404ar', reactCoreBlobUrl);
             var chartsBlobUrl = makeBlobUrl(chartsText);
 
-            // 6. Shared bundle (index-v23.js): patch vendor+motion-core imports, suppress render() call
+            // 6. Shared bundle (index-v10-shared.js): patch vendor+motion imports, suppress render()
+            // index-v10-shared.js uses the OLD vendor (vendor-react-CRHowRiP.js) and OLD motion
+            // (vendor-motion-DwvlWA_f.js, which is byte-identical to motion-core-aq.js).
+            // We use vendorBlobUrl (from vendor-fix2, 1 byte different but same exports) and motionBlobUrl.
             sharedText = sharedText
-              .replace('./vendor-react-CRHowRiP-fix2.js?v=20260404av', vendorBlobUrl)
-              .replace('/assets/vendor-react-CRHowRiP-fix2.js?v=20260404av', vendorBlobUrl)
-              .replace('./motion-core-aq.js?v=20260404ar', motionBlobUrl)
-              .replace('/assets/motion-core-aq.js?v=20260404ar', motionBlobUrl);
+              .replace('./vendor-react-CRHowRiP.js', vendorBlobUrl)
+              .replace('/assets/vendor-react-CRHowRiP.js', vendorBlobUrl)
+              .replace('./vendor-motion-DwvlWA_f.js', motionBlobUrl)
+              .replace('/assets/vendor-motion-DwvlWA_f.js', motionBlobUrl);
             // Suppress the app render() call — loading this as a sub-module must not re-mount the app
-            sharedText = sharedText.replace(/(?:[\w$.]+\.)?createRoot\([^)]*\)\.render\([^;]{0,300}?\);/, '/*render-suppressed*/0;');
+            sharedText = sharedText.replace(
+              /[\w$.]+\.createRoot\(document\.getElementById\([^)]*\)\)\.render\([^;]{0,300}\);/,
+              '/*render-suppressed*/0;'
+            );
+            // Patch lazy import of Dashboard to use the pre-set global blob URL instead of a proxy-served path.
+            sharedText = sharedText.replace(
+              /import\("\.\/Dashboard-[^"]+"\)/g,
+              '(function(){var _u=window.__ccDashboardBlobUrl||"/assets/Dashboard-v30.js?v=20260404an";return import(_u);})()'
+            );
+            // Suppress vitePreload mapDeps for Dashboard in shared blob
+            sharedText = sharedText.replace(/__vite__mapDeps\(\[[^\]]*\]\)/g, '[]');
             var sharedBlobUrl = makeBlobUrl(sharedText);
 
             // 7. Dashboard blob: patch all its relative imports to blob URLs
@@ -434,30 +471,37 @@
               .replace('/assets/maps-core-aq.js?v=20260404ar', mapsBlobUrl)
               .replace('./charts-core-aq.js?v=20260404ar', chartsBlobUrl)
               .replace('/assets/charts-core-aq.js?v=20260404ar', chartsBlobUrl)
+              .replace('./motion-core-aq.js?v=20260404ar', motionBlobUrl)
+              .replace('/assets/motion-core-aq.js?v=20260404ar', motionBlobUrl)
               .replace('./index-v10-shared.js', sharedBlobUrl)
               .replace('/assets/index-v10-shared.js', sharedBlobUrl);
+            // Fix build-artifact syntax bug: `const` in comma-expression context is invalid ES module syntax.
+            // Pattern: `,...,const varName=expr` → `,...;const varName=expr`
+            // This bug exists at index 337138 of Dashboard-v30.js (`,const _isBasico=`).
+            dashboardText = dashboardText.replace(/,const ([a-zA-Z_$][a-zA-Z0-9_$]*)=/g, ';const $1=');
             var dashboardBlobUrl = makeBlobUrl(dashboardText);
+            window.__ccDashboardBlobUrl = dashboardBlobUrl;
 
-            var importMap = {
-              imports: {
-                '/assets/react-core-aq.js?v=20260404av': reactCoreBlobUrl,
-                './react-core-aq.js?v=20260404av': reactCoreBlobUrl,
-                '/assets/vendor-react-CRHowRiP-fix2.js?v=20260404av': vendorBlobUrl,
-                './vendor-react-CRHowRiP-fix2.js?v=20260404av': vendorBlobUrl,
-                '/assets/Dashboard-v30.js?v=20260404an': dashboardBlobUrl,
-                './Dashboard-v30.js?v=20260404an': dashboardBlobUrl
-              }
-            };
-
-            var mapScript = document.createElement('script');
-            mapScript.type = 'importmap';
-            mapScript.textContent = JSON.stringify(importMap);
-            document.head.appendChild(mapScript);
+            // 8. Entry blob: patch all server-relative imports to blob URLs
+            // index-v21.js is 403KB — it can be FNDE-injected; sanitizeVendorSource handles that above.
+            // Patch static imports (they appear as import{...}from"URL" at module top-level):
+            entryText = entryText
+              .replace('./react-core-aq.js?v=20260404av', reactCoreBlobUrl)
+              .replace('/assets/react-core-aq.js?v=20260404av', reactCoreBlobUrl)
+              .replace('./motion-core-aq.js?v=20260404ar', motionBlobUrl)
+              .replace('/assets/motion-core-aq.js?v=20260404ar', motionBlobUrl);
+            // Patch all dynamic dashboard imports so vitePreload's s() calls the blob directly
+            // (replaceAll needed since there are 2 occurrences — one for si, one for La)
+            entryText = entryText.split('./Dashboard-v30.js?v=20260404an').join(dashboardBlobUrl);
+            entryText = entryText.split('/assets/Dashboard-v30.js?v=20260404an').join(dashboardBlobUrl);
+            // Suppress vitePreload dependency list so NO server-URL preload links are created for dashboard
+            entryText = entryText.replace(/__vite__mapDeps\(\[0,1,2,3,4,5\]\)/g, '[]');
+            var entryBlobUrl = makeBlobUrl(entryText);
 
             var entryScript = document.createElement('script');
             entryScript.type = 'module';
             entryScript.crossOrigin = 'anonymous';
-            entryScript.src = ENTRY_URL;
+            entryScript.src = entryBlobUrl;
             document.head.appendChild(entryScript);
           })
           .catch(function(err) {
