@@ -137,8 +137,9 @@
         }
 
         window.addEventListener('vite:preloadError', function(e) {
-          console.warn('[dashboard] vite:preloadError:', e.payload && e.payload.message);
-          showReloadPrompt();
+          // Prevent Vite from rejecting the import — let baseModule() run so the importmap can redirect to the blob URL.
+          e.preventDefault();
+          console.warn('[dashboard] vite:preloadError suprimido (importmap vai redirecionar):', e.payload && e.payload.message);
         });
 
         window.addEventListener('error', function(e) {
@@ -278,6 +279,11 @@
         var ENTRY_URL = '/assets/index-v21.js?v=20260404ak';
         var REACT_CORE_URL = '/assets/react-core-aq.js?v=20260404av';
         var VENDOR_URL = '/assets/vendor-react-CRHowRiP-fix2.js?v=20260404av';
+        var DASHBOARD_URL = '/assets/Dashboard-v30.js?v=20260404an';
+        var MAPS_URL = '/assets/maps-core-aq.js?v=20260404ar';
+        var CHARTS_URL = '/assets/charts-core-aq.js?v=20260404ar';
+        var SHARED_URL = '/assets/index-v10-shared.js';
+        var MOTION_URL = '/assets/vendor-motion-DwvlWA_f.js';
 
         function injectBootError(title, details) {
           try {
@@ -355,15 +361,27 @@
 
         Promise.resolve()
           .then(function() {
-            return Promise.all([fetchText(VENDOR_URL), fetchText(REACT_CORE_URL)]);
+            return Promise.all([
+              fetchText(VENDOR_URL),
+              fetchText(REACT_CORE_URL),
+              fetchText(DASHBOARD_URL),
+              fetchText(MAPS_URL),
+              fetchText(CHARTS_URL),
+              fetchText(SHARED_URL),
+              fetchText(MOTION_URL)
+            ]);
           })
-          .then(function(pair) {
-            var vendorText = sanitizeVendorSource(pair[0]);
-            var reactCoreText = pair[1];
+          .then(function(results) {
+            var vendorText     = sanitizeVendorSource(results[0]);
+            var reactCoreText  = results[1];
+            var dashboardText  = sanitizeVendorSource(results[2]);
+            var mapsText       = sanitizeVendorSource(results[3]);
+            var chartsText     = sanitizeVendorSource(results[4]);
+            var sharedText     = sanitizeVendorSource(results[5]);
+            var motionText     = sanitizeVendorSource(results[6]);
 
             var parseErr = vendorSyntaxError(vendorText);
             if (parseErr) {
-              // One more aggressive pass focused on malformed "else if fetch(...)" patterns.
               vendorText = vendorText.replace(/else\s+if\s+fetch\([\s\S]*?\);\s*/g, 'else{if(false){}}');
               parseErr = vendorSyntaxError(vendorText);
             }
@@ -371,18 +389,60 @@
               throw new Error('Vendor parse falhou apos sanitizacao: ' + ((parseErr && (parseErr.stack || parseErr.message)) || String(parseErr)));
             }
 
+            // 1. Vendor blob (no patching needed)
             var vendorBlobUrl = makeBlobUrl(vendorText);
+
+            // 2. React-core blob: patch vendor import
             reactCoreText = reactCoreText
               .replace('./vendor-react-CRHowRiP-fix2.js?v=20260404av', vendorBlobUrl)
               .replace('/assets/vendor-react-CRHowRiP-fix2.js?v=20260404av', vendorBlobUrl);
             var reactCoreBlobUrl = makeBlobUrl(reactCoreText);
+
+            // 3. Motion blob (vendor bundle, no relative imports to patch)
+            var motionBlobUrl = makeBlobUrl(motionText);
+
+            // 4. Maps-core blob: patch react-core import
+            mapsText = mapsText
+              .replace('./react-core-aq.js?v=20260404ar', reactCoreBlobUrl)
+              .replace('/assets/react-core-aq.js?v=20260404ar', reactCoreBlobUrl);
+            var mapsBlobUrl = makeBlobUrl(mapsText);
+
+            // 5. Charts-core blob: patch react-core import
+            chartsText = chartsText
+              .replace('./react-core-aq.js?v=20260404ar', reactCoreBlobUrl)
+              .replace('/assets/react-core-aq.js?v=20260404ar', reactCoreBlobUrl);
+            var chartsBlobUrl = makeBlobUrl(chartsText);
+
+            // 6. Shared bundle: patch vendor+motion imports, suppress render() call to avoid double-mount
+            sharedText = sharedText
+              .replace('./vendor-react-CRHowRiP.js', vendorBlobUrl)
+              .replace('/assets/vendor-react-CRHowRiP.js', vendorBlobUrl)
+              .replace('./vendor-motion-DwvlWA_f.js', motionBlobUrl)
+              .replace('/assets/vendor-motion-DwvlWA_f.js', motionBlobUrl);
+            // Suppress the app render() call — loading this as a sub-module must not re-mount the app
+            sharedText = sharedText.replace(/(?:[\w$.]+\.)?createRoot\([^)]*\)\.render\([^;]{0,300}?\);/, '/*render-suppressed*/0;');
+            var sharedBlobUrl = makeBlobUrl(sharedText);
+
+            // 7. Dashboard blob: patch all its relative imports to blob URLs
+            dashboardText = dashboardText
+              .replace('./vendor-react-CRHowRiP-fix2.js?v=20260404av', vendorBlobUrl)
+              .replace('/assets/vendor-react-CRHowRiP-fix2.js?v=20260404av', vendorBlobUrl)
+              .replace('./maps-core-aq.js?v=20260404ar', mapsBlobUrl)
+              .replace('/assets/maps-core-aq.js?v=20260404ar', mapsBlobUrl)
+              .replace('./charts-core-aq.js?v=20260404ar', chartsBlobUrl)
+              .replace('/assets/charts-core-aq.js?v=20260404ar', chartsBlobUrl)
+              .replace('./index-v10-shared.js', sharedBlobUrl)
+              .replace('/assets/index-v10-shared.js', sharedBlobUrl);
+            var dashboardBlobUrl = makeBlobUrl(dashboardText);
 
             var importMap = {
               imports: {
                 '/assets/react-core-aq.js?v=20260404av': reactCoreBlobUrl,
                 './react-core-aq.js?v=20260404av': reactCoreBlobUrl,
                 '/assets/vendor-react-CRHowRiP-fix2.js?v=20260404av': vendorBlobUrl,
-                './vendor-react-CRHowRiP-fix2.js?v=20260404av': vendorBlobUrl
+                './vendor-react-CRHowRiP-fix2.js?v=20260404av': vendorBlobUrl,
+                '/assets/Dashboard-v30.js?v=20260404an': dashboardBlobUrl,
+                './Dashboard-v30.js?v=20260404an': dashboardBlobUrl
               }
             };
 
