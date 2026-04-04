@@ -201,6 +201,104 @@ if (fs.existsSync(dashboardAssetPath)) {
   }
 }
 
+// ── 3g2. Patch: add ?_refresh=1 cache bypass to PDDE endpoint ───────────────
+// Allows bypassing the 4-hour cache to test enrichment results or force fresh data.
+const _CACHE_BYPASS_OLD = 'T&&Date.now()-T.updated_at<w){let B=JSON.parse(T.data),N=B&&B.matriculas_por_nivel&&Object.keys(B.matriculas_por_nivel).length>0;if(N||!B?.matriculas_total)return g.json({...B,_cached_at:T.updated_at})}';
+const _CACHE_BYPASS_NEW = 'T&&Date.now()-T.updated_at<w&&!A.query._refresh){let B=JSON.parse(T.data),N=B&&B.matriculas_por_nivel&&Object.keys(B.matriculas_por_nivel).length>0;if(N||!B?.matriculas_total)return g.json({...B,_cached_at:T.updated_at})}';
+if (source.includes(_CACHE_BYPASS_OLD)) {
+  source = source.replace(_CACHE_BYPASS_OLD, _CACHE_BYPASS_NEW);
+  console.log('[bootstrap] PDDE cache bypass patch applied');
+} else {
+  console.warn('[bootstrap] PDDE cache bypass patch NOT applied — anchor not found');
+}
+
+// ── 3g. Patch: enrich PDDE response with FNDE HTML page data ─────────────────
+// The server builds destinacoes from execfin data but:
+//   (1) grouping by DS_PROGRAMA_FNDE|SG_DESTINACAO doubles values when duplicate rows exist
+//   (2) situacao_uex fields are all null (mandato, dados_cadastrais, prestacao_contas)
+//   (3) contas always show programa="PDDE" regardless of actual program
+// This patch scrapes the FNDE escola/consultar HTML page (which is already accessible)
+// and replaces/enriches d.destinacoes, d.situacao_uex, d.contas after the execfin build.
+const _FNDE_HTML_OLD = 'd.destinacoes=[...dm.values()];console.log(`[PDDE Olinda] ok: saldo=${saldo.length} contas, exec=${exec.length} repasses`);return d;';
+const _FNDE_HTML_NEW =
+`d.destinacoes=[...dm.values()];` +
+`console.log(\`[PDDE Olinda] ok: saldo=\${saldo.length} contas, exec=\${exec.length} repasses\`);` +
+`try{` +
+  // Use Node.js https module directly (avoids bundled undici TLS issues)
+  `const _fhtml=await new Promise((_fres,_frej)=>{` +
+    `const _fhttps=require('https');` +
+    `const _fpath='/pddeinfo/pddeinfo/escola/consultar?ano='+encodeURIComponent(t)+'&co_escola='+encodeURIComponent(e)+'&cnpj=&consultar=Consultar';` +
+    `const _fopt={hostname:'www.fnde.gov.br',path:_fpath,headers:{'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36','Accept':'text/html,application/xhtml+xml','Accept-Language':'pt-BR,pt;q=0.9'},timeout:20000};` +
+    `const _freq=_fhttps.get(_fopt,_fr=>{const _fc=[];_fr.on('data',c=>_fc.push(c));_fr.on('end',()=>_fres(Buffer.concat(_fc).toString('latin1')));});` +
+    `_freq.on('error',_frej);` +
+    `_freq.on('timeout',()=>{_freq.destroy();_frej(new Error('https timeout'));});` +
+  `});` +
+  `if(_fhtml&&_fhtml.length>1000){` +
+    // ── contas: replace with correct programa names from HTML ──
+    `const _bi=_fhtml.indexOf('Programa/A');` +
+    `if(_bi>=0){` +
+      `const _bseg=_fhtml.slice(_bi,_bi+2000);` +
+      `const _brows=_bseg.match(/<tr[^>]*>[\\s\\S]*?<\\/tr>/g)||[];` +
+      `const _nc=[];` +
+      `for(const _br of _brows){` +
+        `const _bc=(_br.match(/<td[^>]*>([\\s\\S]*?)<\\/td>/g)||[]).map(c=>c.replace(/<[^>]*>/g,'').replace(/\\s+/g,' ').trim());` +
+        `if(_bc.length>=5&&_bc[0].includes('PDDE')&&!_bc[0].startsWith('N\\xE3o')&&!_bc[0].includes('mandato')){` +
+          `const _bs=parseFloat(_bc[4].replace(/\\./g,'').replace(',','.'))||0;` +
+          `_nc.push({programa:_bc[0],banco:_bc[1],agencia:_bc[2],conta:_bc[3],saldo:_bs,ocorrencia:_bc[5]||null});` +
+        `}` +
+      `}` +
+      `if(_nc.length>0)d.contas=_nc;` +
+    `}` +
+    // ── situacao_uex: mandato, dados_cadastrais, prestacao_contas ──
+    `const _mm=[..._fhtml.matchAll(/mandato:<\\/b>(\\d{2}\\/\\d{2}\\/\\d{4})/g)];` +
+    `const _dc=_fhtml.match(/Dados Cadastrais<\\/th>\\s*<td[^>]*>([\\s\\S]*?)<\\/td>/);` +
+    `const _pc=_fhtml.match(/Presta[^<]*Contas<\\/th>\\s*<td[^>]*>([\\s\\S]*?)<\\/td>/);` +
+    `d.situacao_uex={` +
+      `mandato_inicio:_mm[0]?_mm[0][1]:null,` +
+      `mandato_fim:_mm[1]?_mm[1][1]:null,` +
+      `dados_cadastrais:_dc?_dc[1].replace(/<[^>]*>/g,'').replace(/\\s+/g,' ').trim():null,` +
+      `prestacao_contas:_pc?_pc[1].replace(/<[^>]*>/g,'').replace(/\\s+/g,' ').trim():null,` +
+      `programas_pendentes:[]` +
+    `};` +
+    // ── situacao_eex: adesao + prestacao_contas EEx ──
+    `const _eexIdx=_fhtml.indexOf('da Entidade Executora');` +
+    `const _eexSeg=_eexIdx>=0?_fhtml.slice(_eexIdx,_eexIdx+2000):'';` +
+    `const _aeCell=_eexSeg.match(/<th>Ades[^<]*<\\/th>[\\s\\S]*?<td>([\\s\\S]*?)<\\/td>/);` +
+    `const _aeText=_aeCell?_aeCell[1].replace(/\\s+/g,' ').trim():'';` +
+    `const _ae=_aeText.match(/(\\d{2}\\/\\d{2}\\/\\d{4})/);` +
+    `const _epcCell=_eexSeg.match(/Presta[^<]*<\\/th>[\\s\\S]*?<td>([\\s\\S]*?)<\\/td>/);` +
+    `const _epc=_epcCell?_epcCell[1].replace(/\\s+/g,' ').trim():'';` +
+    `d.situacao_eex={` +
+      `adesao:_aeText||null,` +
+      `adesao_data:_ae?_ae[1]:null,` +
+      `prestacao_contas:_epc||null` +
+    `};` +
+    // ── destinacoes: replace with HTML table data (deduplicated, correct values) ──
+    `const _di=_fhtml.indexOf('Vl Devido Custeio');` +
+    `if(_di>=0){` +
+      `const _dseg=_fhtml.slice(_di-300,_di+8000);` +
+      `const _drows=_dseg.match(/<tr[^>]*>[\\s\\S]*?<\\/tr>/g)||[];` +
+      `const _nd=[];` +
+      `const _pm=s=>{const n=parseFloat((s||'').replace(/\\./g,'').replace(',','.'));return isNaN(n)?null:n;};` +
+      `for(const _dr of _drows){` +
+        `const _dc2=(_dr.match(/<td[^>]*>([\\s\\S]*?)<\\/td>/g)||[]).map(c=>c.replace(/<[^>]*>/g,'').replace(/\\s+/g,' ').trim());` +
+        `if(_dc2.length>=11&&_dc2[0]&&!_dc2[0].match(/^(Subtotal|Total)$/i)){` +
+          `_nd.push({destinacao:_dc2[0],devido_custeio:_pm(_dc2[1]),devido_capital:_pm(_dc2[2]),devido_total:_pm(_dc2[3]),ajuste_custeio:_pm(_dc2[4]),ajuste_capital:_pm(_dc2[5]),ajuste_total:_pm(_dc2[6]),final_devido_total:_pm(_dc2[7]),pago_custeio:_pm(_dc2[8]),pago_capital:_pm(_dc2[9]),pago_total:_pm(_dc2[10]),data_ordem_pgto:_dc2[11]||null});` +
+        `}` +
+      `}` +
+      `if(_nd.length>0)d.destinacoes=_nd;` +
+    `}` +
+    `console.log(\`[PDDE FNDE-HTML] enriched: \${d.destinacoes.length} dest, mandato=\${d.situacao_uex.mandato_inicio}, eex_adesao=\${d.situacao_eex&&d.situacao_eex.adesao_data}\`);` +
+  `}` +
+`}catch(_fe){console.warn('[PDDE FNDE-HTML] scrape failed:',_fe.message);}` +
+`return d;`;
+if (source.includes(_FNDE_HTML_OLD)) {
+  source = source.replace(_FNDE_HTML_OLD, _FNDE_HTML_NEW);
+  console.log('[bootstrap] PDDE FNDE-HTML enrichment patch applied');
+} else {
+  console.warn('[bootstrap] PDDE FNDE-HTML enrichment patch NOT applied — anchor not found');
+}
+
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
