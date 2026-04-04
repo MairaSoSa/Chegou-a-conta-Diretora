@@ -121,7 +121,6 @@ const _RAW_JS_ROUTE = `t.get("/api/raw-js",function(rq,rs){` +
   `var _fm={` +
     `"vendor":"vendor-react-CRHowRiP-fix2.js",` +
     `"dashboard":"Dashboard-v30.js",` +
-    `"shared":"index-v23.js",` +
     `"shared10":"index-v10-shared.js",` +
     `"entry":"index-v21.js",` +
     `"charts":"charts-core-aq.js",` +
