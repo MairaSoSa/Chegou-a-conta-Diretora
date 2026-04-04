@@ -50,6 +50,11 @@
           if (m && m.message && m.message.indexOf('removeChild') !== -1) return;
           return _ce.apply(console, arguments);
         };
+        window.addEventListener('vite:preloadError', function(e) {
+          e.preventDefault();
+          console.warn('[dashboard] vite:preloadError suprimido:', e.payload && e.payload.message);
+        });
+
         window.addEventListener('error', function(e) {
           if (e.message && e.message.indexOf('removeChild') !== -1) {
             e.preventDefault(); e.stopImmediatePropagation(); return true;
@@ -63,6 +68,11 @@
 
         window.addEventListener('unhandledrejection', function(e) {
           var reason = e && e.reason;
+          if (reason instanceof SyntaxError && reason.message && reason.message.indexOf("'const'") !== -1) {
+            e.preventDefault();
+            console.warn('[dashboard] SyntaxError de preload suprimida:', reason.message);
+            return;
+          }
           var details = '';
           if (reason && reason.stack) details = reason.stack;
           else if (typeof reason === 'string') details = reason;
@@ -83,10 +93,12 @@
                 if (!isApi || !resp || resp.__safeJsonPatched) return resp;
 
                 var _json = resp.json.bind(resp);
+                var _preClone = null;
+                try { _preClone = resp.clone(); } catch(_) {}
                 resp.json = function() {
                   return _json().catch(async function(err) {
                     try {
-                      var txt = await resp.clone().text();
+                      var txt = _preClone ? await _preClone.text() : '';
                       var snippet = (txt || '').slice(0, 280);
                       var looksLikeScript = /^\s*const\s+/i.test(txt || '');
                       var looksLikeHtml = /^\s*</.test(txt || '');
@@ -102,7 +114,13 @@
                       }
                       try { return JSON.parse(txt); } catch (_) {}
                     } catch (_) {}
-                    throw err;
+                    return {
+                      ok: false,
+                      error: err && err.message ? err.message : String(err),
+                      _non_json: true,
+                      _status: resp.status,
+                      _url: finalUrl
+                    };
                   });
                 };
                 resp.__safeJsonPatched = true;
