@@ -282,8 +282,8 @@
         var DASHBOARD_URL = '/assets/Dashboard-v30.js?v=20260404an';
         var MAPS_URL = '/assets/maps-core-aq.js?v=20260404ar';
         var CHARTS_URL = '/assets/charts-core-aq.js?v=20260404ar';
-        var SHARED_URL = '/assets/index-v10-shared.js';
-        var MOTION_URL = '/assets/vendor-motion-DwvlWA_f.js';
+        var SHARED_URL = '/assets/index-v23.js';
+        var MOTION_URL = '/assets/motion-core-aq.js?v=20260404ar';
 
         function injectBootError(title, details) {
           try {
@@ -398,7 +398,10 @@
               .replace('/assets/vendor-react-CRHowRiP-fix2.js?v=20260404av', vendorBlobUrl);
             var reactCoreBlobUrl = makeBlobUrl(reactCoreText);
 
-            // 3. Motion blob (vendor bundle, no relative imports to patch)
+            // 3. Motion-core blob: patch react-core import
+            motionText = motionText
+              .replace('./react-core-aq.js?v=20260404ar', reactCoreBlobUrl)
+              .replace('/assets/react-core-aq.js?v=20260404ar', reactCoreBlobUrl);
             var motionBlobUrl = makeBlobUrl(motionText);
 
             // 4. Maps-core blob: patch react-core import
@@ -413,12 +416,12 @@
               .replace('/assets/react-core-aq.js?v=20260404ar', reactCoreBlobUrl);
             var chartsBlobUrl = makeBlobUrl(chartsText);
 
-            // 6. Shared bundle: patch vendor+motion imports, suppress render() call to avoid double-mount
+            // 6. Shared bundle (index-v23.js): patch vendor+motion-core imports, suppress render() call
             sharedText = sharedText
-              .replace('./vendor-react-CRHowRiP.js', vendorBlobUrl)
-              .replace('/assets/vendor-react-CRHowRiP.js', vendorBlobUrl)
-              .replace('./vendor-motion-DwvlWA_f.js', motionBlobUrl)
-              .replace('/assets/vendor-motion-DwvlWA_f.js', motionBlobUrl);
+              .replace('./vendor-react-CRHowRiP-fix2.js?v=20260404av', vendorBlobUrl)
+              .replace('/assets/vendor-react-CRHowRiP-fix2.js?v=20260404av', vendorBlobUrl)
+              .replace('./motion-core-aq.js?v=20260404ar', motionBlobUrl)
+              .replace('/assets/motion-core-aq.js?v=20260404ar', motionBlobUrl);
             // Suppress the app render() call — loading this as a sub-module must not re-mount the app
             sharedText = sharedText.replace(/(?:[\w$.]+\.)?createRoot\([^)]*\)\.render\([^;]{0,300}?\);/, '/*render-suppressed*/0;');
             var sharedBlobUrl = makeBlobUrl(sharedText);
