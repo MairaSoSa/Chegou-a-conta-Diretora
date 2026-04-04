@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "node dist/bootstrap.cjs",
     "start": "bash start.sh",
+    "prune:assets": "bash scripts/prune-dist-assets.sh",
+    "prune:assets:apply": "bash scripts/prune-dist-assets.sh --apply",
     "preflight": "npm run validate:config && npm run validate:structure",
     "validate:config": "node -e \"const env = require('./.env'); console.log('✓ .env válido')\"",
     "validate:structure": "node scripts/validate-build.mjs"
