@@ -16,11 +16,12 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "dependencies": {},
   "optionalDependencies": {
     "@napi-rs/canvas": "^0.1.97"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19",
+    "tailwindcss-animate": "^1.0.7",
     "zod": "^3.22.0"
   },
   "keywords": [
