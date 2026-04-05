@@ -74,4 +74,89 @@
   border: none !important;
 }
 
+/* ── Home: desce levemente a frase do rodapé ───────────────────────────── */
+.hl-footer-strip > span {
+  position: relative;
+  top: 6px;
+}
+
+/* ── Home: abaixa levemente 'Por onde começar' ─────────────────────────── */
+.hl-mural-label {
+  position: relative;
+  top: 8px;
+}
+
+/* ── Home: botão acessibilidade com cara de post-it ────────────────────── */
+.hl-footer-strip .hl-a11y-pill {
+  background:
+    repeating-linear-gradient(
+      -6deg,
+      rgba(255, 255, 255, 0.14) 0px,
+      rgba(255, 255, 255, 0.14) 1px,
+      rgba(0, 0, 0, 0.01) 1px,
+      rgba(0, 0, 0, 0.01) 3px
+    ),
+    linear-gradient(178deg, #fff1ba 0%, #ffe7a0 100%) !important;
+  border: 1px solid #d9c06d !important;
+  border-top-color: #f1dfab !important;
+  border-left-color: #e8d392 !important;
+  border-right-color: #d4b967 !important;
+  border-bottom-color: #cbaa58 !important;
+  color: #6b5208 !important;
+  border-radius: 4px 5px 4px 4px !important;
+  padding: 4px 8px !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.28) inset,
+    0 -1px 0 rgba(142, 109, 20, 0.09) inset,
+    0 1px 0 rgba(181, 142, 28, 0.2),
+    1px 2px 6px rgba(99, 79, 22, 0.16) !important;
+  opacity: 1 !important;
+  transform: rotate(-1deg);
+}
+
+.hl-footer-strip .hl-a11y-pill:hover {
+  transform: translateY(-1px) rotate(-0.35deg);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.32) inset,
+    0 -1px 0 rgba(142, 109, 20, 0.12) inset,
+    0 1px 0 rgba(181, 142, 28, 0.24),
+    2px 4px 9px rgba(99, 79, 22, 0.18) !important;
+}
+
+/* ── Home: hover da Trilha com sombra marrom e leve sobressalto ────────── */
+.hl-caderno-box .hl-trilha-item {
+  transition: background 0.08s linear, box-shadow 0.1s linear, transform 0.1s linear !important;
+}
+
+.hl-caderno-box .hl-trilha-item:hover {
+  box-shadow: 0 4px 10px rgba(118, 83, 46, 0.24) !important;
+  transform: translateY(-1px);
+}
+
+/* ── Painel de acessibilidade aberto no mesmo amarelo do botão ─────────── */
+[role="dialog"][aria-label="Ajustes de visualização e leitura"] {
+  background: linear-gradient(180deg, #fff6cc 0%, #ffedb8 100%) !important;
+  border-color: #dcc676 !important;
+  box-shadow: 0 10px 24px rgba(102, 81, 20, 0.16) !important;
+}
+
+[role="dialog"][aria-label="Ajustes de visualização e leitura"] button[class*="rounded-lg"][class*="border"] {
+  background: #fff8dd !important;
+  border-color: #ddc97f !important;
+  color: #6b5208 !important;
+}
+
+[role="dialog"][aria-label="Ajustes de visualização e leitura"] button[aria-pressed="true"] {
+  background: #f5dc8a !important;
+  border-color: #d1b35c !important;
+  color: #5b4300 !important;
+}
+
+[role="dialog"][aria-label="Ajustes de visualização e leitura"] div[class*="h-px"] {
+  background: rgba(190, 152, 53, 0.24) !important;
+}
+
+
 
