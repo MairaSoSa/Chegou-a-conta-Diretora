@@ -133,6 +133,18 @@ OPENAI_MODEL=gpt-4o-mini
 - **Styling**: Tailwind CSS
 - **Data**: INEP Censo Escolar + FNDE PDDE
 
+## 🎨 Padrão Visual de Destaques (Cards Informativos)
+
+Para manter consistência nos cards "Bilhete da Diretora" e "Situação das Escolas", use o padrão semântico abaixo para palavras/frases destacadas:
+
+- **Informação importante**: `#2d5a88` (azul)
+- **Frase auxiliar/contextual**: `#0b8f6a` (verde)
+
+Regra prática:
+
+- Destaque em azul para termos centrais da mensagem.
+- Destaque em verde para termos de apoio, contexto ou orientação complementar.
+
 ## 🐛 Troubleshooting
 
 ### Build não passa validação

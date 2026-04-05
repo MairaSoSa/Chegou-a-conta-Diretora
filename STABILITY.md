@@ -96,6 +96,18 @@ function processData(input) {
 - ✓ Usar React.memo para evitar re-renders desnecessários
 - ✓ Adicionar error boundaries
 
+### 3.1. Padrão Visual de Destaques (Cards Informativos)
+
+Para manter consistência nos cards "Bilhete da Diretora" e "Situação das Escolas":
+
+- ✓ **Informação importante**: usar `#2d5a88` (azul)
+- ✓ **Frase auxiliar/contextual**: usar `#0b8f6a` (verde)
+
+Regra de manutenção:
+
+- ✓ Não criar novas cores para destaque sem necessidade
+- ✓ Reaplicar o padrão ao editar textos longos nesses cards
+
 ### 4. Checklist Antes de Deploy
 
 - [ ] `npm run preflight` passa
