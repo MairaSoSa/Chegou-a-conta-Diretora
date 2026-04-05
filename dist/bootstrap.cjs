@@ -114,7 +114,10 @@ if (_redirPatched === source) {
 // The runtime server executes index.cjs.gz, so this route must be injected here.
 // It always returns {ok:true,dados:{...}} with sensible fallback fields.
 const _SEC_EXISTING_START = 'e.get("/api/secretaria-municipal",async(A,g)=>{';
-const _SEC_EXISTING_END = '}),e.get("/api/escola-completa/:inep"';
+// End marker: the setTimeout that immediately follows the sec route closing })
+// This is tighter than the original end (which was /api/escola-completa),
+// so we no longer accidentally remove the /api/schools routes between them.
+const _SEC_EXISTING_END = '}),setTimeout(async()=>{try{await Cnt';
 const _SEC_EXISTING_ROUTE =
   'e.get("/api/secretaria-municipal",async(A,g)=>{'+
     'let E=String(A.query.municipio||"").trim(),v=String(A.query.uf||"").trim().toUpperCase();'+
@@ -398,6 +401,104 @@ if (source.includes(_FNDE_HTML_OLD)) {
 } else {
   console.warn('[bootstrap] PDDE FNDE-HTML enrichment patch NOT applied — anchor not found');
 }
+
+// ── Fix: school search accent normalization + multi-word cross-field search ──────
+// Strategy: find Qx by its unique signature then slice it out by brace-counting.
+// Bug 1: Accented chars return 0 — the original SQL has json_extract() (SQLite syntax)
+//        which fails silently in PostgreSQL, aborting the query. Fix: remove it.
+// Bug 2: Multi-word searches fail — each word must match nome AND municipio. Fix: OR.
+(function _patchQx() {
+  const QX_START_MARKER = 'async function Qx(t,e=20){';
+  const qxStart = source.indexOf(QX_START_MARKER);
+  if (qxStart === -1) {
+    console.warn('[bootstrap] Qx patch: function not found');
+    return;
+  }
+  // Brace-count from the opening { to find the matching closing }
+  let depth = 0;
+  let qxEnd = -1;
+  for (let ci = qxStart + QX_START_MARKER.length - 1; ci < source.length; ci++) {
+    if (source[ci] === '{') depth++;
+    else if (source[ci] === '}') { depth--; if (depth === 0) { qxEnd = ci + 1; break; } }
+  }
+  if (qxEnd === -1) {
+    console.warn('[bootstrap] Qx patch: could not find closing brace');
+    return;
+  }
+  // Build the REPLACE chain for accents using actual Unicode chars (valid UTF-8 SQL).
+  // PostgreSQL (UTF-8) accepts literal accented chars in string literals.
+  const RC = [
+    ['\u00C1','A'],['\u00C0','A'],['\u00C2','A'],['\u00C3','A'],['\u00C4','A'],
+    ['\u00C9','E'],['\u00CA','E'],['\u00CB','E'],
+    ['\u00CD','I'],['\u00CE','I'],
+    ['\u00D3','O'],['\u00D4','O'],['\u00D5','O'],['\u00D6','O'],
+    ['\u00DA','U'],['\u00DC','U'],['\u00DB','U'],
+    ['\u00C7','C'],['\u00D1','N']
+  ];
+  function buildRC(field) {
+    // Each entry: REPLACE(acc,'Á','A') — accented char as literal in SQL string
+    return RC.reduce((acc, [ch, rep]) =>
+      `REPLACE(${acc},'${ch}','${rep}')`, `UPPER(${field})`);
+  }
+  const sn = buildRC('nome');
+  const sm = buildRC('municipio');
+  // New Qx function — cross-field OR per word, no json_extract
+  const newQx =
+    'async function Qx(t,e=20){' +
+      'let r=t.trim();' +
+      'if(/^\\d{7,8}$/.test(r))' +
+        'return(await fn("SELECT inep,nome,municipio,uf,dependencia,localizacao,matriculas FROM censo_escolar WHERE inep=? ORDER BY ano DESC LIMIT 1",[r])).map(uke);' +
+      'let i=2025;' +
+      'try{i=(await Fn("SELECT MAX(ano) as max_ano FROM censo_escolar",[]))?.max_ano||2025;}catch(_){}' +
+      'let n;' +
+      'try{n=r.normalize("NFD").replace(/[\\u0300-\\u036f]/gu,"").toUpperCase();}' +
+      'catch(_){n=r.toUpperCase();}' +
+      'let w=n.split(/\\s+/).filter(d=>d.length>0);' +
+      'if(!w.length)return[];' +
+      'const _sn=' + JSON.stringify(sn) + ';' +
+      'const _sm=' + JSON.stringify(sm) + ';' +
+      'let wc=w.map(()=>"("+_sn+" LIKE ? OR "+_sm+" LIKE ?)").join(" AND ");' +
+      'let wp=w.flatMap(d=>["%"+d+"%","%"+d+"%"]);' +
+      'try{' +
+        'return(await fn(' +
+          '"SELECT inep,nome,municipio,uf,dependencia,localizacao,matriculas FROM censo_escolar WHERE ano=? AND ("+wc+") LIMIT ?",' +
+          '[i,...wp,e]' +
+        ')).map(uke);' +
+      '}catch(_e){console.error("[Qx-err]",_e.message);return[];}' +
+    '}';
+  source = source.slice(0, qxStart) + newQx + source.slice(qxEnd);
+  console.log('[bootstrap] Qx accent+multiword patch applied (position-based)');
+})();
+
+// ── Fix schools route handler: wrap with explicit try/catch ──────────────────
+// In Express 4, async errors in route handlers are NOT caught automatically.
+// If Qx throws, the request hangs or falls through to static middleware (HTML).
+// Fix: patch the route handler to add try/catch and always return JSON.
+(function _patchSchoolsRoute() {
+  // The route handler as it appears in the minified source
+  const SEARCH_PATH_MARKER = 'T0.schools.search.path,async(A,g)=>';
+  const markerIdx = source.indexOf(SEARCH_PATH_MARKER);
+  console.log('[bootstrap] Schools route marker at:', markerIdx);
+  if (markerIdx > 0) {
+    const ctxBefore = source.slice(markerIdx - 10, markerIdx);
+    const ctxAfter = source.slice(markerIdx, markerIdx + 100);
+    console.log('[bootstrap] Route ctx before marker:', JSON.stringify(ctxBefore));
+    console.log('[bootstrap] Route ctx after marker:', JSON.stringify(ctxAfter));
+  }
+
+  const OLD_HANDLER = 'e.get(T0.schools.search.path,async(A,g)=>{let E=A.query.q;if(!E||E.length<2)return g.json([]);g.json(await Qx(E))})';
+  if (source.includes(OLD_HANDLER)) {
+    const NEW_HANDLER = 'e.get(T0.schools.search.path,async(A,g)=>{try{let E=A.query.q;if(!E||E.length<2)return g.json([]);let _R=await Qx(E);g.json(Array.isArray(_R)?_R:[])}catch(_e){console.error("[schools-route-err]",_e&&_e.message||_e);g.json([])}})';
+    source = source.replace(OLD_HANDLER, NEW_HANDLER);
+    console.log('[bootstrap] Schools route handler try/catch patch applied');
+  } else {
+    console.warn('[bootstrap] Schools route handler patch NOT applied — pattern not found');
+    // Show what the actual route looks like to diagnose the mismatch
+    if (markerIdx > 0) {
+      console.warn('[bootstrap] Actual route (80 chars):', JSON.stringify(source.slice(markerIdx - 15, markerIdx + 80)));
+    }
+  }
+})();
 
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
