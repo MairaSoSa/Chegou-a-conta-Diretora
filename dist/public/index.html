@@ -448,6 +448,16 @@
               .replace('/assets/vendor-react-CRHowRiP.js', vendorBlobUrl)
               .replace('./vendor-motion-DwvlWA_f.js', motionBlobUrl)
               .replace('/assets/vendor-motion-DwvlWA_f.js', motionBlobUrl);
+            sharedText = sharedText
+              .split('"/dashboard"').join('"/dados-educacionais"')
+              .split('"/trilha"').join('"/trilha-da-diretora"')
+              .split('"/chat"').join('"/caderno-da-diretora"')
+              .split('href:`/trilha/${').join('href:`/trilha-da-diretora/${')
+              .split('href:`/trilha?unit=${').join('href:`/trilha-da-diretora?unit=${')
+              .split('a(`/trilha/${').join('a(`/trilha-da-diretora/${')
+              .split('t("/trilha")').join('t("/trilha-da-diretora")')
+              .split('t(`/trilha/${').join('t(`/trilha-da-diretora/${')
+              .split('function Ne(){const{data:a}=Z({queryKey:["/api/settings"]}),{toggle:s}=Wa();').join('function Ne(){const{data:a}=Z({queryKey:["/api/settings"]}),{toggle:s,isOpen:menuOpen}=Wa();');
             // Suppress the app render() call — loading this as a sub-module must not re-mount the app
             sharedText = sharedText.replace(
               /[\w$.]+\.createRoot\(document\.getElementById\([^)]*\)\)\.render\([^;]{0,300}\);/,
@@ -502,6 +512,24 @@
             // (replaceAll needed since there are 2 occurrences — one for si, one for La)
             entryText = entryText.split('./Dashboard-v30.js?v=20260404an').join(dashboardBlobUrl);
             entryText = entryText.split('/assets/Dashboard-v30.js?v=20260404an').join(dashboardBlobUrl);
+            // Support legacy SPA paths that may still be emitted by older shared bundle fragments.
+            entryText = entryText
+              .replace(
+                'e.jsx(he,{path:"/",component:Er}),e.jsx(he,{path:"/dados-educacionais"',
+                'e.jsx(he,{path:"/",component:Er}),e.jsx(he,{path:"/dashboard",children:e.jsx(x.Suspense,{fallback:e.jsx("div",{children:"Carregando..."}),children:e.jsx(si,{})})}),e.jsx(he,{path:"/dados-educacionais"'
+              )
+              .replace(
+                'e.jsx(he,{path:"/trilha-da-diretora",component:_r}),e.jsx(he,{path:"/trilha-da-diretora/:unitId",component:Br}),',
+                'e.jsx(he,{path:"/trilha",component:_r}),e.jsx(he,{path:"/trilha/:unitId",component:Br}),e.jsx(he,{path:"/trilha-da-diretora",component:_r}),e.jsx(he,{path:"/trilha-da-diretora/:unitId",component:Br}),'
+              )
+              .replace(
+                'e.jsx(he,{path:"/caderno-da-diretora",component:go}),',
+                'e.jsx(he,{path:"/chat",component:go}),e.jsx(he,{path:"/caderno-da-diretora",component:go}),'
+              )
+              .replace(
+                'function Ne(){const{data:a}=Z({queryKey:["/api/settings"]}),{toggle:s}=Wa();',
+                'function Ne(){const{data:a}=Z({queryKey:["/api/settings"]}),{toggle:s,isOpen:menuOpen}=Wa();'
+              );
             // Suppress vitePreload dependency list so NO server-URL preload links are created for dashboard
             entryText = entryText.replace(/__vite__mapDeps\(\[0,1,2,3,4,5\]\)/g, '[]');
             var entryBlobUrl = makeBlobUrl(entryText);
