@@ -158,5 +158,37 @@
   background: rgba(190, 152, 53, 0.24) !important;
 }
 
+/* ── Home: mantém contexto mínimo dos cards no mobile ─────────────────── */
+@media (max-width: 640px) {
+  .hl-note-card p {
+    display: -webkit-box !important;
+    margin-top: 4px !important;
+    overflow: hidden !important;
+    font-size: 0.63rem !important;
+    line-height: 1.28 !important;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .hl-note-card small {
+    display: none !important;
+  }
+}
+
+/* ── Home: evita truncamento duro da trilha em tablet/iPad ────────────── */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .hl-trilha-item {
+    align-items: flex-start !important;
+  }
+
+  .hl-trilha-item-title,
+  .hl-trilha-item-sub {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+  }
+}
+
 
 
