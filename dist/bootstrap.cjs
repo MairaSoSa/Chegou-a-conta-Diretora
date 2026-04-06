@@ -569,6 +569,59 @@ if (source.includes(_FNDE_HTML_OLD)) {
   console.log('[bootstrap] Trilha seed U21 patch applied');
 })();
 
+// ── Fix: gestão → administração + reorganizar U21 para posição 4 ─────────────
+(function _patchTrilhaFixes() {
+  const SEED_MARKER = '"Pre-warming stats cache in background...")';
+  if (!source.includes(SEED_MARKER)) {
+    console.warn('[bootstrap] Trilha fixes — marker not found, skipping');
+    return;
+  }
+
+  const fixCode = `;setImmediate(async function(){try{` +
+    // Substituições gestão → administração (REPLACE é idempotente — roda múltiplas vezes sem problema)
+    `await vt.execute("UPDATE trilha_units SET intro = REPLACE(intro, 'gestão dos recursos', 'administração dos recursos') WHERE unit_id = 'U03'");` +
+    `await vt.execute("UPDATE trilha_units SET intro = REPLACE(intro, 'gestão financeira', 'administração financeira') WHERE unit_id IN ('U05','U09','U14')");` +
+    `await vt.execute("UPDATE trilha_units SET subtitle = REPLACE(subtitle, 'na gestão', 'na administração') WHERE unit_id = 'U06'");` +
+    `await vt.execute("UPDATE trilha_units SET subtitle = REPLACE(subtitle, 'Gestão e arquivamento', 'Organização e arquivamento') WHERE unit_id = 'U15'");` +
+    `await vt.execute("UPDATE trilha_units SET subtitle = REPLACE(subtitle, 'da gestão escolar', 'da administração escolar') WHERE unit_id = 'U19'");` +
+    `await vt.execute("UPDATE trilha_units SET subtitle = REPLACE(subtitle, 'passagem de gestão', 'passagem de administração') WHERE unit_id = 'U20'");` +
+    `await vt.execute("UPDATE trilha_units SET intro = REPLACE(intro, 'continuidade na gestão', 'continuidade na administração') WHERE unit_id = 'U20'");` +
+    // Reorganizar sortOrders: U21 vai para posição 4, U04-U20 vão para 5-21
+    // Etapa 1: mover tudo para 100+ para evitar conflito de unique
+    `await vt.execute("UPDATE trilha_units SET sort_order = sort_order + 100 WHERE sort_order BETWEEN 1 AND 21");` +
+    // Etapa 2: definir sort_order correto por unit_id (idempotente)
+    `await vt.execute("UPDATE trilha_units SET sort_order = 1 WHERE unit_id = 'U01'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 2 WHERE unit_id = 'U02'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 3 WHERE unit_id = 'U03'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 4 WHERE unit_id = 'U21'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 5 WHERE unit_id = 'U04'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 6 WHERE unit_id = 'U05'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 7 WHERE unit_id = 'U06'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 8 WHERE unit_id = 'U07'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 9 WHERE unit_id = 'U08'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 10 WHERE unit_id = 'U09'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 11 WHERE unit_id = 'U10'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 12 WHERE unit_id = 'U11'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 13 WHERE unit_id = 'U12'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 14 WHERE unit_id = 'U13'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 15 WHERE unit_id = 'U14'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 16 WHERE unit_id = 'U15'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 17 WHERE unit_id = 'U16'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 18 WHERE unit_id = 'U17'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 19 WHERE unit_id = 'U18'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 20 WHERE unit_id = 'U19'");` +
+    `await vt.execute("UPDATE trilha_units SET sort_order = 21 WHERE unit_id = 'U20'");` +
+    // Ajustar links de navegação para a nova posição de U21
+    `await vt.execute("UPDATE trilha_units SET next_unit = 'U21' WHERE unit_id = 'U03'");` +
+    `await vt.execute("UPDATE trilha_units SET previous_unit = 'U03', next_unit = 'U04' WHERE unit_id = 'U21'");` +
+    `await vt.execute("UPDATE trilha_units SET previous_unit = 'U21' WHERE unit_id = 'U04'");` +
+    `console.log("[fixes] gestão→administração e reordenação aplicados com sucesso");` +
+  `}catch(_e){console.error("[fixes] erro:",_e&&_e.message||_e);}});`;
+
+  source = source.replace(SEED_MARKER, SEED_MARKER + fixCode);
+  console.log('[bootstrap] Trilha fixes patch applied');
+})();
+
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
