@@ -176,7 +176,31 @@
   }
 }
 
-/* ── Home: evita truncamento duro da trilha em tablet/iPad ────────────── */
+/* ── Home: evita truncamento duro da trilha (tablet/iPad e desktop) ───── */
+
+/* Caderno-box tem overflow:hidden que corta textos longos horizontalmente.
+   Liberamos para que a lista interna gerencie o overflow */
+.hl-caderno-box {
+  overflow: visible !important;
+}
+
+.hl-caderno-box .hl-trilha-list {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.hl-caderno-box .hl-trilha-item {
+  align-items: flex-start !important;
+  overflow: visible !important;
+}
+
+.hl-caderno-box .hl-trilha-item-title,
+.hl-caderno-box .hl-trilha-item-sub {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+}
+
 @media (min-width: 641px) and (max-width: 1024px) {
   .hl-trilha-item {
     align-items: flex-start !important;

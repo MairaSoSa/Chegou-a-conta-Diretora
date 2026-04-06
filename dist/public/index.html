@@ -548,6 +548,53 @@
     <link rel="stylesheet" crossorigin href="/assets/index-v2.css">
     <link rel="stylesheet" crossorigin href="/assets/postit.css">
     <link rel="stylesheet" href="/painel-educacional.css">
+    <style>
+      /* ── Trilha da Diretora — sidebar (homepage): garante texto visível ── */
+      .hl-caderno-box { overflow: visible !important; }
+      .hl-caderno-box .hl-trilha-list { overflow-y: auto !important; overflow-x: hidden !important; }
+      .hl-caderno-box .hl-trilha-item { align-items: flex-start !important; overflow: visible !important; }
+      .hl-caderno-box .hl-trilha-item-title { white-space: normal !important; overflow: visible !important; text-overflow: unset !important; font-size: .72rem !important; line-height: 1.25 !important; }
+      .hl-caderno-box .hl-trilha-item-sub { white-space: normal !important; overflow: visible !important; text-overflow: unset !important; font-size: .62rem !important; line-height: 1.4 !important; }
+    </style>
+    <script>
+      /* Garante que títulos e subtítulos da Trilha sidebar não sejam cortados */
+      (function fixTrilha() {
+        function apply() {
+          var box = document.querySelector('.hl-caderno-box');
+          if (!box) return;
+          box.style.setProperty('overflow', 'visible', 'important');
+          var list = box.querySelector('.hl-trilha-list');
+          if (list) {
+            list.style.setProperty('overflow-y', 'auto', 'important');
+            list.style.setProperty('overflow-x', 'hidden', 'important');
+          }
+          box.querySelectorAll('.hl-trilha-item-title, .hl-trilha-item-sub').forEach(function(el) {
+            el.style.setProperty('white-space', 'normal', 'important');
+            el.style.setProperty('overflow', 'visible', 'important');
+            el.style.setProperty('text-overflow', 'unset', 'important');
+          });
+          box.querySelectorAll('.hl-trilha-item').forEach(function(el) {
+            el.style.setProperty('align-items', 'flex-start', 'important');
+            el.style.setProperty('overflow', 'visible', 'important');
+          });
+        }
+        /* Aplica assim que o DOM muda — captura a chegada do React renderizado */
+        var _trilhaFixed = false;
+        var obs = new MutationObserver(function() {
+          var subs = document.querySelectorAll('.hl-caderno-box .hl-trilha-item-sub');
+          if (subs.length > 0 && !_trilhaFixed) {
+            apply();
+            _trilhaFixed = true;
+            obs.disconnect();
+          }
+        });
+        obs.observe(document.documentElement, { childList: true, subtree: true });
+        document.addEventListener('DOMContentLoaded', apply);
+        setTimeout(apply, 200);
+        setTimeout(apply, 600);
+        setTimeout(apply, 1500);
+      })();
+    </script>
     <script>
       (function() {
         function syncA11yZoom() {

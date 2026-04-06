@@ -331,3 +331,53 @@ html.a11y-zoom table {
 html.a11y-zoom {
   scroll-behavior: smooth;
 }
+
+/* ================================================================
+   TRILHA DA DIRETORA — sidebar da página inicial
+   Permite que título e subtítulo caibam dentro do quadro,
+   cada um em sua própria linha (sem truncar com ellipsis).
+   ================================================================ */
+
+/* O caderno-box tem overflow:hidden que corta o texto — liberamos
+   o overflow vertical para que a lista interna possa rolar/exibir */
+.hl-caderno-box {
+  overflow: visible !important;
+}
+
+/* A lista interna cuida do scroll vertical */
+.hl-caderno-box .hl-trilha-list {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Título: permite quebra de linha e reduz fonte levemente */
+.hl-caderno-box .hl-trilha-item-title {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  font-size: 0.72rem !important;
+  line-height: 1.25 !important;
+}
+
+/* Subtítulo: permite quebra de linha e reduz fonte levemente */
+.hl-caderno-box .hl-trilha-item-sub {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  font-size: 0.62rem !important;
+  line-height: 1.2 !important;
+}
+
+/* Item: alinha pelo topo para acomodar texto multiline */
+.hl-caderno-box .hl-trilha-item {
+  align-items: flex-start !important;
+  height: auto !important;
+  min-height: unset !important;
+  overflow: visible !important;
+}
+
+/* Body do item: garante altura automática */
+.hl-caderno-box .hl-trilha-item-body {
+  overflow: visible !important;
+  height: auto !important;
+}

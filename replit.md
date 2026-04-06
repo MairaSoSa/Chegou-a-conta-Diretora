@@ -78,6 +78,20 @@ This is a **monorepo with a compiled distribution model**. The actual TypeScript
 
 ---
 
+## Known Patches to Compiled Output
+
+Since the source code is not present, all fixes are applied directly to the compiled files in `dist/`.
+
+| File | Patch |
+|---|---|
+| `dist/public/assets/index-v21.js` | Removed `.slice(0,43)` truncation from `hl-trilha-item-sub` subtitle render — was cutting subtitles to 43 chars. Fix: `(n.subtitle\|\|"").slice(0,43)` → `n.subtitle\|\|""` |
+| `dist/public/index.html` | Added `<style>` block with CSS overrides for Trilha sidebar (white-space, overflow, font sizes); added accessibility panel JS for inner pages; added a11y-zoom observer script |
+| `dist/public/assets/index-v2.css` | Patched compact sidebar `.hl-trilha-item-sub` and `.hl-trilha-item-title` rules to use `white-space: normal; overflow: visible` |
+| `dist/public/assets/postit.css` | Added global (non-media-query) trilha subtitle fix rules |
+| `dist/public/painel-educacional.css` | Global CSS with a11y zoom overrides and additional trilha sidebar rules |
+
+---
+
 ## External Dependencies
 
 | Dependency | Purpose | Notes |
