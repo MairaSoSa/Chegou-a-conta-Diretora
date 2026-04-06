@@ -60,3 +60,213 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ================================================================
+   ACESSIBILIDADE: ALTO CONTRASTE
+   Garante que os elementos da página respondam ao modo high-contrast
+   ================================================================ */
+
+/* Fundo da página */
+.high-contrast .hl-root {
+  background: #ffffff !important;
+}
+
+/* Cards coloridos → brancos com borda escura */
+.high-contrast .hl-yellow,
+.high-contrast .hl-pink,
+.high-contrast .hl-blue,
+.high-contrast .hl-green,
+.high-contrast .hl-orange,
+.high-contrast .hl-purple,
+.high-contrast .hl-teal {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: none !important;
+}
+
+.high-contrast .hl-note-card {
+  box-shadow: none !important;
+}
+
+.high-contrast .hl-note-card:hover {
+  box-shadow: 0 0 0 3px #000000 !important;
+  transform: none !important;
+}
+
+.high-contrast .hl-note-card:before {
+  background: #cccccc !important;
+}
+
+.high-contrast .hl-note-card h3 {
+  color: #000000 !important;
+}
+
+.high-contrast .hl-note-card p,
+.high-contrast .hl-note-card small {
+  color: #1a1a1a !important;
+}
+
+.high-contrast .hl-card-icon {
+  filter: grayscale(1) contrast(1.5) !important;
+  opacity: 1 !important;
+}
+
+/* Caixa Dica */
+.high-contrast .hl-tip-box {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+.high-contrast .hl-tip-box:before,
+.high-contrast .hl-tip-box:after {
+  display: none !important;
+}
+
+.high-contrast .hl-tip-box strong,
+.high-contrast .hl-tip-box p {
+  color: #000000 !important;
+}
+
+/* Hero note (caixa do título principal) */
+.high-contrast .hl-hero-note {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: none !important;
+}
+
+.high-contrast .hl-hero-note:before,
+.high-contrast .hl-hero-note:after {
+  display: none !important;
+}
+
+/* Eyebrow / tags */
+.high-contrast .hl-eyebrow,
+.high-contrast .hl-tag {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  color: #000000 !important;
+}
+
+/* Remendo (badge "atualizado") */
+.high-contrast .hl-remendo {
+  background: #ffff00 !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: none !important;
+}
+
+.high-contrast .hl-remendo:before {
+  background: #dddd00 !important;
+  opacity: 1 !important;
+}
+
+/* Footer strip */
+.high-contrast .hl-footer-strip {
+  color: #000000 !important;
+  border-top: 1.5px solid #000000 !important;
+}
+
+/* Caderno / Trilha */
+.high-contrast .hl-caderno-box {
+  background: #f8f8f8 !important;
+  border: 1px solid #333333 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.high-contrast .hl-trilha-item {
+  background: #f5f5f5 !important;
+  border: 2px solid #333333 !important;
+  box-shadow: none !important;
+}
+
+.high-contrast .hl-trilha-item:hover,
+.high-contrast .hl-trilha-item:active,
+.high-contrast .hl-trilha-item:focus {
+  background: #eeeeee !important;
+  border-color: #000000 !important;
+  box-shadow: none !important;
+}
+
+.high-contrast .hl-trilha-item:after {
+  display: none !important;
+}
+
+.high-contrast .hl-trilha-item-num {
+  color: #000000 !important;
+  background: transparent !important;
+}
+
+.high-contrast .hl-trilha-item-title {
+  color: #000000 !important;
+}
+
+.high-contrast .hl-trilha-item-sub {
+  color: #333333 !important;
+}
+
+.high-contrast .hl-trilha-ver-todas {
+  color: #000080 !important;
+  text-decoration: underline !important;
+}
+
+/* Acessibilidade: botão pill */
+.high-contrast .hl-a11y-pill {
+  background: #ffff00 !important;
+  border-color: #000000 !important;
+  color: #000000 !important;
+  opacity: 1 !important;
+}
+
+/* Layout label "Por onde começar" */
+.high-contrast .hl-mural-label {
+  color: #000000 !important;
+}
+
+/* ================================================================
+   ACESSIBILIDADE: MODO DISLEXIA
+   Reforça espaçamento e legibilidade além do CSS base
+   ================================================================ */
+
+.dyslexia-font .hl-note-card h3,
+.dyslexia-font .hl-note-card p,
+.dyslexia-font .hl-note-card small {
+  word-spacing: 0.18em !important;
+  letter-spacing: 0.05em !important;
+  line-height: 1.85 !important;
+}
+
+.dyslexia-font .hl-trilha-item-title,
+.dyslexia-font .hl-trilha-item-sub {
+  word-spacing: 0.18em !important;
+  letter-spacing: 0.04em !important;
+  line-height: 1.75 !important;
+}
+
+.dyslexia-font .hl-tip-box p,
+.dyslexia-font .hl-tip-box strong {
+  word-spacing: 0.18em !important;
+  letter-spacing: 0.04em !important;
+  line-height: 1.85 !important;
+}
+
+/* Aumenta levemente o tamanho de texto muito pequeno */
+.dyslexia-font .hl-note-card p {
+  font-size: 0.78rem !important;
+}
+
+.dyslexia-font .hl-trilha-item-sub {
+  font-size: 0.78rem !important;
+}
+
+/* ================================================================
+   ACESSIBILIDADE: COMBINAÇÃO (Alto Contraste + Dislexia)
+   ================================================================ */
+
+.high-contrast.dyslexia-font .hl-note-card h3,
+.high-contrast .dyslexia-font .hl-note-card h3 {
+  color: #000000 !important;
+}
