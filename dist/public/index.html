@@ -279,7 +279,7 @@
         var ENTRY_URL = '/assets/index-v21.js?v=20260404ak';
         var REACT_CORE_URL = '/assets/react-core-aq.js?v=20260404av';
         var VENDOR_URL = '/assets/vendor-react-CRHowRiP-fix2.js?v=20260404av';
-        var DASHBOARD_URL = '/assets/Dashboard-v30.js?v=20260404an';
+        var DASHBOARD_URL = '/assets/Dashboard-v30.js?v=202604060222';
         var MAPS_URL = '/assets/maps-core-aq.js?v=20260404ar';
         var CHARTS_URL = '/assets/charts-core-aq.js?v=20260404ar';
         var MOTION_URL = '/assets/motion-core-aq.js?v=20260404ar';
@@ -466,7 +466,7 @@
             // Patch lazy import of Dashboard to use the pre-set global blob URL instead of a proxy-served path.
             sharedText = sharedText.replace(
               /import\("\.\/Dashboard-[^"]+"\)/g,
-              '(function(){var _u=window.__ccDashboardBlobUrl||"/assets/Dashboard-v30.js?v=20260404an";return import(_u);})()'
+              '(function(){var _u=window.__ccDashboardBlobUrl||"/assets/Dashboard-v30.js?v=202604060222";return import(_u);})()'
             );
             // Suppress vitePreload mapDeps for Dashboard in shared blob
             sharedText = sharedText.replace(/__vite__mapDeps\(\[[^\]]*\]\)/g, '[]');
@@ -510,8 +510,8 @@
               .replace('/assets/motion-core-aq.js?v=20260404ar', motionBlobUrl);
             // Patch all dynamic dashboard imports so vitePreload's s() calls the blob directly
             // (replaceAll needed since there are 2 occurrences — one for si, one for La)
-            entryText = entryText.split('./Dashboard-v30.js?v=20260404an').join(dashboardBlobUrl);
-            entryText = entryText.split('/assets/Dashboard-v30.js?v=20260404an').join(dashboardBlobUrl);
+            entryText = entryText.split('./Dashboard-v30.js?v=202604060222').join(dashboardBlobUrl);
+            entryText = entryText.split('/assets/Dashboard-v30.js?v=202604060222').join(dashboardBlobUrl);
             // Support legacy SPA paths that may still be emitted by older shared bundle fragments.
             entryText = entryText
               .replace(

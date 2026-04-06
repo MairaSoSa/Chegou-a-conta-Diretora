@@ -21,6 +21,11 @@ DOWNLOAD_URL="${SQLITE_DB_DOWNLOAD_URL:-https://drive.google.com/file/d/1Dtp04JG
 
 # ── Função: iniciar aplicação Node.js ────────────────────────────────────────
 start_app() {
+  if [ -f scripts/sync-mec-contatos.mjs ]; then
+    echo "[START] Sincronizando bloco MEC (Composição) no painel..."
+    node scripts/sync-mec-contatos.mjs || echo "[WARN] Falha na sincronização MEC; iniciando com último cache local."
+  fi
+
   echo "[START] Iniciando servidor Node.js na porta $PORT..."
   if [ -f dist/bootstrap.cjs ]; then
     exec node dist/bootstrap.cjs
