@@ -89,6 +89,7 @@ Since the source code is not present, all fixes are applied directly to the comp
 | `dist/public/assets/index-v2.css` | Patched compact sidebar `.hl-trilha-item-sub` and `.hl-trilha-item-title` rules to use `white-space: normal; overflow: visible` |
 | `dist/public/assets/postit.css` | Added global (non-media-query) trilha subtitle fix rules |
 | `dist/public/painel-educacional.css` | Global CSS with a11y zoom overrides and additional trilha sidebar rules |
+| `dist/public/assets/Dashboard-v30.js` | Fixed syntax error (extra `})` at line 884 position 12461-12463) introduced in commit f990b83 — the MEC contacts section had an extra closing paren+brace that prematurely terminated the MEC institutional container div before the Fonte footnote was added to its children array. Removed ` })` (3 chars) to restore brace balance. |
 
 ---
 
