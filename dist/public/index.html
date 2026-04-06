@@ -547,6 +547,181 @@
     </script>
     <link rel="stylesheet" crossorigin href="/assets/index-v2.css">
     <link rel="stylesheet" crossorigin href="/assets/postit.css">
+    <link rel="stylesheet" href="/painel-educacional.css">
+    <script>
+      (function() {
+        function syncA11yZoom() {
+          var fs = document.documentElement.style.fontSize;
+          var pct = fs ? parseInt(fs) : 100;
+          if (pct && pct !== 100) {
+            document.documentElement.classList.add('a11y-zoom');
+          } else {
+            document.documentElement.classList.remove('a11y-zoom');
+          }
+        }
+        var saved = localStorage.getItem('accessibility-font-size');
+        if (saved && parseInt(saved) !== 100) {
+          document.documentElement.classList.add('a11y-zoom');
+        }
+        var obs = new MutationObserver(function(mutations) {
+          mutations.forEach(function(m) {
+            if (m.attributeName === 'style') syncA11yZoom();
+          });
+        });
+        obs.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+      })();
+    </script>
+    <script>
+      /* Corrige botão de acessibilidade nas páginas internas.
+         Bug: onClick:s (booleano) em vez de onClick:toggle (função do contexto React).
+         Solução: percorre a árvore de fibras React para encontrar o {toggle} do contexto
+         e adiciona um listener que o chama corretamente. */
+      (function() {
+        function findA11yToggle() {
+          // Strategy 1: traverse UP from button using fiber.return,
+          // checking context dependencies (React 18 stores them in fiber.dependencies)
+          var btn = document.querySelector('[data-testid="button-accessibility-menu"]');
+          if (!btn) return null;
+          var fk = Object.keys(btn).find(function(k) {
+            return k.startsWith('__reactFiber') || k.startsWith('__reactInternals');
+          });
+          if (!fk) return null;
+          var fiber = btn[fk];
+          var depth = 0;
+          while (fiber && depth < 400) {
+            depth++;
+            // Context provider: value is in memoizedProps.value
+            if (fiber.memoizedProps && fiber.memoizedProps.value &&
+                typeof fiber.memoizedProps.value.toggle === 'function') {
+              return fiber.memoizedProps.value.toggle;
+            }
+            // Context consumer: value is accessible via fiber.dependencies
+            if (fiber.dependencies && fiber.dependencies.firstContext) {
+              var ctx = fiber.dependencies.firstContext;
+              var ci = 0;
+              while (ctx && ci < 20) {
+                ci++;
+                var cv = ctx.context && ctx.context._currentValue;
+                if (cv && typeof cv.toggle === 'function') {
+                  return cv.toggle;
+                }
+                ctx = ctx.next;
+              }
+            }
+            // Hook state: some providers store toggle in useState/useReducer
+            if (fiber.memoizedState) {
+              var st = fiber.memoizedState;
+              var si = 0;
+              while (st && si < 30) {
+                si++;
+                var ms = st.memoizedState;
+                if (ms && typeof ms === 'object' && ms !== null &&
+                    typeof ms.toggle === 'function') {
+                  return ms.toggle;
+                }
+                st = st.next;
+              }
+            }
+            fiber = fiber.return;
+          }
+          return null;
+        }
+
+        function patchBtn(btn) {
+          if (btn._a11yFixed) return;
+          btn._a11yFixed = true;
+          btn.addEventListener('click', function(e) {
+            if (window.location.pathname === '/') return; // homepage handled by React
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            openStandaloneA11yPanel();
+          }, true);
+        }
+
+        function patchAll() {
+          document.querySelectorAll('[data-testid="button-accessibility-menu"]').forEach(patchBtn);
+        }
+
+        var domObs = new MutationObserver(function() { patchAll(); });
+        domObs.observe(document.body || document.documentElement, { childList: true, subtree: true });
+        document.addEventListener('DOMContentLoaded', patchAll);
+        setTimeout(patchAll, 500);
+        setTimeout(patchAll, 1500);
+
+        /* ─────── PAINEL DE ACESSIBILIDADE STANDALONE (páginas internas) ─────── */
+        var SA11Y_PANEL_ID = 'sa11y-panel';
+        var SA11Y_KEYS = {
+          fontSize: 'accessibility-font-size',
+          highContrast: 'accessibility-high-contrast',
+          dyslexia: 'accessibility-dyslexia-font'
+        };
+
+        function sa11yRead(key, def) {
+          var v = localStorage.getItem(key); return v !== null ? v : def;
+        }
+        function sa11yWrite(key, val) { localStorage.setItem(key, String(val)); }
+
+        function openStandaloneA11yPanel() {
+          var existing = document.getElementById(SA11Y_PANEL_ID);
+          if (existing) { existing.remove(); return; }
+
+          var hc = sa11yRead(SA11Y_KEYS.highContrast, 'false') === 'true';
+          var dy = sa11yRead(SA11Y_KEYS.dyslexia, 'false') === 'true';
+          var fs = parseInt(sa11yRead(SA11Y_KEYS.fontSize, '100')) || 100;
+
+          var panel = document.createElement('div');
+          panel.id = SA11Y_PANEL_ID;
+          panel.setAttribute('role', 'dialog');
+          panel.setAttribute('aria-label', 'Ajustes de visualização e leitura');
+          panel.style.cssText = 'position:fixed;right:1rem;bottom:3rem;z-index:9999;background:#faf4ee;border:1px solid #ddd0c8;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);padding:1rem;width:min(268px,calc(100vw - 2rem));font-family:Nunito,system-ui,sans-serif;';
+
+          panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem"><h3 style="margin:0;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:#5a3328">Visualização</h3><button id="sa11y-close" aria-label="Fechar" style="background:none;border:none;cursor:pointer;color:#888;font-size:1.2rem;line-height:1;padding:0 4px">×</button></div>'
+            + '<div style="display:flex;flex-direction:column;gap:.5rem">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;background:#fff8f0;border-radius:10px;padding:.5rem .75rem"><span style="font-size:.78rem;color:#3d2b1f;font-weight:600">Alto contraste</span><button id="sa11y-hc" role="switch" aria-checked="' + hc + '" style="width:38px;height:22px;border-radius:11px;border:none;cursor:pointer;transition:background .2s;background:' + (hc ? '#235060' : '#d0c8be') + ';position:relative"><span style="position:absolute;top:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .2s;left:' + (hc ? '19px' : '3px') + '"></span></button></div>'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;background:#fff8f0;border-radius:10px;padding:.5rem .75rem"><span style="font-size:.78rem;color:#3d2b1f;font-weight:600">Fonte para dislexia</span><button id="sa11y-dy" role="switch" aria-checked="' + dy + '" style="width:38px;height:22px;border-radius:11px;border:none;cursor:pointer;transition:background .2s;background:' + (dy ? '#235060' : '#d0c8be') + ';position:relative"><span style="position:absolute;top:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .2s;left:' + (dy ? '19px' : '3px') + '"></span></button></div>'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;background:#fff8f0;border-radius:10px;padding:.5rem .75rem"><span style="font-size:.78rem;color:#3d2b1f;font-weight:600">Tamanho de fonte</span><div style="display:flex;gap:.35rem;align-items:center"><button id="sa11y-fm" aria-label="Diminuir fonte" style="width:26px;height:26px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer;font-size:.9rem;font-weight:700">A−</button><span id="sa11y-fv" style="font-size:.72rem;min-width:28px;text-align:center;color:#444">' + fs + '%</span><button id="sa11y-fp" aria-label="Aumentar fonte" style="width:26px;height:26px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer;font-size:.9rem;font-weight:700">A+</button></div></div>'
+            + '</div>';
+
+          document.body.appendChild(panel);
+
+          document.getElementById('sa11y-close').onclick = function() { panel.remove(); };
+
+          document.getElementById('sa11y-hc').onclick = function() {
+            hc = !hc; sa11yWrite(SA11Y_KEYS.highContrast, hc);
+            document.documentElement.classList.toggle('high-contrast', hc);
+            this.setAttribute('aria-checked', hc);
+            this.style.background = hc ? '#235060' : '#d0c8be';
+            this.querySelector('span').style.left = hc ? '19px' : '3px';
+          };
+
+          document.getElementById('sa11y-dy').onclick = function() {
+            dy = !dy; sa11yWrite(SA11Y_KEYS.dyslexia, dy);
+            document.documentElement.classList.toggle('dyslexia-font', dy);
+            this.setAttribute('aria-checked', dy);
+            this.style.background = dy ? '#235060' : '#d0c8be';
+            this.querySelector('span').style.left = dy ? '19px' : '3px';
+          };
+
+          function updateFS(newFS) {
+            fs = Math.min(150, Math.max(80, newFS));
+            sa11yWrite(SA11Y_KEYS.fontSize, fs);
+            document.documentElement.style.fontSize = fs + '%';
+            document.getElementById('sa11y-fv').textContent = fs + '%';
+          }
+          document.getElementById('sa11y-fm').onclick = function() { updateFS(fs - 10); };
+          document.getElementById('sa11y-fp').onclick = function() { updateFS(fs + 10); };
+
+          document.addEventListener('keydown', function escClose(e) {
+            if (e.key === 'Escape') { panel.remove(); document.removeEventListener('keydown', escClose); }
+          });
+          document.addEventListener('click', function outsideClose(e) {
+            if (!panel.contains(e.target) && e.target.getAttribute('data-testid') !== 'button-accessibility-menu') {
+              panel.remove(); document.removeEventListener('click', outsideClose);
+            }
+          });
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
