@@ -548,6 +548,29 @@
     <link rel="stylesheet" crossorigin href="/assets/index-v2.css">
     <link rel="stylesheet" crossorigin href="/assets/postit.css">
     <link rel="stylesheet" href="/painel-educacional.css">
+    <script>
+      (function() {
+        function syncA11yZoom() {
+          var fs = document.documentElement.style.fontSize;
+          var pct = fs ? parseInt(fs) : 100;
+          if (pct && pct !== 100) {
+            document.documentElement.classList.add('a11y-zoom');
+          } else {
+            document.documentElement.classList.remove('a11y-zoom');
+          }
+        }
+        var saved = localStorage.getItem('accessibility-font-size');
+        if (saved && parseInt(saved) !== 100) {
+          document.documentElement.classList.add('a11y-zoom');
+        }
+        var obs = new MutationObserver(function(mutations) {
+          mutations.forEach(function(m) {
+            if (m.attributeName === 'style') syncA11yZoom();
+          });
+        });
+        obs.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

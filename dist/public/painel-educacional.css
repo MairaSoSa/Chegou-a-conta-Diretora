@@ -270,3 +270,41 @@
 .high-contrast .dyslexia-font .hl-note-card h3 {
   color: #000000 !important;
 }
+
+/* ================================================================
+   ACESSIBILIDADE: ROLAGEM COM ZOOM DE FONTE (a11y-zoom)
+   Quando o tamanho da fonte é aumentado, o layout fixo do "caderno"
+   bloqueia a rolagem. Esta regra libera overflow e permite scroll.
+   A classe a11y-zoom é adicionada via JS quando fontSize != 100%.
+   ================================================================ */
+
+.a11y-zoom .hl-root {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  align-items: flex-start !important;
+}
+
+.a11y-zoom .hl-notebook {
+  height: auto !important;
+  min-height: min(720px, calc(100vh - 20px)) !important;
+  overflow: visible !important;
+}
+
+.a11y-zoom .hl-page {
+  height: auto !important;
+  overflow: visible !important;
+  padding-bottom: 48px !important;
+}
+
+.a11y-zoom .hl-left-col {
+  overflow: visible !important;
+}
+
+.a11y-zoom .hl-right-col {
+  overflow: visible !important;
+}
+
+/* Garante rolagem suave */
+.a11y-zoom {
+  scroll-behavior: smooth;
+}
