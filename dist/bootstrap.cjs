@@ -500,6 +500,75 @@ if (source.includes(_FNDE_HTML_OLD)) {
   }
 })();
 
+// ── Seed U21: Como ler dados e indicadores da escola ─────────────────────────
+// Injeta uma função de semeadura que roda após o servidor inicializar.
+// Usa as variáveis minificadas (vt = Drizzle client, Gu = trilha_units, Ft = eq).
+(function _patchTrilhaSeedU21() {
+  const SEED_MARKER = '"Pre-warming stats cache in background...")';
+  if (!source.includes(SEED_MARKER)) {
+    console.warn('[bootstrap] Trilha seed U21 — marker not found, skipping');
+    return;
+  }
+
+  const u21 = {
+    unitId: 'U21',
+    part: '5',
+    title: 'Como ler dados e indicadores da escola',
+    subtitle: 'Interpretando números, índices e relatórios que descrevem sua escola.',
+    duration: '25 min',
+    intro: 'Ensina como interpretar os principais dados educacionais disponíveis sobre a escola — IDEB, Censo Escolar, indicadores de fluxo e dados de repasse PDDE — para que a diretora possa compreender a realidade da escola com mais clareza e usar as informações na tomada de decisão.',
+    sections: JSON.stringify([
+      {
+        id: 's1',
+        title: 'O que é o IDEB e como ler a nota',
+        content: 'O IDEB (Índice de Desenvolvimento da Educação Básica) é calculado a cada dois anos pelo INEP. Ele combina duas informações: o desempenho dos alunos na Prova Brasil (proficiência em Língua Portuguesa e Matemática) e o fluxo escolar (taxas de aprovação, reprovação e abandono).\n\nComo ler: a nota vai de 0 a 10. Uma nota acima de 6 é considerada boa. Compare sempre o IDEB da sua escola com a média do município, do estado e do país — não apenas com a meta projetada.\n\nDica prática: se o IDEB subiu mas a taxa de abandono também subiu, pode ser sinal de que alunos com baixo desempenho saíram da escola.',
+        type: 'teoria'
+      },
+      {
+        id: 's2',
+        title: 'Censo Escolar: o que ele registra',
+        content: 'O Censo Escolar é realizado todo ano pelo INEP e registra informações detalhadas sobre a escola: número de matrículas por etapa e modalidade, quantidade de docentes, turmas, infraestrutura (salas de aula, laboratórios, banheiros, internet) e condições de acessibilidade.\n\nEsses dados são usados pelo governo para distribuir recursos — inclusive o PDDE. Por isso, é essencial que os dados informados pela escola no censo sejam precisos e atualizados.',
+        type: 'teoria'
+      },
+      {
+        id: 's3',
+        title: 'Indicadores de fluxo: aprovação, reprovação e abandono',
+        content: 'Os três indicadores de fluxo mostram o que acontece com os alunos ao longo do ano:\n\n• Taxa de aprovação: percentual de alunos que passaram de ano.\n• Taxa de reprovação: percentual de alunos que ficaram retidos.\n• Taxa de abandono: percentual de alunos que saíram sem concluir o ano letivo.\n\nA soma dos três deve ser 100%. O abandono é o indicador mais crítico — ele impacta diretamente o IDEB e sinaliza problemas sociais, econômicos ou pedagógicos que precisam de atenção.',
+        type: 'teoria'
+      },
+      {
+        id: 's4',
+        title: 'Como ler os dados de repasse PDDE',
+        content: 'Ao consultar os repasses PDDE, você verá campos como:\n\n• Ação/Programa: identifica qual modalidade do PDDE (básico, acessibilidade, campo etc.)\n• Ano de exercício: o ano a que se refere o recurso\n• Valor custeio: recursos para despesas do dia a dia (material, serviços)\n• Valor capital: recursos para bens permanentes (equipamentos, mobiliário)\n• Situação: se o recurso foi creditado, pendente ou restituído\n\nSempre verifique se os valores creditados correspondem ao que está na conta bancária da escola.',
+        type: 'pratica'
+      },
+      {
+        id: 's5',
+        title: 'Onde encontrar os dados da sua escola',
+        content: 'Principais fontes de dados educacionais:\n\n• Painel da Educação (este sistema): IDEB, Censo Escolar, dados PDDE integrados por escola.\n• Portal FNDE (fnde.gov.br): consulta de repasses PDDE por escola.\n• QEdu (qedu.org.br): IDEB, fluxo e aprendizado por escola, município e estado.\n• Painel de Monitoramento do INEP (painel.inep.gov.br): dados do Censo Escolar.\n• SIMEC (simec.mec.gov.br): obras e programas do MEC vinculados à escola.',
+        type: 'recurso'
+      }
+    ]),
+    materials: JSON.stringify([]),
+    previousUnit: 'U20',
+    nextUnit: '',
+    sortOrder: 21
+  };
+
+  const seedCode = `;setImmediate(async function(){try{` +
+    `var _ex=await vt.select().from(Gu).where(Ft(Gu.unitId,${JSON.stringify(u21.unitId)}));` +
+    `if(_ex.length===0){` +
+      `await vt.insert(Gu).values(${JSON.stringify(u21)});` +
+      `console.log("[seed] U21 inserida com sucesso");` +
+      `await vt.update(Gu).set({nextUnit:${JSON.stringify(u21.unitId)}}).where(Ft(Gu.unitId,"U20"));` +
+      `console.log("[seed] U20 atualizada: nextUnit -> U21");` +
+    `}else{console.log("[seed] U21 já existe, pulando");}` +
+  `}catch(_e){console.error("[seed] erro ao inserir U21:",_e&&_e.message||_e);}});`;
+
+  source = source.replace(SEED_MARKER, SEED_MARKER + seedCode);
+  console.log('[bootstrap] Trilha seed U21 patch applied');
+})();
+
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
