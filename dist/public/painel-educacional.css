@@ -278,33 +278,56 @@
    A classe a11y-zoom é adicionada via JS quando fontSize != 100%.
    ================================================================ */
 
-.a11y-zoom .hl-root {
+/* html e body: permite scroll horizontal se necessário */
+html.a11y-zoom,
+html.a11y-zoom body {
+  overflow-x: auto !important;
+}
+
+html.a11y-zoom .hl-root {
   overflow-y: auto !important;
-  overflow-x: hidden !important;
+  overflow-x: auto !important;
   align-items: flex-start !important;
 }
 
-.a11y-zoom .hl-notebook {
+html.a11y-zoom .hl-notebook {
   height: auto !important;
   min-height: min(720px, calc(100vh - 20px)) !important;
   overflow: visible !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
-.a11y-zoom .hl-page {
+html.a11y-zoom .hl-page {
   height: auto !important;
   overflow: visible !important;
   padding-bottom: 48px !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
-.a11y-zoom .hl-left-col {
+html.a11y-zoom .hl-layout {
   overflow: visible !important;
 }
 
-.a11y-zoom .hl-right-col {
+html.a11y-zoom .hl-left-col {
   overflow: visible !important;
+  min-width: 0 !important;
+}
+
+html.a11y-zoom .hl-right-col {
+  overflow: visible !important;
+  min-width: 0 !important;
+}
+
+/* Garante que tabelas e conteúdo largo rolem horizontalmente */
+html.a11y-zoom table {
+  display: block !important;
+  overflow-x: auto !important;
+  max-width: 100% !important;
 }
 
 /* Garante rolagem suave */
-.a11y-zoom {
+html.a11y-zoom {
   scroll-behavior: smooth;
 }
