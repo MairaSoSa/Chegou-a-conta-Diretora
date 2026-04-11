@@ -623,11 +623,42 @@ if (source.includes(_FNDE_HTML_OLD)) {
 })();
 
 
+// ── 3x-idx. Preload in-memory escola index for fast similares filtering ──────
+(function _patchSimPreload() {
+  const SEED_MARKER = '"Pre-warming stats cache in background...")';
+  if (!source.includes(SEED_MARKER)) return;
+
+  const preloadCode = `;setImmediate(async function(){try{` +
+    `const _t=Date.now();` +
+    `const [_rows,_icgRows]=await Promise.all([` +
+    `fn("SELECT inep,nome,municipio,uf,dependencia,localizacao,situacao,"+` +
+    `"CAST(COALESCE(matriculas,'0') AS BIGINT) as matriculas,"+` +
+    `"(dados::jsonb)->>'telefone' as telefone,"+` +
+    `"(dados::jsonb)->>'ds_endereco' as ds_endereco,"+` +
+    `"(dados::jsonb)->>'no_bairro' as no_bairro,"+` +
+    `"(dados::jsonb)->>'co_cep' as co_cep,"+` +
+    `"CAST(COALESCE((dados::jsonb)->>'co_municipio','0') AS BIGINT) as co_municipio,"+` +
+    `"CAST(COALESCE((dados::jsonb)->>'qt_mat_inf','0') AS BIGINT) as qt_mat_inf,"+` +
+    `"CAST(COALESCE((dados::jsonb)->>'qt_mat_fund','0') AS BIGINT) as qt_mat_fund,"+` +
+    `"CAST(COALESCE((dados::jsonb)->>'qt_mat_med','0') AS BIGINT) as qt_mat_med,"+` +
+    `"CAST(COALESCE((dados::jsonb)->>'qt_mat_eja','0') AS BIGINT) as qt_mat_eja,"+` +
+    `"CAST(COALESCE((dados::jsonb)->>'qt_mat_prof','0') AS BIGINT) as qt_mat_prof "+` +
+    `"FROM censo_escolar WHERE ano=2025",[]),` +
+    `fn("SELECT inep,(dados::jsonb)->>'nivel' as nivel FROM indicadores_educacionais WHERE ano=2025 AND tipo='icg'",[])` +
+    `]);` +
+    `const _idx=new Map();` +
+    `for(const r of _rows){r.uf=r.uf?.toUpperCase()||"";r.matriculas=Number(r.matriculas)||0;_idx.set(r.inep,r);}` +
+    `const _icgMap=new Map();for(const r of _icgRows)_icgMap.set(r.inep,r.nivel);` +
+    `globalThis._simData={idx:_idx,icg:_icgMap,ready:true};` +
+    `console.log("[sim-idx] Preloaded "+_idx.size+" schools + "+_icgMap.size+" ICG in "+(Date.now()-_t)+"ms");` +
+  `}catch(_e){console.error("[sim-idx] Preload failed:",_e&&_e.message||_e);}});`;
+
+  source = source.replace(SEED_MARKER, SEED_MARKER + preloadCode);
+  console.log('[bootstrap] Similares in-memory preload patch applied');
+})();
+
 // ── 3x. Patch: Otimizar carregamento de Escolas Similares ───────────────────
-// Performance improvements for /api/escola/:inep/similares:
-// 1. Enrollment range filter moved from JS to SQL (BETWEEN ? AND ?)
-// 2. Unified candidate+detail query via LEFT JOIN (no batch loop)
-// 3. In-memory cache with 1h TTL (globalThis._simCache)
+// v4: in-memory filtering (0ms), only OSRM+road_dist is external
 (function _patchSimilares() {
   const _SIM_START = 'e.get("/api/escola/:inep/similares",async(A,g)=>{let E=A.params.inep,v=parseInt(A.query.ano)||2025;try{let x=await Fn(';
   const _SIM_END_MARKER = '}catch(x){g.status(500).json({erro:x.message})}}),';
@@ -637,9 +668,91 @@ if (source.includes(_FNDE_HTML_OLD)) {
     return;
   }
   const _simEndIdx = source.indexOf(_SIM_END_MARKER, _simStartIdx) + _SIM_END_MARKER.length;
-  const _newSim = "e.get(\"/api/escola/:inep/similares\",async(A,g)=>{globalThis._simCache=globalThis._simCache||new Map();let E=A.params.inep,v=parseInt(A.query.ano)||2025;try{const _cacheKey=E+\":\"+v,_now=Date.now();if(globalThis._simCache.size>500){for(const[k,entry]of globalThis._simCache)if(_now-entry.ts>=3600000)globalThis._simCache.delete(k);}const _cacheEntry=globalThis._simCache.get(_cacheKey);if(_cacheEntry&&_now-_cacheEntry.ts<3600000)return g.json(_cacheEntry.data);let x=await Fn(`\n        SELECT inep, uf, dependencia, localizacao,\n          CAST(COALESCE(matriculas, '0') AS BIGINT) as matriculas,\n          CAST(COALESCE((dados::jsonb)->>'co_municipio', '0') AS BIGINT) as co_municipio,\n          CAST(COALESCE((dados::jsonb)->>'qt_mat_inf',  '0') AS BIGINT) as qt_mat_inf,\n          CAST(COALESCE((dados::jsonb)->>'qt_mat_fund', '0') AS BIGINT) as qt_mat_fund,\n          CAST(COALESCE((dados::jsonb)->>'qt_mat_med',  '0') AS BIGINT) as qt_mat_med,\n          CAST(COALESCE((dados::jsonb)->>'qt_mat_eja',  '0') AS BIGINT) as qt_mat_eja,\n          CAST(COALESCE((dados::jsonb)->>'qt_mat_prof', '0') AS BIGINT) as qt_mat_prof\n        FROM censo_escolar WHERE inep=? AND ano=? LIMIT 1\n      `,[E,v]);if(!x)return g.status(404).json({erro:\"Escola n\\xE3o encontrada\"});let w=Math.floor((x.matriculas||50)*.33),T=Math.ceil((x.matriculas||50)*3),I=x.matriculas||50,D=j=>{let le=new Set;return j.qt_mat_inf>0&&le.add(\"EI\"),j.qt_mat_fund>0&&le.add(\"EF\"),j.qt_mat_med>0&&le.add(\"EM\"),j.qt_mat_eja>0&&le.add(\"EJA\"),j.qt_mat_prof>0&&le.add(\"EP\"),le.size===0&&le.add(\"EF\"),le},B=D(x),N=[...B].sort().join(\"+\"),M=(await Fn(`\n        SELECT (dados::jsonb)->>'nivel' as nivel\n        FROM indicadores_educacionais WHERE inep=? AND ano=? AND tipo='icg' LIMIT 1\n      `,[E,v]))?.nivel??null,L=x.uf?.toUpperCase()||\"\",Z=await fn(`\n        SELECT c.inep, c.nome, c.municipio, c.uf, c.dependencia, c.localizacao,\n          CAST(COALESCE(c.matriculas, '0') AS BIGINT) as matriculas,\n          (c.dados::jsonb)->>'telefone'    as telefone,\n          (c.dados::jsonb)->>'ds_endereco' as ds_endereco,\n          (c.dados::jsonb)->>'no_bairro'   as no_bairro,\n          (c.dados::jsonb)->>'co_cep'      as co_cep,\n          CAST(COALESCE((c.dados::jsonb)->>'co_municipio', '0') AS BIGINT) as co_municipio,\n          CAST(COALESCE((c.dados::jsonb)->>'qt_mat_inf',  '0') AS BIGINT) as qt_mat_inf,\n          CAST(COALESCE((c.dados::jsonb)->>'qt_mat_fund', '0') AS BIGINT) as qt_mat_fund,\n          CAST(COALESCE((c.dados::jsonb)->>'qt_mat_med',  '0') AS BIGINT) as qt_mat_med,\n          CAST(COALESCE((c.dados::jsonb)->>'qt_mat_eja',  '0') AS BIGINT) as qt_mat_eja,\n          CAST(COALESCE((c.dados::jsonb)->>'qt_mat_prof', '0') AS BIGINT) as qt_mat_prof,\n          CAST(COALESCE((ie.dados::jsonb)->>'nivel', '0') AS BIGINT) as icg_nivel\n        FROM censo_escolar c\n        LEFT JOIN indicadores_educacionais ie\n          ON ie.inep = c.inep AND ie.ano = ? AND ie.tipo = 'icg'\n        WHERE c.ano=? AND c.dependencia=? AND UPPER(c.uf)=? AND c.situacao='Em Atividade' AND c.inep!=?\n          AND CAST(COALESCE(c.matriculas,'0') AS BIGINT) BETWEEN ? AND ?\n      `,[v,v,x.dependencia,L,E,w,T]),P=(j,le)=>{let Ae=aq[j],Ce=aq[le];if(!Ae||!Ce)return 9999;let ie=6371,ge=(Ce[0]-Ae[0])*Math.PI/180,de=(Ce[1]-Ae[1])*Math.PI/180,Ne=Math.sin(ge/2)**2+Math.cos(Ae[0]*Math.PI/180)*Math.cos(Ce[0]*Math.PI/180)*Math.sin(de/2)**2;return ie*2*Math.atan2(Math.sqrt(Ne),Math.sqrt(1-Ne))},V=x.co_municipio||0,Y=[];if(Z.length>0){let Ce=ie=>{let ge=D(ie);for(let de of B)if(ge.has(de))return!0;return!1};Y=Z.filter(ie=>!(!Ce(ie)||M!==null&&ie.icg_nivel!==null&&ie.icg_nivel!==M)).sort((ie,ge)=>{let de=P(V,ie.co_municipio||0),Ne=P(V,ge.co_municipio||0);if(de!==Ne)return de-Ne;let Fe=[...B].filter(K=>D(ie).has(K)).length,$e=[...B].filter(K=>D(ge).has(K)).length;return Fe!==$e?$e-Fe:Math.abs((ie.matriculas||0)-I)-Math.abs((ge.matriculas||0)-I)}).slice(0,50)}let fe=!1,G={},oe=aq[V];if(oe&&Y.length>0&&V)try{let j=[...new Set(Y.map(Ae=>Ae.co_municipio).filter(Boolean))];if(j.length>0){let Ae=j.map(()=>\"?\").join(\",\");try{let Ce=await fn(`SELECT co_mun_dest, km FROM mun_road_dist WHERE co_mun_orig=? AND co_mun_dest IN (${Ae})`,[V,...j]);for(let ie of Ce)G[ie.co_mun_dest]=ie.km}catch{}}let le=j.filter(Ae=>G[Ae]===void 0);if(le.length>0){let Ae=le.map(Ce=>{let ie=aq[Ce];return ie?{mun:Ce,coord:`${ie[1]},${ie[0]}`}:null}).filter(Boolean);if(Ae.length>0){let Ce=Ae.map(Ne=>Ne.coord),ge=`http://router.project-osrm.org/table/v1/driving/${[`${oe[1]},${oe[0]}`,...Ce].join(\";\")}?sources=0&annotations=distance`,de=await fetch(ge,{signal:AbortSignal.timeout(8e3)});if(de.ok){let Ne=await de.json();if(Ne.code===\"Ok\"&&Array.isArray(Ne.distances?.[0])){let Fe=Ne.distances[0],$e=\"INSERT INTO mun_road_dist (co_mun_orig, co_mun_dest, km) VALUES (?, ?, ?) ON CONFLICT (co_mun_orig, co_mun_dest) DO UPDATE SET km=excluded.km\";for(let K=0;K<Ae.length;K++){let X=Fe[K+1];if(X!=null&&isFinite(X)){let se=Math.round(X/1e3);G[Ae[K].mun]=se,au($e,[V,Ae[K].mun,se]).catch(()=>{}),au($e,[Ae[K].mun,V,se]).catch(()=>{})}}}}}}j.some(Ae=>G[Ae]!==void 0)&&(fe=!0)}catch{}fe&&Y.sort((j,le)=>{let Ae=G[j.co_municipio]??P(V,j.co_municipio||0),Ce=G[le.co_municipio]??P(V,le.co_municipio||0);return Ae-Ce});let z={};for(let j of Y)j.uf&&(z[j.uf.toUpperCase()]=(z[j.uf.toUpperCase()]||0)+1);const _result={escola_base:{inep:E,dependencia:x.dependencia,localizacao:x.localizacao,matriculas:x.matriculas,uf:L,modalidades:N,icg_nivel:M},total:Y.length,por_uf:z,distancia_tipo:fe?\"rodovi\\xE1ria\":\"linha reta\",escolas:Y.map(j=>({inep:j.inep,nome:j.nome,municipio:j.municipio,uf:j.uf?.toUpperCase(),dependencia:j.dependencia,localizacao:j.localizacao,matriculas:j.matriculas,distancia_km:V&&j.co_municipio?G[j.co_municipio]??Math.round(P(V,j.co_municipio)):null,telefone:j.telefone||null,ds_endereco:j.ds_endereco||null,no_bairro:j.no_bairro||null,co_cep:j.co_cep||null,icg_nivel:j.icg_nivel??null,modalidades:[j.qt_mat_inf>0&&\"Infantil\",j.qt_mat_fund>0&&\"Fundamental\",j.qt_mat_med>0&&\"M\\xE9dio\",j.qt_mat_eja>0&&\"EJA\",j.qt_mat_prof>0&&\"Prof.\"].filter(Boolean)}))};globalThis._simCache.set(_cacheKey,{ts:Date.now(),data:_result});g.json(_result)}catch(x){g.status(500).json({erro:x.message})}}),";
-  source = source.slice(0, _simStartIdx) + _newSim + source.slice(_simEndIdx);
-  console.log('[bootstrap] Similares optimization patch applied (SQL BETWEEN + JOIN + cache)');
+
+  const _newSimFn = `e.get("/api/escola/:inep/similares",async(A,g)=>{
+globalThis._simCache=globalThis._simCache||new Map();
+let E=A.params.inep,v=parseInt(A.query.ano)||2025;
+try{
+  const _ck=E+":"+v,_now=Date.now();
+  if(globalThis._simCache.size>500){for(const[k,en]of globalThis._simCache)if(_now-en.ts>=3600000)globalThis._simCache.delete(k);}
+  const _ce=globalThis._simCache.get(_ck);
+  if(_ce&&_now-_ce.ts<3600000)return g.json(_ce.data);
+
+  const _t0=Date.now();
+  const _sd=globalThis._simData;
+  if(!_sd||!_sd.ready){
+    return g.status(503).json({erro:"\\xCDndice de escolas ainda carregando, tente novamente em alguns segundos"});
+  }
+  const _idx=_sd.idx,_icg=_sd.icg;
+  const x=_idx.get(E);
+  if(!x)return g.status(404).json({erro:"Escola n\\xE3o encontrada"});
+  const M=_icg.get(E)??null;
+
+  let w=Math.floor((x.matriculas||50)*.33),T=Math.ceil((x.matriculas||50)*3);
+  const D=j=>{let s=new Set;return j.qt_mat_inf>0&&s.add("EI"),j.qt_mat_fund>0&&s.add("EF"),j.qt_mat_med>0&&s.add("EM"),j.qt_mat_eja>0&&s.add("EJA"),j.qt_mat_prof>0&&s.add("EP"),s.size===0&&s.add("EF"),s};
+  const B=D(x),N=[...B].sort().join("+"),L=x.uf?.toUpperCase()||"";
+  const V=x.co_municipio||0;
+
+  const P=(j,le)=>{let a=aq[j],c=aq[le];if(!a||!c)return 9999;let R=6371,dl=(c[0]-a[0])*Math.PI/180,dn=(c[1]-a[1])*Math.PI/180,h=Math.sin(dl/2)**2+Math.cos(a[0]*Math.PI/180)*Math.cos(c[0]*Math.PI/180)*Math.sin(dn/2)**2;return R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h))};
+  const hasOverlap=r=>{const s=D(r);for(const m of B)if(s.has(m))return true;return false};
+
+  const Z=[];
+  for(const[inep,r] of _idx){
+    if(inep===E)continue;
+    if(r.situacao!=='Em Atividade')continue;
+    if(r.dependencia!==x.dependencia)continue;
+    if(r.uf!==L)continue;
+    const mat=Number(r.matriculas)||0;
+    if(mat<w||mat>T)continue;
+    if(!hasOverlap(r))continue;
+    const icg=_icg.get(inep)??null;
+    if(M!==null&&icg!==null&&icg!==M)continue;
+    Z.push({r,icg});
+  }
+
+  let Y=Z.sort((a,b)=>P(V,a.r.co_municipio||0)-P(V,b.r.co_municipio||0)).slice(0,50);
+
+  let fe=false,G={},oe=aq[V];
+  if(oe&&Y.length>0&&V){
+    try{
+      const allMuns=[...new Set(Y.map(e=>e.r.co_municipio).filter(Boolean))];
+      if(allMuns.length>0){
+        const ph=allMuns.map(()=>"?").join(",");
+        try{const rows=await fn(\`SELECT co_mun_dest,km FROM mun_road_dist WHERE co_mun_orig=? AND co_mun_dest IN (\${ph})\`,[V,...allMuns]);
+          for(const r of rows)G[r.co_mun_dest]=r.km;}catch{}
+        const missing=allMuns.filter(m=>G[m]===void 0)
+          .map(m=>{const c=aq[m];return c?{mun:m,coord:\`\${c[1]},\${c[0]}\`,dist:P(V,m)}:null})
+          .filter(Boolean)
+          .sort((a,b)=>a.dist-b.dist)
+          .slice(0,15);
+        if(missing.length>0){
+          const coords=missing.map(r=>r.coord);
+          const url=\`http://router.project-osrm.org/table/v1/driving/\${[\`\${oe[1]},\${oe[0]}\`,...coords].join(";")}?sources=0&annotations=distance\`;
+          try{
+            const res=await fetch(url,{signal:AbortSignal.timeout(4000)});
+            if(res.ok){const j=await res.json();
+              if(j.code==="Ok"&&Array.isArray(j.distances?.[0])){
+                const ds=j.distances[0],ins="INSERT INTO mun_road_dist(co_mun_orig,co_mun_dest,km)VALUES(?,?,?)ON CONFLICT(co_mun_orig,co_mun_dest)DO UPDATE SET km=excluded.km";
+                for(let i=0;i<missing.length;i++){const d=ds[i+1];if(d!=null&&isFinite(d)){const km=Math.round(d/1e3);G[missing[i].mun]=km;au(ins,[V,missing[i].mun,km]).catch(()=>{});au(ins,[missing[i].mun,V,km]).catch(()=>{});}}
+              }
+            }
+          }catch{}
+        }
+        allMuns.some(m=>G[m]!==void 0)&&(fe=true);
+      }
+    }catch{}
+    fe&&Y.sort((a,b)=>(G[a.r.co_municipio]??P(V,a.r.co_municipio||0))-(G[b.r.co_municipio]??P(V,b.r.co_municipio||0)));
+  }
+
+  let z={};for(const e of Y)e.r.uf&&(z[e.r.uf.toUpperCase()]=(z[e.r.uf.toUpperCase()]||0)+1);
+  const _result={escola_base:{inep:E,dependencia:x.dependencia,localizacao:x.localizacao,matriculas:x.matriculas,uf:L,modalidades:N,icg_nivel:M},total:Y.length,por_uf:z,distancia_tipo:fe?"rodovi\\xE1ria":"linha reta",escolas:Y.map(e=>{const r=e.r;return{inep:r.inep,nome:r.nome,municipio:r.municipio,uf:r.uf?.toUpperCase(),dependencia:r.dependencia,localizacao:r.localizacao,matriculas:Number(r.matriculas)||0,distancia_km:V&&r.co_municipio?G[r.co_municipio]??Math.round(P(V,r.co_municipio)):null,telefone:r.telefone||null,ds_endereco:r.ds_endereco||null,no_bairro:r.no_bairro||null,co_cep:r.co_cep||null,icg_nivel:e.icg??null,modalidades:[r.qt_mat_inf>0&&"Infantil",r.qt_mat_fund>0&&"Fundamental",r.qt_mat_med>0&&"M\\xE9dio",r.qt_mat_eja>0&&"EJA",r.qt_mat_prof>0&&"Prof."].filter(Boolean)}})};
+  globalThis._simCache.set(_ck,{ts:Date.now(),data:_result});
+  g.json(_result);
+}catch(x){g.status(500).json({erro:x.message})}
+}),`;
+
+  source = source.slice(0, _simStartIdx) + _newSimFn + source.slice(_simEndIdx);
+  console.log('[bootstrap] Similares v4 patch applied (in-memory filter, OSRM top-15, 4s timeout)');
 })();
 
 const m = new Module(path.join(distDir, 'index.cjs'));

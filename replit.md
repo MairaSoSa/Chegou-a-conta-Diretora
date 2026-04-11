@@ -56,6 +56,7 @@ This is a **monorepo with a compiled distribution model**. The actual TypeScript
 - In-memory + persistent cache for census statistics (pre-warmed at startup per year: 2022, 2023, 2024, 2025)
 - IDEB analytics maps pre-computed in memory at startup (~450ms for all municipalities and UFs)
 - PDDE data cached per school/year with `_cached_at` timestamp
+- **Similares in-memory index** (`globalThis._simIdx`): Full censo_escolar 2025 data (214K schools) + ICG records (179K) preloaded at startup (~15s) into Map for sub-second candidate filtering. Result cache (`globalThis._simCache`) with 1hr TTL.
 
 ### Geographic Data
 - `municipio-centroides.json`: Lat/lng centroids for all ~5570 Brazilian municipalities (by IBGE code)
