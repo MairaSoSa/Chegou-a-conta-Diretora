@@ -927,6 +927,12 @@ FORMATO DA RESPOSTA (use exatamente esta estrutura JSON):
       "alerta": "erro comum ou risco"
     }
   ],
+  "regrasDoJogo": [
+    {
+      "regra": "descrição curta e direta da regra ou obrigação",
+      "consequencia": "o que acontece se não cumprir"
+    }
+  ],
   "cuidadosDiretora": ["lista do que eu como diretora preciso cuidar"],
   "errosComuns": ["erros que podem dar problema"],
   "dicasPraticas": ["dicas práticas do dia a dia"]

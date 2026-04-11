@@ -178,6 +178,7 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
     [munQ,setMunQ]=x.useState(""),
     [munOff,setMunOff]=x.useState(0),
     [explicarInput,setExplicarInput]=x.useState(""),
+    [doeEmbed,setDoeEmbed]=x.useState(""),
     doeSize=10,munSize=10;
 
   const doeQ2=yo({q:doeQ,state:doeState,size:doeSize,offset:doeOff},!!doeQ&&!!doeState);
@@ -188,33 +189,33 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
   const sugTags=["PDDE","PNAE","PNATE transporte","FUNDEB","presta\u00E7\u00E3o de contas","censo escolar","FNDE resolu\u00E7\u00E3o"];
 
   const doePortais=[
-    {uf:"AC",nome:"Acre",url:"https://www.diario.ac.gov.br",regiao:"N"},
-    {uf:"AL",nome:"Alagoas",url:"https://www.imprensaoficialal.com.br",regiao:"NE"},
-    {uf:"AM",nome:"Amazonas",url:"https://diario.imprensaoficial.am.gov.br",regiao:"N"},
-    {uf:"AP",nome:"Amap\u00E1",url:"https://seed.portal.ap.gov.br/diario",regiao:"N"},
-    {uf:"BA",nome:"Bahia",url:"https://dool.egba.ba.gov.br",regiao:"NE"},
-    {uf:"CE",nome:"Cear\u00E1",url:"https://www.ceara.gov.br/diario-oficial",regiao:"NE"},
-    {uf:"DF",nome:"Distrito Federal",url:"https://www.dodf.df.gov.br",regiao:"CO"},
-    {uf:"ES",nome:"Esp\u00EDrito Santo",url:"https://ioes.dio.es.gov.br",regiao:"SE"},
-    {uf:"GO",nome:"Goi\u00E1s",url:"https://diariooficial.abc.go.gov.br",regiao:"CO"},
-    {uf:"MA",nome:"Maranh\u00E3o",url:"https://www.diariooficial.ma.gov.br",regiao:"NE"},
-    {uf:"MG",nome:"Minas Gerais",url:"https://www.iof.mg.gov.br",regiao:"SE"},
-    {uf:"MS",nome:"Mato Grosso do Sul",url:"https://www.spdo.ms.gov.br/diariodoe",regiao:"CO"},
-    {uf:"MT",nome:"Mato Grosso",url:"https://www.iomat.mt.gov.br",regiao:"CO"},
-    {uf:"PA",nome:"Par\u00E1",url:"https://www.ioepa.com.br",regiao:"N"},
-    {uf:"PB",nome:"Para\u00EDba",url:"https://auniao.pb.gov.br/doe",regiao:"NE"},
-    {uf:"PE",nome:"Pernambuco",url:"https://www.cepe.com.br/diario-oficial",regiao:"NE"},
-    {uf:"PI",nome:"Piau\u00ED",url:"https://www.diariooficial.pi.gov.br",regiao:"NE"},
-    {uf:"PR",nome:"Paran\u00E1",url:"https://www.imprensaoficial.pr.gov.br",regiao:"S"},
-    {uf:"RJ",nome:"Rio de Janeiro",url:"https://www.ioerj.com.br",regiao:"SE"},
-    {uf:"RN",nome:"Rio Grande do Norte",url:"https://www.diariooficial.rn.gov.br",regiao:"NE"},
-    {uf:"RO",nome:"Rond\u00F4nia",url:"https://diof.ro.gov.br",regiao:"N"},
-    {uf:"RR",nome:"Roraima",url:"https://www.imprensaoficial.rr.gov.br",regiao:"N"},
-    {uf:"RS",nome:"Rio Grande do Sul",url:"https://www.diariooficial.rs.gov.br",regiao:"S"},
-    {uf:"SC",nome:"Santa Catarina",url:"https://www.doe.sc.gov.br",regiao:"S"},
-    {uf:"SE",nome:"Sergipe",url:"https://www.se.gov.br/diario-oficial",regiao:"NE"},
-    {uf:"SP",nome:"S\u00E3o Paulo",url:"https://www.doe.sp.gov.br",regiao:"SE"},
-    {uf:"TO",nome:"Tocantins",url:"https://diariooficial.to.gov.br",regiao:"N"}
+    {uf:"AC",nome:"Acre",url:"https://www.diario.ac.gov.br",regiao:"N",embed:true},
+    {uf:"AL",nome:"Alagoas",url:"https://www.imprensaoficialal.com.br",regiao:"NE",embed:true},
+    {uf:"AM",nome:"Amazonas",url:"https://diario.imprensaoficial.am.gov.br",regiao:"N",embed:true},
+    {uf:"AP",nome:"Amap\u00E1",url:"https://seed.portal.ap.gov.br/diario",regiao:"N",embed:true},
+    {uf:"BA",nome:"Bahia",url:"https://dool.egba.ba.gov.br",regiao:"NE",embed:true},
+    {uf:"CE",nome:"Cear\u00E1",url:"https://www.ceara.gov.br/diario-oficial",regiao:"NE",embed:true},
+    {uf:"DF",nome:"Distrito Federal",url:"https://www.dodf.df.gov.br",regiao:"CO",embed:true},
+    {uf:"ES",nome:"Esp\u00EDrito Santo",url:"https://ioes.dio.es.gov.br",regiao:"SE",embed:true},
+    {uf:"GO",nome:"Goi\u00E1s",url:"https://diariooficial.abc.go.gov.br",regiao:"CO",embed:true},
+    {uf:"MA",nome:"Maranh\u00E3o",url:"https://www.diariooficial.ma.gov.br",regiao:"NE",embed:true},
+    {uf:"MG",nome:"Minas Gerais",url:"https://www.iof.mg.gov.br",regiao:"SE",embed:true},
+    {uf:"MS",nome:"Mato Grosso do Sul",url:"https://www.spdo.ms.gov.br/diariodoe",regiao:"CO",embed:true},
+    {uf:"MT",nome:"Mato Grosso",url:"https://www.iomat.mt.gov.br",regiao:"CO",embed:true},
+    {uf:"PA",nome:"Par\u00E1",url:"https://www.ioepa.com.br",regiao:"N",embed:true},
+    {uf:"PB",nome:"Para\u00EDba",url:"https://auniao.pb.gov.br/doe",regiao:"NE",embed:false},
+    {uf:"PE",nome:"Pernambuco",url:"https://www.cepe.com.br/diario-oficial",regiao:"NE",embed:true},
+    {uf:"PI",nome:"Piau\u00ED",url:"https://www.diariooficial.pi.gov.br",regiao:"NE",embed:true},
+    {uf:"PR",nome:"Paran\u00E1",url:"https://www.imprensaoficial.pr.gov.br",regiao:"S",embed:false},
+    {uf:"RJ",nome:"Rio de Janeiro",url:"https://www.ioerj.com.br",regiao:"SE",embed:true},
+    {uf:"RN",nome:"Rio Grande do Norte",url:"https://www.diariooficial.rn.gov.br",regiao:"NE",embed:true},
+    {uf:"RO",nome:"Rond\u00F4nia",url:"https://diof.ro.gov.br",regiao:"N",embed:true},
+    {uf:"RR",nome:"Roraima",url:"https://www.imprensaoficial.rr.gov.br",regiao:"N",embed:true},
+    {uf:"RS",nome:"Rio Grande do Sul",url:"https://www.diariooficial.rs.gov.br",regiao:"S",embed:true},
+    {uf:"SC",nome:"Santa Catarina",url:"https://www.doe.sc.gov.br",regiao:"S",embed:true},
+    {uf:"SE",nome:"Sergipe",url:"https://www.se.gov.br/diario-oficial",regiao:"NE",embed:true},
+    {uf:"SP",nome:"S\u00E3o Paulo",url:"https://www.doe.sp.gov.br",regiao:"SE",embed:true},
+    {uf:"TO",nome:"Tocantins",url:"https://diariooficial.to.gov.br",regiao:"N",embed:true}
   ];
 
   const tabs=[{id:"dou",label:"DOU Federal"},{id:"doe",label:"DOE Estados"},{id:"municipal",label:"Di\u00E1rios Municipais"}];
@@ -326,7 +327,7 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
       e.jsxs("div",{className:"rounded-2xl border-2 border-[#c5d4b8] bg-[#f7faf5] p-5 space-y-4",children:[
         e.jsxs("div",{className:"flex items-center gap-2",children:[
           e.jsx("span",{className:"text-lg",children:"\uD83D\uDCA1"}),
-          e.jsx("h4",{className:"text-sm font-black text-[#3f4637]",children:"Explicar ato do DOU com IA"})]}),
+          e.jsx("h4",{className:"text-sm font-black text-[#3f4637]",children:"Explicar ato do DOU"})]}),
         e.jsx("p",{className:"text-xs text-[#6b6356]",children:"Encontrou uma portaria, resolu\u00E7\u00E3o ou lei no DOU? Cole o t\u00EDtulo aqui e a IA explica de forma simples o que significa para a escola."}),
         e.jsxs("div",{className:"flex gap-2",children:[
           e.jsx("input",{type:"text",value:explicarInput,onChange:function(ev){return setExplicarInput(ev.target.value)},
@@ -352,29 +353,57 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
     tab==="doe"&&e.jsxs("div",{className:"space-y-4",children:[
       e.jsxs("div",{className:"rounded-2xl border border-[#d8cab4] bg-white p-5 space-y-4",children:[
         e.jsx("h4",{className:"text-sm font-black text-[#3f4637]",children:"Di\u00E1rios Oficiais dos Estados (DOE)"}),
-        e.jsx("p",{className:"text-xs text-[#6b6356]",children:"Acesse diretamente o Di\u00E1rio Oficial do seu estado. Selecione a regi\u00E3o para ver os portais dispon\u00EDveis."}),
-        e.jsxs("select",{value:doeState,onChange:function(ev){setDoeState(ev.target.value)},
-          className:"rounded-xl border border-[#d8cab4] px-3 py-2 text-sm bg-[#faf8f3] w-full sm:w-auto",children:[
-            e.jsx("option",{value:"",children:"Filtrar por regi\u00E3o..."}),
-            e.jsx("option",{value:"N",children:"Norte"}),
-            e.jsx("option",{value:"NE",children:"Nordeste"}),
-            e.jsx("option",{value:"CO",children:"Centro-Oeste"}),
-            e.jsx("option",{value:"SE",children:"Sudeste"}),
-            e.jsx("option",{value:"S",children:"Sul"})]}),
-        e.jsx("div",{className:"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2",children:
+        e.jsx("p",{className:"text-xs text-[#6b6356]",children:"Selecione seu estado para ler o DOE diretamente aqui ou acesse o portal externo."}),
+        e.jsxs("div",{className:"flex gap-2 flex-wrap",children:[
+          e.jsxs("select",{value:doeState,onChange:function(ev){setDoeState(ev.target.value)},
+            className:"rounded-xl border border-[#d8cab4] px-3 py-2 text-sm bg-[#faf8f3]",children:[
+              e.jsx("option",{value:"",children:"Filtrar por regi\u00E3o..."}),
+              e.jsx("option",{value:"N",children:"Norte"}),
+              e.jsx("option",{value:"NE",children:"Nordeste"}),
+              e.jsx("option",{value:"CO",children:"Centro-Oeste"}),
+              e.jsx("option",{value:"SE",children:"Sudeste"}),
+              e.jsx("option",{value:"S",children:"Sul"})]}),
+          doeEmbed&&e.jsx("button",{onClick:function(){setDoeEmbed("")},
+            className:"rounded-full px-3 py-1.5 text-xs font-bold bg-[#f4efe4] text-[#6b6356] hover:bg-[#e8e0d0] transition",
+            children:"\u2715 Fechar leitura"})
+        ]}),
+
+        doeEmbed&&e.jsxs("div",{className:"space-y-2",children:[
+          e.jsxs("div",{className:"flex items-center gap-2 text-xs text-[#5d7452] font-bold",children:[
+            e.jsx("span",{children:"\uD83D\uDCF0"}),
+            "Lendo DOE: "+doePortais.find(function(p){return p.uf===doeEmbed})?.nome||doeEmbed]}),
+          e.jsx("div",{className:"rounded-xl border border-[#d8cab4] overflow-hidden bg-white",children:
+            e.jsx("iframe",{src:doePortais.find(function(p){return p.uf===doeEmbed})?.url||"",
+              className:"w-full border-0",style:{height:"70vh",minHeight:"500px"},
+              title:"DOE "+doeEmbed,loading:"lazy"})})
+        ]}),
+
+        !doeEmbed&&e.jsx("div",{className:"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2",children:
           doePortais.filter(function(p){return !doeState||p.regiao===doeState}).map(function(p){
-            return e.jsxs("a",{href:p.url,target:"_blank",rel:"noopener noreferrer",
-              className:"flex items-center gap-2 rounded-xl bg-[#faf8f3] px-4 py-3 text-sm text-[#3f4637] hover:bg-[#eef3e8] hover:shadow-md transition border border-[#e0d5c0]",
+            return p.embed?e.jsxs("button",{onClick:function(){setDoeEmbed(p.uf)},
+              className:"flex items-center gap-2 rounded-xl bg-[#eef3e8] px-4 py-3 text-sm text-[#3f4637] hover:bg-[#dde8d4] hover:shadow-md transition border border-[#c5d4b8] text-left",
               children:[
                 e.jsx("span",{className:"text-base",children:"\uD83D\uDCF0"}),
-                e.jsxs("div",{children:[
+                e.jsxs("div",{className:"flex-1",children:[
+                  e.jsx("span",{className:"font-bold text-xs",children:p.uf}),
+                  e.jsx("span",{className:"text-xs text-[#5d6558] ml-1",children:"\u2013 "+p.nome})
+                ]}),
+                e.jsx("span",{className:"text-[9px] rounded-full bg-[#5d7452] text-white px-2 py-0.5 font-bold shrink-0",children:"Abrir aqui"})
+              ]},p.uf):
+            e.jsxs("a",{href:p.url,target:"_blank",rel:"noopener noreferrer",
+              className:"flex items-center gap-2 rounded-xl bg-[#faf8f3] px-4 py-3 text-sm text-[#3f4637] hover:bg-[#f4efe4] hover:shadow-md transition border border-[#e0d5c0]",
+              children:[
+                e.jsx("span",{className:"text-base",children:"\uD83D\uDCF0"}),
+                e.jsxs("div",{className:"flex-1",children:[
                   e.jsx("span",{className:"font-bold text-xs",children:p.uf}),
                   e.jsx("span",{className:"text-xs text-[#8a7e6b] ml-1",children:"\u2013 "+p.nome})
-                ]})
-              ]},p.uf)})
+                ]}),
+                e.jsx("span",{className:"text-[9px] rounded-full bg-[#e0d5c0] text-[#6b6356] px-2 py-0.5 font-bold shrink-0",children:"Link externo \u2197"})
+              ]},p.uf)
+          })
         })
       ]}),
-      e.jsx("p",{className:"text-[10px] text-[#b0a898] text-center italic",children:"Links para os portais oficiais dos Di\u00E1rios Oficiais Estaduais (DOE)."})
+      e.jsx("p",{className:"text-[10px] text-[#b0a898] text-center italic",children:"Portais oficiais dos Di\u00E1rios Oficiais Estaduais (DOE)."})
     ]}),
 
     tab==="municipal"&&e.jsxs("div",{className:"space-y-4",children:[
@@ -424,7 +453,7 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
       body:JSON.stringify({titulo:titulo,ementa:ementa,tipo:tipo,link:link,contexto:contexto})})
     .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.message||"Erro "+r.status);return d})})
     .then(function(d){if(d.ok)setDados(d.explicacao);else setErro(d.message||"Erro ao gerar")})
-    .catch(function(err){setErro(err.message||"Falha na conexão")})
+    .catch(function(err){setErro(err.message||"Falha na conex\u00E3o")})
     .finally(function(){setLoading(false)})
   }
 
@@ -443,11 +472,11 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
     e.jsx("button",{onClick:buscar,
       className:"inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold transition "+
         (aberto?"bg-[#5d7452] text-white shadow":"bg-[#eef3e8] text-[#5d7452] border border-[#c5d4b8] hover:bg-[#dde8d4]"),
-      children:loading?e.jsxs(x.Fragment,{children:[e.jsx("div",{className:"h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"})," Gerando..."]}):aberto?"\u2715 Fechar explica\u00E7\u00E3o":"\uD83D\uDCA1 Explicar com IA"}),
+      children:loading?e.jsxs(x.Fragment,{children:[e.jsx("div",{className:"h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"})," Gerando..."]}):aberto?"\u2715 Fechar explica\u00E7\u00E3o":"\uD83D\uDCA1 Explicar"}),
     aberto&&e.jsx("div",{className:"mt-3 rounded-2xl border-2 border-[#c5d4b8] bg-[#f7faf5] p-4 shadow-lg animate-in slide-in-from-top-2",children:
       loading?e.jsxs("div",{className:"flex flex-col items-center gap-3 py-8",children:[
         e.jsx("div",{className:"h-8 w-8 animate-spin rounded-full border-3 border-[#5d7452] border-t-transparent"}),
-        e.jsx("p",{className:"text-sm text-[#6b6356]",children:"A IA est\u00E1 analisando a norma..."}),
+        e.jsx("p",{className:"text-sm text-[#6b6356]",children:"Analisando a norma..."}),
         e.jsx("p",{className:"text-xs text-[#8a7e6b]",children:"Isso pode levar alguns segundos"})]}):
       erro?e.jsxs("div",{className:"text-center py-4 space-y-2",children:[
         e.jsx("p",{className:"text-sm text-[#9b4b45]",children:erro}),
@@ -462,6 +491,18 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
             children:dados.situacao}),
           e.jsx("p",{className:"text-xs text-[#5d6558] mt-1 leading-5",children:dados.situacaoExplicada})]}),
         dados.blocos&&dados.blocos.map(function(b,i){return e.jsx(Bloco,Object.assign({},b),i)}),
+        dados.regrasDoJogo&&dados.regrasDoJogo.length>0&&e.jsxs("div",{className:"rounded-2xl bg-[#f5f0e8] border-2 border-[#d4c7a8] p-4",children:[
+          e.jsxs("div",{className:"flex items-center gap-2 mb-3",children:[
+            e.jsx("span",{className:"text-base",children:"\uD83C\uDFB2"}),
+            e.jsx("h5",{className:"text-xs font-black text-[#6b5a2e] uppercase tracking-wider",children:"Regras do Jogo"})]}),
+          e.jsx("div",{className:"space-y-2",children:dados.regrasDoJogo.map(function(r,i){return e.jsxs("div",{className:"rounded-xl bg-white border border-[#e0d5c0] p-3 space-y-1",children:[
+            e.jsxs("div",{className:"flex items-start gap-1.5",children:[
+              e.jsx("span",{className:"text-xs font-bold text-[#5d7452] shrink-0",children:"\u2705"}),
+              e.jsx("span",{className:"text-xs text-[#3f4637] font-semibold leading-5",children:r.regra})]}),
+            r.consequencia&&e.jsxs("div",{className:"flex items-start gap-1.5 ml-4",children:[
+              e.jsx("span",{className:"text-[10px] text-[#9b4b45] shrink-0",children:"\u26A0\uFE0F"}),
+              e.jsx("span",{className:"text-[11px] text-[#7a3d3a] italic leading-4",children:r.consequencia})]})
+          ]},i)})})]}),
         dados.cuidadosDiretora&&dados.cuidadosDiretora.length>0&&e.jsxs("div",{className:"rounded-2xl bg-[#fff8e7] border border-[#f0dfa0] p-4",children:[
           e.jsx("h5",{className:"text-xs font-black text-[#8a6a14] uppercase tracking-wider mb-2",children:"\uD83C\uDFAF O que eu, como diretora, preciso cuidar"}),
           e.jsx("ul",{className:"space-y-1",children:dados.cuidadosDiretora.map(function(c,i){return e.jsxs("li",{className:"text-xs text-[#6b5a2e] flex gap-1.5",children:[e.jsx("span",{children:"\u2022"}),c]},i)})})]}),
