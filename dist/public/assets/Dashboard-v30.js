@@ -283,7 +283,7 @@ function Rs(b, z, I, E = 20) {
 function Ts(b, z, I) {
   return me({ queryKey: ["similar-schools", b, z], queryFn: async () => {
     if (!b) return null;
-    const E = await fetch(`/api/escola/${b}/similares?ano=${z}`);
+    const E = await fetch(`/api/escola/${b}/similares?ano=${z}&limit=20`);
     if (!E.ok) throw new Error("Erro ao buscar escolas similares");
     return xe(await E.json());
   }, enabled: !!b && I, staleTime: 600 * 1e3 });
