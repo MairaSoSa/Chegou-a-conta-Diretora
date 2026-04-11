@@ -755,6 +755,124 @@ try{
   console.log('[bootstrap] Similares v4 patch applied (in-memory filter, OSRM top-15, 4s timeout)');
 })();
 
+// ── 4x. DOU Federal — enhanced API routes ──────────────────────────────────
+(function _patchDOU() {
+  const DOU_MARKER = 'e.get("/api/dou/search",async(A,g)=>';
+  if (!source.includes(DOU_MARKER)) {
+    console.warn('[bootstrap] DOU patch — marker not found, skipping');
+  } else {
+    // Inject new routes BEFORE the existing /api/dou/search
+    const douRoutes = `
+e.get("/api/dou/edicao",async(A,g)=>{
+  try{
+    const data=String(A.query.data||"").trim();
+    const secao=String(A.query.secao||"do1").trim().toLowerCase();
+    const orgao=String(A.query.orgao||"").trim();
+    const page=Math.max(1,parseInt(A.query.page)||1);
+    const size=Math.min(50,parseInt(A.query.size)||20);
+    const cacheKey="dou-ed:"+data+":"+secao+":"+orgao+":"+page;
+    globalThis._douCache=globalThis._douCache||new Map();
+    const cached=globalThis._douCache.get(cacheKey);
+    if(cached&&Date.now()-cached.ts<1800000)return g.json(cached.data);
+
+    let query=orgao||"*";
+    const params=new URLSearchParams();
+    params.set("q",query);
+    params.set("s",String((page-1)*size));
+    params.set("delta",String(size));
+    params.set("sortType","0");
+    if(data){
+      params.set("exactDate","personalizado");
+      params.set("publishFrom",data);
+      params.set("publishTo",data);
+    }else{
+      params.set("exactDate","dia");
+    }
+    if(secao!=="todos"){
+      const secMap={"do1":"DO1","do2":"DO2","do3":"DO3","doe":"DOE","do1a":"DO1A","do1e":"DO1-E","do2e":"DO2-E","do3e":"DO3-E"};
+      const secVal=secMap[secao]||secao.toUpperCase();
+      params.set("newNormPublicationType",secVal);
+    }
+    const url="https://www.in.gov.br/consulta/-/buscar/dou?"+params.toString();
+    let results=[];
+    try{
+      const r=await fetch(url,{
+        headers:{"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept:"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Cookie:"COOKIE_SUPPORT=true; GUEST_LANGUAGE_ID=pt_BR"},
+        signal:AbortSignal.timeout(20000)});
+      if(r.ok){
+        const html=await r.text();
+        const jsonMatch=html.match(/"jsonArray"\\s*:\\s*(\\[[^\\]]*\\])/);
+        if(jsonMatch){
+          try{results=JSON.parse(jsonMatch[1]).map(i=>({
+            title:i.title||"",href:i.urlTitle?"https://www.in.gov.br/web/dou/-/"+i.urlTitle:"",
+            abstract:(i.content||"").replace(/<[^>]+>/g,"").replace(/\\s+/g," ").trim().substring(0,300),
+            date:i.pubDate||"",section:(i.pubName||"").toLowerCase(),
+            hierarchy:i.hierarchyStr||"",artType:i.artType||"",
+            artCategory:i.artCategory||"",editionNumber:i.editionNumber||"",
+            pageNumber:i.pageNumber||""}));}catch{}
+        }
+        if(results.length===0){
+          const Dc=require("cheerio").load||require("cheerio");
+          const $ch=(typeof Dc==="function"?Dc:Dc.load)(html);
+          $ch(".resultados-lista .content-area, .resultado-busca, .resultados-702__item").each((_,el)=>{
+            const $e=$ch(el);
+            const title=$e.find("h5,h2,.title-marker,a.link-marker").first().text().trim();
+            const href=$e.find("a").first().attr("href")||"";
+            const abs=$e.find("p,.abstract-marker").first().text().trim();
+            const dt=$e.find(".date-marker,.data").first().text().trim();
+            if(title)results.push({title,href:href.startsWith("http")?href:"https://www.in.gov.br"+href,abstract:abs.substring(0,300),date:dt,section:secao,hierarchy:"",artType:"",artCategory:"",editionNumber:"",pageNumber:""});
+          });
+        }
+      }
+    }catch(_e){}
+    const resp={ok:true,data:data||new Date().toISOString().split("T")[0],secao,orgao:orgao||null,page,size,total:results.length,results,
+      searchUrl:url,
+      linkDireto:"https://www.in.gov.br/leiturajornal?data="+(data||new Date().toISOString().split("T")[0])+"&secao="+secao};
+    if(results.length>0)globalThis._douCache.set(cacheKey,{ts:Date.now(),data:resp});
+    g.json(resp);
+  }catch(E){g.status(500).json({ok:false,message:E.message})}
+}),
+e.get("/api/dou/destaques",async(A,g)=>{
+  try{
+    globalThis._douDestCache=globalThis._douDestCache||{ts:0,data:null};
+    if(globalThis._douDestCache.data&&Date.now()-globalThis._douDestCache.ts<1800000)return g.json(globalThis._douDestCache.data);
+    const orgaos=["Minist\\xE9rio da Educa\\xE7\\xE3o","FNDE","INEP","CAPES","CNE"];
+    const allResults=[];
+    for(const org of orgaos){
+      try{
+        const params=new URLSearchParams({q:org,exactDate:"mes",sortType:"0",delta:"5",s:"0"});
+        const url="https://www.in.gov.br/consulta/-/buscar/dou?"+params.toString();
+        const r=await fetch(url,{
+          headers:{"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Accept:"text/html,application/xhtml+xml",Cookie:"COOKIE_SUPPORT=true; GUEST_LANGUAGE_ID=pt_BR"},
+          signal:AbortSignal.timeout(10000)});
+        if(r.ok){
+          const html=await r.text();
+          const jm=html.match(/"jsonArray"\\s*:\\s*(\\[[^\\]]*\\])/);
+          if(jm){
+            try{const items=JSON.parse(jm[1]);
+              items.slice(0,3).forEach(i=>allResults.push({
+                title:i.title||"",href:i.urlTitle?"https://www.in.gov.br/web/dou/-/"+i.urlTitle:"",
+                abstract:(i.content||"").replace(/<[^>]+>/g,"").replace(/\\s+/g," ").trim().substring(0,200),
+                date:i.pubDate||"",section:(i.pubName||"").toLowerCase(),
+                orgao:org,artType:i.artType||""}));}catch{}
+          }
+        }
+      }catch{}
+    }
+    const resp={ok:true,atualizado:new Date().toISOString(),total:allResults.length,destaques:allResults};
+    if(allResults.length>0)globalThis._douDestCache={ts:Date.now(),data:resp};
+    g.json(resp);
+  }catch(E){g.status(500).json({ok:false,message:E.message})}
+}),
+`;
+    source = source.replace(DOU_MARKER, douRoutes + DOU_MARKER);
+    console.log('[bootstrap] DOU enhanced routes patch applied');
+  }
+})();
+
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
