@@ -181,11 +181,15 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
     [doeEmbed,setDoeEmbed]=x.useState(""),
     doeSize=10,munSize=10;
 
-  const doeQ2=yo({q:doeQ,state:doeState,size:doeSize,offset:doeOff},!!doeQ&&!!doeState);
+  const doeLinks={AC:"https://www.diario.ac.gov.br/",AL:"https://www.imprensaoficialal.com.br/",AM:"https://diario.imprensaoficial.am.gov.br/",AP:"https://doe.ap.gov.br/",BA:"https://dool.egba.ba.gov.br/",CE:"https://pesquisa.doe.seplag.ce.gov.br/doepesquisa/",DF:"https://www.dodf.df.gov.br/",ES:"https://ioes.dio.es.gov.br/",GO:"https://diariooficial.abc.go.gov.br/",MA:"https://www.diariooficial.ma.gov.br/",MG:"https://www.jornalminasgerais.mg.gov.br/",MS:"https://www.do.ms.gov.br/",MT:"https://www.iomat.mt.gov.br/",PA:"https://www.ioepa.com.br/",PB:"https://auniao.pb.gov.br/doe/",PE:"https://www.cepe.com.br/diario-oficial",PI:"https://www.diariooficial.pi.gov.br/",PR:"https://www.imprensaoficial.pr.gov.br/",RJ:"https://www.ioerj.com.br/",RN:"https://www.diariooficial.rn.gov.br/",RO:"https://diof.ro.gov.br/",RR:"https://www.imprensaoficial.rr.gov.br/",RS:"https://www.diariooficial.rs.gov.br/",SC:"https://www.doe.sea.sc.gov.br/",SE:"https://www.diarioficial.se.gov.br/",SP:"https://www.doe.sp.gov.br/",TO:"https://diariooficial.to.gov.br/"};
+  const doeCobertura=new Set(["AL","BA","CE","GO","MA","MG","MS","MT","PE","PR","RJ","RR","RS","SC","SE","SP"]);
+  const estadoTemBusca=function(uf){return doeCobertura.has(uf)};
+  const estados=[{sigla:"AC",nome:"Acre"},{sigla:"AL",nome:"Alagoas"},{sigla:"AM",nome:"Amazonas"},{sigla:"AP",nome:"Amap\u00E1"},{sigla:"BA",nome:"Bahia"},{sigla:"CE",nome:"Cear\u00E1"},{sigla:"DF",nome:"Distrito Federal"},{sigla:"ES",nome:"Esp\u00EDrito Santo"},{sigla:"GO",nome:"Goi\u00E1s"},{sigla:"MA",nome:"Maranh\u00E3o"},{sigla:"MG",nome:"Minas Gerais"},{sigla:"MS",nome:"Mato Grosso do Sul"},{sigla:"MT",nome:"Mato Grosso"},{sigla:"PA",nome:"Par\u00E1"},{sigla:"PB",nome:"Para\u00EDba"},{sigla:"PE",nome:"Pernambuco"},{sigla:"PI",nome:"Piau\u00ED"},{sigla:"PR",nome:"Paran\u00E1"},{sigla:"RJ",nome:"Rio de Janeiro"},{sigla:"RN",nome:"Rio Grande do Norte"},{sigla:"RO",nome:"Rond\u00F4nia"},{sigla:"RR",nome:"Roraima"},{sigla:"RS",nome:"Rio Grande do Sul"},{sigla:"SC",nome:"Santa Catarina"},{sigla:"SE",nome:"Sergipe"},{sigla:"SP",nome:"S\u00E3o Paulo"},{sigla:"TO",nome:"Tocantins"}];
+
+  const doeQ2=yo({q:doeQ,state:doeState,size:doeSize,offset:doeOff},!!doeQ&&!!doeState&&doeCobertura.has(doeState));
   const munQ2=vo({q:munQ,size:munSize,offset:munOff},!!munQ);
 
   const secoes=[{id:"do1",label:"Se\u00E7\u00E3o 1"},{id:"do2",label:"Se\u00E7\u00E3o 2"},{id:"do3",label:"Se\u00E7\u00E3o 3"}];
-  const estados=[{sigla:"AC",nome:"Acre"},{sigla:"AL",nome:"Alagoas"},{sigla:"AM",nome:"Amazonas"},{sigla:"AP",nome:"Amap\u00E1"},{sigla:"BA",nome:"Bahia"},{sigla:"CE",nome:"Cear\u00E1"},{sigla:"DF",nome:"Distrito Federal"},{sigla:"ES",nome:"Esp\u00EDrito Santo"},{sigla:"GO",nome:"Goi\u00E1s"},{sigla:"MA",nome:"Maranh\u00E3o"},{sigla:"MG",nome:"Minas Gerais"},{sigla:"MS",nome:"Mato Grosso do Sul"},{sigla:"MT",nome:"Mato Grosso"},{sigla:"PA",nome:"Par\u00E1"},{sigla:"PB",nome:"Para\u00EDba"},{sigla:"PE",nome:"Pernambuco"},{sigla:"PI",nome:"Piau\u00ED"},{sigla:"PR",nome:"Paran\u00E1"},{sigla:"RJ",nome:"Rio de Janeiro"},{sigla:"RN",nome:"Rio Grande do Norte"},{sigla:"RO",nome:"Rond\u00F4nia"},{sigla:"RR",nome:"Roraima"},{sigla:"RS",nome:"Rio Grande do Sul"},{sigla:"SC",nome:"Santa Catarina"},{sigla:"SE",nome:"Sergipe"},{sigla:"SP",nome:"S\u00E3o Paulo"},{sigla:"TO",nome:"Tocantins"}];
   const sugTags=["PDDE","PNAE","PNATE transporte","FUNDEB","presta\u00E7\u00E3o de contas","censo escolar","FNDE resolu\u00E7\u00E3o"];
 
   const doePortais=[
@@ -352,58 +356,48 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
 
     tab==="doe"&&e.jsxs("div",{className:"space-y-4",children:[
       e.jsxs("div",{className:"rounded-2xl border border-[#d8cab4] bg-white p-5 space-y-4",children:[
-        e.jsx("h4",{className:"text-sm font-black text-[#3f4637]",children:"Di\u00E1rios Oficiais dos Estados (DOE)"}),
-        e.jsx("p",{className:"text-xs text-[#6b6356]",children:"Selecione seu estado para ler o DOE diretamente aqui ou acesse o portal externo."}),
+        e.jsx("h4",{className:"text-sm font-black text-[#3f4637]",children:"Di\u00E1rios Oficiais Estaduais"}),
+        e.jsxs("div",{className:"flex items-center gap-3 flex-wrap mb-1",children:[
+          e.jsxs("span",{className:"inline-flex items-center gap-1 text-[10px] text-[#5d7452] font-semibold",children:[e.jsx("span",{className:"inline-block w-2 h-2 rounded-full bg-[#5d7452]"}),"Busca direta"]}),
+          e.jsxs("span",{className:"inline-flex items-center gap-1 text-[10px] text-[#b08d57] font-semibold",children:[e.jsx("span",{className:"inline-block w-2 h-2 rounded-full bg-[#b08d57]"}),"Acesso externo"]})
+        ]}),
         e.jsxs("div",{className:"flex gap-2 flex-wrap",children:[
-          e.jsxs("select",{value:doeState,onChange:function(ev){setDoeState(ev.target.value)},
+          e.jsxs("select",{value:doeState,onChange:function(ev){setDoeState(ev.target.value);setDoeOff(0);setDoeQ("")},
             className:"rounded-xl border border-[#d8cab4] px-3 py-2 text-sm bg-[#faf8f3]",children:[
-              e.jsx("option",{value:"",children:"Filtrar por regi\u00E3o..."}),
-              e.jsx("option",{value:"N",children:"Norte"}),
-              e.jsx("option",{value:"NE",children:"Nordeste"}),
-              e.jsx("option",{value:"CO",children:"Centro-Oeste"}),
-              e.jsx("option",{value:"SE",children:"Sudeste"}),
-              e.jsx("option",{value:"S",children:"Sul"})]}),
-          doeEmbed&&e.jsx("button",{onClick:function(){setDoeEmbed("")},
-            className:"rounded-full px-3 py-1.5 text-xs font-bold bg-[#f4efe4] text-[#6b6356] hover:bg-[#e8e0d0] transition",
-            children:"\u2715 Fechar leitura"})
+              e.jsx("option",{value:"",children:"Selecione o estado"}),
+              ...estados.filter(function(uf){return estadoTemBusca(uf.sigla)}).map(function(uf){return e.jsx("option",{value:uf.sigla,children:"\u25CF "+uf.sigla+" \u2013 "+uf.nome+" (busca direta)"},uf.sigla)}),
+              e.jsx("option",{disabled:true,children:"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"},"sep"),
+              ...estados.filter(function(uf){return !estadoTemBusca(uf.sigla)}).map(function(uf){return e.jsx("option",{value:uf.sigla,children:"\u25CB "+uf.sigla+" \u2013 "+uf.nome+" (acesso externo)"},uf.sigla)})]}),
+          doeState&&estadoTemBusca(doeState)&&e.jsx("input",{type:"text",value:doeQ,onChange:function(ev){return setDoeQ(ev.target.value)},
+            placeholder:"Palavra-chave...",className:"flex-1 min-w-[180px] rounded-xl border border-[#d8cab4] px-4 py-2 text-sm bg-[#faf8f3] placeholder-[#b0a898] focus:outline-none focus:ring-2 focus:ring-[#5d7452]/30"})]}),
+        !doeState&&e.jsx("p",{className:"text-xs text-[#8a7e6b] italic",children:"Selecione um estado para buscar ou acessar o di\u00E1rio oficial."}),
+        doeState&&!estadoTemBusca(doeState)&&e.jsxs("div",{className:"rounded-2xl border border-dashed border-[#d8cab4] bg-[#fdf8ef] p-6 text-center space-y-3",children:[
+          e.jsx("div",{className:"text-3xl",children:"\uD83D\uDCF0"}),
+          e.jsx("p",{className:"text-sm font-bold text-[#3f4637]",children:"DOE "+doeState+" \u2013 "+(estados.find(function(u){return u.sigla===doeState})||{}).nome}),
+          e.jsx("p",{className:"text-xs text-[#6b6356]",children:"Este estado ainda n\u00E3o possui busca integrada na plataforma. Acesse o di\u00E1rio oficial diretamente no site do estado:"}),
+          e.jsx("a",{href:doeLinks[doeState]||"#",target:"_blank",rel:"noopener noreferrer",
+            className:"inline-flex items-center gap-2 rounded-xl bg-[#b08d57] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#9a7a4a] transition shadow",
+            children:"Abrir DOE "+doeState+" \u2197"}),
+          e.jsx("p",{className:"text-[10px] text-[#b0a898] mt-2",children:doeLinks[doeState]})
         ]}),
-
-        doeEmbed&&e.jsxs("div",{className:"space-y-2",children:[
-          e.jsxs("div",{className:"flex items-center gap-2 text-xs text-[#5d7452] font-bold",children:[
-            e.jsx("span",{children:"\uD83D\uDCF0"}),
-            "Lendo DOE: "+doePortais.find(function(p){return p.uf===doeEmbed})?.nome||doeEmbed]}),
-          e.jsx("div",{className:"rounded-xl border border-[#d8cab4] overflow-hidden bg-white",children:
-            e.jsx("iframe",{src:doePortais.find(function(p){return p.uf===doeEmbed})?.url||"",
-              className:"w-full border-0",style:{height:"70vh",minHeight:"500px"},
-              title:"DOE "+doeEmbed,loading:"lazy"})})
+        doeState&&estadoTemBusca(doeState)&&!doeQ&&e.jsx("p",{className:"text-xs text-[#8a7e6b] italic",children:"Digite uma palavra-chave para buscar no DOE de "+doeState+"."}),
+        doeState&&estadoTemBusca(doeState)&&doeLinks[doeState]&&e.jsxs("div",{className:"flex items-center gap-2 text-xs text-[#8a7e6b]",children:[
+          e.jsx("span",{children:"Acesse tamb\u00E9m:"}),
+          e.jsx("a",{href:doeLinks[doeState],target:"_blank",rel:"noopener noreferrer",className:"text-[#5d7452] underline hover:text-[#4a5f42]",children:"Site oficial do DOE "+doeState+" \u2197"})
         ]}),
-
-        !doeEmbed&&e.jsx("div",{className:"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2",children:
-          doePortais.filter(function(p){return !doeState||p.regiao===doeState}).map(function(p){
-            return p.embed?e.jsxs("button",{onClick:function(){setDoeEmbed(p.uf)},
-              className:"flex items-center gap-2 rounded-xl bg-[#eef3e8] px-4 py-3 text-sm text-[#3f4637] hover:bg-[#dde8d4] hover:shadow-md transition border border-[#c5d4b8] text-left",
-              children:[
-                e.jsx("span",{className:"text-base",children:"\uD83D\uDCF0"}),
-                e.jsxs("div",{className:"flex-1",children:[
-                  e.jsx("span",{className:"font-bold text-xs",children:p.uf}),
-                  e.jsx("span",{className:"text-xs text-[#5d6558] ml-1",children:"\u2013 "+p.nome})
-                ]}),
-                e.jsx("span",{className:"text-[9px] rounded-full bg-[#5d7452] text-white px-2 py-0.5 font-bold shrink-0",children:"Abrir aqui"})
-              ]},p.uf):
-            e.jsxs("a",{href:p.url,target:"_blank",rel:"noopener noreferrer",
-              className:"flex items-center gap-2 rounded-xl bg-[#faf8f3] px-4 py-3 text-sm text-[#3f4637] hover:bg-[#f4efe4] hover:shadow-md transition border border-[#e0d5c0]",
-              children:[
-                e.jsx("span",{className:"text-base",children:"\uD83D\uDCF0"}),
-                e.jsxs("div",{className:"flex-1",children:[
-                  e.jsx("span",{className:"font-bold text-xs",children:p.uf}),
-                  e.jsx("span",{className:"text-xs text-[#8a7e6b] ml-1",children:"\u2013 "+p.nome})
-                ]}),
-                e.jsx("span",{className:"text-[9px] rounded-full bg-[#e0d5c0] text-[#6b6356] px-2 py-0.5 font-bold shrink-0",children:"Link externo \u2197"})
-              ]},p.uf)
-          })
-        })
+        doeQ2.isLoading&&e.jsx("div",{className:"text-center py-6",children:e.jsx("div",{className:"inline-block h-6 w-6 animate-spin rounded-full border-2 border-[#5d7452] border-t-transparent"})}),
+        doeResults.length>0&&e.jsxs("div",{className:"space-y-3",children:[
+          e.jsx("p",{className:"text-xs text-[#8a7e6b]",children:doeTotal+" resultado"+(doeTotal===1?"":"s")}),
+          ...doeResults.map(function(item,i){return e.jsx(GazetteCard,{item:item},"doe-"+i)}),
+          e.jsx(Pagination,{total:doeTotal,size:doeSize,offset:doeOff,setOffset:setDoeOff})]}),
+        doeQ&&doeState&&estadoTemBusca(doeState)&&doeResults.length===0&&!doeQ2.isLoading&&e.jsxs("div",{className:"rounded-2xl border border-dashed border-[#d8cab4] bg-[#faf8f3] p-5 text-center space-y-2",children:[
+          e.jsx("p",{className:"text-sm text-[#6b6356]",children:"Nenhum resultado encontrado na busca integrada."}),
+          doeLinks[doeState]&&e.jsx("a",{href:doeLinks[doeState],target:"_blank",rel:"noopener noreferrer",
+            className:"inline-flex items-center gap-2 rounded-xl bg-[#5d7452] px-4 py-2 text-sm font-bold text-white hover:bg-[#4a5f42] transition shadow",
+            children:"Buscar no site oficial do DOE "+doeState+" \u2197"})
+        ]})
       ]}),
-      e.jsx("p",{className:"text-[10px] text-[#b0a898] text-center italic",children:"Portais oficiais dos Di\u00E1rios Oficiais Estaduais (DOE)."})
+      e.jsx("p",{className:"text-[10px] text-[#b0a898] text-center italic",children:"Fonte: Querido Di\u00E1rio (OKBR) para estados com busca direta. Para demais estados, acesse o di\u00E1rio oficial do estado."})
     ]}),
 
     tab==="municipal"&&e.jsxs("div",{className:"space-y-4",children:[
