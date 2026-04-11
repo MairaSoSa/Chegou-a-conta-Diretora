@@ -91,6 +91,9 @@ Since the source code is not present, all fixes are applied directly to the comp
 | `dist/public/assets/postit.css` | Added global (non-media-query) trilha subtitle fix rules |
 | `dist/public/painel-educacional.css` | Global CSS with a11y zoom overrides and additional trilha sidebar rules |
 | `dist/public/assets/Dashboard-v30.js` | Fixed syntax error (extra `})` at line 884 position 12461-12463) introduced in commit f990b83 — the MEC contacts section had an extra closing paren+brace that prematurely terminated the MEC institutional container div before the Fonte footnote was added to its children array. Removed ` })` (3 chars) to restore brace balance. |
+| `dist/public/assets/index-v21.js` / `index-v10-shared.js` | **AiExplica component**: AI explanation feature for Normas cards (Leis fundamentais + Demais Normas) and DOU tab free-text input. Uses `useRef` to track titulo changes and reset stale data. |
+| `dist/public/assets/index-v21.js` / `index-v10-shared.js` | **Lo component (DOU)**: Added "Explicar ato do DOU com IA" section with text input for free-text AI explanations of DOU publications. |
+| `dist/bootstrap.cjs` | **AI explicar-norma route**: `POST /api/ai/explicar-norma` — calls OpenAI gpt-4o-mini with educator-specific prompt, structured JSON response, 24hr in-memory cache (capped at 500 entries), rate-limited to 10 req/min. |
 
 ---
 
@@ -114,6 +117,8 @@ Since the source code is not present, all fixes are applied directly to the comp
 RAILWAY_DATABASE_URL   # PostgreSQL connection string (production)
 SQLITE_DATABASE_URL    # SQLite path (development: file:dev.db)
 ADMIN_PASSWORD         # Simple admin auth password
+OPENAI_API_KEY         # OpenAI API key for AI explanations (gpt-4o-mini)
+OPENAI_MODEL           # Optional: override AI model (default: gpt-4o-mini)
 NODE_ENV               # development / production
 PORT                   # Server port (5000 dev, 8080 prod)
 ```

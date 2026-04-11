@@ -873,6 +873,101 @@ e.get("/api/dou/destaques",async(A,g)=>{
   }
 })();
 
+// ── 5. AI "Explicar Norma" route ─────────────────────────────────────────────
+(function _patchAIExplicar() {
+  const AI_MARKER = 'e.get("/api/dou/search",async(A,g)=>';
+  if (!source.includes(AI_MARKER)) {
+    console.warn('[bootstrap] AI explicar — marker not found, skipping');
+  } else {
+    const aiRoute = `
+e.post("/api/ai/explicar-norma",async(A,g)=>{
+  try{
+    const apiKey=process.env.OPENAI_API_KEY;
+    if(!apiKey)return g.status(503).json({ok:false,message:"Chave de IA não configurada"});
+    const{titulo,ementa,tipo,link,contexto}=A.body||{};
+    if(!titulo)return g.status(400).json({ok:false,message:"Título obrigatório"});
+
+    globalThis._aiRateLimit=globalThis._aiRateLimit||{ts:0,count:0};
+    const rl=globalThis._aiRateLimit;const now=Date.now();
+    if(now-rl.ts>60000){rl.ts=now;rl.count=0;}
+    rl.count++;
+    if(rl.count>10)return g.status(429).json({ok:false,message:"Muitas requisições. Aguarde um minuto."});
+
+    const cacheKey="ai-exp:"+titulo.substring(0,80)+"|"+(contexto||"").substring(0,30);
+    globalThis._aiExpCache=globalThis._aiExpCache||new Map();
+    if(globalThis._aiExpCache.size>500){const keys=[...globalThis._aiExpCache.keys()];for(let i=0;i<100;i++)globalThis._aiExpCache.delete(keys[i]);}
+    const cached=globalThis._aiExpCache.get(cacheKey);
+    if(cached&&Date.now()-cached.ts<86400000)return g.json(cached.data);
+
+    const systemPrompt=\`Você é uma diretora de escola pública brasileira, experiente, acolhedora e prática. Você explica leis e normas para outras diretoras.
+
+REGRAS ABSOLUTAS:
+- Escreva como uma diretora conversando com outra diretora
+- Frases curtas e palavras simples
+- Se usar termo técnico, explique na hora entre parênteses
+- Considere escolas em comunidades quilombolas, ribeirinhas, rurais, com poucos recursos
+- Traga exemplos reais (distância, transporte, falta de estrutura)
+- Nada de linguagem jurídica ou texto com "cara de IA"
+- Não invente regra que não existe
+- Se algo depende da prefeitura ou secretaria, diga claramente
+
+FORMATO DA RESPOSTA (use exatamente esta estrutura JSON):
+{
+  "situacao": "vigente | revogada | alterada | parcialmente revogada",
+  "situacaoExplicada": "explicação simples do status, ex: Essa lei ainda vale hoje...",
+  "blocos": [
+    {
+      "tema": "título curto do bloco",
+      "oQueDiz": "o que a lei diz, bem simples",
+      "naPratica": "o que isso quer dizer no dia a dia da escola",
+      "podeFazer": ["o que a escola pode fazer"],
+      "naoPodeFazer": ["o que a escola NÃO pode fazer"],
+      "responsabilidade": "quem é responsável (separar União, estado, município, secretaria, escola, direção, professor)",
+      "exemplo": "exemplo real como se fosse situação da escola",
+      "alerta": "erro comum ou risco"
+    }
+  ],
+  "cuidadosDiretora": ["lista do que eu como diretora preciso cuidar"],
+  "errosComuns": ["erros que podem dar problema"],
+  "dicasPraticas": ["dicas práticas do dia a dia"]
+}\`;
+
+    const userMsg=\`Analise e explique esta norma/lei de forma simples e prática para o dia a dia da escola:
+
+Título: \${titulo}
+\${tipo?"Tipo: "+tipo:""}
+\${ementa?"Ementa/Resumo: "+ementa:""}
+\${link?"Link oficial: "+link:""}
+\${contexto?"Contexto adicional: "+contexto:""}
+
+Retorne APENAS o JSON no formato especificado, sem markdown, sem backticks, sem texto extra.\`;
+
+    const model=process.env.OPENAI_MODEL||"gpt-4o-mini";
+    const resp=await fetch("https://api.openai.com/v1/chat/completions",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+      body:JSON.stringify({model,messages:[{role:"system",content:systemPrompt},{role:"user",content:userMsg}],temperature:0.7,max_tokens:3000}),
+      signal:AbortSignal.timeout(60000)
+    });
+    if(!resp.ok){const err=await resp.text();throw new Error("OpenAI error: "+resp.status+" "+err.substring(0,200));}
+    const data=await resp.json();
+    const raw=data.choices?.[0]?.message?.content||"";
+    let parsed;
+    try{
+      const cleaned=raw.replace(/^\`\`\`json?\\n?/,"").replace(/\\n?\`\`\`$/,"").trim();
+      parsed=JSON.parse(cleaned);
+    }catch{parsed={blocos:[{tema:"Explicação",oQueDiz:raw}],situacao:"",situacaoExplicada:"",cuidadosDiretora:[],errosComuns:[],dicasPraticas:[]};}
+    const result={ok:true,titulo,explicacao:parsed,modelo:model};
+    globalThis._aiExpCache.set(cacheKey,{ts:Date.now(),data:result});
+    g.json(result);
+  }catch(E){console.error("[ai-explicar]",E.message);g.status(500).json({ok:false,message:E.message})}
+}),
+`;
+    source = source.replace(AI_MARKER, aiRoute + AI_MARKER);
+    console.log('[bootstrap] AI explicar-norma route applied');
+  }
+})();
+
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
