@@ -167,11 +167,11 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
         }
       `}),e.jsx(Ne,{})]})}function bo(){return Z({queryKey:["/api/mecnormas/tipos"],queryFn:async()=>{const a=await fetch("/api/mecnormas/tipos");if(!a.ok)throw new Error("Falha ao carregar tipos");return a.json()},staleTime:1e3*60*30,retry:2})}function za(a){const s=new URLSearchParams;return a.page!==void 0&&s.set("page",String(a.page)),a.size&&s.set("size",String(a.size)),a.tipo&&s.set("tipo",a.tipo),a.assunto&&s.set("assunto",a.assunto),a.vigente&&s.set("vigente",a.vigente),a.q&&s.set("q",a.q),Z({queryKey:["/api/mecnormas/all",a],queryFn:async()=>{const t=await fetch(`/api/mecnormas/all?${s.toString()}`);if(!t.ok)throw new Error("Falha ao buscar normas");return t.json()},staleTime:1e3*60*10,retry:1})}function jo(a,s=!0){const t=new URLSearchParams;return a.q&&t.set("q",a.q),a.exact===!1&&t.set("exact","false"),a.from&&t.set("from",a.from),a.to&&t.set("to",a.to),a.limit&&t.set("limit",String(a.limit)),Z({queryKey:["/api/dou/search",a],queryFn:async()=>{const o=await fetch(`/api/dou/search?${t.toString()}`);if(!o.ok){const i=await o.json().catch(()=>({}));throw new Error(i.message||"Falha ao buscar no DOU")}return o.json()},enabled:s&&!!a.q?.trim(),staleTime:1e3*60*10,retry:1})}function vo(a,s=!0){const t=new URLSearchParams;return a.q&&t.set("q",a.q),a.size&&t.set("size",String(a.size)),a.offset&&t.set("offset",String(a.offset)),a.territory_ids&&t.set("territory_ids",a.territory_ids),a.since&&t.set("since",a.since),a.until&&t.set("until",a.until),Z({queryKey:["/api/diarios-municipais/busca",a],queryFn:async()=>{const o=await fetch(`/api/diarios-municipais/busca?${t.toString()}`);if(!o.ok){const i=await o.json().catch(()=>({}));throw new Error(i.message||"Falha ao buscar diários municipais")}return o.json()},enabled:s&&!!a.q?.trim(),staleTime:1e3*60*10,retry:1})}function yo(a,s=!0){const t=new URLSearchParams;return a.q&&t.set("q",a.q),a.state&&t.set("state",a.state),a.size&&t.set("size",String(a.size)),a.offset&&t.set("offset",String(a.offset)),Z({queryKey:["/api/diarios-estaduais/busca",a],queryFn:async()=>{const o=await fetch(`/api/diarios-estaduais/busca?${t.toString()}`);if(!o.ok){const i=await o.json().catch(()=>({}));throw new Error(i.message||"Falha ao buscar diários estaduais")}return o.json()},enabled:s&&!!a.q?.trim()&&!!a.state?.trim(),staleTime:1e3*60*10,retry:1})}const xs=[{titulo:"Lei de Diretrizes e Bases da Educação Nacional (LDB)",numero:"Lei nº 9.394/1996",descricao:"Estabelece as diretrizes e bases da educação nacional.",link:"https://www.planalto.gov.br/ccivil_03/leis/l9394.htm",categoria:"Base Legal",paraADiretora:'A "lei mãe" da educação. Define como a escola deve funcionar: quantas horas de aula, como organizar as turmas, o que ensinar. Diz que a diretora tem autonomia para montar o projeto pedagógico da escola junto com a comunidade.'},{titulo:"Constituição Federal - Capítulo da Educação",numero:"CF/1988 - Arts. 205 a 214",descricao:"Define a educação como direito de todos e dever do Estado.",link:"https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm",categoria:"Base Legal",paraADiretora:"A base de tudo. Garante que toda criança tem direito a estudar de graça. Obriga o governo a investir pelo menos 18% (União) e 25% (estados e municípios) do dinheiro público em educação. Se não cumprir, é inconstitucional."},{titulo:"FUNDEB - Fundo de Manutenção e Desenvolvimento da Educação Básica",numero:"Lei nº 14.113/2020",descricao:"Regulamenta o FUNDEB permanente, principal mecanismo de financiamento da educação básica.",link:"https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/lei/l14113.htm",categoria:"Financiamento",paraADiretora:'O "cofrinho" principal da educação. Junta dinheiro de impostos e distribui para as escolas conforme o número de alunos. Quanto mais alunos sua escola tem, mais dinheiro ela recebe. Agora é permanente - não precisa mais renovar a cada 14 anos.'},{titulo:"PDDE - Programa Dinheiro Direto na Escola",numero:"Lei nº 11.947/2009 (Art. 22 a 30)",descricao:"Autoriza o repasse de recursos financeiros diretamente às escolas.",link:"https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/lei/l11947.htm",categoria:"Programas FNDE",paraADiretora:"Dinheiro que cai direto na conta da escola, sem precisar pedir para a prefeitura. A diretora decide, junto com o conselho escolar, como gastar: pode comprar material, consertar a escola, pagar pequenos serviços. Precisa prestar contas direitinho depois."},{titulo:"Resolução FNDE nº 15/2021 - PDDE Básico",numero:"Resolução CD/FNDE nº 15/2021",descricao:"Dispõe sobre critérios de transferência e prestação de contas do PDDE.",link:"https://www.fnde.gov.br/index.php/legislacoes/resolucoes",categoria:"Programas FNDE",paraADiretora:'O "manual de instruções" do PDDE. Explica passo a passo: como o dinheiro chega, o que pode e o que não pode comprar, como guardar as notas fiscais e como fazer a prestação de contas. Se seguir direitinho, não tem erro.'},{titulo:"PNAE - Programa Nacional de Alimentação Escolar",numero:"Lei nº 11.947/2009 (Art. 1 a 21)",descricao:"Garante alimentação escolar e ações de educação alimentar e nutricional.",link:"https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/lei/l11947.htm",categoria:"Programas FNDE",paraADiretora:"Garante a merenda na escola. Regra importante: pelo menos 30% do dinheiro tem que ser gasto comprando comida de agricultores da região. A diretora precisa acompanhar o cardápio (feito por nutricionista) e garantir que os alunos comam bem."},{titulo:"PNATE - Programa Nacional de Apoio ao Transporte Escolar",numero:"Lei nº 10.880/2004",descricao:"Garante o transporte escolar dos alunos da educação básica que residem em área rural.",link:"https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2004/lei/l10.880.htm",categoria:"Programas FNDE",paraADiretora:"Dinheiro para levar e trazer os alunos que moram no campo até a escola. Se sua escola recebe alunos da zona rural, esse programa garante que eles tenham como chegar. A diretora pode ajudar a identificar alunos que precisam do transporte."},{titulo:"PNLD - Programa Nacional do Livro e do Material Didático",numero:"Decreto nº 9.099/2017",descricao:"Disponibiliza obras didáticas, pedagógicas e literárias para as escolas.",link:"https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/decreto/d9099.htm",categoria:"Programas FNDE",paraADiretora:"O governo manda livros e materiais para a escola de graça. A diretora e os professores escolhem quais livros querem entre as opções aprovadas. Importante: cuidar bem dos livros porque eles são reutilizados por outros alunos nos anos seguintes."},{titulo:"Plano Nacional de Educação (PNE)",numero:"Lei nº 14.934/2024",descricao:"Estabelece 18 metas e estratégias para a educação brasileira 2024-2034.",link:"https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2024/lei/L14934.htm",categoria:"Planejamento",paraADiretora:'O "plano de 10 anos" da educação no Brasil. Tem 18 metas que o país precisa cumprir até 2034: alfabetizar todas as crianças, ter mais escolas em tempo integral, valorizar os professores. A diretora pode usar essas metas para justificar melhorias na escola.'},{titulo:"Estatuto da Criança e do Adolescente (ECA)",numero:"Lei nº 8.069/1990",descricao:"Dispõe sobre a proteção integral à criança e ao adolescente.",link:"https://www.planalto.gov.br/ccivil_03/leis/l8069.htm",categoria:"Base Legal",paraADiretora:"Protege todas as crianças e adolescentes. A escola é obrigada a comunicar ao Conselho Tutelar se perceber maus-tratos, faltas excessivas sem justificativa ou evasão escolar. A diretora tem papel fundamental nessa proteção."},{titulo:"Gestão Democrática na Educação",numero:"Lei nº 14.644/2023",descricao:"Institui a gestão democrática nas redes públicas de educação básica.",link:"https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2023/lei/L14644.htm",categoria:"Gestão",paraADiretora:"Define como diretores escolares são escolhidos: com participação da comunidade (eleição, consulta pública). A diretora precisa governar junto com o conselho escolar, ouvir pais, alunos e professores nas decisões importantes da escola."},{titulo:"Lei de Responsabilidade Fiscal",numero:"Lei Complementar nº 101/2000",descricao:"Estabelece normas de finanças públicas voltadas para a responsabilidade fiscal.",link:"https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp101.htm",categoria:"Financiamento",paraADiretora:"Regra de ouro do dinheiro público: não pode gastar mais do que recebe. A diretora precisa planejar os gastos da escola com cuidado, guardar todos os comprovantes e nunca usar o dinheiro público para fins pessoais. Transparência total."}],No={"Base Legal":{bg:"#dcfce7",color:"#166534"},Financiamento:{bg:"#ffedd5",color:"#9a3412"},"Programas FNDE":{bg:"#fee2e2",color:"#991b1b"},Planejamento:{bg:"#e8f0e0",color:"#6d4c41"},Gestão:{bg:"#e8f0e0",color:"#6d4c41"}},ms=[{estado:"Acre",sigla:"AC",url:"https://www.diario.ac.gov.br/",searchUrl:a=>`https://www.diario.ac.gov.br/?s=${encodeURIComponent(a)}`},{estado:"Alagoas",sigla:"AL",url:"https://www.imprensaoficialal.com.br/"},{estado:"Amapá",sigla:"AP",url:"https://doe.ap.gov.br/"},{estado:"Amazonas",sigla:"AM",url:"https://diario.imprensaoficial.am.gov.br/"},{estado:"Bahia",sigla:"BA",url:"https://dool.egba.ba.gov.br/"},{estado:"Ceará",sigla:"CE",url:"https://pesquisa.doe.seplag.ce.gov.br/doepesquisa/"},{estado:"Distrito Federal",sigla:"DF",url:"https://www.dodf.df.gov.br/",searchUrl:a=>`https://www.dodf.df.gov.br/index/pesquisar/q/${encodeURIComponent(a)}`},{estado:"Espírito Santo",sigla:"ES",url:"https://ioes.dio.es.gov.br/",searchUrl:a=>`https://ioes.dio.es.gov.br/portal/visualizacoes/diario_oficial?txtPesquisa=${encodeURIComponent(a)}`},{estado:"Goiás",sigla:"GO",url:"https://diariooficial.abc.go.gov.br/"},{estado:"Maranhão",sigla:"MA",url:"https://www.diariooficial.ma.gov.br/"},{estado:"Mato Grosso",sigla:"MT",url:"https://www.iomat.mt.gov.br/"},{estado:"Mato Grosso do Sul",sigla:"MS",url:"https://www.do.ms.gov.br/"},{estado:"Minas Gerais",sigla:"MG",url:"https://www.jornalminasgerais.mg.gov.br/",searchUrl:a=>`https://www.jornalminasgerais.mg.gov.br/pesquisa/pesquisar?texto=${encodeURIComponent(a)}`},{estado:"Pará",sigla:"PA",url:"https://www.ioepa.com.br/"},{estado:"Paraíba",sigla:"PB",url:"https://auniao.pb.gov.br/doe/"},{estado:"Paraná",sigla:"PR",url:"https://www.imprensaoficial.pr.gov.br/"},{estado:"Pernambuco",sigla:"PE",url:"https://www.cepe.com.br/diario-oficial"},{estado:"Piauí",sigla:"PI",url:"https://www.diariooficial.pi.gov.br/"},{estado:"Rio de Janeiro",sigla:"RJ",url:"https://www.ioerj.com.br/"},{estado:"Rio Grande do Norte",sigla:"RN",url:"https://www.diariooficial.rn.gov.br/"},{estado:"Rio Grande do Sul",sigla:"RS",url:"https://www.diariooficial.rs.gov.br/"},{estado:"Rondônia",sigla:"RO",url:"https://diof.ro.gov.br/"},{estado:"Roraima",sigla:"RR",url:"https://www.imprensaoficial.rr.gov.br/"},{estado:"Santa Catarina",sigla:"SC",url:"https://www.doe.sea.sc.gov.br/"},{estado:"São Paulo",sigla:"SP",url:"https://www.doe.sp.gov.br/",searchUrl:a=>`https://www.doe.sp.gov.br/executivo/pesquisa?q=${encodeURIComponent(a)}`},{estado:"Sergipe",sigla:"SE",url:"https://www.diarioficial.se.gov.br/"},{estado:"Tocantins",sigla:"TO",url:"https://diariooficial.to.gov.br/"}];function Pe({children:a,className:s="h-7 w-7"}){return e.jsx("svg",{viewBox:"0 0 24 24",className:`${s} overflow-visible`,fill:"none",stroke:"currentColor",strokeWidth:"1.9",strokeLinecap:"round",strokeLinejoin:"round","aria-hidden":"true",children:e.jsx("g",{className:"icon-sketch text-[#4f5b45]",children:a})})}const wo=[],ps=[{year:"1988",title:"Constituição Federal",note:"educação como direito de todos",link:"https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm"},{year:"1996",title:"LDB",note:"organiza a educação brasileira",link:"https://www.planalto.gov.br/ccivil_03/leis/l9394.htm"},{year:"2001",title:"PNE",note:"metas para a educação",link:"https://www.planalto.gov.br/ccivil_03/leis/leis_2001/l10172.htm"},{year:"2007",title:"FUNDEB",note:"financiamento da educação básica",link:"https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2007/lei/l11494.htm"},{year:"2014",title:"Novo PNE",note:"planejamento educacional",link:"https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2014/lei/l13005.htm"},{year:"2017",title:"BNCC",note:"aprendizagens essenciais",link:"https://basenacionalcomum.mec.gov.br/"},{year:"2020",title:"Novo FUNDEB",note:"financiamento permanente",link:"https://www.planalto.gov.br/ccivil_03/constituicao/emendas/emc/emc108.htm"},{year:"2024",title:"PNE 2024–2034",note:"18 metas para a próxima década",link:"https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2024/lei/l15366.htm"}],Co={Portaria:{bg:"#f4e6a6",text:"#7a5e10"},Resolução:{bg:"#dcead7",text:"#3d6e4a"},Lei:{bg:"#dce7f6",text:"#3b5a82"},Decreto:{bg:"#f1dfd8",text:"#7a3d2e"},"Instrução Normativa":{bg:"#e8ddf3",text:"#5a3d82"},"Nota Técnica":{bg:"#fff3cd",text:"#8a6a14"}};function $a(a){return Co[a]||{bg:"#f3eedf",text:"#6b6a58"}}function ko(){const[a,s]=x.useState(0),[t,o]=x.useState(""),[i,n]=x.useState(""),[r,d]=x.useState(""),c=30,{data:N,isLoading:b}=bo(),{data:f,isLoading:v,error:p}=za({page:a,size:c,tipo:t||void 0,q:r||void 0}),u=x.useCallback(j=>{j.preventDefault(),d(i.trim()),s(0)},[i]),C=x.useCallback(()=>{n(""),d(""),s(0)},[]),T=f?.entidades||[],S=f?.total||0,h=f?.totalPages||0,k=a===0&&!r&&!t;return e.jsxs("div",{className:"space-y-6",children:[!b&&N?.tipos&&e.jsxs("div",{className:"flex flex-wrap gap-2",children:[e.jsxs("button",{onClick:()=>{o(""),s(0)},className:`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.12em] transition ${t?"border border-[#d9ceb8] bg-white text-[#60705d] hover:bg-[#f0ebe0]":"bg-[#5d7452] text-white shadow-md"}`,children:["Todos · ",N.totalGeral.toLocaleString("pt-BR")]}),N.tipos.slice(0,7).map(j=>{const z=$a(j.nome),M=t===String(j.id);return e.jsxs("button",{onClick:()=>{o(M?"":String(j.id)),s(0)},className:"rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.12em] transition border hover:shadow-sm",style:{background:M?z.bg:"white",color:M?z.text:"#60705d",borderColor:M?z.bg:"#d9ceb8",boxShadow:M?"0 2px 8px rgba(0,0,0,0.08)":"none"},children:[j.nome," · ",j.total.toLocaleString("pt-BR")]},j.id)})]}),e.jsxs("form",{onSubmit:u,className:"grid gap-3 md:grid-cols-[1fr_auto]",children:[e.jsx("input",{type:"text",value:i,onChange:j=>n(j.target.value),placeholder:"Pesquisar lei, portaria, resolução, PDDE, alimentação...",className:"w-full rounded-2xl border border-[#e3d8c8] bg-white px-4 py-3 text-sm shadow-inner focus:outline-none focus:ring-2 focus:ring-[#8fa37f]/40"}),e.jsxs("div",{className:"flex gap-2",children:[e.jsxs("button",{type:"submit",disabled:!i.trim(),className:"rounded-2xl px-5 py-3 text-sm font-black text-white shadow-sm transition disabled:opacity-50",style:{background:"#5d7452"},children:[e.jsx(Fe,{className:"w-4 h-4 inline mr-1.5"}),"Buscar"]}),(t||r)&&e.jsx("button",{type:"button",onClick:()=>{o(""),C()},className:"rounded-2xl border border-[#d9ceb8] bg-white px-4 py-3 text-xs font-semibold text-[#6b7066] hover:bg-[#f0ebe0] transition",children:"Limpar"})]})]}),v&&e.jsxs("div",{className:"flex flex-col items-center gap-3 py-12 text-[#8a9a84]",children:[e.jsx(ae,{className:"w-8 h-8 animate-spin",style:{color:"#5d7452"}}),e.jsx("span",{className:"text-sm",children:"Carregando normas do MEC..."})]}),p&&e.jsxs("div",{className:"rounded-2xl border border-[#f5e6b8] bg-[#fffbeb] px-5 py-4 text-sm text-[#92400e]",children:[e.jsx(ga,{className:"w-4 h-4 inline mr-2"}),"Não foi possível consultar o MEC Normas. Tente novamente em alguns instantes."]}),!v&&!p&&T.length===0&&e.jsxs("div",{className:"flex flex-col items-center gap-3 py-12 text-[#8a9a84]",children:[e.jsx(Ms,{className:"w-10 h-10 opacity-30"}),e.jsx("p",{className:"text-sm",children:"Nenhuma norma encontrada"})]}),k&&e.jsxs("div",{className:"space-y-4",children:[e.jsxs("div",{className:"flex items-center gap-3",children:[e.jsx("div",{className:"h-8 w-1.5 rounded-full bg-[#d1a43c]"}),e.jsxs("h3",{className:"text-lg font-black text-[#43513d]",children:["Leis Fundamentais da Educação",e.jsxs("span",{className:"ml-2 rounded-full bg-[#fef3c7] px-2 py-0.5 text-xs font-bold text-[#92400e]",children:[xs.length," normas"]})]})]}),e.jsx("div",{className:"leg-scroll-wrap border border-[#d9cfc0] rounded-2xl",children:e.jsx("div",{className:"leg-scroll max-h-[480px] overflow-y-scroll space-y-4 p-2 pr-2 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#5a7a50] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#b8d4ae]",children:xs.map(j=>{const z=No[j.categoria]||{bg:"#e8f0e0",color:"#5a6e4e"};return e.jsxs("div",{className:"grid gap-4 rounded-[24px] border border-[#e6ddcf] bg-white p-5 md:grid-cols-[2fr_1fr_2fr_auto] md:items-start",children:[e.jsxs("div",{children:[e.jsx("h4",{className:"text-base font-black text-[#46543f] leading-snug",children:j.titulo}),e.jsx("div",{className:"mt-1 text-xs text-[#94a3b8] font-mono",children:j.numero}),e.jsx("p",{className:"mt-2 text-sm leading-6 text-[#60685a]",children:j.descricao})]}),e.jsx("div",{className:"flex flex-wrap gap-2 items-start",children:e.jsx("span",{className:"inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em]",style:{background:z.bg,color:z.color},children:j.categoria})}),e.jsxs("div",{className:"rounded-[18px] border border-[#e8ddd0] bg-[#fffdf8] p-3",children:[e.jsx("div",{className:"text-[10px] font-black uppercase tracking-[0.14em] text-[#9b7a2c] mb-1",children:"Para a diretora"}),e.jsx("p",{className:"text-xs leading-5 text-[#5d6558]",children:j.paraADiretora})]}),e.jsx("div",{children:e.jsxs("a",{href:j.link,target:"_blank",rel:"noopener noreferrer",className:"inline-flex items-center gap-1.5 rounded-full border border-[#d4c7b3] bg-[#5d7452] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#526847] whitespace-nowrap",children:[e.jsx(Le,{className:"w-3 h-3"})," Abrir lei"]})})]},j.numero)})})}),e.jsxs("div",{className:"flex items-center gap-3 pt-2",children:[e.jsx("div",{className:"h-8 w-1.5 rounded-full bg-[#cf7e3f]"}),e.jsxs("h3",{className:"text-lg font-black text-[#43513d]",children:["Demais Normas",e.jsxs("span",{className:"ml-2 rounded-full bg-[#f3eedf] px-2 py-0.5 text-xs font-semibold text-[#6b6a58]",children:[S.toLocaleString("pt-BR")," no acervo"]})]})]})]}),!k&&T.length>0&&e.jsxs("div",{className:"flex items-center gap-3",children:[e.jsx("div",{className:"h-8 w-1.5 rounded-full bg-[#8fa37f]"}),e.jsxs("h3",{className:"text-lg font-black text-[#43513d]",children:[r?`Resultados para "${r}"`:"Normas",e.jsx("span",{className:"ml-2 rounded-full bg-[#f3eedf] px-2 py-0.5 text-xs font-semibold text-[#6b6a58]",children:S.toLocaleString("pt-BR")})]})]}),T.length>0&&e.jsx("div",{className:"leg-scroll-wrap border border-[#d9cfc0] rounded-2xl",children:e.jsx("div",{className:"leg-scroll max-h-[600px] overflow-y-scroll space-y-3 p-2 pr-2 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#5a7a50] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#b8d4ae]",children:T.map(j=>{const z=j.titulo||j.tituloAto||j.identificacao||`Ato ${j.id}`,M=j.ementa||j.resumo||"",L=j.dataDePublicacaoString||j.dataPublicacao||j.dataPublicacaoAto||j.dataDePublicacao||"",U=j.tipo?.nome||"",A=j.disponivelEm||j.disponivel_em||"",$=j.vigente,G=j.correlacoes||[],J=G.some(D=>D.encerraVigencia),H=$a(U),w=$===!0&&!J?{label:"Vigente",bg:"#dcead7",text:"#4e7a4d"}:$===!0&&J?{label:"Com alteração",bg:"#f5e6b8",text:"#8a6a14"}:$===!1?{label:"Revogada",bg:"#f3d2cf",text:"#9b4b45"}:null;return e.jsxs("div",{className:"grid gap-4 rounded-[24px] border border-[#e6ddcf] bg-white p-4 md:grid-cols-[2fr_1fr_1fr_auto] md:items-center transition hover:-translate-y-0.5 hover:shadow-md",children:[e.jsxs("div",{children:[e.jsx("h4",{className:"text-sm font-black text-[#46543f] leading-snug",children:z}),M&&e.jsx("p",{className:"mt-1.5 text-xs leading-5 text-[#60685a]",children:M.length>160?M.slice(0,160)+"…":M}),L&&e.jsxs("div",{className:"mt-1 text-[10px] text-[#94a3b8]",children:[j.unidade?.sigla?`${j.unidade.sigla} · `:"",L]})]}),e.jsx("div",{className:"flex flex-wrap gap-2 items-start",children:U&&e.jsx("span",{className:"inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em]",style:{background:H.bg,color:H.text},children:U})}),e.jsxs("div",{children:[w?e.jsx("span",{className:"inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]",style:{background:w.bg,color:w.text},children:w.label}):e.jsx("span",{className:"text-xs text-[#cbd5e1]",children:"—"}),G.slice(0,1).map((D,l)=>e.jsx("div",{className:"mt-1 text-[10px] text-[#94a3b8] leading-4",children:D.textoCorrelacao},l))]}),e.jsx("div",{children:A?e.jsxs("a",{href:A,target:"_blank",rel:"noopener noreferrer",className:"inline-flex items-center gap-1.5 rounded-full border border-[#d4c7b3] bg-[#5d7452] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#526847] whitespace-nowrap",children:[e.jsx(Le,{className:"w-3 h-3"})," Abrir"]}):e.jsx("span",{className:"inline-flex rounded-full border border-[#e6ddcf] bg-[#f9f6ef] px-4 py-2.5 text-[10px] font-semibold text-[#94a3b8]",children:"Sem link"})})]},j.id)})})}),h>1&&e.jsxs("div",{className:"flex items-center justify-center gap-3 pt-2",children:[e.jsx("button",{onClick:()=>s(j=>Math.max(0,j-1)),disabled:a<=0,className:"rounded-full border border-[#d9ceb8] bg-white px-5 py-2.5 text-sm font-semibold text-[#6b7066] shadow-sm transition disabled:opacity-40 hover:bg-[#f0ebe0]",children:"Anterior"}),e.jsxs("span",{className:"text-sm font-semibold text-[#8a9a84]",children:["Página ",a+1," de ",h]}),e.jsx("button",{onClick:()=>s(j=>Math.min(h-1,j+1)),disabled:a>=h-1,className:"rounded-full border border-[#d9ceb8] bg-white px-5 py-2.5 text-sm font-semibold text-[#6b7066] shadow-sm transition disabled:opacity-40 hover:bg-[#f0ebe0]",children:"Próxima"})]})]})}function us({gazettes:a}){return e.jsx("div",{className:"space-y-3",children:a.map((s,t)=>e.jsxs("div",{className:"grid gap-3 rounded-[22px] border border-[#e6ddcf] bg-white p-4 md:grid-cols-[2fr_1fr_auto] md:items-start transition hover:-translate-y-0.5 hover:shadow-md",children:[e.jsxs("div",{children:[e.jsxs("div",{className:"flex flex-wrap items-center gap-2",children:[e.jsx("span",{className:"font-black text-sm text-[#46543f]",children:s.territory_name||s.title||"—"}),s.state_code&&e.jsx("span",{className:"inline-flex rounded-full bg-[#eef3e8] px-2 py-0.5 text-[10px] font-bold text-[#4e7a4d]",children:s.state_code})]}),s.excerpts&&s.excerpts.length>0?e.jsx("div",{className:"mt-1.5 text-xs leading-5 text-[#60685a]",dangerouslySetInnerHTML:{__html:s.excerpts[0].length>200?s.excerpts[0].slice(0,200)+"…":s.excerpts[0]}}):s.abstract?e.jsx("p",{className:"mt-1.5 text-xs leading-5 text-[#60685a]",children:s.abstract.length>200?s.abstract.slice(0,200)+"…":s.abstract}):null]}),e.jsx("div",{className:"text-[10px] text-[#94a3b8] md:pt-0.5",children:s.date?new Date(s.date+"T12:00:00").toLocaleDateString("pt-BR"):"—"}),e.jsxs("div",{className:"flex flex-wrap gap-2",children:[e.jsxs("a",{href:s.url||s.href,target:"_blank",rel:"noopener noreferrer",className:"inline-flex items-center gap-1.5 rounded-full bg-[#5d7452] px-3 py-2 text-[10px] font-bold text-white shadow-sm transition hover:opacity-90",children:[e.jsx(Le,{className:"w-3 h-3"}),"PDF"]}),s.txt_url&&e.jsxs("a",{href:s.txt_url,target:"_blank",rel:"noopener noreferrer",className:"inline-flex items-center gap-1.5 rounded-full border border-[#d8dcd3] bg-white px-3 py-2 text-[10px] font-semibold text-[#5e6659] transition hover:bg-[#f8faf7]",children:[e.jsx(xe,{className:"w-3 h-3"}),"TXT"]})]})]},`gz-${t}`))})}function Lo(){
   const[tab,setTab]=x.useState("dou"),
-    [q,setQ]=x.useState(""),
-    [qInput,setQInput]=x.useState(""),
     [secao,setSecao]=x.useState("do1"),
     [dataSel,setDataSel]=x.useState(""),
-    [orgaoSel,setOrgaoSel]=x.useState(""),
+    [iframeMode,setIframeMode]=x.useState("edicao"),
+    [searchTerm,setSearchTerm]=x.useState(""),
+    [searchInput,setSearchInput]=x.useState(""),
     [doeQ,setDoeQ]=x.useState(""),
     [doeState,setDoeState]=x.useState(""),
     [doeOff,setDoeOff]=x.useState(0),
@@ -179,66 +179,46 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
     [munOff,setMunOff]=x.useState(0),
     doeSize=10,munSize=10;
 
-  const douEdQ=Z({queryKey:["/api/dou/edicao",secao,dataSel,orgaoSel],queryFn:async()=>{
-    const p=new URLSearchParams();
-    p.set("secao",secao);
-    if(dataSel)p.set("data",dataSel);
-    if(orgaoSel)p.set("orgao",orgaoSel);
-    const r=await fetch("/api/dou/edicao?"+p.toString());
-    if(!r.ok)throw new Error("Falha");return r.json()},
-    staleTime:1800000,retry:1});
-
-  const douSearchQ=Z({queryKey:["/api/dou/search",q],queryFn:async()=>{
-    const r=await fetch("/api/dou/search?q="+encodeURIComponent(q)+"&limit=20");
-    if(!r.ok)throw new Error("Falha");return r.json()},
-    enabled:!!q.trim(),staleTime:600000,retry:1});
-
   const doeQ2=yo({q:doeQ,state:doeState,size:doeSize,offset:doeOff},!!doeQ&&!!doeState);
   const munQ2=vo({q:munQ,size:munSize,offset:munOff},!!munQ);
 
-  const secoes=[{id:"do1",label:"Se\u00E7\u00E3o 1",desc:"Leis, decretos, resolu\u00E7\u00F5es"},{id:"do2",label:"Se\u00E7\u00E3o 2",desc:"Nomea\u00E7\u00F5es, exonera\u00E7\u00F5es"},{id:"do3",label:"Se\u00E7\u00E3o 3",desc:"Contratos, avisos, editais"},{id:"todos",label:"Todas",desc:""}];
-  const orgaos=[{id:"",label:"Todos"},{id:"Minist\u00E9rio da Educa\u00E7\u00E3o",label:"MEC"},{id:"FNDE",label:"FNDE"},{id:"INEP",label:"INEP"},{id:"CAPES",label:"CAPES"},{id:"CNE",label:"CNE"}];
+  const secoes=[{id:"do1",label:"Se\u00E7\u00E3o 1"},{id:"do2",label:"Se\u00E7\u00E3o 2"},{id:"do3",label:"Se\u00E7\u00E3o 3"}];
   const estados=[{sigla:"AC",nome:"Acre"},{sigla:"AL",nome:"Alagoas"},{sigla:"AM",nome:"Amazonas"},{sigla:"AP",nome:"Amap\u00E1"},{sigla:"BA",nome:"Bahia"},{sigla:"CE",nome:"Cear\u00E1"},{sigla:"DF",nome:"Distrito Federal"},{sigla:"ES",nome:"Esp\u00EDrito Santo"},{sigla:"GO",nome:"Goi\u00E1s"},{sigla:"MA",nome:"Maranh\u00E3o"},{sigla:"MG",nome:"Minas Gerais"},{sigla:"MS",nome:"Mato Grosso do Sul"},{sigla:"MT",nome:"Mato Grosso"},{sigla:"PA",nome:"Par\u00E1"},{sigla:"PB",nome:"Para\u00EDba"},{sigla:"PE",nome:"Pernambuco"},{sigla:"PI",nome:"Piau\u00ED"},{sigla:"PR",nome:"Paran\u00E1"},{sigla:"RJ",nome:"Rio de Janeiro"},{sigla:"RN",nome:"Rio Grande do Norte"},{sigla:"RO",nome:"Rond\u00F4nia"},{sigla:"RR",nome:"Roraima"},{sigla:"RS",nome:"Rio Grande do Sul"},{sigla:"SC",nome:"Santa Catarina"},{sigla:"SE",nome:"Sergipe"},{sigla:"SP",nome:"S\u00E3o Paulo"},{sigla:"TO",nome:"Tocantins"}];
-  const sugTags=["PDDE","PNAE alimenta\u00E7\u00E3o escolar","PNATE transporte","FUNDEB","presta\u00E7\u00E3o de contas","censo escolar"];
+  const sugTags=["PDDE","PNAE","PNATE transporte","FUNDEB","presta\u00E7\u00E3o de contas","censo escolar","FNDE resolu\u00E7\u00E3o"];
 
   const tabs=[{id:"dou",label:"DOU Federal"},{id:"doe",label:"DOE Estados"},{id:"municipal",label:"Di\u00E1rios Municipais"}];
 
-  const edResults=douEdQ.data?.results||[];
-  const searchResults=douSearchQ.data?.results||[];
   const doeResults=doeQ2.data?.gazettes||[];
   const doeTotal=doeQ2.data?.total||0;
   const munResults=munQ2.data?.gazettes||[];
   const munTotal=munQ2.data?.total||0;
 
   const today=new Date().toISOString().split("T")[0];
-  const linkDOU="https://www.in.gov.br/leiturajornal?data="+(dataSel||today)+"&secao="+secao;
+  const todayBR=today.split("-").reverse().join("-");
 
-  const ResultCard=({item,showSection})=>e.jsxs("a",{href:item.href||"#",target:"_blank",rel:"noopener noreferrer",
-    className:"block rounded-2xl border border-[#e0d5c0] bg-white p-4 hover:border-[#5d7452] hover:shadow-md transition group",children:[
-      e.jsxs("div",{className:"flex items-start justify-between gap-2",children:[
-        e.jsx("h4",{className:"text-sm font-bold text-[#3f4637] group-hover:text-[#5d7452] leading-snug",children:item.title}),
-        item.date&&e.jsx("span",{className:"shrink-0 text-xs text-[#8a7e6b] bg-[#f4efe4] px-2 py-0.5 rounded-full",children:item.date})]}),
-      item.abstract&&e.jsx("p",{className:"mt-1.5 text-xs text-[#6b6356] leading-relaxed line-clamp-2",children:item.abstract}),
-      e.jsxs("div",{className:"mt-2 flex items-center gap-2 flex-wrap",children:[
-        showSection&&item.section&&e.jsx("span",{className:"text-[10px] px-2 py-0.5 rounded-full bg-[#eef3e8] text-[#4f5b45] font-medium",children:item.section.toUpperCase()}),
-        item.artType&&e.jsx("span",{className:"text-[10px] px-2 py-0.5 rounded-full bg-[#f0e8d8] text-[#7a6b54] font-medium",children:item.artType}),
-        item.hierarchy&&e.jsx("span",{className:"text-[10px] text-[#9a8e7a] truncate max-w-[200px]",children:item.hierarchy})]})]});
+  var iframeSrc="";
+  if(iframeMode==="edicao"){
+    var dt=dataSel?dataSel.split("-").reverse().join("-"):todayBR;
+    iframeSrc="https://www.in.gov.br/leiturajornal?data="+dt+"&secao="+secao;
+  }else if(iframeMode==="busca"&&searchTerm){
+    iframeSrc="https://www.in.gov.br/consulta/-/buscar/dou?q="+encodeURIComponent(searchTerm)+"&s=0&sortType=0&delta=20&exactDate=todos";
+  }
 
-  const GazetteCard=({item})=>e.jsxs("a",{href:item.txt_url||item.url||"#",target:"_blank",rel:"noopener noreferrer",
+  const GazetteCard=function(props){var item=props.item;return e.jsxs("a",{href:item.txt_url||item.url||"#",target:"_blank",rel:"noopener noreferrer",
     className:"block rounded-2xl border border-[#e0d5c0] bg-white p-4 hover:border-[#5d7452] hover:shadow-md transition group",children:[
       e.jsx("h4",{className:"text-sm font-bold text-[#3f4637] group-hover:text-[#5d7452] leading-snug",children:item.territory_name||"Di\u00E1rio Oficial"}),
       item.date&&e.jsx("p",{className:"text-xs text-[#8a7e6b] mt-1",children:item.date}),
       item.excerpts&&e.jsx("p",{className:"mt-1.5 text-xs text-[#6b6356] leading-relaxed line-clamp-3",
-        dangerouslySetInnerHTML:{__html:item.excerpts}})]});
+        dangerouslySetInnerHTML:{__html:item.excerpts}})]})};
 
-  const Pagination=({total,size,offset,setOffset})=>{
-    const pages=Math.ceil(total/size),cur=Math.floor(offset/size);
+  const Pagination=function(props){var total=props.total,size=props.size,offset=props.offset,setOffset=props.setOffset;
+    var pages=Math.ceil(total/size),cur=Math.floor(offset/size);
     if(pages<=1)return null;
     return e.jsxs("div",{className:"flex items-center justify-center gap-2 mt-4",children:[
-      e.jsx("button",{disabled:cur===0,onClick:()=>setOffset(Math.max(0,offset-size)),
+      e.jsx("button",{disabled:cur===0,onClick:function(){return setOffset(Math.max(0,offset-size))},
         className:"px-3 py-1 text-xs rounded-lg border "+(cur===0?"border-[#e0d5c0] text-[#c0b8a4] cursor-not-allowed":"border-[#5d7452] text-[#5d7452] hover:bg-[#eef3e8]"),children:"Anterior"}),
       e.jsx("span",{className:"text-xs text-[#8a7e6b]",children:(cur+1)+" / "+pages}),
-      e.jsx("button",{disabled:cur>=pages-1,onClick:()=>setOffset(offset+size),
+      e.jsx("button",{disabled:cur>=pages-1,onClick:function(){return setOffset(offset+size)},
         className:"px-3 py-1 text-xs rounded-lg border "+(cur>=pages-1?"border-[#e0d5c0] text-[#c0b8a4] cursor-not-allowed":"border-[#5d7452] text-[#5d7452] hover:bg-[#eef3e8]"),children:"Pr\u00F3xima"})]})};
 
   return e.jsxs("div",{className:"space-y-6",children:[
@@ -258,75 +238,71 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
         children:t.label},t.id)})}),
 
     tab==="dou"&&e.jsxs("div",{className:"space-y-5",children:[
+
       e.jsxs("div",{className:"rounded-2xl border border-[#d8cab4] bg-white p-5 space-y-4",children:[
-        e.jsxs("div",{className:"flex items-center gap-3 flex-wrap",children:[
-          e.jsx("h4",{className:"text-sm font-black text-[#3f4637]",children:"Edi\u00E7\u00E3o do DOU"}),
+
+        e.jsxs("div",{className:"flex gap-2 mb-1",children:[
+          e.jsx("button",{onClick:function(){setIframeMode("edicao")},
+            className:"rounded-full px-4 py-1.5 text-xs font-bold transition "+(iframeMode==="edicao"?"bg-[#5d7452] text-white":"bg-[#f4efe4] text-[#60705d] hover:bg-[#e8e0d0]"),
+            children:"Edi\u00E7\u00E3o do Dia"}),
+          e.jsx("button",{onClick:function(){setIframeMode("busca")},
+            className:"rounded-full px-4 py-1.5 text-xs font-bold transition "+(iframeMode==="busca"?"bg-[#5d7452] text-white":"bg-[#f4efe4] text-[#60705d] hover:bg-[#e8e0d0]"),
+            children:"Buscar no DOU"})
+        ]}),
+
+        iframeMode==="edicao"&&e.jsxs("div",{className:"flex items-center gap-3 flex-wrap",children:[
           e.jsx("input",{type:"date",value:dataSel||today,onChange:function(ev){return setDataSel(ev.target.value)},max:today,
-            className:"rounded-lg border border-[#d8cab4] px-3 py-1.5 text-sm bg-[#faf8f3] text-[#3f4637] focus:outline-none focus:ring-2 focus:ring-[#5d7452]/30"})]}),
-
-        e.jsx("div",{className:"flex gap-1.5 flex-wrap",children:
-          secoes.map(function(s){return e.jsx("button",{onClick:function(){return setSecao(s.id)},
+            className:"rounded-lg border border-[#d8cab4] px-3 py-1.5 text-sm bg-[#faf8f3] text-[#3f4637] focus:outline-none focus:ring-2 focus:ring-[#5d7452]/30"}),
+          ...secoes.map(function(s){return e.jsx("button",{onClick:function(){return setSecao(s.id)},
             className:"rounded-full px-3 py-1 text-xs font-bold transition "+(secao===s.id?"bg-[#5d7452] text-white":"bg-[#f4efe4] text-[#60705d] hover:bg-[#e8e0d0]"),
-            children:s.label+(s.desc?" \u2013 "+s.desc:"")},s.id)})}),
+            children:s.label},s.id)})
+        ]}),
 
-        e.jsxs("div",{className:"flex gap-1.5 flex-wrap items-center",children:[
-          e.jsx("span",{className:"text-xs text-[#8a7e6b] font-medium",children:"\u00D3rg\u00E3o:"}),
-          ...orgaos.map(function(o){return e.jsx("button",{onClick:function(){return setOrgaoSel(o.id)},
-            className:"rounded-full px-2.5 py-0.5 text-xs font-bold transition "+(orgaoSel===o.id?"bg-[#6d4c41] text-white":"bg-[#f4efe4] text-[#6d4c41] hover:bg-[#e8e0d0]"),
-            children:o.label},"org-"+o.id)})]})
+        iframeMode==="busca"&&e.jsxs("div",{className:"space-y-3",children:[
+          e.jsxs("form",{onSubmit:function(ev){ev.preventDefault();setSearchTerm(searchInput)},className:"flex gap-2",children:[
+            e.jsx("input",{type:"text",value:searchInput,onChange:function(ev){return setSearchInput(ev.target.value)},
+              placeholder:"Ex: PDDE, FUNDEB, presta\u00E7\u00E3o de contas...",
+              className:"flex-1 rounded-xl border border-[#d8cab4] px-4 py-2 text-sm bg-[#faf8f3] text-[#3f4637] placeholder-[#b0a898] focus:outline-none focus:ring-2 focus:ring-[#5d7452]/30"}),
+            e.jsx("button",{type:"submit",
+              className:"rounded-xl bg-[#5d7452] px-5 py-2 text-sm font-bold text-white hover:bg-[#4a5f42] transition",children:"Buscar"})]}),
+          e.jsx("div",{className:"flex gap-1.5 flex-wrap",children:
+            sugTags.map(function(t){return e.jsx("button",{onClick:function(){setSearchInput(t);setSearchTerm(t)},
+              className:"rounded-full px-2.5 py-1 text-xs bg-[#f4efe4] text-[#6b6356] hover:bg-[#e8e0d0] transition font-medium",
+              children:t},"tag-"+t)})})
+        ]})
       ]}),
 
-      douEdQ.isLoading&&e.jsx("div",{className:"text-center py-8",children:
-        e.jsx("div",{className:"inline-block h-6 w-6 animate-spin rounded-full border-2 border-[#5d7452] border-t-transparent"})}),
-
-      edResults.length>0&&e.jsxs("div",{className:"space-y-3",children:[
-        e.jsx("p",{className:"text-xs text-[#8a7e6b]",children:edResults.length+" publica\u00E7"+(edResults.length===1?"\u00E3o":"\u00F5es")+" encontrada"+(edResults.length===1?"":"s")}),
-        ...edResults.map(function(item,i){return e.jsx(ResultCard,{item:item,showSection:secao==="todos"},"ed-"+i)})]}),
-
-      edResults.length===0&&!douEdQ.isLoading&&e.jsxs("div",{className:"rounded-2xl border border-dashed border-[#d8cab4] bg-[#faf8f3] p-6 text-center space-y-3",children:[
-        e.jsx("p",{className:"text-sm text-[#6b6356]",children:"O portal do DOU n\u00E3o retornou resultados via consulta autom\u00E1tica. Acesse a edi\u00E7\u00E3o diretamente:"}),
-        e.jsx("a",{href:linkDOU,target:"_blank",rel:"noopener noreferrer",
-          className:"inline-flex items-center gap-2 rounded-xl bg-[#5d7452] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#4a5f42] transition shadow",
-          children:"Abrir Edi\u00E7\u00E3o no IN.gov.br \u2197"})]}),
-
-      e.jsxs("div",{className:"rounded-2xl border border-[#d8cab4] bg-white p-5 space-y-4",children:[
-        e.jsx("h4",{className:"text-sm font-black text-[#3f4637]",children:"Busca por Palavra-chave"}),
-        e.jsxs("form",{onSubmit:function(ev){ev.preventDefault();setQ(qInput)},className:"flex gap-2",children:[
-          e.jsx("input",{type:"text",value:qInput,onChange:function(ev){return setQInput(ev.target.value)},
-            placeholder:"Ex: PDDE, FUNDEB, presta\u00E7\u00E3o de contas...",
-            className:"flex-1 rounded-xl border border-[#d8cab4] px-4 py-2 text-sm bg-[#faf8f3] text-[#3f4637] placeholder-[#b0a898] focus:outline-none focus:ring-2 focus:ring-[#5d7452]/30"}),
-          e.jsx("button",{type:"submit",
-            className:"rounded-xl bg-[#5d7452] px-5 py-2 text-sm font-bold text-white hover:bg-[#4a5f42] transition",children:"Buscar"})]}),
-        e.jsx("div",{className:"flex gap-1.5 flex-wrap",children:
-          sugTags.map(function(t){return e.jsx("button",{onClick:function(){setQInput(t);setQ(t)},
-            className:"rounded-full px-2.5 py-1 text-xs bg-[#f4efe4] text-[#6b6356] hover:bg-[#e8e0d0] transition font-medium",
-            children:t},"tag-"+t)})})
+      iframeSrc&&e.jsxs("div",{className:"rounded-2xl border border-[#d8cab4] overflow-hidden bg-white",children:[
+        e.jsxs("div",{className:"flex items-center justify-between px-4 py-2 bg-[#f4efe4] border-b border-[#d8cab4]",children:[
+          e.jsx("span",{className:"text-xs text-[#6b6356] font-medium truncate flex-1",children:"Imprensa Nacional \u2013 in.gov.br"}),
+          e.jsx("a",{href:iframeSrc,target:"_blank",rel:"noopener noreferrer",
+            className:"shrink-0 ml-2 text-xs text-[#5d7452] hover:text-[#4a5f42] font-bold flex items-center gap-1",
+            children:"Abrir em nova aba \u2197"})]}),
+        e.jsx("iframe",{src:iframeSrc,
+          className:"w-full border-0",
+          style:{height:"70vh",minHeight:"500px"},
+          title:"Di\u00E1rio Oficial da Uni\u00E3o",
+          sandbox:"allow-scripts allow-same-origin allow-forms allow-popups",
+          loading:"lazy"})
       ]}),
 
-      douSearchQ.isLoading&&e.jsx("div",{className:"text-center py-6",children:
-        e.jsx("div",{className:"inline-block h-6 w-6 animate-spin rounded-full border-2 border-[#5d7452] border-t-transparent"})}),
-
-      searchResults.length>0&&e.jsxs("div",{className:"space-y-3",children:[
-        e.jsx("p",{className:"text-xs text-[#8a7e6b]",children:searchResults.length+" resultado"+(searchResults.length===1?"":"s")}),
-        ...searchResults.map(function(item,i){return e.jsx(ResultCard,{item:item,showSection:true},"sr-"+i)})]}),
-
-      q&&searchResults.length===0&&!douSearchQ.isLoading&&e.jsxs("div",{className:"rounded-2xl border border-dashed border-[#d8cab4] bg-[#faf8f3] p-5 text-center space-y-2",children:[
-        e.jsx("p",{className:"text-sm text-[#6b6356]",children:"Nenhum resultado encontrado via consulta autom\u00E1tica."}),
-        e.jsx("a",{href:douSearchQ.data?.searchUrl||("https://www.in.gov.br/consulta/-/buscar/dou?q="+encodeURIComponent(q)),
-          target:"_blank",rel:"noopener noreferrer",
-          className:"inline-flex items-center gap-2 rounded-xl bg-[#5d7452] px-4 py-2 text-sm font-bold text-white hover:bg-[#4a5f42] transition shadow",
-          children:"Buscar no site do DOU \u2197"})]}),
+      !iframeSrc&&iframeMode==="busca"&&e.jsxs("div",{className:"rounded-2xl border border-dashed border-[#d8cab4] bg-[#faf8f3] p-8 text-center space-y-3",children:[
+        e.jsx("div",{className:"text-4xl",children:"\uD83D\uDD0D"}),
+        e.jsx("p",{className:"text-sm text-[#6b6356]",children:"Digite um termo acima para buscar no Di\u00E1rio Oficial da Uni\u00E3o."}),
+        e.jsx("p",{className:"text-xs text-[#8a7e6b]",children:"Sugest\u00F5es: PDDE, FUNDEB, PNAE, presta\u00E7\u00E3o de contas, censo escolar"})
+      ]}),
 
       e.jsxs("div",{className:"rounded-2xl border border-[#d8cab4] bg-[#f4efe4] p-5",children:[
-        e.jsx("h4",{className:"text-sm font-black text-[#3f4637] mb-3",children:"Links R\u00E1pidos"}),
+        e.jsx("h4",{className:"text-sm font-black text-[#3f4637] mb-3",children:"Acesso R\u00E1pido"}),
         e.jsxs("div",{className:"grid grid-cols-1 sm:grid-cols-2 gap-2",children:[
-          e.jsx("a",{href:"https://www.in.gov.br/leiturajornal?data="+today+"&secao=do1",target:"_blank",rel:"noopener noreferrer",className:"flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm text-[#3f4637] hover:shadow-md transition border border-[#e0d5c0]",children:"\uD83D\uDCDC Se\u00E7\u00E3o 1 \u2013 Hoje"}),
-          e.jsx("a",{href:"https://www.in.gov.br/leiturajornal?data="+today+"&secao=do2",target:"_blank",rel:"noopener noreferrer",className:"flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm text-[#3f4637] hover:shadow-md transition border border-[#e0d5c0]",children:"\uD83D\uDCCB Se\u00E7\u00E3o 2 \u2013 Hoje"}),
-          e.jsx("a",{href:"https://www.in.gov.br/leiturajornal?data="+today+"&secao=do3",target:"_blank",rel:"noopener noreferrer",className:"flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm text-[#3f4637] hover:shadow-md transition border border-[#e0d5c0]",children:"\uD83D\uDCC4 Se\u00E7\u00E3o 3 \u2013 Hoje"}),
-          e.jsx("a",{href:"https://www.in.gov.br/consulta/-/buscar/dou",target:"_blank",rel:"noopener noreferrer",className:"flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm text-[#3f4637] hover:shadow-md transition border border-[#e0d5c0]",children:"\uD83D\uDD0D Busca Avan\u00E7ada no DOU"})]})
+          e.jsx("a",{href:"https://www.in.gov.br/leiturajornal?data="+todayBR+"&secao=do1",target:"_blank",rel:"noopener noreferrer",className:"flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm text-[#3f4637] hover:shadow-md transition border border-[#e0d5c0]",children:"\uD83D\uDCDC Se\u00E7\u00E3o 1 \u2013 Leis e Decretos"}),
+          e.jsx("a",{href:"https://www.in.gov.br/leiturajornal?data="+todayBR+"&secao=do2",target:"_blank",rel:"noopener noreferrer",className:"flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm text-[#3f4637] hover:shadow-md transition border border-[#e0d5c0]",children:"\uD83D\uDCCB Se\u00E7\u00E3o 2 \u2013 Nomea\u00E7\u00F5es"}),
+          e.jsx("a",{href:"https://www.in.gov.br/leiturajornal?data="+todayBR+"&secao=do3",target:"_blank",rel:"noopener noreferrer",className:"flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm text-[#3f4637] hover:shadow-md transition border border-[#e0d5c0]",children:"\uD83D\uDCC4 Se\u00E7\u00E3o 3 \u2013 Editais e Contratos"}),
+          e.jsx("a",{href:"https://www.in.gov.br/consulta/-/buscar/dou",target:"_blank",rel:"noopener noreferrer",className:"flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm text-[#3f4637] hover:shadow-md transition border border-[#e0d5c0]",children:"\uD83D\uDD0D Busca Avan\u00E7ada no DOU"})
+        ]})
       ]}),
 
-      e.jsx("p",{className:"text-[10px] text-[#b0a898] text-center italic",children:"Fonte: Imprensa Nacional (in.gov.br) \u2013 Di\u00E1rio Oficial da Uni\u00E3o. A consulta autom\u00E1tica pode ter limita\u00E7\u00F5es; use os links diretos como complemento."})
+      e.jsx("p",{className:"text-[10px] text-[#b0a898] text-center italic",children:"Fonte: Imprensa Nacional (in.gov.br) \u2013 Di\u00E1rio Oficial da Uni\u00E3o."})
     ]}),
 
     tab==="doe"&&e.jsxs("div",{className:"space-y-4",children:[
