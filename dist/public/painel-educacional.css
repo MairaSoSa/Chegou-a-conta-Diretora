@@ -381,3 +381,19 @@ html.a11y-zoom {
   overflow: visible !important;
   height: auto !important;
 }
+
+/* Modo de seleção de texto para leitura por voz */
+body.tts-select-mode,
+body.tts-select-mode * {
+  cursor: text !important;
+}
+
+body.tts-select-mode .tts-select-btn {
+  background: #4a7c5c !important;
+  color: #ffffff !important;
+  border-color: #3a6c4c !important;
+}
+
+body.tts-select-mode .tts-select-btn svg {
+  color: #ffffff !important;
+}
