@@ -94,6 +94,8 @@ Since the source code is not present, all fixes are applied directly to the comp
 | `dist/public/assets/index-v21.js` / `index-v10-shared.js` | **AiExplica component**: AI explanation feature for Normas cards (Leis fundamentais + Demais Normas) and DOU tab free-text input. Uses `useRef` to track titulo changes and reset stale data. |
 | `dist/public/assets/index-v21.js` / `index-v10-shared.js` | **Lo component (DOU)**: Added "Explicar ato do DOU com IA" section with text input for free-text AI explanations of DOU publications. |
 | `dist/bootstrap.cjs` | **AI explicar-norma route**: `POST /api/ai/explicar-norma` — calls OpenAI gpt-4o-mini with educator-specific prompt, structured JSON response, 24hr in-memory cache (capped at 500 entries), rate-limited to 10 req/min. |
+| `dist/bootstrap.cjs` | **CONSED/UNDIME news route**: `GET /api/noticias-extras` — scrapes consed.org.br and undime.org.br for education news, 10min in-memory cache, merged with existing MEC/FNDE/INEP feed on the calendar page. |
+| `dist/public/assets/index-v21.js` / `index-v10-shared.js` | **Calendar news merge**: Added second query to `/api/noticias-extras`, merging CONSED+UNDIME news with existing MEC/FNDE/INEP feed, sorted by date. Badge colors: CONSED=amber, UNDIME=rose. |
 
 ---
 

@@ -974,6 +974,74 @@ Retorne APENAS o JSON no formato especificado, sem markdown, sem backticks, sem 
   }
 })();
 
+// ── CONSED + UNDIME news scraping ────────────────────────────────────────────
+(function patchNoticiasExtras() {
+  const NOTICIAS_MARKER = 'e.get("/api/noticias-educacao"';
+  if (!source.includes(NOTICIAS_MARKER)) {
+    console.warn('[bootstrap] noticias-educacao marker not found, adding CONSED/UNDIME as separate route');
+  }
+
+  const extraNewsRoute = `
+e.get("/api/noticias-extras",async(A,g)=>{
+  try{
+    const limit=Math.min(parseInt(String(A.query.limit||"20")),50);
+    const cache=globalThis._noticiasExtrasCache;
+    if(cache&&Date.now()-cache.ts<600000){const d=cache.data;return g.json({...d,noticias:d._all.slice(0,limit),total:d._all.length});}
+
+    async function scrapeConsed(){
+      try{
+        const r=await fetch("https://www.consed.org.br",{
+          headers:{"User-Agent":"Mozilla/5.0 (compatible; EducBot/1.0)","Accept":"text/html"},
+          signal:AbortSignal.timeout(12000)});
+        if(!r.ok)return[];
+        const h=await r.text();
+        const items=[];
+        const links=[...new Set([...h.matchAll(/href="(https:\\/\\/www\\.consed\\.org\\.br\\/noticia\\/[^"]+)"/g)].map(m=>m[1]))];
+        for(const url of links){
+          const slug=url.split("/noticia/")[1]||"";
+          const idx=h.indexOf(url);
+          let title="";
+          if(idx>-1){const chunk=h.substring(idx,idx+800);const tm=chunk.match(/class="title"[^>]*>([^<]+)/);if(tm)title=tm[1].trim();}
+          if(!title||title.length<10) title=slug.replace(/-/g," ").replace(/^./,c=>c.toUpperCase());
+          if(title.length>15&&!items.find(x=>x.titulo===title)){
+            items.push({titulo:title,url,fonte:"CONSED",categoria:"Secretarias Estaduais",data:new Date().toISOString().slice(0,7)});
+          }
+        }
+        return items.slice(0,15);
+      }catch{return[];}
+    }
+
+    async function scrapeUndime(){
+      try{
+        const r=await fetch("https://undime.org.br/noticia/",{
+          headers:{"User-Agent":"Mozilla/5.0 (compatible; EducBot/1.0)","Accept":"text/html"},
+          signal:AbortSignal.timeout(12000)});
+        if(!r.ok)return[];
+        const h=await r.text();
+        const links=[...new Set([...h.matchAll(/\\/noticia\\/(\\d{2})-(\\d{2})-(\\d{4})-(\\d{2})-(\\d{2})-([a-z0-9-]+)/g)].map(m=>m[0]))];
+        return links.slice(0,15).map(l=>{
+          const dm=l.match(/\\/noticia\\/(\\d{2})-(\\d{2})-(\\d{4})/);
+          const date=dm?dm[3]+"-"+dm[2]+"-"+dm[1]:"";
+          const slug=l.replace(/^\\/noticia\\/\\d{2}-\\d{2}-\\d{4}-\\d{2}-\\d{2}-/,"").replace(/-/g," ");
+          const title=slug.charAt(0).toUpperCase()+slug.slice(1);
+          return{titulo:title,url:"https://undime.org.br"+l,fonte:"UNDIME",categoria:"Dirigentes Municipais",data:date||new Date().toISOString().slice(0,7)};
+        });
+      }catch{return[];}
+    }
+
+    const[consed,undime]=await Promise.allSettled([scrapeConsed(),scrapeUndime()]);
+    const all=[...(consed.value||[]),...(undime.value||[])];
+    all.sort((a,b)=>(b.data||"").localeCompare(a.data||""));
+    const result={ok:true,noticias:all.slice(0,limit),total:all.length,fontes:["CONSED","UNDIME"],_all:all};
+    globalThis._noticiasExtrasCache={ts:Date.now(),data:result};
+    g.json({ok:true,noticias:all.slice(0,limit),total:all.length,fontes:["CONSED","UNDIME"]});
+  }catch(E){g.status(500).json({ok:false,noticias:[],total:0,error:E.message})}
+}),
+`;
+  source = source.replace(NOTICIAS_MARKER, extraNewsRoute + NOTICIAS_MARKER);
+  console.log('[bootstrap] CONSED/UNDIME noticias-extras route applied');
+})();
+
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
