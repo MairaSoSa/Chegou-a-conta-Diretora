@@ -47,6 +47,13 @@ This is a **monorepo with a compiled distribution model**. The actual TypeScript
 - The app uses an ORM/query layer that supports both backends (Drizzle is likely, given `npm run db:push` in devcontainer setup)
 - Large dataset (~10 GB SQLite dev.db) historically downloaded from Google Drive at container start; production uses PostgreSQL
 
+### MEC YouTube Streams
+- **Endpoint:** `/api/mec-streams` — scrapes the MEC YouTube channel streams page (`https://www.youtube.com/@ministeriodaeducacao_MEC/streams`)
+- **Cache:** In-memory, 30-minute TTL to avoid hammering YouTube
+- **Data:** Returns up to 20 streams with title, URL, live/upcoming status, thumbnails
+- **Frontend:** Integrated into the Calendar page (`/calendario`) as MEC-category cards with red styling and "Assistir no YouTube" links
+- **Implementation:** Backend endpoint injected via `bootstrap.cjs` patch; frontend integration via direct patches to the minified JS bundles
+
 ### Data Sources (External Scraping)
 - **FNDE PDDE Info** (`www.fnde.gov.br/pddeinfo/...`): Live scraping for school registration status, fund balances, financial executions, accounts payable status, and attendance data per school per year (2020–2026)
 - **INEP Censo Escolar**: Pre-imported CSV data for 2020–2025; stored in DB with 200K+ records per indicator

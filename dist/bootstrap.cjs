@@ -249,6 +249,80 @@ if (source.indexOf(_RAW_JS_ANCHOR) !== -1) {
   console.warn('[bootstrap] /api/raw-js patch NOT applied — anchor not found (dashboard-redirect not present)');
 }
 
+// ── 3c3. Patch: /api/mec-streams endpoint — scrapes YouTube MEC streams ─────
+// Fetches the MEC YouTube channel streams page, extracts titles, dates/times
+// and URLs. Uses an in-memory cache (30 min TTL) to avoid hammering YouTube.
+const _MEC_STREAMS_ANCHOR = 'e.get("/api/health",(A,g)=>{g.status(200).json({ok:!0,ts:Date.now()})}),';
+const _MEC_STREAMS_ROUTE =
+  'globalThis._mecStreamsCache={ts:0,data:null};' +
+  'e.get("/api/mec-streams",async(A,g)=>{' +
+    'try{' +
+      'const now=Date.now();' +
+      'if(globalThis._mecStreamsCache.data&&(now-globalThis._mecStreamsCache.ts)<30*60*1000){' +
+        'return g.json(globalThis._mecStreamsCache.data);' +
+      '}' +
+      'const resp=await fetch("https://www.youtube.com/@ministeriodaeducacao_MEC/streams",{' +
+        'headers:{"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36","Accept-Language":"pt-BR,pt;q=0.9"},' +
+        'signal:AbortSignal.timeout(15000)' +
+      '});' +
+      'if(!resp.ok)throw new Error("YouTube returned "+resp.status);' +
+      'const html=await resp.text();' +
+      'const streams=[];' +
+      'const ytInit=html.match(/var ytInitialData\\s*=\\s*(\\{.+?\\});\\s*<\\/script>/s);' +
+      'if(ytInit){' +
+        'try{' +
+          'const yt=JSON.parse(ytInit[1]);' +
+          'const tabs=yt?.contents?.twoColumnBrowseResultsRenderer?.tabs||[];' +
+          'let items=[];' +
+          'for(const tab of tabs){' +
+            'const sec=tab?.tabRenderer?.content?.richGridRenderer?.contents||[];' +
+            'for(const s of sec){' +
+              'const v=s?.richItemRenderer?.content?.videoRenderer;' +
+              'if(v)items.push(v);' +
+            '}' +
+          '}' +
+          'for(const v of items){' +
+            'if(streams.length>=20)break;' +
+            'const id=v.videoId;' +
+            'const title=v.title?.runs?.[0]?.text||v.title?.simpleText||"";' +
+            'if(!id||!title)continue;' +
+            'const url="https://www.youtube.com/watch?v="+id;' +
+            'let dateText=v.publishedTimeText?.simpleText||"";' +
+            'let viewCount=v.viewCountText?.simpleText||v.viewCountText?.runs?.[0]?.text||"";' +
+            'const lengthText=v.lengthText?.simpleText||"";' +
+            'const thumbnailUrl=v.thumbnail?.thumbnails?.slice(-1)?.[0]?.url||"";' +
+            'const isLive=!!(v.badges?.some(b=>b?.metadataBadgeRenderer?.label==="AO VIVO")||v.thumbnailOverlays?.some(o=>o?.thumbnailOverlayTimeStatusRenderer?.style==="LIVE"));' +
+            'const isUpcoming=!!(v.upcomingEventData||v.thumbnailOverlays?.some(o=>o?.thumbnailOverlayTimeStatusRenderer?.style==="UPCOMING"));' +
+            'let scheduledTime=null;' +
+            'if(v.upcomingEventData?.startTime){scheduledTime=new Date(parseInt(v.upcomingEventData.startTime)*1000).toISOString();}' +
+            'streams.push({id,title,url,dateText,viewCount,lengthText,thumbnailUrl,isLive,isUpcoming,scheduledTime});' +
+          '}' +
+        '}catch(pe){console.error("[mec-streams] JSON parse error:",pe.message);}' +
+      '}' +
+      'if(streams.length===0){' +
+        'const vRe=/\\/watch\\?v=([\\w-]+)/g;' +
+        'let m;const seen=new Set();' +
+        'while((m=vRe.exec(html))&&streams.length<20){' +
+          'if(seen.has(m[1]))continue;seen.add(m[1]);' +
+          'streams.push({id:m[1],title:"Stream MEC",url:"https://www.youtube.com/watch?v="+m[1],dateText:"",viewCount:"",lengthText:"",thumbnailUrl:"",isLive:false,isUpcoming:false,scheduledTime:null});' +
+        '}' +
+      '}' +
+      'const result={ok:true,streams,total:streams.length,cached_at:now};' +
+      'globalThis._mecStreamsCache={ts:now,data:result};' +
+      'g.json(result);' +
+    '}catch(E){' +
+      'console.error("[mec-streams]",E.message);' +
+      'if(globalThis._mecStreamsCache.data){return g.json(globalThis._mecStreamsCache.data);}' +
+      'g.status(500).json({ok:false,streams:[],total:0,error:E.message});' +
+    '}' +
+  '}),';
+if (source.indexOf(_MEC_STREAMS_ANCHOR) !== -1) {
+  source = source.replace(_MEC_STREAMS_ANCHOR, _MEC_STREAMS_ANCHOR + _MEC_STREAMS_ROUTE);
+  console.log('[bootstrap] /api/mec-streams endpoint patch applied');
+} else {
+  console.warn('[bootstrap] /api/mec-streams patch NOT applied — anchor not found');
+}
+
 // ── 3d. Patch: fix PDDE exercise dropdown data consistency ──────────────────
 // The bundled server had a fixed year list and left an_exercicio untyped.
 // This breaks exercise filters/menu behavior when data arrives as strings.
