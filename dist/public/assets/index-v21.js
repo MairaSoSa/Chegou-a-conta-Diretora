@@ -187,6 +187,36 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
   const estados=[{sigla:"AC",nome:"Acre"},{sigla:"AL",nome:"Alagoas"},{sigla:"AM",nome:"Amazonas"},{sigla:"AP",nome:"Amap\u00E1"},{sigla:"BA",nome:"Bahia"},{sigla:"CE",nome:"Cear\u00E1"},{sigla:"DF",nome:"Distrito Federal"},{sigla:"ES",nome:"Esp\u00EDrito Santo"},{sigla:"GO",nome:"Goi\u00E1s"},{sigla:"MA",nome:"Maranh\u00E3o"},{sigla:"MG",nome:"Minas Gerais"},{sigla:"MS",nome:"Mato Grosso do Sul"},{sigla:"MT",nome:"Mato Grosso"},{sigla:"PA",nome:"Par\u00E1"},{sigla:"PB",nome:"Para\u00EDba"},{sigla:"PE",nome:"Pernambuco"},{sigla:"PI",nome:"Piau\u00ED"},{sigla:"PR",nome:"Paran\u00E1"},{sigla:"RJ",nome:"Rio de Janeiro"},{sigla:"RN",nome:"Rio Grande do Norte"},{sigla:"RO",nome:"Rond\u00F4nia"},{sigla:"RR",nome:"Roraima"},{sigla:"RS",nome:"Rio Grande do Sul"},{sigla:"SC",nome:"Santa Catarina"},{sigla:"SE",nome:"Sergipe"},{sigla:"SP",nome:"S\u00E3o Paulo"},{sigla:"TO",nome:"Tocantins"}];
   const sugTags=["PDDE","PNAE","PNATE transporte","FUNDEB","presta\u00E7\u00E3o de contas","censo escolar","FNDE resolu\u00E7\u00E3o"];
 
+  const doePortais=[
+    {uf:"AC",nome:"Acre",url:"https://www.diario.ac.gov.br",regiao:"N"},
+    {uf:"AL",nome:"Alagoas",url:"https://www.imprensaoficialal.com.br",regiao:"NE"},
+    {uf:"AM",nome:"Amazonas",url:"https://diario.imprensaoficial.am.gov.br",regiao:"N"},
+    {uf:"AP",nome:"Amap\u00E1",url:"https://seed.portal.ap.gov.br/diario",regiao:"N"},
+    {uf:"BA",nome:"Bahia",url:"https://dool.egba.ba.gov.br",regiao:"NE"},
+    {uf:"CE",nome:"Cear\u00E1",url:"https://www.ceara.gov.br/diario-oficial",regiao:"NE"},
+    {uf:"DF",nome:"Distrito Federal",url:"https://www.dodf.df.gov.br",regiao:"CO"},
+    {uf:"ES",nome:"Esp\u00EDrito Santo",url:"https://ioes.dio.es.gov.br",regiao:"SE"},
+    {uf:"GO",nome:"Goi\u00E1s",url:"https://diariooficial.abc.go.gov.br",regiao:"CO"},
+    {uf:"MA",nome:"Maranh\u00E3o",url:"https://www.diariooficial.ma.gov.br",regiao:"NE"},
+    {uf:"MG",nome:"Minas Gerais",url:"https://www.iof.mg.gov.br",regiao:"SE"},
+    {uf:"MS",nome:"Mato Grosso do Sul",url:"https://www.spdo.ms.gov.br/diariodoe",regiao:"CO"},
+    {uf:"MT",nome:"Mato Grosso",url:"https://www.iomat.mt.gov.br",regiao:"CO"},
+    {uf:"PA",nome:"Par\u00E1",url:"https://www.ioepa.com.br",regiao:"N"},
+    {uf:"PB",nome:"Para\u00EDba",url:"https://auniao.pb.gov.br/doe",regiao:"NE"},
+    {uf:"PE",nome:"Pernambuco",url:"https://www.cepe.com.br/diario-oficial",regiao:"NE"},
+    {uf:"PI",nome:"Piau\u00ED",url:"https://www.diariooficial.pi.gov.br",regiao:"NE"},
+    {uf:"PR",nome:"Paran\u00E1",url:"https://www.imprensaoficial.pr.gov.br",regiao:"S"},
+    {uf:"RJ",nome:"Rio de Janeiro",url:"https://www.ioerj.com.br",regiao:"SE"},
+    {uf:"RN",nome:"Rio Grande do Norte",url:"https://www.diariooficial.rn.gov.br",regiao:"NE"},
+    {uf:"RO",nome:"Rond\u00F4nia",url:"https://diof.ro.gov.br",regiao:"N"},
+    {uf:"RR",nome:"Roraima",url:"https://www.imprensaoficial.rr.gov.br",regiao:"N"},
+    {uf:"RS",nome:"Rio Grande do Sul",url:"https://www.diariooficial.rs.gov.br",regiao:"S"},
+    {uf:"SC",nome:"Santa Catarina",url:"https://www.doe.sc.gov.br",regiao:"S"},
+    {uf:"SE",nome:"Sergipe",url:"https://www.se.gov.br/diario-oficial",regiao:"NE"},
+    {uf:"SP",nome:"S\u00E3o Paulo",url:"https://www.doe.sp.gov.br",regiao:"SE"},
+    {uf:"TO",nome:"Tocantins",url:"https://diariooficial.to.gov.br",regiao:"N"}
+  ];
+
   const tabs=[{id:"dou",label:"DOU Federal"},{id:"doe",label:"DOE Estados"},{id:"municipal",label:"Di\u00E1rios Municipais"}];
 
   const doeResults=doeQ2.data?.gazettes||[];
@@ -321,23 +351,30 @@ import{aF as ot,r as x,R as it,j as e,aG as nt,K as lt,aH as js,aI as vs,aJ as R
 
     tab==="doe"&&e.jsxs("div",{className:"space-y-4",children:[
       e.jsxs("div",{className:"rounded-2xl border border-[#d8cab4] bg-white p-5 space-y-4",children:[
-        e.jsx("h4",{className:"text-sm font-black text-[#3f4637]",children:"Di\u00E1rios Oficiais Estaduais"}),
-        e.jsxs("div",{className:"flex gap-2 flex-wrap",children:[
-          e.jsxs("select",{value:doeState,onChange:function(ev){setDoeState(ev.target.value);setDoeOff(0)},
-            className:"rounded-xl border border-[#d8cab4] px-3 py-2 text-sm bg-[#faf8f3]",children:[
-              e.jsx("option",{value:"",children:"Selecione o estado"}),
-              ...estados.map(function(uf){return e.jsx("option",{value:uf.sigla,children:uf.sigla+" \u2013 "+uf.nome},uf.sigla)})]}),
-          e.jsx("input",{type:"text",value:doeQ,onChange:function(ev){return setDoeQ(ev.target.value)},
-            placeholder:"Palavra-chave...",className:"flex-1 min-w-[180px] rounded-xl border border-[#d8cab4] px-4 py-2 text-sm bg-[#faf8f3] placeholder-[#b0a898] focus:outline-none focus:ring-2 focus:ring-[#5d7452]/30"})]}),
-        !doeState&&e.jsx("p",{className:"text-xs text-[#8a7e6b] italic",children:"Selecione um estado para buscar."}),
-        doeQ2.isLoading&&e.jsx("div",{className:"text-center py-6",children:e.jsx("div",{className:"inline-block h-6 w-6 animate-spin rounded-full border-2 border-[#5d7452] border-t-transparent"})}),
-        doeResults.length>0&&e.jsxs("div",{className:"space-y-3",children:[
-          e.jsx("p",{className:"text-xs text-[#8a7e6b]",children:doeTotal+" resultado"+(doeTotal===1?"":"s")}),
-          ...doeResults.map(function(item,i){return e.jsx(GazetteCard,{item:item},"doe-"+i)}),
-          e.jsx(Pagination,{total:doeTotal,size:doeSize,offset:doeOff,setOffset:setDoeOff})]}),
-        doeQ&&doeState&&doeResults.length===0&&!doeQ2.isLoading&&e.jsx("p",{className:"text-sm text-[#6b6356] text-center py-4",children:"Nenhum resultado encontrado."})
+        e.jsx("h4",{className:"text-sm font-black text-[#3f4637]",children:"Di\u00E1rios Oficiais dos Estados (DOE)"}),
+        e.jsx("p",{className:"text-xs text-[#6b6356]",children:"Acesse diretamente o Di\u00E1rio Oficial do seu estado. Selecione a regi\u00E3o para ver os portais dispon\u00EDveis."}),
+        e.jsxs("select",{value:doeState,onChange:function(ev){setDoeState(ev.target.value)},
+          className:"rounded-xl border border-[#d8cab4] px-3 py-2 text-sm bg-[#faf8f3] w-full sm:w-auto",children:[
+            e.jsx("option",{value:"",children:"Filtrar por regi\u00E3o..."}),
+            e.jsx("option",{value:"N",children:"Norte"}),
+            e.jsx("option",{value:"NE",children:"Nordeste"}),
+            e.jsx("option",{value:"CO",children:"Centro-Oeste"}),
+            e.jsx("option",{value:"SE",children:"Sudeste"}),
+            e.jsx("option",{value:"S",children:"Sul"})]}),
+        e.jsx("div",{className:"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2",children:
+          doePortais.filter(function(p){return !doeState||p.regiao===doeState}).map(function(p){
+            return e.jsxs("a",{href:p.url,target:"_blank",rel:"noopener noreferrer",
+              className:"flex items-center gap-2 rounded-xl bg-[#faf8f3] px-4 py-3 text-sm text-[#3f4637] hover:bg-[#eef3e8] hover:shadow-md transition border border-[#e0d5c0]",
+              children:[
+                e.jsx("span",{className:"text-base",children:"\uD83D\uDCF0"}),
+                e.jsxs("div",{children:[
+                  e.jsx("span",{className:"font-bold text-xs",children:p.uf}),
+                  e.jsx("span",{className:"text-xs text-[#8a7e6b] ml-1",children:"\u2013 "+p.nome})
+                ]})
+              ]},p.uf)})
+        })
       ]}),
-      e.jsx("p",{className:"text-[10px] text-[#b0a898] text-center italic",children:"Fonte: Querido Di\u00E1rio (OKBR) \u2013 Di\u00E1rios oficiais estaduais."})
+      e.jsx("p",{className:"text-[10px] text-[#b0a898] text-center italic",children:"Links para os portais oficiais dos Di\u00E1rios Oficiais Estaduais (DOE)."})
     ]}),
 
     tab==="municipal"&&e.jsxs("div",{className:"space-y-4",children:[
