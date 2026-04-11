@@ -1075,10 +1075,12 @@ e.get("/api/noticias-extras",async(A,g)=>{
           const slug=url.split("/noticia/")[1]||"";
           const idx=h.indexOf(url);
           let title="";
-          if(idx>-1){const chunk=h.substring(idx,idx+800);const tm=chunk.match(/class="title"[^>]*>([^<]+)/);if(tm)title=tm[1].trim();}
+          if(idx>-1){const chunk=h.substring(idx,idx+1200);const tm=chunk.match(/class="title"[^>]*>([^<]+)/);if(tm)title=tm[1].trim();}
           if(!title||title.length<10) title=slug.replace(/-/g," ").replace(/^./,c=>c.toUpperCase());
+          const dm=slug.match(/(\d{2})-(\d{2})-(\d{4})-/);
+          const data=dm?dm[3]+"-"+dm[2]+"-"+dm[1]:new Date().toISOString().slice(0,10);
           if(title.length>15&&!items.find(x=>x.titulo===title)){
-            items.push({titulo:title,url,fonte:"CONSED",categoria:"Secretarias Estaduais",data:new Date().toISOString().slice(0,7)});
+            items.push({titulo:title,url,fonte:"CONSED",categoria:"Secretarias Estaduais",data});
           }
         }
         return items.slice(0,15);
@@ -1098,7 +1100,7 @@ e.get("/api/noticias-extras",async(A,g)=>{
           const date=dm?dm[3]+"-"+dm[2]+"-"+dm[1]:"";
           const slug=l.replace(/^\\/noticia\\/\\d{2}-\\d{2}-\\d{4}-\\d{2}-\\d{2}-/,"").replace(/-/g," ");
           const title=slug.charAt(0).toUpperCase()+slug.slice(1);
-          return{titulo:title,url:"https://undime.org.br"+l,fonte:"UNDIME",categoria:"Dirigentes Municipais",data:date||new Date().toISOString().slice(0,7)};
+          return{titulo:title,url:"https://undime.org.br"+l,fonte:"UNDIME",categoria:"Dirigentes Municipais",data:date||new Date().toISOString().slice(0,10)};
         });
       }catch{return[];}
     }
