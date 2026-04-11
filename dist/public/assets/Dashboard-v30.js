@@ -408,6 +408,7 @@ function ii() {
     ie((m) => ({ ...m, [c]: !m[c] }));
   }, [Zt, jt] = F.useState(null), [Yt, Fa] = F.useState(false), [Xt, Qt] = F.useState(null), eo = F.useRef({}), [smInfo, setSmInfo] = F.useState(null), [smLoading, setSmLoading] = F.useState(false), smReady = F.useRef(false);
   F.useEffect(function(){ if (!H || Je || smReady.current) return; smReady.current = true; fetch("/api/escola/" + H + "/similares?ano=" + Y + "&limit=6").then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ if (d) setSmInfo(d); }).catch(function(){}); }, [H, Y, Je]);
+  F.useEffect(function(){ if (!H || Je || smReady.current) return; smReady.current = true; fetch("/api/escola/" + H + "/similares?ano=" + Y + "&limit=6").then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ if (d) setSmInfo(d); }).catch(function(){}); }, [H, Y, Je]);
   F.useEffect(() => {
     if (!ze) {
       jt(null);
