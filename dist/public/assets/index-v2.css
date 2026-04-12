@@ -6,6 +6,5 @@
 .organic-divider:before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;border-radius:1px;background:linear-gradient(90deg,transparent 0%,rgba(72,68,85,.28) 2%,rgba(58,55,72,.82) 12%,rgba(50,48,64,.94) 28%,rgba(46,44,60,.88) 42%,rgba(52,50,66,.96) 55%,rgba(48,46,62,.9) 68%,rgba(58,55,72,.82) 86%,rgba(72,68,85,.28) 98%,transparent 100%);transform:rotate(-.18deg);filter:blur(.35px);box-shadow:0 1px 2px rgba(50,48,70,.12),0 -0.5px 1px rgba(50,48,70,.07)}
 .organic-divider:after{content:"";position:absolute;left:1%;right:1%;top:8.5px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,transparent 0%,rgba(100,98,120,.14) 5%,rgba(110,108,128,.1) 30%,rgba(105,103,124,.08) 50%,rgba(110,108,128,.1) 70%,rgba(100,98,120,.14) 95%,transparent 100%);transform:rotate(.22deg);filter:blur(.6px)}
 /* grifo de lapis so embaixo do titulo Ficha da escola */
-#sec-ficha .organic-divider{display:none}
-#sec-ficha .section-title h2{display:inline-block;position:relative;padding-bottom:5px}
-#sec-ficha .section-title h2::after{content:"";position:absolute;left:-2px;right:-4px;bottom:0;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(72,68,85,.22) 0%,rgba(50,48,64,.9) 10%,rgba(46,44,60,.85) 45%,rgba(52,50,66,.92) 60%,rgba(58,55,72,.78) 85%,rgba(72,68,85,.18) 100%);transform:rotate(-.2deg);filter:blur(.35px);box-shadow:0 1px 1.5px rgba(50,48,70,.1)}
+#sec-ficha .organic-divider{display:none!important}
+#sec-ficha .section-title h2{width:fit-content!important;display:block!important;text-decoration:underline!important;text-decoration-color:rgba(52,50,68,.55)!important;text-decoration-thickness:2px!important;text-underline-offset:5px!important;text-decoration-skip-ink:none!important}
