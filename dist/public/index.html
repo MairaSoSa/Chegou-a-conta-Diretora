@@ -572,11 +572,36 @@
           display:block!important;
           max-width:100%!important
         }
+        /* trilha da diretora: scroll compacto em celular */
+        .hl-caderno-box .hl-trilha-list{
+          max-height:148px!important;
+          overflow-y:auto!important;
+          overflow-x:hidden!important;
+          scroll-behavior:smooth!important;
+          -webkit-overflow-scrolling:touch!important
+        }
+        .hl-caderno-box{
+          overflow:hidden!important;
+          border-radius:14px!important;
+          position:relative!important
+        }
+        .hl-caderno-box .hl-trilha-list::-webkit-scrollbar{
+          width:3px!important
+        }
+        .hl-caderno-box .hl-trilha-list::-webkit-scrollbar-track{
+          background:transparent!important
+        }
+        .hl-caderno-box .hl-trilha-list::-webkit-scrollbar-thumb{
+          background:rgba(160,130,100,.3)!important;
+          border-radius:4px!important
+        }
       }
     </style>
     <style>
       /* ── Trilha da Diretora — sidebar (homepage): garante texto visível ── */
-      .hl-caderno-box { overflow: visible !important; }
+      @media(min-width:641px){
+        .hl-caderno-box { overflow: visible !important; }
+      }
       .hl-caderno-box .hl-trilha-list { overflow-y: auto !important; overflow-x: hidden !important; }
       .hl-caderno-box .hl-trilha-item { align-items: flex-start !important; overflow: visible !important; }
       .hl-caderno-box .hl-trilha-item-title { white-space: normal !important; overflow: visible !important; text-overflow: unset !important; font-size: .72rem !important; line-height: 1.25 !important; }
