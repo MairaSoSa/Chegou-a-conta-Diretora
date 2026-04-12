@@ -1227,9 +1227,41 @@ e.get("/api/see/ia",async(A,g)=>{
     g.json(seeResult);
   }catch(e){g.json({ok:false,erro:String(e)});}
 }),
+e.get("/api/cme/ia",async(A,g)=>{
+  try{
+    const apiKey=process.env.OPENAI_API_KEY;
+    if(!apiKey)return g.status(503).json({ok:false});
+    const municipio=String(A.query.municipio||"").trim();
+    const uf=String(A.query.uf||"").trim().toUpperCase();
+    if(!municipio||uf.length!==2)return g.status(400).json({ok:false});
+    globalThis._cmeIaCache=globalThis._cmeIaCache||new Map();
+    const cacheKey="cme-ia:"+municipio.toLowerCase()+":"+uf;
+    const cached=globalThis._cmeIaCache.get(cacheKey);
+    if(cached&&Date.now()-cached.ts<86400000)return g.json(cached.data);
+    const [c1,c2]=await Promise.all([
+      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("Conselho Municipal de Educação CME "+municipio+" "+uf+" presidente telefone email"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("CME "+municipio+" "+uf+" site oficial endereço contato"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+    ]);
+    function _snipM(html,maxN){const out=[];const pts=html.split('class="result__snippet"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const s=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim();if(s&&s.length>10)out.push(s)}}return out;}
+    function _urlsM(html,maxN){const out=[];const pts=html.split('class="result__url"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const u=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').trim();if(u&&u.length>5)out.push(u)}}return out;}
+    const cmeSnips=[..._snipM(c1,6),..._snipM(c2,5)].join(" | ");
+    const cmeUrls=[..._urlsM(c1,4),..._urlsM(c2,3)].join(", ");
+    const cmeResp=await fetch("https://api.openai.com/v1/chat/completions",{
+      method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+      body:JSON.stringify({model:process.env.OPENAI_MODEL||"gpt-4o-mini",temperature:0.1,response_format:{type:"json_object"},
+        messages:[{role:"user",content:"Extraia dados do Conselho Municipal de Educação (CME) de "+municipio+"-"+uf+", Brasil. BUSCAS: "+cmeSnips+" URLS: "+cmeUrls+" Retorne JSON com os campos: presidente (nome completo ou vazio), tel, email, endereco, site (URL oficial), encontrado (true se achou dados confiaveis, false se nao). Se nao tiver certeza, encontrado deve ser false. Nao invente."}]
+      }),signal:AbortSignal.timeout(15000)
+    }).then(r=>r.json()).catch(()=>null);
+    let cmeD={};
+    try{cmeD=JSON.parse(cmeResp?.choices?.[0]?.message?.content||"{}");}catch(e){}
+    const result={ok:true,dados:cmeD,_ia:true,municipio,uf};
+    globalThis._cmeIaCache.set(cacheKey,{data:result,ts:Date.now()});
+    g.json(result);
+  }catch(e){g.json({ok:false,erro:String(e)});}
+}),
 `;
     source = source.replace(AI_MARKER, aiRoute + AI_MARKER);
-    console.log('[bootstrap] AI explicar-norma + SME IA + CEE IA + SEE IA routes applied');
+    console.log('[bootstrap] AI explicar-norma + SME IA + CEE IA + SEE IA + CME IA routes applied');
   }
 })();
 
