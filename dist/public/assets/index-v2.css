@@ -2,6 +2,6 @@
 
 
 /* divisor estilo traco de lapis */
-.organic-divider{position:relative;height:14px;margin:8px 0 18px}
-.organic-divider:before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent 0%,#8a8278 6%,#6f675d 34%,#7a7268 68%,#8a8278 94%,transparent 100%);opacity:.9;transform:rotate(-.25deg)}
-.organic-divider:after{content:"";position:absolute;left:2%;right:2%;top:8px;height:1px;border-radius:1px;background:linear-gradient(90deg,transparent 0%,rgba(95,87,78,.35) 8%,rgba(95,87,78,.22) 50%,rgba(95,87,78,.35) 92%,transparent 100%);transform:rotate(.2deg)}
+.organic-divider{position:relative;height:16px;margin:8px 0 18px}
+.organic-divider:before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;border-radius:1px;background:linear-gradient(90deg,transparent 0%,rgba(72,68,85,.28) 2%,rgba(58,55,72,.82) 12%,rgba(50,48,64,.94) 28%,rgba(46,44,60,.88) 42%,rgba(52,50,66,.96) 55%,rgba(48,46,62,.9) 68%,rgba(58,55,72,.82) 86%,rgba(72,68,85,.28) 98%,transparent 100%);transform:rotate(-.18deg);filter:blur(.35px);box-shadow:0 1px 2px rgba(50,48,70,.12),0 -0.5px 1px rgba(50,48,70,.07)}
+.organic-divider:after{content:"";position:absolute;left:1%;right:1%;top:8.5px;height:1.5px;border-radius:1px;background:linear-gradient(90deg,transparent 0%,rgba(100,98,120,.14) 5%,rgba(110,108,128,.1) 30%,rgba(105,103,124,.08) 50%,rgba(110,108,128,.1) 70%,rgba(100,98,120,.14) 95%,transparent 100%);transform:rotate(.22deg);filter:blur(.6px)}
