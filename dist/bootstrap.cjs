@@ -1259,6 +1259,70 @@ e.get("/api/cme/ia",async(A,g)=>{
     g.json(result);
   }catch(e){g.json({ok:false,erro:String(e)});}
 }),
+e.get("/api/cacs/ia",async(A,g)=>{
+  try{
+    const apiKey=process.env.OPENAI_API_KEY;
+    if(!apiKey)return g.status(503).json({ok:false});
+    const municipio=String(A.query.municipio||"").trim();
+    const uf=String(A.query.uf||"").trim().toUpperCase();
+    if(!municipio||uf.length!==2)return g.status(400).json({ok:false});
+    globalThis._cacsIaCache=globalThis._cacsIaCache||new Map();
+    const cacheKey="cacs-ia:"+municipio.toLowerCase()+":"+uf;
+    const cached=globalThis._cacsIaCache.get(cacheKey);
+    if(cached&&Date.now()-cached.ts<86400000)return g.json(cached.data);
+    const [a1,a2]=await Promise.all([
+      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("CACS FUNDEB "+municipio+" "+uf+" presidente telefone contato"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("Conselho Acompanhamento Controle Social FUNDEB "+municipio+" "+uf+" 2024 2025"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+    ]);
+    function _snipA(html,maxN){const out=[];const pts=html.split('class="result__snippet"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const s=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim();if(s&&s.length>10)out.push(s)}}return out;}
+    function _urlsA(html,maxN){const out=[];const pts=html.split('class="result__url"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const u=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').trim();if(u&&u.length>5)out.push(u)}}return out;}
+    const cacsSnips=[..._snipA(a1,6),..._snipA(a2,5)].join(" | ");
+    const cacsUrls=[..._urlsA(a1,4),..._urlsA(a2,3)].join(", ");
+    const cacsResp=await fetch("https://api.openai.com/v1/chat/completions",{
+      method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+      body:JSON.stringify({model:process.env.OPENAI_MODEL||"gpt-4o-mini",temperature:0.1,response_format:{type:"json_object"},
+        messages:[{role:"user",content:"Extraia dados do CACS-FUNDEB (Conselho de Acompanhamento e Controle Social do FUNDEB) de "+municipio+"-"+uf+", Brasil. BUSCAS: "+cacsSnips+" URLS: "+cacsUrls+" Retorne JSON com os campos: presidente (nome completo ou vazio), tel, email, endereco, site (URL oficial), encontrado (true se achou dados confiaveis, false se nao). Nao invente."}]
+      }),signal:AbortSignal.timeout(15000)
+    }).then(r=>r.json()).catch(()=>null);
+    let cacsD={};
+    try{cacsD=JSON.parse(cacsResp?.choices?.[0]?.message?.content||"{}");}catch(e){}
+    const cacsResult={ok:true,dados:cacsD,_ia:true,municipio,uf};
+    globalThis._cacsIaCache.set(cacheKey,{data:cacsResult,ts:Date.now()});
+    g.json(cacsResult);
+  }catch(e){g.json({ok:false,erro:String(e)});}
+}),
+e.get("/api/cae/ia",async(A,g)=>{
+  try{
+    const apiKey=process.env.OPENAI_API_KEY;
+    if(!apiKey)return g.status(503).json({ok:false});
+    const municipio=String(A.query.municipio||"").trim();
+    const uf=String(A.query.uf||"").trim().toUpperCase();
+    if(!municipio||uf.length!==2)return g.status(400).json({ok:false});
+    globalThis._caeIaCache=globalThis._caeIaCache||new Map();
+    const cacheKey="cae-ia:"+municipio.toLowerCase()+":"+uf;
+    const cached=globalThis._caeIaCache.get(cacheKey);
+    if(cached&&Date.now()-cached.ts<86400000)return g.json(cached.data);
+    const [e1,e2]=await Promise.all([
+      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("CAE Conselho Alimentação Escolar "+municipio+" "+uf+" presidente telefone contato"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("Conselho de Alimentação Escolar "+municipio+" "+uf+" 2024 2025 FNDE"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+    ]);
+    function _snipE(html,maxN){const out=[];const pts=html.split('class="result__snippet"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const s=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim();if(s&&s.length>10)out.push(s)}}return out;}
+    function _urlsE(html,maxN){const out=[];const pts=html.split('class="result__url"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const u=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').trim();if(u&&u.length>5)out.push(u)}}return out;}
+    const caeSnips=[..._snipE(e1,6),..._snipE(e2,5)].join(" | ");
+    const caeUrls=[..._urlsE(e1,4),..._urlsE(e2,3)].join(", ");
+    const caeResp=await fetch("https://api.openai.com/v1/chat/completions",{
+      method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+      body:JSON.stringify({model:process.env.OPENAI_MODEL||"gpt-4o-mini",temperature:0.1,response_format:{type:"json_object"},
+        messages:[{role:"user",content:"Extraia dados do CAE (Conselho de Alimentação Escolar) de "+municipio+"-"+uf+", Brasil. BUSCAS: "+caeSnips+" URLS: "+caeUrls+" Retorne JSON com os campos: presidente (nome completo ou vazio), tel, email, endereco, site (URL oficial), encontrado (true se achou dados confiaveis, false se nao). Nao invente."}]
+      }),signal:AbortSignal.timeout(15000)
+    }).then(r=>r.json()).catch(()=>null);
+    let caeD={};
+    try{caeD=JSON.parse(caeResp?.choices?.[0]?.message?.content||"{}");}catch(e){}
+    const caeResult={ok:true,dados:caeD,_ia:true,municipio,uf};
+    globalThis._caeIaCache.set(cacheKey,{data:caeResult,ts:Date.now()});
+    g.json(caeResult);
+  }catch(e){g.json({ok:false,erro:String(e)});}
+}),
 `;
     source = source.replace(AI_MARKER, aiRoute + AI_MARKER);
     console.log('[bootstrap] AI explicar-norma + SME IA + CEE IA + SEE IA + CME IA routes applied');

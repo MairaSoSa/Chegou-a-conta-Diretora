@@ -406,7 +406,7 @@ function ii() {
     return Qa && (c.uf = Qa), et && (c.tp_dependencia = et), c;
   }, [Qa, et]), { data: Xs, isLoading: Qs } = Rs(Y, gn, Go, 15), Sa = (c) => {
     ie((m) => ({ ...m, [c]: !m[c] }));
-  }, [Zt, jt] = F.useState(null), [Yt, Fa] = F.useState(false), [Xt, Qt] = F.useState(null), eo = F.useRef({}), [smInfo, setSmInfo] = F.useState(null), [smLoading, setSmLoading] = F.useState(false), [fndeComposicao, setFndeComposicao] = F.useState([]), [fndeComposicaoLoading, setFndeComposicaoLoading] = F.useState(false), [smIaLoading, setSmIaLoading] = F.useState(false), [ceeIaData, setCeeIaData] = F.useState(null), [ceeIaLoading, setCeeIaLoading] = F.useState(false), [seeIaData, setSeeIaData] = F.useState(null), [seeIaLoading, setSeeIaLoading] = F.useState(false), [cmeIaData, setCmeIaData] = F.useState(null), [cmeIaLoading, setCmeIaLoading] = F.useState(false), smReady = F.useRef(false);
+  }, [Zt, jt] = F.useState(null), [Yt, Fa] = F.useState(false), [Xt, Qt] = F.useState(null), eo = F.useRef({}), [smInfo, setSmInfo] = F.useState(null), [smLoading, setSmLoading] = F.useState(false), [fndeComposicao, setFndeComposicao] = F.useState([]), [fndeComposicaoLoading, setFndeComposicaoLoading] = F.useState(false), [smIaLoading, setSmIaLoading] = F.useState(false), [ceeIaData, setCeeIaData] = F.useState(null), [ceeIaLoading, setCeeIaLoading] = F.useState(false), [seeIaData, setSeeIaData] = F.useState(null), [seeIaLoading, setSeeIaLoading] = F.useState(false), [cmeIaData, setCmeIaData] = F.useState(null), [cmeIaLoading, setCmeIaLoading] = F.useState(false), [cacsIaData, setCacsIaData] = F.useState(null), [cacsIaLoading, setCacsIaLoading] = F.useState(false), [caeIaData, setCaeIaData] = F.useState(null), [caeIaLoading, setCaeIaLoading] = F.useState(false), smReady = F.useRef(false);
   F.useEffect(function(){ if (!H || Je || smReady.current) return; smReady.current = true; fetch("/api/escola/" + H + "/similares?ano=" + Y + "&limit=6").then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ if (d) setSmInfo(d); }).catch(function(){}); }, [H, Y, Je]);
   F.useEffect(function(){ if (!H || Je || smReady.current) return; smReady.current = true; fetch("/api/escola/" + H + "/similares?ano=" + Y + "&limit=6").then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ if (d) setSmInfo(d); }).catch(function(){}); }, [H, Y, Je]);
   F.useEffect(() => {
@@ -470,15 +470,31 @@ function ii() {
         .catch(function(){})
         .finally(function(){ setSeeIaLoading(false); });
     }
-    if (!cmeIaData?._ia && !cmeIaLoading) {
-      var _mun2 = N?.escola?.no_municipio?.trim();
-      if (_mun2) {
+    var _mun2 = N?.escola?.no_municipio?.trim();
+    if (_mun2) {
+      if (!cmeIaData?._ia && !cmeIaLoading) {
         setCmeIaLoading(true);
         fetch("/api/cme/ia?municipio=" + encodeURIComponent(_mun2) + "&uf=" + encodeURIComponent(_uf))
           .then(function(r){ return r.ok ? r.json() : null; })
           .then(function(d){ if (d && d.ok) setCmeIaData(d); })
           .catch(function(){})
           .finally(function(){ setCmeIaLoading(false); });
+      }
+      if (!cacsIaData?._ia && !cacsIaLoading) {
+        setCacsIaLoading(true);
+        fetch("/api/cacs/ia?municipio=" + encodeURIComponent(_mun2) + "&uf=" + encodeURIComponent(_uf))
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(d){ if (d && d.ok) setCacsIaData(d); })
+          .catch(function(){})
+          .finally(function(){ setCacsIaLoading(false); });
+      }
+      if (!caeIaData?._ia && !caeIaLoading) {
+        setCaeIaLoading(true);
+        fetch("/api/cae/ia?municipio=" + encodeURIComponent(_mun2) + "&uf=" + encodeURIComponent(_uf))
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(d){ if (d && d.ok) setCaeIaData(d); })
+          .catch(function(){})
+          .finally(function(){ setCaeIaLoading(false); });
       }
     }
   }, [Bt]);
@@ -983,7 +999,41 @@ out center tags 100;`, B2 = fetch("https://overpass-api.de/api/interpreter", { m
       e.jsx("a", { href: "https://www.uncme.org.br", target: "_blank", rel: "noopener noreferrer", style: { fontSize: 12, fontWeight: 700, color: "#1f6b45", background: "rgba(255,255,255,0.7)", padding: "5px 14px", borderRadius: 20, border: "1px solid #b8dfc8", textDecoration: "none" }, children: "UNCME Nacional \u2197" })
     ] })
   ] });
-})() ] }), e.jsx("p", { style: { fontSize: 10, color: "#9b7fcf", margin: 0, lineHeight: 1.4 }, children: "Fonte: dados compilados de sites oficiais dos \xF3rg\xE3os. Presid\xEAncias sujeitas a altera\xE7\xE3o. Verifique nos sites oficiais." })] }), aa === "sistemas" && e.jsx("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }, children: [{ icon: e.jsx(Na, { size: 18 }), titulo: "Painel PDDE \u2014 FNDE", desc: "Execu\xE7\xE3o financeira do PDDE por escola \u2014 PowerBI oficial do FNDE", url: "https://app.powerbi.com/view?r=eyJrIjoiMDU1ODMyMmEtNzMxNi00NGI1LWIwMTctMTc5OWEzYWMwMDY3IiwidCI6ImNmODQ1NGQzLWUwMTItNGE5ZC05NWIzLTcwYmRiNmY0NTlkNSJ9", cor: "#1f6b45", bg: "#e8f5ee", bd: "#b8dfc8" }, { icon: e.jsx(Aa, { size: 18 }), titulo: "PDDE Interativo", desc: "Elabora\xE7\xE3o do PDE Escola e gest\xE3o financeira (MEC)", url: "https://pddeinterativo.mec.gov.br", cor: "#1f6b45", bg: "#e8f5ee", bd: "#b8dfc8" }, { icon: e.jsx(It, { size: 18 }), titulo: "Balc\xE3o FNDE", desc: "Atendimento virtual do FNDE \u2014 d\xFAvidas sobre programas e repasses", url: "https://www.gov.br/fnde/pt-br/acesso-a-informacao/acoes-e-programas/acoes/balcao-fnde-1", cor: "#1f6b45", bg: "#e8f5ee", bd: "#b8dfc8" }].map((y, B2) => e.jsxs("a", { href: y.url, target: "_blank", rel: "noopener noreferrer", style: { display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 14px", borderRadius: 12, background: y.bg, border: `1.5px solid ${y.bd}`, textDecoration: "none" }, children: [e.jsx("span", { style: { flexShrink: 0, display: "flex", alignItems: "center", paddingTop: 2 }, children: y.icon }), e.jsxs("div", { children: [e.jsxs("p", { style: { fontSize: 12, fontWeight: 700, color: y.cor, margin: "0 0 2px" }, children: [y.titulo, " \u2197"] }), e.jsx("p", { style: { fontSize: 11, color: y.cor, opacity: 0.8, margin: 0, lineHeight: 1.4 }, children: y.desc })] })] }, B2)) })] });
+})() ] }), (() => {
+  const _mun3 = N?.escola?.no_municipio?.trim() || "";
+  const _btnStyle = { fontSize: 12, fontWeight: 700, color: "#1f6b45", background: "rgba(255,255,255,0.7)", padding: "5px 14px", borderRadius: 20, border: "1px solid #b8dfc8", textDecoration: "none" };
+  const _buildCard = function(label, sigla, iaData, iaLoading, googleQ) {
+    const _cd = iaData?.dados;
+    const _gUrl = "https://www.google.com/search?q=" + encodeURIComponent(googleQ + " " + _mun3 + " " + n);
+    return e.jsxs("div", { style: { borderRadius: 12, border: "1.5px solid #b8dfc8", background: "#e8f5ee", padding: "14px 16px" }, children: [
+      e.jsxs("p", { style: { fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em", color: "#1f6b45", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 5 }, children: [e.jsx(Oe, { size: 11 }), " ", label, " (", sigla, ")"] }),
+      (() => {
+        if (iaLoading) return e.jsx("p", { style: { fontSize: 11, color: "#1f6b45", margin: "0 0 10px" }, children: "Buscando dados\u2026" });
+        if (_cd && _cd.encontrado) return e.jsxs("div", { children: [
+          e.jsxs("div", { style: { background: "rgba(255,255,255,0.75)", borderRadius: 10, padding: "10px 12px", border: "1px solid #b8dfc8", display: "flex", flexDirection: "column", gap: 4, marginBottom: 10 }, children: [
+            _cd.presidente && e.jsxs(e.Fragment, { children: [e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#1f6b45", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }, children: "Presidente(a)" }), e.jsx("p", { style: { fontSize: 13, fontWeight: 700, color: "#0d3d24", margin: 0 }, children: _cd.presidente })] }),
+            _cd.tel && e.jsxs("p", { style: { fontSize: 11, color: "#1f6b45", margin: 0, display: "flex", alignItems: "center", gap: 4 }, children: [e.jsx(He, { size: 10 }), " ", _cd.tel] }),
+            _cd.email && e.jsxs("p", { style: { fontSize: 11, color: "#1f6b45", margin: 0, display: "flex", alignItems: "center", gap: 4 }, children: [e.jsx(ra, { size: 10 }), " ", e.jsx("a", { href: "mailto:" + _cd.email, style: { color: "#1f6b45" }, children: _cd.email })] }),
+            _cd.endereco && e.jsxs("p", { style: { fontSize: 11, color: "#1f6b45", margin: 0, display: "flex", alignItems: "center", gap: 4 }, children: [e.jsx(be, { size: 10 }), " ", _cd.endereco] })
+          ] }),
+          e.jsxs("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: [
+            _cd.site && e.jsx("a", { href: _cd.site, target: "_blank", rel: "noopener noreferrer", style: _btnStyle, children: "Site do " + sigla + " \u2197" }),
+            e.jsx("a", { href: _gUrl, target: "_blank", rel: "noopener noreferrer", style: _btnStyle, children: "Buscar no Google \u2197" })
+          ] })
+        ] });
+        return e.jsxs("div", { children: [
+          e.jsx("p", { style: { fontSize: 11, color: "#1f6b45", margin: "0 0 10px", lineHeight: 1.5 }, children: sigla === "CACS-FUNDEB" ? "Fiscaliza o uso dos recursos do FUNDEB no munic\xEDpio \u2014 acompanha aplica\xE7\xE3o, presta\xE7\xE3o de contas e elabora parecer sobre o cumprimento da lei." : "Fiscaliza a aplica\xE7\xE3o dos recursos do PNAE (Programa Nacional de Alimenta\xE7\xE3o Escolar) no munic\xEDpio." }),
+          e.jsx("a", { href: _gUrl, target: "_blank", rel: "noopener noreferrer", style: _btnStyle, children: "Buscar " + sigla + " no Google \u2197" })
+        ] });
+      })()
+    ] });
+  };
+  return e.jsxs(e.Fragment, { children: [
+    _buildCard("Conselho de Acompanhamento e Controle Social do FUNDEB", "CACS-FUNDEB", cacsIaData, cacsIaLoading, "CACS FUNDEB"),
+    _buildCard("Conselho de Alimenta\xE7\xE3o Escolar", "CAE", caeIaData, caeIaLoading, "Conselho Alimenta\xE7\xE3o Escolar CAE")
+  ] });
+})(),
+e.jsx("p", { style: { fontSize: 10, color: "#9b7fcf", margin: 0, lineHeight: 1.4 }, children: "Fonte: dados compilados de sites oficiais dos \xF3rg\xE3os. Presid\xEAncias sujeitas a altera\xE7\xE3o. Verifique nos sites oficiais." })] }), aa === "sistemas" && e.jsx("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }, children: [{ icon: e.jsx(Na, { size: 18 }), titulo: "Painel PDDE \u2014 FNDE", desc: "Execu\xE7\xE3o financeira do PDDE por escola \u2014 PowerBI oficial do FNDE", url: "https://app.powerbi.com/view?r=eyJrIjoiMDU1ODMyMmEtNzMxNi00NGI1LWIwMTctMTc5OWEzYWMwMDY3IiwidCI6ImNmODQ1NGQzLWUwMTItNGE5ZC05NWIzLTcwYmRiNmY0NTlkNSJ9", cor: "#1f6b45", bg: "#e8f5ee", bd: "#b8dfc8" }, { icon: e.jsx(Aa, { size: 18 }), titulo: "PDDE Interativo", desc: "Elabora\xE7\xE3o do PDE Escola e gest\xE3o financeira (MEC)", url: "https://pddeinterativo.mec.gov.br", cor: "#1f6b45", bg: "#e8f5ee", bd: "#b8dfc8" }, { icon: e.jsx(It, { size: 18 }), titulo: "Balc\xE3o FNDE", desc: "Atendimento virtual do FNDE \u2014 d\xFAvidas sobre programas e repasses", url: "https://www.gov.br/fnde/pt-br/acesso-a-informacao/acoes-e-programas/acoes/balcao-fnde-1", cor: "#1f6b45", bg: "#e8f5ee", bd: "#b8dfc8" }].map((y, B2) => e.jsxs("a", { href: y.url, target: "_blank", rel: "noopener noreferrer", style: { display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 14px", borderRadius: 12, background: y.bg, border: `1.5px solid ${y.bd}`, textDecoration: "none" }, children: [e.jsx("span", { style: { flexShrink: 0, display: "flex", alignItems: "center", paddingTop: 2 }, children: y.icon }), e.jsxs("div", { children: [e.jsxs("p", { style: { fontSize: 12, fontWeight: 700, color: y.cor, margin: "0 0 2px" }, children: [y.titulo, " \u2197"] }), e.jsx("p", { style: { fontSize: 11, color: y.cor, opacity: 0.8, margin: 0, lineHeight: 1.4 }, children: y.desc })] })] }, B2)) })] });
       })()] })] });
     })(), e.jsxs("div", { style: { display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap", marginTop: "22px" }, children: [(() => {
       const a = ["theme-blue", "theme-yellow", "theme-green", "theme-purple", "theme-pink", "theme-teal"], t = !!Le && !!Ve && Ve < re, s = [{ label: `Matr\xEDculas ${re ?? ""}`, val: G.qt_mat_bas || 0, prev: t ? Le?.qt_mat_bas || 0 : null, icon: e.jsxs("svg", { width: "22", height: "22", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", children: [e.jsx("polygon", { points: "12 3 2 8 12 13 22 8 12 3" }), e.jsx("polyline", { points: "6.5 10.5 6.5 17 12 20 17.5 17 17.5 10.5" }), e.jsx("line", { x1: "2", y1: "8", x2: "2", y2: "14" })] }) }, { label: `Docentes ${re}`, val: G.qt_doc_bas || G.qt_docentes || 0, prev: t ? Le && (Le.qt_doc_bas || Le.qt_docentes) || 0 : null, icon: e.jsxs("svg", { width: "22", height: "22", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", children: [e.jsx("rect", { x: "2", y: "3", width: "20", height: "14", rx: "2" }), e.jsx("line", { x1: "2", y1: "20", x2: "22", y2: "20" }), e.jsx("line", { x1: "8", y1: "17", x2: "7", y2: "20" }), e.jsx("line", { x1: "16", y1: "17", x2: "17", y2: "20" }), e.jsx("line", { x1: "8", y1: "8", x2: "16", y2: "8" }), e.jsx("line", { x1: "8", y1: "11", x2: "13", y2: "11" })] }) }, { label: `Turmas ${re}`, val: G.qt_tur_bas || G.qt_turmas || 0, prev: t ? Le && (Le.qt_tur_bas || Le.qt_turmas) || 0 : null, icon: e.jsxs("svg", { width: "22", height: "22", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", children: [e.jsx("circle", { cx: "9", cy: "7", r: "3" }), e.jsx("circle", { cx: "17", cy: "8", r: "2.5" }), e.jsx("path", { d: "M2 20c0-3.9 3.1-7 7-7h5c3.9 0 7 3.1 7 7" })] }) }, { label: "Status PDDE", ...(() => {
