@@ -1054,35 +1054,98 @@ e.get("/api/secretaria-municipal/ia",async(A,g)=>{
     const cached=globalThis._smeIaCache.get(cacheKey);
     if(cached&&Date.now()-cached.ts<86400000)return g.json(cached.data);
     const model=process.env.OPENAI_MODEL||"gpt-4o-mini";
-    // Step 1: Search DuckDuckGo for real data about this SME
-    let snippetText="";
-    try{
-      const q=encodeURIComponent("Secretaria Municipal de Educa\xE7\xE3o "+municipio+" "+uf+" respons\xE1vel secret\xE1ria telefone endere\xE7o");
-      const ddgResp=await fetch("https://html.duckduckgo.com/html/?q="+q,{
-        headers:{"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0","Accept":"text/html"},
-        signal:AbortSignal.timeout(10000)
-      });
-      if(ddgResp.ok){
-        const html=await ddgResp.text();
-        const snippets=[];
-        const parts=html.split('class="result__snippet"');
-        for(let i2=1;i2<parts.length&&snippets.length<8;i2++){
-          const st=parts[i2].indexOf('>');
-          const en=parts[i2].indexOf('</a>');
-          if(st>=0&&en>st){
-            const s=parts[i2].substring(st+1,en).replace(/<[^>]+>/g,"").replace(/&amp;/g,"&").replace(/&nbsp;/g," ").replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();
-            if(s&&s.length>15)snippets.push(s);
-          }
+    // ── helpers (no regex literals to avoid template-literal escape issues) ──
+    function _snip(html,maxN){
+      const out=[];
+      const pts=html.split('class="result__snippet"');
+      for(let ii=1;ii<pts.length&&out.length<maxN;ii++){
+        const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');
+        if(st>=0&&en>st){
+          const s=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();
+          if(s&&s.length>15)out.push(s);
         }
-        if(snippets.length>0)snippetText=snippets.join("\\n\\n");
       }
-    }catch(_e){console.warn("[sme-ia] ddg search failed:",_e.message);}
-    // Step 2: Ask OpenAI to extract structured data from the snippets (or from its knowledge)
-    const systemPrompt="Voc\xEA \xE9 um assistente especializado em extrair dados de contato de secretarias municipais de educa\xE7\xE3o brasileiras. Responda APENAS com JSON v\xE1lido, sem markdown, sem explica\xE7\xF5es.";
-    const jsonSchema='\\n\\nRetorne APENAS este JSON (sem markdown, sem texto extra):\\n{\\n  "nome": "nome da secretaria",\\n  "titular": "nome completo do(a) secret\xE1rio(a)",\\n  "tel": "telefone (formato (XX) XXXXX-XXXX)",\\n  "email": "e-mail institucional ou de contato",\\n  "foco": "endere\xE7o completo com CEP",\\n  "horario": "hor\xE1rio de atendimento",\\n  "site": "URL do site oficial",\\n  "paginaFonte": "URL de origem dos dados"\\n}\\n\\nUse string vazia "" para campos n\xE3o encontrados. N\xE3o invente dados.';
+      return out;
+    }
+    function _urls(html,maxN){
+      const out=[];
+      const pts=html.split('class="result__url"');
+      for(let ii=1;ii<pts.length&&out.length<maxN;ii++){
+        const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');
+        if(st>=0&&en>st){
+          const u=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').trim();
+          if(u&&u.length>5)out.push(u);
+        }
+      }
+      return out;
+    }
+    function _emails(txt){
+      const found=[];
+      const pts=txt.split('@');
+      for(let ii=1;ii<pts.length;ii++){
+        const bef=pts[ii-1],aft=pts[ii];
+        let loc='';
+        for(let j=bef.length-1;j>=0&&j>=bef.length-64;j--){const c=bef[j];if((c>='a'&&c<='z')||(c>='A'&&c<='Z')||(c>='0'&&c<='9')||c==='.'||c==='_'||c==='-'||c==='+'){loc=c+loc;}else break;}
+        let dom='',dot=false;
+        for(let j=0;j<aft.length&&j<64;j++){const c=aft[j];if((c>='a'&&c<='z')||(c>='A'&&c<='Z')||(c>='0'&&c<='9')||c==='-'||c==='.'){if(c==='.')dot=true;dom+=c;}else break;}
+        if(loc.length>=2&&dom.length>=4&&dot){const em=loc+'@'+dom;if(!found.includes(em))found.push(em);}
+      }
+      return found;
+    }
+    function _cleanHtml(h){
+      return h.replace(new RegExp('<script[^>]*>[\\s\\S]*?<\\/script>','gi'),' ')
+               .replace(new RegExp('<style[^>]*>[\\s\\S]*?<\\/style>','gi'),' ')
+               .replace(new RegExp('<[^>]+>','g'),' ')
+               .replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/\\s+/g,' ');
+    }
+    // ── Step 1: two DDG searches in parallel ─────────────────────────────────
+    const UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36';
+    const q1=encodeURIComponent("Secretaria Municipal de Educa\xE7\xE3o "+municipio+" "+uf+" respons\xE1vel secret\xE1rio email telefone endere\xE7o");
+    const q2=encodeURIComponent("SEMED "+municipio+" "+uf+" secretar email contato site prefeitura");
+    const [ddgR1,ddgR2]=await Promise.allSettled([
+      fetch("https://html.duckduckgo.com/html/?q="+q1,{headers:{"User-Agent":UA,"Accept":"text/html"},signal:AbortSignal.timeout(10000)}),
+      fetch("https://html.duckduckgo.com/html/?q="+q2,{headers:{"User-Agent":UA,"Accept":"text/html"},signal:AbortSignal.timeout(10000)})
+    ]);
+    let allSnips=[],allEmails=[],siteUrl="";
+    for(const r of [ddgR1,ddgR2]){
+      if(r.status!=="fulfilled"||!r.value.ok)continue;
+      const html=await r.value.text();
+      allSnips=[...allSnips,..._snip(html,6)];
+      allEmails=[...allEmails,..._emails(html)];
+      if(!siteUrl){const us=_urls(html,5);const pref=us.find(u=>u.includes('gov.br')||u.includes('prefeitura')||u.toLowerCase().includes(municipio.toLowerCase().substring(0,5)));if(pref)siteUrl=pref;}
+    }
+    // deduplicate snippets
+    const seen=new Set();
+    allSnips=allSnips.filter(s=>{if(seen.has(s))return false;seen.add(s);return true;}).slice(0,10);
+    allEmails=[...new Set(allEmails)].filter(e=>e.includes('.')).slice(0,5);
+    // ── Step 2: try to scrape prefeitura/SEMED page ───────────────────────────
+    let prefText="";
+    const smeSlug=municipio.toLowerCase().replace(/\s+/g,'').replace(new RegExp('[^a-z0-9]','g'),'');
+    const ufL=uf.toLowerCase();
+    const candidates=[];
+    if(siteUrl){const base=(siteUrl.startsWith('http')?siteUrl:'https://'+siteUrl).replace(/\\/+$/,'');candidates.push(base+'/secretaria-municipal-de-educacao/',base+'/semed/',base+'/educacao/');}
+    candidates.push('https://'+smeSlug+'.'+ufL+'.gov.br/secretaria-municipal-de-educacao/','https://www.'+smeSlug+'.'+ufL+'.gov.br/semed/');
+    for(const url of candidates.slice(0,5)){
+      if(prefText)break;
+      try{
+        const pr=await fetch(url,{headers:{"User-Agent":UA},signal:AbortSignal.timeout(6000)});
+        if(!pr.ok)continue;
+        const ph=await pr.text();
+        const pt=_cleanHtml(ph);
+        if(pt.length>200){prefText=pt.substring(0,3000);allEmails=[...new Set([...allEmails,..._emails(ph)])].slice(0,8);break;}
+      }catch(_){}
+    }
+    // ── Step 3: build context and call OpenAI ────────────────────────────────
+    const ctxParts=[];
+    if(allSnips.length>0)ctxParts.push("=== TRECHOS DA WEB ===\\n"+allSnips.join("\\n\\n"));
+    if(allEmails.length>0)ctxParts.push("=== E-MAILS ENCONTRADOS ===\\n"+allEmails.join(", "));
+    if(prefText)ctxParts.push("=== CONTE\xDADO DO SITE DA PREFEITURA ===\\n"+prefText.substring(0,1500));
+    const snippetText=ctxParts.join("\\n\\n");
+    const systemPrompt="Voc\xEA extrai dados de contato de secretarias municipais de educa\xE7\xE3o brasileiras a partir de trechos da web. Alguns trechos podem ter OCR ou espa\xE7os extras — corrija-os. Responda APENAS com JSON v\xE1lido.";
+    const jsonSchema="\\n\\nRetorne APENAS este JSON:\\n{\\n  \\"nome\\": \\"nome da secretaria\\",\\n  \\"titular\\": \\"nome completo do(a) secret\xE1rio(a) — corrija OCR se necess\xE1rio\\",\\n  \\"tel\\": \\"telefone com DDD (formato (XX) XXXXX-XXXX)\\",\\n  \\"email\\": \\"e-mail — prefira institucional; corrija espa\xE7os de OCR (ex: semed b ujaru@gmail → semedbujaru@gmail.com)\\",\\n  \\"foco\\": \\"endere\xE7o completo com CEP\\",\\n  \\"horario\\": \\"hor\xE1rio de atendimento\\",\\n  \\"site\\": \\"URL do site oficial\\",\\n  \\"paginaFonte\\": \\"URL de onde os dados foram encontrados\\"\\n}\\n\\nUse \\"\\" para campos n\xE3o encontrados. N\xE3o invente.";
     const userMsg=snippetText
-      ? "Com base nestes trechos encontrados na web sobre a Secretaria Municipal de Educa\xE7\xE3o de "+municipio+" - "+uf+":\\n\\n"+snippetText+jsonSchema
-      : "Quais s\xE3o os dados de contato da Secretaria Municipal de Educa\xE7\xE3o de "+municipio+" - "+uf+", Brasil?"+jsonSchema;
+      ? "Dados encontrados sobre a SME de "+municipio+" - "+uf+":\\n\\n"+snippetText+jsonSchema
+      : "Informe os dados de contato da Secretaria Municipal de Educa\xE7\xE3o de "+municipio+" - "+uf+", Brasil."+jsonSchema;
     const resp=await fetch("https://api.openai.com/v1/chat/completions",{
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
