@@ -1042,9 +1042,39 @@ Retorne APENAS o JSON no formato especificado, sem markdown, sem backticks, sem 
     g.json(result);
   }catch(E){console.error("[ai-explicar]",E.message);g.status(500).json({ok:false,message:E.message})}
 }),
+e.get("/api/secretaria-municipal/ia",async(A,g)=>{
+  try{
+    const apiKey=process.env.OPENAI_API_KEY;
+    if(!apiKey)return g.status(503).json({ok:false,message:"Chave de IA n\xE3o configurada"});
+    const municipio=String(A.query.municipio||"").trim();
+    const uf=String(A.query.uf||"").trim().toUpperCase();
+    if(!municipio||uf.length!==2)return g.status(400).json({ok:false,message:"Munic\xEDpio e UF obrigat\xF3rios"});
+    globalThis._smeIaCache=globalThis._smeIaCache||new Map();
+    const cacheKey="sme-ia:"+municipio.toLowerCase()+":"+uf;
+    const cached=globalThis._smeIaCache.get(cacheKey);
+    if(cached&&Date.now()-cached.ts<86400000)return g.json(cached.data);
+    const model=process.env.OPENAI_MODEL||"gpt-4o-mini";
+    const systemPrompt="Voc\xEA \xE9 um especialista em gest\xE3o p\xFAblica municipal brasileira. Forne\xE7a dados reais e precisos sobre secretarias municipais de educa\xE7\xE3o. Responda APENAS com JSON v\xE1lido, sem markdown, sem explica\xE7\xF5es.";
+    const userMsg="Forne\xE7a os dados de contato da Secretaria Municipal de Educa\xE7\xE3o de "+municipio+" - "+uf+", Brasil.\\n\\nRetorne APENAS este JSON (sem markdown, sem texto extra):\\n{\\n  \\"nome\\": \\"nome completo da secretaria\\",\\n  \\"titular\\": \\"nome do(a) secret\xE1rio(a) municipal de educa\xE7\xE3o\\",\\n  \\"tel\\": \\"telefone principal (formato (XX) XXXX-XXXX)\\",\\n  \\"email\\": \\"e-mail institucional\\",\\n  \\"foco\\": \\"endere\xE7o completo com CEP se poss\xEDvel\\",\\n  \\"horario\\": \\"hor\xE1rio de atendimento ao p\xFAblico\\",\\n  \\"site\\": \\"URL do site oficial da prefeitura ou secretaria\\",\\n  \\"paginaFonte\\": \\"URL onde estes dados podem ser verificados\\"\\n}\\n\\nSe n\xE3o souber um campo com certeza, use string vazia \\"\\". N\xE3o invente dados. Use apenas informa\xE7\xF5es que voc\xEA tem certeza.";
+    const resp=await fetch("https://api.openai.com/v1/chat/completions",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+      body:JSON.stringify({model,messages:[{role:"system",content:systemPrompt},{role:"user",content:userMsg}],temperature:0.3,max_tokens:600}),
+      signal:AbortSignal.timeout(30000)
+    });
+    if(!resp.ok){const err=await resp.text();throw new Error("OpenAI error: "+resp.status+" "+err.substring(0,200));}
+    const data=await resp.json();
+    const raw=data.choices?.[0]?.message?.content||"{}";
+    let parsed2;
+    try{const cleaned2=raw.replace(/^\`\`\`json?\\n?/,"").replace(/\\n?\`\`\`$/,"").trim();parsed2=JSON.parse(cleaned2);}catch{parsed2={};}
+    const result2={ok:true,dados:{sigla:"SME",nome:parsed2.nome||("Secretaria Municipal de Educa\xE7\xE3o de "+municipio),titular:parsed2.titular||"",tel:parsed2.tel||"",email:parsed2.email||"",foco:parsed2.foco||"",horario:parsed2.horario||"",site:parsed2.site||"",paginaFonte:parsed2.paginaFonte||"",maps:""},_ia:true};
+    globalThis._smeIaCache.set(cacheKey,{ts:Date.now(),data:result2});
+    g.json(result2);
+  }catch(E){console.error("[sme-ia]",E.message);g.status(500).json({ok:false,message:E.message})}
+}),
 `;
     source = source.replace(AI_MARKER, aiRoute + AI_MARKER);
-    console.log('[bootstrap] AI explicar-norma route applied');
+    console.log('[bootstrap] AI explicar-norma + SME IA routes applied');
   }
 })();
 
