@@ -1238,23 +1238,31 @@ e.get("/api/cme/ia",async(A,g)=>{
     const cacheKey="cme-ia:"+municipio.toLowerCase()+":"+uf;
     const cached=globalThis._cmeIaCache.get(cacheKey);
     if(cached&&Date.now()-cached.ts<86400000)return g.json(cached.data);
-    const [c1,c2]=await Promise.all([
-      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("Conselho Municipal de Educação CME "+municipio+" "+uf+" presidente telefone email"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
-      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("CME "+municipio+" "+uf+" site oficial endereço contato"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+    const _hdrs={"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36","Accept-Language":"pt-BR,pt;q=0.9","Accept":"text/html,application/xhtml+xml,*/*;q=0.8"};
+    const _ddg=q=>fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent(q),{headers:_hdrs,signal:AbortSignal.timeout(9000)}).then(r=>r.text()).catch(()=>"");
+    const [d1,d2,d3]=await Promise.all([
+      _ddg("CME Conselho Municipal Educação "+municipio+" "+uf+" presidente presidenta 2024 2025"),
+      _ddg("CME "+municipio+" "+uf+" composição portaria diario oficial presidente"),
+      _ddg("site:*.gov.br CME "+municipio+" "+uf+" Educação")
     ]);
-    function _snipM(html,maxN){const out=[];const pts=html.split('class="result__snippet"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const s=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim();if(s&&s.length>10)out.push(s)}}return out;}
-    function _urlsM(html,maxN){const out=[];const pts=html.split('class="result__url"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const u=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').trim();if(u&&u.length>5)out.push(u)}}return out;}
-    const cmeSnips=[..._snipM(c1,6),..._snipM(c2,5)].join(" | ");
-    const cmeUrls=[..._urlsM(c1,4),..._urlsM(c2,3)].join(", ");
-    const cmeResp=await fetch("https://api.openai.com/v1/chat/completions",{
+    function _snip(h,n){const o=[];const p=h.split('class="result__snippet"');for(let i=1;i<p.length&&o.length<n;i++){const s=p[i].indexOf('>'),e=p[i].indexOf('</a>');if(s>=0&&e>s){const t=p[i].substring(s+1,e).replace(new RegExp('<[^>]+>','g'),'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim();if(t&&t.length>10)o.push(t)}}return o;}
+    function _urls(h,n){const o=[];const p=h.split('class="result__url"');for(let i=1;i<p.length&&o.length<n;i++){const s=p[i].indexOf('>'),e=p[i].indexOf('</a>');if(s>=0&&e>s){const u=p[i].substring(s+1,e).replace(new RegExp('<[^>]+>','g'),'').trim();if(u&&u.length>5)o.push(u)}}return o;}
+    function _href(h,n){const o=[];const p=h.split('class="result__a"');for(let i=1;i<p.length&&o.length<n;i++){const m=p[i].match(/href="([^"]+)"/);if(m&&m[1]&&!m[1].includes('duckduckgo'))o.push(m[1]);}return o;}
+    const snips=[..._snip(d1,5),..._snip(d2,4),..._snip(d3,3)].join(" | ");
+    const topUrls=[..._href(d1,2),..._href(d2,1)].filter(u=>u.startsWith('http'));
+    const pageTexts=await Promise.all(topUrls.slice(0,2).map(u=>fetch(u,{headers:_hdrs,signal:AbortSignal.timeout(7000)}).then(r=>r.ok?r.text():"").catch(()=>"")));
+    function _clean(h){return h.replace(new RegExp('<style[^>]*>[\\s\\S]*?</style>','gi'),'').replace(new RegExp('<script[^>]*>[\\s\\S]*?</script>','gi'),'').replace(new RegExp('<[^>]+>','g'),' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/\\s+/g,' ').trim().substring(0,2500);}
+    const pageContent=pageTexts.map(_clean).filter(t=>t.length>50).join(" ||| ").substring(0,4000);
+    const urls=[..._urls(d1,3),..._urls(d2,2)].join(", ");
+    const resp=await fetch("https://api.openai.com/v1/chat/completions",{
       method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
       body:JSON.stringify({model:process.env.OPENAI_MODEL||"gpt-4o-mini",temperature:0.1,response_format:{type:"json_object"},
-        messages:[{role:"user",content:"Extraia dados do Conselho Municipal de Educação (CME) de "+municipio+"-"+uf+", Brasil. BUSCAS: "+cmeSnips+" URLS: "+cmeUrls+" Retorne JSON com os campos: presidente (nome completo ou vazio), tel, email, endereco, site (URL oficial), encontrado (true se achou dados confiaveis, false se nao). Se nao tiver certeza, encontrado deve ser false. Nao invente."}]
-      }),signal:AbortSignal.timeout(15000)
+        messages:[{role:"system",content:"Voce extrai dados de conselhos municipais de educacao do Brasil a partir de textos de paginas web. Seja preciso: so retorne presidente se encontrar nome completo explicitamente mencionado como presidente ou presidenta do CME. Nunca invente."},{role:"user",content:"Extraia dados do CME (Conselho Municipal de Educacao) de "+municipio+"-"+uf+". TRECHOS DE BUSCA: "+snips+" CONTEUDO DAS PAGINAS: "+pageContent+" URLS ENCONTRADAS: "+urls+". Retorne JSON com: presidente (nome completo de quem preside o CME, ou vazio), tel, email, endereco, site (URL do CME), encontrado (true so se achou ao menos presidente ou contato oficial confiaveis)."}]
+      }),signal:AbortSignal.timeout(20000)
     }).then(r=>r.json()).catch(()=>null);
-    let cmeD={};
-    try{cmeD=JSON.parse(cmeResp?.choices?.[0]?.message?.content||"{}");}catch(e){}
-    const result={ok:true,dados:cmeD,_ia:true,municipio,uf};
+    let dados={};
+    try{dados=JSON.parse(resp?.choices?.[0]?.message?.content||"{}");}catch(e){}
+    const result={ok:true,dados,_ia:true,municipio,uf};
     globalThis._cmeIaCache.set(cacheKey,{data:result,ts:Date.now()});
     g.json(result);
   }catch(e){g.json({ok:false,erro:String(e)});}
@@ -1270,23 +1278,31 @@ e.get("/api/cacs/ia",async(A,g)=>{
     const cacheKey="cacs-ia:"+municipio.toLowerCase()+":"+uf;
     const cached=globalThis._cacsIaCache.get(cacheKey);
     if(cached&&Date.now()-cached.ts<86400000)return g.json(cached.data);
-    const [a1,a2]=await Promise.all([
-      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("CACS FUNDEB "+municipio+" "+uf+" presidente telefone contato"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
-      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("Conselho Acompanhamento Controle Social FUNDEB "+municipio+" "+uf+" 2024 2025"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+    const _hdrs2={"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36","Accept-Language":"pt-BR,pt;q=0.9","Accept":"text/html,application/xhtml+xml,*/*;q=0.8"};
+    const _ddg2=q=>fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent(q),{headers:_hdrs2,signal:AbortSignal.timeout(9000)}).then(r=>r.text()).catch(()=>"");
+    const [a1,a2,a3]=await Promise.all([
+      _ddg2("CACS FUNDEB "+municipio+" "+uf+" presidente presidenta composição 2024 2025"),
+      _ddg2("CACS-FUNDEB "+municipio+" "+uf+" portaria diario oficial composição"),
+      _ddg2("site:*.gov.br CACS FUNDEB "+municipio+" "+uf)
     ]);
-    function _snipA(html,maxN){const out=[];const pts=html.split('class="result__snippet"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const s=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim();if(s&&s.length>10)out.push(s)}}return out;}
-    function _urlsA(html,maxN){const out=[];const pts=html.split('class="result__url"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const u=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').trim();if(u&&u.length>5)out.push(u)}}return out;}
-    const cacsSnips=[..._snipA(a1,6),..._snipA(a2,5)].join(" | ");
-    const cacsUrls=[..._urlsA(a1,4),..._urlsA(a2,3)].join(", ");
-    const cacsResp=await fetch("https://api.openai.com/v1/chat/completions",{
+    function _snipA(h,n){const o=[];const p=h.split('class="result__snippet"');for(let i=1;i<p.length&&o.length<n;i++){const s=p[i].indexOf('>'),e=p[i].indexOf('</a>');if(s>=0&&e>s){const t=p[i].substring(s+1,e).replace(new RegExp('<[^>]+>','g'),'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim();if(t&&t.length>10)o.push(t)}}return o;}
+    function _urlsA(h,n){const o=[];const p=h.split('class="result__url"');for(let i=1;i<p.length&&o.length<n;i++){const s=p[i].indexOf('>'),e=p[i].indexOf('</a>');if(s>=0&&e>s){const u=p[i].substring(s+1,e).replace(new RegExp('<[^>]+>','g'),'').trim();if(u&&u.length>5)o.push(u)}}return o;}
+    function _hrefA(h,n){const o=[];const p=h.split('class="result__a"');for(let i=1;i<p.length&&o.length<n;i++){const m=p[i].match(/href="([^"]+)"/);if(m&&m[1]&&!m[1].includes('duckduckgo'))o.push(m[1]);}return o;}
+    const snipsA=[..._snipA(a1,5),..._snipA(a2,4),..._snipA(a3,3)].join(" | ");
+    const topUrlsA=[..._hrefA(a1,2),..._hrefA(a2,1)].filter(u=>u.startsWith('http'));
+    const pageTextsA=await Promise.all(topUrlsA.slice(0,2).map(u=>fetch(u,{headers:_hdrs2,signal:AbortSignal.timeout(7000)}).then(r=>r.ok?r.text():"").catch(()=>"")));
+    function _cleanA(h){return h.replace(new RegExp('<style[^>]*>[\\s\\S]*?</style>','gi'),'').replace(new RegExp('<script[^>]*>[\\s\\S]*?</script>','gi'),'').replace(new RegExp('<[^>]+>','g'),' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/\\s+/g,' ').trim().substring(0,2500);}
+    const pageContentA=pageTextsA.map(_cleanA).filter(t=>t.length>50).join(" ||| ").substring(0,4000);
+    const urlsA=[..._urlsA(a1,3),..._urlsA(a2,2)].join(", ");
+    const respA=await fetch("https://api.openai.com/v1/chat/completions",{
       method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
       body:JSON.stringify({model:process.env.OPENAI_MODEL||"gpt-4o-mini",temperature:0.1,response_format:{type:"json_object"},
-        messages:[{role:"user",content:"Extraia dados do CACS-FUNDEB (Conselho de Acompanhamento e Controle Social do FUNDEB) de "+municipio+"-"+uf+", Brasil. BUSCAS: "+cacsSnips+" URLS: "+cacsUrls+" Retorne JSON com os campos: presidente (nome completo ou vazio), tel, email, endereco, site (URL oficial), encontrado (true se achou dados confiaveis, false se nao). Nao invente."}]
-      }),signal:AbortSignal.timeout(15000)
+        messages:[{role:"system",content:"Voce extrai dados do CACS-FUNDEB (Conselho de Acompanhamento e Controle Social do FUNDEB) de municipios brasileiros. So retorne presidente se encontrar nome completo explicitamente mencionado. Nunca invente."},{role:"user",content:"Extraia dados do CACS-FUNDEB de "+municipio+"-"+uf+". TRECHOS DE BUSCA: "+snipsA+" CONTEUDO DAS PAGINAS: "+pageContentA+" URLS ENCONTRADAS: "+urlsA+". Retorne JSON com: presidente (nome completo de quem preside o CACS-FUNDEB, ou vazio), tel, email, endereco, site, encontrado (true so se achou ao menos presidente ou contato oficial confiaveis)."}]
+      }),signal:AbortSignal.timeout(20000)
     }).then(r=>r.json()).catch(()=>null);
-    let cacsD={};
-    try{cacsD=JSON.parse(cacsResp?.choices?.[0]?.message?.content||"{}");}catch(e){}
-    const cacsResult={ok:true,dados:cacsD,_ia:true,municipio,uf};
+    let dadosA={};
+    try{dadosA=JSON.parse(respA?.choices?.[0]?.message?.content||"{}");}catch(e){}
+    const cacsResult={ok:true,dados:dadosA,_ia:true,municipio,uf};
     globalThis._cacsIaCache.set(cacheKey,{data:cacsResult,ts:Date.now()});
     g.json(cacsResult);
   }catch(e){g.json({ok:false,erro:String(e)});}
@@ -1302,23 +1318,31 @@ e.get("/api/cae/ia",async(A,g)=>{
     const cacheKey="cae-ia:"+municipio.toLowerCase()+":"+uf;
     const cached=globalThis._caeIaCache.get(cacheKey);
     if(cached&&Date.now()-cached.ts<86400000)return g.json(cached.data);
-    const [e1,e2]=await Promise.all([
-      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("CAE Conselho Alimentação Escolar "+municipio+" "+uf+" presidente telefone contato"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
-      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("Conselho de Alimentação Escolar "+municipio+" "+uf+" 2024 2025 FNDE"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+    const _hdrs3={"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36","Accept-Language":"pt-BR,pt;q=0.9","Accept":"text/html,application/xhtml+xml,*/*;q=0.8"};
+    const _ddg3=q=>fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent(q),{headers:_hdrs3,signal:AbortSignal.timeout(9000)}).then(r=>r.text()).catch(()=>"");
+    const [e1,e2,e3]=await Promise.all([
+      _ddg3("CAE Conselho Alimentação Escolar "+municipio+" "+uf+" presidente presidenta composição 2024 2025"),
+      _ddg3("CAE PNAE "+municipio+" "+uf+" portaria diario oficial presidente composição"),
+      _ddg3("site:*.gov.br CAE alimentação escolar "+municipio+" "+uf)
     ]);
-    function _snipE(html,maxN){const out=[];const pts=html.split('class="result__snippet"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const s=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim();if(s&&s.length>10)out.push(s)}}return out;}
-    function _urlsE(html,maxN){const out=[];const pts=html.split('class="result__url"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const u=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').trim();if(u&&u.length>5)out.push(u)}}return out;}
-    const caeSnips=[..._snipE(e1,6),..._snipE(e2,5)].join(" | ");
-    const caeUrls=[..._urlsE(e1,4),..._urlsE(e2,3)].join(", ");
-    const caeResp=await fetch("https://api.openai.com/v1/chat/completions",{
+    function _snipE(h,n){const o=[];const p=h.split('class="result__snippet"');for(let i=1;i<p.length&&o.length<n;i++){const s=p[i].indexOf('>'),e=p[i].indexOf('</a>');if(s>=0&&e>s){const t=p[i].substring(s+1,e).replace(new RegExp('<[^>]+>','g'),'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim();if(t&&t.length>10)o.push(t)}}return o;}
+    function _urlsE(h,n){const o=[];const p=h.split('class="result__url"');for(let i=1;i<p.length&&o.length<n;i++){const s=p[i].indexOf('>'),e=p[i].indexOf('</a>');if(s>=0&&e>s){const u=p[i].substring(s+1,e).replace(new RegExp('<[^>]+>','g'),'').trim();if(u&&u.length>5)o.push(u)}}return o;}
+    function _hrefE(h,n){const o=[];const p=h.split('class="result__a"');for(let i=1;i<p.length&&o.length<n;i++){const m=p[i].match(/href="([^"]+)"/);if(m&&m[1]&&!m[1].includes('duckduckgo'))o.push(m[1]);}return o;}
+    const snipsE=[..._snipE(e1,5),..._snipE(e2,4),..._snipE(e3,3)].join(" | ");
+    const topUrlsE=[..._hrefE(e1,2),..._hrefE(e2,1)].filter(u=>u.startsWith('http'));
+    const pageTextsE=await Promise.all(topUrlsE.slice(0,2).map(u=>fetch(u,{headers:_hdrs3,signal:AbortSignal.timeout(7000)}).then(r=>r.ok?r.text():"").catch(()=>"")));
+    function _cleanE(h){return h.replace(new RegExp('<style[^>]*>[\\s\\S]*?</style>','gi'),'').replace(new RegExp('<script[^>]*>[\\s\\S]*?</script>','gi'),'').replace(new RegExp('<[^>]+>','g'),' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/\\s+/g,' ').trim().substring(0,2500);}
+    const pageContentE=pageTextsE.map(_cleanE).filter(t=>t.length>50).join(" ||| ").substring(0,4000);
+    const urlsE=[..._urlsE(e1,3),..._urlsE(e2,2)].join(", ");
+    const respE=await fetch("https://api.openai.com/v1/chat/completions",{
       method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
       body:JSON.stringify({model:process.env.OPENAI_MODEL||"gpt-4o-mini",temperature:0.1,response_format:{type:"json_object"},
-        messages:[{role:"user",content:"Extraia dados do CAE (Conselho de Alimentação Escolar) de "+municipio+"-"+uf+", Brasil. BUSCAS: "+caeSnips+" URLS: "+caeUrls+" Retorne JSON com os campos: presidente (nome completo ou vazio), tel, email, endereco, site (URL oficial), encontrado (true se achou dados confiaveis, false se nao). Nao invente."}]
-      }),signal:AbortSignal.timeout(15000)
+        messages:[{role:"system",content:"Voce extrai dados do CAE (Conselho de Alimentacao Escolar) de municipios brasileiros. So retorne presidente se encontrar nome completo explicitamente mencionado. Nunca invente."},{role:"user",content:"Extraia dados do CAE de "+municipio+"-"+uf+". TRECHOS DE BUSCA: "+snipsE+" CONTEUDO DAS PAGINAS: "+pageContentE+" URLS ENCONTRADAS: "+urlsE+". Retorne JSON com: presidente (nome completo de quem preside o CAE, ou vazio), tel, email, endereco, site, encontrado (true so se achou ao menos presidente ou contato oficial confiaveis)."}]
+      }),signal:AbortSignal.timeout(20000)
     }).then(r=>r.json()).catch(()=>null);
-    let caeD={};
-    try{caeD=JSON.parse(caeResp?.choices?.[0]?.message?.content||"{}");}catch(e){}
-    const caeResult={ok:true,dados:caeD,_ia:true,municipio,uf};
+    let dadosE={};
+    try{dadosE=JSON.parse(respE?.choices?.[0]?.message?.content||"{}");}catch(e){}
+    const caeResult={ok:true,dados:dadosE,_ia:true,municipio,uf};
     globalThis._caeIaCache.set(cacheKey,{data:caeResult,ts:Date.now()});
     g.json(caeResult);
   }catch(e){g.json({ok:false,erro:String(e)});}
