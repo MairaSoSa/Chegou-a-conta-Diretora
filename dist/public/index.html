@@ -549,6 +549,19 @@
     <link rel="stylesheet" crossorigin href="/assets/postit.css">
     <link rel="stylesheet" href="/painel-educacional.css">
     <style>
+      /* responsividade mobile: todos os celulares ate 640px */
+      @media(max-width:640px){
+        .container,.section,.summary-grid,.card-clay,.soft-card,.hero-inner,.section-title,.organic-divider,.two-col,.priority-layout,.chart-wall,.tab-panel-v6,.tab-buttons-v6{max-width:100vw!important;min-width:0!important;margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important;padding-left:10px!important;padding-right:10px!important}
+        .summary-grid,.two-col,.priority-layout{display:block!important}
+        .mini-grid-3{grid-template-columns:1fr!important}
+        .section-pauta{border-radius:14px!important;margin-top:12px!important;padding-top:18px!important;padding-bottom:20px!important}
+        .soft-card{border-radius:10px!important;padding:12px!important}
+        table{font-size:11px!important}
+        .section-title p{font-size:12px!important;line-height:1.4!important}
+        .section-title h2{font-size:16px!important}
+      }
+    </style>
+    <style>
       /* ── Trilha da Diretora — sidebar (homepage): garante texto visível ── */
       .hl-caderno-box { overflow: visible !important; }
       .hl-caderno-box .hl-trilha-list { overflow-y: auto !important; overflow-x: hidden !important; }
