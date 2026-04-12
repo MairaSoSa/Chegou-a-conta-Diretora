@@ -1162,9 +1162,74 @@ e.get("/api/secretaria-municipal/ia",async(A,g)=>{
     g.json(result2);
   }catch(E){console.error("[sme-ia]",E.message);g.status(500).json({ok:false,message:E.message})}
 }),
+e.get("/api/cee/ia",async(A,g)=>{
+  try{
+    const apiKey=process.env.OPENAI_API_KEY;
+    if(!apiKey)return g.status(503).json({ok:false});
+    const uf=String(A.query.uf||"").trim().toUpperCase();
+    if(uf.length!==2)return g.status(400).json({ok:false});
+    globalThis._ceeIaCache=globalThis._ceeIaCache||new Map();
+    const cacheKey="cee-ia:"+uf;
+    const cached=globalThis._ceeIaCache.get(cacheKey);
+    if(cached&&Date.now()-cached.ts<86400000)return g.json(cached.data);
+    const _SN={AC:"Acre",AL:"Alagoas",AM:"Amazonas",AP:"Amapá",BA:"Bahia",CE:"Ceará",DF:"Distrito Federal",ES:"Espírito Santo",GO:"Goiás",MA:"Maranhão",MG:"Minas Gerais",MS:"Mato Grosso do Sul",MT:"Mato Grosso",PA:"Pará",PB:"Paraíba",PE:"Pernambuco",PI:"Piauí",PR:"Paraná",RJ:"Rio de Janeiro",RN:"Rio Grande do Norte",RO:"Rondônia",RR:"Roraima",RS:"Rio Grande do Sul",SC:"Santa Catarina",SE:"Sergipe",SP:"São Paulo",TO:"Tocantins"};
+    const stateName=_SN[uf]||uf;
+    const ceeBase="http://www.cee."+uf.toLowerCase()+".gov.br";
+    const [r1,r2,r3]=await Promise.all([
+      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent('presidente "Conselho Estadual de Educação" '+stateName+' CEE 2024 2025'),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("site:cee."+uf.toLowerCase()+".gov.br presidente composicao 2025"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+      fetch(ceeBase,{headers:{"User-Agent":"Mozilla/5.0"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+    ]);
+    function _snipC(html,maxN){const out=[];const pts=html.split('class="result__snippet"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const s=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim();if(s&&s.length>10)out.push(s)}}return out;}
+    const snippets=[..._snipC(r1,6),..._snipC(r2,4)].join(" | ");
+    const ceeText=r3.replace(new RegExp('<style[^>]*>[\\s\\S]*?</style>','gi'),'').replace(new RegExp('<script[^>]*>[\\s\\S]*?</script>','gi'),'').replace(new RegExp('<[^>]+>','g'),' ').replace(/&nbsp;/g,' ').replace(/\\s+/g,' ').substring(0,2000);
+    const ceeResp=await fetch("https://api.openai.com/v1/chat/completions",{
+      method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+      body:JSON.stringify({model:process.env.OPENAI_MODEL||"gpt-4o-mini",temperature:0.1,response_format:{type:"json_object"},
+        messages:[{role:"user",content:"Extraia dados do Conselho Estadual de Educação (CEE-"+uf+") do "+stateName+", Brasil. BUSCAS: "+snippets+" PÁGINA CEE: "+ceeText+" Retorne JSON: {presidente: nome completo do presidente ATUAL 2024-2025 ou vazio, tel: telefone do CEE, email: email institucional, endereco: endereço completo, site: URL oficial}. Se não tiver certeza do presidente atual, retorne string vazia. Não invente."}]
+      }),signal:AbortSignal.timeout(15000)
+    }).then(r=>r.json()).catch(()=>null);
+    let ceeD={};
+    try{ceeD=JSON.parse(ceeResp?.choices?.[0]?.message?.content||"{}");}catch(e){}
+    const ceeResult={ok:true,dados:ceeD,_ia:true};
+    globalThis._ceeIaCache.set(cacheKey,{data:ceeResult,ts:Date.now()});
+    g.json(ceeResult);
+  }catch(e){g.json({ok:false,erro:String(e)});}
+}),
+e.get("/api/see/ia",async(A,g)=>{
+  try{
+    const apiKey=process.env.OPENAI_API_KEY;
+    if(!apiKey)return g.status(503).json({ok:false});
+    const uf=String(A.query.uf||"").trim().toUpperCase();
+    if(uf.length!==2)return g.status(400).json({ok:false});
+    globalThis._seeIaCache=globalThis._seeIaCache||new Map();
+    const cacheKey="see-ia:"+uf;
+    const cached=globalThis._seeIaCache.get(cacheKey);
+    if(cached&&Date.now()-cached.ts<86400000)return g.json(cached.data);
+    const _SN2={AC:"Acre",AL:"Alagoas",AM:"Amazonas",AP:"Amapá",BA:"Bahia",CE:"Ceará",DF:"Distrito Federal",ES:"Espírito Santo",GO:"Goiás",MA:"Maranhão",MG:"Minas Gerais",MS:"Mato Grosso do Sul",MT:"Mato Grosso",PA:"Pará",PB:"Paraíba",PE:"Pernambuco",PI:"Piauí",PR:"Paraná",RJ:"Rio de Janeiro",RN:"Rio Grande do Norte",RO:"Rondônia",RR:"Roraima",RS:"Rio Grande do Sul",SC:"Santa Catarina",SE:"Sergipe",SP:"São Paulo",TO:"Tocantins"};
+    const stateName2=_SN2[uf]||uf;
+    const [s1,s2]=await Promise.all([
+      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("secretário secretária educação "+stateName2+" 2025 governo"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+      fetch("https://html.duckduckgo.com/html/?q="+encodeURIComponent("secretaria estadual educação "+stateName2+" titular secretário 2024 2025"),{headers:{"User-Agent":"Mozilla/5.0","Accept-Language":"pt-BR"},signal:AbortSignal.timeout(8000)}).then(r=>r.text()).catch(()=>""),
+    ]);
+    function _snipS(html,maxN){const out=[];const pts=html.split('class="result__snippet"');for(let ii=1;ii<pts.length&&out.length<maxN;ii++){const st=pts[ii].indexOf('>'),en=pts[ii].indexOf('</a>');if(st>=0&&en>st){const s=pts[ii].substring(st+1,en).replace(new RegExp('<[^>]+>','g'),'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim();if(s&&s.length>10)out.push(s)}}return out;}
+    const seeSnips=[..._snipS(s1,6),..._snipS(s2,5)].join(" | ");
+    const seeResp=await fetch("https://api.openai.com/v1/chat/completions",{
+      method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+      body:JSON.stringify({model:process.env.OPENAI_MODEL||"gpt-4o-mini",temperature:0.1,response_format:{type:"json_object"},
+        messages:[{role:"user",content:"Extraia dados do(a) Secretário(a) de Educação do estado "+stateName2+" ("+uf+"), Brasil. BUSCAS: "+seeSnips+" Retorne JSON: {nome: nome completo do secretário(a) ATUAL 2024-2025 ou vazio, email: email institucional, tel: telefone, site: site oficial da secretaria, estado: "+stateName2+"}. Se não tiver certeza, retorne nome string vazia. Não invente."}]
+      }),signal:AbortSignal.timeout(15000)
+    }).then(r=>r.json()).catch(()=>null);
+    let seeD={};
+    try{seeD=JSON.parse(seeResp?.choices?.[0]?.message?.content||"{}");}catch(e){}
+    const seeResult={ok:true,dados:seeD,_ia:true};
+    globalThis._seeIaCache.set(cacheKey,{data:seeResult,ts:Date.now()});
+    g.json(seeResult);
+  }catch(e){g.json({ok:false,erro:String(e)});}
+}),
 `;
     source = source.replace(AI_MARKER, aiRoute + AI_MARKER);
-    console.log('[bootstrap] AI explicar-norma + SME IA routes applied');
+    console.log('[bootstrap] AI explicar-norma + SME IA + CEE IA + SEE IA routes applied');
   }
 })();
 
