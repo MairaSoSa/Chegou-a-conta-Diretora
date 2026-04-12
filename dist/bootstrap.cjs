@@ -1054,12 +1054,39 @@ e.get("/api/secretaria-municipal/ia",async(A,g)=>{
     const cached=globalThis._smeIaCache.get(cacheKey);
     if(cached&&Date.now()-cached.ts<86400000)return g.json(cached.data);
     const model=process.env.OPENAI_MODEL||"gpt-4o-mini";
-    const systemPrompt="Voc\xEA \xE9 um especialista em gest\xE3o p\xFAblica municipal brasileira. Forne\xE7a dados reais e precisos sobre secretarias municipais de educa\xE7\xE3o. Responda APENAS com JSON v\xE1lido, sem markdown, sem explica\xE7\xF5es.";
-    const userMsg="Forne\xE7a os dados de contato da Secretaria Municipal de Educa\xE7\xE3o de "+municipio+" - "+uf+", Brasil.\\n\\nRetorne APENAS este JSON (sem markdown, sem texto extra):\\n{\\n  \\"nome\\": \\"nome completo da secretaria\\",\\n  \\"titular\\": \\"nome do(a) secret\xE1rio(a) municipal de educa\xE7\xE3o\\",\\n  \\"tel\\": \\"telefone principal (formato (XX) XXXX-XXXX)\\",\\n  \\"email\\": \\"e-mail institucional\\",\\n  \\"foco\\": \\"endere\xE7o completo com CEP se poss\xEDvel\\",\\n  \\"horario\\": \\"hor\xE1rio de atendimento ao p\xFAblico\\",\\n  \\"site\\": \\"URL do site oficial da prefeitura ou secretaria\\",\\n  \\"paginaFonte\\": \\"URL onde estes dados podem ser verificados\\"\\n}\\n\\nSe n\xE3o souber um campo com certeza, use string vazia \\"\\". N\xE3o invente dados. Use apenas informa\xE7\xF5es que voc\xEA tem certeza.";
+    // Step 1: Search DuckDuckGo for real data about this SME
+    let snippetText="";
+    try{
+      const q=encodeURIComponent("Secretaria Municipal de Educa\xE7\xE3o "+municipio+" "+uf+" respons\xE1vel secret\xE1ria telefone endere\xE7o");
+      const ddgResp=await fetch("https://html.duckduckgo.com/html/?q="+q,{
+        headers:{"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0","Accept":"text/html"},
+        signal:AbortSignal.timeout(10000)
+      });
+      if(ddgResp.ok){
+        const html=await ddgResp.text();
+        const snippets=[];
+        const parts=html.split('class="result__snippet"');
+        for(let i2=1;i2<parts.length&&snippets.length<8;i2++){
+          const st=parts[i2].indexOf('>');
+          const en=parts[i2].indexOf('</a>');
+          if(st>=0&&en>st){
+            const s=parts[i2].substring(st+1,en).replace(/<[^>]+>/g,"").replace(/&amp;/g,"&").replace(/&nbsp;/g," ").replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();
+            if(s&&s.length>15)snippets.push(s);
+          }
+        }
+        if(snippets.length>0)snippetText=snippets.join("\\n\\n");
+      }
+    }catch(_e){console.warn("[sme-ia] ddg search failed:",_e.message);}
+    // Step 2: Ask OpenAI to extract structured data from the snippets (or from its knowledge)
+    const systemPrompt="Voc\xEA \xE9 um assistente especializado em extrair dados de contato de secretarias municipais de educa\xE7\xE3o brasileiras. Responda APENAS com JSON v\xE1lido, sem markdown, sem explica\xE7\xF5es.";
+    const jsonSchema='\\n\\nRetorne APENAS este JSON (sem markdown, sem texto extra):\\n{\\n  "nome": "nome da secretaria",\\n  "titular": "nome completo do(a) secret\xE1rio(a)",\\n  "tel": "telefone (formato (XX) XXXXX-XXXX)",\\n  "email": "e-mail institucional ou de contato",\\n  "foco": "endere\xE7o completo com CEP",\\n  "horario": "hor\xE1rio de atendimento",\\n  "site": "URL do site oficial",\\n  "paginaFonte": "URL de origem dos dados"\\n}\\n\\nUse string vazia "" para campos n\xE3o encontrados. N\xE3o invente dados.';
+    const userMsg=snippetText
+      ? "Com base nestes trechos encontrados na web sobre a Secretaria Municipal de Educa\xE7\xE3o de "+municipio+" - "+uf+":\\n\\n"+snippetText+jsonSchema
+      : "Quais s\xE3o os dados de contato da Secretaria Municipal de Educa\xE7\xE3o de "+municipio+" - "+uf+", Brasil?"+jsonSchema;
     const resp=await fetch("https://api.openai.com/v1/chat/completions",{
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
-      body:JSON.stringify({model,messages:[{role:"system",content:systemPrompt},{role:"user",content:userMsg}],temperature:0.3,max_tokens:600}),
+      body:JSON.stringify({model,messages:[{role:"system",content:systemPrompt},{role:"user",content:userMsg}],temperature:0.1,max_tokens:600}),
       signal:AbortSignal.timeout(30000)
     });
     if(!resp.ok){const err=await resp.text();throw new Error("OpenAI error: "+resp.status+" "+err.substring(0,200));}
