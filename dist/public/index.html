@@ -559,6 +559,19 @@
         table{font-size:11px!important}
         .section-title p{font-size:12px!important;line-height:1.4!important}
         .section-title h2{font-size:16px!important}
+        /* subtitulo hero: permite quebra de linha e centraliza */
+        .hl-hero-desc,
+        .hl-hero-note .hl-hero-desc,
+        .hl-hero-note .hl-hero-desc:not(.hl-hero-desc--wrapped){
+          white-space:normal!important;
+          text-align:center!important;
+          overflow:visible!important;
+          text-overflow:clip!important;
+          word-break:break-word!important;
+          overflow-wrap:break-word!important;
+          display:block!important;
+          max-width:100%!important
+        }
       }
     </style>
     <style>
