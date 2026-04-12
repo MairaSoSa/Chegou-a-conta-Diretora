@@ -1478,3 +1478,5 @@ function Fo({ data: b, lines: z, unit: I, large: E, referenceLines: R, dataStart
 export {
   ii as default
 };
+
+(()=>{try{const s='.hl-hero-note .hl-hero-desc',w='hl-hero-desc--wrapped';const m=(e)=>{if(!e||!e.isConnected)return;e.classList.remove(w);const d=e.style.display,h=e.style.whiteSpace,o=e.style.overflow,t=e.style.textOverflow;e.style.display='block',e.style.whiteSpace='nowrap',e.style.overflow='hidden',e.style.textOverflow='ellipsis';const n=e.scrollWidth>e.clientWidth+1;e.style.display=d,e.style.whiteSpace=h,e.style.overflow=o,e.style.textOverflow=t,e.classList.toggle(w,n)};const a=()=>document.querySelectorAll(s).forEach(m);const ro=new ResizeObserver((es)=>es.forEach((it)=>m(it.target)));const r=()=>{document.querySelectorAll(s).forEach((e)=>{e.dataset.wrapObs||(e.dataset.wrapObs='1',ro.observe(e)),m(e)})};const start=()=>{r(),a()};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:!0});else start();window.addEventListener('resize',a,{passive:!0});const mo=new MutationObserver(()=>r());document.body&&mo.observe(document.body,{childList:!0,subtree:!0,characterData:!0});}catch{}})();

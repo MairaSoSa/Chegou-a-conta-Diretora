@@ -656,6 +656,119 @@
          Solução: percorre a árvore de fibras React para encontrar o {toggle} do contexto
          e adiciona um listener que o chama corretamente. */
       (function() {
+        function isHomePage() {
+          var p = window.location.pathname || '/';
+          return p === '/' || p === '/index.html';
+        }
+
+        function isCompactA11yViewport() {
+          return window.matchMedia('(max-width: 360px) and (max-height: 700px)').matches;
+        }
+
+        function ensureA11yEndAnchor() {
+          var anchor = document.getElementById('sa11y-end-anchor');
+          if (anchor) return anchor;
+
+          var host = document.querySelector('.hl-page') ||
+                     document.querySelector('.hl-root') ||
+                     document.querySelector('main') ||
+                     document.getElementById('root') ||
+                     document.body ||
+                     document.documentElement;
+
+          anchor = document.createElement('div');
+          anchor.id = 'sa11y-end-anchor';
+          anchor.style.display = 'flex';
+          anchor.style.justifyContent = 'flex-end';
+          anchor.style.padding = '10px 12px 24px';
+          anchor.style.width = '100%';
+          anchor.style.boxSizing = 'border-box';
+          host.appendChild(anchor);
+          return anchor;
+        }
+
+        function repositionA11yButton(btn) {
+          if (!btn) return;
+          if (!btn._a11yOriginalParent) {
+            btn._a11yOriginalParent = btn.parentNode;
+            btn._a11yOriginalNext = btn.nextSibling;
+          }
+
+          if (!isHomePage()) {
+            if (btn._a11yOriginalParent && btn.parentNode !== btn._a11yOriginalParent) {
+              if (btn._a11yOriginalNext && btn._a11yOriginalNext.parentNode === btn._a11yOriginalParent) {
+                btn._a11yOriginalParent.insertBefore(btn, btn._a11yOriginalNext);
+              } else {
+                btn._a11yOriginalParent.appendChild(btn);
+              }
+            }
+            btn.style.removeProperty('position');
+            btn.style.removeProperty('inset');
+            btn.style.removeProperty('left');
+            btn.style.removeProperty('right');
+            btn.style.removeProperty('bottom');
+            btn.style.removeProperty('top');
+            btn.style.removeProperty('transform');
+            btn.style.removeProperty('z-index');
+            btn.style.removeProperty('margin');
+            btn.style.removeProperty('display');
+            btn.style.removeProperty('visibility');
+            btn.style.removeProperty('opacity');
+            btn.style.removeProperty('pointer-events');
+
+            var nonHomeAnchor = document.getElementById('sa11y-end-anchor');
+            if (nonHomeAnchor) nonHomeAnchor.remove();
+            return;
+          }
+
+          if (isCompactA11yViewport()) {
+            var anchor = ensureA11yEndAnchor();
+            if (btn.parentNode !== anchor) anchor.appendChild(btn);
+
+            btn.style.setProperty('position', 'static', 'important');
+            btn.style.setProperty('inset', 'auto', 'important');
+            btn.style.setProperty('left', 'auto', 'important');
+            btn.style.setProperty('right', 'auto', 'important');
+            btn.style.setProperty('bottom', 'auto', 'important');
+            btn.style.setProperty('top', 'auto', 'important');
+            btn.style.setProperty('transform', 'none', 'important');
+            btn.style.setProperty('z-index', '20', 'important');
+            btn.style.setProperty('margin', '0', 'important');
+            btn.style.setProperty('display', 'inline-flex', 'important');
+            btn.style.setProperty('visibility', 'visible', 'important');
+            btn.style.setProperty('opacity', '1', 'important');
+            btn.style.setProperty('pointer-events', 'auto', 'important');
+            return;
+          }
+
+          if (btn._a11yOriginalParent && btn.parentNode !== btn._a11yOriginalParent) {
+            if (btn._a11yOriginalNext && btn._a11yOriginalNext.parentNode === btn._a11yOriginalParent) {
+              btn._a11yOriginalParent.insertBefore(btn, btn._a11yOriginalNext);
+            } else {
+              btn._a11yOriginalParent.appendChild(btn);
+            }
+          }
+
+          btn.style.removeProperty('position');
+          btn.style.removeProperty('inset');
+          btn.style.removeProperty('left');
+          btn.style.removeProperty('right');
+          btn.style.removeProperty('bottom');
+          btn.style.removeProperty('top');
+          btn.style.removeProperty('transform');
+          btn.style.removeProperty('z-index');
+          btn.style.removeProperty('margin');
+          btn.style.removeProperty('display');
+          btn.style.removeProperty('visibility');
+          btn.style.removeProperty('opacity');
+          btn.style.removeProperty('pointer-events');
+
+          var staleAnchor = document.getElementById('sa11y-end-anchor');
+          if (staleAnchor && !staleAnchor.querySelector('[data-testid="button-accessibility-menu"]')) {
+            staleAnchor.remove();
+          }
+        }
+
         function findA11yToggle() {
           // Strategy 1: traverse UP from button using fiber.return,
           // checking context dependencies (React 18 stores them in fiber.dependencies)
