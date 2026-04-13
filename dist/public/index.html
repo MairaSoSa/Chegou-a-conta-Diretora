@@ -572,33 +572,35 @@
           display:block!important;
           max-width:100%!important
         }
-        /* espacamento entre blocos: por onde comecar, dica e trilha */
-        .hl-layout{gap:28px!important}
-        .hl-right-col{gap:32px!important;margin-top:4px!important}
-        .hl-tip-box{margin-bottom:0!important}
-        .hl-caderno-box{margin-top:0!important}
-        /* trilha da diretora: scroll compacto em celular */
-        .hl-caderno-box .hl-trilha-list{
-          max-height:218px!important;
-          overflow-y:auto!important;
-          overflow-x:hidden!important;
-          scroll-behavior:smooth!important;
-          -webkit-overflow-scrolling:touch!important
-        }
-        .hl-caderno-box{
-          overflow:hidden!important;
-          border-radius:14px!important;
-          position:relative!important
-        }
-        .hl-caderno-box .hl-trilha-list::-webkit-scrollbar{
-          width:3px!important
-        }
-        .hl-caderno-box .hl-trilha-list::-webkit-scrollbar-track{
-          background:transparent!important
-        }
-        .hl-caderno-box .hl-trilha-list::-webkit-scrollbar-thumb{
-          background:rgba(160,130,100,.3)!important;
-          border-radius:4px!important
+        @media(max-width:599px){
+          /* espacamento entre blocos: por onde comecar, dica e trilha */
+          .hl-layout{gap:28px!important}
+          .hl-right-col{gap:32px!important;margin-top:4px!important}
+          .hl-tip-box{margin-bottom:0!important}
+          .hl-caderno-box{margin-top:0!important}
+          /* trilha da diretora: scroll compacto em celular */
+          .hl-caderno-box .hl-trilha-list{
+            max-height:218px!important;
+            overflow-y:auto!important;
+            overflow-x:hidden!important;
+            scroll-behavior:smooth!important;
+            -webkit-overflow-scrolling:touch!important
+          }
+          .hl-caderno-box{
+            overflow:hidden!important;
+            border-radius:14px!important;
+            position:relative!important
+          }
+          .hl-caderno-box .hl-trilha-list::-webkit-scrollbar{
+            width:3px!important
+          }
+          .hl-caderno-box .hl-trilha-list::-webkit-scrollbar-track{
+            background:transparent!important
+          }
+          .hl-caderno-box .hl-trilha-list::-webkit-scrollbar-thumb{
+            background:rgba(160,130,100,.3)!important;
+            border-radius:4px!important
+          }
         }
       }
       /* 4 unidades visiveis em telas de 400-459px (ex: iPhone SE 2, Galaxy A) */
