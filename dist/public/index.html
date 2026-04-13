@@ -603,6 +603,35 @@
           }
         }
       }
+      /* replica do mobile para 641-679 (igual 600x627) */
+      @media(min-width:641px) and (max-width:679px){
+        .hl-hero-desc,
+        .hl-hero-note .hl-hero-desc,
+        .hl-hero-note .hl-hero-desc:not(.hl-hero-desc--wrapped){
+          white-space:normal!important;
+          text-align:center!important;
+          overflow:visible!important;
+          text-overflow:clip!important;
+          word-break:break-word!important;
+          overflow-wrap:break-word!important;
+          display:block!important;
+          max-width:100%!important
+        }
+        .hl-cards-grid{
+          grid-template-columns:repeat(2,minmax(0,1fr))!important;
+          gap:10px!important;
+        }
+        .hl-note-card{
+          min-height:122px!important;
+        }
+        .hl-note-card h3{
+          display:block!important;
+          visibility:visible!important;
+          opacity:1!important;
+          font-size:.98rem!important;
+          line-height:1.2!important;
+        }
+      }
       /* 4 unidades visiveis em telas de 400-459px (ex: iPhone SE 2, Galaxy A) */
       @media(min-width:400px) and (max-width:459px){
         .hl-caderno-box .hl-trilha-list{
@@ -655,8 +684,16 @@
         .hl-right-col{
           width:420px!important;
           flex:0 0 420px!important;
+          align-items:center!important;
           gap:18px!important;
           margin-top:10px!important
+        }
+        .hl-tip-box,
+        .hl-caderno-box{
+          width:100%!important;
+          max-width:420px!important;
+          margin-left:auto!important;
+          margin-right:auto!important
         }
         .hl-caderno-box .hl-trilha-list{
           max-height:430px!important
@@ -688,7 +725,440 @@
           min-height:0!important;
         }
       }
+      /* proteção global da linha vermelha do caderno em telas >= 641px */
+      @media (min-width:641px){
+        .hl-page{
+          padding-left:56px!important;
+        }
+      }
+      /* 768x768 deve seguir o mesmo comportamento visual de 425x768 */
+      @media (min-width:768px) and (max-width:768px) and (max-height:768px){
+        .hl-page{
+          padding:16px 14px 80px 56px!important;
+        }
+        .hl-layout{
+          grid-template-columns:1fr!important;
+          gap:24px!important;
+          padding:0!important;
+        }
+        .hl-left-col,
+        .hl-right-col{
+          width:100%!important;
+          min-width:0!important;
+        }
+        .hl-right-col{
+          flex-direction:column!important;
+          align-items:stretch!important;
+          gap:16px!important;
+          margin-top:0!important;
+          flex:1 1 auto!important;
+        }
+        .hl-cards-grid{
+          grid-template-columns:repeat(2,minmax(0,1fr))!important;
+          gap:10px!important;
+        }
+        .hl-tip-box,
+        .hl-caderno-box{
+          width:min(100%,460px)!important;
+          max-width:460px!important;
+          margin-left:auto!important;
+          margin-right:auto!important;
+        }
+        .hl-caderno-box .hl-trilha-list{
+          max-height:228px!important;
+        }
+      }
+      /* ajuste fino para telas no perfil 1024x768 (com tolerancia de viewport) */
+      @media (min-width:980px) and (max-width:1060px) and (min-height:700px) and (max-height:820px){
+        .hl-page{
+          padding-bottom:24px!important;
+        }
+        .hl-footer-mobile,
+        .hl-footer-strip.hl-footer-mobile{
+          position:relative!important;
+          margin-top:220px!important;
+          top:50px!important;
+          transform:none!important;
+        }
+        .hl-footer-strip.hl-footer-mobile .hl-a11y-pill{
+          position:relative!important;
+          top:50px!important;
+        }
+      }
+      /* mobile pequeno 320-420x768: esconder subtitulos do bloco "Por onde comecar" */
+      @media (min-width:320px) and (max-width:420px) and (max-height:768px){
+        .hl-cards-grid .hl-note-card p,
+        .hl-cards-grid .hl-note-card small{
+          display:none!important;
+        }
+      }
+      /* 700x627: subtitulos dos cards "Por onde comecar" devem aparecer */
+      @media (min-width:680px) and (max-width:720px) and (max-height:700px){
+        .hl-cards-grid .hl-note-card p,
+        .hl-cards-grid .hl-note-card small{
+          display:block!important;
+        }
+      }
+      /* 767x627: subtitulos dos cards "Por onde comecar" devem aparecer */
+      @media (min-width:740px) and (max-width:780px) and (max-height:700px){
+        .hl-cards-grid .hl-note-card p,
+        .hl-cards-grid .hl-note-card small{
+          display:block!important;
+        }
+      }
+      /* 600-679x627: manter comportamento do 600x627 */
+      @media (min-width:600px) and (max-width:679px) and (max-height:700px){
+        .hl-cards-grid{
+          grid-template-columns:repeat(2,minmax(0,1fr))!important;
+          gap:10px!important;
+        }
+        .hl-cards-grid .hl-note-card{
+          min-height:122px!important;
+          overflow:visible!important;
+        }
+        .hl-cards-grid .hl-note-card h3{
+          display:block!important;
+          visibility:visible!important;
+          opacity:1!important;
+          font-size:.98rem!important;
+          line-height:1.2!important;
+          margin:0 0 4px!important;
+        }
+        .hl-caderno-box{
+          overflow:hidden!important;
+        }
+        .hl-caderno-box .hl-trilha-list,
+        .hl-trilha-list{
+          max-height:276px!important;
+          overflow-y:auto!important;
+          overflow-x:hidden!important;
+          -webkit-overflow-scrolling:touch!important;
+        }
+      }
+      /* 840x627: centralizar blocos Dica e Trilha da Diretora */
+      @media (min-width:820px) and (max-width:860px) and (max-height:700px){
+        .hl-right-col{
+          width:100%!important;
+          flex:1 1 auto!important;
+          align-items:center!important;
+          justify-content:flex-start!important;
+        }
+        .hl-tip-box,
+        .hl-caderno-box{
+          width:min(100%,460px)!important;
+          max-width:460px!important;
+          margin-left:auto!important;
+          margin-right:auto!important;
+        }
+      }
+      /* 900x768: manter layout igual ao desktop (ex.: 1440x768) */
+      @media (min-width:880px) and (max-width:940px) and (min-height:740px) and (max-height:820px){
+        .hl-page{
+          padding:16px 28px 2px 56px!important;
+          overflow:hidden!important;
+        }
+        .hl-layout{
+          display:grid!important;
+          grid-template-columns:1.3fr .7fr!important;
+          gap:22px!important;
+          padding:16px 4px 8px 0!important;
+        }
+        .hl-left-col{
+          overflow:hidden!important;
+        }
+        .hl-right-col{
+          display:flex!important;
+          flex-direction:column!important;
+          flex-wrap:nowrap!important;
+          gap:16px!important;
+          padding-top:4px!important;
+          align-items:stretch!important;
+          width:auto!important;
+          flex:0 0 auto!important;
+        }
+        .hl-tip-box{
+          width:90%!important;
+          margin:0 auto!important;
+          transform:rotate(1deg)!important;
+        }
+        .hl-caderno-box{
+          flex:1!important;
+          max-width:380px!important;
+          max-height:460px!important;
+          margin-top:16px!important;
+        }
+        .hl-footer-desktop{
+          display:flex!important;
+        }
+        .hl-footer-mobile{
+          display:none!important;
+        }
+      }
+      /* 900x627: desktop compacto estavel (evita quebra de layout) */
+      @media (min-width:880px) and (max-width:1180px) and (max-height:700px){
+        .hl-page{
+          padding:10px 18px 0 56px!important;
+          overflow:hidden!important;
+        }
+        .hl-layout{
+          display:grid!important;
+          grid-template-columns:1.3fr .7fr!important;
+          gap:14px!important;
+          padding:8px 2px 0 0!important;
+        }
+        .hl-left-col{
+          overflow:hidden!important;
+          overflow-x:visible!important;
+          padding-right:4px!important;
+          padding-bottom:6px!important;
+          min-height:0!important;
+        }
+        .hl-cards-grid{
+          align-content:start!important;
+          overflow:visible!important;
+          gap:8px!important;
+          padding-bottom:10px!important;
+          margin-bottom:0!important;
+        }
+        .hl-cards-grid .hl-note-card{
+          min-height:84px!important;
+          height:auto!important;
+          padding:10px 10px 8px!important;
+          transform:none!important;
+          animation:none!important;
+        }
+        .hl-cards-grid .hl-note-card h3{
+          font-size:14px!important;
+          line-height:1.15!important;
+        }
+        .hl-cards-grid .hl-note-card p{
+          font-size:11px!important;
+          line-height:1.2!important;
+          margin-top:4px!important;
+        }
+        .hl-right-col{
+          display:grid!important;
+          grid-template-rows:auto minmax(0,1fr) auto!important;
+          gap:10px!important;
+          align-items:stretch!important;
+          padding-top:0!important;
+          width:auto!important;
+          flex:0 0 auto!important;
+        }
+        .hl-tip-box{
+          width:90%!important;
+          margin:0 auto 2px!important;
+          transform:rotate(1deg)!important;
+        }
+        .hl-caderno-box{
+          flex:1!important;
+          max-width:none!important;
+          width:100%!important;
+          max-height:322px!important;
+          margin-top:0!important;
+          overflow:hidden!important;
+        }
+        .hl-caderno-box .hl-trilha-header{
+          padding:4px 8px 2px!important;
+          margin:0!important;
+        }
+        .hl-caderno-box .hl-trilha-list{
+          max-height:230px!important;
+          overflow-y:auto!important;
+          overflow-x:hidden!important;
+          padding:2px 6px 0!important;
+        }
+        .hl-caderno-box .hl-trilha-item{
+          gap:10px!important;
+          padding:6px 2px!important;
+          align-items:flex-start!important;
+        }
+        .hl-caderno-box .hl-trilha-item-num{
+          min-width:28px!important;
+          font-size:11px!important;
+          margin-top:1px!important;
+        }
+        .hl-caderno-box .hl-trilha-item-body{
+          display:flex!important;
+          flex-direction:column!important;
+          gap:2px!important;
+        }
+        .hl-caderno-box .hl-trilha-item-title{
+          font-size:13px!important;
+          line-height:1.2!important;
+        }
+        .hl-caderno-box .hl-trilha-item-sub{
+          font-size:11px!important;
+          line-height:1.2!important;
+        }
+        .hl-footer-desktop{
+          display:flex!important;
+        }
+        .hl-footer-strip.hl-footer-desktop{
+          margin-top:2px!important;
+          padding-top:2px!important;
+        }
+        .hl-footer-mobile{
+          display:none!important;
+        }
+      }
+      /* fallback robusto compartilhado: perfis ~900x627 e ~1024x627 */
+      html.fix-home-900x627 .hl-page,
+      html.fix-home-1024x627 .hl-page{
+        overflow-y:auto!important;
+        overflow-x:hidden!important;
+        padding-bottom:24px!important;
+      }
+      html.fix-home-900x627 .hl-layout,
+      html.fix-home-1024x627 .hl-layout{
+        min-height:auto!important;
+      }
+      html.fix-home-900x627 .hl-left-col,
+      html.fix-home-1024x627 .hl-left-col{
+        overflow-y:visible!important;
+        padding-bottom:20px!important;
+      }
+      html.fix-home-900x627 .hl-cards-grid,
+      html.fix-home-1024x627 .hl-cards-grid{
+        margin-top:-14px!important;
+        padding-bottom:56px!important;
+      }
+      html.fix-home-900x627 .hl-cards-grid .hl-note-card,
+      html.fix-home-1024x627 .hl-cards-grid .hl-note-card{
+        transform:none!important;
+        animation:none!important;
+      }
+      /* 900x627 sem scroll da pagina */
+      html.fix-home-900x627 .hl-page{
+        overflow:hidden!important;
+        padding:10px 18px 0 56px!important;
+      }
+      html.fix-home-900x627 .hl-layout{
+        gap:14px!important;
+        padding:8px 2px 0 0!important;
+      }
+      html.fix-home-900x627 .hl-left-col{
+        overflow:hidden!important;
+        padding-bottom:6px!important;
+      }
+      html.fix-home-900x627 .hl-cards-grid{
+        gap:8px!important;
+        margin-top:0!important;
+        padding-bottom:10px!important;
+      }
+      html.fix-home-900x627 .hl-cards-grid .hl-note-card{
+        min-height:84px!important;
+        padding:10px 10px 8px!important;
+      }
+      html.fix-home-900x627 .hl-cards-grid .hl-note-card h3{
+        font-size:14px!important;
+        line-height:1.15!important;
+      }
+      html.fix-home-900x627 .hl-cards-grid .hl-note-card p{
+        font-size:11px!important;
+        line-height:1.2!important;
+        margin-top:4px!important;
+      }
+      html.fix-home-900x627 .hl-right-col{
+        gap:10px!important;
+        padding-top:0!important;
+      }
+      html.fix-home-900x627 .hl-tip-box{
+        margin:0 auto 2px!important;
+      }
+      html.fix-home-900x627 .hl-caderno-box{
+        width:100%!important;
+        max-width:none!important;
+        max-height:322px!important;
+      }
+      html.fix-home-900x627 .hl-caderno-box .hl-trilha-header{
+        padding:4px 8px 2px!important;
+        margin:0!important;
+      }
+      html.fix-home-900x627 .hl-caderno-box .hl-trilha-list{
+        max-height:230px!important;
+        overflow-y:auto!important;
+        padding:2px 6px 0!important;
+      }
+      html.fix-home-900x627 .hl-caderno-box .hl-trilha-item{
+        gap:10px!important;
+        padding:6px 2px!important;
+        align-items:flex-start!important;
+      }
+      html.fix-home-900x627 .hl-caderno-box .hl-trilha-item-num{
+        min-width:28px!important;
+        font-size:11px!important;
+        margin-top:1px!important;
+      }
+      html.fix-home-900x627 .hl-caderno-box .hl-trilha-item-body{
+        display:flex!important;
+        flex-direction:column!important;
+        gap:2px!important;
+      }
+      html.fix-home-900x627 .hl-caderno-box .hl-trilha-item-title{
+        font-size:13px!important;
+        line-height:1.2!important;
+      }
+      html.fix-home-900x627 .hl-caderno-box .hl-trilha-item-sub{
+        font-size:11px!important;
+        line-height:1.2!important;
+      }
+      html.fix-home-900x627 .hl-footer-strip.hl-footer-desktop{
+        margin-top:2px!important;
+        padding-top:2px!important;
+      }
+      /* 840x627: cria respiro no fim da pagina */
+      @media (min-width:820px) and (max-width:870px) and (max-height:700px){
+        .hl-page{
+          padding-bottom:16px!important;
+        }
+        .hl-layout{
+          padding-bottom:10px!important;
+        }
+        .hl-right-col{
+          padding-bottom:12px!important;
+        }
+        .hl-caderno-box{
+          max-height:300px!important;
+          margin-bottom:10px!important;
+        }
+        .hl-caderno-box .hl-trilha-list{
+          max-height:206px!important;
+        }
+        .hl-footer-strip.hl-footer-desktop{
+          margin-top:8px!important;
+          padding-bottom:4px!important;
+        }
+      }
     </style>
+    <script>
+      (function fixHome900x627Viewport() {
+        function apply() {
+          var w = window.innerWidth || document.documentElement.clientWidth || 0;
+          var h = window.innerHeight || document.documentElement.clientHeight || 0;
+          var isProfile = w >= 840 && w <= 1180 && h >= 560 && h <= 700;
+          document.documentElement.classList.toggle('fix-home-900x627', isProfile);
+        }
+        window.addEventListener('resize', apply, { passive: true });
+        window.addEventListener('orientationchange', apply);
+        document.addEventListener('DOMContentLoaded', apply);
+        apply();
+      })();
+    </script>
+    <script>
+      (function fixHome1024x627Viewport() {
+        function apply() {
+          var w = window.innerWidth || document.documentElement.clientWidth || 0;
+          var h = window.innerHeight || document.documentElement.clientHeight || 0;
+          var isProfile = w >= 940 && w <= 1100 && h >= 560 && h <= 700;
+          document.documentElement.classList.toggle('fix-home-1024x627', isProfile);
+        }
+        window.addEventListener('resize', apply, { passive: true });
+        window.addEventListener('orientationchange', apply);
+        document.addEventListener('DOMContentLoaded', apply);
+        apply();
+      })();
+    </script>
     <script>
       /* Garante que títulos e subtítulos da Trilha sidebar não sejam cortados */
       (function fixTrilha() {

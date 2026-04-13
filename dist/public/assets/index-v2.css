@@ -324,7 +324,7 @@
 }
 
 /* mobile-cards-por-onde-comecar-2026-04-12 */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .hl-cards-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 10px !important;
