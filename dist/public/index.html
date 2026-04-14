@@ -1984,8 +1984,9 @@
         function apply() {
           var box = document.querySelector('.hl-caderno-box');
           if (!box) return;
-          /* No desktop (>=641px) libera overflow para mostrar textos; no mobile mantém clipped */
-          if (window.innerWidth >= 641) {
+          var w = window.innerWidth;
+          /* No desktop (>=641px) libera overflow; no mobile mantém clipped */
+          if (w >= 641) {
             box.style.setProperty('overflow', 'visible', 'important');
           } else {
             box.style.setProperty('overflow', 'hidden', 'important');
@@ -1994,6 +1995,13 @@
           if (list) {
             list.style.setProperty('overflow-y', 'auto', 'important');
             list.style.setProperty('overflow-x', 'hidden', 'important');
+            /* Garante minimo de 3 unidades visiveis em qualquer viewport mobile */
+            if (w < 641) {
+              var mh = parseInt(list.style.maxHeight) || 0;
+              if (mh < 200) {
+                list.style.setProperty('max-height', '210px', 'important');
+              }
+            }
           }
           box.querySelectorAll('.hl-trilha-item-title, .hl-trilha-item-sub').forEach(function(el) {
             el.style.setProperty('white-space', 'normal', 'important');
@@ -2005,6 +2013,12 @@
             el.style.setProperty('overflow', 'visible', 'important');
           });
         }
+        /* Reaplicar ao redimensionar (troca de viewport no canvas) */
+        var _resizeTimer;
+        window.addEventListener('resize', function() {
+          clearTimeout(_resizeTimer);
+          _resizeTimer = setTimeout(apply, 80);
+        });
         /* Aplica assim que o DOM muda — captura a chegada do React renderizado */
         var _trilhaFixed = false;
         var obs = new MutationObserver(function() {
