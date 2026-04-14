@@ -770,13 +770,16 @@
           margin-left:auto!important;
           margin-right:auto!important
         }
+        .hl-caderno-box{
+          overflow:hidden!important
+        }
         .hl-caderno-box .hl-trilha-list{
-          max-height:none!important;
+          max-height:calc(100vh - 320px)!important;
+          min-height:100px!important;
           overflow-y:auto!important;
           overflow-x:hidden!important;
           padding-right:6px!important;
-          box-sizing:border-box!important;
-          margin-right:0!important
+          box-sizing:border-box!important
         }
         .hl-caderno-box .hl-trilha-item{
           min-height:0!important;
@@ -786,29 +789,8 @@
           min-width:0!important;
           overflow:hidden!important
         }
-        .hl-caderno-box .hl-trilha-item-title,
-        .hl-caderno-box .hl-trilha-item-sub{
-          overflow:hidden!important;
-          text-overflow:ellipsis!important;
-          display:-webkit-box!important;
-          -webkit-box-orient:vertical!important
-        }
-        .hl-caderno-box .hl-trilha-item-title{
-          -webkit-line-clamp:2!important
-        }
-        .hl-caderno-box .hl-trilha-item-sub{
-          -webkit-line-clamp:2!important
-        }
         [data-testid="button-accessibility-menu"]{
           bottom:8px!important
-        }
-        .hl-page-footer,
-        .hl-footer,
-        .hl-home-footer{
-          margin-top:72px!important
-        }
-        .hl-footer-note{
-          margin-top:24px!important
         }
       }
       @media(min-width:700px){
@@ -924,7 +906,7 @@
           max-height:228px!important;
         }
       }
-      /* vertical: centraliza Dica + Trilha e mantém trilha clipada dentro da caixa */
+      /* vertical <= 767px: centraliza Dica + Trilha e mantém trilha clipada dentro da caixa */
       @media (max-width:767px){
         .hl-right-col{
           width:100%!important;
@@ -942,7 +924,7 @@
           overflow:hidden!important;
         }
         .hl-caderno-box .hl-trilha-list{
-          max-height:230px!important;
+          max-height:max(180px,calc(100vh - 380px))!important;
           overflow-y:auto!important;
           overflow-x:hidden!important;
           padding-right:8px!important;
