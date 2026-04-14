@@ -763,11 +763,6 @@
           gap:20px!important;
           margin-top:12px!important
         }
-        .hl-right-col,
-        .hl-tip-box,
-        .hl-caderno-box{
-          align-self:center!important
-        }
         .hl-tip-box,
         .hl-caderno-box{
           width:100%!important;
@@ -776,11 +771,12 @@
           margin-right:auto!important
         }
         .hl-caderno-box .hl-trilha-list{
-          max-height:396px!important;
+          max-height:none!important;
           overflow-y:auto!important;
           overflow-x:hidden!important;
           padding-right:6px!important;
-          box-sizing:border-box!important
+          box-sizing:border-box!important;
+          margin-right:0!important
         }
         .hl-caderno-box .hl-trilha-item{
           min-height:0!important;
@@ -873,6 +869,37 @@
         }
         .hl-caderno-box .hl-trilha-list{
           max-height:228px!important;
+        }
+      }
+      /* vertical: centraliza Dica + Trilha e mantém trilha clipada dentro da caixa */
+      @media (max-width:767px){
+        .hl-right-col{
+          width:100%!important;
+          align-items:center!important;
+          justify-content:center!important;
+        }
+        .hl-tip-box,
+        .hl-caderno-box{
+          width:min(100%,460px)!important;
+          max-width:460px!important;
+          margin-left:auto!important;
+          margin-right:auto!important;
+        }
+        .hl-caderno-box{
+          overflow:hidden!important;
+        }
+        .hl-caderno-box .hl-trilha-list{
+          max-height:260px!important;
+          overflow-y:auto!important;
+          overflow-x:hidden!important;
+          padding-right:8px!important;
+          box-sizing:border-box!important;
+        }
+        .hl-caderno-box .hl-trilha-item{
+          overflow:hidden!important;
+        }
+        .hl-caderno-box .hl-trilha-item-body{
+          min-width:0!important;
         }
       }
             /* ajuste fino para telas no perfil 1024x768 e 1180x820 (com tolerancia de viewport) */
