@@ -754,51 +754,64 @@
   }
 }
 
-/* force center "Dicas" and "Trilha da Diretora" on portrait tablets (e.g. 800x1280) */
-@media (min-width: 641px) and (max-width: 1024px) and (orientation: portrait) {
-  .hl-right-col {
-    width: 100% !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 18px !important;
-  }
+/* ROBUST RESPONSIVE CENTERING FOR DICAS AND TRILHA - ALL VIEWPORTS */
 
-  .hl-tip-box,
-  .hl-caderno-box {
-    width: min(420px, calc(100% - 24px)) !important;
-    max-width: 420px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-  }
-
-  .hl-tip-box {
-    transform: none !important;
-  }
-
-  .hl-caderno-box {
-    margin-top: 0 !important;
-  }
+/* default: center Dicas and Trilha blocks universally */
+.hl-right-col {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
 }
 
-/* homepage: center only Dicas and Trilha da Diretora blocks */
 .hl-right-col > .hl-tip-box,
 .hl-right-col > .hl-caderno-box {
+  display: block !important;
   margin-left: auto !important;
   margin-right: auto !important;
+  width: min(100%, 420px) !important;
+  max-width: 100% !important;
 }
 
-/* final fallback: center only Dicas and Trilha in home stacked layout */
-@media (max-width: 840px) {
+/* mobile phones: compact and centered */
+@media (max-width: 640px) {
   .hl-right-col {
     align-items: center !important;
+    gap: 14px !important;
   }
 
-  .hl-right-col .hl-tip-box,
-  .hl-right-col .hl-caderno-box {
-    width: min(420px, calc(100% - 24px)) !important;
+  .hl-right-col > .hl-tip-box,
+  .hl-right-col > .hl-caderno-box {
+    width: calc(100% - 20px) !important;
+    max-width: 100% !important;
+  }
+}
+
+/* tablets portrait and landscape: medium width and centered */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .hl-right-col {
+    align-items: center !important;
+    gap: 16px !important;
+  }
+
+  .hl-right-col > .hl-tip-box,
+  .hl-right-col > .hl-caderno-box {
+    width: min(420px, calc(100% - 30px)) !important;
     max-width: 420px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+  }
+}
+
+/* desktop and large screens: preserve centering but allow natural flow */
+@media (min-width: 1025px) {
+  .hl-right-col {
+    align-items: flex-start !important;
+  }
+
+  .hl-right-col > .hl-tip-box,
+  .hl-right-col > .hl-caderno-box {
+    width: auto !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
 }
