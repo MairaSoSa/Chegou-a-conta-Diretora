@@ -822,10 +822,56 @@
           min-height:0!important;
         }
       }
-      /* 1100px+: rodape nao sobrepoe os post-its */
+      /* === DESKTOP >= 1101px: tudo cabe numa unica pagina === */
       @media(min-width:1101px){
         .hl-page{
-          padding-bottom:40px!important
+          height:100vh!important;
+          max-height:100vh!important;
+          overflow:hidden!important;
+          padding-top:14px!important;
+          padding-bottom:8px!important;
+          display:flex!important;
+          flex-direction:column!important;
+          box-sizing:border-box!important;
+        }
+        .hl-layout{
+          flex:1!important;
+          min-height:0!important;
+          overflow:hidden!important;
+          align-items:stretch!important;
+        }
+        .hl-left-col{
+          display:flex!important;
+          flex-direction:column!important;
+          min-height:0!important;
+          overflow:hidden!important;
+        }
+        .hl-right-col{
+          display:flex!important;
+          flex-direction:column!important;
+          min-height:0!important;
+          overflow:hidden!important;
+          flex-shrink:0!important;
+        }
+        .hl-caderno-box{
+          flex:1!important;
+          min-height:0!important;
+          overflow:hidden!important;
+          display:flex!important;
+          flex-direction:column!important;
+        }
+        .hl-caderno-box .hl-trilha-list{
+          flex:1!important;
+          min-height:0!important;
+          max-height:none!important;
+          overflow-y:auto!important;
+          overflow-x:hidden!important;
+        }
+        .hl-footer-strip,
+        .hl-footer-desktop{
+          flex-shrink:0!important;
+          margin-top:auto!important;
+          padding-top:6px!important;
         }
       }
       /* proteção global da linha vermelha do caderno em telas >= 641px */
