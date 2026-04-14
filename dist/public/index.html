@@ -225,6 +225,18 @@
           window.__globalSafeJsonPatched = true;
         }
 
+        /* Silencia "Failed to fetch" de recarregamentos/troca de viewport — erros reais continuam visíveis */
+        window.addEventListener('unhandledrejection', function(e) {
+          var err = e && e.reason;
+          if (err && err instanceof TypeError && (
+            err.message === 'Failed to fetch' ||
+            err.message === 'Load failed' ||
+            err.message === 'NetworkError when attempting to fetch resource.'
+          )) {
+            e.preventDefault();
+          }
+        });
+
         var _origFetch = window.fetch;
         if (typeof _origFetch === 'function') {
           window.fetch = function(input, init) {
