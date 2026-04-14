@@ -902,6 +902,59 @@
           min-width:0!important;
         }
       }
+      /* 658x320 e similares: vertical curto com trilha compacta e centralizada */
+      @media (min-width:640px) and (max-width:700px) and (max-height:360px){
+        .hl-page{
+          padding:12px 12px 72px 56px!important;
+        }
+        .hl-layout{
+          grid-template-columns:1fr!important;
+          gap:14px!important;
+          padding:0!important;
+        }
+        .hl-right-col{
+          width:100%!important;
+          align-items:center!important;
+          justify-content:center!important;
+          gap:12px!important;
+          margin-top:0!important;
+        }
+        .hl-tip-box,
+        .hl-caderno-box{
+          width:min(100%,420px)!important;
+          max-width:420px!important;
+          margin-left:auto!important;
+          margin-right:auto!important;
+        }
+        .hl-caderno-box{
+          overflow:hidden!important;
+        }
+        .hl-caderno-box .hl-trilha-header h3{
+          font-size:.92rem!important;
+          line-height:1.2!important;
+        }
+        .hl-caderno-box .hl-trilha-list{
+          max-height:168px!important;
+          overflow-y:auto!important;
+          overflow-x:hidden!important;
+          padding-right:8px!important;
+          box-sizing:border-box!important;
+        }
+        .hl-caderno-box .hl-trilha-item{
+          padding:6px 0!important;
+          overflow:hidden!important;
+        }
+        .hl-caderno-box .hl-trilha-item-title{
+          font-size:.72rem!important;
+          line-height:1.15!important;
+          -webkit-line-clamp:1!important;
+        }
+        .hl-caderno-box .hl-trilha-item-sub{
+          font-size:.58rem!important;
+          line-height:1.2!important;
+          -webkit-line-clamp:1!important;
+        }
+      }
             /* ajuste fino para telas no perfil 1024x768 e 1180x820 (com tolerancia de viewport) */
             @media (min-width:980px) and (max-width:1060px) and (min-height:700px) and (max-height:820px),
               (min-width:1140px) and (max-width:1220px) and (min-height:780px) and (max-height:860px){
