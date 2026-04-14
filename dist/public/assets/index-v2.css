@@ -844,21 +844,60 @@
   overflow: visible !important;
 }
 
-/* ultra-short landscape: 658x320 and similar */
+/* ultra-short landscape: 658x320 and similar - AGGRESSIVE containment */
 @media (max-width: 680px) and (max-height: 340px) {
   .hl-caderno-box {
-    max-height: 180px !important;
+    max-height: 160px !important;
     min-height: 140px !important;
     overflow: hidden !important;
+    padding: 8px 12px 8px !important;
+  }
+
+  .hl-caderno-box h3 {
+    font-size: 0.95rem !important;
+    margin: 0 0 2px 0 !important;
   }
 
   .hl-trilha-header {
-    margin-bottom: 2px !important;
+    margin-bottom: 0px !important;
+    gap: 0px !important;
+  }
+
+  .hl-trilha-ver-todas {
+    font-size: 0.6rem !important;
   }
 
   .hl-trilha-list {
     overflow-y: auto !important;
-    max-height: calc(100% - 24px) !important;
+    overflow-x: hidden !important;
+    max-height: calc(100% - 20px) !important;
+    gap: 0px !important;
+    padding-right: 1px !important;
+    margin-top: 1px !important;
+  }
+
+  .hl-trilha-item {
+    padding: 2px 2px !important;
+    gap: 3px !important;
+    min-height: auto !important;
+    border-bottom: 0.5px solid rgba(180, 150, 110, 0.1) !important;
+  }
+
+  .hl-trilha-item-num {
+    font-size: 0.55rem !important;
+    min-width: 12px !important;
+    width: 12px !important;
+  }
+
+  .hl-trilha-item-title {
+    font-size: 0.55rem !important;
+    line-height: 1.1 !important;
+  }
+
+  .hl-trilha-item-sub {
+    font-size: 0.48rem !important;
+    line-height: 1.1 !important;
+    display: none !important;
   }
 }
 
