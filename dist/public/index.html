@@ -708,7 +708,7 @@
           border-radius:14px!important
         }
         .hl-caderno-box .hl-trilha-list{
-          max-height:260px!important;
+          max-height:320px!important;
           overflow-y:auto!important;
           overflow-x:hidden!important
         }
@@ -1995,13 +1995,6 @@
           if (list) {
             list.style.setProperty('overflow-y', 'auto', 'important');
             list.style.setProperty('overflow-x', 'hidden', 'important');
-            /* Garante minimo de 3 unidades visiveis em qualquer viewport mobile */
-            if (w < 641) {
-              var mh = parseInt(list.style.maxHeight) || 0;
-              if (mh < 200) {
-                list.style.setProperty('max-height', '210px', 'important');
-              }
-            }
           }
           box.querySelectorAll('.hl-trilha-item-title, .hl-trilha-item-sub').forEach(function(el) {
             el.style.setProperty('white-space', 'normal', 'important');
