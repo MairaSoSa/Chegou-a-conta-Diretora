@@ -177,6 +177,17 @@
 
         window.addEventListener('unhandledrejection', function(e) {
           var reason = e && e.reason;
+          /* Silencia erros de rede transitórios (troca de viewport, reload, reinício do servidor) */
+          if (reason instanceof TypeError && (
+            reason.message === 'Failed to fetch' ||
+            reason.message === 'Load failed' ||
+            reason.message === 'NetworkError when attempting to fetch resource.' ||
+            reason.message === 'cancelled' ||
+            (reason.message && reason.message.indexOf('fetch') !== -1 && reason.message.indexOf('fail') !== -1)
+          )) {
+            e.preventDefault();
+            return;
+          }
           if (reason && reason.message && (
             reason.message.indexOf("'const'") !== -1 ||
             reason.message.indexOf("reading 'default'") !== -1 ||
