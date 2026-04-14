@@ -844,6 +844,24 @@
   overflow: visible !important;
 }
 
+/* ultra-short landscape: 658x320 and similar */
+@media (max-width: 680px) and (max-height: 340px) {
+  .hl-caderno-box {
+    max-height: 180px !important;
+    min-height: 140px !important;
+    overflow: hidden !important;
+  }
+
+  .hl-trilha-header {
+    margin-bottom: 2px !important;
+  }
+
+  .hl-trilha-list {
+    overflow-y: auto !important;
+    max-height: calc(100% - 24px) !important;
+  }
+}
+
 /* small phones: extra safeguard for trilha containment */
 @media (max-width: 480px) {
   .hl-caderno-box {
