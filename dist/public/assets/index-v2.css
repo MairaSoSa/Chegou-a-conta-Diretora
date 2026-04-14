@@ -318,6 +318,110 @@
     font-size: 0.74rem;
   }
 
+
+/* compact spacing for short landscape phones (e.g., 640x360) */
+@media (max-width: 640px) and (max-height: 420px) {
+  .hl-page {
+    padding-top: 10px !important;
+    padding-bottom: 18px !important;
+  }
+
+  .hl-layout {
+    gap: 10px !important;
+  }
+
+  .hl-left-col,
+  .hl-right-col {
+    gap: 10px !important;
+  }
+
+  .hl-hero-note,
+  .hl-tip-box,
+  .hl-caderno-box {
+    margin: 0 !important;
+  }
+
+  .hl-hero-note {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+  }
+
+  .hl-caderno-box {
+    margin-top: 6px !important;
+  }
+
+  .hl-trilha-list {
+    gap: 6px !important;
+    margin-top: 4px !important;
+  }
+
+  .hl-note-card {
+    min-height: 94px !important;
+  }
+}
+
+@media (max-width: 640px) and (max-height: 380px) {
+  .hl-page {
+    padding-top: 8px !important;
+    padding-bottom: 12px !important;
+  }
+
+  .hl-layout,
+  .hl-left-col,
+  .hl-right-col {
+    gap: 8px !important;
+  }
+
+  .hl-hero-note {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .hl-hero-actions,
+  .hl-hero-tags {
+    margin-top: 6px !important;
+    gap: 6px !important;
+  }
+
+  .hl-mural-label {
+    line-height: 24px !important;
+    height: 24px !important;
+  }
+
+  .hl-cards-grid {
+    gap: 8px !important;
+  }
+
+  .hl-note-card {
+    min-height: 84px !important;
+    padding-top: 12px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .hl-right-col {
+    padding-top: 0 !important;
+  }
+
+  .hl-tip-box {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .hl-caderno-box {
+    margin-top: 4px !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .hl-trilha-list {
+    gap: 4px !important;
+    margin-top: 2px !important;
+  }
+
+  .hl-footer-mobile {
+    margin-top: 8px !important;
+  }
+}
   .hl-trilha-item-sub {
     font-size: 0.64rem;
   }
@@ -622,5 +726,79 @@
     word-break: normal !important;
     line-height: 1.38 !important;
     font-size: 0.74rem !important;
+  }
+}
+
+/* prevent clipping of final cards on short desktop heights (e.g. 1138x712) */
+@media (min-width: 1025px) and (max-width: 1280px) and (max-height: 760px) {
+  .hl-notebook {
+    height: min(760px, calc(100vh - 12px)) !important;
+  }
+
+  .hl-page {
+    overflow-y: auto !important;
+    padding-bottom: 16px !important;
+  }
+
+  .hl-layout {
+    min-height: auto !important;
+  }
+
+  .hl-left-col {
+    overflow: visible !important;
+  }
+
+  .hl-cards-grid {
+    flex: none !important;
+    min-height: auto !important;
+  }
+}
+
+/* force center "Dicas" and "Trilha da Diretora" on portrait tablets (e.g. 800x1280) */
+@media (min-width: 641px) and (max-width: 1024px) and (orientation: portrait) {
+  .hl-right-col {
+    width: 100% !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 18px !important;
+  }
+
+  .hl-tip-box,
+  .hl-caderno-box {
+    width: min(420px, calc(100% - 24px)) !important;
+    max-width: 420px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .hl-tip-box {
+    transform: none !important;
+  }
+
+  .hl-caderno-box {
+    margin-top: 0 !important;
+  }
+}
+
+/* homepage: center only Dicas and Trilha da Diretora blocks */
+.hl-right-col > .hl-tip-box,
+.hl-right-col > .hl-caderno-box {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* final fallback: center only Dicas and Trilha in home stacked layout */
+@media (max-width: 840px) {
+  .hl-right-col {
+    align-items: center !important;
+  }
+
+  .hl-right-col .hl-tip-box,
+  .hl-right-col .hl-caderno-box {
+    width: min(420px, calc(100% - 24px)) !important;
+    max-width: 420px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 }
