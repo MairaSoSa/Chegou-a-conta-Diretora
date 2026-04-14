@@ -1984,7 +1984,12 @@
         function apply() {
           var box = document.querySelector('.hl-caderno-box');
           if (!box) return;
-          box.style.setProperty('overflow', 'visible', 'important');
+          /* No desktop (>=641px) libera overflow para mostrar textos; no mobile mantém clipped */
+          if (window.innerWidth >= 641) {
+            box.style.setProperty('overflow', 'visible', 'important');
+          } else {
+            box.style.setProperty('overflow', 'hidden', 'important');
+          }
           var list = box.querySelector('.hl-trilha-list');
           if (list) {
             list.style.setProperty('overflow-y', 'auto', 'important');
