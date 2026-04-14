@@ -15,6 +15,17 @@
 
 set -e
 
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+# Carrega variaveis do .env automaticamente quando presente.
+if [ -f "$PROJECT_ROOT/.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  . "$PROJECT_ROOT/.env"
+  set +a
+  echo "[START] Variaveis de ambiente carregadas de .env"
+fi
+
 PORT="${PORT:-5000}"
 DB_PATH="/data/dev.db"
 DOWNLOAD_URL="${SQLITE_DB_DOWNLOAD_URL:-https://drive.google.com/file/d/1Dtp04JGoLqB9kIzgRnXi36BRtdH23BK4/view?usp=drive_link}"

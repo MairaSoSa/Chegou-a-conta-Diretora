@@ -4,7 +4,7 @@
   "description": "Dashboard de gestão financeira para escolas públicas brasileiras",
   "license": "MIT",
   "scripts": {
-    "dev": "node dist/bootstrap.cjs",
+    "dev": "set -a; [ -f .env ] && . ./.env; set +a; node dist/bootstrap.cjs",
     "sync:mec": "node scripts/sync-mec-contatos.mjs",
     "prestart": "npm run sync:mec && npm run prune:assets:apply",
     "start": "bash start.sh",
