@@ -701,6 +701,18 @@
           max-height:228px!important
         }
       }
+      /* zona intermediaria 600-640px: garante que o scroll nao vaze para fora da caixa */
+      @media(min-width:600px) and (max-width:640px){
+        .hl-caderno-box{
+          overflow:hidden!important;
+          border-radius:14px!important
+        }
+        .hl-caderno-box .hl-trilha-list{
+          max-height:260px!important;
+          overflow-y:auto!important;
+          overflow-x:hidden!important
+        }
+      }
     </style>
     <style>
       /* ── Trilha da Diretora — sidebar (homepage): garante texto visível ── */
