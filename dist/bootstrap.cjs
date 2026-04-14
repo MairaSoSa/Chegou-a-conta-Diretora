@@ -5,6 +5,41 @@ const zlib = require('zlib');
 const os = require('os');
 const Module = require('module');
 
+function loadDotEnvFile() {
+  const envPath = path.join(process.cwd(), '.env');
+  if (!fs.existsSync(envPath)) return;
+
+  try {
+    const raw = fs.readFileSync(envPath, 'utf8');
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx <= 0) continue;
+
+      const key = trimmed.slice(0, eqIdx).trim();
+      let val = trimmed.slice(eqIdx + 1).trim();
+      if (!key) continue;
+
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+
+      if (typeof process.env[key] === 'undefined') {
+        process.env[key] = val;
+      }
+    }
+
+    const hasDb = !!(process.env.RAILWAY_DATABASE_URL || process.env.DATABASE_URL);
+    console.log(`[bootstrap] .env loaded (db configured: ${hasDb})`);
+  } catch (err) {
+    console.warn('[bootstrap] Failed to load .env:', err.message);
+  }
+}
+
+loadDotEnvFile();
+
 const distDir = __dirname;
 const tmpDir = os.tmpdir();
 
