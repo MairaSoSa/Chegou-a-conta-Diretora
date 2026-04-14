@@ -800,6 +800,17 @@
           min-height:0!important;
         }
       }
+      /* 1100px+: rodape nao sobrepoe os post-its */
+      @media(min-width:1101px){
+        .hl-left-col{
+          padding-bottom:64px!important
+        }
+        .hl-page-footer,
+        .hl-footer,
+        .hl-home-footer{
+          margin-top:48px!important
+        }
+      }
       /* proteção global da linha vermelha do caderno em telas >= 641px */
       @media (min-width:641px){
         .hl-page{
