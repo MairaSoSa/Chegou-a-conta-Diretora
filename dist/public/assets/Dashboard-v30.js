@@ -1209,6 +1209,37 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
         e.jsx("p", { style: { fontSize: 9, color: "#888", margin: "4px 0 0" }, children: "Fonte: Portal da Transpar\xEAncia \u2022 " + (ctxMunData.bpc.mes ? ctxMunData.bpc.mes.slice(0, 4) + "/" + ctxMunData.bpc.mes.slice(4, 6) : "") })
       ]})
     ]}),
+    ctxMunData && ctxMunData.censo2022 && e.jsxs("div", { style: { background: "#e8eaf6", border: "1px solid #9fa8da", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
+      e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }, children: [
+        e.jsx("span", { style: { fontSize: 14 }, children: "\uD83C\uDFD9\uFE0F" }),
+        e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#1a237e", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", flex: 1 }, children: "Perfil Demogr\xE1fico \u2014 Censo 2022 / IBGE" })
+      ]}),
+      e.jsxs("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 10px", marginBottom: 8 }, children: [
+        ctxMunData.censo2022.taxa_alfabetizacao_15plus != null && e.jsxs("div", { style: { background: "#fff", borderRadius: 6, padding: "6px 8px", border: "1px solid #c5cae9" }, children: [
+          e.jsx("p", { style: { fontSize: 18, fontWeight: 800, color: "#283593", margin: 0, lineHeight: 1 }, children: ctxMunData.censo2022.taxa_alfabetizacao_15plus.toFixed(1).replace(".", ",") + "%" }),
+          e.jsx("p", { style: { fontSize: 9, color: "#3949ab", margin: "2px 0 0" }, children: "alfab. 15+ anos" })
+        ]}),
+        ctxMunData.censo2022.idade_mediana != null && e.jsxs("div", { style: { background: "#fff", borderRadius: 6, padding: "6px 8px", border: "1px solid #c5cae9" }, children: [
+          e.jsx("p", { style: { fontSize: 18, fontWeight: 800, color: "#283593", margin: 0, lineHeight: 1 }, children: ctxMunData.censo2022.idade_mediana + " anos" }),
+          e.jsx("p", { style: { fontSize: 9, color: "#3949ab", margin: "2px 0 0" }, children: "idade mediana" })
+        ]}),
+        ctxMunData.censo2022.indice_envelhecimento != null && e.jsxs("div", { style: { background: "#fff", borderRadius: 6, padding: "6px 8px", border: "1px solid #c5cae9" }, children: [
+          e.jsx("p", { style: { fontSize: 18, fontWeight: 800, color: "#283593", margin: 0, lineHeight: 1 }, children: ctxMunData.censo2022.indice_envelhecimento.toFixed(1).replace(".", ",") }),
+          e.jsx("p", { style: { fontSize: 9, color: "#3949ab", margin: "2px 0 0" }, children: "\xEDnd. envelhecimento (id\xF3sos/jovens)" })
+        ]}),
+        ctxMunData.censo2022.razao_sexo != null && e.jsxs("div", { style: { background: "#fff", borderRadius: 6, padding: "6px 8px", border: "1px solid #c5cae9" }, children: [
+          e.jsx("p", { style: { fontSize: 18, fontWeight: 800, color: "#283593", margin: 0, lineHeight: 1 }, children: ctxMunData.censo2022.razao_sexo.toFixed(1).replace(".", ",") }),
+          e.jsx("p", { style: { fontSize: 9, color: "#3949ab", margin: "2px 0 0" }, children: "raz\xE3o de sexo (hom./100 mul.)" })
+        ]})
+      ]}),
+      (ctxMunData.censo2022.pop_60plus != null || ctxMunData.censo2022.pop_0_14 != null) && e.jsxs("div", { style: { display: "flex", gap: 8, marginBottom: 6, alignItems: "center", flexWrap: "wrap" }, children: [
+        e.jsx("span", { style: { fontSize: 9, color: "#5c6bc0", fontWeight: 600 }, children: "Faixas et\xE1rias:" }),
+        ctxMunData.censo2022.pop_0_14 != null && e.jsxs("span", { style: { fontSize: 9, background: "#c5cae9", borderRadius: 4, padding: "2px 7px", color: "#1a237e", fontWeight: 600 }, children: ["0-14 anos: ", ctxMunData.censo2022.pop_0_14.toLocaleString("pt-BR")] }),
+        ctxMunData.censo2022.pop_60plus != null && e.jsxs("span", { style: { fontSize: 9, background: "#c5cae9", borderRadius: 4, padding: "2px 7px", color: "#1a237e", fontWeight: 600 }, children: ["60+ anos: ", ctxMunData.censo2022.pop_60plus.toLocaleString("pt-BR")] }),
+        (ctxMunData.censo2022.homens != null && ctxMunData.censo2022.mulheres != null) && e.jsxs("span", { style: { fontSize: 9, background: "#c5cae9", borderRadius: 4, padding: "2px 7px", color: "#1a237e", fontWeight: 600 }, children: ["\u2642 ", ctxMunData.censo2022.homens.toLocaleString("pt-BR"), " \u2022 \u2640 ", ctxMunData.censo2022.mulheres.toLocaleString("pt-BR")] })
+      ]}),
+      e.jsx("p", { style: { fontSize: 9, color: "#888", margin: "4px 0 0" }, children: "Fonte: IBGE \u2022 Censo Demogr\xE1fico 2022 \u2022 SIDRA" })
+    ]}),
     !ctxMunLoading && ctxMunData && !ctxMunData.ok && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: "Dados de contexto n\xE3o dispon\xEDveis para este munic\xEDpio." }),
     !ctxMunLoading && !ctxMunData && !a && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: "C\xF3digo IBGE n\xE3o dispon\xEDvel para esta escola." })
   ]})

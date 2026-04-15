@@ -1763,6 +1763,28 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '        if(_bpcSerie.length>0){const _last=_bpcSerie[_bpcSerie.length-1];bpc={beneficiados:_last.beneficiados,valor:_last.valor,media:Math.round(_last.valor/_last.beneficiados),mes:_last.mes,serie:_bpcSerie};}\n' +
 '      }\n' +
 '    }catch(_bpcErr){console.warn("[ctx-mun] bpc erro:",String(_bpcErr));}\n' +
+'    // ── Censo 2022 (IBGE SIDRA) — perfil demografico municipal ──────────────\n' +
+'    let censo2022=null;\n' +
+'    try{\n' +
+'      if(co.length===7){\n' +
+'        const [_s9955,_s9951]=await Promise.all([\n' +
+'          fetch("https://apisidra.ibge.gov.br/values/t/9955/n6/"+co+"/v/all/p/2022",{signal:AbortSignal.timeout(9000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),\n' +
+'          fetch("https://apisidra.ibge.gov.br/values/t/9951/n6/"+co+"/v/all/p/2022",{signal:AbortSignal.timeout(9000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})\n' +
+'        ]);\n' +
+'        const _fv=function(arr,substr){if(!Array.isArray(arr))return null;const r=arr.find(function(x){return x.D2N&&x.D2N.includes(substr)&&x.V&&x.V!=="V"&&x.V!=="Valor"&&x.V!=="..."&&!isNaN(parseFloat(x.V));});return r?parseFloat(r.V):null;};\n' +
+'        const _env=_fv(_s9955,"Índice de envelhecimento (Id");\n' +
+'        const _imed=_fv(_s9955,"Idade mediana");\n' +
+'        const _rsex=_fv(_s9955,"Razão de sexo");\n' +
+'        const _p60=_fv(_s9955,"Pessoas de 60 anos");\n' +
+'        const _p014=_fv(_s9955,"Pessoas de 0 a 14");\n' +
+'        const _hom=_fv(_s9955,"homens");\n' +
+'        const _mul=_fv(_s9955,"mulheres");\n' +
+'        const _talfab=_fv(_s9951,"Taxa de alfabetização das pessoas de 15");\n' +
+'        const _nalfab=_fv(_s9951,"Pessoas de 15 anos ou mais de idade alfabet");\n' +
+'        const _t15=_fv(_s9951,"Pessoas de 15 anos ou mais de idade");\n' +
+'        if(_env!==null||_talfab!==null){censo2022={indice_envelhecimento:_env,idade_mediana:_imed,razao_sexo:_rsex,pop_60plus:_p60,pop_0_14:_p014,homens:_hom,mulheres:_mul,taxa_alfabetizacao_15plus:_talfab,alfabetizados_15plus:_nalfab,total_15plus:_t15};}\n' +
+'      }\n' +
+'    }catch(_c22Err){console.warn("[ctx-mun] censo2022 erro:",String(_c22Err));}\n' +
 '    // ── Dengue (InfoDengue/Fiocruz) ─────────────────────────────────────────\n' +
 '    let dengue=null;\n' +
 '    try{\n' +
@@ -1783,7 +1805,7 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '        }\n' +
 '      }\n' +
 '    }catch(_dngErr){console.warn("[ctx-mun] dengue erro:",String(_dngErr));}\n' +
-'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,dengue:dengue});\n' +
+'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,censo2022:censo2022,dengue:dengue});\n' +
 '  }catch(err){console.error("[ctx-mun] erro:",String(err));g.json({ok:false,erro:String(err)});}\n' +
 '}),\n';
 
