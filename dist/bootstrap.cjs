@@ -1663,13 +1663,13 @@ e.get("/api/noticias-extras",async(A,g)=>{
   if (!source.includes(MARKER)) { console.warn('[bootstrap] contexto-municipal — marker not found'); return; }
 
   const UF_MAP = {'11':'RO','12':'AC','13':'AM','14':'RR','15':'PA','16':'AP','17':'TO','21':'MA','22':'PI','23':'CE','24':'RN','25':'PB','26':'PE','27':'AL','28':'SE','29':'BA','31':'MG','32':'ES','33':'RJ','35':'SP','41':'PR','42':'SC','43':'RS','50':'MS','51':'MT','52':'GO','53':'DF'};
-  const IND_NOMES = {'1':'Pre-natal 6+ consultas','2':'Exames sifilis e HIV gestacao','3':'Vacinas em dia gestacao','4':'Saude bucal','5':'Hipertensos c/ PA aferida','6':'Diabeticos c/ HbA1c','7':'Puericultura em dia','8':'Citopatologico colo','9':'Aleitamento materno exclusivo','10':'Consulta puerperal'};
+  // Previne Brasil: API usa codigos 10,20,30... (multiplos de 10)
+  const IND_NOMES = {'10':'Pre-natal (6+ consultas)','20':'Sifilis/HIV na gestacao','30':'Vacinas em dia na gestacao','40':'Hipertensos c/ PA aferida','50':'Diabeticos c/ HbA1c','60':'Citopatologico (colo)','70':'Puericultura em dia','80':'Saude bucal','90':'Aleitamento materno exclusivo','100':'Consulta puerperal'};
 
   const ufMapJson = JSON.stringify(UF_MAP);
   const indNomesJson = JSON.stringify(IND_NOMES);
 
   const routeCtx = 'e.get("/api/contexto-municipal/:coMunicipio",async(A,g)=>{\n' +
-'  console.log("[ctx-mun] chamado param="+A.params.coMunicipio);\n' +
 '  try{\n' +
 '    const co=String(A.params.coMunicipio||"");\n' +
 '    const co6=co.length===7?co.slice(0,6):co;\n' +
@@ -1678,32 +1678,43 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '    const indNomes=' + indNomesJson + ';\n' +
 '    const uf=ufMap[co6.slice(0,2)]||"";\n' +
 '    const BASE="https://apidadosabertos.saude.gov.br";\n' +
-'    const _f=async(url)=>{try{const r=await fetch(url,{signal:AbortSignal.timeout(8000)});return r.ok?r.json():null;}catch(fe){return null;}};\n' +
-'    const [macroR,previneR,cadastroR,sisvanCR,sisvanAR]=await Promise.allSettled([\n' +
+'    const _f=async(url)=>{try{const r=await fetch(url,{signal:AbortSignal.timeout(9000)});return r.ok?r.json():null;}catch(fe){return null;}};\n' +
+'    const [macroR,previneR,cadastroR,sv1R,sv2R,sv3R,sv4R]=await Promise.allSettled([\n' +
 '      _f(BASE+"/macrorregiao-e-regiao-de-saude/municipio?codigo_municipio="+co6+"&limit=1"),\n' +
-'      _f(BASE+"/atencao-primaria/indicador-desempenho-programa-previne-brasil?codigo_municipio="+co6+"&limit=20"),\n' +
+'      _f(BASE+"/atencao-primaria/indicador-desempenho-programa-previne-brasil?codigo_municipio="+co6+"&limit=30"),\n' +
 '      _f(BASE+"/atencao-primaria/cadastro-vinculado-programa-previne-brasil?codigo_municipio_ibge="+co6+"&limit=50"),\n' +
-'      _f(BASE+"/sisvan/estado-nutricional?codigo_municipio="+co6+"&codigo_fase_vida=5&limit=20"),\n' +
-'      _f(BASE+"/sisvan/estado-nutricional?codigo_municipio="+co6+"&codigo_fase_vida=6&limit=20"),\n' +
+'      _f(BASE+"/sisvan/estado-nutricional?codigo_municipio="+co6+"&codigo_fase_vida=1&limit=100"),\n' +
+'      _f(BASE+"/sisvan/estado-nutricional?codigo_municipio="+co6+"&codigo_fase_vida=2&limit=100"),\n' +
+'      _f(BASE+"/sisvan/estado-nutricional?codigo_municipio="+co6+"&codigo_fase_vida=3&limit=80"),\n' +
+'      _f(BASE+"/sisvan/estado-nutricional?codigo_municipio="+co6+"&codigo_fase_vida=4&limit=50"),\n' +
 '    ]);\n' +
 '    const macro=(macroR.status==="fulfilled"&&macroR.value&&macroR.value.macrorregiao_regiao_saude_municipios&&macroR.value.macrorregiao_regiao_saude_municipios[0])||null;\n' +
 '    const previneAll=(previneR.status==="fulfilled"&&previneR.value&&previneR.value.sisab_indicador_desempenho)||[];\n' +
 '    const cadastroAll=(cadastroR.status==="fulfilled"&&cadastroR.value&&cadastroR.value.sisab_cadastro_vinculado)||[];\n' +
-'    const sisvanC=(sisvanCR.status==="fulfilled"&&sisvanCR.value&&sisvanCR.value.estados_nutricionais)||[];\n' +
-'    const sisvanA=(sisvanAR.status==="fulfilled"&&sisvanAR.value&&sisvanAR.value.estados_nutricionais)||[];\n' +
+'    const previneValidas=previneAll.filter(function(i){return i.visao_equipe==="validas";});\n' +
 '    const latestInd={};\n' +
-'    for(const ind of previneAll){const k=ind.codigo_tipo_indicador;if(!latestInd[k]||ind.competencia>latestInd[k].competencia)latestInd[k]=ind;}\n' +
-'    const indicadores=Object.values(latestInd).map(function(i){return{codigo:i.codigo_tipo_indicador,nome:indNomes[String(i.codigo_tipo_indicador)]||("Indicador "+i.codigo_tipo_indicador),percentual:i.percentual,numerador:i.numerador,denominador:i.denominador_utilizador,quadrimestre:i.quadrimestre,populacao:i.populacao,cadastro:i.cadastro};}).sort(function(a,b){return a.codigo-b.codigo;});\n' +
+'    for(const ind of previneValidas){const k=ind.codigo_tipo_indicador;if(!latestInd[k]||ind.competencia>latestInd[k].competencia)latestInd[k]=ind;}\n' +
+'    const indicadores=Object.values(latestInd).map(function(i){return{codigo:i.codigo_tipo_indicador,nome:indNomes[String(i.codigo_tipo_indicador)]||("Indicador "+i.codigo_tipo_indicador),percentual:i.percentual_quadrimestre,numerador:i.numerador,denominador:i.denominador_utilizador,quadrimestre:i.quadrimestre};}).sort(function(a,b){return a.codigo-b.codigo;});\n' +
 '    const teamMap={};\n' +
 '    for(const c of cadastroAll){const k=c.sigla_equipe+":"+c.situacao_equipe;if(!teamMap[k]||c.competencia_referencia>teamMap[k].competencia_referencia)teamMap[k]=c;}\n' +
 '    const equipes=Object.values(teamMap).map(function(c){return{tipo:c.sigla_equipe,situacao:c.situacao_equipe,pessoas:c.pessoas_vinculadas_equipe_municipio,competencia:c.competencia_referencia};});\n' +
-'    const populacao=(indicadores[0]&&indicadores[0].populacao)||(macro&&macro.populacao_estimada_ibge_2022)||null;\n' +
-'    const cadastrosTotal=(indicadores[0]&&indicadores[0].cadastro)||null;\n' +
-'    const allSisvan=sisvanC.concat(sisvanA);\n' +
-'    const sisvanPorFase={};\n' +
-'    for(const s of allSisvan){const f=s.fase_vida||"?";if(!sisvanPorFase[f])sisvanPorFase[f]={fase:f,count:0,obesos:0,sobrepeso:0,adequado:0,magreza:0};sisvanPorFase[f].count++;const imc=parseFloat(s.imc||0);if(imc>=30)sisvanPorFase[f].obesos++;else if(imc>=25)sisvanPorFase[f].sobrepeso++;else if(imc>=18.5)sisvanPorFase[f].adequado++;else if(imc>0)sisvanPorFase[f].magreza++;}\n' +
+'    const firstInd=Object.values(latestInd)[0];\n' +
+'    const populacao=(firstInd&&firstInd.populacao)||(macro&&macro.populacao_estimada_ibge_2022)||null;\n' +
+'    const cadastrosTotal=(firstInd&&firstInd.cadastro)||null;\n' +
+'    const coberturaAP=populacao&&cadastrosTotal?Math.round(cadastrosTotal/populacao*100):null;\n' +
+'    function _svCat(recs,campo){const cats={};for(const r of recs){const v=(r[campo]||"Sem dado").replace(/[\\u00c0-\\u024f]/g,function(c){return c.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"");});cats[v]=(cats[v]||0)+1;}return cats;}\n' +
+'    function _svImc(recs){const cats={};for(const r of recs){const imc=parseFloat(r.imc||0);const v=imc>=30?"Obesidade":imc>=25?"Sobrepeso":imc>=18.5?"Adequado":imc>0?"Magreza":"Sem dado";cats[v]=(cats[v]||0)+1;}return cats;}\n' +
+'    const sv1=(sv1R.status==="fulfilled"&&sv1R.value&&sv1R.value.estados_nutricionais)||[];\n' +
+'    const sv2=(sv2R.status==="fulfilled"&&sv2R.value&&sv2R.value.estados_nutricionais)||[];\n' +
+'    const sv3=(sv3R.status==="fulfilled"&&sv3R.value&&sv3R.value.estados_nutricionais)||[];\n' +
+'    const sv4=(sv4R.status==="fulfilled"&&sv4R.value&&sv4R.value.estados_nutricionais)||[];\n' +
+'    const sisvan=[];\n' +
+'    if(sv1.length>0)sisvan.push({fase:"Criancas",rotulo:"Criancas",count:sv1.length,categorias:_svCat(sv1,"crianca_imc_x_idade")});\n' +
+'    if(sv2.length>0)sisvan.push({fase:"Adolescentes",rotulo:"Adolescentes",count:sv2.length,categorias:_svCat(sv2,"adolescente_imc_x_idade")});\n' +
+'    if(sv3.length>0)sisvan.push({fase:"Adultos",rotulo:"Adultos",count:sv3.length,categorias:_svImc(sv3)});\n' +
+'    if(sv4.length>0)sisvan.push({fase:"Idosos",rotulo:"Idosos",count:sv4.length,categorias:_svImc(sv4)});\n' +
 '    const munNome=(macro&&macro.municipio||"").replace(/^[A-Z]{2}\\s*-\\s*/,"");\n' +
-'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,equipes_saude:equipes,indicadores_previne:indicadores,sisvan_fases:Object.values(sisvanPorFase),sisvan_total_amostra:allSisvan.length});\n' +
+'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,equipes_saude:equipes,indicadores_previne:indicadores,sisvan:sisvan});\n' +
 '  }catch(err){console.error("[ctx-mun] erro:",String(err));g.json({ok:false,erro:String(err)});}\n' +
 '}),\n';
 

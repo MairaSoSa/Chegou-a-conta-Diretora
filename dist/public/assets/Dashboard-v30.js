@@ -1010,7 +1010,10 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
           ]}),
           ctxMunData.cadastros_atencao_primaria && e.jsxs("div", { style: { background: "#e8f5e9", borderRadius: 10, padding: "10px 12px", border: "1px solid #a5d6a7" }, children: [
             e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 3px", textTransform: "uppercase" }, children: "Cadastros na Aten\xE7\xE3o Prim\xE1ria" }),
-            e.jsx("p", { style: { fontSize: 18, fontWeight: 800, color: "#2e7d32", margin: 0 }, children: ctxMunData.cadastros_atencao_primaria.toLocaleString("pt-BR") })
+            e.jsxs("p", { style: { fontSize: 18, fontWeight: 800, color: "#2e7d32", margin: 0, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [
+              ctxMunData.cadastros_atencao_primaria.toLocaleString("pt-BR"),
+              ctxMunData.cobertura_ap != null && e.jsx("span", { style: { fontSize: 11, fontWeight: 700, color: "#558b2f", background: "#f1f8e9", borderRadius: 6, padding: "2px 8px", border: "1px solid #aed581", lineHeight: 1.3 }, children: ctxMunData.cobertura_ap + "% cobertura" })
+            ]})
           ]})
         ]})
       ]}),
@@ -1036,9 +1039,25 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
           ]}, idx);
         }) })
       ]}),
-      ctxMunData.sisvan_total_amostra > 0 && e.jsxs("div", { style: { background: "#f3e5f5", border: "1px solid #ce93d8", borderRadius: 10, padding: "10px 12px" }, children: [
-        e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#6a1b9a", margin: "0 0 6px", textTransform: "uppercase" }, children: "Estado Nutricional (SISVAN \u2014 amostra de " + ctxMunData.sisvan_total_amostra + " registros)" }),
-        ctxMunData.sisvan_fases && ctxMunData.sisvan_fases.map(function(f, idx){ return e.jsxs("p", { style: { fontSize: 11, color: "#4a1060", margin: "3px 0", lineHeight: 1.5 }, children: [e.jsx("strong", { children: f.fase + ": " }), f.count, " registros", f.obesos > 0 ? " \u2014 Obesidade: " + f.obesos : "", f.sobrepeso > 0 ? " \u2014 Sobrepeso: " + f.sobrepeso : "", f.adequado > 0 ? " \u2014 Adequado: " + f.adequado : "", f.magreza > 0 ? " \u2014 Magreza: " + f.magreza : ""] }, idx); })
+      ctxMunData.sisvan && ctxMunData.sisvan.length > 0 && e.jsxs("div", { style: { background: "#f3e5f5", border: "1px solid #ce93d8", borderRadius: 10, padding: "10px 12px" }, children: [
+        e.jsxs("p", { style: { fontSize: 10, fontWeight: 700, color: "#6a1b9a", margin: "0 0 8px", textTransform: "uppercase" }, children: ["Estado Nutricional \u2014 SISVAN (amostra: ", ctxMunData.sisvan.reduce(function(s, f) { return s + f.count; }, 0), " registros)"] }),
+        ctxMunData.sisvan.map(function(f, fidx) {
+          var cats = f.categorias || {};
+          var catEntries = Object.entries(cats).filter(function(en) { return en[0] !== "Sem dado"; }).sort(function(a, b) { return b[1] - a[1]; });
+          if (catEntries.length === 0) return null;
+          return e.jsxs("div", { style: { marginBottom: fidx < ctxMunData.sisvan.length - 1 ? 8 : 0 }, children: [
+            e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#4a1060", margin: "0 0 4px" }, children: (f.rotulo || f.fase) + " (" + f.count + " reg.)" }),
+            e.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: 4 }, children: catEntries.map(function(entry, ci) {
+              var cat = entry[0]; var count = entry[1];
+              var isGood = /eutro|adequa|peso adequa|eutrofi/i.test(cat);
+              var isAlert = /magreza|sobrepeso|obesidade/i.test(cat);
+              var bg = isGood ? "#e8f5e9" : isAlert ? "#fff8e1" : "#f5f5f5";
+              var col = isGood ? "#2e7d32" : isAlert ? "#e65100" : "#555";
+              var bdr = isGood ? "1px solid #a5d6a7" : isAlert ? "1px solid #ffcc02" : "1px solid #e0e0e0";
+              return e.jsxs("span", { style: { fontSize: 10, background: bg, border: bdr, borderRadius: 4, padding: "2px 7px", color: col, fontWeight: 500 }, children: [cat, ": ", count] }, ci);
+            })})
+          ]}, fidx);
+        })
       ]})
     ]}),
     !ctxMunLoading && ctxMunData && !ctxMunData.ok && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: "Dados de contexto n\xE3o dispon\xEDveis para este munic\xEDpio." }),
