@@ -207,6 +207,38 @@ const _EQUIP_ROUTE =
       '}catch(I){T.erro=I.message}'+
       'return T;'+
     '},T=w();'+
+    // CNES API fallback when local file not available OR doesn't match municipality
+    'if(!T.disponivel||!T.dados_correspondem_municipio){'+
+      // reset so we build fresh from CNES for this municipality
+      'T={disponivel:!1,fonte:"CNES-API",atualizado_em:null,referencia_proximidade:null,resumo:null,pronto_socorro_mais_proximo:null,top_contatos:[],dados_correspondem_municipio:!1};'+
+      'try{'+
+        // fetch UBS (tipo 1=Posto Saúde, 2=Centro Saúde), UPA (tipo 73), Hospital (tipo 5) in parallel
+        'let _base="https://apidadosabertos.saude.gov.br/cnes/estabelecimentos?codigo_municipio="+v;'+
+        'let _sig=AbortSignal.timeout(14e3);'+
+        'let _hdrs={"User-Agent":"ChegoAContaDiretora/1.0","Accept":"application/json"};'+
+        'let [_r1,_r2,_r3,_r4]=await Promise.all(['+
+          'fetch(_base+"&codigo_tipo_unidade=1&limit=100",{signal:_sig,headers:_hdrs}).then(r=>r.ok?r.json():null).catch(()=>null),'+
+          'fetch(_base+"&codigo_tipo_unidade=2&limit=100",{signal:_sig,headers:_hdrs}).then(r=>r.ok?r.json():null).catch(()=>null),'+
+          'fetch(_base+"&codigo_tipo_unidade=73&limit=50",{signal:_sig,headers:_hdrs}).then(r=>r.ok?r.json():null).catch(()=>null),'+
+          'fetch(_base+"&codigo_tipo_unidade=5&limit=30",{signal:_sig,headers:_hdrs}).then(r=>r.ok?r.json():null).catch(()=>null)'+
+        ']);'+
+        'let _mapEst=(arr,tipo)=>(Array.isArray(arr)?arr:[]).map(_est=>({tipo,nome:_est.nome_razao_social||_est.nome_fantasia,bairro:_est.bairro_estabelecimento||null,telefone:_est.numero_telefone_estabelecimento||null,latitude:_est.latitude_estabelecimento_decimo_grau?parseFloat(_est.latitude_estabelecimento_decimo_grau):null,longitude:_est.longitude_estabelecimento_decimo_grau?parseFloat(_est.longitude_estabelecimento_decimo_grau):null,distancia_km:null}));'+
+        'let _ubs=[..._mapEst((_r1&&_r1.estabelecimentos)||[],"UBS"),..._mapEst((_r2&&_r2.estabelecimentos)||[],"UBS")];'+
+        'let _upa=_mapEst((_r3&&_r3.estabelecimentos)||[],"UPA");'+
+        // filter hospitals by name: only those with "pronto socorro" count as PS
+        'let _hosp=((_r4&&_r4.estabelecimentos)||[]);'+
+        'let _ps=_hosp.filter(h=>/pronto[- ]socorro/.test(String(h.nome_razao_social||"").toLowerCase())).map(h=>({tipo:"PRONTO_SOCORRO",nome:h.nome_razao_social,bairro:h.bairro_estabelecimento||null,telefone:h.numero_telefone_estabelecimento||null,latitude:h.latitude_estabelecimento_decimo_grau?parseFloat(h.latitude_estabelecimento_decimo_grau):null,longitude:h.longitude_estabelecimento_decimo_grau?parseFloat(h.longitude_estabelecimento_decimo_grau):null,distancia_km:null}));'+
+        'if(_ubs.length>0||_upa.length>0||_ps.length>0){'+
+          'T.disponivel=!0;'+
+          'T.dados_correspondem_municipio=!0;'+
+          'T.fonte="CNES-API";'+
+          'T.atualizado_em=new Date().toISOString();'+
+          'T.pronto_socorro_mais_proximo=_ps.length>0?_ps[0]:null;'+
+          'T.top_contatos=[..._upa,..._ubs].slice(0,8);'+
+          'T.resumo={total_unidades:_ubs.length+_upa.length+_ps.length};'+
+        '}'+
+      '}catch(_ce){console.warn("[equipamentos] CNES fallback erro:",_ce.message);}'+
+    '}'+
     'try{'+
       'let I="https://servicodados.ibge.gov.br/api/v1/pesquisas/10079/periodos/2013/indicadores/"+x+"/resultados/"+v,D=await fetch(I,{signal:AbortSignal.timeout(8e3),headers:{"User-Agent":"ChegoAContaDiretora/1.0"}});'+
       'if(!D.ok)throw new Error("IBGE HTTP "+D.status);'+
