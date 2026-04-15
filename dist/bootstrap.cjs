@@ -754,6 +754,96 @@ if (fs.existsSync(dashboardV30AssetPath)) {
     console.log('[bootstrap] Dashboard-v30 ONGs block patch already applied');
   }
 
+  // ── Gov.br Services tab: new "Serviços gov.br" tab in Suporte Institucional ──
+  const _GOVSERV_IDCHECK = 'servicos-gov';
+  if (!dashV30Source.includes(_GOVSERV_IDCHECK)) {
+    // 1. Add tab button to the tabs array
+    const _GOVSERV_TAB_OLD = '{ id: "sistemas", label: "Sistemas" }].map';
+    const _GOVSERV_TAB_NEW = '{ id: "sistemas", label: "Sistemas" }, { id: "servicos-gov", label: "Servi\\xE7os gov.br" }].map';
+    if (dashV30Source.includes(_GOVSERV_TAB_OLD)) {
+      dashV30Source = dashV30Source.replace(_GOVSERV_TAB_OLD, _GOVSERV_TAB_NEW);
+      console.log('[bootstrap] Dashboard-v30 gov.br services tab button patch applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 gov.br services tab button anchor NOT found');
+    }
+
+    // 2. Inject tab content before the closing ] of the tab panel children array
+    // Anchor: unique string at the very end of the "sistemas" tab content
+    const _GOVSERV_ANCHOR = ', B2)) })] });';
+    const _govServData =
+      '[{id:9340,nome:"Solicitar aumento da velocidade da conex\\xE3o do PBLE",' +
+      'desc:"Garante \\xE0 unidade educacional o direito ao aumento da velocidade de internet escolar (PBLE/ProInfo).",' +
+      'url:"https://www.gov.br/pt-br/servicos/solicitar-aumento-da-velocidade-da-conexao-do-pble",programa:"PBLE"},' +
+      '{id:9925,nome:"Solicitar a\\xE7\\xF5es de infraestrutura educacional (PAR)",' +
+      'desc:"O Plano de A\\xE7\\xF5es Articuladas (PAR) viabiliza obras, mobili\\xE1rio e equipamentos para a rede p\\xFAblica de ensino.",' +
+      'url:"https://www.gov.br/pt-br/servicos/solicitar-acoes-de-infraestrutura-educacional-obras-mobiliario-e-equipamentos",programa:"PAR"},' +
+      '{id:9930,nome:"Solicitar ades\\xE3o \\xE0s atas de Registro de Pre\\xE7os Nacional (RPN)",' +
+      'desc:"Permite ao gestor utilizar atas de compras do FNDE, reduzindo custos e burocracia nas aquisi\\xE7\\xF5es escolares.",' +
+      'url:"https://www.gov.br/pt-br/servicos/solicitar-utilizacao-adesao-as-atas-de-registro-de-precos-nacional-rpn",programa:"Compras"},' +
+      '{id:10025,nome:"Solicitar livros do PNLD pela Reserva T\\xE9cnica",' +
+      'desc:"Escolas benefici\\xE1rias do PNLD podem solicitar livros dispon\\xEDveis na Reserva T\\xE9cnica do FNDE.",' +
+      'url:"https://www.gov.br/pt-br/servicos/solicitar-livros-da-reserva-tecnica",programa:"PNLD"},' +
+      '{id:12620,nome:"Solicitar Ades\\xE3o \\xE0 Conta Cart\\xE3o PNAE",' +
+      'desc:"Aderir \\xE0 Conta Cart\\xE3o PNAE \\u2014 maior transpar\\xEAncia e controle na movimenta\\xE7\\xE3o dos recursos de alimenta\\xE7\\xE3o escolar.",' +
+      'url:"https://www.gov.br/pt-br/servicos/solicitar-adesao-a-conta-cartao-pnae",programa:"PNAE"},' +
+      '{id:12780,nome:"Realizar assinatura eletr\\xF4nica de documentos no FNDE",' +
+      'desc:"Cadastro para assinar eletronicamente documentos em processos administrativos do FNDE (pessoa f\\xEDsica).",' +
+      'url:"https://www.gov.br/pt-br/servicos/realizar-assinatura-eletronica-de-documentos",programa:"FNDE Digital"},' +
+      '{id:12920,nome:"Solicitar Pagamento Retroativo de Parcela Retida do PNAE",' +
+      'desc:"Ap\\xF3s regulariza\\xE7\\xE3o da inadimpl\\xEAncia com o PNAE, solicitar libera\\xE7\\xE3o de parcelas retidas junto ao FNDE.",' +
+      'url:"https://www.gov.br/pt-br/servicos/solicitar-pagamento-retroativo-de-parcela-retida-do-pnae",programa:"PNAE"}]';
+
+    const _govServContent =
+      'aa==="servicos-gov"&&(()=>{' +
+      'const _gsd=' + _govServData + ';' +
+      'const _gpc={' +
+        '"PNLD":{bg:"#dbeafe",bd:"#93c5fd",txt:"#1d4ed8"},' +
+        '"PNAE":{bg:"#fef3c7",bd:"#fcd34d",txt:"#92400e"},' +
+        '"PAR":{bg:"#d1fae5",bd:"#6ee7b7",txt:"#065f46"},' +
+        '"PBLE":{bg:"#ccfbf1",bd:"#5eead4",txt:"#0f766e"},' +
+        '"FNDE Digital":{bg:"#f3e8ff",bd:"#c084fc",txt:"#6b21a8"},' +
+        '"Compras":{bg:"#fce7f3",bd:"#f9a8d4",txt:"#9d174d"}' +
+      '};' +
+      'return e.jsxs("div",{style:{display:"flex",flexDirection:"column",gap:10},children:[' +
+        'e.jsxs("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4},children:[' +
+          'e.jsx("p",{style:{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.07em",color:"#1f6b45",margin:0},' +
+          'children:"Servi\\xE7os FNDE \\u2014 Portal gov.br"}),' +
+          'e.jsx("a",{href:"https://www.servicos.gov.br/servicos?q=fnde",target:"_blank",rel:"noopener noreferrer",' +
+          'style:{fontSize:10,color:"#1f6b45",background:"#e8f5ee",borderRadius:20,padding:"3px 10px",fontWeight:600,textDecoration:"none"},' +
+          'children:"Ver todos \\u2197"})' +
+        ']}),' +
+        'e.jsx("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:10},' +
+        'children:_gsd.map(function(_sv,_si){' +
+          'const _c=_gpc[_sv.programa]||{bg:"#e8f5ee",bd:"#b8dfc8",txt:"#1f6b45"};' +
+          'return e.jsxs("div",{style:{background:"#fff",border:"1.5px solid "+_c.bd,borderRadius:12,padding:"12px 14px",borderLeft:"4px solid "+_c.bd,display:"flex",flexDirection:"column",gap:7},children:[' +
+            'e.jsxs("div",{style:{display:"flex",gap:5,alignItems:"center"},children:[' +
+              'e.jsx("span",{style:{fontSize:9,fontWeight:800,color:_c.txt,background:_c.bg,borderRadius:6,padding:"2px 7px"},children:_sv.programa}),' +
+              'e.jsx("span",{style:{fontSize:9,color:"#6b7785",background:"#f1f5f9",borderRadius:6,padding:"2px 6px"},children:"FNDE"})' +
+            ']}),' +
+            'e.jsx("p",{style:{fontSize:12,fontWeight:700,color:"#1a2e2a",margin:0,lineHeight:1.35},children:_sv.nome}),' +
+            'e.jsx("p",{style:{fontSize:11,color:"#6b7785",margin:0,lineHeight:1.4,flexGrow:1},children:_sv.desc}),' +
+            'e.jsx("a",{href:_sv.url,target:"_blank",rel:"noopener noreferrer",' +
+            'style:{fontSize:11,fontWeight:700,color:_c.txt,background:_c.bg,borderRadius:20,padding:"5px 12px",textDecoration:"none",display:"inline-flex",alignItems:"center",gap:4,width:"fit-content"},' +
+            'children:"Acessar servi\\xE7o \\u2197"})' +
+          ']},_si);' +
+        '})}),' +
+        'e.jsx("p",{style:{fontSize:10,color:"#6b7785",margin:0,lineHeight:1.4},' +
+        'children:"Fonte: API de Servi\\xE7os \\u2014 gov.br/conecta. Servi\\xE7os p\\xFAblicos gratuitos prestados pelo FNDE."})' +
+      ']});' +
+      '})()';
+
+    const _GOVSERV_NEW = ', B2)) }), ' + _govServContent + '] });';
+    if (dashV30Source.includes(_GOVSERV_ANCHOR)) {
+      dashV30Source = dashV30Source.replace(_GOVSERV_ANCHOR, _GOVSERV_NEW);
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 gov.br services tab content patch applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 gov.br services tab content anchor NOT found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 gov.br services tab already applied');
+  }
+
   if (dashV30Changed) {
     fs.writeFileSync(dashboardV30AssetPath, dashV30Source, 'utf8');
   }
