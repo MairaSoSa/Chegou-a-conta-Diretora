@@ -1657,6 +1657,60 @@ e.get("/api/noticias-extras",async(A,g)=>{
   console.log('[bootstrap] CONSED/UNDIME noticias-extras route applied');
 })();
 
+// ── Contexto Municipal de Saúde ──────────────────────────────────────────────
+(function _patchContextoMunicipal() {
+  const MARKER = 'e.get("/api/dou/search",async(A,g)=>';
+  if (!source.includes(MARKER)) { console.warn('[bootstrap] contexto-municipal — marker not found'); return; }
+
+  const UF_MAP = {'11':'RO','12':'AC','13':'AM','14':'RR','15':'PA','16':'AP','17':'TO','21':'MA','22':'PI','23':'CE','24':'RN','25':'PB','26':'PE','27':'AL','28':'SE','29':'BA','31':'MG','32':'ES','33':'RJ','35':'SP','41':'PR','42':'SC','43':'RS','50':'MS','51':'MT','52':'GO','53':'DF'};
+  const IND_NOMES = {'1':'Pre-natal 6+ consultas','2':'Exames sifilis e HIV gestacao','3':'Vacinas em dia gestacao','4':'Saude bucal','5':'Hipertensos c/ PA aferida','6':'Diabeticos c/ HbA1c','7':'Puericultura em dia','8':'Citopatologico colo','9':'Aleitamento materno exclusivo','10':'Consulta puerperal'};
+
+  const ufMapJson = JSON.stringify(UF_MAP);
+  const indNomesJson = JSON.stringify(IND_NOMES);
+
+  const routeCtx = 'e.get("/api/contexto-municipal/:coMunicipio",async(A,g)=>{\n' +
+'  console.log("[ctx-mun] chamado param="+A.params.coMunicipio);\n' +
+'  try{\n' +
+'    const co=String(A.params.coMunicipio||"");\n' +
+'    const co6=co.length===7?co.slice(0,6):co;\n' +
+'    if(!co6||!/^\\d{6}$/.test(co6))return g.json({ok:false,erro:"Codigo invalido"});\n' +
+'    const ufMap=' + ufMapJson + ';\n' +
+'    const indNomes=' + indNomesJson + ';\n' +
+'    const uf=ufMap[co6.slice(0,2)]||"";\n' +
+'    const BASE="https://apidadosabertos.saude.gov.br";\n' +
+'    const _f=async(url)=>{try{const r=await fetch(url,{signal:AbortSignal.timeout(8000)});return r.ok?r.json():null;}catch(fe){return null;}};\n' +
+'    const [macroR,previneR,cadastroR,sisvanCR,sisvanAR]=await Promise.allSettled([\n' +
+'      _f(BASE+"/macrorregiao-e-regiao-de-saude/municipio?codigo_municipio="+co6+"&limit=1"),\n' +
+'      _f(BASE+"/atencao-primaria/indicador-desempenho-programa-previne-brasil?codigo_municipio="+co6+"&limit=20"),\n' +
+'      _f(BASE+"/atencao-primaria/cadastro-vinculado-programa-previne-brasil?codigo_municipio_ibge="+co6+"&limit=50"),\n' +
+'      _f(BASE+"/sisvan/estado-nutricional?codigo_municipio="+co6+"&codigo_fase_vida=5&limit=20"),\n' +
+'      _f(BASE+"/sisvan/estado-nutricional?codigo_municipio="+co6+"&codigo_fase_vida=6&limit=20"),\n' +
+'    ]);\n' +
+'    const macro=(macroR.status==="fulfilled"&&macroR.value&&macroR.value.macrorregiao_regiao_saude_municipios&&macroR.value.macrorregiao_regiao_saude_municipios[0])||null;\n' +
+'    const previneAll=(previneR.status==="fulfilled"&&previneR.value&&previneR.value.sisab_indicador_desempenho)||[];\n' +
+'    const cadastroAll=(cadastroR.status==="fulfilled"&&cadastroR.value&&cadastroR.value.sisab_cadastro_vinculado)||[];\n' +
+'    const sisvanC=(sisvanCR.status==="fulfilled"&&sisvanCR.value&&sisvanCR.value.estados_nutricionais)||[];\n' +
+'    const sisvanA=(sisvanAR.status==="fulfilled"&&sisvanAR.value&&sisvanAR.value.estados_nutricionais)||[];\n' +
+'    const latestInd={};\n' +
+'    for(const ind of previneAll){const k=ind.codigo_tipo_indicador;if(!latestInd[k]||ind.competencia>latestInd[k].competencia)latestInd[k]=ind;}\n' +
+'    const indicadores=Object.values(latestInd).map(function(i){return{codigo:i.codigo_tipo_indicador,nome:indNomes[String(i.codigo_tipo_indicador)]||("Indicador "+i.codigo_tipo_indicador),percentual:i.percentual,numerador:i.numerador,denominador:i.denominador_utilizador,quadrimestre:i.quadrimestre,populacao:i.populacao,cadastro:i.cadastro};}).sort(function(a,b){return a.codigo-b.codigo;});\n' +
+'    const teamMap={};\n' +
+'    for(const c of cadastroAll){const k=c.sigla_equipe+":"+c.situacao_equipe;if(!teamMap[k]||c.competencia_referencia>teamMap[k].competencia_referencia)teamMap[k]=c;}\n' +
+'    const equipes=Object.values(teamMap).map(function(c){return{tipo:c.sigla_equipe,situacao:c.situacao_equipe,pessoas:c.pessoas_vinculadas_equipe_municipio,competencia:c.competencia_referencia};});\n' +
+'    const populacao=(indicadores[0]&&indicadores[0].populacao)||(macro&&macro.populacao_estimada_ibge_2022)||null;\n' +
+'    const cadastrosTotal=(indicadores[0]&&indicadores[0].cadastro)||null;\n' +
+'    const allSisvan=sisvanC.concat(sisvanA);\n' +
+'    const sisvanPorFase={};\n' +
+'    for(const s of allSisvan){const f=s.fase_vida||"?";if(!sisvanPorFase[f])sisvanPorFase[f]={fase:f,count:0,obesos:0,sobrepeso:0,adequado:0,magreza:0};sisvanPorFase[f].count++;const imc=parseFloat(s.imc||0);if(imc>=30)sisvanPorFase[f].obesos++;else if(imc>=25)sisvanPorFase[f].sobrepeso++;else if(imc>=18.5)sisvanPorFase[f].adequado++;else if(imc>0)sisvanPorFase[f].magreza++;}\n' +
+'    const munNome=(macro&&macro.municipio||"").replace(/^[A-Z]{2}\\s*-\\s*/,"");\n' +
+'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,equipes_saude:equipes,indicadores_previne:indicadores,sisvan_fases:Object.values(sisvanPorFase),sisvan_total_amostra:allSisvan.length});\n' +
+'  }catch(err){console.error("[ctx-mun] erro:",String(err));g.json({ok:false,erro:String(err)});}\n' +
+'}),\n';
+
+  source = source.replace(MARKER, routeCtx + MARKER);
+  console.log('[bootstrap] contexto-municipal route applied (pre-compile)');
+})();
+
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
