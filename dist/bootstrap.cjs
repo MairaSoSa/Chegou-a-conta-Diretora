@@ -273,14 +273,27 @@ const _EQUIP_ROUTE =
         '}'+
       '}catch(_onge){console.warn("[equipamentos] ONGs CNEAS erro:",_onge.message);}'+
     '}'+
+    // FUNAI CTL/CR data from funai-coordenacoes.json
+    'let _funaiResult={disponivel:!1,ctls:[],cr:null,fonte:"funai-coordenacoes.json",atualizado_em:null};'+
+    'try{'+
+      'const _fFs=require("fs"),_fPath=require("path").resolve(process.cwd(),process.env.FUNAI_OUTPUT_JSON||"funai-coordenacoes.json");'+
+      'if(_fFs.existsSync(_fPath)){'+
+        'const _fData=JSON.parse(_fFs.readFileSync(_fPath,"utf8"));'+
+        'const _fAt=_fData.generated_at||null;'+
+        'const _fMun=_fData.by_municipio&&(_fData.by_municipio[v]||_fData.by_municipio[E]);'+
+        'if(_fMun&&(_fMun.ctls&&_fMun.ctls.length>0||_fMun.cr)){'+
+          '_funaiResult={disponivel:!0,ctls:_fMun.ctls||[],cr:_fMun.cr||null,fonte:"funai-coordenacoes.json",atualizado_em:_fAt};'+
+        '}else{_funaiResult.atualizado_em=_fAt;}'+
+      '}'+
+    '}catch(_fe){console.warn("[equipamentos] FUNAI lookup erro:",_fe.message);}'+
     'try{'+
       'let I="https://servicodados.ibge.gov.br/api/v1/pesquisas/10079/periodos/2013/indicadores/"+x+"/resultados/"+v,D=await fetch(I,{signal:AbortSignal.timeout(8e3),headers:{"User-Agent":"ChegoAContaDiretora/1.0"}});'+
       'if(!D.ok)throw new Error("IBGE HTTP "+D.status);'+
       'let B=await D.json(),N={};'+
       'for(let R of B)N[R.id]=R&&R.res&&R.res[0]&&R.res[0].res?R.res[0].res["2013"]??null:null;'+
-      'return g.json({ok:!0,co_municipio:E,ibge_fonte:"IBGE MUNIC Assist\\xEAncia Social 2013",suas_counts:{cras:{total:N[72814]??null,label:"CRAS",descricao:"Centro de Refer\\xEAncia da Assist\\xEAncia Social"},creas:{total:N[72837]??null,label:"CREAS",descricao:"Centro de Refer\\xEAncia Especializado de Assist\\xEAncia Social"},centro_pop:{total:N[72839]??null,label:"Centro POP",descricao:"Centro de Refer\\xEAncia para Pop. em Situa\\xE7\\xE3o de Rua"},abrigos:{total:N[72858]??null,label:"Abrigos / Casa Lar",descricao:"Servi\\xE7os de acolhimento institucional"}},saude:T,saude_pronto_socorro_mais_proximo:T.pronto_socorro_mais_proximo||null,ongs:_ongsResult,links:[{nome:"Mapa SUAS (MDS)",url:"https://mapas.mds.gov.br/mapas/app/painel-suas/"},{nome:"CNES (sa\\xFAde)",url:"https://cnes.datasus.gov.br/"},{nome:"Dados abertos SUAS",url:"https://dados.gov.br/dataset/unidades-de-atendimento-da-assistencia-social"},{nome:"CadSUAS",url:"https://cadsuas.mds.gov.br/"}]});'+
+      'return g.json({ok:!0,co_municipio:E,ibge_fonte:"IBGE MUNIC Assist\\xEAncia Social 2013",suas_counts:{cras:{total:N[72814]??null,label:"CRAS",descricao:"Centro de Refer\\xEAncia da Assist\\xEAncia Social"},creas:{total:N[72837]??null,label:"CREAS",descricao:"Centro de Refer\\xEAncia Especializado de Assist\\xEAncia Social"},centro_pop:{total:N[72839]??null,label:"Centro POP",descricao:"Centro de Refer\\xEAncia para Pop. em Situa\\xE7\\xE3o de Rua"},abrigos:{total:N[72858]??null,label:"Abrigos / Casa Lar",descricao:"Servi\\xE7os de acolhimento institucional"}},saude:T,saude_pronto_socorro_mais_proximo:T.pronto_socorro_mais_proximo||null,ongs:_ongsResult,funai:_funaiResult,links:[{nome:"Mapa SUAS (MDS)",url:"https://mapas.mds.gov.br/mapas/app/painel-suas/"},{nome:"CNES (sa\\xFAde)",url:"https://cnes.datasus.gov.br/"},{nome:"Dados abertos SUAS",url:"https://dados.gov.br/dataset/unidades-de-atendimento-da-assistencia-social"},{nome:"CadSUAS",url:"https://cadsuas.mds.gov.br/"}]});'+
     '}catch(I){'+
-      'return g.json({ok:!1,co_municipio:E,error:I.message,suas_counts:{},saude:T,saude_pronto_socorro_mais_proximo:T.pronto_socorro_mais_proximo||null,ongs:_ongsResult,links:[{nome:"Mapa SUAS (MDS)",url:"https://mapas.mds.gov.br/mapas/app/painel-suas/"},{nome:"CNES (sa\\xFAde)",url:"https://cnes.datasus.gov.br/"}]});'+
+      'return g.json({ok:!1,co_municipio:E,error:I.message,suas_counts:{},saude:T,saude_pronto_socorro_mais_proximo:T.pronto_socorro_mais_proximo||null,ongs:_ongsResult,funai:_funaiResult,links:[{nome:"Mapa SUAS (MDS)",url:"https://mapas.mds.gov.br/mapas/app/painel-suas/"},{nome:"CNES (sa\\xFAde)",url:"https://cnes.datasus.gov.br/"}]});'+
     '}'+
   '});';
 
@@ -578,6 +591,75 @@ if (source.indexOf(_ONDH_API_ANCHOR) !== -1) {
   console.warn('[bootstrap] /api/ondh-municipio patch NOT applied — anchor not found');
 }
 
+// ── 3c6. Patch: /api/escola/:inep/funai endpoint ──────────────────────────────
+// Returns FUNAI CTL/CR data for the escola's municipality + escola indigenous flags.
+// Conditions for "presença indígena": IN_EDUCACAO_INDIGENA=1, TP_LOCALIZACAO_DIFERENCIADA>0,
+// qt_mat_bas_indigena>0, or municipality mapped to a FUNAI CTL/CR.
+const _FUNAI_API_ANCHOR = _ONGS_API_ANCHOR;
+const _FUNAI_API_ROUTE =
+  'e.get("/api/escola/:inep/funai",async(A,g)=>{'+
+    'try{'+
+      'const _inep=String(A.params.inep||"").replace(/\\D/g,"");'+
+      'if(!_inep||_inep.length!==8)return g.status(400).json({ok:!1,mensagem:"INEP inv\\xE1lido"});'+
+      'const _db=globalThis._pgPool||null;'+
+      // Get escola data from DB
+      'let _esc=null;'+
+      'if(_db){'+
+        'const _q=await _db.query('+
+          '"SELECT co_municipio,in_educacao_indigena,tp_localizacao_diferenciada '+
+          'FROM censo_escolas WHERE co_entidade=$1 ORDER BY ano DESC LIMIT 1",'+
+          '[_inep]'+
+        ').catch((e)=>{console.warn("[funai-api] DB query error:",e.message);return{rows:[]};});'+
+        '_esc=_q.rows&&_q.rows[0]||null;'+
+      '}'+
+      // Normalize municipality code
+      'const _rawMun=String(_esc&&_esc.co_municipio||"").replace(/\\D/g,"");'+
+      'const _munCod=_rawMun.length===7?_rawMun.slice(0,6):_rawMun;'+
+      // Load FUNAI CTL/CR from JSON file
+      'let _ctls=[],_cr=null,_funaiAt=null;'+
+      'try{'+
+        'const _fFs=require("fs"),_fPath=require("path").resolve(process.cwd(),process.env.FUNAI_OUTPUT_JSON||"funai-coordenacoes.json");'+
+        'if(_fFs.existsSync(_fPath)){'+
+          'const _fData=JSON.parse(_fFs.readFileSync(_fPath,"utf8"));'+
+          '_funaiAt=_fData.generated_at||null;'+
+          'const _fMun=_munCod&&_fData.by_municipio&&(_fData.by_municipio[_munCod]||_fData.by_municipio[_rawMun]);'+
+          'if(_fMun){_ctls=_fMun.ctls||[];_cr=_fMun.cr||null;}'+
+        '}'+
+      '}catch(_fe){console.warn("[funai-api] JSON erro:",_fe.message);}'+
+      // Evaluate conditions (qt_mat_bas_indigena from SQLite censo_escola_historico)
+      'const _edInd=Number(_esc&&_esc.in_educacao_indigena)||0;'+
+      'const _tpLoc=Number(_esc&&_esc.tp_localizacao_diferenciada)||0;'+
+      'let _qtInd=0;'+
+      'try{'+
+        'if(typeof fn==="function"){'+
+          'const _sR=fn("SELECT (dados_json->>\'QT_MAT_BAS_INDIGENA\') AS q FROM censo_escola_historico WHERE co_entidade=? ORDER BY ano DESC LIMIT 1",[_inep]);'+
+          '_qtInd=Number(Array.isArray(_sR)&&_sR[0]&&_sR[0].q||0)||0;'+
+        '}'+
+      '}catch(_qe){/* sqlite qt_mat_bas_indigena optional */}'+
+      'const _temFunai=_ctls.length>0||!!_cr;'+
+      'const _temPresenca=_edInd===1||_tpLoc===2||_qtInd>0||_temFunai;'+
+      'return g.json({'+
+        'ok:!0,'+
+        'inep:_inep,'+
+        'municipio:{codigo:_munCod,nome:null,uf:null},'+
+        'flags:{in_educacao_indigena:_edInd,tp_localizacao_diferenciada:_tpLoc,qt_mat_bas_indigena:_qtInd},'+
+        'tem_presenca_indigena:_temPresenca,'+
+        'funai:{disponivel:_temFunai,ctls:_ctls,cr:_cr,atualizado_em:_funaiAt}'+
+      '});'+
+    '}catch(_e){console.error("[funai-api] erro:",_e.message);return g.status(500).json({ok:!1,mensagem:"Erro interno: "+_e.message});}'+
+  '}),';
+
+if (source.indexOf(_FUNAI_API_ANCHOR) !== -1) {
+  if (!source.includes('/api/escola/:inep/funai')) {
+    source = source.replace(_FUNAI_API_ANCHOR, _FUNAI_API_ANCHOR + _FUNAI_API_ROUTE);
+    console.log('[bootstrap] /api/escola/:inep/funai endpoint patch applied');
+  } else {
+    console.log('[bootstrap] /api/escola/:inep/funai already present — skipping');
+  }
+} else {
+  console.warn('[bootstrap] /api/escola/:inep/funai patch NOT applied — anchor not found');
+}
+
 // ── 3d. Patch: fix PDDE exercise dropdown data consistency ──────────────────
 // The bundled server had a fixed year list and left an_exercicio untyped.
 // This breaks exercise filters/menu behavior when data arrives as strings.
@@ -803,6 +885,92 @@ if (fs.existsSync(dashboardV30AssetPath)) {
     }
   } else {
     console.log('[bootstrap] Dashboard-v30 ONGs block patch already applied');
+  }
+
+  // ── FUNAI block: Presença Indígena — injected before footnote, after ONGs ──
+  // Condition: municipality has CTL/CR (Ra.funai.disponivel) OR school has indigenous
+  // flags (G.in_educacao_indigena, G.tp_localizacao_diferenciada) OR indigenous
+  // enrollments (V.matriculas.por_raca.indigena > 0).
+  const _FUNAI_FE_BLOCK =
+    ', (Ra&&Ra.funai&&Ra.funai.disponivel||(typeof G!=="undefined"&&G&&(Number(G.in_educacao_indigena||0)===1||Number(G.tp_localizacao_diferenciada||0)===2))||(V&&V.matriculas&&V.matriculas.por_raca&&(V.matriculas.por_raca.indigena||0)>0))&&(()=>{' +
+      'const _F=Ra&&Ra.funai||{disponivel:!1,ctls:[],cr:null};' +
+      'const _ctls=Array.isArray(_F.ctls)?_F.ctls:[];' +
+      'const _cr=_F.cr||null;' +
+      'const _qtInd=(V&&V.matriculas&&V.matriculas.por_raca&&V.matriculas.por_raca.indigena)||0;' +
+      'const _edInd=typeof G!=="undefined"&&G?Number(G.in_educacao_indigena||0):0;' +
+      'const _tpLoc=typeof G!=="undefined"&&G?Number(G.tp_localizacao_diferenciada||0):0;' +
+      'return e.jsxs("div",{style:{marginTop:14},children:[' +
+        // section header
+        'e.jsxs("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10},children:[' +
+          'e.jsx("p",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:"#7b3f00",margin:0},' +
+          'children:"Presen\\xE7a Ind\\xEDgena \\u2014 FUNAI"}),' +
+          'e.jsx("span",{style:{fontSize:9,color:"#7b3f00",background:"#fef3e2",borderRadius:20,padding:"2px 8px",fontWeight:600},' +
+          'children:"Censo Escolar / FUNAI"})' +
+        ']}),' +
+        // indigenous context badges (always show when block is visible)
+        'e.jsxs("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10},children:[' +
+          '_edInd===1&&e.jsx("span",{style:{fontSize:10,fontWeight:700,color:"#7b3f00",background:"#fef3e2",border:"1px solid #f4c06c",borderRadius:20,padding:"3px 10px"},children:"Escola Ind\\xEDgena (Censo)"}),' +
+          '_tpLoc===2&&e.jsx("span",{style:{fontSize:10,fontWeight:700,color:"#5d4037",background:"#efebe9",border:"1px solid #bcaaa4",borderRadius:20,padding:"3px 10px"},children:"Terra Ind\\xEDgena (Localiza\\xE7\\xE3o)"}),' +
+          '_qtInd>0&&e.jsxs("span",{style:{fontSize:10,fontWeight:700,color:"#4e342e",background:"#efebe9",border:"1px solid #bcaaa4",borderRadius:20,padding:"3px 10px"},children:[_qtInd.toLocaleString("pt-BR")," mat. ind\\xEDgenas"]})' +
+        ']}),' +
+        // CTLs section
+        '_ctls.length>0&&e.jsxs("div",{style:{marginBottom:10},children:[' +
+          'e.jsx("p",{style:{fontSize:10,fontWeight:700,color:"#7b3f00",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6},children:"Coordena\\xE7\\xF5es T\\xE9cnicas Locais (CTL)"}),' +
+          'e.jsx("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(240px, 1fr))",gap:8},children:' +
+            '_ctls.slice(0,5).map(function(_ctl,_ci){' +
+              'return e.jsxs("div",{style:{background:"#fff",border:"1.5px solid #f4c06c",borderRadius:12,padding:"10px 12px",borderLeft:"4px solid #e65100"},children:[' +
+                'e.jsx("p",{style:{fontWeight:700,fontSize:11,color:"#bf360c",margin:"0 0 4px",lineHeight:1.3},children:[' +
+                  'e.jsx("span",{style:{fontSize:8,fontWeight:800,color:"#e65100",background:"#fbe9e7",borderRadius:6,padding:"1px 5px",marginRight:4,verticalAlign:"middle"},children:"CTL"}),' +
+                  '_ctl.nome||"CTL"' +
+                '].filter(Boolean)}),' +
+                '(_ctl.municipio_nome||_ctl.uf)&&e.jsxs("p",{style:{fontSize:10,color:"#5d4037",margin:"0 0 2px"},children:[' +
+                  '"\\uD83D\\uDCCD ",_ctl.municipio_nome||"",_ctl.municipio_nome&&_ctl.uf?" \u2014 ":"",_ctl.uf||""' +
+                ']}),' +
+                '_ctl.endereco&&e.jsx("p",{style:{fontSize:10,color:"#6d4c41",margin:"0 0 2px"},children:"\\uD83C\\uDFE2 "+_ctl.endereco}),' +
+                '_ctl.municipios_atendidos&&e.jsx("p",{style:{fontSize:9,color:"#8d6e63",margin:"2px 0 0",fontStyle:"italic",lineHeight:1.3},children:"Atende: "+_ctl.municipios_atendidos.slice(0,120)+((_ctl.municipios_atendidos.length||0)>120?"...":"")})' +
+              ']},_ci);' +
+            '})' +
+          '})' +
+        ']}),' +
+        // CR section
+        '_cr&&e.jsxs("div",{style:{marginBottom:10},children:[' +
+          'e.jsx("p",{style:{fontSize:10,fontWeight:700,color:"#7b3f00",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6},children:"Coordena\\xE7\\xE3o Regional (CR)"}),' +
+          'e.jsxs("div",{style:{background:"#fff",border:"1.5px solid #bcaaa4",borderRadius:12,padding:"12px 14px",borderLeft:"4px solid #7b3f00"},children:[' +
+            'e.jsx("p",{style:{fontWeight:700,fontSize:12,color:"#4e342e",margin:"0 0 4px"},children:[' +
+              'e.jsx("span",{style:{fontSize:9,fontWeight:800,color:"#7b3f00",background:"#efebe9",borderRadius:6,padding:"1px 6px",marginRight:5,verticalAlign:"middle"},children:"CR"}),' +
+              '_cr.nome' +
+            '].filter(Boolean)}),' +
+            '(_cr.municipio_sede||_cr.uf)&&e.jsxs("p",{style:{fontSize:11,color:"#5d4037",margin:"0 0 3px"},children:["\\uD83D\\uDCCD Sede: ",_cr.municipio_sede||"",_cr.municipio_sede&&_cr.uf?" \u2014 ":"",_cr.uf||""]}),' +
+            '_cr.abrangencia&&e.jsx("p",{style:{fontSize:10,color:"#6d4c41",margin:"0 0 2px",lineHeight:1.4},children:"Abrang\\xEAncia: "+_cr.abrangencia.slice(0,200)+((_cr.abrangencia.length||0)>200?"...":"")})' +
+          ']})' +
+        ']}),' +
+        // no CTL/CR but school flags show
+        '!_ctls.length&&!_cr&&(_edInd===1||_tpLoc===2||_qtInd>0)&&e.jsx("p",{style:{fontSize:10,color:"#8d6e63",fontStyle:"italic",margin:"0 0 6px",lineHeight:1.4},' +
+        'children:"Coordena\\xE7\\xE3o T\\xE9cnica Local (CTL) e/ou Coordena\\xE7\\xE3o Regional (CR) da FUNAI n\\xE3o mapeadas para este munic\\xEDpio na base atual. Execute o script sync-funai.mjs para atualizar os dados."}),' +
+        // footer
+        'e.jsxs("p",{style:{fontSize:10,color:"#8d6e63",margin:"6px 0 0",lineHeight:1.4},children:[' +
+          '"Fonte: Censo Escolar INEP",_F.disponivel&&_F.atualizado_em&&e.jsxs("span",{children:[" / FUNAI (atualizado em ",new Date(_F.atualizado_em).toLocaleDateString("pt-BR"),")"]}),".",' +
+          'e.jsx("a",{href:"https://www.gov.br/funai/pt-br/atuacao/presenca-indigena",target:"_blank",rel:"noopener noreferrer",style:{color:"#7b3f00",marginLeft:4,textDecoration:"underline"},children:"Saiba mais sobre a FUNAI \\u2197"})' +
+        ']})' +
+      ']});' +
+    '})()'
+  ;
+  const _funaiBlockPresent = dashV30Source.includes(', (Ra&&Ra.funai&&Ra.funai.disponivel') && dashV30Source.includes('tp_localizacao_diferenciada||0)===2');
+  if (!_funaiBlockPresent) {
+    // Remove old ===1 block if present before re-injecting with ===2
+    if (dashV30Source.includes(', (Ra&&Ra.funai&&Ra.funai.disponivel')) {
+      dashV30Source = dashV30Source.replace(/, \(Ra&&Ra\.funai&&Ra\.funai\.disponivel[^)]+\)\(\)\)/s, '');
+    }
+    const _funaiAnchorIdx = dashV30Source.indexOf(_SAUDE_FE_ANCHOR);
+    if (_funaiAnchorIdx !== -1) {
+      dashV30Source = dashV30Source.slice(0, _funaiAnchorIdx) + _FUNAI_FE_BLOCK + dashV30Source.slice(_funaiAnchorIdx);
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 FUNAI block patch applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 FUNAI block patch NOT applied — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 FUNAI block patch already applied');
   }
 
   // ── Gov.br Services tab: new "Serviços gov.br" tab in Suporte Institucional ──
