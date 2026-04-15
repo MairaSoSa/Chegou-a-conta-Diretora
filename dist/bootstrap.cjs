@@ -182,6 +182,53 @@ if (_secExistingStartIdx !== -1) {
   }
 }
 
+// ── 3c1b. Patch: adiciona bloco saude em /api/equipamentos-publicos ─────────
+// Lê saude-contatos-priorizados.json (quando disponível) e retorna resumo,
+// top contatos e pronto socorro mais próximo no mesmo payload da API municipal.
+const _EQUIP_START = 'e.get("/api/equipamentos-publicos/:coMunicipio",async(A,g)=>{';
+const _EQUIP_END = '});let c={},d=360*60*1e3;';
+const _EQUIP_ROUTE =
+  'e.get("/api/equipamentos-publicos/:coMunicipio",async(A,g)=>{'+
+    'let{coMunicipio:E}=A.params;'+
+    'if(!E||!/^[\\d]{6,7}$/.test(E))return g.status(400).json({ok:!1,error:"C\\xF3digo de munic\\xEDpio inv\\xE1lido"});'+
+    'let v=E.length===7?E.slice(0,6):E,x="72814|72837|72839|72858",w=()=>{'+
+      'let T={disponivel:!1,fonte:"saude-contatos-priorizados.json",atualizado_em:null,referencia_proximidade:null,resumo:null,pronto_socorro_mais_proximo:null,top_contatos:[],dados_correspondem_municipio:!1};'+
+      'try{'+
+        'let I=require("fs"),D=require("path"),B=D.resolve(process.cwd(),process.env.SAUDE_CONTATOS_OUTPUT_JSON||"saude-contatos-priorizados.json");'+
+        'if(!I.existsSync(B))return T;'+
+        'let N=JSON.parse(I.readFileSync(B,"utf8")),R=String(N&&N.filtros&&N.filtros.codigo_municipio||"").replace(/\\D/g,""),M=String(E||"").replace(/\\D/g,""),L=M.length===7?M.slice(0,6):M;'+
+        'T.disponivel=!0;'+
+        'T.atualizado_em=N.generated_at||null;'+
+        'T.referencia_proximidade=N.referencia_proximidade||null;'+
+        'T.resumo=N.resumo||null;'+
+        'T.pronto_socorro_mais_proximo=N.pronto_socorro_mais_proximo||null;'+
+        'T.top_contatos=Array.isArray(N.priorizados_geral)?N.priorizados_geral.slice(0,5):[];'+
+        'T.dados_correspondem_municipio=R?R===M||R===L:!0;'+
+      '}catch(I){T.erro=I.message}'+
+      'return T;'+
+    '},T=w();'+
+    'try{'+
+      'let I="https://servicodados.ibge.gov.br/api/v1/pesquisas/10079/periodos/2013/indicadores/"+x+"/resultados/"+v,D=await fetch(I,{signal:AbortSignal.timeout(8e3),headers:{"User-Agent":"ChegoAContaDiretora/1.0"}});'+
+      'if(!D.ok)throw new Error("IBGE HTTP "+D.status);'+
+      'let B=await D.json(),N={};'+
+      'for(let R of B)N[R.id]=R&&R.res&&R.res[0]&&R.res[0].res?R.res[0].res["2013"]??null:null;'+
+      'return g.json({ok:!0,co_municipio:E,ibge_fonte:"IBGE MUNIC Assist\\xEAncia Social 2013",suas_counts:{cras:{total:N[72814]??null,label:"CRAS",descricao:"Centro de Refer\\xEAncia da Assist\\xEAncia Social"},creas:{total:N[72837]??null,label:"CREAS",descricao:"Centro de Refer\\xEAncia Especializado de Assist\\xEAncia Social"},centro_pop:{total:N[72839]??null,label:"Centro POP",descricao:"Centro de Refer\\xEAncia para Pop. em Situa\\xE7\\xE3o de Rua"},abrigos:{total:N[72858]??null,label:"Abrigos / Casa Lar",descricao:"Servi\\xE7os de acolhimento institucional"}},saude:T,saude_pronto_socorro_mais_proximo:T.pronto_socorro_mais_proximo||null,links:[{nome:"Mapa SUAS (MDS)",url:"https://mapas.mds.gov.br/mapas/app/painel-suas/"},{nome:"CNES (sa\\xFAde)",url:"https://cnes.datasus.gov.br/"},{nome:"Dados abertos SUAS",url:"https://dados.gov.br/dataset/unidades-de-atendimento-da-assistencia-social"},{nome:"CadSUAS",url:"https://cadsuas.mds.gov.br/"}]});'+
+    '}catch(I){'+
+      'return g.json({ok:!1,co_municipio:E,error:I.message,suas_counts:{},saude:T,saude_pronto_socorro_mais_proximo:T.pronto_socorro_mais_proximo||null,links:[{nome:"Mapa SUAS (MDS)",url:"https://mapas.mds.gov.br/mapas/app/painel-suas/"},{nome:"CNES (sa\\xFAde)",url:"https://cnes.datasus.gov.br/"}]});'+
+    '}'+
+  '});';
+
+const _equipStartIdx = source.indexOf(_EQUIP_START);
+if (_equipStartIdx !== -1) {
+  const _equipEndIdx = source.indexOf(_EQUIP_END, _equipStartIdx);
+  if (_equipEndIdx !== -1) {
+    source = source.slice(0, _equipStartIdx) + _EQUIP_ROUTE + source.slice(_equipEndIdx + 3);
+    console.log('[bootstrap] equipamentos-publicos + bloco saude patch applied');
+  } else {
+    console.warn('[bootstrap] equipamentos-publicos patch NOT applied — end marker not found');
+  }
+}
+
 const _SEC_ANCHOR = 'e.get("/api/health",(A,g)=>{g.status(200).json({ok:!0,ts:Date.now()})}),';
 const _SEC_ROUTE =
   // helper: try to scrape secretaria page from prefeitura website
@@ -410,6 +457,125 @@ if (fs.existsSync(dashboardAssetPath)) {
     console.log('[bootstrap] Dashboard repasses program chip patch applied');
   } else {
     console.warn('[bootstrap] Dashboard repasses program chip patch NOT applied — pattern not found');
+  }
+}
+
+// ── 3f2. Patch: add bloco saúde in Equipamentos Públicos accordion (Dashboard-v30.js) ──
+// Injects a health (CNES) section into the accordion, showing pronto socorro +
+// top UBS/UPA contacts from Ra.saude (the new API field we added earlier).
+//
+// ANCHOR: the ", e.jsxs("p"..." that is the footnote in the Fragment children array.
+// It starts with the comma separator, placed RIGHT AFTER the CadUnico IIFE invocation.
+// The block is inserted BEFORE this anchor and carries its own leading ", " separator.
+// This avoids a double })() that occurred in v1 of this patch.
+const dashboardV30AssetPath = path.join(distDir, 'public/assets/Dashboard-v30.js');
+const _SAUDE_FE_ANCHOR = ', e.jsxs("p", { style: { fontSize: "10px", color: "#6b8a74", marginTop: 10, marginBottom: 6 }, children: [Ke?.ok && Ke.total > 0 &&';
+const _SAUDE_FE_BLOCK =
+  // starts with ', ' = comma separator after the previous (CadUnico) item
+  // ends with ')()' = IIFE close+invoke, no trailing comma (anchor provides it)
+  ', Ra.saude&&Ra.saude.disponivel&&(()=>{' +
+    'const _S=Ra.saude;' +
+    'const _PS=_S.pronto_socorro_mais_proximo;' +
+    'const _TC=Array.isArray(_S.top_contatos)?_S.top_contatos:[];' +
+    'const _tipoLabel=(t)=>({UBS:"UBS / Posto de Sa\\xFAde",UPA:"UPA",PRONTO_SOCORRO:"Pronto Socorro"}[t]||t||"Unidade de Sa\\xFAde");' +
+    'const _tipoDot=(t)=>({UBS:"#1565c0",UPA:"#c62828",PRONTO_SOCORRO:"#d32f2f"}[t]||"#1565c0");' +
+    'const _tipoBg=(t)=>({UBS:"#e3f2fd",UPA:"#fff3e0",PRONTO_SOCORRO:"#ffebee"}[t]||"#e3f2fd");' +
+    'const _tipoBorder=(t)=>({UBS:"#90caf9",UPA:"#ffcc80",PRONTO_SOCORRO:"#ef9a9a"}[t]||"#90caf9");' +
+    'const _tipoTxt=(t)=>({UBS:"#0d47a1",UPA:"#e65100",PRONTO_SOCORRO:"#b71c1c"}[t]||"#0d47a1");' +
+    'return e.jsxs("div",{style:{marginTop:14},children:[' +
+      // section title
+      'e.jsxs("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10},children:[' +
+        'e.jsx("p",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:"#0d47a1",margin:0},children:"Sa\\xFAde \u2014 Unidades Pr\\xF3ximas (CNES)"}),' +
+        '_S.resumo&&e.jsxs("span",{style:{fontSize:9,color:"#1565c0",background:"#e3f2fd",borderRadius:20,padding:"2px 8px",fontWeight:600},children:[_S.resumo.total_unidades," unidades"]})' +
+      ']}),' +
+      // Pronto socorro card (red, prominent)
+      '_PS&&e.jsxs("div",{style:{borderRadius:12,border:"2px solid #ef9a9a",background:"#ffebee",padding:"12px 14px",marginBottom:10,borderLeft:"4px solid #d32f2f"},children:[' +
+        'e.jsxs("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:6},children:[' +
+          'e.jsxs("p",{style:{fontWeight:700,fontSize:12,color:"#b71c1c",margin:0,lineHeight:1.3},children:[' +
+            'e.jsx("span",{style:{fontSize:9,fontWeight:800,color:"#d32f2f",background:"#ffcdd2",borderRadius:8,padding:"1px 6px",marginRight:6,verticalAlign:"middle"},' +
+            'children:"PRONTO SOCORRO"}),' +
+            '_PS.nome' +
+          ']}),' +
+          '_PS.latitude&&_PS.longitude&&e.jsxs("a",{href:"https://www.google.com/maps?q="+_PS.latitude+","+_PS.longitude,' +
+            'target:"_blank",rel:"noopener noreferrer",' +
+            'style:{fontSize:10,color:"#1a73e8",textDecoration:"none",fontWeight:600,whiteSpace:"nowrap",flexShrink:0,display:"flex",alignItems:"center",gap:2},' +
+            'children:[' +
+              'e.jsx("svg",{width:"10",height:"10",viewBox:"0 0 24 24",fill:"#1a73e8",children:e.jsx("path",{d:"M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"})}),' +
+              '"Maps"' +
+            ']})' +
+        ']}),' +
+        '_PS.bairro&&e.jsxs("p",{style:{fontSize:11,color:"#c62828",margin:"0 0 3px"},children:[_PS.endereco||"",_PS.endereco&&_PS.numero?" n\\xBA "+_PS.numero:"",_PS.bairro?" \\u2014 "+_PS.bairro:""]}),' +
+        '_PS.telefone&&e.jsxs("p",{style:{fontSize:11,color:"#b71c1c",margin:"0 0 3px",display:"flex",alignItems:"center",gap:4},children:[' +
+          'e.jsx("svg",{width:11,height:11,viewBox:"0 0 24 24",fill:"none",stroke:"#b71c1c",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round",children:e.jsx("path",{d:"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.58A16 16 0 0 0 14 15.65l.95-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"})}),' +
+          'e.jsx("a",{href:"tel:"+_PS.telefone.replace(/\\D/g,""),style:{color:"#b71c1c",textDecoration:"none",fontWeight:600},children:_PS.telefone})' +
+        ']}),' +
+        '_PS.email&&e.jsxs("p",{style:{fontSize:11,color:"#b71c1c",margin:"0 0 3px",display:"flex",alignItems:"center",gap:4},children:[' +
+          '"\\u2709\\uFE0F ",' +
+          'e.jsx("a",{href:"mailto:"+_PS.email,style:{color:"#b71c1c",textDecoration:"none",fontWeight:600},children:_PS.email})' +
+        ']}),' +
+        '_PS.distancia_km!=null&&e.jsxs("p",{style:{fontSize:10,color:"#c62828",margin:"3px 0 0",fontStyle:"italic"},children:["\\uD83D\\uDCCD "+_PS.distancia_km.toFixed(2)+" km da escola"]})' +
+      ']}),' +
+      // top contacts grid (UBS + UPA)
+      '_TC.length>0&&e.jsxs("div",{style:{marginTop:4},children:[' +
+        'e.jsx("p",{style:{fontSize:10,fontWeight:700,color:"#0d47a1",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6},children:"UBS / UPA mais pr\\xF3ximas"}),' +
+        'e.jsx("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(220px, 1fr))",gap:8},children:' +
+          '_TC.map(function(_c,_i){' +
+            'const _dot=_tipoDot(_c.tipo);const _bg=_tipoBg(_c.tipo);const _bd=_tipoBorder(_c.tipo);const _txt=_tipoTxt(_c.tipo);' +
+            'const _mapsUrl=_c.latitude&&_c.longitude?"https://www.google.com/maps?q="+_c.latitude+","+_c.longitude:null;' +
+            'return e.jsxs("div",{style:{background:"#fff",border:"1.5px solid "+_bd,borderRadius:12,padding:"10px 12px",borderLeft:"4px solid "+_dot},children:[' +
+              'e.jsxs("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:6,marginBottom:4},children:[' +
+                'e.jsxs("p",{style:{fontWeight:700,fontSize:11,color:_txt,margin:0,lineHeight:1.3},children:[' +
+                  'e.jsx("span",{style:{fontSize:8,fontWeight:800,color:_dot,background:_bg,borderRadius:6,padding:"1px 5px",marginRight:4,verticalAlign:"middle"},children:_tipoLabel(_c.tipo)}),' +
+                  '_c.nome' +
+                ']}),' +
+                '_mapsUrl&&e.jsxs("a",{href:_mapsUrl,target:"_blank",rel:"noopener noreferrer",style:{fontSize:9,color:"#1a73e8",textDecoration:"none",fontWeight:600,whiteSpace:"nowrap",flexShrink:0,display:"flex",alignItems:"center",gap:2},children:[' +
+                  'e.jsx("svg",{width:"9",height:"9",viewBox:"0 0 24 24",fill:"#1a73e8",children:e.jsx("path",{d:"M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"})}),' +
+                  '"Maps"' +
+                ']})' +
+              ']}),' +
+              '_c.bairro&&e.jsx("p",{style:{fontSize:10,color:"#555",margin:"0 0 2px"},children:_c.bairro}),' +
+              '_c.telefone&&e.jsxs("p",{style:{fontSize:10,color:"#555",margin:"0 0 2px",display:"flex",alignItems:"center",gap:3},children:[' +
+                '"\\uD83D\\uDCDE ",' +
+                'e.jsx("a",{href:"tel:"+_c.telefone.replace(/\\D/g,""),style:{color:_txt,textDecoration:"none",fontWeight:600},children:_c.telefone})' +
+              ']}),' +
+              '_c.distancia_km!=null&&e.jsx("p",{style:{fontSize:9,color:"#888",margin:"2px 0 0",fontStyle:"italic"},children:"\\uD83D\\uDCCD "+_c.distancia_km.toFixed(2)+" km"})' +
+            ']},_i);' +
+          '})' +
+        '})' +
+      ']}),' +
+      // footer note for saude
+      'e.jsxs("p",{style:{fontSize:10,color:"#1565c0",margin:"8px 0 0",lineHeight:1.4},children:["Fonte: CNES / Minist\\xE9rio da Sa\\xFAde. ",_S.atualizado_em&&e.jsxs("span",{children:["Atualizado em ",new Date(_S.atualizado_em).toLocaleDateString("pt-BR"),"."]})," Dados p\\xF3dem estar desatualizados."]})' +
+    ']});' +
+  '})()';
+if (fs.existsSync(dashboardV30AssetPath)) {
+  let dashV30Source = fs.readFileSync(dashboardV30AssetPath, 'utf8');
+  let dashV30Changed = false;
+  // Undo v1 bad injection (started with `})()` prefix — caused double closure)
+  const _SAUDE_FE_BAD_MARKER = '})(), Ra.saude&&Ra.saude.disponivel&&';
+  if (dashV30Source.includes(_SAUDE_FE_BAD_MARKER)) {
+    const _badStart = dashV30Source.indexOf(_SAUDE_FE_BAD_MARKER);
+    const _badEnd = dashV30Source.indexOf('\n, ', _badStart);
+    if (_badEnd !== -1) {
+      dashV30Source = dashV30Source.slice(0, _badStart) + dashV30Source.slice(_badEnd + 3);
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 bad saude v1 patch undone');
+    }
+  }
+  // Apply correct injection
+  if (!dashV30Source.includes(', Ra.saude&&Ra.saude.disponivel&&')) {
+    const _anchorIdx = dashV30Source.indexOf(_SAUDE_FE_ANCHOR);
+    if (_anchorIdx !== -1) {
+      dashV30Source = dashV30Source.slice(0, _anchorIdx) + _SAUDE_FE_BLOCK + dashV30Source.slice(_anchorIdx);
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 saude block patch applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 saude block patch NOT applied — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 saude block patch already applied');
+  }
+  if (dashV30Changed) {
+    fs.writeFileSync(dashboardV30AssetPath, dashV30Source, 'utf8');
   }
 }
 

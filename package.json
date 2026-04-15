@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "set -a; [ -f .env ] && . ./.env; set +a; node dist/bootstrap.cjs",
     "sync:mec": "node scripts/sync-mec-contatos.mjs",
+    "sync:saude:tipos": "node scripts/sync-saude-tipounidades.mjs",
+    "sync:saude:contatos": "node scripts/sync-saude-contatos.mjs",
     "prestart": "npm run sync:mec && npm run prune:assets:apply",
     "start": "bash start.sh",
     "prune:assets": "bash scripts/prune-dist-assets.sh",
