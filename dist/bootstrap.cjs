@@ -1745,6 +1745,31 @@ e.get("/api/noticias-extras",async(A,g)=>{
   console.log('[bootstrap] contexto-municipal route applied (pre-compile)');
 })();
 
+// ── PATCH: inject vaccination calendar events into prazos-educacionais ────────
+(function _patchVacinacao() {
+  const VACA_MARKER = 'g.json({ok:!0,prazos:x,ano:v})';
+  if (!source.includes(VACA_MARKER)) {
+    console.warn('[bootstrap] vacinacao patch: marker not found, skipping');
+    return;
+  }
+  const vacinaJson = JSON.stringify([
+    { titulo: "Campanha Nacional de Vacinação contra Influenza — Abertura", descricao: "Início da Campanha Nacional. Grupos prioritários: crianças de 6 meses a 5 anos, gestantes, puérperas, idosos ≥60 anos, professores e profissionais de saúde. A escola pode mobilizar famílias e ceder espaço como ponto de apoio.", mes: 3, categoria: "VACINAÇÃO", fonte: "PNI/Ministério da Saúde", urgencia: "alta", url: "https://www.gov.br/saude/pt-br/vacinacao" },
+    { titulo: "Campanha Nacional de Vacinação contra Influenza — Dia D", descricao: "Intensificação da campanha. Verificar cobertura vacinal de alunos e mobilizar famílias para a vacinação. Professores e funcionários de escolas são público-alvo prioritário.", mes: 4, categoria: "VACINAÇÃO", fonte: "PNI/Ministério da Saúde", urgencia: "alta", url: "https://www.gov.br/saude/pt-br/vacinacao" },
+    { titulo: "Campanha Nacional de Vacinação contra Poliomielite — Dia D", descricao: "Vacinação de crianças menores de 5 anos contra a Poliomielite. Escolas podem ser utilizadas como pontos de vacinação. A diretora pode colaborar com a Secretaria de Saúde para facilitar o acesso das famílias.", mes: 5, categoria: "VACINAÇÃO", fonte: "PNI/Ministério da Saúde", urgencia: "alta", url: "https://www.gov.br/saude/pt-br/vacinacao" },
+    { titulo: "Verificação da Carteira de Vacinação — Matrícula", descricao: "Período recomendado para verificar a situação vacinal dos estudantes. A exigência do cartão de vacinação atualizado na matrícula é prevista pelo Estatuto da Criança e do Adolescente (ECA, art. 14). Registrar pendências e orientar responsáveis.", mes: 2, categoria: "VACINAÇÃO", fonte: "PNI/MS — ECA art. 14", urgencia: "media" },
+    { titulo: "Campanha Nacional de Multivacinação — Dia D", descricao: "Campanha voltada para crianças menores de 5 anos, para atualização de todas as vacinas do calendário. A escola pode ser parceira na comunicação com as famílias. Verificar cobertura vacinal da comunidade escolar.", mes: 8, categoria: "VACINAÇÃO", fonte: "PNI/Ministério da Saúde", urgencia: "alta", url: "https://www.gov.br/saude/pt-br/vacinacao" },
+    { titulo: "Campanha Nacional de Vacinação contra o Sarampo", descricao: "Vacinação de crianças de 1 a 4 anos e adolescentes/adultos sem comprovante de duas doses. O retorno das aulas pós-recesso é momento estratégico para mobilização das famílias. Verificar cobertura vacinal dos alunos.", mes: 10, categoria: "VACINAÇÃO", fonte: "PNI/Ministério da Saúde", urgencia: "alta", url: "https://www.gov.br/saude/pt-br/vacinacao" },
+    { titulo: "Vacinação HPV e Meningocócica — Escolas (2ª Fase)", descricao: "Continuidade da vacinação intraescolar contra HPV (meninas 9-14 anos, meninos 11-14 anos) e Meningocócica ACWY (adolescentes). Coordenar com a Secretaria Municipal de Saúde o agendamento das equipes na escola.", mes: 9, categoria: "VACINAÇÃO", fonte: "PNI/Ministério da Saúde", urgencia: "media", url: "https://www.gov.br/saude/pt-br/vacinacao" },
+    { titulo: "Vacinação HPV e Meningocócica — Escolas (1ª Fase)", descricao: "Início da vacinação intraescolar contra HPV (meninas 9-14 anos, meninos 11-14 anos) e Meningocócica ACWY (adolescentes 11-14 anos). Articular com a Secretaria Municipal de Saúde o calendário de visitas às escolas e autorizar a vacinação no ambiente escolar.", mes: 3, categoria: "VACINAÇÃO", fonte: "PNI/Ministério da Saúde", urgencia: "media", url: "https://www.gov.br/saude/pt-br/vacinacao" },
+    { titulo: "Balanço Anual de Cobertura Vacinal", descricao: "Momento de revisão da situação vacinal dos alunos. Identificar estudantes sem comprovante de vacinação completa e orientar responsáveis antes das matrículas de 2027. O ECA exige apresentação da carteira de vacinação atualizada.", mes: 11, categoria: "VACINAÇÃO", fonte: "PNI/MS — ECA art. 14", urgencia: "informativo" }
+  ]);
+  source = source.replace(
+    VACA_MARKER,
+    `const _vacEvts=${vacinaJson};const _allPrazos=[...x,..._vacEvts];g.json({ok:!0,prazos:_allPrazos,ano:v})`
+  );
+  console.log('[bootstrap] vacinacao patch applied:', JSON.parse(vacinaJson).length, 'eventos');
+})();
+
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
