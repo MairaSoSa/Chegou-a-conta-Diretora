@@ -893,6 +893,38 @@ if (fs.existsSync(dashboardV30AssetPath)) {
     console.log('[bootstrap] Dashboard-v30 govserv extension already applied');
   }
 
+  // ── Extension 2: add certidão + assinatura digital services (IDs 788, 790, 10443) ──
+  const _GOVSERV_EXT2_MARKER = 'id:10443,';
+  if (dashV30Source.includes('id:10119,') && !dashV30Source.includes(_GOVSERV_EXT2_MARKER)) {
+    const _EXT2_GSD_ANCHOR = 'banda-larga-na-escola-publica",programa:"PIEC"}]';
+    const _EXT2_GSD_NEW =
+      'banda-larga-na-escola-publica",programa:"PIEC"},' +
+      '{id:788,nome:"Emitir Certid\\xE3o de Antecedentes Criminais",' +
+      'desc:"Emita gratuitamente a CAC (Pol\\xEDcia Federal) para verificar registros de decis\\xE3o condenat\\xF3ria transitada em julgado. Necess\\xE1ria na contrata\\xE7\\xE3o de funcion\\xE1rios e volunt\\xE1rios da escola.",' +
+      'url:"https://www.gov.br/pt-br/servicos/emitir-certidao-de-antecedentes-criminais",programa:"Gov.br"},' +
+      '{id:790,nome:"Validar Certid\\xE3o de Antecedentes Criminais",' +
+      'desc:"Verifique a autenticidade da Certid\\xE3o de Antecedentes Criminais emitida pela Pol\\xEDcia Federal. Garante que a certid\\xE3o apresentada por um candidato \\xE9 leg\\xEDtima.",' +
+      'url:"https://www.gov.br/pt-br/servicos/validar-certidao-de-antecedentes-criminais",programa:"Gov.br"},' +
+      '{id:10443,nome:"Validar e assinar documentos digitais (RFB)",' +
+      'desc:"Valide a autenticidade e assine documentos digitais emitidos com c\\xF3digo de valida\\xE7\\xE3o pela Receita Federal. Aceito como substituto de reconhecimento de firma para documentos digitais.",' +
+      'url:"https://www.gov.br/pt-br/servicos/validar-e-assinar-documentos-digitais",programa:"Gov.br"}]';
+    if (dashV30Source.includes(_EXT2_GSD_ANCHOR)) {
+      dashV30Source = dashV30Source.replace(_EXT2_GSD_ANCHOR, _EXT2_GSD_NEW);
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 govserv ext2: 3 certidão/assinatura services added');
+    }
+    // Add Gov.br color to _gpc
+    const _EXT2_GPC_ANCHOR = '"PIEC":{bg:"#e0f2fe",bd:"#7dd3fc",txt:"#0369a1"}}';
+    const _EXT2_GPC_NEW = '"PIEC":{bg:"#e0f2fe",bd:"#7dd3fc",txt:"#0369a1"},"Gov.br":{bg:"#e2e8f0",bd:"#94a3b8",txt:"#334155"}}';
+    if (dashV30Source.includes(_EXT2_GPC_ANCHOR)) {
+      dashV30Source = dashV30Source.replace(_EXT2_GPC_ANCHOR, _EXT2_GPC_NEW);
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 govserv ext2: Gov.br color added to _gpc');
+    }
+  } else if (dashV30Source.includes(_GOVSERV_EXT2_MARKER)) {
+    console.log('[bootstrap] Dashboard-v30 govserv ext2 already applied');
+  }
+
   if (dashV30Changed) {
     fs.writeFileSync(dashboardV30AssetPath, dashV30Source, 'utf8');
   }
