@@ -1169,6 +1169,44 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
           })
         ]}),
         e.jsx("p", { style: { fontSize: 9, color: "#888", margin: "4px 0 0" }, children: "Fonte: Portal da Transpar\xEAncia \u2022 " + (ctxMunData.bf.mes ? ctxMunData.bf.mes.slice(0, 4) + "/" + ctxMunData.bf.mes.slice(4, 6) : "") })
+      ]}),
+      ctxMunData.bpc && e.jsxs("div", { style: { background: "#f3e5f5", border: "1px solid #ce93d8", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
+        e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }, children: [
+          e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#4a148c", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", flex: 1 }, children: "BPC \u2014 Benef\xEDcio de Presta\xE7\xE3o Continuada" }),
+          e.jsx("span", { style: { fontSize: 10, color: "#6a1b9a", background: "#e1bee7", border: "1px solid #ce93d8", borderRadius: 20, padding: "2px 10px", fontWeight: 700 }, children: "LOAS / INSS" })
+        ]}),
+        e.jsxs("div", { style: { display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 8 }, children: [
+          e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 20, fontWeight: 800, color: "#6a1b9a", margin: 0, lineHeight: 1 }, children: ctxMunData.bpc.beneficiados.toLocaleString("pt-BR") }),
+            e.jsx("p", { style: { fontSize: 10, color: "#7b1fa2", margin: "2px 0 0" }, children: "benefici\xE1rios (def. ou idosos)" })
+          ]}),
+          e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: "#6a1b9a", margin: 0, lineHeight: 1 }, children: "R$\xA0" + (ctxMunData.bpc.valor >= 1e6 ? (ctxMunData.bpc.valor / 1e6).toFixed(2).replace(".", ",") + "\xA0mi" : (ctxMunData.bpc.valor / 1e3).toFixed(0) + "\xA0mil") }),
+            e.jsx("p", { style: { fontSize: 10, color: "#7b1fa2", margin: "2px 0 0" }, children: "valor total/m\xEAs" })
+          ]}),
+          e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: "#6a1b9a", margin: 0, lineHeight: 1 }, children: "R$\xA0" + ctxMunData.bpc.media.toLocaleString("pt-BR") }),
+            e.jsx("p", { style: { fontSize: 10, color: "#7b1fa2", margin: "2px 0 0" }, children: "m\xE9dia/benef." })
+          ]}),
+          ctxMunData.populacao && e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: "#6a1b9a", margin: 0, lineHeight: 1 }, children: Math.round(ctxMunData.bpc.beneficiados / ctxMunData.populacao * 1000) + "/mil\xA0hab." }),
+            e.jsx("p", { style: { fontSize: 10, color: "#7b1fa2", margin: "2px 0 0" }, children: "cobertura estimada" })
+          ]})
+        ]}),
+        ctxMunData.bpc.serie && ctxMunData.bpc.serie.length > 1 && e.jsxs("div", { style: { display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }, children: [
+          e.jsx("span", { style: { fontSize: 10, color: "#555", fontWeight: 600, marginRight: 2 }, children: "Tend\xEAncia:" }),
+          ctxMunData.bpc.serie.map(function(s, si) {
+            var mes = s.mes.slice(0, 4) + "/" + s.mes.slice(4, 6);
+            var next = ctxMunData.bpc.serie[si + 1];
+            var arrow = next ? (next.beneficiados > s.beneficiados ? "\u2191" : next.beneficiados < s.beneficiados ? "\u2193" : "\u2192") : null;
+            var arrowColor = arrow === "\u2191" ? "#6a1b9a" : "#2e7d32";
+            return e.jsxs(F.Fragment, { key: si, children: [
+              e.jsxs("span", { style: { fontSize: 10, background: "#e1bee7", borderRadius: 4, padding: "2px 7px", color: "#4a148c", fontWeight: 600 }, children: [mes, ": ", s.beneficiados.toLocaleString("pt-BR")] }),
+              arrow && e.jsx("span", { style: { fontSize: 12, color: arrowColor, fontWeight: 700, margin: "0 2px" }, children: arrow })
+            ]});
+          })
+        ]}),
+        e.jsx("p", { style: { fontSize: 9, color: "#888", margin: "4px 0 0" }, children: "Fonte: Portal da Transpar\xEAncia \u2022 " + (ctxMunData.bpc.mes ? ctxMunData.bpc.mes.slice(0, 4) + "/" + ctxMunData.bpc.mes.slice(4, 6) : "") })
       ]})
     ]}),
     !ctxMunLoading && ctxMunData && !ctxMunData.ok && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: "Dados de contexto n\xE3o dispon\xEDveis para este munic\xEDpio." }),

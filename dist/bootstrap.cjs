@@ -1750,6 +1750,19 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '        if(_bfSerie.length>0){const _last=_bfSerie[_bfSerie.length-1];bf={familias:_last.familias,valor:_last.valor,media:Math.round(_last.valor/_last.familias),mes:_last.mes,serie:_bfSerie};}\n' +
 '      }\n' +
 '    }catch(_bfErr){console.warn("[ctx-mun] bf erro:",String(_bfErr));}\n' +
+'    // ── BPC — Beneficio de Prestacao Continuada ───────────────────────────\n' +
+'    let bpc=null;\n' +
+'    try{\n' +
+'      const _bpcKey=process.env.PORTAL_TRANSPARENCIA_KEY||"";\n' +
+'      if(_bpcKey&&co.length===7){\n' +
+'        const _now=new Date();\n' +
+'        const _months=[];\n' +
+'        for(let _i=1;_i<=5;_i++){const _d=new Date(_now.getFullYear(),_now.getMonth()-_i,1);_months.push(String(_d.getFullYear())+String(_d.getMonth()+1).padStart(2,"0"));}\n' +
+'        const _bpcResults=await Promise.all(_months.map(function(_m){return fetch("https://api.portaldatransparencia.gov.br/api-de-dados/bpc-por-municipio?mesAno="+_m+"&codigoIbge="+co+"&pagina=1",{headers:{"chave-api-dados":_bpcKey},signal:AbortSignal.timeout(8000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});}));\n' +
+'        const _bpcSerie=_bpcResults.map(function(r,i){const rec=Array.isArray(r)&&r[0]?r[0]:null;return rec?{mes:_months[i],beneficiados:rec.quantidadeBeneficiados,valor:rec.valor}:null;}).filter(Boolean).reverse();\n' +
+'        if(_bpcSerie.length>0){const _last=_bpcSerie[_bpcSerie.length-1];bpc={beneficiados:_last.beneficiados,valor:_last.valor,media:Math.round(_last.valor/_last.beneficiados),mes:_last.mes,serie:_bpcSerie};}\n' +
+'      }\n' +
+'    }catch(_bpcErr){console.warn("[ctx-mun] bpc erro:",String(_bpcErr));}\n' +
 '    // ── Dengue (InfoDengue/Fiocruz) ─────────────────────────────────────────\n' +
 '    let dengue=null;\n' +
 '    try{\n' +
@@ -1770,7 +1783,7 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '        }\n' +
 '      }\n' +
 '    }catch(_dngErr){console.warn("[ctx-mun] dengue erro:",String(_dngErr));}\n' +
-'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,dengue:dengue});\n' +
+'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,dengue:dengue});\n' +
 '  }catch(err){console.error("[ctx-mun] erro:",String(err));g.json({ok:false,erro:String(err)});}\n' +
 '}),\n';
 
