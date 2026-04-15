@@ -2355,6 +2355,384 @@ e.get("/api/noticias-extras",async(A,g)=>{
   console.log('[bootstrap] vacinacao patch applied:', JSON.parse(vacinaJson).length, 'eventos');
 })();
 
+// ── 3h. Patch: /api/seguranca-municipio/:coIbge — SINESP crime data (UF level) ──
+// Queries dados.gov.br CKAN datastore for SINESP crime occurrence data.
+// Returns totals for the latest available year by natureza (crime type) for the UF.
+const _SEG_MUN_ANCHOR = 'e.get("/api/health",(A,g)=>{g.status(200).json({ok:!0,ts:Date.now()})}),';
+const _SEG_MUN_ROUTE =
+  'globalThis._sinespRidCache={rid:null,ts:0};' +
+  'e.get("/api/seguranca-municipio/:coIbge",async(A,g)=>{' +
+    'try{' +
+      'const E=String(A.params.coIbge||"").replace(/\\D/g,"");' +
+      'if(!E||E.length<6)return g.status(400).json({ok:!1,error:"C\\xF3digo IBGE inv\\xE1lido"});' +
+      'const _ufMap={11:"RO",12:"AC",13:"AM",14:"RR",15:"PA",16:"AP",17:"TO",21:"MA",22:"PI",23:"CE",24:"RN",25:"PB",26:"PE",27:"AL",28:"SE",29:"BA",31:"MG",32:"ES",33:"RJ",35:"SP",41:"PR",42:"SC",43:"RS",50:"MS",51:"MT",52:"GO",53:"DF"};' +
+      'const _ufCode=parseInt(E.slice(0,2));const _uf=_ufMap[_ufCode]||null;' +
+      'if(!_uf)return g.json({ok:!1,co_municipio:E,uf:null,error:"UF n\\xE3o identificada",naturezas:[],fonte:"SINESP/dados.gov.br"});' +
+      // get or refresh resource ID (cache 24h)
+      'const _now=Date.now();' +
+      'if(!globalThis._sinespRidCache.rid||(_now-globalThis._sinespRidCache.ts)>86400000){' +
+        'try{' +
+          'const _pkgUrl="https://dados.gov.br/api/3/action/package_show?id=sinesp-uf-ano-natureza-por-ocorrencia";' +
+          'const _pkgR=await fetch(_pkgUrl,{signal:AbortSignal.timeout(10000),headers:{"Accept":"application/json","User-Agent":"ChegoAContaDiretora/1.0"}});' +
+          'if(_pkgR.ok){' +
+            'const _pkgD=await _pkgR.json();' +
+            'const _resources=(_pkgD&&_pkgD.result&&_pkgD.result.resources)||[];' +
+            'const _active=_resources.find(r=>r.datastore_active===true)||_resources[0];' +
+            'if(_active&&_active.id){globalThis._sinespRidCache={rid:_active.id,ts:_now};console.log("[sinesp] resource_id:",_active.id);}' +
+          '}' +
+        '}catch(_pe){console.warn("[sinesp] package_show erro:",_pe.message);}' +
+      '}' +
+      'if(!globalThis._sinespRidCache.rid)return g.json({ok:!1,co_municipio:E,uf:_uf,error:"SINESP n\\xE3o dispon\\xEDvel no momento",naturezas:[],fonte:"SINESP/dados.gov.br"});' +
+      // query datastore for UF, get latest year
+      'const _filt=JSON.stringify({UF:_uf});' +
+      'const _dUrl="https://dados.gov.br/api/3/action/datastore_search?resource_id="+encodeURIComponent(globalThis._sinespRidCache.rid)+"&filters="+encodeURIComponent(_filt)+"&limit=5000";' +
+      'const _dR=await fetch(_dUrl,{signal:AbortSignal.timeout(20000),headers:{"Accept":"application/json","User-Agent":"ChegoAContaDiretora/1.0"}});' +
+      'if(!_dR.ok)return g.json({ok:!1,co_municipio:E,uf:_uf,error:"Falha na consulta SINESP (HTTP "+_dR.status+")",naturezas:[],fonte:"SINESP/dados.gov.br"});' +
+      'const _dD=await _dR.json();' +
+      'const _recs=(_dD&&_dD.result&&_dD.result.records)||[];' +
+      'if(!_recs.length)return g.json({ok:!0,co_municipio:E,uf:_uf,ano:null,naturezas:[],mensagem:"Sem dados SINESP dispon\\xEDveis para "+_uf,fonte:"SINESP/dados.gov.br"});' +
+      // find latest year
+      'const _anos=_recs.map(r=>Number(r.ANO||r.ano||r.Ano||0)).filter(n=>n>0);' +
+      'const _anoMax=_anos.length?Math.max(..._anos):null;' +
+      'if(!_anoMax)return g.json({ok:!0,co_municipio:E,uf:_uf,ano:null,naturezas:[],mensagem:"Ano n\\xE3o identificado nos dados",fonte:"SINESP/dados.gov.br"});' +
+      // aggregate by natureza for latest year
+      'const _recsAno=_recs.filter(r=>Number(r.ANO||r.ano||r.Ano||0)===_anoMax);' +
+      'const _byNat={};' +
+      'for(const r of _recsAno){' +
+        'const _nat=String(r.NATUREZA||r.natureza||r.Natureza||r.TIPO_CRIME||r.tipo_crime||"Outros").trim();' +
+        'const _qtd=Number(r.QTDE||r.qtde||r.QUANTIDADE||r.quantidade||r.OCORRENCIAS||r.ocorrencias||0);' +
+        '_byNat[_nat]=(_byNat[_nat]||0)+_qtd;' +
+      '}' +
+      'const _prioNat=["Homic\\xEDdio doloso","Estupro","Roubo","Furto","Roubo de ve\\xEDculo","Furto de ve\\xEDculo","Tráfico de entorpecentes","Lesão corporal dolosa","Latrocínio","Sequestro e cárcere privado"];' +
+      'const _natList=Object.entries(_byNat).map(([k,v])=>({natureza:k,quantidade:v})).sort((a,b)=>b.quantidade-a.quantidade);' +
+      'const _prio=_prioNat.map(n=>_natList.find(x=>x.natureza.toLowerCase().includes(n.toLowerCase()))).filter(Boolean);' +
+      'const _outros=_natList.filter(x=>!_prio.some(p=>p.natureza===x.natureza));' +
+      'const _naturezas=[..._prio,..._outros].slice(0,12);' +
+      'return g.json({ok:!0,co_municipio:E,uf:_uf,ano:_anoMax,naturezas:_naturezas,total_registros:_recsAno.length,fonte:"SINESP / Secretaria Nacional de Segurança Pública (SENASP) via dados.gov.br",nota:"Dados de ocorrências criminais registradas em boletim de ocorrência. Nível estadual (UF)."});' +
+    '}catch(_ge){console.error("[sinesp]",_ge.message);return g.status(500).json({ok:!1,error:_ge.message,naturezas:[],fonte:"SINESP/dados.gov.br"});}' +
+  '}),';
+if (source.indexOf(_SEG_MUN_ANCHOR) !== -1) {
+  source = source.replace(_SEG_MUN_ANCHOR, _SEG_MUN_ANCHOR + _SEG_MUN_ROUTE);
+  console.log('[bootstrap] /api/seguranca-municipio endpoint patch applied');
+} else {
+  console.warn('[bootstrap] /api/seguranca-municipio patch NOT applied — anchor not found');
+}
+
+// ── 3i. Patch: /api/saude-violencia/:coIbge — DataSUS violence/external causes ──
+// Queries apidadosabertos.saude.gov.br for SISVAN data related to the municipality.
+// Also provides direct links to DataSUS SIM and SIH.
+const _SAUD_VIO_ANCHOR = 'e.get("/api/health",(A,g)=>{g.status(200).json({ok:!0,ts:Date.now()})}),';
+const _SAUD_VIO_ROUTE =
+  'e.get("/api/saude-violencia/:coIbge",async(A,g)=>{' +
+    'try{' +
+      'const E=String(A.params.coIbge||"").replace(/\\D/g,"");' +
+      'if(!E||E.length<6)return g.status(400).json({ok:!1,error:"C\\xF3digo IBGE inv\\xE1lido"});' +
+      'const co6=E.length===7?E.slice(0,6):E;' +
+      'const co7=E.length===7?E:E+"0";' +
+      'const BASE="https://apidadosabertos.saude.gov.br";' +
+      'const _hdr={"User-Agent":"ChegoAContaDiretora/1.0","Accept":"application/json"};' +
+      // Fetch CNES for causas externas hospitals (trauma centers) and SISVAN
+      'let internacoes=null;let obitos=null;let violencia_notificada=null;' +
+      'const _links=[' +
+        '{nome:"SIM — Mortalidade por causas externas (DataSUS)",url:"http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sim/cnv/ext10uf.def",desc:"Óbitos por causas externas (CID V01-Y98) por município — Sistema de Informação sobre Mortalidade"},' +
+        '{nome:"SIH — Internações por causas externas (DataSUS)",url:"http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/qiuf.def",desc:"Internações hospitalares por causas externas por município — Sistema de Informação Hospitalar"},' +
+        '{nome:"SINAN — Violência interpessoal (DataSUS)",url:"http://tabnet.datasus.gov.br/cgi/tabcgi.exe?sinannet/cnv/violebr.def",desc:"Notificações de violência interpessoal e autoprovocada por município"},' +
+        '{nome:"Painel de Monitoramento da Violência (SVS/MS)",url:"https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/v/violencia",desc:"Painel de monitoramento da violência do Ministério da Saúde"}' +
+      '];' +
+      // Try to fetch SISVAN data (child nutrition / violence-related indicators)
+      'let sisvanData=null;' +
+      'try{' +
+        'const _svR=await fetch(BASE+"/sisvan/estado-nutricional?codigo_municipio="+co6+"&codigo_fase_vida=1&limit=50",{signal:AbortSignal.timeout(10000),headers:_hdr});' +
+        'if(_svR.ok){const _svD=await _svR.json();const _arr=(_svD&&_svD.estados_nutricionais)||[];if(_arr.length>0){const _comp=_arr.reduce((m,x)=>(!m||x.competencia>m.competencia?x:m),null);sisvanData={competencia:_comp?.competencia,municipio:_comp?.municipio,registros:_arr.length,nota:"Vigilância alimentar e nutricional infantil — SISVAN"};}}' +
+      '}catch(_sve){}' +
+      'return g.json({ok:!0,co_municipio:E,mensagem:"Dados de internações e óbitos por violência são consultados diretamente no DataSUS (TABNET). As APIs abertas do Ministério da Saúde ainda não disponibilizam esses dados em formato JSON por município.",sisvan:sisvanData,links:_links,fonte:"DataSUS / Ministério da Saúde",nota:"Use os links abaixo para acessar os dados diretamente no sistema TABNET do DataSUS."});' +
+    '}catch(_ge){console.error("[saude-violencia]",_ge.message);return g.status(500).json({ok:!1,error:_ge.message,links:[],fonte:"DataSUS"});}' +
+  '}),';
+if (source.indexOf(_SAUD_VIO_ANCHOR) !== -1) {
+  source = source.replace(_SAUD_VIO_ANCHOR, _SAUD_VIO_ANCHOR + _SAUD_VIO_ROUTE);
+  console.log('[bootstrap] /api/saude-violencia endpoint patch applied');
+} else {
+  console.warn('[bootstrap] /api/saude-violencia patch NOT applied — anchor not found');
+}
+
+// ── 3j. Patch: /api/perfil-socioeconomico/:coIbge — IBGE socioeconomic data ────
+// Fetches PIB per capita, population, and Censo 2022 income/poverty from IBGE API.
+const _IBGE_SOCIO_ANCHOR = 'e.get("/api/health",(A,g)=>{g.status(200).json({ok:!0,ts:Date.now()})}),';
+const _IBGE_SOCIO_ROUTE =
+  'e.get("/api/perfil-socioeconomico/:coIbge",async(A,g)=>{' +
+    'try{' +
+      'const E=String(A.params.coIbge||"").replace(/\\D/g,"");' +
+      'if(!E||E.length<6)return g.status(400).json({ok:!1,error:"C\\xF3digo IBGE inv\\xE1lido"});' +
+      'const co7=E.length===7?E:null;' +
+      'const co6=E.length===7?E.slice(0,6):E;' +
+      'const _hdr={"User-Agent":"ChegoAContaDiretora/1.0","Accept":"application/json"};' +
+      'const _sig=AbortSignal.timeout(15000);' +
+      // PIB per capita (IBGE agregados 5938, variável 37, nível município)
+      // Population estimates (6579 / 9324)
+      // Censo 2022 income (SIDRA 4711 or similar)
+      'const [_pibR,_popR,_cen4711R,_cen9952R]=await Promise.allSettled([' +
+        'co7?fetch("https://servicodados.ibge.gov.br/api/v3/agregados/5938/periodos/-1/variaveis/37?localidades=N6["+co7+"]",{signal:_sig,headers:_hdr}).then(r=>r.ok?r.json():null).catch(()=>null):Promise.resolve(null),' +
+        'co7?fetch("https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/-1/variaveis/9324?localidades=N6["+co7+"]",{signal:_sig,headers:_hdr}).then(r=>r.ok?r.json():null).catch(()=>null):Promise.resolve(null),' +
+        'co7?fetch("https://apisidra.ibge.gov.br/values/t/4711/n6/"+co7+"/v/93,10041,10042/p/2021",{signal:_sig,headers:_hdr}).then(r=>r.ok?r.json():null).catch(()=>null):Promise.resolve(null),' +
+        'co7?fetch("https://apisidra.ibge.gov.br/values/t/9952/n6/"+co7+"/v/all/p/2022",{signal:_sig,headers:_hdr}).then(r=>r.ok?r.json():null).catch(()=>null):Promise.resolve(null)' +
+      ']);' +
+      'const _pibD=_pibR.status==="fulfilled"?_pibR.value:null;' +
+      'const _popD=_popR.status==="fulfilled"?_popR.value:null;' +
+      'const _cen4711=_cen4711R.status==="fulfilled"?_cen4711R.value:null;' +
+      'const _cen9952=_cen9952R.status==="fulfilled"?_cen9952R.value:null;' +
+      // Parse PIB per capita
+      'let pib_per_capita=null;let pib_ano=null;' +
+      'if(Array.isArray(_pibD)&&_pibD.length>0){' +
+        'const _pibItem=_pibD[0];const _pibRes=_pibItem&&_pibItem.resultados&&_pibItem.resultados[0];' +
+        'const _pibSer=_pibRes&&_pibRes.series&&_pibRes.series[0];' +
+        'if(_pibSer&&_pibSer.serie){' +
+          'const _pibEntries=Object.entries(_pibSer.serie).filter(([k,v])=>v&&v!=="-");' +
+          'if(_pibEntries.length){const _last=_pibEntries[_pibEntries.length-1];pib_per_capita=Number(_last[1]);pib_ano=Number(_last[0]);if(isNaN(pib_per_capita))pib_per_capita=null;}' +
+        '}' +
+      '}' +
+      // Parse population
+      'let populacao=null;let pop_ano=null;' +
+      'if(Array.isArray(_popD)&&_popD.length>0){' +
+        'const _popItem=_popD[0];const _popRes=_popItem&&_popItem.resultados&&_popItem.resultados[0];' +
+        'const _popSer=_popRes&&_popRes.series&&_popRes.series[0];' +
+        'if(_popSer&&_popSer.serie){' +
+          'const _popEntries=Object.entries(_popSer.serie).filter(([k,v])=>v&&v!=="-");' +
+          'if(_popEntries.length){const _last=_popEntries[_popEntries.length-1];populacao=Number(String(_last[1]).replace(/\\./g,""));pop_ano=Number(_last[0]);if(isNaN(populacao))populacao=null;}' +
+        '}' +
+      '}' +
+      // Parse PNAD/Censo rendimento (t/4711: rendimento médio domiciliar per capita)
+      'let rendimento_medio=null;let rendimento_ano=null;' +
+      'if(Array.isArray(_cen4711)&&_cen4711.length>0){' +
+        'const _rm=_cen4711.find(function(x){return x&&x.D2N&&x.D2N.includes("Rendimento médio")&&x.V&&x.V!=="V"&&x.V!=="..."&&!isNaN(parseFloat(x.V));});' +
+        'if(_rm){rendimento_medio=parseFloat(_rm.V.replace(/\\./g,"").replace(",","."));rendimento_ano=_rm.D3N?Number(_rm.D3N):null;}' +
+      '}' +
+      // Parse extrema pobreza (Censo 2022 t/9952)
+      'let taxa_extrema_pobreza=null;let pobreza_ano=null;' +
+      'if(Array.isArray(_cen9952)&&_cen9952.length>0){' +
+        'const _ep=_cen9952.find(function(x){return x&&x.D2N&&(x.D2N.includes("pobreza")&&x.D2N.includes("extrema")||x.D2N.includes("\\xBD salário"))&&x.V&&x.V!=="V"&&x.V!=="..."&&!isNaN(parseFloat(x.V.replace(",",".")));});' +
+        'if(_ep){taxa_extrema_pobreza=parseFloat(_ep.V.replace(",","."));pobreza_ano=2022;}' +
+      '}' +
+      // pib_per_capita currently holds total PIB in Mil Reais (table 5938, var 37)
+      // Compute real per capita: total_mil_reais * 1000 / populacao
+      'const _pibTotalMilR=pib_per_capita;' +
+      'const _pibPC=_pibTotalMilR!==null&&populacao&&populacao>0?Math.round(_pibTotalMilR*1000/populacao):null;' +
+      'const _temDados=_pibTotalMilR!==null||populacao!==null||rendimento_medio!==null;' +
+      'return g.json({ok:_temDados,co_municipio:E,populacao,populacao_ano:pop_ano,pib_total_mil_reais:_pibTotalMilR,pib_per_capita:_pibPC,pib_ano,rendimento_medio_domiciliar:rendimento_medio,rendimento_ano,taxa_extrema_pobreza,pobreza_ano,fontes:{pib:"IBGE — Produto Interno Bruto dos Municípios, preços correntes (Série "+pib_ano+")",populacao:"IBGE — Estimativas da População ("+pop_ano+")",rendimento:rendimento_ano?"IBGE — PNAD Contínua "+rendimento_ano:null,pobreza:pobreza_ano?"IBGE — Censo Demográfico 2022":null},links:[{nome:"IBGE Cidades",url:"https://cidades.ibge.gov.br/brasil/"+E+"/pesquisa/38/0"},{nome:"IBGE PIB Municipal",url:"https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/9088-produto-interno-bruto-dos-municipios.html"},{nome:"IBGE SIDRA",url:"https://sidra.ibge.gov.br/"}]});' +
+    '}catch(_ge){console.error("[ibge-socio]",_ge.message);return g.status(500).json({ok:!1,error:_ge.message,fontes:{},links:[]});}' +
+  '}),';
+if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
+  source = source.replace(_IBGE_SOCIO_ANCHOR, _IBGE_SOCIO_ANCHOR + _IBGE_SOCIO_ROUTE);
+  console.log('[bootstrap] /api/perfil-socioeconomico endpoint patch applied');
+} else {
+  console.warn('[bootstrap] /api/perfil-socioeconomico patch NOT applied — anchor not found');
+}
+
+// ── 3k. Patch Dashboard-v30.js — add Segurança, Saúde/Violência, IBGE cards ──
+// Adds state vars, open handlers, and 3 new accordion cards to the Dashboard.
+(function _patchDashboardContextCards() {
+  if (!fs.existsSync(dashboardV30AssetPath)) {
+    console.warn('[bootstrap] Dashboard-v30 context cards patch: file not found');
+    return;
+  }
+  const _ID_CHECK = 'segOpen, setSegOpen';
+  let dashSrc = fs.readFileSync(dashboardV30AssetPath, 'utf8');
+  let changed = false;
+
+  // 1. Add state variables for the 3 new cards
+  if (!dashSrc.includes(_ID_CHECK)) {
+    const _SV_OLD = '[ctxSuasOpen, setCtxSuasOpen] = F.useState(false), smReady';
+    const _SV_NEW =
+      '[ctxSuasOpen, setCtxSuasOpen] = F.useState(false), ' +
+      '[segData, setSegData] = F.useState(null), [segLoading, setSegLoading] = F.useState(false), [segOpen, setSegOpen] = F.useState(false), ' +
+      '[saudeViolData, setSaudeViolData] = F.useState(null), [saudeViolLoading, setSaudeViolLoading] = F.useState(false), [saudeViolOpen, setSaudeViolOpen] = F.useState(false), ' +
+      '[ibgeSocioData, setIbgeSocioData] = F.useState(null), [ibgeSocioLoading, setIbgeSocioLoading] = F.useState(false), [ibgeSocioOpen, setIbgeSocioOpen] = F.useState(false), ' +
+      'smReady';
+    if (dashSrc.includes(_SV_OLD)) {
+      dashSrc = dashSrc.replace(_SV_OLD, _SV_NEW);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 context cards: state vars patch applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 context cards: state vars anchor not found');
+    }
+  }
+
+  // 2. Add open handlers after openCtxSuas
+  const _OH_MARKER = 'openSaudeViol = () =>';
+  if (!dashSrc.includes(_OH_MARKER)) {
+    const _OH_OLD = '}, _ = { conselho_tutelar: { icon: e.jsx(Ya,';
+    const _OH_NEW =
+      '}, openSeguranca = () => {' +
+        'const n = !segOpen; setSegOpen(n);' +
+        'if (n && a && !segData && !segLoading) {' +
+          'setSegLoading(true);' +
+          'fetch(`/api/seguranca-municipio/${a}`).then(g => g.json()).then(g => { setSegData(g); setSegLoading(false); }).catch(() => { setSegData({ ok: false }); setSegLoading(false); });' +
+        '}' +
+      '}, openSaudeViol = () => {' +
+        'const n = !saudeViolOpen; setSaudeViolOpen(n);' +
+        'if (n && a && !saudeViolData && !saudeViolLoading) {' +
+          'setSaudeViolLoading(true);' +
+          'fetch(`/api/saude-violencia/${a}`).then(g => g.json()).then(g => { setSaudeViolData(g); setSaudeViolLoading(false); }).catch(() => { setSaudeViolData({ ok: false }); setSaudeViolLoading(false); });' +
+        '}' +
+      '}, openIbgeSocio = () => {' +
+        'const n = !ibgeSocioOpen; setIbgeSocioOpen(n);' +
+        'if (n && a && !ibgeSocioData && !ibgeSocioLoading) {' +
+          'setIbgeSocioLoading(true);' +
+          'fetch(`/api/perfil-socioeconomico/${a}`).then(g => g.json()).then(g => { setIbgeSocioData(g); setIbgeSocioLoading(false); }).catch(() => { setIbgeSocioData({ ok: false }); setIbgeSocioLoading(false); });' +
+        '}' +
+      '}, _ = { conselho_tutelar: { icon: e.jsx(Ya,';
+    if (dashSrc.includes(_OH_OLD)) {
+      dashSrc = dashSrc.replace(_OH_OLD, _OH_NEW);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 context cards: open handlers patch applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 context cards: open handlers anchor not found');
+    }
+  }
+
+  // 3. Add 3 new accordion cards before the "Suporte Institucional" card
+  const _CARD_MARKER = 'seguranca-publica-card';
+  if (!dashSrc.includes(_CARD_MARKER)) {
+    const _SUPORTE_ANCHOR = 'e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5px solid #d4c4f5", background: "#f9f6ff" }, children: [e.jsxs("button", { onClick: () => on((n) => !n),';
+    const _NEW_CARDS =
+      // ── Segurança Pública card ──
+      'e.jsxs("div", { id: "seguranca-publica-card", style: { borderRadius: "16px", overflow: "hidden", border: "1.5px solid #ffab91", background: "#fff3e0" }, children: [' +
+        'e.jsxs("button", { onClick: openSeguranca, style: { width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "14px 18px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }, children: [' +
+          'e.jsx("div", { style: { width: 38, height: 38, borderRadius: 12, background: "#ffccbc", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }, children: e.jsx(Ue, { size: 18 }) }),' +
+          'e.jsxs("div", { style: { flex: 1 }, children: [' +
+            'e.jsx("p", { style: { fontWeight: 700, fontSize: "13px", color: "#bf360c", margin: 0 }, children: "Seguran\\xE7a P\\xFAblica do Munic\\xEDpio" }),' +
+            'e.jsx("p", { style: { fontSize: "11px", color: "#e64a19", margin: 0 }, children: "Ocorr\\xEAncias criminais por natureza \\u2014 SINESP/SENASP" })' +
+          ']}),' +
+          'e.jsx("span", { style: { fontSize: "16px", color: "#e64a19", transform: segOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }, children: "\\u25BE" })' +
+        ']}),' +
+        'segOpen && e.jsxs("div", { style: { padding: "0 18px 16px", borderTop: "1px solid #ffccbc" }, children: [' +
+          'segLoading && e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "16px 0", color: "#e64a19", fontSize: 13 }, children: [e.jsx(Ie, { className: "w-4 h-4 animate-spin" }), " Consultando SINESP..."] }),' +
+          '!segLoading && segData && segData.ok && segData.naturezas && segData.naturezas.length > 0 && e.jsxs(e.Fragment, { children: [' +
+            'e.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, marginBottom: 10 }, children: [' +
+              'e.jsx("p", { style: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#bf360c", margin: 0 }, children: "Ocorr\\xEAncias por Natureza \\u2014 " + (segData.uf || "") + " (" + (segData.ano || "") + ")" }),' +
+              'e.jsx("span", { style: { fontSize: 9, color: "#bf360c", background: "#ffccbc", borderRadius: 20, padding: "2px 8px", fontWeight: 600, whiteSpace: "nowrap" }, children: segData.uf })' +
+            ']}),' +
+            'e.jsx("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 8, marginBottom: 10 }, children: segData.naturezas.map(function(n, ni) {' +
+              'return e.jsxs("div", { style: { background: "#fff", border: "1.5px solid #ffab91", borderRadius: 10, padding: "10px 12px", borderLeft: "4px solid #e64a19" }, children: [' +
+                'e.jsx("p", { style: { fontSize: 20, fontWeight: 800, color: "#bf360c", margin: "0 0 2px", lineHeight: 1 }, children: n.quantidade.toLocaleString("pt-BR") }),' +
+                'e.jsx("p", { style: { fontSize: 10, color: "#e64a19", margin: 0, lineHeight: 1.3 }, children: n.natureza })' +
+              ']}, ni);' +
+            '})}),' +
+            'e.jsxs("p", { style: { fontSize: 10, color: "#bf360c", margin: "6px 0 0", lineHeight: 1.4 }, children: ["Fonte: ", segData.fonte, ". ", segData.nota || ""] }),' +
+            'e.jsxs("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }, children: [' +
+              'e.jsx("a", { href: "https://dados.gov.br/dados/conjuntos-dados/sinesp-uf-ano-natureza-por-ocorrencia", target: "_blank", rel: "noopener noreferrer", style: { fontSize: 11, fontWeight: 700, color: "#bf360c", background: "#ffccbc", padding: "4px 12px", borderRadius: 20, border: "1px solid #ffab91", textDecoration: "none" }, children: "SINESP dados.gov.br \\u2197" }),' +
+              'e.jsx("a", { href: "https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/sinesp", target: "_blank", rel: "noopener noreferrer", style: { fontSize: 11, fontWeight: 700, color: "#bf360c", background: "#ffccbc", padding: "4px 12px", borderRadius: 20, border: "1px solid #ffab91", textDecoration: "none" }, children: "Portal SINESP/SENASP \\u2197" })' +
+            ']})' +
+          ']}),' +
+          '!segLoading && segData && segData.ok && (!segData.naturezas || segData.naturezas.length === 0) && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: segData.mensagem || "Dados de seguran\\xE7a n\\xE3o dispon\\xEDveis para este munic\\xEDpio." }),' +
+          '!segLoading && segData && !segData.ok && e.jsxs("div", { style: { padding: "12px 0" }, children: [' +
+            'e.jsx("p", { style: { fontSize: 12, color: "#888", marginBottom: 8 }, children: "Dados SINESP n\\xE3o dispon\\xEDveis no momento." }),' +
+            'e.jsx("a", { href: "https://dados.gov.br/dados/conjuntos-dados/sinesp-uf-ano-natureza-por-ocorrencia", target: "_blank", rel: "noopener noreferrer", style: { fontSize: 11, fontWeight: 700, color: "#bf360c", background: "#ffccbc", padding: "4px 12px", borderRadius: 20, border: "1px solid #ffab91", textDecoration: "none" }, children: "Acessar SINESP no dados.gov.br \\u2197" })' +
+          ']}),' +
+          '!segLoading && !segData && !a && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: "C\\xF3digo IBGE n\\xE3o dispon\\xEDvel para esta escola." })' +
+        ']})' +
+      ']}),' +
+      // ── Saúde e Violência card ──
+      'e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5px solid #f48fb1", background: "#fce4ec" }, children: [' +
+        'e.jsxs("button", { onClick: openSaudeViol, style: { width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "14px 18px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }, children: [' +
+          'e.jsx("div", { style: { width: 38, height: 38, borderRadius: 12, background: "#f8bbd0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }, children: e.jsx(ko, { size: 18 }) }),' +
+          'e.jsxs("div", { style: { flex: 1 }, children: [' +
+            'e.jsx("p", { style: { fontWeight: 700, fontSize: "13px", color: "#880e4f", margin: 0 }, children: "Sa\\xFAde e Viol\\xEAncia no Munic\\xEDpio" }),' +
+            'e.jsx("p", { style: { fontSize: "11px", color: "#c2185b", margin: 0 }, children: "Interna\\xE7\\xF5es por causas externas e \\xF3bitos por viol\\xEAncia \\u2014 DataSUS" })' +
+          ']}),' +
+          'e.jsx("span", { style: { fontSize: "16px", color: "#c2185b", transform: saudeViolOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }, children: "\\u25BE" })' +
+        ']}),' +
+        'saudeViolOpen && e.jsxs("div", { style: { padding: "0 18px 16px", borderTop: "1px solid #f8bbd0" }, children: [' +
+          'saudeViolLoading && e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "16px 0", color: "#c2185b", fontSize: 13 }, children: [e.jsx(Ie, { className: "w-4 h-4 animate-spin" }), " Consultando DataSUS..."] }),' +
+          '!saudeViolLoading && saudeViolData && saudeViolData.ok && e.jsxs(e.Fragment, { children: [' +
+            'e.jsxs("div", { style: { background: "#fff8e1", border: "1px solid #ffe082", borderRadius: 10, padding: "10px 14px", marginTop: 14, marginBottom: 10 }, children: [' +
+              'e.jsx("p", { style: { fontSize: 11, fontWeight: 700, color: "#5f4200", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.05em" }, children: "\\u2139\\uFE0F Como consultar" }),' +
+              'e.jsx("p", { style: { fontSize: 11, color: "#7a5200", margin: 0, lineHeight: 1.5 }, children: saudeViolData.mensagem })' +
+            ']}),' +
+            'saudeViolData.sisvan && e.jsxs("div", { style: { background: "#fff", border: "1.5px solid #f48fb1", borderRadius: 10, padding: "10px 12px", marginBottom: 10 }, children: [' +
+              'e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#880e4f", margin: "0 0 4px", textTransform: "uppercase" }, children: "SISVAN \\u2014 Vigil\\xE2ncia Nutricional Infantil" }),' +
+              'e.jsxs("p", { style: { fontSize: 12, color: "#c2185b", margin: 0 }, children: [saudeViolData.sisvan.registros, " registros \\u2014 compet\\xEAncia ", saudeViolData.sisvan.competencia || "n.d."] }),' +
+              'e.jsx("p", { style: { fontSize: 10, color: "#888", margin: "4px 0 0" }, children: saudeViolData.sisvan.nota })' +
+            ']}),' +
+            'e.jsxs("div", { style: { marginBottom: 10 }, children: [' +
+              'e.jsx("p", { style: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#880e4f", marginBottom: 8 }, children: "Acesso direto ao DataSUS (TABNET)" }),' +
+              'e.jsx("div", { style: { display: "flex", flexDirection: "column", gap: 6 }, children: (saudeViolData.links || []).map(function(lk, li) {' +
+                'return e.jsxs("a", { href: lk.url, target: "_blank", rel: "noopener noreferrer", style: { fontSize: 11, fontWeight: 600, color: "#880e4f", background: "#fff", border: "1px solid #f48fb1", borderRadius: 8, padding: "6px 10px", textDecoration: "none", display: "flex", flexDirection: "column", gap: 2 }, children: [' +
+                  'e.jsxs("span", { children: [lk.nome, " \\u2197"] }),' +
+                  'e.jsx("span", { style: { fontSize: 10, color: "#c2185b", fontWeight: 400 }, children: lk.desc })' +
+                ']}, li);' +
+              '})})' +
+            ']}),' +
+            'e.jsx("p", { style: { fontSize: 10, color: "#c2185b", margin: "6px 0 0", lineHeight: 1.4 }, children: "Fonte: " + (saudeViolData.fonte || "DataSUS / Ministério da Saúde") })' +
+          ']}),' +
+          '!saudeViolLoading && saudeViolData && !saudeViolData.ok && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: "Dados de sa\\xFAde e viol\\xEAncia n\\xE3o dispon\\xEDveis para este munic\\xEDpio." }),' +
+          '!saudeViolLoading && !saudeViolData && !a && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: "C\\xF3digo IBGE n\\xE3o dispon\\xEDvel para esta escola." })' +
+        ']})' +
+      ']}),' +
+      // ── Perfil Socioeconômico card ──
+      'e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5px solid #a5d6a7", background: "#e8f5e9" }, children: [' +
+        'e.jsxs("button", { onClick: openIbgeSocio, style: { width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "14px 18px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }, children: [' +
+          'e.jsx("div", { style: { width: 38, height: 38, borderRadius: 12, background: "#c8e6c9", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }, children: e.jsx(Ct, { size: 18 }) }),' +
+          'e.jsxs("div", { style: { flex: 1 }, children: [' +
+            'e.jsx("p", { style: { fontWeight: 700, fontSize: "13px", color: "#1b5e20", margin: 0 }, children: "Perfil Socioecon\\xF4mico do Munic\\xEDpio" }),' +
+            'e.jsx("p", { style: { fontSize: "11px", color: "#2e7d32", margin: 0 }, children: "PIB per capita, popula\\xE7\\xE3o, renda \\u2014 IBGE" })' +
+          ']}),' +
+          'e.jsx("span", { style: { fontSize: "16px", color: "#2e7d32", transform: ibgeSocioOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }, children: "\\u25BE" })' +
+        ']}),' +
+        'ibgeSocioOpen && e.jsxs("div", { style: { padding: "0 18px 16px", borderTop: "1px solid #c8e6c9" }, children: [' +
+          'ibgeSocioLoading && e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "16px 0", color: "#2e7d32", fontSize: 13 }, children: [e.jsx(Ie, { className: "w-4 h-4 animate-spin" }), " Consultando IBGE..."] }),' +
+          '!ibgeSocioLoading && ibgeSocioData && ibgeSocioData.ok && e.jsxs(e.Fragment, { children: [' +
+            'e.jsx("p", { style: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#1b5e20", marginTop: 14, marginBottom: 10 }, children: "Indicadores Socioecon\\xF4micos \\u2014 IBGE" }),' +
+            'e.jsx("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 8, marginBottom: 10 }, children: [' +
+              'ibgeSocioData.populacao != null && e.jsxs("div", { style: { background: "#fff", border: "1px solid #a5d6a7", borderRadius: 10, padding: "10px 12px" }, children: [' +
+                'e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 2px", textTransform: "uppercase" }, children: "Popula\\xE7\\xE3o (" + (ibgeSocioData.populacao_ano || "IBGE") + ")" }),' +
+                'e.jsx("p", { style: { fontSize: 20, fontWeight: 800, color: "#2e7d32", margin: 0, lineHeight: 1 }, children: ibgeSocioData.populacao.toLocaleString("pt-BR") })' +
+              ']}),' +
+              'ibgeSocioData.pib_per_capita != null && e.jsxs("div", { style: { background: "#fff", border: "1px solid #a5d6a7", borderRadius: 10, padding: "10px 12px" }, children: [' +
+                'e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 2px", textTransform: "uppercase" }, children: "PIB per capita (" + (ibgeSocioData.pib_ano || "") + ")" }),' +
+                'e.jsxs("p", { style: { fontSize: 20, fontWeight: 800, color: "#2e7d32", margin: 0, lineHeight: 1 }, children: ["R$\\xA0", ibgeSocioData.pib_per_capita.toLocaleString("pt-BR", { maximumFractionDigits: 0 })] })' +
+              ']}),' +
+              'ibgeSocioData.rendimento_medio_domiciliar != null && e.jsxs("div", { style: { background: "#fff", border: "1px solid #a5d6a7", borderRadius: 10, padding: "10px 12px" }, children: [' +
+                'e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 2px", textTransform: "uppercase" }, children: "Rendimento M\\xE9dio Domiciliar" + (ibgeSocioData.rendimento_ano ? " (" + ibgeSocioData.rendimento_ano + ")" : "") }),' +
+                'e.jsxs("p", { style: { fontSize: 20, fontWeight: 800, color: "#2e7d32", margin: 0, lineHeight: 1 }, children: ["R$\\xA0", ibgeSocioData.rendimento_medio_domiciliar.toLocaleString("pt-BR", { maximumFractionDigits: 0 })] })' +
+              ']}),' +
+              'ibgeSocioData.taxa_extrema_pobreza != null && e.jsxs("div", { style: { background: "#fff8e1", border: "1px solid #ffe082", borderRadius: 10, padding: "10px 12px" }, children: [' +
+                'e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#5f4200", margin: "0 0 2px", textTransform: "uppercase" }, children: "Taxa de Extrema Pobreza (Censo 2022)" }),' +
+                'e.jsxs("p", { style: { fontSize: 20, fontWeight: 800, color: "#e65100", margin: 0, lineHeight: 1 }, children: [ibgeSocioData.taxa_extrema_pobreza.toFixed(1).replace(".", ","), "%"] })' +
+              ']})' +
+            '].filter(Boolean)}),' +
+            'e.jsxs("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }, children: (ibgeSocioData.links || []).map(function(lk, li) {' +
+              'return e.jsx("a", { href: lk.url, target: "_blank", rel: "noopener noreferrer", style: { fontSize: 11, fontWeight: 700, color: "#1b5e20", background: "#c8e6c9", padding: "4px 12px", borderRadius: 20, border: "1px solid #a5d6a7", textDecoration: "none" }, children: lk.nome + " \\u2197" }, li);' +
+            '})}),' +
+            'e.jsxs("p", { style: { fontSize: 10, color: "#388e3c", margin: "4px 0 0", lineHeight: 1.5 }, children: [' +
+              'ibgeSocioData.fontes && ibgeSocioData.fontes.pib && e.jsxs("span", { children: [ibgeSocioData.fontes.pib, ". "] }),' +
+              'ibgeSocioData.fontes && ibgeSocioData.fontes.populacao && e.jsxs("span", { children: [ibgeSocioData.fontes.populacao, "."] })' +
+            ']})' +
+          ']}),' +
+          '!ibgeSocioLoading && ibgeSocioData && !ibgeSocioData.ok && e.jsxs("div", { style: { padding: "12px 0" }, children: [' +
+            'e.jsx("p", { style: { fontSize: 12, color: "#888", marginBottom: 8 }, children: "Dados socioecon\\xF4micos n\\xE3o dispon\\xEDveis para este munic\\xEDpio." }),' +
+            'e.jsx("a", { href: "https://cidades.ibge.gov.br/", target: "_blank", rel: "noopener noreferrer", style: { fontSize: 11, fontWeight: 700, color: "#1b5e20", background: "#c8e6c9", padding: "4px 12px", borderRadius: 20, border: "1px solid #a5d6a7", textDecoration: "none" }, children: "IBGE Cidades \\u2197" })' +
+          ']}),' +
+          '!ibgeSocioLoading && !ibgeSocioData && !a && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: "C\\xF3digo IBGE n\\xE3o dispon\\xEDvel para esta escola." })' +
+        ']})' +
+      ']}),' +
+      _SUPORTE_ANCHOR;
+    const _anchorIdx = dashSrc.indexOf(_SUPORTE_ANCHOR);
+    if (_anchorIdx !== -1) {
+      dashSrc = dashSrc.slice(0, _anchorIdx) + _NEW_CARDS + dashSrc.slice(_anchorIdx + _SUPORTE_ANCHOR.length);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 context cards: 3 new accordion cards injected');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 context cards: Suporte Institucional anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 context cards: already applied');
+  }
+
+  if (changed) {
+    fs.writeFileSync(dashboardV30AssetPath, dashSrc, 'utf8');
+  }
+})();
+
 const m = new Module(path.join(distDir, 'index.cjs'));
 m.filename = path.join(distDir, 'index.cjs');
 m.paths = Module._nodeModulePaths(distDir);
