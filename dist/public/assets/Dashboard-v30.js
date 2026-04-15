@@ -1092,6 +1092,41 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
             })})
           ]}, fidx);
         })
+      ]}),
+      ctxMunData.bf && e.jsxs("div", { style: { background: "#e8f5e9", border: "1px solid #a5d6a7", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
+        e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 8px 0", textTransform: "uppercase", letterSpacing: "0.05em" }, children: "Bolsa Fam\xEDlia \u2014 Fam\xEDlias Benefici\xE1rias" }),
+        e.jsxs("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 8 }, children: [
+          e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 22, fontWeight: 800, color: "#2e7d32", margin: 0, lineHeight: 1 }, children: ctxMunData.bf.familias.toLocaleString("pt-BR") }),
+            e.jsx("p", { style: { fontSize: 10, color: "#388e3c", margin: "2px 0 0" }, children: "fam\xEDlias benefici\xE1rias" })
+          ]}),
+          e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: "#1b5e20", margin: 0, lineHeight: 1 }, children: "R$\xA0" + (ctxMunData.bf.valor >= 1e6 ? (ctxMunData.bf.valor / 1e6).toFixed(2).replace(".", ",") + "\xA0mi" : (ctxMunData.bf.valor / 1e3).toFixed(0) + "\xA0mil") }),
+            e.jsx("p", { style: { fontSize: 10, color: "#388e3c", margin: "2px 0 0" }, children: "valor total/m\xEAs" })
+          ]}),
+          e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: "#1b5e20", margin: 0, lineHeight: 1 }, children: "R$\xA0" + ctxMunData.bf.media.toLocaleString("pt-BR") }),
+            e.jsx("p", { style: { fontSize: 10, color: "#388e3c", margin: "2px 0 0" }, children: "m\xE9dia/fam\xEDlia" })
+          ]}),
+          ctxMunData.populacao && e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: "#1b5e20", margin: 0, lineHeight: 1 }, children: Math.round(ctxMunData.bf.familias / ctxMunData.populacao * 1000) + "/mil\xA0hab." }),
+            e.jsx("p", { style: { fontSize: 10, color: "#388e3c", margin: "2px 0 0" }, children: "cobertura estimada" })
+          ]})
+        ]}),
+        ctxMunData.bf.serie && ctxMunData.bf.serie.length > 1 && e.jsxs("div", { style: { display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }, children: [
+          e.jsx("span", { style: { fontSize: 10, color: "#555", fontWeight: 600, marginRight: 2 }, children: "Tend\xEAncia:" }),
+          ctxMunData.bf.serie.map(function(s, si) {
+            var mes = s.mes.slice(0, 4) + "/" + s.mes.slice(4, 6);
+            var next = ctxMunData.bf.serie[si + 1];
+            var arrow = next ? (next.familias > s.familias ? "\u2191" : next.familias < s.familias ? "\u2193" : "\u2192") : null;
+            var arrowColor = arrow === "\u2191" ? "#c62828" : "#2e7d32";
+            return e.jsxs(F.Fragment, { key: si, children: [
+              e.jsxs("span", { style: { fontSize: 10, background: "#c8e6c9", borderRadius: 4, padding: "2px 7px", color: "#1b5e20", fontWeight: 600 }, children: [mes, ": ", s.familias.toLocaleString("pt-BR")] }),
+              arrow && e.jsx("span", { style: { fontSize: 12, color: arrowColor, fontWeight: 700, margin: "0 2px" }, children: arrow })
+            ]});
+          })
+        ]}),
+        e.jsx("p", { style: { fontSize: 9, color: "#888", margin: "4px 0 0" }, children: "Fonte: Portal da Transpar\xEAncia \u2022 " + (ctxMunData.bf.mes ? ctxMunData.bf.mes.slice(0, 4) + "/" + ctxMunData.bf.mes.slice(4, 6) : "") })
       ]})
     ]}),
     !ctxMunLoading && ctxMunData && !ctxMunData.ok && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: "Dados de contexto n\xE3o dispon\xEDveis para este munic\xEDpio." }),

@@ -1737,7 +1737,20 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '    if(sv3.length>0)sisvan.push({fase:"Adultos",rotulo:"Adultos",count:sv3.length,categorias:_svImc(sv3)});\n' +
 '    if(sv4.length>0)sisvan.push({fase:"Idosos",rotulo:"Idosos",count:sv4.length,categorias:_svImc(sv4)});\n' +
 '    const munNome=(macro&&macro.municipio||"").replace(/^[A-Z]{2}\\s*-\\s*/,"");\n' +
-'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan});\n' +
+'    // ── Bolsa Familia (Portal da Transparencia) ─────────────────────────────\n' +
+'    let bf=null;\n' +
+'    try{\n' +
+'      const _bfKey=process.env.PORTAL_TRANSPARENCIA_KEY||"";\n' +
+'      if(_bfKey&&co.length===7){\n' +
+'        const _now=new Date();\n' +
+'        const _months=[];\n' +
+'        for(let _i=1;_i<=6;_i++){const _d=new Date(_now.getFullYear(),_now.getMonth()-_i,1);_months.push(String(_d.getFullYear())+String(_d.getMonth()+1).padStart(2,"0"));}\n' +
+'        const _bfResults=await Promise.all(_months.map(function(_m){return fetch("https://api.portaldatransparencia.gov.br/api-de-dados/novo-bolsa-familia-por-municipio?mesAno="+_m+"&codigoIbge="+co+"&pagina=1",{headers:{"chave-api-dados":_bfKey},signal:AbortSignal.timeout(8000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});}));\n' +
+'        const _bfSerie=_bfResults.map(function(r,i){const rec=Array.isArray(r)&&r[0]?r[0]:null;return rec?{mes:_months[i],familias:rec.quantidadeBeneficiados,valor:rec.valor}:null;}).filter(Boolean).reverse();\n' +
+'        if(_bfSerie.length>0){const _last=_bfSerie[_bfSerie.length-1];bf={familias:_last.familias,valor:_last.valor,media:Math.round(_last.valor/_last.familias),mes:_last.mes,serie:_bfSerie};}\n' +
+'      }\n' +
+'    }catch(_bfErr){console.warn("[ctx-mun] bf erro:",String(_bfErr));}\n' +
+'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf});\n' +
 '  }catch(err){console.error("[ctx-mun] erro:",String(err));g.json({ok:false,erro:String(err)});}\n' +
 '}),\n';
 
