@@ -222,12 +222,13 @@ const _EQUIP_ROUTE =
           'fetch(_base+"&codigo_tipo_unidade=73&limit=50",{signal:_sig,headers:_hdrs}).then(r=>r.ok?r.json():null).catch(()=>null),'+
           'fetch(_base+"&codigo_tipo_unidade=5&limit=30",{signal:_sig,headers:_hdrs}).then(r=>r.ok?r.json():null).catch(()=>null)'+
         ']);'+
-        'let _mapEst=(arr,tipo)=>(Array.isArray(arr)?arr:[]).map(_est=>({tipo,nome:_est.nome_razao_social||_est.nome_fantasia,bairro:_est.bairro_estabelecimento||null,telefone:_est.numero_telefone_estabelecimento||null,latitude:_est.latitude_estabelecimento_decimo_grau?parseFloat(_est.latitude_estabelecimento_decimo_grau):null,longitude:_est.longitude_estabelecimento_decimo_grau?parseFloat(_est.longitude_estabelecimento_decimo_grau):null,distancia_km:null}));'+
+        // nome_fantasia = nome real da unidade (ex: "UBS CENTRO"), nome_razao_social = entidade mantenedora (ex: "Prefeitura de...")
+        'let _mapEst=(arr,tipo)=>(Array.isArray(arr)?arr:[]).map(_est=>({tipo,nome:_est.nome_fantasia||_est.nome_razao_social,bairro:_est.bairro_estabelecimento||null,endereco:(_est.endereco_estabelecimento&&_est.numero_estabelecimento)?_est.endereco_estabelecimento+", "+_est.numero_estabelecimento:(_est.endereco_estabelecimento||null),telefone:_est.numero_telefone_estabelecimento||null,latitude:_est.latitude_estabelecimento_decimo_grau?parseFloat(_est.latitude_estabelecimento_decimo_grau):null,longitude:_est.longitude_estabelecimento_decimo_grau?parseFloat(_est.longitude_estabelecimento_decimo_grau):null,distancia_km:null}));'+
         'let _ubs=[..._mapEst((_r1&&_r1.estabelecimentos)||[],"UBS"),..._mapEst((_r2&&_r2.estabelecimentos)||[],"UBS")];'+
         'let _upa=_mapEst((_r3&&_r3.estabelecimentos)||[],"UPA");'+
         // filter hospitals by name: only those with "pronto socorro" count as PS
         'let _hosp=((_r4&&_r4.estabelecimentos)||[]);'+
-        'let _ps=_hosp.filter(h=>/pronto[- ]socorro/.test(String(h.nome_razao_social||"").toLowerCase())).map(h=>({tipo:"PRONTO_SOCORRO",nome:h.nome_razao_social,bairro:h.bairro_estabelecimento||null,telefone:h.numero_telefone_estabelecimento||null,latitude:h.latitude_estabelecimento_decimo_grau?parseFloat(h.latitude_estabelecimento_decimo_grau):null,longitude:h.longitude_estabelecimento_decimo_grau?parseFloat(h.longitude_estabelecimento_decimo_grau):null,distancia_km:null}));'+
+        'let _ps=_hosp.filter(h=>/pronto[- ]socorro/.test(String(h.nome_fantasia||h.nome_razao_social||"").toLowerCase())).map(h=>({tipo:"PRONTO_SOCORRO",nome:h.nome_fantasia||h.nome_razao_social,bairro:h.bairro_estabelecimento||null,endereco:(h.endereco_estabelecimento&&h.numero_estabelecimento)?h.endereco_estabelecimento+", "+h.numero_estabelecimento:(h.endereco_estabelecimento||null),telefone:h.numero_telefone_estabelecimento||null,latitude:h.latitude_estabelecimento_decimo_grau?parseFloat(h.latitude_estabelecimento_decimo_grau):null,longitude:h.longitude_estabelecimento_decimo_grau?parseFloat(h.longitude_estabelecimento_decimo_grau):null,distancia_km:null}));'+
         'if(_ubs.length>0||_upa.length>0||_ps.length>0){'+
           'T.disponivel=!0;'+
           'T.dados_correspondem_municipio=!0;'+
@@ -565,11 +566,11 @@ const _SAUDE_FE_BLOCK =
                   '"Maps"' +
                 ']})' +
               ']}),' +
-              '_c.bairro&&e.jsx("p",{style:{fontSize:10,color:"#555",margin:"0 0 2px"},children:_c.bairro}),' +
-              '_c.telefone&&e.jsxs("p",{style:{fontSize:10,color:"#555",margin:"0 0 2px",display:"flex",alignItems:"center",gap:3},children:[' +
+              '(_c.bairro||_c.endereco)&&e.jsx("p",{style:{fontSize:10,color:"#555",margin:"0 0 2px"},children:[_c.endereco,_c.endereco&&_c.bairro?" \\u2014 ":null,_c.bairro].filter(Boolean).join("")}),' +
+              '_c.telefone?e.jsxs("p",{style:{fontSize:10,color:"#555",margin:"0 0 2px",display:"flex",alignItems:"center",gap:3},children:[' +
                 '"\\uD83D\\uDCDE ",' +
                 'e.jsx("a",{href:"tel:"+_c.telefone.replace(/\\D/g,""),style:{color:_txt,textDecoration:"none",fontWeight:600},children:_c.telefone})' +
-              ']}),' +
+              ']}):e.jsx("p",{style:{fontSize:9,color:"#aaa",margin:"0 0 2px",fontStyle:"italic"},children:"Telefone n\\xE3o cadastrado"}),' +
               '_c.distancia_km!=null&&e.jsx("p",{style:{fontSize:9,color:"#888",margin:"2px 0 0",fontStyle:"italic"},children:"\\uD83D\\uDCCD "+_c.distancia_km.toFixed(2)+" km"})' +
             ']},_i);' +
           '})' +
