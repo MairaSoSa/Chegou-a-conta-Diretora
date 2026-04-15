@@ -28,6 +28,90 @@
 
 /* ...demais regras do anexo, cole aqui... */
 
+/* Cards de resumo nacional: 1 coluna fora de desktop, 4 colunas em desktop */
+.summary-grid-resumo {
+  grid-template-columns: 1fr !important;
+}
+@media (min-width: 1024px) {
+  .summary-grid-resumo {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
+/* Dados educacionais: evita overflow horizontal em tablet e laptop */
+@media (max-width: 1399px) {
+  .section,
+  .section-pauta,
+  .hero,
+  .hero-inner,
+  .summary-grid,
+  .summary-grid-resumo,
+  .chart-wall,
+  .chart-stage,
+  .chart-menu,
+  .two-col,
+  .priority-layout,
+  .analytics-layout,
+  .finance-layout,
+  .alert-grid,
+  .snapshot-grid,
+  .indicator-grid,
+  .compare-grid,
+  .auto-text-grid,
+  .filters-grid,
+  .tab-panel-v6,
+  .tab-buttons-v6,
+  .table-card,
+  .list-card,
+  .soft-card,
+  .card-v6,
+  .metric {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .summary-grid > *,
+  .summary-grid-resumo > *,
+  .chart-wall > *,
+  .chart-stage > *,
+  .chart-menu > *,
+  .two-col > *,
+  .priority-layout > *,
+  .analytics-layout > *,
+  .finance-layout > *,
+  .alert-grid > *,
+  .snapshot-grid > *,
+  .indicator-grid > *,
+  .compare-grid > *,
+  .auto-text-grid > *,
+  .filters-grid > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #sec-ficha {
+    min-width: 0 !important;
+    width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+
+  .section-pauta div[style*="overflow-x:auto"],
+  .section-pauta div[style*="overflow-x: auto"],
+  .section-pauta div[style*="overflow:auto"],
+  .section-pauta div[style*="overflow: auto"] {
+    max-width: 100% !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .section-pauta table,
+  .section-pauta svg,
+  .section-pauta canvas {
+    max-width: 100% !important;
+  }
+}
+
 /* Centralização do painel de dados educacionais no mobile (iPhone SE e similares) */
 @media (max-width: 400px) {
   .container,
