@@ -2896,6 +2896,17 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 context cards: already applied');
   }
 
+  // Fix: context cards patch caused occurrence 2 (inner CME) to be a statement inside
+  // Bt IIFE #1 without closing occurrence 2's e.jsxs or Bt IIFE #1.
+  // This adds the missing `)})()` between the two `]`s in the closing sequence.
+  const _BROKEN_CLOSE = '\n      })()] })] });\n';
+  const _FIXED_CLOSE  = '\n      })()] })})() ] });\n';
+  if (dashSrc.includes(_BROKEN_CLOSE)) {
+    dashSrc = dashSrc.replace(_BROKEN_CLOSE, _FIXED_CLOSE);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 context cards: closing-sequence fix applied');
+  }
+
   if (changed) {
     fs.writeFileSync(dashboardV30AssetPath, dashSrc, 'utf8');
   }
