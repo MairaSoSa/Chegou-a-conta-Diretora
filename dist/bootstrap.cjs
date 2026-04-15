@@ -1750,7 +1750,27 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '        if(_bfSerie.length>0){const _last=_bfSerie[_bfSerie.length-1];bf={familias:_last.familias,valor:_last.valor,media:Math.round(_last.valor/_last.familias),mes:_last.mes,serie:_bfSerie};}\n' +
 '      }\n' +
 '    }catch(_bfErr){console.warn("[ctx-mun] bf erro:",String(_bfErr));}\n' +
-'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf});\n' +
+'    // ── Dengue (InfoDengue/Fiocruz) ─────────────────────────────────────────\n' +
+'    let dengue=null;\n' +
+'    try{\n' +
+'      if(co.length===7){\n' +
+'        const _yr=new Date().getFullYear();\n' +
+'        const [_dngCurr,_dngPrev]=await Promise.all([\n' +
+'          fetch("https://info.dengue.mat.br/api/alertcity?geocode="+co+"&disease=dengue&format=json&ew_start=1&ew_end=53&ey_start="+_yr+"&ey_end="+_yr,{signal:AbortSignal.timeout(9000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),\n' +
+'          fetch("https://info.dengue.mat.br/api/alertcity?geocode="+co+"&disease=dengue&format=json&ew_start=1&ew_end=53&ey_start="+(_yr-1)+"&ey_end="+(_yr-1),{signal:AbortSignal.timeout(9000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})\n' +
+'        ]);\n' +
+'        if(Array.isArray(_dngCurr)&&_dngCurr.length>0){\n' +
+'          const _sorted=_dngCurr.slice().sort(function(a,b){return b.SE-a.SE;});\n' +
+'          const _atual=_sorted[0];\n' +
+'          const _serie=_sorted.slice(0,5).reverse();\n' +
+'          const _accCurr=_dngCurr.reduce(function(s,x){return s+x.casos;},0);\n' +
+'          const _accPrev=Array.isArray(_dngPrev)?_dngPrev.reduce(function(s,x){return s+x.casos;},0):null;\n' +
+'          const _NIVEL={"1":"Verde","2":"Alerta","3":"Alto","4":"Muito Alto"};\n' +
+'          dengue={nivel:_atual.nivel,nivel_nome:_NIVEL[String(_atual.nivel)]||"Desconhecido",semana:"SE"+String(_atual.SE).slice(4)+"/"+String(_atual.SE).slice(0,4),casos:_atual.casos,casos_est:Math.round(_atual.casos_est||0),inc100k:Math.round((_atual.p_inc100k||0)*10)/10,rt:Math.round((_atual.Rt||0)*100)/100,p_rt1:Math.round((_atual.p_rt1||0)*100),accum_ano:_accCurr,accum_ano_ant:_accPrev,ano:_yr,serie:_serie.map(function(s){return{se:"SE"+String(s.SE).slice(4),casos:s.casos,nivel:s.nivel,inc100k:Math.round((s.p_inc100k||0)*10)/10};})}\n' +
+'        }\n' +
+'      }\n' +
+'    }catch(_dngErr){console.warn("[ctx-mun] dengue erro:",String(_dngErr));}\n' +
+'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,dengue:dengue});\n' +
 '  }catch(err){console.error("[ctx-mun] erro:",String(err));g.json({ok:false,erro:String(err)});}\n' +
 '}),\n';
 

@@ -1093,6 +1093,48 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
           ]}, fidx);
         })
       ]}),
+      ctxMunData.dengue && (function() {
+        var _dng = ctxMunData.dengue;
+        var _nivelCores = {1:{bg:"#e8f5e9",bdr:"#a5d6a7",col:"#1b5e20",badge:"#2e7d32",badgeBg:"#c8e6c9",icon:"\u{1F7E2}"},2:{bg:"#fff9c4",bdr:"#f9a825",col:"#e65100",badge:"#f57f17",badgeBg:"#fff9c4",icon:"\u{1F7E1}"},3:{bg:"#fff3e0",bdr:"#ef6c00",col:"#bf360c",badge:"#e64a19",badgeBg:"#ffe0b2",icon:"\u{1F7E0}"},4:{bg:"#ffebee",bdr:"#ef9a9a",col:"#b71c1c",badge:"#c62828",badgeBg:"#ffcdd2",icon:"\u{1F534}"}};
+        var _c = _nivelCores[_dng.nivel] || _nivelCores[2];
+        var _nivelSerie = {1:"\u{1F7E2}",2:"\u{1F7E1}",3:"\u{1F7E0}",4:"\u{1F534}"};
+        return e.jsxs("div", { style: { background: _c.bg, border: "1px solid "+_c.bdr, borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
+          e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }, children: [
+            e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: _c.col, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", flex: 1 }, children: "Dengue \u2014 Vigil\xE2ncia Epidemiol\xF3gica" }),
+            e.jsxs("span", { style: { fontSize: 11, fontWeight: 800, background: _c.badgeBg, color: _c.badge, border: "1px solid "+_c.bdr, borderRadius: 20, padding: "2px 10px", whiteSpace: "nowrap" }, children: [_c.icon, "\xA0", _dng.nivel_nome] })
+          ]}),
+          e.jsxs("div", { style: { display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 8 }, children: [
+            e.jsxs("div", { children: [
+              e.jsx("p", { style: { fontSize: 20, fontWeight: 800, color: _c.badge, margin: 0, lineHeight: 1 }, children: _dng.casos_est }),
+              e.jsx("p", { style: { fontSize: 10, color: _c.col, margin: "2px 0 0" }, children: "casos estimados/sem." })
+            ]}),
+            e.jsxs("div", { children: [
+              e.jsx("p", { style: { fontSize: 20, fontWeight: 800, color: _c.badge, margin: 0, lineHeight: 1 }, children: _dng.casos }),
+              e.jsx("p", { style: { fontSize: 10, color: _c.col, margin: "2px 0 0" }, children: "notificados/sem." })
+            ]}),
+            e.jsxs("div", { children: [
+              e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: _c.badge, margin: 0, lineHeight: 1 }, children: _dng.inc100k }),
+              e.jsx("p", { style: { fontSize: 10, color: _c.col, margin: "2px 0 0" }, children: "casos/100\xA0mil hab." })
+            ]}),
+            _dng.rt > 0 && e.jsxs("div", { children: [
+              e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: _dng.rt >= 1 ? _c.badge : "#2e7d32", margin: 0, lineHeight: 1 }, children: _dng.rt.toFixed(2) }),
+              e.jsx("p", { style: { fontSize: 10, color: _c.col, margin: "2px 0 0" }, children: "Rt (reprodu\xE7\xE3o)" })
+            ]}),
+            e.jsxs("div", { children: [
+              e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: _c.badge, margin: 0, lineHeight: 1 }, children: _dng.accum_ano }),
+              e.jsx("p", { style: { fontSize: 10, color: _c.col, margin: "2px 0 0" }, children: "acum. "+_dng.ano+(_dng.accum_ano_ant != null ? " (ant.: "+_dng.accum_ano_ant+")" : "") })
+            ]})
+          ]}),
+          _dng.serie && _dng.serie.length > 1 && e.jsxs("div", { style: { display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }, children: [
+            e.jsx("span", { style: { fontSize: 10, color: _c.col, fontWeight: 600, marginRight: 2 }, children: "\xDAlt. semanas:" }),
+            _dng.serie.map(function(s, si) {
+              var ico = _nivelSerie[s.nivel] || "\u{1F7E1}";
+              return e.jsxs("span", { style: { fontSize: 10, background: "rgba(255,255,255,0.6)", border: "1px solid "+_c.bdr, borderRadius: 4, padding: "2px 7px", color: _c.col, fontWeight: 600, whiteSpace: "nowrap" }, children: [ico, "\xA0", s.se, ":\xA0", s.casos, " casos"] }, si);
+            })
+          ]}),
+          e.jsx("p", { style: { fontSize: 9, color: _c.col, margin: "4px 0 0", opacity: 0.75 }, children: "Fonte: InfoDengue / Fiocruz \u2022 "+_dng.semana })
+        ]});
+      })(),
       ctxMunData.bf && e.jsxs("div", { style: { background: "#e8f5e9", border: "1px solid #a5d6a7", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
         e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 8px 0", textTransform: "uppercase", letterSpacing: "0.05em" }, children: "Bolsa Fam\xEDlia \u2014 Fam\xEDlias Benefici\xE1rias" }),
         e.jsxs("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 8 }, children: [
