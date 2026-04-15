@@ -106,6 +106,7 @@ Since the source code is not present, all fixes are applied directly to the comp
 | `dist/public/assets/Dashboard-v30.js` | **FNDE contacts populated**: All 8 FNDE directorate entries (Presidência, GABIN, DIRAD, DIRTI, DIFIN, DIRAE, DIGAP, DIGEF) now have `tel` and `email` fields filled with official contact data from gov.br/fnde. |
 | `dist/bootstrap.cjs` + `dist/public/assets/Dashboard-v30.js` | **SME IA fill**: `GET /api/secretaria-municipal/ia?municipio=X&uf=Y` uses OpenAI (gpt-4o-mini, temp=0.3) to return structured SME contact data (titular, tel, email, foco, horario, site). 24h cache. Frontend: "Busca Google ↗" replaced by "✨ Preencher com IA" button in the SME card; on click, calls the IA endpoint and populates all SME fields. Button shows "⏳ Buscando..." during load, "✨ Atualizar via IA" after fill. |
 | `dist/bootstrap.cjs` + `dist/public/assets/Dashboard-v30.js` | **Censo 2022 / IBGE SIDRA**: `GET /api/contexto-municipal/:co` now fetches t9955 (indicadores demográficos: índice envelhecimento, idade mediana, razão de sexo, pop 60+, pop 0-14, homens/mulheres) and t9951 (taxa de alfabetização 15+) via SIDRA API (apisidra.ibge.gov.br). Requires 7-digit IBGE code. Frontend: card "Perfil Demográfico — Censo 2022 / IBGE" (fundo azul índigo) abaixo do BPC card, exibindo 4 métricas em grade 2×2 + faixas etárias + distribuição por sexo. |
+| `dist/bootstrap.cjs` + `dist/public/assets/Dashboard-v30.js` + `scripts/sync-ongs-contatos.mjs` | **ONGs e Entidades de Assistência Social (CNEAS)**: New section in the Equipamentos Públicos accordion, shown below the saúde block. Data from CNEAS (dados.gov.br CKAN API), enriched with CEBAS certification flag. Backend: `ongs` field added to `/api/equipamentos-publicos/:coMunicipio` response + standalone `GET /api/ongs/:coMunicipio` endpoint. Frontend: cards with colored area badges (green=Assistência Social, blue=Saúde, orange=Educação) and purple CEBAS badge. Sync script: `scripts/sync-ongs-contatos.mjs` pre-generates `ongs-contatos.json` from CNEAS+CEBAS; env vars: `ONG_CODIGO_MUNICIPIO`, `ONG_UF`, `ONG_TOP_N`, `ONG_CONTATOS_OUTPUT_JSON`. Runtime fallback queries dados.gov.br CKAN API directly. |
 
 ---
 
@@ -133,4 +134,8 @@ OPENAI_API_KEY         # OpenAI API key for AI explanations (gpt-4o-mini)
 OPENAI_MODEL           # Optional: override AI model (default: gpt-4o-mini)
 NODE_ENV               # development / production
 PORT                   # Server port (5000 dev, 8080 prod)
+ONG_CODIGO_MUNICIPIO   # IBGE municipality code for CNEAS sync (6 or 7 digits)
+ONG_UF                 # UF sigla for CNEAS sync (informational, e.g. SP)
+ONG_TOP_N              # Max entities to include in ongs-contatos.json (default: 15)
+ONG_CONTATOS_OUTPUT_JSON # Output path for sync script (default: ongs-contatos.json)
 ```

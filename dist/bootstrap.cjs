@@ -240,14 +240,47 @@ const _EQUIP_ROUTE =
         '}'+
       '}catch(_ce){console.warn("[equipamentos] CNES fallback erro:",_ce.message);}'+
     '}'+
+    // ONGs from CNEAS (local file or API fallback)
+    'let _ongsResult={disponivel:!1,entidades:[],fonte:"ongs-contatos.json",atualizado_em:null};'+
+    'try{'+
+      'const _oFs=require("fs"),_oPath=require("path").resolve(process.cwd(),process.env.ONG_CONTATOS_OUTPUT_JSON||"ongs-contatos.json");'+
+      'if(_oFs.existsSync(_oPath)){'+
+        'const _oData=JSON.parse(_oFs.readFileSync(_oPath,"utf8"));'+
+        'const _oMun=String(_oData&&_oData.filtros&&_oData.filtros.codigo_municipio||"").replace(/\\D/g,"");'+
+        'const _oMun6=_oMun.length===7?_oMun.slice(0,6):_oMun;'+
+        'const _oMatch=!_oMun||_oMun===E||_oMun6===v||_oMun===v;'+
+        'if(_oMatch){_ongsResult={disponivel:!0,fonte:"ongs-contatos.json",atualizado_em:_oData.generated_at||null,resumo:_oData.resumo||null,entidades:Array.isArray(_oData.entidades)?_oData.entidades.slice(0,15):[],dados_correspondem_municipio:!0};}'+
+      '}'+
+    '}catch(_ofe){}'+
+    'if(!_ongsResult.disponivel){'+
+      'try{'+
+        'if(!globalThis._cneasRid){'+
+          'const _pkgR=await fetch("https://dados.gov.br/api/3/action/package_show?id=cneas--cadastro-nacional-de-entidades-de-assistencia-social",{signal:AbortSignal.timeout(10e3),headers:{"Accept":"application/json","User-Agent":"ChegoAContaDiretora/1.0"}});'+
+          'if(_pkgR.ok){const _pkg=await _pkgR.json();const _res=(_pkg&&_pkg.result&&_pkg.result.resources||[]).find(r=>r.datastore_active===!0)||(_pkg&&_pkg.result&&_pkg.result.resources||[])[0];if(_res)globalThis._cneasRid=_res.id;}'+
+        '}'+
+        'if(globalThis._cneasRid){'+
+          'const _flt=JSON.stringify({CO_MUNICIPIO:v});'+
+          'const _cUrl="https://dados.gov.br/api/3/action/datastore_search?resource_id="+encodeURIComponent(globalThis._cneasRid)+"&filters="+encodeURIComponent(_flt)+"&limit=50";'+
+          'const _cR=await fetch(_cUrl,{signal:AbortSignal.timeout(14e3),headers:{"Accept":"application/json","User-Agent":"ChegoAContaDiretora/1.0"}});'+
+          'if(_cR.ok){'+
+            'const _cD=await _cR.json();'+
+            'const _recs=(_cD&&_cD.result&&_cD.result.records)||[];'+
+            'const _nA=a=>{const s=String(a||"").toLowerCase();if(s.includes("assist"))return"Assist\\xEAncia Social";if(s.includes("sa\\xFAde")||s.includes("saude"))return"Sa\\xFAde";if(s.includes("educa"))return"Educa\\xE7\\xE3o";return String(a||"").trim()||null};'+
+            'const _ents=_recs.map(r=>({nome:r.NO_ENTIDADE||r.NM_ENTIDADE||r.DS_RAZAO_SOCIAL||null,area:_nA(r.DS_AREA_ATUACAO||r.NO_AREA_ATUACAO||null),telefone:r.NU_TELEFONE||r.DS_TELEFONE||null,email:(String(r.DS_EMAIL||r.NO_EMAIL||"").includes("@"))?String(r.DS_EMAIL||r.NO_EMAIL||"").trim():null,cnpj:String(r.NU_CNPJ||r.CD_CNPJ||"").replace(/\\D/g,"")||null,tem_cebas:!1,possui_contato:!!(r.NU_TELEFONE||r.DS_TELEFONE||(String(r.DS_EMAIL||"").includes("@")&&r.DS_EMAIL))})).filter(e=>e.nome);'+
+            '_ents.sort((a,b)=>(b.possui_contato?1:0)-(a.possui_contato?1:0));'+
+            '_ongsResult={disponivel:!0,fonte:"CNEAS-API",atualizado_em:new Date().toISOString(),resumo:{total_entidades:_ents.length,total_com_contato:_ents.filter(e=>e.possui_contato).length},entidades:_ents.slice(0,15),dados_correspondem_municipio:!0};'+
+          '}'+
+        '}'+
+      '}catch(_onge){console.warn("[equipamentos] ONGs CNEAS erro:",_onge.message);}'+
+    '}'+
     'try{'+
       'let I="https://servicodados.ibge.gov.br/api/v1/pesquisas/10079/periodos/2013/indicadores/"+x+"/resultados/"+v,D=await fetch(I,{signal:AbortSignal.timeout(8e3),headers:{"User-Agent":"ChegoAContaDiretora/1.0"}});'+
       'if(!D.ok)throw new Error("IBGE HTTP "+D.status);'+
       'let B=await D.json(),N={};'+
       'for(let R of B)N[R.id]=R&&R.res&&R.res[0]&&R.res[0].res?R.res[0].res["2013"]??null:null;'+
-      'return g.json({ok:!0,co_municipio:E,ibge_fonte:"IBGE MUNIC Assist\\xEAncia Social 2013",suas_counts:{cras:{total:N[72814]??null,label:"CRAS",descricao:"Centro de Refer\\xEAncia da Assist\\xEAncia Social"},creas:{total:N[72837]??null,label:"CREAS",descricao:"Centro de Refer\\xEAncia Especializado de Assist\\xEAncia Social"},centro_pop:{total:N[72839]??null,label:"Centro POP",descricao:"Centro de Refer\\xEAncia para Pop. em Situa\\xE7\\xE3o de Rua"},abrigos:{total:N[72858]??null,label:"Abrigos / Casa Lar",descricao:"Servi\\xE7os de acolhimento institucional"}},saude:T,saude_pronto_socorro_mais_proximo:T.pronto_socorro_mais_proximo||null,links:[{nome:"Mapa SUAS (MDS)",url:"https://mapas.mds.gov.br/mapas/app/painel-suas/"},{nome:"CNES (sa\\xFAde)",url:"https://cnes.datasus.gov.br/"},{nome:"Dados abertos SUAS",url:"https://dados.gov.br/dataset/unidades-de-atendimento-da-assistencia-social"},{nome:"CadSUAS",url:"https://cadsuas.mds.gov.br/"}]});'+
+      'return g.json({ok:!0,co_municipio:E,ibge_fonte:"IBGE MUNIC Assist\\xEAncia Social 2013",suas_counts:{cras:{total:N[72814]??null,label:"CRAS",descricao:"Centro de Refer\\xEAncia da Assist\\xEAncia Social"},creas:{total:N[72837]??null,label:"CREAS",descricao:"Centro de Refer\\xEAncia Especializado de Assist\\xEAncia Social"},centro_pop:{total:N[72839]??null,label:"Centro POP",descricao:"Centro de Refer\\xEAncia para Pop. em Situa\\xE7\\xE3o de Rua"},abrigos:{total:N[72858]??null,label:"Abrigos / Casa Lar",descricao:"Servi\\xE7os de acolhimento institucional"}},saude:T,saude_pronto_socorro_mais_proximo:T.pronto_socorro_mais_proximo||null,ongs:_ongsResult,links:[{nome:"Mapa SUAS (MDS)",url:"https://mapas.mds.gov.br/mapas/app/painel-suas/"},{nome:"CNES (sa\\xFAde)",url:"https://cnes.datasus.gov.br/"},{nome:"Dados abertos SUAS",url:"https://dados.gov.br/dataset/unidades-de-atendimento-da-assistencia-social"},{nome:"CadSUAS",url:"https://cadsuas.mds.gov.br/"}]});'+
     '}catch(I){'+
-      'return g.json({ok:!1,co_municipio:E,error:I.message,suas_counts:{},saude:T,saude_pronto_socorro_mais_proximo:T.pronto_socorro_mais_proximo||null,links:[{nome:"Mapa SUAS (MDS)",url:"https://mapas.mds.gov.br/mapas/app/painel-suas/"},{nome:"CNES (sa\\xFAde)",url:"https://cnes.datasus.gov.br/"}]});'+
+      'return g.json({ok:!1,co_municipio:E,error:I.message,suas_counts:{},saude:T,saude_pronto_socorro_mais_proximo:T.pronto_socorro_mais_proximo||null,ongs:_ongsResult,links:[{nome:"Mapa SUAS (MDS)",url:"https://mapas.mds.gov.br/mapas/app/painel-suas/"},{nome:"CNES (sa\\xFAde)",url:"https://cnes.datasus.gov.br/"}]});'+
     '}'+
   '});';
 
@@ -438,6 +471,62 @@ if (source.indexOf(_MEC_STREAMS_ANCHOR) !== -1) {
   console.warn('[bootstrap] /api/mec-streams patch NOT applied — anchor not found');
 }
 
+// ── 3c4. Patch: /api/ongs/:coMunicipio endpoint ──────────────────────────────
+// Reads ongs-contatos.json when available and municipality matches;
+// otherwise queries the CNEAS CKAN API at dados.gov.br in real time.
+// Returns up to 15 entities with nome, area, telefone, email, tem_cebas.
+const _ONGS_API_ANCHOR = 'e.get("/api/health",(A,g)=>{g.status(200).json({ok:!0,ts:Date.now()})}),';
+const _ONGS_API_ROUTE =
+  'e.get("/api/ongs/:coMunicipio",async(A,g)=>{'+
+    'try{'+
+      'const E=A.params.coMunicipio;'+
+      'if(!E||!/^\\d{6,7}$/.test(E))return g.status(400).json({ok:!1,error:"C\\xF3digo de munic\\xEDpio inv\\xE1lido"});'+
+      'const v=E.length===7?E.slice(0,6):E;'+
+      'let _r={disponivel:!1,entidades:[],fonte:"ongs-contatos.json",atualizado_em:null};'+
+      'try{'+
+        'const _oFs=require("fs"),_oPath=require("path").resolve(process.cwd(),process.env.ONG_CONTATOS_OUTPUT_JSON||"ongs-contatos.json");'+
+        'if(_oFs.existsSync(_oPath)){'+
+          'const _d=JSON.parse(_oFs.readFileSync(_oPath,"utf8"));'+
+          'const _m=String(_d&&_d.filtros&&_d.filtros.codigo_municipio||"").replace(/\\D/g,"");'+
+          'const _m6=_m.length===7?_m.slice(0,6):_m;'+
+          'if(!_m||_m===E||_m6===v||_m===v){'+
+            '_r={disponivel:!0,fonte:"ongs-contatos.json",atualizado_em:_d.generated_at||null,resumo:_d.resumo||null,entidades:Array.isArray(_d.entidades)?_d.entidades.slice(0,15):[],dados_correspondem_municipio:!0};'+
+          '}'+
+        '}'+
+      '}catch(_e){}'+
+      'if(!_r.disponivel){'+
+        'if(!globalThis._cneasRid){'+
+          'try{'+
+            'const _pr=await fetch("https://dados.gov.br/api/3/action/package_show?id=cneas--cadastro-nacional-de-entidades-de-assistencia-social",{signal:AbortSignal.timeout(10e3),headers:{"Accept":"application/json","User-Agent":"ChegoAContaDiretora/1.0"}});'+
+            'if(_pr.ok){const _pd=await _pr.json();const _res=(_pd&&_pd.result&&_pd.result.resources||[]).find(r=>r.datastore_active===!0)||(_pd&&_pd.result&&_pd.result.resources||[])[0];if(_res)globalThis._cneasRid=_res.id;}'+
+          '}catch(_pe){}'+
+        '}'+
+        'if(globalThis._cneasRid){'+
+          'try{'+
+            'const _fl=JSON.stringify({CO_MUNICIPIO:v});'+
+            'const _cu="https://dados.gov.br/api/3/action/datastore_search?resource_id="+encodeURIComponent(globalThis._cneasRid)+"&filters="+encodeURIComponent(_fl)+"&limit=50";'+
+            'const _cr=await fetch(_cu,{signal:AbortSignal.timeout(14e3),headers:{"Accept":"application/json","User-Agent":"ChegoAContaDiretora/1.0"}});'+
+            'if(_cr.ok){'+
+              'const _cd=await _cr.json();'+
+              'const _recs=(_cd&&_cd.result&&_cd.result.records)||[];'+
+              'const _nA=a=>{const s=String(a||"").toLowerCase();if(s.includes("assist"))return"Assist\\xEAncia Social";if(s.includes("sa\\xFAde")||s.includes("saude"))return"Sa\\xFAde";if(s.includes("educa"))return"Educa\\xE7\\xE3o";return String(a||"").trim()||null};'+
+              'const _ents=_recs.map(r=>({nome:r.NO_ENTIDADE||r.NM_ENTIDADE||r.DS_RAZAO_SOCIAL||null,area:_nA(r.DS_AREA_ATUACAO||r.NO_AREA_ATUACAO||null),telefone:r.NU_TELEFONE||r.DS_TELEFONE||null,email:(String(r.DS_EMAIL||r.NO_EMAIL||"").includes("@"))?String(r.DS_EMAIL||r.NO_EMAIL||"").trim():null,cnpj:String(r.NU_CNPJ||r.CD_CNPJ||"").replace(/\\D/g,"")||null,tem_cebas:!1,possui_contato:!!(r.NU_TELEFONE||r.DS_TELEFONE||(String(r.DS_EMAIL||"").includes("@")&&r.DS_EMAIL))})).filter(e=>e.nome);'+
+              '_ents.sort((a,b)=>(b.possui_contato?1:0)-(a.possui_contato?1:0));'+
+              '_r={disponivel:!0,fonte:"CNEAS-API",atualizado_em:new Date().toISOString(),resumo:{total_entidades:_ents.length,total_com_contato:_ents.filter(e=>e.possui_contato).length},entidades:_ents.slice(0,15),dados_correspondem_municipio:!0};'+
+            '}'+
+          '}catch(_ae){console.warn("[ongs-api] CNEAS erro:",_ae.message);}'+
+        '}'+
+      '}'+
+      'return g.json({ok:!0,co_municipio:E,..._r});'+
+    '}catch(_ge){console.error("[ongs-api] erro:",_ge.message);return g.status(500).json({ok:!1,error:_ge.message,entidades:[]});}'+
+  '}),';
+if (source.indexOf(_ONGS_API_ANCHOR) !== -1) {
+  source = source.replace(_ONGS_API_ANCHOR, _ONGS_API_ANCHOR + _ONGS_API_ROUTE);
+  console.log('[bootstrap] /api/ongs/:coMunicipio endpoint patch applied');
+} else {
+  console.warn('[bootstrap] /api/ongs patch NOT applied — anchor not found');
+}
+
 // ── 3d. Patch: fix PDDE exercise dropdown data consistency ──────────────────
 // The bundled server had a fixed year list and left an_exercicio untyped.
 // This breaks exercise filters/menu behavior when data arrives as strings.
@@ -607,6 +696,64 @@ if (fs.existsSync(dashboardV30AssetPath)) {
   } else {
     console.log('[bootstrap] Dashboard-v30 saude block patch already applied');
   }
+
+  // ── ONGs block: injected after saúde, before footnote paragraph ──────────
+  const _ONGS_FE_BLOCK =
+    ', Ra.ongs&&Ra.ongs.disponivel&&Ra.ongs.entidades&&Ra.ongs.entidades.length>0&&(()=>{' +
+      'const _O=Ra.ongs;' +
+      'const _oEnts=Array.isArray(_O.entidades)?_O.entidades:[];' +
+      'const _oAreaStyle=area=>{' +
+        'const s=String(area||"").toLowerCase();' +
+        'if(s.includes("assist"))return{bg:"#e8f5e9",border:"#a5d6a7",txt:"#2e7d32",dot:"#2e7d32"};' +
+        'if(s.includes("sa\\xFAde")||s.includes("saude"))return{bg:"#e3f2fd",border:"#90caf9",txt:"#1565c0",dot:"#1565c0"};' +
+        'if(s.includes("educa"))return{bg:"#fff3e0",border:"#ffcc80",txt:"#e65100",dot:"#f57c00"};' +
+        'return{bg:"#f5f5f5",border:"#bdbdbd",txt:"#616161",dot:"#9e9e9e"};' +
+      '};' +
+      'return e.jsxs("div",{style:{marginTop:14},children:[' +
+        'e.jsxs("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10},children:[' +
+          'e.jsx("p",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:"#2e7d32",margin:0},children:"ONGs e Entidades de Assist\\xEAncia Social (CNEAS)"}),' +
+          'e.jsxs("span",{style:{fontSize:9,color:"#2e7d32",background:"#e8f5e9",borderRadius:20,padding:"2px 8px",fontWeight:600},children:[_oEnts.length," entidades"]})' +
+        ']}),' +
+        'e.jsx("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(220px, 1fr))",gap:8},children:' +
+          '_oEnts.slice(0,15).map(function(_ong,_oi){' +
+            'const _ac=_oAreaStyle(_ong.area);' +
+            'return e.jsxs("div",{style:{background:"#fff",border:"1.5px solid "+_ac.border,borderRadius:12,padding:"10px 12px",borderLeft:"4px solid "+_ac.dot},children:[' +
+              'e.jsxs("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:6,marginBottom:4},children:[' +
+                'e.jsxs("p",{style:{fontWeight:700,fontSize:11,color:_ac.txt,margin:0,lineHeight:1.3},children:[' +
+                  '_ong.area&&e.jsx("span",{style:{fontSize:8,fontWeight:800,color:_ac.dot,background:_ac.bg,borderRadius:6,padding:"1px 5px",marginRight:4,verticalAlign:"middle"},children:_ong.area}),' +
+                  '_ong.nome' +
+                ']}),' +
+                '_ong.tem_cebas&&e.jsx("span",{style:{fontSize:8,fontWeight:800,color:"#6a1b9a",background:"#f3e5f5",borderRadius:8,padding:"1px 6px",whiteSpace:"nowrap",flexShrink:0},children:"CEBAS"})' +
+              ']}),' +
+              '_ong.telefone?e.jsxs("p",{style:{fontSize:10,color:"#555",margin:"0 0 2px",display:"flex",alignItems:"center",gap:3},children:[' +
+                '"\\uD83D\\uDCDE ",' +
+                'e.jsx("a",{href:"tel:"+_ong.telefone.replace(/\\D/g,""),style:{color:_ac.txt,textDecoration:"none",fontWeight:600},children:_ong.telefone})' +
+              ']}):null,' +
+              '_ong.email?e.jsxs("p",{style:{fontSize:10,color:"#555",margin:"0 0 2px",display:"flex",alignItems:"center",gap:3},children:[' +
+                '"\\u2709\\uFE0F ",' +
+                'e.jsx("a",{href:"mailto:"+_ong.email,style:{color:_ac.txt,textDecoration:"none"},children:_ong.email})' +
+              ']}):null,' +
+              '!_ong.telefone&&!_ong.email&&e.jsx("p",{style:{fontSize:9,color:"#aaa",margin:"0 0 2px",fontStyle:"italic"},children:"Contato n\\xE3o cadastrado"})' +
+            ']},_oi);' +
+          '})' +
+        '}),' +
+        'e.jsxs("p",{style:{fontSize:10,color:"#2e7d32",margin:"8px 0 0",lineHeight:1.4},children:["Fonte: CNEAS / MDS. ",_O.atualizado_em&&e.jsxs("span",{children:["Atualizado em ",new Date(_O.atualizado_em).toLocaleDateString("pt-BR"),"."]})," Dados p\\xF3dem estar desatualizados."]})' +
+      ']});' +
+    '})()'
+  ;
+  if (!dashV30Source.includes(', Ra.ongs&&Ra.ongs.disponivel&&')) {
+    const _ongsAnchorIdx = dashV30Source.indexOf(_SAUDE_FE_ANCHOR);
+    if (_ongsAnchorIdx !== -1) {
+      dashV30Source = dashV30Source.slice(0, _ongsAnchorIdx) + _ONGS_FE_BLOCK + dashV30Source.slice(_ongsAnchorIdx);
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 ONGs block patch applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 ONGs block patch NOT applied — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 ONGs block patch already applied');
+  }
+
   if (dashV30Changed) {
     fs.writeFileSync(dashboardV30AssetPath, dashV30Source, 'utf8');
   }
