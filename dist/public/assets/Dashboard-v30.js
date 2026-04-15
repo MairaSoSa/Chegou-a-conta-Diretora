@@ -1026,18 +1026,45 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
           e.jsx("p", { style: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#01579b", margin: 0 }, children: "Indicadores Previne Brasil" }),
           ctxMunData.indicadores_previne[0] && ctxMunData.indicadores_previne[0].quadrimestre && e.jsx("span", { style: { fontSize: 9, color: "#0277bd", background: "#e1f5fe", borderRadius: 20, padding: "2px 8px", fontWeight: 600 }, children: ctxMunData.indicadores_previne[0].quadrimestre })
         ]}),
-        e.jsx("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: ctxMunData.indicadores_previne.map(function(ind, idx){
+        e.jsx("div", { style: { display: "flex", flexDirection: "column", gap: 10 }, children: ctxMunData.indicadores_previne.map(function(ind, idx){
           const pct = Math.max(0, Math.min(100, ind.percentual || 0));
           const barColor = pct >= 75 ? "#2e7d32" : pct >= 50 ? "#e65100" : "#b71c1c";
           const numColor = pct >= 75 ? "#2e7d32" : pct >= 50 ? "#e65100" : "#b71c1c";
+          const serie = ind.serie || [];
           return e.jsxs("div", { children: [
-            e.jsxs("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 3 }, children: [
-              e.jsx("span", { style: { fontSize: 11, color: "#333" }, children: ind.nome }),
-              e.jsxs("span", { style: { fontSize: 11, fontWeight: 700, color: numColor }, children: [pct, "%"] })
+            e.jsxs("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 3, alignItems: "flex-start", gap: 8 }, children: [
+              e.jsx("span", { style: { fontSize: 11, color: "#333", flex: 1 }, children: ind.nome }),
+              e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }, children: [
+                serie.length > 1 && e.jsx("div", { style: { display: "flex", alignItems: "center", gap: 2 }, children: serie.map(function(s, si) {
+                  var sp = Math.max(0, Math.min(100, s.p || 0));
+                  var sc = sp >= 75 ? "#2e7d32" : sp >= 50 ? "#e65100" : "#b71c1c";
+                  return e.jsxs("span", { children: [
+                    e.jsx("span", { style: { fontSize: 9, color: sc, fontWeight: 700 }, children: sp + "%" }),
+                    si < serie.length - 1 && e.jsx("span", { style: { fontSize: 8, color: "#999", margin: "0 1px" }, children: "\u2192" })
+                  ]}, si);
+                })
+                }),
+                e.jsxs("span", { style: { fontSize: 12, fontWeight: 700, color: numColor, marginLeft: 4 }, children: [pct, "%"] })
+              ]})
             ]}),
             e.jsx("div", { style: { height: 7, background: "#e0e0e0", borderRadius: 4, overflow: "hidden" }, children: e.jsx("div", { style: { height: "100%", width: pct + "%", background: barColor, borderRadius: 4 } }) })
           ]}, idx);
         }) })
+      ]}),
+      ctxMunData.hospitais && ctxMunData.hospitais.length > 0 && e.jsxs("div", { style: { marginBottom: 14 }, children: [
+        e.jsx("p", { style: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#4a148c", marginBottom: 6 }, children: "Hospitais do Munic\xEDpio (CNES)" }),
+        e.jsx("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: ctxMunData.hospitais.map(function(hosp, hi) {
+          return e.jsxs("div", { style: { background: "#fce4ec", border: "1px solid #f48fb1", borderRadius: 8, padding: "8px 10px" }, children: [
+            e.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }, children: [
+              e.jsx("span", { style: { fontSize: 11, fontWeight: 700, color: "#880e4f" }, children: hosp.nome }),
+              hosp.esfera && e.jsx("span", { style: { fontSize: 9, color: "#ad1457", background: "#fce4ec", borderRadius: 4, padding: "1px 5px", border: "1px solid #f48fb1", whiteSpace: "nowrap", marginLeft: 6 }, children: hosp.esfera })
+            ]}),
+            hosp.caps && hosp.caps.length > 0 && e.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: 3 }, children: hosp.caps.map(function(cap, ci) {
+              var isCrit = cap === "Obstetricia" || cap === "Neonatal/UTI Neo" || cap === "Cirurgia";
+              return e.jsx("span", { style: { fontSize: 9, background: isCrit ? "#e8eaf6" : "#f3e5f5", border: isCrit ? "1px solid #9fa8da" : "1px solid #ce93d8", borderRadius: 4, padding: "2px 6px", color: isCrit ? "#283593" : "#6a1b9a", fontWeight: isCrit ? 700 : 500 }, children: cap }, ci);
+            })})
+          ]}, hi);
+        })})
       ]}),
       ctxMunData.sisvan && ctxMunData.sisvan.length > 0 && e.jsxs("div", { style: { background: "#f3e5f5", border: "1px solid #ce93d8", borderRadius: 10, padding: "10px 12px" }, children: [
         e.jsxs("p", { style: { fontSize: 10, fontWeight: 700, color: "#6a1b9a", margin: "0 0 8px", textTransform: "uppercase" }, children: ["Estado Nutricional \u2014 SISVAN (amostra: ", ctxMunData.sisvan.reduce(function(s, f) { return s + f.count; }, 0), " registros)"] }),
