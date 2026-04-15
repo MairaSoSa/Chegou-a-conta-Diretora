@@ -527,6 +527,57 @@ if (source.indexOf(_ONGS_API_ANCHOR) !== -1) {
   console.warn('[bootstrap] /api/ongs patch NOT applied — anchor not found');
 }
 
+// ── 3c4b. Patch: expose pg pool in globalThis for injected routes ─────────────
+// The server bundle (index.cjs) creates a pg Pool in variable 'vm'.
+// Inject globalThis._pgPool = vm so injected routes can query the database.
+const _PG_POOL_ANCHOR = 'vm.on("error",t=>{console.error("[pg] pool error:",t.message)});';
+const _PG_POOL_INSERT = _PG_POOL_ANCHOR + 'globalThis._pgPool=vm;';
+if (source.includes(_PG_POOL_ANCHOR) && !source.includes('globalThis._pgPool=vm')) {
+  source = source.replace(_PG_POOL_ANCHOR, _PG_POOL_INSERT);
+  console.log('[bootstrap] pg pool exposed in globalThis._pgPool');
+} else if (source.includes('globalThis._pgPool=vm')) {
+  console.log('[bootstrap] pg pool globalThis already patched');
+} else {
+  console.warn('[bootstrap] pg pool exposure patch NOT applied — anchor not found');
+}
+
+// ── 3c5. Patch: /api/ondh-municipio/:coIbge endpoint ─────────────────────────
+// Queries ondh_denuncias table in PostgreSQL and returns aggregated data.
+// If the table doesn't exist, returns {ok:false, mensagem:"Dados não disponíveis"}.
+const _ONDH_API_ANCHOR = _ONGS_API_ANCHOR;
+const _ONDH_API_ROUTE =
+  'e.get("/api/ondh-municipio/:coIbge",async(A,g)=>{'+
+    'try{'+
+      'const E=A.params.coIbge;'+
+      'if(!E||!/^\\d{6,7}$/.test(E))return g.status(400).json({ok:!1,mensagem:"C\\xF3digo IBGE inv\\xE1lido"});'+
+      'const _db=globalThis._pgPool||null;'+
+      'if(!_db)return g.json({ok:!1,mensagem:"Banco de dados n\\xE3o dispon\\xEDvel. Configure DATABASE_URL."});'+
+      // Check if table exists
+      'const _te=await _db.query("SELECT 1 FROM information_schema.tables WHERE table_name=\'ondh_denuncias\' LIMIT 1").catch(()=>({rows:[]}));'+
+      'if(!_te.rows||!_te.rows.length)return g.json({ok:!1,mensagem:"Tabela ondh_denuncias n\\xE3o encontrada. Execute o script de importa\\xE7\\xE3o."});'+
+      // Total
+      'const _tot=await _db.query("SELECT COALESCE(SUM(quantidade),0)::int AS total FROM ondh_denuncias WHERE co_ibge=$1",[E]).catch(()=>({rows:[{total:0}]}));'+
+      'const total=(_tot.rows[0]&&_tot.rows[0].total)||0;'+
+      'if(!total)return g.json({ok:!1,mensagem:"Sem dados de direitos humanos para este munic\\xEDpio. Execute o script de importa\\xE7\\xE3o ONDH."});'+
+      // Por canal
+      'const _pc=await _db.query("SELECT canal, COALESCE(SUM(quantidade),0)::int AS total FROM ondh_denuncias WHERE co_ibge=$1 GROUP BY canal ORDER BY total DESC LIMIT 10",[E]).catch(()=>({rows:[]}));'+
+      // Por violação (top 5)
+      'const _pv=await _db.query("SELECT COALESCE(tp_violacao,ds_especie_violacao,\'N\\xE3o informado\') AS tipo, COALESCE(SUM(quantidade),0)::int AS total FROM ondh_denuncias WHERE co_ibge=$1 GROUP BY tipo ORDER BY total DESC LIMIT 5",[E]).catch(()=>({rows:[]}));'+
+      // Por grupo vulnerável (top 5)
+      'const _pg=await _db.query("SELECT COALESCE(grupo_vulneravel,\'N\\xE3o informado\') AS grupo, COALESCE(SUM(quantidade),0)::int AS total FROM ondh_denuncias WHERE co_ibge=$1 GROUP BY grupo ORDER BY total DESC LIMIT 5",[E]).catch(()=>({rows:[]}));'+
+      // Evolução semestral
+      'const _ps=await _db.query("SELECT COALESCE(semestre,\'?\') AS semestre, COALESCE(SUM(quantidade),0)::int AS total FROM ondh_denuncias WHERE co_ibge=$1 AND semestre IS NOT NULL GROUP BY semestre ORDER BY semestre ASC LIMIT 20",[E]).catch(()=>({rows:[]}));'+
+      'return g.json({ok:!0,co_ibge:E,total,por_canal:_pc.rows,por_violacao:_pv.rows,por_grupo_vulneravel:_pg.rows,evolucao_semestral:_ps.rows});'+
+    '}catch(_e){console.error("[ondh-api] erro:",_e.message);return g.status(500).json({ok:!1,mensagem:"Erro interno: "+_e.message});}'+
+  '}),';
+
+if (source.indexOf(_ONDH_API_ANCHOR) !== -1) {
+  source = source.replace(_ONDH_API_ANCHOR, _ONDH_API_ANCHOR + _ONDH_API_ROUTE);
+  console.log('[bootstrap] /api/ondh-municipio/:coIbge endpoint patch applied');
+} else {
+  console.warn('[bootstrap] /api/ondh-municipio patch NOT applied — anchor not found');
+}
+
 // ── 3d. Patch: fix PDDE exercise dropdown data consistency ──────────────────
 // The bundled server had a fixed year list and left an_exercicio untyped.
 // This breaks exercise filters/menu behavior when data arrives as strings.
@@ -923,6 +974,154 @@ if (fs.existsSync(dashboardV30AssetPath)) {
     }
   } else if (dashV30Source.includes(_GOVSERV_EXT2_MARKER)) {
     console.log('[bootstrap] Dashboard-v30 govserv ext2 already applied');
+  }
+
+  // ── ONDH card: state + handler + expandable card (Direitos Humanos) ─────────
+  const _ONDH_STATE_ANCHOR = '[ctxSuasOpen, setCtxSuasOpen] = F.useState(false), smReady = F.useRef(false);';
+  const _ONDH_STATE_INSERT = '[ctxSuasOpen, setCtxSuasOpen] = F.useState(false), [ctxOndhData, setCtxOndhData] = F.useState(null), [ctxOndhLoading, setCtxOndhLoading] = F.useState(false), [ctxOndhOpen, setCtxOndhOpen] = F.useState(false), smReady = F.useRef(false);';
+
+  // State patch: idempotent guard on state variable declaration
+  if (!dashV30Source.includes('[ctxOndhData, setCtxOndhData]')) {
+    if (dashV30Source.includes(_ONDH_STATE_ANCHOR)) {
+      dashV30Source = dashV30Source.replace(_ONDH_STATE_ANCHOR, _ONDH_STATE_INSERT);
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 ONDH state patch applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 ONDH state patch NOT applied — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 ONDH state already applied');
+  }
+
+  // Handler patch: idempotent guard on function name
+  if (!dashV30Source.includes('openCtxOndh = () =>')) {
+    const _ONDH_HANDLER_ANCHOR = 'setCtxSuasLoading(false); }).catch(() => { setCtxSuasData({ ok: false }); setCtxSuasLoading(false); });\n        }\n      }, _ = {';
+    const _ONDH_HANDLER_INSERT =
+      'setCtxSuasLoading(false); }).catch(() => { setCtxSuasData({ ok: false }); setCtxSuasLoading(false); });\n        }\n      }, openCtxOndh = () => {\n' +
+      '        const n = !ctxOndhOpen;\n' +
+      '        setCtxOndhOpen(n);\n' +
+      '        if (n && a && !ctxOndhData && !ctxOndhLoading) {\n' +
+      '          setCtxOndhLoading(true);\n' +
+      '          fetch("/api/ondh-municipio/"+a).then((g) => g.json()).then((g) => { setCtxOndhData(g); setCtxOndhLoading(false); }).catch(() => { setCtxOndhData({ ok: false }); setCtxOndhLoading(false); });\n' +
+      '        }\n' +
+      '      }, _ = {';
+    if (dashV30Source.includes(_ONDH_HANDLER_ANCHOR)) {
+      dashV30Source = dashV30Source.replace(_ONDH_HANDLER_ANCHOR, _ONDH_HANDLER_INSERT);
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 ONDH handler patch applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 ONDH handler patch NOT applied — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 ONDH handler already applied');
+  }
+
+  // Deduplication guard: remove duplicate ONDH card if it exists (from prior bad patch)
+  const _ONDH_DEDUP_SEARCH = '\ne.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5px solid #ce93d8"';
+  const _ONDH_SUPORTE_SEARCH = '\ne.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5px solid #d4c4f5"';
+  const _ce93d8Count = (dashV30Source.match(/1\.5px solid #ce93d8/g) || []).length;
+  if (_ce93d8Count > 1) {
+    const _firstIdx = dashV30Source.indexOf('1.5px solid #ce93d8');
+    const _secondIdx = dashV30Source.indexOf('1.5px solid #ce93d8', _firstIdx + 1);
+    const _dupStart = dashV30Source.lastIndexOf(_ONDH_DEDUP_SEARCH, _secondIdx);
+    const _suporteStart = dashV30Source.indexOf(_ONDH_SUPORTE_SEARCH, _secondIdx);
+    if (_dupStart >= 0 && _suporteStart > _dupStart) {
+      dashV30Source = dashV30Source.slice(0, _dupStart) + dashV30Source.slice(_suporteStart);
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 ONDH duplicate card removed');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 ONDH dedup could not find boundaries');
+    }
+  }
+
+  // Card patch: idempotent guard on ONDH card border color (unique to ONDH card)
+  if (!dashV30Source.includes('1.5px solid #ce93d8')) {
+    // Card: inject ONDH card after the SUAS card closing, before the Suporte Institucional card
+    const _ONDH_CARD_ANCHOR = 'C\\xF3digo IBGE n\\xE3o dispon\\xEDvel para esta escola." })\n  ]})\n]}),\ne.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5px solid #d4c4f5", background: "#f9f6ff" },';
+    const _ONDH_CARD =
+      // SUAS card closing (same as anchor start) + ONDH card + Suporte Institucional opening (same as anchor end)
+      'C\\xF3digo IBGE n\\xE3o dispon\\xEDvel para esta escola." })\n  ]})\n]}),\n' +
+      'e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5px solid #ce93d8", background: "#fdf4ff" }, children: [\n' +
+      '  e.jsxs("button", { onClick: openCtxOndh, style: { width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "14px 18px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }, children: [\n' +
+      '    e.jsx("div", { style: { width: 38, height: 38, borderRadius: 12, background: "#e1bee7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }, children: e.jsx("span", { style: { fontSize: 20 }, children: "\\uD83E\\uDEF3" }) }),\n' +
+      '    e.jsxs("div", { style: { flex: 1 }, children: [\n' +
+      '      e.jsx("p", { style: { fontWeight: 700, fontSize: "13px", color: "#4a148c", margin: 0 }, children: "Direitos Humanos \\u2014 ONDH" }),\n' +
+      '      e.jsx("p", { style: { fontSize: "11px", color: "#6a1b9a", margin: 0 }, children: "Den\\xFAncias Disque 100, Ligue 180 e App DH Brasil por munic\\xEDpio" })\n' +
+      '    ]}),\n' +
+      '    e.jsx("span", { style: { fontSize: "16px", color: "#6a1b9a", transform: ctxOndhOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }, children: "\\u25BE" })\n' +
+      '  ]}),\n' +
+      '  ctxOndhOpen && e.jsxs("div", { style: { padding: "0 18px 16px", borderTop: "1px solid #e1bee7" }, children: [\n' +
+      '    ctxOndhLoading && e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "16px 0", color: "#6a1b9a", fontSize: 13 }, children: [e.jsx(Ie, { className: "w-4 h-4 animate-spin" }), " Consultando dados da ONDH..."] }),\n' +
+      '    !ctxOndhLoading && ctxOndhData && ctxOndhData.ok && (() => {\n' +
+      '      const _od = ctxOndhData;\n' +
+      '      return e.jsxs(e.Fragment, { children: [\n' +
+      '        e.jsxs("div", { style: { marginTop: 14, marginBottom: 12 }, children: [\n' +
+      '          e.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }, children: [\n' +
+      '            e.jsx("p", { style: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#4a148c", margin: 0 }, children: "Den\\xFAncias registradas \\u2014 ONDH" }),\n' +
+      '            e.jsxs("span", { style: { fontSize: 9, color: "#6a1b9a", background: "#e1bee7", borderRadius: 20, padding: "2px 8px", fontWeight: 600 }, children: [(_od.total||0).toLocaleString("pt-BR"), " total"] })\n' +
+      '          ]}),\n' +
+      '          e.jsxs("div", { style: { background: "#f3e5f5", border: "1px solid #ce93d8", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }, children: [\n' +
+      '            e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#4a148c", margin: "0 0 2px", textTransform: "uppercase" }, children: "Total de Den\\xFAncias" }),\n' +
+      '            e.jsx("p", { style: { fontSize: 28, fontWeight: 800, color: "#4a148c", margin: 0, lineHeight: 1 }, children: (_od.total||0).toLocaleString("pt-BR") })\n' +
+      '          ]})\n' +
+      '        ]}),\n' +
+      '        _od.por_canal && _od.por_canal.length > 0 && e.jsxs("div", { style: { marginBottom: 12 }, children: [\n' +
+      '          e.jsx("p", { style: { fontSize: 11, fontWeight: 700, color: "#4a148c", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }, children: "Por Canal" }),\n' +
+      '          e.jsx("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" }, children: _od.por_canal.map(function(_c, _ci) {\n' +
+      '            return e.jsxs("div", { style: { background: "#f3e5f5", border: "1px solid #ce93d8", borderRadius: 8, padding: "6px 10px", fontSize: 11 }, children: [\n' +
+      '              e.jsx("span", { style: { fontWeight: 700, color: "#4a148c" }, children: _c.canal || "Desconhecido" }),\n' +
+      '              e.jsxs("span", { style: { color: "#6a1b9a", marginLeft: 4 }, children: ["\\u2014 ", (_c.total||0).toLocaleString("pt-BR")] })\n' +
+      '            ]}, _ci);\n' +
+      '          }) })\n' +
+      '        ]}),\n' +
+      '        _od.por_violacao && _od.por_violacao.length > 0 && e.jsxs("div", { style: { marginBottom: 12 }, children: [\n' +
+      '          e.jsx("p", { style: { fontSize: 11, fontWeight: 700, color: "#4a148c", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }, children: "Principais Tipos de Viola\\xE7\\xE3o (Top 5)" }),\n' +
+      '          e.jsx("div", { style: { display: "flex", gap: 5, flexWrap: "wrap" }, children: _od.por_violacao.slice(0, 5).map(function(_v, _vi) {\n' +
+      '            return e.jsxs("span", { style: { background: "#ede7f6", border: "1px solid #b39ddb", borderRadius: 6, padding: "3px 9px", fontSize: 10, color: "#4527a0", fontWeight: 600 }, children: [_v.tipo || _v.violacao || "Tipo", ": ", (_v.total||0).toLocaleString("pt-BR")] }, _vi);\n' +
+      '          }) })\n' +
+      '        ]}),\n' +
+      '        _od.por_grupo_vulneravel && _od.por_grupo_vulneravel.length > 0 && e.jsxs("div", { style: { marginBottom: 12 }, children: [\n' +
+      '          e.jsx("p", { style: { fontSize: 11, fontWeight: 700, color: "#4a148c", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }, children: "Grupos Vulner\\xE1veis (Top 5)" }),\n' +
+      '          e.jsx("div", { style: { display: "flex", gap: 5, flexWrap: "wrap" }, children: _od.por_grupo_vulneravel.slice(0, 5).map(function(_g, _gi) {\n' +
+      '            return e.jsxs("span", { style: { background: "#fce4ec", border: "1px solid #f48fb1", borderRadius: 6, padding: "3px 9px", fontSize: 10, color: "#880e4f", fontWeight: 600 }, children: [_g.grupo || "Grupo", ": ", (_g.total||0).toLocaleString("pt-BR")] }, _gi);\n' +
+      '          }) })\n' +
+      '        ]}),\n' +
+      '        _od.evolucao_semestral && _od.evolucao_semestral.length > 0 && e.jsxs("div", { style: { marginBottom: 12 }, children: [\n' +
+      '          e.jsx("p", { style: { fontSize: 11, fontWeight: 700, color: "#4a148c", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }, children: "Evolu\\xE7\\xE3o Semestral" }),\n' +
+      '          e.jsx("div", { style: { display: "flex", gap: 4, alignItems: "flex-end", flexWrap: "wrap" }, children: _od.evolucao_semestral.slice(-8).map(function(_s, _si, _arr) {\n' +
+      '            const _prev = _arr[_si - 1];\n' +
+      '            const _arrow = _prev ? (_s.total > _prev.total ? "\\u2191" : _s.total < _prev.total ? "\\u2193" : "\\u2192") : null;\n' +
+      '            const _arrowColor = _arrow === "\\u2191" ? "#c62828" : "#2e7d32";\n' +
+      '            return e.jsxs("div", { style: { textAlign: "center" }, children: [\n' +
+      '              e.jsx("div", { style: { fontSize: 12, fontWeight: 700, color: "#4a148c" }, children: (_s.total||0).toLocaleString("pt-BR") }),\n' +
+      '              _arrow && e.jsx("span", { style: { fontSize: 10, color: _arrowColor, fontWeight: 700 }, children: _arrow }),\n' +
+      '              e.jsx("div", { style: { fontSize: 9, color: "#9c4dcc", marginTop: 2 }, children: _s.semestre })\n' +
+      '            ]}, _si);\n' +
+      '          }) })\n' +
+      '        ]}),\n' +
+      '        e.jsxs("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10, marginBottom: 8 }, children: [\n' +
+      '          e.jsx("a", { href: "https://dados.gov.br/dados/conjuntos-dados/ouvidoria-nacional-de-direitos-humanos-ondh", target: "_blank", rel: "noopener noreferrer", style: { fontSize: 11, fontWeight: 700, color: "#4a148c", background: "#e1bee7", padding: "4px 12px", borderRadius: 20, border: "1px solid #ce93d8", textDecoration: "none" }, children: "Dados ONDH \\u2197" }),\n' +
+      '          e.jsx("a", { href: "https://observadh.mdh.gov.br", target: "_blank", rel: "noopener noreferrer", style: { fontSize: 11, fontWeight: 700, color: "#4a148c", background: "#e1bee7", padding: "4px 12px", borderRadius: 20, border: "1px solid #ce93d8", textDecoration: "none" }, children: "ObservaDH \\u2197" })\n' +
+      '        ]}),\n' +
+      '        e.jsx("p", { style: { fontSize: 10, color: "#6a1b9a", margin: "4px 0 0", lineHeight: 1.4 }, children: "Fonte: ONDH / MDH \\u2014 Disque 100, Ligue 180 e App DH Brasil. Dados a partir de 2020." })\n' +
+      '      ]\n' +
+      '      });\n' +
+      '    })(),\n' +
+      '    !ctxOndhLoading && ctxOndhData && !ctxOndhData.ok && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: "Dados de direitos humanos n\\xE3o dispon\\xEDveis para este munic\\xEDpio. Execute o script de importa\\xE7\\xE3o ONDH para habilitar." }),\n' +
+      '    !ctxOndhLoading && !ctxOndhData && !a && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: "C\\xF3digo IBGE n\\xE3o dispon\\xEDvel para esta escola." })\n' +
+      '  ]})\n' +
+      ']}),\n' +
+      'e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5px solid #d4c4f5", background: "#f9f6ff" },';
+
+    if (dashV30Source.includes(_ONDH_CARD_ANCHOR)) {
+      dashV30Source = dashV30Source.replace(_ONDH_CARD_ANCHOR, _ONDH_CARD);
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 ONDH card patch applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 ONDH card patch NOT applied — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 ONDH card already applied');
   }
 
   if (dashV30Changed) {
