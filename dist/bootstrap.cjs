@@ -791,7 +791,19 @@ if (fs.existsSync(dashboardV30AssetPath)) {
       'url:"https://www.gov.br/pt-br/servicos/realizar-assinatura-eletronica-de-documentos",programa:"FNDE Digital"},' +
       '{id:12920,nome:"Solicitar Pagamento Retroativo de Parcela Retida do PNAE",' +
       'desc:"Ap\\xF3s regulariza\\xE7\\xE3o da inadimpl\\xEAncia com o PNAE, solicitar libera\\xE7\\xE3o de parcelas retidas junto ao FNDE.",' +
-      'url:"https://www.gov.br/pt-br/servicos/solicitar-pagamento-retroativo-de-parcela-retida-do-pnae",programa:"PNAE"}]';
+      'url:"https://www.gov.br/pt-br/servicos/solicitar-pagamento-retroativo-de-parcela-retida-do-pnae",programa:"PNAE"},' +
+      '{id:9328,nome:"Alterar domic\\xEDlio banc\\xE1rio no cadastro do PNAE",' +
+      'desc:"Indicar ag\\xEAncia banc\\xE1ria para recebimento do repasse dos recursos do PNAE. O FNDE abre a conta corrente na Caixa Econ\\xF4mica Federal.",' +
+      'url:"https://www.gov.br/pt-br/servicos/alterar-domicilio-bancario-no-cadastro-do-pnae",programa:"PNAE"},' +
+      '{id:9339,nome:"Solicitar Revers\\xE3o de Dedu\\xE7\\xE3o \\u2014 Saldo Excedente PNAE",' +
+      'desc:"Evitar ou reverter a dedu\\xE7\\xE3o do saldo acima de 15% do total de recursos do PNAE em 31 de dezembro, apresentando justificativa.",' +
+      'url:"https://www.gov.br/pt-br/servicos/solicitar-analise-de-justificativa-do-saldo-excedente-de-30-na-conta-especifica-do-pnae",programa:"PNAE"},' +
+      '{id:10027,nome:"Escolher livros e materiais do PNLD",' +
+      'desc:"Sistema para que as escolas participantes do PNLD registrem as obras que ir\\xE3o receber nos pr\\xF3ximos anos. Acesso via senha do(a) gestor(a).",' +
+      'url:"https://www.gov.br/pt-br/servicos/escolher-materiais-do-PNLD",programa:"PNLD"},' +
+      '{id:10119,nome:"Obter apoio financeiro para internet banda larga na escola",' +
+      'desc:"O Programa Educa\\xE7\\xE3o Conectada (PIEC/MEC) apoia a universaliza\\xE7\\xE3o do acesso \\xE0 internet de alta velocidade nas escolas p\\xFAblicas.",' +
+      'url:"https://www.gov.br/pt-br/servicos/obter-apoio-financeiro-para-instalacao-de-internet-banda-larga-na-escola-publica",programa:"PIEC"}]';
 
     const _govServContent =
       'aa==="servicos-gov"&&(()=>{' +
@@ -802,7 +814,8 @@ if (fs.existsSync(dashboardV30AssetPath)) {
         '"PAR":{bg:"#d1fae5",bd:"#6ee7b7",txt:"#065f46"},' +
         '"PBLE":{bg:"#ccfbf1",bd:"#5eead4",txt:"#0f766e"},' +
         '"FNDE Digital":{bg:"#f3e8ff",bd:"#c084fc",txt:"#6b21a8"},' +
-        '"Compras":{bg:"#fce7f3",bd:"#f9a8d4",txt:"#9d174d"}' +
+        '"Compras":{bg:"#fce7f3",bd:"#f9a8d4",txt:"#9d174d"},' +
+        '"PIEC":{bg:"#e0f2fe",bd:"#7dd3fc",txt:"#0369a1"}' +
       '};' +
       'return e.jsxs("div",{style:{display:"flex",flexDirection:"column",gap:10},children:[' +
         'e.jsxs("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4},children:[' +
@@ -842,6 +855,42 @@ if (fs.existsSync(dashboardV30AssetPath)) {
     }
   } else {
     console.log('[bootstrap] Dashboard-v30 gov.br services tab already applied');
+  }
+
+  // ── Extension: add 4 more FNDE/MEC services to the existing govserv tab ──
+  // Runs even if the base patch is already applied (adds services 9328/9339/10027/10119)
+  const _GOVSERV_EXT_MARKER = 'id:9328,';
+  if (dashV30Source.includes('servicos-gov') && !dashV30Source.includes(_GOVSERV_EXT_MARKER)) {
+    const _EXT_GSD_ANCHOR = 'solicitar-pagamento-retroativo-de-parcela-retida-do-pnae",programa:"PNAE"}]';
+    const _EXT_GSD_NEW =
+      'solicitar-pagamento-retroativo-de-parcela-retida-do-pnae",programa:"PNAE"},' +
+      '{id:9328,nome:"Alterar domic\\xEDlio banc\\xE1rio no cadastro do PNAE",' +
+      'desc:"Indicar ag\\xEAncia banc\\xE1ria para recebimento do repasse dos recursos do PNAE. O FNDE abre a conta corrente na Caixa Econ\\xF4mica Federal.",' +
+      'url:"https://www.gov.br/pt-br/servicos/alterar-domicilio-bancario-no-cadastro-do-pnae",programa:"PNAE"},' +
+      '{id:9339,nome:"Solicitar Revers\\xE3o de Dedu\\xE7\\xE3o \\u2014 Saldo Excedente PNAE",' +
+      'desc:"Evitar ou reverter a dedu\\xE7\\xE3o do saldo acima de 15% do total de recursos do PNAE em 31 de dezembro, apresentando justificativa.",' +
+      'url:"https://www.gov.br/pt-br/servicos/solicitar-analise-de-justificativa-do-saldo-excedente-de-30-na-conta-especifica-do-pnae",programa:"PNAE"},' +
+      '{id:10027,nome:"Escolher livros e materiais do PNLD",' +
+      'desc:"Sistema para que as escolas participantes do PNLD registrem as obras que ir\\xE3o receber nos pr\\xF3ximos anos. Acesso via senha do(a) gestor(a).",' +
+      'url:"https://www.gov.br/pt-br/servicos/escolher-materiais-do-PNLD",programa:"PNLD"},' +
+      '{id:10119,nome:"Obter apoio financeiro para internet banda larga na escola",' +
+      'desc:"O Programa Educa\\xE7\\xE3o Conectada (PIEC/MEC) apoia a universaliza\\xE7\\xE3o do acesso \\xE0 internet de alta velocidade nas escolas p\\xFAblicas.",' +
+      'url:"https://www.gov.br/pt-br/servicos/obter-apoio-financeiro-para-instalacao-de-internet-banda-larga-na-escola-publica",programa:"PIEC"}]';
+    if (dashV30Source.includes(_EXT_GSD_ANCHOR)) {
+      dashV30Source = dashV30Source.replace(_EXT_GSD_ANCHOR, _EXT_GSD_NEW);
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 govserv extension: 4 new services added to _gsd');
+    }
+    // Also add PIEC color to _gpc
+    const _EXT_GPC_ANCHOR = '"Compras":{bg:"#fce7f3",bd:"#f9a8d4",txt:"#9d174d"}}';
+    const _EXT_GPC_NEW = '"Compras":{bg:"#fce7f3",bd:"#f9a8d4",txt:"#9d174d"},"PIEC":{bg:"#e0f2fe",bd:"#7dd3fc",txt:"#0369a1"}}';
+    if (dashV30Source.includes(_EXT_GPC_ANCHOR)) {
+      dashV30Source = dashV30Source.replace(_EXT_GPC_ANCHOR, _EXT_GPC_NEW);
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 govserv extension: PIEC color added to _gpc');
+    }
+  } else if (dashV30Source.includes(_GOVSERV_EXT_MARKER)) {
+    console.log('[bootstrap] Dashboard-v30 govserv extension already applied');
   }
 
   if (dashV30Changed) {
