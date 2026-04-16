@@ -13,6 +13,8 @@ Key capabilities:
 
 The application is a pre-compiled, fully bundled Node.js app. The source is compiled into `dist/` and served via Express. The frontend is a React SPA served as static files from `dist/public/`.
 
+**Critical fix applied (April 2026):** `dist/public/assets/Dashboard-v30.js` L1426 had broken syntax caused by a security card (`seguranca-publica-card`) being nested inside the govserv button card via a double `Bt && (() => {` IIFE pattern. The fix replaced the broken closing `})()] })})() ] });` with `})()] }) })()] })] });` which correctly closes: govserv IIFE (`})()`), govserv button div (`] })`), security Bt IIFE (`})()`), security card (`] })`), and outer children array (`]`).
+
 ---
 
 ## User Preferences
