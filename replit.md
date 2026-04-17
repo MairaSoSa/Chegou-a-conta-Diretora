@@ -15,6 +15,16 @@ The application is a pre-compiled, fully bundled Node.js app. The source is comp
 
 **Critical fix applied (April 2026):** `dist/public/assets/Dashboard-v30.js` L1426 had broken syntax caused by a security card (`seguranca-publica-card`) being nested inside the govserv button card via a double `Bt && (() => {` IIFE pattern. The fix replaced the broken closing `})()] })})() ] });` with `})()] }) })()] })] });` which correctly closes: govserv IIFE (`})()`), govserv button div (`] })`), security Bt IIFE (`})()`), security card (`] })`), and outer children array (`]`).
 
+### Saúde Municipal (April 2026)
+New endpoints `/api/saude-municipio/:coIbge` and `/api/saude-backfill?ids=` lazy-ingest data from the SUS open data API (`apidadosabertos.saude.gov.br`) into Postgres tables on Railway:
+- **`saude_estabelecimentos`** — CNES facilities (UBS, hospitals, CAPS, UPA, clinics) with geocoordinates, type label, address, phone. Type derived from `codigo_tipo_unidade` via in-bootstrap mapping (`CNES_TIPO_UNIDADE`).
+- **`saude_indicadores_municipio`** — fact table for aggregated indicators. Two sources today: `CNES` (counts per facility type: `cnes_ubs_centro_saude`, `cnes_hospital_geral`, `cnes_caps`, `cnes_upa`, `cnes_pronto_socorro`, etc.) and `SISVAN` (categorical IMC distribution from API sample — labelled clearly as sample, not municipal aggregate, since the open API returns oldest records first and is not designed for population-level aggregates).
+- **`saude_ingestao_log`** — per (município, fonte) status + last fetch. Cache TTL = 30 days. Use `?refresh=1` to force; `?async=1` to refresh in background.
+
+Handlers live in `dist/bootstrap.cjs` as `globalThis._saudeMunHandler` / `_saudeBackfillHandler` (avoids string-escaping pain in route patches). Routes are injected via the `/api/health` anchor.
+
+Future ETL needed for SINASC, SIM, PNI, SISAGUA — those don't have JSON-per-município endpoints; they require the bulk CSV pipeline described in `attached_assets/Pasted-Perfeito-Vou-te-deixar-um-pipeline-completo-do-dado-bru_*.txt`.
+
 ---
 
 ## User Preferences

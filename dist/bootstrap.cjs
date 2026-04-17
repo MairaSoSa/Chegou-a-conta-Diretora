@@ -2623,6 +2623,410 @@ if (source.indexOf(_SAUD_VIO_ANCHOR) !== -1) {
   console.warn('[bootstrap] /api/saude-violencia patch NOT applied — anchor not found');
 }
 
+// ── 3i-bis. Patch: /api/saude-municipio/:coIbge ──
+// Lazy-ingest CNES (estabelecimentos) + SISVAN (estado nutricional) into Postgres.
+// Cache TTL: 30 days per (municipio, fonte). Use ?refresh=1 to force re-ingest.
+// Use ?async=1 to return cached data immediately and refresh in background.
+// Tables: saude_estabelecimentos, saude_indicadores_municipio, saude_ingestao_log.
+const SAUDE_MUN_BASE = 'https://apidadosabertos.saude.gov.br';
+const SAUDE_MUN_HDR = { 'User-Agent': 'ChegoAContaDiretora/1.0', 'Accept': 'application/json' };
+const SAUDE_MUN_TTL_MS = 30 * 24 * 3600 * 1000;
+
+// CNES — codigo_tipo_unidade → label (https://datasus.saude.gov.br tabela TP_UNID)
+const CNES_TIPO_UNIDADE = {
+  1: 'POSTO DE SAUDE',
+  2: 'CENTRO DE SAUDE / UBS',
+  4: 'POLICLINICA',
+  5: 'HOSPITAL GERAL',
+  7: 'HOSPITAL ESPECIALIZADO',
+  15: 'UNIDADE MISTA',
+  20: 'PRONTO SOCORRO GERAL',
+  21: 'PRONTO SOCORRO ESPECIALIZADO',
+  22: 'CONSULTORIO ISOLADO',
+  32: 'UNIDADE MOVEL FLUVIAL',
+  36: 'CLINICA / CENTRO DE ESPECIALIDADE',
+  39: 'UNIDADE SADT (APOIO DIAGNOSE/TERAPIA)',
+  40: 'UNIDADE MOVEL TERRESTRE',
+  42: 'UNIDADE MOVEL PRE-HOSPITALAR (URGENCIA)',
+  43: 'FARMACIA',
+  50: 'UNIDADE DE VIGILANCIA EM SAUDE',
+  60: 'COOPERATIVA / CESSAO DE TRABALHADORES',
+  61: 'CENTRO DE PARTO NORMAL ISOLADO',
+  62: 'HOSPITAL DIA ISOLADO',
+  67: 'LABORATORIO CENTRAL (LACEN)',
+  68: 'CENTRAL DE GESTAO EM SAUDE',
+  69: 'CENTRO HEMOTERAPICO / HEMATOLOGICO',
+  70: 'CENTRO DE ATENCAO PSICOSSOCIAL (CAPS)',
+  71: 'CENTRO DE APOIO A SAUDE DA FAMILIA',
+  72: 'UNIDADE DE ATENCAO A SAUDE INDIGENA',
+  73: 'PRONTO ATENDIMENTO (UPA)',
+  74: 'POLO ACADEMIA DA SAUDE',
+  75: 'TELESSAUDE',
+  76: 'CENTRAL DE REGULACAO MEDICA DAS URGENCIAS',
+  77: 'SERVICO DE ATENCAO DOMICILIAR (HOME CARE)',
+  78: 'UNIDADE DE ATENCAO EM REGIME RESIDENCIAL',
+  79: 'OFICINA ORTOPEDICA',
+  80: 'LABORATORIO DE SAUDE PUBLICA',
+  81: 'CENTRAL DE REGULACAO DO ACESSO',
+  82: 'CENTRAL DE CAPTACAO/DISTRIB DE ORGAOS',
+  83: 'POLO DE PREVENCAO DE DOENCAS / PROMOCAO DE SAUDE',
+  84: 'CENTRAL DE ABASTECIMENTO',
+  85: 'CENTRO DE IMUNIZACAO',
+};
+function _cnesTipoLabel(codigo) {
+  if (codigo == null) return null;
+  return CNES_TIPO_UNIDADE[Number(codigo)] || `TIPO ${codigo}`;
+}
+
+async function _saudeIngestCNES(pool, co7, co6) {
+  const all = [];
+  let offset = 0;
+  const limit = 100;
+  let pages = 0;
+  while (pages < 50) {
+    const url = `${SAUDE_MUN_BASE}/cnes/estabelecimentos?codigo_municipio=${co6}&limit=${limit}&offset=${offset}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(20000), headers: SAUDE_MUN_HDR });
+    if (!r.ok) break;
+    const j = await r.json();
+    const arr = (j && j.estabelecimentos) || [];
+    if (arr.length === 0) break;
+    all.push(...arr);
+    if (arr.length < limit) break;
+    offset += limit;
+    pages++;
+  }
+  const cli = await pool.connect();
+  try {
+    await cli.query('BEGIN');
+    for (const e of all) {
+      const cnes = String(e.codigo_cnes || e.cnes || '').trim();
+      if (!cnes) continue;
+      await cli.query(
+        `INSERT INTO saude_estabelecimentos
+           (cnes,nome,tipo_estabelecimento,codigo_tipo_unidade,co_municipio,no_municipio,uf,bairro,endereco,telefone,latitude,longitude,competencia,metadata,updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NOW())
+         ON CONFLICT (cnes) DO UPDATE SET
+           nome=EXCLUDED.nome, tipo_estabelecimento=EXCLUDED.tipo_estabelecimento,
+           codigo_tipo_unidade=EXCLUDED.codigo_tipo_unidade, co_municipio=EXCLUDED.co_municipio,
+           no_municipio=EXCLUDED.no_municipio, uf=EXCLUDED.uf, bairro=EXCLUDED.bairro,
+           endereco=EXCLUDED.endereco, telefone=EXCLUDED.telefone,
+           latitude=EXCLUDED.latitude, longitude=EXCLUDED.longitude,
+           competencia=EXCLUDED.competencia, metadata=EXCLUDED.metadata, updated_at=NOW()`,
+        [
+          cnes,
+          e.nome_fantasia || e.nome_razao_social || '(sem nome)',
+          _cnesTipoLabel(e.codigo_tipo_unidade),
+          e.codigo_tipo_unidade != null ? Number(e.codigo_tipo_unidade) : null,
+          co7,
+          e.municipio || null,
+          e.uf || null,
+          e.bairro_estabelecimento || null,
+          (e.endereco_estabelecimento && e.numero_estabelecimento)
+            ? `${e.endereco_estabelecimento}, ${e.numero_estabelecimento}`
+            : (e.endereco_estabelecimento || null),
+          e.numero_telefone_estabelecimento || null,
+          e.latitude_estabelecimento_decimo_grau ? Number(e.latitude_estabelecimento_decimo_grau) : null,
+          e.longitude_estabelecimento_decimo_grau ? Number(e.longitude_estabelecimento_decimo_grau) : null,
+          e.data_atualizacao ? String(e.data_atualizacao) : null,
+          JSON.stringify(e),
+        ]
+      );
+    }
+    await cli.query(
+      `INSERT INTO saude_ingestao_log (co_municipio,fonte,last_fetch,status,registros)
+       VALUES ($1,'CNES',NOW(),'ok',$2)
+       ON CONFLICT (co_municipio,fonte) DO UPDATE
+         SET last_fetch=NOW(), status='ok', registros=$2, erro=NULL`,
+      [co7, all.length]
+    );
+    await cli.query('COMMIT');
+    return { fonte: 'CNES', registros: all.length };
+  } catch (e) {
+    await cli.query('ROLLBACK');
+    throw e;
+  } finally {
+    cli.release();
+  }
+}
+
+async function _saudeIngestSISVAN(pool, co7, co6) {
+  // SISVAN — API aberta retorna observações individuais (não agregadas) e
+  // tende a entregar registros mais antigos primeiro. Para indicadores
+  // municipais agregados de verdade, é preciso ETL dos CSVs anuais (futuro).
+  // Por ora, gravamos: amostra disponível por fase + distribuição categórica
+  // do estado nutricional dentro dessa amostra.
+  const fases = [
+    { codigo: 1, label: 'criancas_menores_5', campos: ['peso_x_idade', 'peso_x_altura', 'crianca_imc_x_idade', 'crianca_altura_x_idade'] },
+    { codigo: 2, label: 'criancas_adolescentes_5_19', campos: ['adolescente_imc_x_idade', 'adolescente_altura_x_idade', 'crianca_imc_x_idade', 'crianca_altura_x_idade'] },
+    { codigo: 3, label: 'adultos', campos: ['codigo_estado_nutricional_adulto'] },
+    { codigo: 4, label: 'idosos', campos: ['codigo_estado_nutricional_idoso'] },
+  ];
+  let totalIndic = 0;
+  const anoAtual = new Date().getFullYear();
+  for (const fase of fases) {
+    let r;
+    try {
+      r = await fetch(
+        `${SAUDE_MUN_BASE}/sisvan/estado-nutricional?codigo_municipio=${co6}&codigo_fase_vida=${fase.codigo}&limit=200`,
+        { signal: AbortSignal.timeout(20000), headers: SAUDE_MUN_HDR }
+      );
+    } catch (_e) {
+      continue;
+    }
+    if (!r.ok) continue;
+    const j = await r.json();
+    const arr = (j && j.estados_nutricionais) || [];
+    if (arr.length === 0) continue;
+    let compMin = '', compMax = '';
+    for (const x of arr) {
+      const c = String(x.ano_mes_competencia || '');
+      if (c && (!compMin || c < compMin)) compMin = c;
+      if (c && c > compMax) compMax = c;
+    }
+    // Indicador: tamanho amostral disponível
+    await pool.query(
+      `INSERT INTO saude_indicadores_municipio (co_municipio,ano,mes,fonte,indicador,recorte,valor,unidade,metadata)
+       VALUES ($1,$2,NULL,'SISVAN','sisvan_amostra_disponivel',$3,$4,'registros',$5)
+       ON CONFLICT (co_municipio,ano,COALESCE(mes,0),fonte,indicador,COALESCE(recorte,''))
+       DO UPDATE SET valor=EXCLUDED.valor, metadata=EXCLUDED.metadata, updated_at=NOW()`,
+      [
+        co7,
+        anoAtual,
+        fase.label,
+        arr.length,
+        JSON.stringify({ competencia_min: compMin, competencia_max: compMax, fase_codigo: fase.codigo }),
+      ]
+    );
+    totalIndic++;
+    // Distribuição categórica por campo
+    for (const campo of fase.campos) {
+      const counts = {};
+      let validos = 0;
+      for (const x of arr) {
+        const v = x[campo];
+        if (v == null || v === '') continue;
+        const k = String(v);
+        counts[k] = (counts[k] || 0) + 1;
+        validos++;
+      }
+      if (validos === 0) continue;
+      for (const [categoria, n] of Object.entries(counts)) {
+        const indicador = `sisvan_${campo}`.slice(0, 80);
+        const recorte = `${fase.label}__${categoria}`.slice(0, 80);
+        await pool.query(
+          `INSERT INTO saude_indicadores_municipio (co_municipio,ano,mes,fonte,indicador,recorte,valor,denominador,unidade,metadata)
+           VALUES ($1,$2,NULL,'SISVAN',$3,$4,$5,$6,'pct_amostra',$7)
+           ON CONFLICT (co_municipio,ano,COALESCE(mes,0),fonte,indicador,COALESCE(recorte,''))
+           DO UPDATE SET valor=EXCLUDED.valor, denominador=EXCLUDED.denominador, metadata=EXCLUDED.metadata, updated_at=NOW()`,
+          [
+            co7,
+            anoAtual,
+            indicador,
+            recorte,
+            (n / validos) * 100,
+            validos,
+            JSON.stringify({ n: n, fase: fase.label, campo: campo, competencia_min: compMin, competencia_max: compMax, nota: 'amostra da API aberta SISVAN — não é agregado oficial municipal' }),
+          ]
+        );
+        totalIndic++;
+      }
+    }
+  }
+  await pool.query(
+    `INSERT INTO saude_ingestao_log (co_municipio,fonte,last_fetch,status,registros)
+     VALUES ($1,'SISVAN',NOW(),'ok',$2)
+     ON CONFLICT (co_municipio,fonte) DO UPDATE
+       SET last_fetch=NOW(), status='ok', registros=$2, erro=NULL`,
+    [co7, totalIndic]
+  );
+  return { fonte: 'SISVAN', registros: totalIndic };
+}
+
+// Derive aggregated indicators from CNES estabelecimentos already in DB.
+async function _saudeIngestCNESAgregados(pool, co7) {
+  const r = await pool.query(
+    `SELECT codigo_tipo_unidade, count(*)::int AS n
+     FROM saude_estabelecimentos WHERE co_municipio=$1 GROUP BY codigo_tipo_unidade`,
+    [co7]
+  );
+  const counts = {};
+  let total = 0;
+  for (const row of r.rows) {
+    counts[row.codigo_tipo_unidade] = row.n;
+    total += row.n;
+  }
+  const ano = new Date().getFullYear();
+  const indicadores = [
+    { ind: 'cnes_total_estabelecimentos', valor: total, recorte: null },
+    { ind: 'cnes_ubs_centro_saude', valor: (counts[1] || 0) + (counts[2] || 0), recorte: 'tipo_1_2' },
+    { ind: 'cnes_hospital_geral', valor: counts[5] || 0, recorte: 'tipo_5' },
+    { ind: 'cnes_hospital_especializado', valor: counts[7] || 0, recorte: 'tipo_7' },
+    { ind: 'cnes_pronto_socorro', valor: (counts[20] || 0) + (counts[21] || 0), recorte: 'tipo_20_21' },
+    { ind: 'cnes_upa', valor: counts[73] || 0, recorte: 'tipo_73' },
+    { ind: 'cnes_caps', valor: counts[70] || 0, recorte: 'tipo_70' },
+    { ind: 'cnes_farmacia', valor: counts[43] || 0, recorte: 'tipo_43' },
+    { ind: 'cnes_academia_saude', valor: counts[74] || 0, recorte: 'tipo_74' },
+    { ind: 'cnes_atencao_indigena', valor: counts[72] || 0, recorte: 'tipo_72' },
+  ];
+  for (const it of indicadores) {
+    await pool.query(
+      `INSERT INTO saude_indicadores_municipio (co_municipio,ano,mes,fonte,indicador,recorte,valor,unidade,metadata)
+       VALUES ($1,$2,NULL,'CNES',$3,$4,$5,'n',$6)
+       ON CONFLICT (co_municipio,ano,COALESCE(mes,0),fonte,indicador,COALESCE(recorte,''))
+       DO UPDATE SET valor=EXCLUDED.valor, metadata=EXCLUDED.metadata, updated_at=NOW()`,
+      [co7, ano, it.ind, it.recorte, it.valor, JSON.stringify({ contagens_por_tipo: counts })]
+    );
+  }
+  return indicadores.length;
+}
+
+async function _saudeIsStale(pool, co7, fonte) {
+  const r = await pool.query(
+    "SELECT last_fetch, status FROM saude_ingestao_log WHERE co_municipio=$1 AND fonte=$2",
+    [co7, fonte]
+  );
+  if (!r.rows.length) return true;
+  if (r.rows[0].status !== 'ok') return true;
+  return Date.now() - new Date(r.rows[0].last_fetch).getTime() > SAUDE_MUN_TTL_MS;
+}
+
+async function _saudeIngestAll(pool, co7, co6) {
+  const results = [];
+  for (const [fonte, fn] of [['CNES', _saudeIngestCNES], ['SISVAN', _saudeIngestSISVAN]]) {
+    try {
+      const r = await fn(pool, co7, co6);
+      results.push(r);
+      if (fonte === 'CNES') {
+        try {
+          const n = await _saudeIngestCNESAgregados(pool, co7);
+          results.push({ fonte: 'CNES_AGREGADOS', registros: n });
+        } catch (ae) {
+          console.error('[saude-municipio] CNES_AGREGADOS erro:', ae.message);
+        }
+      }
+    } catch (e) {
+      console.error(`[saude-municipio] ${fonte} ingest erro ${co7}:`, e.message);
+      try {
+        await pool.query(
+          `INSERT INTO saude_ingestao_log (co_municipio,fonte,last_fetch,status,erro)
+           VALUES ($1,$2,NOW(),'erro',$3)
+           ON CONFLICT (co_municipio,fonte) DO UPDATE
+             SET last_fetch=NOW(), status='erro', erro=$3`,
+          [co7, fonte, e.message]
+        );
+      } catch (_le) {}
+      results.push({ fonte, registros: 0, erro: e.message });
+    }
+  }
+  return results;
+}
+
+globalThis._saudeMunHandler = async (A, g) => {
+  try {
+    const E = String(A.params.coIbge || '').replace(/\D/g, '');
+    if (!E || E.length < 6) {
+      return g.status(400).json({ ok: false, error: 'Código IBGE inválido' });
+    }
+    const co7 = E.length === 7 ? E : (E.length === 6 ? E + '0' : E.padEnd(7, '0').slice(0, 7));
+    const co6 = co7.slice(0, 6);
+    const refresh = A.query.refresh === '1';
+    const asyncMode = A.query.async === '1';
+    const pool = globalThis._pgPool;
+    if (!pool) return g.status(500).json({ ok: false, error: 'DB pool indisponível' });
+
+    const needCNES = refresh || (await _saudeIsStale(pool, co7, 'CNES'));
+    const needSISVAN = refresh || (await _saudeIsStale(pool, co7, 'SISVAN'));
+
+    let ingestResults = [];
+    if (needCNES || needSISVAN) {
+      if (asyncMode) {
+        // Fire-and-forget refresh in background
+        _saudeIngestAll(pool, co7, co6).catch((e) =>
+          console.error('[saude-municipio] bg ingest erro:', e.message)
+        );
+        ingestResults = [{ fonte: 'CNES', status: 'ingest_iniciado_em_background' }];
+      } else {
+        ingestResults = await _saudeIngestAll(pool, co7, co6);
+      }
+    }
+
+    const estabsR = await pool.query(
+      `SELECT cnes,nome,tipo_estabelecimento,codigo_tipo_unidade,bairro,endereco,telefone,latitude,longitude,competencia
+       FROM saude_estabelecimentos WHERE co_municipio=$1
+       ORDER BY codigo_tipo_unidade NULLS LAST, nome`,
+      [co7]
+    );
+    const indicR = await pool.query(
+      `SELECT ano,mes,fonte,indicador,recorte,valor,denominador,unidade,metadata
+       FROM saude_indicadores_municipio WHERE co_municipio=$1
+       ORDER BY fonte,ano DESC,indicador`,
+      [co7]
+    );
+    const logR = await pool.query(
+      `SELECT fonte,last_fetch,status,registros,erro FROM saude_ingestao_log WHERE co_municipio=$1`,
+      [co7]
+    );
+
+    const estabs = estabsR.rows;
+    const porTipo = {};
+    for (const e of estabs) {
+      const t = e.tipo_estabelecimento || 'OUTROS';
+      porTipo[t] = (porTipo[t] || 0) + 1;
+    }
+
+    g.json({
+      ok: true,
+      co_municipio: co7,
+      estabelecimentos: { total: estabs.length, por_tipo: porTipo, lista: estabs },
+      indicadores: indicR.rows,
+      ingestao: { log: logR.rows, executou_agora: ingestResults },
+      fonte: 'Ministério da Saúde — apidadosabertos.saude.gov.br (CNES, SISVAN)',
+    });
+  } catch (e) {
+    console.error('[saude-municipio]', e.message);
+    g.status(500).json({ ok: false, error: e.message });
+  }
+};
+
+globalThis._saudeBackfillHandler = async (A, g) => {
+  try {
+    const ids = String(A.query.ids || '').split(',').map((s) => s.trim().replace(/\D/g, '')).filter((s) => s.length >= 6);
+    if (!ids.length) return g.status(400).json({ ok: false, error: 'Passe ?ids=co1,co2,...' });
+    const pool = globalThis._pgPool;
+    if (!pool) return g.status(500).json({ ok: false, error: 'DB pool indisponível' });
+    const limited = ids.slice(0, 50);
+    g.json({ ok: true, iniciado: limited.length, municipios: limited, modo: 'background' });
+    (async () => {
+      for (const id of limited) {
+        const co7 = id.length === 7 ? id : (id.length === 6 ? id + '0' : id.padEnd(7, '0').slice(0, 7));
+        const co6 = co7.slice(0, 6);
+        try {
+          await _saudeIngestAll(pool, co7, co6);
+          console.log(`[saude-backfill] ok ${co7}`);
+        } catch (e) {
+          console.error(`[saude-backfill] erro ${co7}:`, e.message);
+        }
+      }
+      console.log('[saude-backfill] concluído', limited.length);
+    })();
+  } catch (e) {
+    g.status(500).json({ ok: false, error: e.message });
+  }
+};
+
+const _SAUD_MUN_ANCHOR = 'e.get("/api/health",(A,g)=>{g.status(200).json({ok:!0,ts:Date.now()})}),';
+const _SAUD_MUN_ROUTE =
+  'e.get("/api/saude-municipio/:coIbge",globalThis._saudeMunHandler),' +
+  'e.get("/api/saude-backfill",globalThis._saudeBackfillHandler),';
+if (source.indexOf(_SAUD_MUN_ANCHOR) !== -1 && source.indexOf('/api/saude-municipio/') === -1) {
+  source = source.replace(_SAUD_MUN_ANCHOR, _SAUD_MUN_ANCHOR + _SAUD_MUN_ROUTE);
+  console.log('[bootstrap] /api/saude-municipio + /api/saude-backfill endpoints patch applied');
+} else if (source.indexOf('/api/saude-municipio/') !== -1) {
+  console.log('[bootstrap] /api/saude-municipio already present');
+} else {
+  console.warn('[bootstrap] /api/saude-municipio patch NOT applied — anchor not found');
+}
+
 // ── 3j. Patch: /api/perfil-socioeconomico/:coIbge — IBGE socioeconomic data ────
 // Fetches PIB per capita, population, and Censo 2022 income/poverty from IBGE API.
 const _IBGE_SOCIO_ANCHOR = 'e.get("/api/health",(A,g)=>{g.status(200).json({ok:!0,ts:Date.now()})}),';
