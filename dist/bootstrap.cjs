@@ -3026,9 +3026,9 @@ globalThis._saudeEtlRunHandler = async (A, g) => {
     const provided = A.query.token || A.headers['x-admin-token'] || '';
     if (adminToken && provided !== adminToken) return g.status(401).json({ ok: false, error: 'token inválido' });
     const source = String(A.query.source || '').toLowerCase();
-    if (!['sinasc', 'sim', 'pni', 'sinan'].includes(source)) return g.status(400).json({ ok: false, error: 'source deve ser sinasc|sim|pni|sinan' });
+    if (!['sinasc', 'sim', 'pni', 'sinan', 'sisagua'].includes(source)) return g.status(400).json({ ok: false, error: 'source deve ser sinasc|sim|pni|sinan|sisagua' });
     const states = String(A.query.states || 'ALL');
-    const defaultYears = { pni: '2015-2019', sim: '2020-2024', sinasc: '2018-2022', sinan: '2020-2026' }[source];
+    const defaultYears = { pni: '2015-2019', sim: '2020-2024', sinasc: '2018-2022', sinan: '2020-2026', sisagua: '2023-2024' }[source];
     const years = String(A.query.years || defaultYears);
     const coMunicipio = A.query.co_municipio ? String(A.query.co_municipio) : null;
     const diseases = A.query.diseases ? String(A.query.diseases) : null;

@@ -151,6 +151,8 @@ async function streamPython(pool, scriptName, args, onProgress) {
 
     child.stderr.on('data', d => process.stderr.write(d));
     const rl = readline.createInterface({ input: child.stdout });
+    // Capture rl 'close' upfront to avoid race when finalize() runs after readline already drained
+    const rlClosed = new Promise((res) => rl.once('close', res));
     rl.on('line', (line) => {
       const s = line.trim();
       if (!s) return;
@@ -170,8 +172,8 @@ async function streamPython(pool, scriptName, args, onProgress) {
     });
 
     const finalize = async () => {
-      // wait for readline to drain stdout
-      await new Promise((res) => rl.once('close', res));
+      // wait for readline to drain stdout (uses upfront-captured promise)
+      await rlClosed;
       // flush remaining buffer
       if (buf.length > 0) {
         const chunk = buf; buf = [];
@@ -277,19 +279,22 @@ async function runSinan(opts) {
 }
 
 async function runSisagua(opts) {
-  const m = require('./sources/sisagua.cjs');
+  const args = ['--years', opts.years || '2020-2024', '--states', opts.states || 'ALL'];
+  if (opts['co-municipio']) args.push('--co-municipio', opts['co-municipio']);
   return await withPool(async (pool) => {
     const t0 = Date.now();
+    let res;
     try {
-      const res = await m.run(pool, batchUpsert, opts);
-      await logIngestion(pool, 'SISAGUA', { year: opts.year || 'latest', co_municipio: opts['co-municipio'] || null },
+      res = await streamPython(pool, 'sisagua.py', args,
+        (ins, rec) => { if (ins % 500 === 0) console.log(`  sisagua inserted=${ins} received=${rec}`); });
+      await logIngestion(pool, 'SISAGUA', { states: opts.states, years: opts.years, co_municipio: opts['co-municipio'] || null },
         'OK', { ...res, ms: Date.now() - t0 });
-      return res;
     } catch (e) {
-      await logIngestion(pool, 'SISAGUA', { year: opts.year || 'latest' },
+      await logIngestion(pool, 'SISAGUA', { states: opts.states, years: opts.years },
         'ERROR', { error: e.message, ms: Date.now() - t0 });
       throw e;
     }
+    return res;
   });
 }
 
