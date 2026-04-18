@@ -3606,7 +3606,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   const _CNES_FIELDS_MARKER = 'O.latitude_estabelecimento_decimo_grau';
   if (!dashSrc.includes(_CNES_FIELDS_MARKER)) {
     const _CNES_OLD = 'const M = O.latitude ? parseFloat(O.latitude) : null, K = O.longitude ? parseFloat(O.longitude) : null, Se = [[O.logradouro, O.numero].filter(Boolean).join(", "), O.bairro, O.municipio, O.cep ? `CEP ${O.cep}` : ""].filter(Boolean).join(" \\u2014 ");\n              r[$].push({ source: "cnes", nome: O.nome_fantasia || O.nome_razao_social || null, endereco: Se || null, telefone: O.telefone || null, lat: M, lon: K, mapsUrl: M && K ? `https://www.google.com/maps?q=${M},${K}` : null });';
-    const _CNES_NEW = 'const M = O.latitude_estabelecimento_decimo_grau ? parseFloat(String(O.latitude_estabelecimento_decimo_grau).replace(",", ".")) : null, K = O.longitude_estabelecimento_decimo_grau ? parseFloat(String(O.longitude_estabelecimento_decimo_grau).replace(",", ".")) : null, Se = [[O.endereco_estabelecimento, O.numero_estabelecimento].filter(Boolean).join(", "), O.bairro_estabelecimento, O.municipio_estabelecimento, O.cep_estabelecimento ? `CEP ${O.cep_estabelecimento}` : ""].filter(Boolean).join(" \\u2014 ");\n              r[$].push({ source: "cnes", nome: O.nome_fantasia || O.nome_razao_social || null, endereco: Se || null, telefone: O.numero_telefone_estabelecimento || null, lat: M, lon: K, mapsUrl: M && K ? `https://www.google.com/maps/search/${encodeURIComponent((O.nome_fantasia || O.nome_razao_social || "").trim()).replace(/%20/g, "+")}/@${M},${K},17z` : null });';
+    const _CNES_NEW = 'const M = O.latitude_estabelecimento_decimo_grau ? parseFloat(String(O.latitude_estabelecimento_decimo_grau).replace(",", ".")) : null, K = O.longitude_estabelecimento_decimo_grau ? parseFloat(String(O.longitude_estabelecimento_decimo_grau).replace(",", ".")) : null, Se = [[O.endereco_estabelecimento, O.numero_estabelecimento].filter(Boolean).join(", "), O.bairro_estabelecimento, O.municipio_estabelecimento, O.cep_estabelecimento ? `CEP ${O.cep_estabelecimento}` : ""].filter(Boolean).join(" \\u2014 ");\n              r[$].push({ source: "cnes", nome: O.nome_fantasia || O.nome_razao_social || null, endereco: Se || null, telefone: O.numero_telefone_estabelecimento || null, lat: M, lon: K, mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps?q=${encodeURIComponent(_q)}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
     if (dashSrc.includes(_CNES_OLD)) {
       dashSrc = dashSrc.replace(_CNES_OLD, _CNES_NEW);
       changed = true;
@@ -3620,11 +3620,22 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   // Applied separately from cnes-fields-v1 because dashSrc may already have the field fix
   // but still uses the old ?q=LAT,LON format without the establishment name.
   const _CNES_MAPS_OLD = 'mapsUrl: M && K ? `https://www.google.com/maps?q=${M},${K}` : null });';
-  const _CNES_MAPS_NEW = 'mapsUrl: M && K ? `https://www.google.com/maps/search/${encodeURIComponent((O.nome_fantasia || O.nome_razao_social || "").trim()).replace(/%20/g, "+")}/@${M},${K},17z` : null });';
+  const _CNES_MAPS_NEW = 'mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps?q=${encodeURIComponent(_q)}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
   if (dashSrc.includes(_CNES_MAPS_OLD)) {
     dashSrc = dashSrc.replace(_CNES_MAPS_OLD, _CNES_MAPS_NEW);
     changed = true;
-    console.log('[bootstrap] Dashboard-v30 CNES Maps URL upgraded to /search/NAME/@lat,lon,17z');
+    console.log('[bootstrap] Dashboard-v30 CNES Maps URL: text-search by name+address applied');
+  }
+
+  // ── Sub-patch: cnes-maps-addr-v1 — upgrade /search/NAME/@LAT,LON to text-search by address ──
+  // Replaces the intermediate /search/NAME/@LAT,LON,17z format (from cnes-maps-name-v1)
+  // with a full text query (name + full address) so Google resolves the establishment correctly.
+  const _CNES_ADDR_OLD = 'mapsUrl: M && K ? `https://www.google.com/maps/search/${encodeURIComponent((O.nome_fantasia || O.nome_razao_social || "").trim()).replace(/%20/g, "+")}/@${M},${K},17z` : null });';
+  const _CNES_ADDR_NEW = 'mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps?q=${encodeURIComponent(_q)}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
+  if (dashSrc.includes(_CNES_ADDR_OLD)) {
+    dashSrc = dashSrc.replace(_CNES_ADDR_OLD, _CNES_ADDR_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 CNES Maps URL upgraded to text-search (name+address)');
   }
 
   // ── Sub-patch 3k-i: update segurança card UI for SINAN/SIM data (not SINESP-only) ──
