@@ -2490,7 +2490,22 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '        }\n' +
 '      }\n' +
 '    }catch(_dngErr){console.warn("[ctx-mun] dengue erro:",String(_dngErr));}\n' +
-'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,censo2022:censo2022,dengue:dengue});\n' +
+'    // ── Indicadores SUS bulk (saude_indicadores_municipio) ──────────────────\n' +
+'    let saude_db=null;\n' +
+'    try{\n' +
+'      const _pool=globalThis._pgPool;\n' +
+'      if(_pool&&co.length===7){\n' +
+'        const _qres=await _pool.query("SELECT DISTINCT ON (fonte,indicador) fonte,indicador,ano,valor,denominador,unidade,recorte,metadata FROM saude_indicadores_municipio WHERE co_municipio=$1 AND fonte IN (\'SISAGUA\',\'SINASC\',\'SIM\',\'PNI\',\'SINAN\') ORDER BY fonte,indicador,ano DESC NULLS LAST",[co]);\n' +
+'        if(_qres.rows.length>0){\n' +
+'          saude_db={};\n' +
+'          for(const _r of _qres.rows){\n' +
+'            const _f=_r.fonte;if(!saude_db[_f])saude_db[_f]=[];\n' +
+'            saude_db[_f].push({indicador:_r.indicador,ano:_r.ano,valor:Number(_r.valor),denominador:_r.denominador!=null?Number(_r.denominador):null,unidade:_r.unidade,recorte:_r.recorte,metadata:_r.metadata});\n' +
+'          }\n' +
+'        }\n' +
+'      }\n' +
+'    }catch(_dbErr){console.warn("[ctx-mun] saude_db erro:",String(_dbErr));}\n' +
+'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,censo2022:censo2022,dengue:dengue,saude_db:saude_db});\n' +
 '  }catch(err){console.error("[ctx-mun] erro:",String(err));g.json({ok:false,erro:String(err)});}\n' +
 '}),\n';
 

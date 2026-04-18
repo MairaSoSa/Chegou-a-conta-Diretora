@@ -1214,7 +1214,91 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
           })
         ]}),
         e.jsx("p", { style: { fontSize: 9, color: "#888", margin: "4px 0 0" }, children: "Fonte: Portal da Transpar\xEAncia \u2022 " + (ctxMunData.bpc.mes ? ctxMunData.bpc.mes.slice(0, 4) + "/" + ctxMunData.bpc.mes.slice(4, 6) : "") })
-      ]})
+      ]}),
+      ctxMunData.saude_db && (function() {
+        var _SDB = ctxMunData.saude_db;
+        var _LABELS = {
+          sisagua_pct_amostras_conformes_coliformes: "Amostras conformes (Coliformes)",
+          sisagua_pct_amostras_conformes_ecoli: "Amostras conformes (E. coli)",
+          sisagua_pct_cloro_conforme: "Cloro residual conforme",
+          sisagua_pct_turbidez_conforme: "Turbidez conforme",
+          sisagua_total_amostras_analisadas: "Total amostras analisadas",
+          sisagua_meses_com_dados: "Meses com dados",
+          sinasc_nascidos_vivos_total: "Nascidos vivos",
+          sinasc_pct_cesarea: "% Cesárea",
+          sinasc_pct_prenatal_7mais: "% Pré-natal 7+ consultas",
+          sinasc_pct_baixo_peso: "% Baixo peso ao nascer",
+          sinasc_pct_prematuro: "% Prematuros",
+          sinasc_pct_mae_adolescente: "% Mãe adolescente",
+          sinasc_pct_mae_sem_escolaridade: "% Mãe sem escolaridade",
+          sim_obitos_total: "Óbitos totais",
+          sim_obitos_menor_1_ano: "Óbitos < 1 ano",
+          sim_obitos_maternos: "Óbitos maternos",
+          sim_obitos_externos: "Óbitos por causas externas",
+          sim_obitos_evitaveis: "Óbitos evitáveis",
+          sim_obitos_covid: "Óbitos por COVID-19",
+          pni_cobertura_vacinal: "Cobertura vacinal"
+        };
+        var _FONTES = [
+          { key: "SISAGUA", label: "Qualidade da Água (SISAGUA)", icon: "\u{1F4A7}", bg: "#e0f7fa", border: "#80deea", color: "#006064" },
+          { key: "SINASC", label: "Nascimentos (SINASC)", icon: "\u{1F476}", bg: "#fce4ec", border: "#f48fb1", color: "#880e4f" },
+          { key: "SIM", label: "Mortalidade (SIM)", icon: "\u26B0\uFE0F", bg: "#eceff1", border: "#b0bec5", color: "#37474f" },
+          { key: "PNI", label: "Imunizações (PNI)", icon: "\u{1F489}", bg: "#fff3e0", border: "#ffcc80", color: "#e65100" },
+          { key: "SINAN", label: "Doenças Notificáveis (SINAN)", icon: "\u{1F9A0}", bg: "#f3e5f5", border: "#ce93d8", color: "#4a148c" }
+        ];
+        var _fmt = function(v, u) {
+          if (v == null) return "—";
+          if (u === "%") return Number(v).toFixed(1).replace(".", ",") + "%";
+          if (u === "meses") return Math.round(v) + " / 12";
+          if (Math.abs(v) >= 1000) return Math.round(v).toLocaleString("pt-BR");
+          if (Number.isInteger(v)) return String(v);
+          return Number(v).toFixed(2).replace(".", ",");
+        };
+        var _sections = _FONTES.filter(function(f) { return _SDB[f.key] && _SDB[f.key].length > 0; });
+        if (_sections.length === 0) return null;
+        return e.jsxs("div", { style: { background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
+          e.jsxs("p", { style: { fontSize: 10, fontWeight: 700, color: "#37474f", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.05em" }, children: ["Indicadores SUS \u2014 Histórico Consolidado"] }),
+          e.jsx("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }, children:
+            _sections.map(function(f, fi) {
+              var _items = _SDB[f.key];
+              // For PNI: show top 5 imunos by valor; for SINAN: top 5 doenças by casos; otherwise show all
+              var _display = _items;
+              if (f.key === "PNI") {
+                _display = _items.slice().sort(function(a, b){ return (b.valor||0) - (a.valor||0); }).slice(0, 6);
+              } else if (f.key === "SINAN") {
+                _display = _items.filter(function(it){ return it.indicador.indexOf("_casos") !== -1; }).sort(function(a,b){ return (b.valor||0) - (a.valor||0); }).slice(0, 6);
+              }
+              var _maxYear = _items.reduce(function(m, it){ return (it.ano && it.ano > m) ? it.ano : m; }, 0);
+              return e.jsxs("div", { style: { background: f.bg, border: "1px solid " + f.border, borderRadius: 8, padding: "8px 10px" }, children: [
+                e.jsxs("p", { style: { fontSize: 11, fontWeight: 700, color: f.color, margin: "0 0 6px", display: "flex", alignItems: "center", gap: 5 }, children: [
+                  e.jsx("span", { children: f.icon }),
+                  e.jsx("span", { style: { flex: 1 }, children: f.label }),
+                  _maxYear > 0 && e.jsx("span", { style: { fontSize: 9, fontWeight: 600, color: f.color, opacity: 0.7 }, children: "até " + _maxYear })
+                ]}),
+                e.jsx("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children:
+                  _display.map(function(it, ii) {
+                    var _label = _LABELS[it.indicador] || (it.recorte ? (it.indicador + " · " + it.recorte) : it.indicador);
+                    if (f.key === "SINAN") {
+                      _label = it.indicador.replace("sinan_", "").replace("_casos", "").replace("_obitos", "").replace(/_/g, " ");
+                      _label = _label.charAt(0).toUpperCase() + _label.slice(1) + " (casos)";
+                    } else if (f.key === "PNI" && it.recorte) {
+                      _label = "Cobertura " + it.recorte;
+                    }
+                    return e.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, fontSize: 11, padding: "2px 0", borderBottom: ii < _display.length - 1 ? "1px dashed " + f.border : "none" }, children: [
+                      e.jsx("span", { style: { color: f.color, opacity: 0.85, flex: 1, lineHeight: 1.2 }, children: _label }),
+                      e.jsxs("span", { style: { fontWeight: 700, color: f.color, whiteSpace: "nowrap" }, children: [
+                        _fmt(it.valor, it.unidade),
+                        it.ano && e.jsx("span", { style: { fontSize: 9, opacity: 0.65, marginLeft: 4, fontWeight: 500 }, children: "(" + it.ano + ")" })
+                      ]})
+                    ]}, ii);
+                  })
+                })
+              ]}, fi);
+            })
+          }),
+          e.jsx("p", { style: { fontSize: 9, color: "#888", margin: "8px 0 0", lineHeight: 1.4 }, children: "Fontes: DATASUS (SINASC, SIM, PNI, SINAN via pysus) + DEMAS API pública (SISAGUA). Valores mais recentes disponíveis por indicador." })
+        ]});
+      })()
     ]}),
     ctxMunData && ctxMunData.censo2022 && e.jsxs("div", { style: { background: "#e8eaf6", border: "1px solid #9fa8da", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
       e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }, children: [
