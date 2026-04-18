@@ -3598,6 +3598,24 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 context cards: closing-sequence fix applied');
   }
 
+  // ── Sub-patch: fix CNES field name mappings in equip map URL (cnes-fields-v1) ──
+  // The compiled SPA fetches CNES directly and uses old field names (O.latitude,
+  // O.logradouro, O.numero, O.bairro, O.municipio, O.cep, O.telefone) that don't
+  // exist in the current CNES API. Correct names use _estabelecimento suffixes.
+  // This caused Maps links to fall back to name-only search → wrong location.
+  const _CNES_FIELDS_MARKER = 'O.latitude_estabelecimento_decimo_grau';
+  if (!dashSrc.includes(_CNES_FIELDS_MARKER)) {
+    const _CNES_OLD = 'const M = O.latitude ? parseFloat(O.latitude) : null, K = O.longitude ? parseFloat(O.longitude) : null, Se = [[O.logradouro, O.numero].filter(Boolean).join(", "), O.bairro, O.municipio, O.cep ? `CEP ${O.cep}` : ""].filter(Boolean).join(" \\u2014 ");\n              r[$].push({ source: "cnes", nome: O.nome_fantasia || O.nome_razao_social || null, endereco: Se || null, telefone: O.telefone || null, lat: M, lon: K, mapsUrl: M && K ? `https://www.google.com/maps?q=${M},${K}` : null });';
+    const _CNES_NEW = 'const M = O.latitude_estabelecimento_decimo_grau ? parseFloat(String(O.latitude_estabelecimento_decimo_grau).replace(",", ".")) : null, K = O.longitude_estabelecimento_decimo_grau ? parseFloat(String(O.longitude_estabelecimento_decimo_grau).replace(",", ".")) : null, Se = [[O.endereco_estabelecimento, O.numero_estabelecimento].filter(Boolean).join(", "), O.bairro_estabelecimento, O.municipio_estabelecimento, O.cep_estabelecimento ? `CEP ${O.cep_estabelecimento}` : ""].filter(Boolean).join(" \\u2014 ");\n              r[$].push({ source: "cnes", nome: O.nome_fantasia || O.nome_razao_social || null, endereco: Se || null, telefone: O.numero_telefone_estabelecimento || null, lat: M, lon: K, mapsUrl: M && K ? `https://www.google.com/maps?q=${M},${K}` : null });';
+    if (dashSrc.includes(_CNES_OLD)) {
+      dashSrc = dashSrc.replace(_CNES_OLD, _CNES_NEW);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 CNES field names fixed (lat/lon/endereco/telefone)');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 CNES fields: anchor not found');
+    }
+  }
+
   // ── Sub-patch 3k-i: update segurança card UI for SINAN/SIM data (not SINESP-only) ──
   // Updates subtitle, section header, natureza cards to reflect municipal-level data.
   // ── Sub-patch: clean up "/* segui-v2-sinan */" text that renders visibly in subtitle ──

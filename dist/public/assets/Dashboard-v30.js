@@ -905,8 +905,8 @@ function ii() {
           if (A2?.estabelecimentos) for (const O of A2.estabelecimentos) {
             const $ = p(O);
             if ($ && r[$]) {
-              const M = O.latitude ? parseFloat(O.latitude) : null, K = O.longitude ? parseFloat(O.longitude) : null, Se = [[O.logradouro, O.numero].filter(Boolean).join(", "), O.bairro, O.municipio, O.cep ? `CEP ${O.cep}` : ""].filter(Boolean).join(" \u2014 ");
-              r[$].push({ source: "cnes", nome: O.nome_fantasia || O.nome_razao_social || null, endereco: Se || null, telefone: O.telefone || null, lat: M, lon: K, mapsUrl: M && K ? `https://www.google.com/maps?q=${M},${K}` : null });
+              const M = O.latitude_estabelecimento_decimo_grau ? parseFloat(String(O.latitude_estabelecimento_decimo_grau).replace(",", ".")) : null, K = O.longitude_estabelecimento_decimo_grau ? parseFloat(String(O.longitude_estabelecimento_decimo_grau).replace(",", ".")) : null, Se = [[O.endereco_estabelecimento, O.numero_estabelecimento].filter(Boolean).join(", "), O.bairro_estabelecimento, O.municipio_estabelecimento, O.cep_estabelecimento ? `CEP ${O.cep_estabelecimento}` : ""].filter(Boolean).join(" \u2014 ");
+              r[$].push({ source: "cnes", nome: O.nome_fantasia || O.nome_razao_social || null, endereco: Se || null, telefone: O.numero_telefone_estabelecimento || null, lat: M, lon: K, mapsUrl: M && K ? `https://www.google.com/maps?q=${M},${K}` : null });
             }
           }
         }).catch(() => {
