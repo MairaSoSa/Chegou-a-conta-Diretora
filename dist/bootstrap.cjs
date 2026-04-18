@@ -2609,65 +2609,84 @@ e.get("/api/noticias-extras",async(A,g)=>{
   console.log('[bootstrap] vacinacao patch applied:', JSON.parse(vacinaJson).length, 'eventos');
 })();
 
-// ── 3h. Patch: /api/seguranca-municipio/:coIbge — SINESP crime data (UF level) ──
-// Queries dados.gov.br CKAN datastore for SINESP crime occurrence data.
-// Returns totals for the latest available year by natureza (crime type) for the UF.
+// ── 3h. Patch: /api/seguranca-municipio/:coIbge — Security data ──
+// Primary source: local DB (SINAN violence cases + SIM external-cause deaths).
+// Bonus: attempts SINESP/dados.gov.br CKAN API (UF level) — currently returns 401.
 const _SEG_MUN_ANCHOR = 'e.get("/api/health",(A,g)=>{g.status(200).json({ok:!0,ts:Date.now()})}),';
 const _SEG_MUN_ROUTE =
-  'globalThis._sinespRidCache={rid:null,ts:0};' +
   'e.get("/api/seguranca-municipio/:coIbge",async(A,g)=>{' +
     'try{' +
       'const E=String(A.params.coIbge||"").replace(/\\D/g,"");' +
       'if(!E||E.length<6)return g.status(400).json({ok:!1,error:"C\\xF3digo IBGE inv\\xE1lido"});' +
       'const _ufMap={11:"RO",12:"AC",13:"AM",14:"RR",15:"PA",16:"AP",17:"TO",21:"MA",22:"PI",23:"CE",24:"RN",25:"PB",26:"PE",27:"AL",28:"SE",29:"BA",31:"MG",32:"ES",33:"RJ",35:"SP",41:"PR",42:"SC",43:"RS",50:"MS",51:"MT",52:"GO",53:"DF"};' +
-      'const _ufCode=parseInt(E.slice(0,2));const _uf=_ufMap[_ufCode]||null;' +
-      'if(!_uf)return g.json({ok:!1,co_municipio:E,uf:null,error:"UF n\\xE3o identificada",naturezas:[],fonte:"SINESP/dados.gov.br"});' +
-      // get or refresh resource ID (cache 24h)
-      'const _now=Date.now();' +
-      'if(!globalThis._sinespRidCache.rid||(_now-globalThis._sinespRidCache.ts)>86400000){' +
+      'const _uf=_ufMap[parseInt(E.slice(0,2))]||null;' +
+      // --- 1. Query local DB for municipal security indicators (SINAN + SIM) ---
+      'const _naturezas=[];let _anoRef=null;' +
+      'const _pool=globalThis._pgPool;' +
+      'if(_pool){' +
         'try{' +
-          'const _pkgUrl="https://dados.gov.br/api/3/action/package_show?id=sinesp-uf-ano-natureza-por-ocorrencia";' +
-          'const _pkgR=await fetch(_pkgUrl,{signal:AbortSignal.timeout(10000),headers:{"Accept":"application/json","User-Agent":"ChegoAContaDiretora/1.0"}});' +
+          'const _qr=await _pool.query(' +
+            '"SELECT DISTINCT ON (indicador) indicador,valor::numeric AS valor,unidade,ano FROM saude_indicadores_municipio WHERE co_municipio=$1 AND fonte IN(\'SINAN\',\'SIM\') AND indicador IN(\'sinan_violencia_casos\',\'sim_obitos_externos\',\'sim_obitos_total\') ORDER BY indicador,ano DESC NULLS LAST",' +
+            '[E]' +
+          ');' +
+          'const _lmap={sinan_violencia_casos:"Viol\\xEAncia Interpessoal / Autoprovocada (SINAN/MS)",sim_obitos_externos:"\\xD3bitos por Causas Externas (SIM/MS)",sim_obitos_total:"Total de \\xD3bitos \\u2014 todas as causas (SIM/MS)"};' +
+          'for(const _r of _qr.rows){' +
+            'const _v=parseFloat(_r.valor)||0;' +
+            'if(!_anoRef||Number(_r.ano)>Number(_anoRef))_anoRef=_r.ano;' +
+            '_naturezas.push({natureza:_lmap[_r.indicador]||_r.indicador,quantidade:Math.round(_v),unidade:_r.unidade||"casos",nivel:"Municipal"});' +
+          '}' +
+        '}catch(_dbE){console.warn("[seguranca] DB erro:",_dbE.message);}' +
+      '}' +
+      // --- 2. Try SINESP CKAN (currently 401 — attempt anyway, use if it works) ---
+      'let _sinespNat=null;let _sinespAno=null;let _sinespErr=null;' +
+      'if(_uf){' +
+        'try{' +
+          'const _pkgR=await fetch("https://dados.gov.br/api/3/action/package_show?id=sinesp-uf-ano-natureza-por-ocorrencia",{signal:AbortSignal.timeout(8000),headers:{"Accept":"application/json","User-Agent":"ChegoAContaDiretora/1.0"}});' +
           'if(_pkgR.ok){' +
             'const _pkgD=await _pkgR.json();' +
-            'const _resources=(_pkgD&&_pkgD.result&&_pkgD.result.resources)||[];' +
-            'const _active=_resources.find(r=>r.datastore_active===true)||_resources[0];' +
-            'if(_active&&_active.id){globalThis._sinespRidCache={rid:_active.id,ts:_now};console.log("[sinesp] resource_id:",_active.id);}' +
-          '}' +
-        '}catch(_pe){console.warn("[sinesp] package_show erro:",_pe.message);}' +
+            'const _res=(_pkgD&&_pkgD.result&&_pkgD.result.resources)||[];' +
+            'const _act=_res.find(r=>r.datastore_active===true)||_res[0];' +
+            'if(_act&&_act.id){' +
+              'const _dR=await fetch("https://dados.gov.br/api/3/action/datastore_search?resource_id="+encodeURIComponent(_act.id)+"&filters="+encodeURIComponent(JSON.stringify({UF:_uf}))+"&limit=5000",{signal:AbortSignal.timeout(15000),headers:{"Accept":"application/json","User-Agent":"ChegoAContaDiretora/1.0"}});' +
+              'if(_dR.ok){' +
+                'const _dD=await _dR.json();' +
+                'const _recs=(_dD&&_dD.result&&_dD.result.records)||[];' +
+                'if(_recs.length){' +
+                  'const _anos=_recs.map(r=>Number(r.ANO||r.ano||r.Ano||0)).filter(n=>n>0);' +
+                  '_sinespAno=_anos.length?Math.max(..._anos):null;' +
+                  'if(_sinespAno){' +
+                    'const _ra=_recs.filter(r=>Number(r.ANO||r.ano||r.Ano||0)===_sinespAno);' +
+                    'const _bn={};' +
+                    'for(const r of _ra){const _n=String(r.NATUREZA||r.natureza||r.Natureza||r.TIPO_CRIME||r.tipo_crime||"Outros").trim();const _q=Number(r.QTDE||r.qtde||r.QUANTIDADE||r.quantidade||r.OCORRENCIAS||r.ocorrencias||0);_bn[_n]=(_bn[_n]||0)+_q;}' +
+                    '_sinespNat=Object.entries(_bn).map(([k,v])=>({natureza:k,quantidade:v,nivel:"UF "+_uf})).sort((a,b)=>b.quantidade-a.quantidade).slice(0,12);' +
+                  '}' +
+                '}' +
+              '}else{_sinespErr="HTTP "+_dR.status;}' +
+            '}' +
+          '}else{_sinespErr="HTTP "+_pkgR.status;}' +
+        '}catch(_se){_sinespErr=_se.message;console.warn("[seguranca] SINESP erro:",_se.message);}' +
       '}' +
-      'if(!globalThis._sinespRidCache.rid)return g.json({ok:!1,co_municipio:E,uf:_uf,error:"SINESP n\\xE3o dispon\\xEDvel no momento",naturezas:[],fonte:"SINESP/dados.gov.br"});' +
-      // query datastore for UF, get latest year
-      'const _filt=JSON.stringify({UF:_uf});' +
-      'const _dUrl="https://dados.gov.br/api/3/action/datastore_search?resource_id="+encodeURIComponent(globalThis._sinespRidCache.rid)+"&filters="+encodeURIComponent(_filt)+"&limit=5000";' +
-      'const _dR=await fetch(_dUrl,{signal:AbortSignal.timeout(20000),headers:{"Accept":"application/json","User-Agent":"ChegoAContaDiretora/1.0"}});' +
-      'if(!_dR.ok)return g.json({ok:!1,co_municipio:E,uf:_uf,error:"Falha na consulta SINESP (HTTP "+_dR.status+")",naturezas:[],fonte:"SINESP/dados.gov.br"});' +
-      'const _dD=await _dR.json();' +
-      'const _recs=(_dD&&_dD.result&&_dD.result.records)||[];' +
-      'if(!_recs.length)return g.json({ok:!0,co_municipio:E,uf:_uf,ano:null,naturezas:[],mensagem:"Sem dados SINESP dispon\\xEDveis para "+_uf,fonte:"SINESP/dados.gov.br"});' +
-      // find latest year
-      'const _anos=_recs.map(r=>Number(r.ANO||r.ano||r.Ano||0)).filter(n=>n>0);' +
-      'const _anoMax=_anos.length?Math.max(..._anos):null;' +
-      'if(!_anoMax)return g.json({ok:!0,co_municipio:E,uf:_uf,ano:null,naturezas:[],mensagem:"Ano n\\xE3o identificado nos dados",fonte:"SINESP/dados.gov.br"});' +
-      // aggregate by natureza for latest year
-      'const _recsAno=_recs.filter(r=>Number(r.ANO||r.ano||r.Ano||0)===_anoMax);' +
-      'const _byNat={};' +
-      'for(const r of _recsAno){' +
-        'const _nat=String(r.NATUREZA||r.natureza||r.Natureza||r.TIPO_CRIME||r.tipo_crime||"Outros").trim();' +
-        'const _qtd=Number(r.QTDE||r.qtde||r.QUANTIDADE||r.quantidade||r.OCORRENCIAS||r.ocorrencias||0);' +
-        '_byNat[_nat]=(_byNat[_nat]||0)+_qtd;' +
+      // --- 3. Build response ---
+      'const _hasDb=_naturezas.length>0;' +
+      'const _hasSinesp=_sinespNat&&_sinespNat.length>0;' +
+      'if(!_hasDb&&!_hasSinesp){' +
+        'return g.json({ok:!1,co_municipio:E,uf:_uf,error:"Dados de seguran\\xE7a n\\xE3o dispon\\xEDveis no momento",naturezas:[],fonte:"SINAN/MS, SIM/MS, SINESP/SENASP",sinesp_erro:_sinespErr});' +
       '}' +
-      'const _prioNat=["Homic\\xEDdio doloso","Estupro","Roubo","Furto","Roubo de ve\\xEDculo","Furto de ve\\xEDculo","Tráfico de entorpecentes","Lesão corporal dolosa","Latrocínio","Sequestro e cárcere privado"];' +
-      'const _natList=Object.entries(_byNat).map(([k,v])=>({natureza:k,quantidade:v})).sort((a,b)=>b.quantidade-a.quantidade);' +
-      'const _prio=_prioNat.map(n=>_natList.find(x=>x.natureza.toLowerCase().includes(n.toLowerCase()))).filter(Boolean);' +
-      'const _outros=_natList.filter(x=>!_prio.some(p=>p.natureza===x.natureza));' +
-      'const _naturezas=[..._prio,..._outros].slice(0,12);' +
-      'return g.json({ok:!0,co_municipio:E,uf:_uf,ano:_anoMax,naturezas:_naturezas,total_registros:_recsAno.length,fonte:"SINESP / Secretaria Nacional de Segurança Pública (SENASP) via dados.gov.br",nota:"Dados de ocorrências criminais registradas em boletim de ocorrência. Nível estadual (UF)."});' +
-    '}catch(_ge){console.error("[sinesp]",_ge.message);return g.status(500).json({ok:!1,error:_ge.message,naturezas:[],fonte:"SINESP/dados.gov.br"});}' +
+      'const _allNat=[..._naturezas,...(_sinespNat||[])];' +
+      'const _fonte=_hasDb&&_hasSinesp' +
+        '?"SINAN/MS e SIM/MS (dados municipais) + SINESP/SENASP via dados.gov.br (UF "+_uf+")"' +
+        ':_hasDb' +
+          '?"SINAN — Sistema de Informa\\xE7\\xE3o de Agravos de Notifica\\xE7\\xE3o e SIM — Sistema de Informa\\xE7\\xF5es sobre Mortalidade (Minist\\xE9rio da Sa\\xFAde)"' +
+          ':"SINESP / Secretaria Nacional de Seguran\\xE7a P\\xFAblica (SENASP) via dados.gov.br";' +
+      'const _nota=_hasDb' +
+        '?"Dados municipais de SINAN: agravos de viol\\xEAncia interpessoal e autoprovocada notificados. SIM: \\xF3bitos registrados em Declara\\xE7\\xF5es de \\xD3bito. N\\xEDvel: Munic\\xEDpio."+(_hasSinesp?" SINESP UF "+_uf+" ("+_sinespAno+"): boletins de ocorr\\xEAncia policiais registrados.":"")' +
+        ':"Dados de ocorr\\xEAncias criminais registradas em boletim de ocorr\\xEAncia. N\\xEDvel estadual (UF "+_uf+").";' +
+      'return g.json({ok:!0,co_municipio:E,uf:_uf,ano:_anoRef||_sinespAno,naturezas:_allNat,municipal_db:_hasDb?_naturezas:null,sinesp_uf:_hasSinesp?{ano:_sinespAno,naturezas:_sinespNat}:null,fonte:_fonte,nota:_nota,sinesp_disponivel:_hasSinesp,sinesp_erro:_sinespErr||null});' +
+    '}catch(_ge){console.error("[seguranca]",_ge.message);return g.status(500).json({ok:!1,error:_ge.message,naturezas:[],fonte:"SINAN/SIM/SINESP"});}' +
   '}),';
 if (source.indexOf(_SEG_MUN_ANCHOR) !== -1) {
   source = source.replace(_SEG_MUN_ANCHOR, _SEG_MUN_ANCHOR + _SEG_MUN_ROUTE);
-  console.log('[bootstrap] /api/seguranca-municipio endpoint patch applied');
+  console.log('[bootstrap] /api/seguranca-municipio endpoint patch applied (DB-primary + SINESP-bonus)');
 } else {
   console.warn('[bootstrap] /api/seguranca-municipio patch NOT applied — anchor not found');
 }
@@ -3464,6 +3483,54 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     dashSrc = dashSrc.replace(_BROKEN_CLOSE, _FIXED_CLOSE);
     changed = true;
     console.log('[bootstrap] Dashboard-v30 context cards: closing-sequence fix applied');
+  }
+
+  // ── Sub-patch 3k-i: update segurança card UI for SINAN/SIM data (not SINESP-only) ──
+  // Updates subtitle, section header, natureza cards to reflect municipal-level data.
+  const _SEG_UI_MARKER = 'segui-v2-sinan';
+  if (!dashSrc.includes(_SEG_UI_MARKER)) {
+    let _segChanged = false;
+    // 1. Update card subtitle
+    const _OLD_SUBTITLE = 'children: "Ocorr\\xEAncias criminais por natureza \\u2014 SINESP/SENASP"';
+    const _NEW_SUBTITLE = 'children: "/* ' + _SEG_UI_MARKER + ' */ Viol\\xEAncia e seguran\\xE7a \\u2014 SINAN/MS, SIM/MS + SINESP"';
+    if (dashSrc.includes(_OLD_SUBTITLE)) {
+      dashSrc = dashSrc.replace(_OLD_SUBTITLE, _NEW_SUBTITLE);
+      _segChanged = true;
+    }
+    // 2. Update section header label: replace "Ocorrências por Natureza — UF (ano)" with dynamic label
+    const _OLD_HDR = '"Ocorr\\xEAncias por Natureza \\u2014 " + (segData.uf || "") + " (" + (segData.ano || "") + ")"';
+    const _NEW_HDR = '(segData.municipal_db && segData.municipal_db.length > 0 ? "Indicadores de Seguran\\xE7a \\u2014 Municipal (" + (segData.ano || "") + ")" : "Ocorr\\xEAncias por Natureza \\u2014 " + (segData.uf || "") + " (" + (segData.ano || "") + ")")';
+    if (dashSrc.includes(_OLD_HDR)) {
+      dashSrc = dashSrc.replace(_OLD_HDR, _NEW_HDR);
+      _segChanged = true;
+    }
+    // 3. Update section badge: replace segData.uf with "Municipal" / UF conditional
+    const _OLD_BADGE = 'children: segData.uf })';
+    const _NEW_BADGE = 'children: segData.municipal_db && segData.municipal_db.length > 0 ? "Municipal" : segData.uf })';
+    if (dashSrc.includes(_OLD_BADGE)) {
+      dashSrc = dashSrc.replace(_OLD_BADGE, _NEW_BADGE);
+      _segChanged = true;
+    }
+    // 4. Update natureza card to show nivel badge + unidade (replace card body render)
+    const _OLD_CARD_BODY =
+      'e.jsx("p", { style: { fontSize: 20, fontWeight: 800, color: "#bf360c", margin: "0 0 2px", lineHeight: 1 }, children: n.quantidade.toLocaleString("pt-BR") }),' +
+      'e.jsx("p", { style: { fontSize: 10, color: "#e64a19", margin: 0, lineHeight: 1.3 }, children: n.natureza })' +
+      ']}, ni);';
+    const _NEW_CARD_BODY =
+      'e.jsxs("p", { style: { fontSize: 20, fontWeight: 800, color: "#bf360c", margin: "0 0 2px", lineHeight: 1 }, children: [n.quantidade.toLocaleString("pt-BR"), n.unidade ? e.jsx("span", { style: { fontSize: 10, fontWeight: 400, color: "#e64a19", marginLeft: 4 }, children: n.unidade }) : null] }),' +
+      'e.jsx("p", { style: { fontSize: 10, color: "#e64a19", margin: "0 0 3px", lineHeight: 1.3 }, children: n.natureza }),' +
+      'n.nivel && e.jsx("span", { style: { fontSize: 9, background: n.nivel === "Municipal" ? "#ffe0b2" : "#fff3e0", color: "#bf360c", borderRadius: 10, padding: "1px 7px", fontWeight: 600 }, children: n.nivel })' +
+      ']}, ni);';
+    if (dashSrc.includes(_OLD_CARD_BODY)) {
+      dashSrc = dashSrc.replace(_OLD_CARD_BODY, _NEW_CARD_BODY);
+      _segChanged = true;
+    }
+    if (_segChanged) {
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 seguranca card UI v2 (SINAN/SIM labels) applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 seguranca card UI v2: some anchors not found');
+    }
   }
 
   if (changed) {
