@@ -153,6 +153,12 @@ Since the source code is not present, all fixes are applied directly to the comp
 
 ---
 
+### Suporte Institucional (SI) accordion fix (April 2026)
+Root cause found and fixed: the `Bt && (() => { e.jsxs("div", { d4c4f5... }) })()` pattern in the compiled Dashboard-v30.js was missing a `return` keyword before `e.jsxs`, so the SI card IIFE always returned `undefined`. React rendered nothing when the accordion was expanded.
+- **Fix**: sub-patch `si-iife-return-v1` in `dist/bootstrap.cjs` adds `return` before the first `e.jsxs("div", {borderRadius:"16px"...d4c4f5` inside `Bt && (() => {`.
+- **Cosmetic fix**: subtitle had `/* segui-v2-sinan */` embedded as visible string — cleaned up in same patch run.
+- Both patches run at startup via the `_patchDashboardContextCards` IIFE in bootstrap.cjs; markers `si-iife-return-v1` and `SINAN/MS, SIM/MS + SINESP` prevent re-application.
+
 ## External Dependencies
 
 | Dependency | Purpose | Notes |

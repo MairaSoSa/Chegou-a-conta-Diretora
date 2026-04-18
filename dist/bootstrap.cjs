@@ -3487,7 +3487,17 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
 
   // ── Sub-patch 3k-i: update segurança card UI for SINAN/SIM data (not SINESP-only) ──
   // Updates subtitle, section header, natureza cards to reflect municipal-level data.
-  const _SEG_UI_MARKER = 'segui-v2-sinan';
+  // ── Sub-patch: clean up "/* segui-v2-sinan */" text that renders visibly in subtitle ──
+  if (dashSrc.includes('/* segui-v2-sinan */ Viol')) {
+    dashSrc = dashSrc.replace(
+      'children: "/* segui-v2-sinan */ Viol\\xEAncia e seguran\\xE7a \\u2014 SINAN/MS, SIM/MS + SINESP"',
+      'children: "Viol\\xEAncia e seguran\\xE7a \\u2014 SINAN/MS, SIM/MS + SINESP"'
+    );
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 seguranca subtitle comment cleaned');
+  }
+
+  const _SEG_UI_MARKER = 'SINAN/MS, SIM/MS + SINESP';
   if (!dashSrc.includes(_SEG_UI_MARKER)) {
     let _segChanged = false;
     // 1. Update card subtitle
@@ -3530,6 +3540,22 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
       console.log('[bootstrap] Dashboard-v30 seguranca card UI v2 (SINAN/SIM labels) applied');
     } else {
       console.warn('[bootstrap] Dashboard-v30 seguranca card UI v2: some anchors not found');
+    }
+  }
+
+  // ── Sub-patch: fix SI accordion IIFE missing return (causes blank when expanded) ──
+  // The Bt && (() => { e.jsxs(...) })() pattern inside the SI card never returned
+  // its JSX, so the accordion showed nothing. Adding 'return' before e.jsxs fixes it.
+  const _SI_RETURN_MARKER = 'si-iife-return-v1';
+  if (!dashSrc.includes(_SI_RETURN_MARKER)) {
+    const _OLD_SI_IIFE = 'Bt && (() => {\ne.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5px solid #d4c4f5"';
+    const _NEW_SI_IIFE = 'Bt && (() => { /* ' + _SI_RETURN_MARKER + ' */\nreturn e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5px solid #d4c4f5"';
+    if (dashSrc.includes(_OLD_SI_IIFE)) {
+      dashSrc = dashSrc.replace(_OLD_SI_IIFE, _NEW_SI_IIFE);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 SI accordion IIFE return fix applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 SI accordion IIFE return fix: anchor not found');
     }
   }
 
