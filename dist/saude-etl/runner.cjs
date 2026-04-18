@@ -255,6 +255,27 @@ async function runPni(opts) {
   });
 }
 
+async function runSinan(opts) {
+  const args = ['--years', opts.years || '2020-2026'];
+  if (opts.diseases) args.push('--diseases', opts.diseases);
+  if (opts['co-municipio']) args.push('--co-municipio', opts['co-municipio']);
+  return await withPool(async (pool) => {
+    const t0 = Date.now();
+    let res;
+    try {
+      res = await streamPython(pool, 'sinan.py', args,
+        (ins, rec) => { if (ins % 1000 === 0) console.log(`  sinan inserted=${ins} received=${rec}`); });
+      await logIngestion(pool, 'SINAN', { diseases: opts.diseases || 'default', years: opts.years, co_municipio: opts['co-municipio'] || null },
+        'OK', { ...res, ms: Date.now() - t0 });
+    } catch (e) {
+      await logIngestion(pool, 'SINAN', { diseases: opts.diseases || 'default', years: opts.years },
+        'ERROR', { error: e.message, ms: Date.now() - t0 });
+      throw e;
+    }
+    return res;
+  });
+}
+
 async function runSisagua(opts) {
   const m = require('./sources/sisagua.cjs');
   return await withPool(async (pool) => {
@@ -280,10 +301,11 @@ async function main() {
   if (src === 'sinasc') await runSinasc(opts);
   else if (src === 'sim') await runSim(opts);
   else if (src === 'pni') await runPni(opts);
+  else if (src === 'sinan') await runSinan(opts);
   else if (src === 'sisagua') await runSisagua(opts);
   else if (src === 'all') {
     await runSinasc(opts); await runSim(opts);
-    await runPni(opts);    await runSisagua(opts);
+    await runPni(opts);    await runSinan(opts); await runSisagua(opts);
   } else { console.error('unknown source: ' + src); process.exit(2); }
   console.log(`[runner] DONE in ${((Date.now()-t0)/1000).toFixed(1)}s`);
 }

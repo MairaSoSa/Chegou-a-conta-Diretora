@@ -24,6 +24,7 @@ New endpoints `/api/saude-municipio/:coIbge` and `/api/saude-backfill?ids=` lazy
   - **SINASC** (bulk via pysus, 2018–2022): 7 indicadores por município/ano — `sinasc_nascidos_vivos_total`, `sinasc_pct_cesarea`, `sinasc_pct_prenatal_7mais`, `sinasc_pct_baixo_peso`, `sinasc_pct_prematuro`, `sinasc_pct_mae_adolescente`, `sinasc_pct_mae_sem_escolaridade`.
   - **SIM** (bulk via pysus, 2020–2024): 6 indicadores — `sim_obitos_total`, `sim_obitos_menor_1_ano`, `sim_obitos_maternos`, `sim_obitos_externos`, `sim_obitos_evitaveis`, `sim_obitos_covid`.
   - **PNI** (bulk via pysus, 2015–2019): cobertura vacinal por imunobiológico (recorte = código IMUNO; 23 imunos típicos por município/ano). Apenas até 2019 (depois migrou para LocalizaSUS sem download massivo).
+  - **SINAN** (bulk via pysus, 2020–2026): doenças de notificação compulsória — Dengue, Chikungunya, Zika, Hepatites virais, Tuberculose, Hanseníase, Violência (incl. doméstica/sexual), Malária, Sífilis (adq./congên./gestante), Meningite, Leptospirose, Chagas aguda, Acid. animal peçonhento. Indicadores: `sinan_<doenca>_casos` e `sinan_<doenca>_obitos` (com `denominador` = casos, metadata `letalidade_pct`). DENG/CHIK/ZIKA chegam até 2026 (dados parciais do ano corrente).
 - **`saude_ingestao_log`** — per (município, fonte) status + last fetch. Cache TTL = 30 days. Use `?refresh=1` to force; `?async=1` to refresh in background.
 - **`saude_etl_runs`** — audit log de execuções bulk ETL.
 
