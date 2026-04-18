@@ -153,8 +153,13 @@ Since the source code is not present, all fixes are applied directly to the comp
 
 ---
 
-### PNAD Contínua no Perfil Socioeconômico (April 2026)
-Novos indicadores da PNAD Contínua Trimestral adicionados ao card "Perfil Socioeconômico do Município":
+### PNAD Contínua removida do Perfil Socioeconômico (April 2026)
+Os cards de PNAD Contínua (taxa de desocupação e rendimento habitual) foram **removidos** porque a PNAD Contínua só publica em nível UF e RM/Capitais — não há dado em nível municipal para os ~5.500 municípios do interior. O Censo 2022 (`rendimento_medio_domiciliar` e `taxa_extrema_pobreza`) cobre o espaço com dados em nível municipal.
+
+Sub-patch `pnad-removed-v1` em `_patchDashboardContextCards` reverte a legenda do card, remove os divs dos dois cards e remove o trecho de fonte PNAD do rodapé. Backend `/api/perfil-socioeconomico` voltou a `Promise.allSettled` com 4 fontes (PIB, população, Censo rendimento, Censo extrema pobreza).
+
+#### Histórico (referência)
+- A versão anterior tentava buscar PNAD Contínua trimestral em N3/UF derivado de `co6.slice(0,2)`:
 - **Taxa de desocupação**: SIDRA tabela 4093, variável 4099, nível UF (N3). Busca os últimos 5 trimestres sequencialmente até encontrar dado disponível.
 - **Rendimento médio habitual — todos os trabalhos**: SIDRA tabela 5436, variável 5933, nível UF (N3), filtro Sexo=Total (D4C=6794).
 - Derivação do código UF: primeiros 2 dígitos do código IBGE de 6 dígitos (`co6.slice(0,2)`).

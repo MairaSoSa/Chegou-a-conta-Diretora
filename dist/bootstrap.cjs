@@ -3213,28 +3213,19 @@ const _IBGE_SOCIO_ROUTE =
       'const co6=E.length===7?E.slice(0,6):E;' +
       'const _hdr={"User-Agent":"ChegoAContaDiretora/1.0","Accept":"application/json"};' +
       'const _sig=AbortSignal.timeout(15000);' +
-      'const coUF=co6.slice(0,2);' +
-      // Compute last 5 quarterly period codes (YYYYQQ), starting 1 quarter before now
-      // PNAD Contínua trimestral period codes: 202401=Q1, 202402=Q2, 202403=Q3, 202404=Q4
-      'const _qnow=new Date();let _qy=_qnow.getFullYear();let _qq=Math.ceil((_qnow.getMonth()+1)/3);_qq--;if(_qq===0){_qq=4;_qy--;}const _qtrs=[];let _qy2=_qy,_qq2=_qq;for(let _qi=0;_qi<5;_qi++){_qtrs.push(String(_qy2)+"0"+String(_qq2));_qq2--;if(_qq2===0){_qq2=4;_qy2--;}}' +
       // PIB per capita (IBGE agregados 5938, variável 37, nível município)
       // Population estimates (6579 / 9324)
-      // Censo 2022 income (SIDRA 4711 or similar)
-      // PNAD Contínua: desocupação (tabela 4093, var 4099) e rendimento habitual todos trabalhos (tabela 5436, var 5933) por UF
-      'const [_pibR,_popR,_cen4711R,_cen9952R,_pnadDesocR,_pnadRendR]=await Promise.allSettled([' +
+      // Censo 2022 rendimento (SIDRA 4711) e extrema pobreza (SIDRA 9952)
+      'const [_pibR,_popR,_cen4711R,_cen9952R]=await Promise.allSettled([' +
         'co7?fetch("https://servicodados.ibge.gov.br/api/v3/agregados/5938/periodos/-1/variaveis/37?localidades=N6["+co7+"]",{signal:_sig,headers:_hdr}).then(r=>r.ok?r.json():null).catch(()=>null):Promise.resolve(null),' +
         'co7?fetch("https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/-1/variaveis/9324?localidades=N6["+co7+"]",{signal:_sig,headers:_hdr}).then(r=>r.ok?r.json():null).catch(()=>null):Promise.resolve(null),' +
         'co7?fetch("https://apisidra.ibge.gov.br/values/t/4711/n6/"+co7+"/v/93,10041,10042/p/2021",{signal:_sig,headers:_hdr}).then(r=>r.ok?r.json():null).catch(()=>null):Promise.resolve(null),' +
-        'co7?fetch("https://apisidra.ibge.gov.br/values/t/9952/n6/"+co7+"/v/all/p/2022",{signal:_sig,headers:_hdr}).then(r=>r.ok?r.json():null).catch(()=>null):Promise.resolve(null),' +
-        '(async()=>{for(const _qt of _qtrs){try{const _r=await fetch("https://apisidra.ibge.gov.br/values/t/4093/n3/"+coUF+"/v/4099/p/"+_qt,{signal:AbortSignal.timeout(10000),headers:_hdr});if(!_r.ok)continue;const _d=await _r.json();const _row=Array.isArray(_d)?_d.find(_x=>_x.D2C==="4099"&&_x.V&&_x.V!=="-"):null;if(_row)return{val:parseFloat(_row.V.replace(",",".")),periodo:_row.D3N,uf_nome:_row.D1N};}catch(_e){continue;}}return null;})(),' +
-        '(async()=>{for(const _qt of _qtrs){try{const _r=await fetch("https://apisidra.ibge.gov.br/values/t/5436/n3/"+coUF+"/v/5933/p/"+_qt,{signal:AbortSignal.timeout(10000),headers:_hdr});if(!_r.ok)continue;const _d=await _r.json();const _row=Array.isArray(_d)?_d.find(_x=>_x.D2C==="5933"&&_x.V&&_x.V!=="-"&&_x.D4C==="6794"):null;if(_row)return{val:parseFloat(_row.V.replace(",",".")),periodo:_row.D3N,uf_nome:_row.D1N};}catch(_e){continue;}}return null;})()' +
+        'co7?fetch("https://apisidra.ibge.gov.br/values/t/9952/n6/"+co7+"/v/all/p/2022",{signal:_sig,headers:_hdr}).then(r=>r.ok?r.json():null).catch(()=>null):Promise.resolve(null)' +
       ']);' +
       'const _pibD=_pibR.status==="fulfilled"?_pibR.value:null;' +
       'const _popD=_popR.status==="fulfilled"?_popR.value:null;' +
       'const _cen4711=_cen4711R.status==="fulfilled"?_cen4711R.value:null;' +
       'const _cen9952=_cen9952R.status==="fulfilled"?_cen9952R.value:null;' +
-      'const _pnadDesoc=_pnadDesocR.status==="fulfilled"?_pnadDesocR.value:null;' +
-      'const _pnadRend=_pnadRendR.status==="fulfilled"?_pnadRendR.value:null;' +
       // Parse PIB per capita
       'let pib_per_capita=null;let pib_ano=null;' +
       'if(Array.isArray(_pibD)&&_pibD.length>0){' +
@@ -3271,12 +3262,8 @@ const _IBGE_SOCIO_ROUTE =
       // Compute real per capita: total_mil_reais * 1000 / populacao
       'const _pibTotalMilR=pib_per_capita;' +
       'const _pibPC=_pibTotalMilR!==null&&populacao&&populacao>0?Math.round(_pibTotalMilR*1000/populacao):null;' +
-      'const _temDados=_pibTotalMilR!==null||populacao!==null||rendimento_medio!==null||_pnadDesoc!==null||_pnadRend!==null;' +
-      'const pnad_desocupacao=_pnadDesoc?_pnadDesoc.val:null;' +
-      'const pnad_rendimento_trabalho=_pnadRend?_pnadRend.val:null;' +
-      'const pnad_periodo=_pnadDesoc?_pnadDesoc.periodo:(_pnadRend?_pnadRend.periodo:null);' +
-      'const pnad_uf_nome=_pnadDesoc?_pnadDesoc.uf_nome:(_pnadRend?_pnadRend.uf_nome:null);' +
-      'return g.json({ok:_temDados,co_municipio:E,populacao,populacao_ano:pop_ano,pib_total_mil_reais:_pibTotalMilR,pib_per_capita:_pibPC,pib_ano,rendimento_medio_domiciliar:rendimento_medio,rendimento_ano,taxa_extrema_pobreza,pobreza_ano,pnad_desocupacao,pnad_rendimento_trabalho,pnad_periodo,pnad_uf_nome,fontes:{pib:"IBGE — Produto Interno Bruto dos Munic\\xEDpios, pre\\xE7os correntes (S\\xE9rie "+pib_ano+")",populacao:"IBGE — Estimativas da Popula\\xE7\\xE3o ("+pop_ano+")",rendimento:rendimento_ano?"IBGE — Censo Demogr\\xE1fico 2022 (rendimento domiciliar)":null,pobreza:pobreza_ano?"IBGE — Censo Demogr\\xE1fico 2022":null,pnad:pnad_periodo?"IBGE — PNAD Cont\\xEDnua ("+pnad_periodo+")":null},links:[{nome:"IBGE Cidades",url:"https://cidades.ibge.gov.br/brasil/"+E+"/pesquisa/38/0"},{nome:"IBGE PIB Municipal",url:"https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/9088-produto-interno-bruto-dos-municipios.html"},{nome:"IBGE SIDRA",url:"https://sidra.ibge.gov.br/"},{nome:"PNAD Cont\\xEDnua/SIDRA",url:"https://sidra.ibge.gov.br/pesquisa/pnadcontinua/tabelas"}]});' +
+      'const _temDados=_pibTotalMilR!==null||populacao!==null||rendimento_medio!==null;' +
+      'return g.json({ok:_temDados,co_municipio:E,populacao,populacao_ano:pop_ano,pib_total_mil_reais:_pibTotalMilR,pib_per_capita:_pibPC,pib_ano,rendimento_medio_domiciliar:rendimento_medio,rendimento_ano,taxa_extrema_pobreza,pobreza_ano,fontes:{pib:"IBGE — Produto Interno Bruto dos Munic\\xEDpios, pre\\xE7os correntes (S\\xE9rie "+pib_ano+")",populacao:"IBGE — Estimativas da Popula\\xE7\\xE3o ("+pop_ano+")",rendimento:rendimento_ano?"IBGE — Censo Demogr\\xE1fico 2022 (rendimento domiciliar)":null,pobreza:pobreza_ano?"IBGE — Censo Demogr\\xE1fico 2022":null},links:[{nome:"IBGE Cidades",url:"https://cidades.ibge.gov.br/brasil/"+E+"/pesquisa/38/0"},{nome:"IBGE PIB Municipal",url:"https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/9088-produto-interno-bruto-dos-municipios.html"},{nome:"IBGE SIDRA",url:"https://sidra.ibge.gov.br/"}]});' +
     '}catch(_ge){console.error("[ibge-socio]",_ge.message);return g.status(500).json({ok:!1,error:_ge.message,fontes:{},links:[]});}' +
   '}),';
 if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
@@ -3556,107 +3543,35 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     }
   }
 
-  // ── Sub-patch: PNAD Contínua cards in Perfil Socioeconômico (pnad-continua-socio-v1) ──
-  // Adds taxa de desocupação and rendimento médio habitual (todos os trabalhos) from PNAD
-  // as new grid cards, updates the card subtitle and footnote.
-  // Marker: unique string from the new subtitle that won't appear in original dashSrc
-  const _PNAD_SOCIO_MARKER = 'renda e emprego \\u2014 IBGE/PNAD Cont\\xEDnua';
-  if (!dashSrc.includes(_PNAD_SOCIO_MARKER)) {
-    let _pnadChanged = false;
-    // 1. Update card subtitle (button header)
-    const _OLD_SOCIO_SUBTITLE = 'children: "PIB per capita, popula\\xE7\\xE3o, renda \\u2014 IBGE"';
-    const _NEW_SOCIO_SUBTITLE = 'children: "PIB per capita, popula\\xE7\\xE3o, ' + _PNAD_SOCIO_MARKER + '"';
-    if (dashSrc.includes(_OLD_SOCIO_SUBTITLE)) {
-      dashSrc = dashSrc.replace(_OLD_SOCIO_SUBTITLE, _NEW_SOCIO_SUBTITLE);
-      _pnadChanged = true;
+  // ── Sub-patch: REMOVE PNAD Contínua cards from Perfil Socioeconômico (pnad-removed-v1) ──
+  // PNAD Contínua só publica em nível UF, não município. Removidos os cards e referências
+  // a pedido do usuário. O Censo 2022 (rendimento_medio_domiciliar e taxa_extrema_pobreza)
+  // já cobre o espaço com dados em nível municipal.
+  if (dashSrc.includes('pnad_desocupacao')) {
+    // 1. Reverter subtitle do card
+    dashSrc = dashSrc.replace(
+      'children: "PIB per capita, popula\\xE7\\xE3o, renda e emprego \\u2014 IBGE/PNAD Cont\\xEDnua"',
+      'children: "PIB per capita, popula\\xE7\\xE3o, renda \\u2014 IBGE"'
+    );
+    // 2. Remover bloco dos dois cards PNAD do grid
+    //    De `]}),ibgeSocioData.pnad_desocupacao ...` até `pnad_uf_nome] })]})].filter(Boolean)`
+    //    Preservando `]})].filter(Boolean)`.
+    const _pnadStart = dashSrc.indexOf(',ibgeSocioData.pnad_desocupacao != null');
+    const _pnadEndAnchor = '"UF \\u2014 ", ibgeSocioData.pnad_uf_nome] })]})].filter(Boolean)';
+    const _pnadEndIdx = dashSrc.indexOf(_pnadEndAnchor, _pnadStart);
+    if (_pnadStart > 0 && _pnadEndIdx > _pnadStart) {
+      const _pnadEnd = _pnadEndIdx + _pnadEndAnchor.length;
+      dashSrc = dashSrc.slice(0, _pnadStart) + '].filter(Boolean)' + dashSrc.slice(_pnadEnd);
     } else {
-      console.warn('[bootstrap] PNAD socio: subtitle anchor not found');
+      console.warn('[bootstrap] pnad-removed: card block anchors not found');
     }
-    // 2. Insert PNAD cards inside the grid children array, before .filter(Boolean)
-    const _OLD_GRID_END = 'children: [ibgeSocioData.taxa_extrema_pobreza.toFixed(1).replace(".", ","), "%"] })].filter(Boolean)}),';
-    const _PNAD_CARDS =
-      'children: [ibgeSocioData.taxa_extrema_pobreza.toFixed(1).replace(".", ","), "%"] }),' +
-      // Taxa de desocupação (PNAD Contínua, UF level)
-      'ibgeSocioData.pnad_desocupacao != null && e.jsxs("div", { style: { background: "#fff", border: "1px solid #b2dfdb", borderRadius: 10, padding: "10px 12px", borderLeft: "3px solid #00897b" }, children: [' +
-        'e.jsxs("p", { style: { fontSize: 10, fontWeight: 700, color: "#004d40", margin: "0 0 2px", textTransform: "uppercase" }, children: ["Taxa de Desocupa\\xE7\\xE3o \\u2014 PNAD Cont\\xEDnua", ibgeSocioData.pnad_periodo ? e.jsx("span", { style: { fontSize: 9, fontWeight: 400, color: "#00796b", marginLeft: 4 }, children: ibgeSocioData.pnad_periodo }) : null] }),' +
-        'e.jsxs("p", { style: { fontSize: 20, fontWeight: 800, color: "#00796b", margin: "0 0 3px", lineHeight: 1 }, children: [ibgeSocioData.pnad_desocupacao.toFixed(1).replace(".", ","), "%"] }),' +
-        'ibgeSocioData.pnad_uf_nome && e.jsxs("span", { style: { fontSize: 9, color: "#004d40", background: "#b2dfdb", borderRadius: 10, padding: "1px 7px", fontWeight: 600 }, children: ["UF \\u2014 ", ibgeSocioData.pnad_uf_nome] })' +
-      ']}),' +
-      // Rendimento médio habitual — todos os trabalhos (PNAD Contínua, UF level)
-      'ibgeSocioData.pnad_rendimento_trabalho != null && e.jsxs("div", { style: { background: "#fff", border: "1px solid #b2dfdb", borderRadius: 10, padding: "10px 12px", borderLeft: "3px solid #00897b" }, children: [' +
-        'e.jsxs("p", { style: { fontSize: 10, fontWeight: 700, color: "#004d40", margin: "0 0 2px", textTransform: "uppercase" }, children: ["Rendimento M\\xE9dio Hab. \\u2014 Todos os Trabalhos", ibgeSocioData.pnad_periodo ? e.jsx("span", { style: { fontSize: 9, fontWeight: 400, color: "#00796b", marginLeft: 4 }, children: ibgeSocioData.pnad_periodo }) : null] }),' +
-        'e.jsxs("p", { style: { fontSize: 20, fontWeight: 800, color: "#00796b", margin: "0 0 3px", lineHeight: 1 }, children: ["R$\\u00A0", ibgeSocioData.pnad_rendimento_trabalho.toLocaleString("pt-BR", { maximumFractionDigits: 0 })] }),' +
-        'ibgeSocioData.pnad_uf_nome && e.jsxs("span", { style: { fontSize: 9, color: "#004d40", background: "#b2dfdb", borderRadius: 10, padding: "1px 7px", fontWeight: 600 }, children: ["UF \\u2014 ", ibgeSocioData.pnad_uf_nome] })' +
-      ']})' +
-      '].filter(Boolean)}),';
-    if (dashSrc.includes(_OLD_GRID_END)) {
-      dashSrc = dashSrc.replace(_OLD_GRID_END, _PNAD_CARDS);
-      _pnadChanged = true;
-    } else {
-      console.warn('[bootstrap] PNAD socio: grid end anchor not found');
-    }
-    // 3. Update footnote to include PNAD source
-    const _OLD_FOOTNOTE = 'ibgeSocioData.fontes && ibgeSocioData.fontes.populacao && e.jsxs("span", { children: [ibgeSocioData.fontes.populacao, "."] })';
-    const _NEW_FOOTNOTE =
-      'ibgeSocioData.fontes && ibgeSocioData.fontes.populacao && e.jsxs("span", { children: [ibgeSocioData.fontes.populacao, ". "] }),' +
-      'ibgeSocioData.fontes && ibgeSocioData.fontes.pnad && e.jsxs("span", { children: [ibgeSocioData.fontes.pnad, "."] })';
-    if (dashSrc.includes(_OLD_FOOTNOTE)) {
-      dashSrc = dashSrc.replace(_OLD_FOOTNOTE, _NEW_FOOTNOTE);
-      _pnadChanged = true;
-    } else {
-      console.warn('[bootstrap] PNAD socio: footnote anchor not found');
-    }
-    if (_pnadChanged) {
-      changed = true;
-      console.log('[bootstrap] Dashboard-v30 PNAD Contínua cards added to Perfil Socioeconômico');
-    }
-  }
-
-  // ── Sub-patch: PNAD cards grid insertion (pnad-socio-grid-v1) ──
-  // Separate from the subtitle sub-patch to allow independent re-application.
-  // Adds taxa de desocupação and rendimento médio habitual cards inside the grid.
-  const _PNAD_GRID_MARKER = 'pnad_desocupacao != null';
-  if (!dashSrc.includes(_PNAD_GRID_MARKER)) {
-    const _OLD_GRID_END2 = '"%"] })]})].filter(Boolean)}),e.jsxs("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }';
-    const _NEW_GRID_END2 =
-      '"%"] })]}),' +
-      // Taxa de desocupação (PNAD Contínua, UF level)
-      'ibgeSocioData.pnad_desocupacao != null && e.jsxs("div", { style: { background: "#fff", border: "1px solid #b2dfdb", borderRadius: 10, padding: "10px 12px", borderLeft: "3px solid #00897b" }, children: [' +
-        'e.jsxs("p", { style: { fontSize: 10, fontWeight: 700, color: "#004d40", margin: "0 0 2px", textTransform: "uppercase" }, children: ["Taxa de Desocupa\\xE7\\xE3o \\u2014 PNAD Cont\\xEDnua", ibgeSocioData.pnad_periodo ? e.jsx("span", { style: { fontSize: 9, fontWeight: 400, color: "#00796b", marginLeft: 4 }, children: ibgeSocioData.pnad_periodo }) : null] }),' +
-        'e.jsxs("p", { style: { fontSize: 20, fontWeight: 800, color: "#00796b", margin: "0 0 3px", lineHeight: 1 }, children: [ibgeSocioData.pnad_desocupacao.toFixed(1).replace(".", ","), "%"] }),' +
-        'ibgeSocioData.pnad_uf_nome && e.jsxs("span", { style: { fontSize: 9, color: "#004d40", background: "#b2dfdb", borderRadius: 10, padding: "1px 7px", fontWeight: 600 }, children: ["UF \\u2014 ", ibgeSocioData.pnad_uf_nome] })' +
-      ']}),' +
-      // Rendimento médio habitual — todos os trabalhos (PNAD Contínua, UF level)
-      'ibgeSocioData.pnad_rendimento_trabalho != null && e.jsxs("div", { style: { background: "#fff", border: "1px solid #b2dfdb", borderRadius: 10, padding: "10px 12px", borderLeft: "3px solid #00897b" }, children: [' +
-        'e.jsxs("p", { style: { fontSize: 10, fontWeight: 700, color: "#004d40", margin: "0 0 2px", textTransform: "uppercase" }, children: ["Rendimento M\\xE9dio Hab. \\u2014 Todos os Trabalhos", ibgeSocioData.pnad_periodo ? e.jsx("span", { style: { fontSize: 9, fontWeight: 400, color: "#00796b", marginLeft: 4 }, children: ibgeSocioData.pnad_periodo }) : null] }),' +
-        'e.jsxs("p", { style: { fontSize: 20, fontWeight: 800, color: "#00796b", margin: "0 0 3px", lineHeight: 1 }, children: ["R$\\u00A0", ibgeSocioData.pnad_rendimento_trabalho.toLocaleString("pt-BR", { maximumFractionDigits: 0 })] }),' +
-        'ibgeSocioData.pnad_uf_nome && e.jsxs("span", { style: { fontSize: 9, color: "#004d40", background: "#b2dfdb", borderRadius: 10, padding: "1px 7px", fontWeight: 600 }, children: ["UF \\u2014 ", ibgeSocioData.pnad_uf_nome] })' +
-      ']})' +
-      '].filter(Boolean)}),e.jsxs("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }';
-    if (dashSrc.includes(_OLD_GRID_END2)) {
-      dashSrc = dashSrc.replace(_OLD_GRID_END2, _NEW_GRID_END2);
-      changed = true;
-      console.log('[bootstrap] Dashboard-v30 PNAD Contínua cards: grid insertion applied');
-    } else {
-      console.warn('[bootstrap] Dashboard-v30 PNAD Contínua cards: grid anchor not found');
-    }
-  } else {
-    console.log('[bootstrap] Dashboard-v30 PNAD Contínua cards: grid already applied');
-  }
-
-  // ── Sub-patch: PNAD rendimento card period fix (pnad-periodo-rendimento-v1) ──
-  // Fixes rendimento card showing literal "PNAD" badge instead of actual period string.
-  // Anchor includes "Todos os Trabalhos" to distinguish from desocupação card.
-  const _PNAD_PERIODO_MARKER = 'Todos os Trabalhos", ibgeSocioData.pnad_periodo ? e.jsx("span", { style: { fontSize: 9, fontWeight: 400, color: "#00796b", marginLeft: 4 }, children: ibgeSocioData.pnad_periodo }) : null]';
-  if (!dashSrc.includes(_PNAD_PERIODO_MARKER)) {
-    const _OLD_PNAD_BADGE = 'Todos os Trabalhos", ibgeSocioData.pnad_periodo ? e.jsx("span", { style: { fontSize: 9, fontWeight: 400, color: "#00796b", marginLeft: 4 }, children: "PNAD" }) : null]';
-    if (dashSrc.includes(_OLD_PNAD_BADGE)) {
-      dashSrc = dashSrc.replace(_OLD_PNAD_BADGE, _PNAD_PERIODO_MARKER);
-      changed = true;
-      console.log('[bootstrap] Dashboard-v30 PNAD rendimento period badge fixed');
-    } else {
-      console.warn('[bootstrap] Dashboard-v30 PNAD rendimento period badge: anchor not found');
-    }
+    // 3. Reverter footnote (remover span do PNAD e voltar pontuação do populacao)
+    dashSrc = dashSrc.replace(
+      'ibgeSocioData.fontes.populacao, ". "] }),ibgeSocioData.fontes && ibgeSocioData.fontes.pnad && e.jsxs("span", { children: [ibgeSocioData.fontes.pnad, "."] })',
+      'ibgeSocioData.fontes.populacao, "."] })'
+    );
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 PNAD Contínua cards REMOVED from Perfil Socioeconômico');
   }
 
   // ── Sub-patch: fix SI accordion IIFE missing return (causes blank when expanded) ──
