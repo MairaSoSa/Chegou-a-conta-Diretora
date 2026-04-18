@@ -3014,10 +3014,76 @@ globalThis._saudeBackfillHandler = async (A, g) => {
   }
 };
 
+// ── 3i-ter. Admin ETL endpoints (SINASC/SIM/PNI bulk via pysus runner) ──
+const { spawn: _etlSpawn } = require('child_process');
+const _etlPath = require('path');
+const _etlFs = require('fs');
+globalThis._saudeEtlJobs = globalThis._saudeEtlJobs || {};
+
+globalThis._saudeEtlRunHandler = async (A, g) => {
+  try {
+    const adminToken = process.env.ADMIN_TOKEN || '';
+    const provided = A.query.token || A.headers['x-admin-token'] || '';
+    if (adminToken && provided !== adminToken) return g.status(401).json({ ok: false, error: 'token inválido' });
+    const source = String(A.query.source || '').toLowerCase();
+    if (!['sinasc', 'sim', 'pni'].includes(source)) return g.status(400).json({ ok: false, error: 'source deve ser sinasc|sim|pni' });
+    const states = String(A.query.states || 'ALL');
+    const years = String(A.query.years || (source === 'pni' ? '2015-2019' : source === 'sim' ? '2020-2024' : '2018-2022'));
+    const coMunicipio = A.query.co_municipio ? String(A.query.co_municipio) : null;
+    const jobId = `${source}-${Date.now()}`;
+    const runner = _etlPath.join(__dirname, 'saude-etl', 'runner.cjs');
+    if (!_etlFs.existsSync(runner)) return g.status(500).json({ ok: false, error: 'runner não encontrado' });
+    const args = [runner, '--source', source, '--states', states, '--years', years];
+    if (coMunicipio) args.push('--co-municipio', coMunicipio);
+    const logFile = `/tmp/etl-${jobId}.log`;
+    const out = _etlFs.openSync(logFile, 'a');
+    const child = _etlSpawn(process.execPath, args, { detached: true, stdio: ['ignore', out, out] });
+    child.unref();
+    globalThis._saudeEtlJobs[jobId] = { source, states, years, coMunicipio, pid: child.pid, logFile, started: new Date().toISOString(), status: 'running' };
+    g.json({ ok: true, jobId, pid: child.pid, source, states, years, coMunicipio, logFile });
+  } catch (e) {
+    g.status(500).json({ ok: false, error: e.message });
+  }
+};
+
+globalThis._saudeEtlStatusHandler = async (A, g) => {
+  try {
+    const pool = globalThis._pgPool;
+    if (!pool) return g.status(500).json({ ok: false, error: 'DB pool indisponível' });
+    const jobs = Object.entries(globalThis._saudeEtlJobs).map(([id, j]) => {
+      let alive = false;
+      try { process.kill(j.pid, 0); alive = true; } catch (_) {}
+      let tail = '';
+      try {
+        if (_etlFs.existsSync(j.logFile)) {
+          const buf = _etlFs.readFileSync(j.logFile, 'utf8');
+          tail = buf.slice(-2000);
+        }
+      } catch (_) {}
+      return { id, ...j, alive, status: alive ? 'running' : 'finished', tail };
+    });
+    const counts = await pool.query(
+      `SELECT fonte, COUNT(*)::int AS rows, COUNT(DISTINCT co_municipio)::int AS municipios,
+              MIN(ano)::int AS ano_min, MAX(ano)::int AS ano_max
+       FROM saude_indicadores_municipio GROUP BY fonte ORDER BY fonte`
+    );
+    const runs = await pool.query(
+      `SELECT id, fonte, status, parametros, resultado, started_at, finished_at
+       FROM saude_etl_runs ORDER BY id DESC LIMIT 30`
+    ).catch(() => ({ rows: [] }));
+    g.json({ ok: true, jobs, counts: counts.rows, runs: runs.rows });
+  } catch (e) {
+    g.status(500).json({ ok: false, error: e.message });
+  }
+};
+
 const _SAUD_MUN_ANCHOR = 'e.get("/api/health",(A,g)=>{g.status(200).json({ok:!0,ts:Date.now()})}),';
 const _SAUD_MUN_ROUTE =
   'e.get("/api/saude-municipio/:coIbge",globalThis._saudeMunHandler),' +
-  'e.get("/api/saude-backfill",globalThis._saudeBackfillHandler),';
+  'e.get("/api/saude-backfill",globalThis._saudeBackfillHandler),' +
+  'e.post("/api/saude-etl/run",globalThis._saudeEtlRunHandler),' +
+  'e.get("/api/saude-etl/run",globalThis._saudeEtlRunHandler),' +
+  'e.get("/api/saude-etl/status",globalThis._saudeEtlStatusHandler),';
 if (source.indexOf(_SAUD_MUN_ANCHOR) !== -1 && source.indexOf('/api/saude-municipio/') === -1) {
   source = source.replace(_SAUD_MUN_ANCHOR, _SAUD_MUN_ANCHOR + _SAUD_MUN_ROUTE);
   console.log('[bootstrap] /api/saude-municipio + /api/saude-backfill endpoints patch applied');

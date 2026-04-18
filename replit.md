@@ -18,12 +18,38 @@ The application is a pre-compiled, fully bundled Node.js app. The source is comp
 ### Saúde Municipal (April 2026)
 New endpoints `/api/saude-municipio/:coIbge` and `/api/saude-backfill?ids=` lazy-ingest data from the SUS open data API (`apidadosabertos.saude.gov.br`) into Postgres tables on Railway:
 - **`saude_estabelecimentos`** — CNES facilities (UBS, hospitals, CAPS, UPA, clinics) with geocoordinates, type label, address, phone. Type derived from `codigo_tipo_unidade` via in-bootstrap mapping (`CNES_TIPO_UNIDADE`).
-- **`saude_indicadores_municipio`** — fact table for aggregated indicators. Two sources today: `CNES` (counts per facility type: `cnes_ubs_centro_saude`, `cnes_hospital_geral`, `cnes_caps`, `cnes_upa`, `cnes_pronto_socorro`, etc.) and `SISVAN` (categorical IMC distribution from API sample — labelled clearly as sample, not municipal aggregate, since the open API returns oldest records first and is not designed for population-level aggregates).
+- **`saude_indicadores_municipio`** — fact table for aggregated indicators. Now populated by 5 fontes:
+  - **CNES** (lazy via SUS open API): counts per facility type (`cnes_ubs_centro_saude`, `cnes_hospital_geral`, `cnes_caps`, `cnes_upa`, etc.).
+  - **SISVAN** (lazy via SUS open API): categorical IMC distribution from API sample (labelled as sample, not population aggregate).
+  - **SINASC** (bulk via pysus, 2018–2022): 7 indicadores por município/ano — `sinasc_nascidos_vivos_total`, `sinasc_pct_cesarea`, `sinasc_pct_prenatal_7mais`, `sinasc_pct_baixo_peso`, `sinasc_pct_prematuro`, `sinasc_pct_mae_adolescente`, `sinasc_pct_mae_sem_escolaridade`.
+  - **SIM** (bulk via pysus, 2020–2024): 6 indicadores — `sim_obitos_total`, `sim_obitos_menor_1_ano`, `sim_obitos_maternos`, `sim_obitos_externos`, `sim_obitos_evitaveis`, `sim_obitos_covid`.
+  - **PNI** (bulk via pysus, 2015–2019): cobertura vacinal por imunobiológico (recorte = código IMUNO; 23 imunos típicos por município/ano). Apenas até 2019 (depois migrou para LocalizaSUS sem download massivo).
 - **`saude_ingestao_log`** — per (município, fonte) status + last fetch. Cache TTL = 30 days. Use `?refresh=1` to force; `?async=1` to refresh in background.
+- **`saude_etl_runs`** — audit log de execuções bulk ETL.
 
-Handlers live in `dist/bootstrap.cjs` as `globalThis._saudeMunHandler` / `_saudeBackfillHandler` (avoids string-escaping pain in route patches). Routes are injected via the `/api/health` anchor.
+Handlers live in `dist/bootstrap.cjs` as `globalThis._saudeMunHandler` / `_saudeBackfillHandler` / `_saudeEtlRunHandler` / `_saudeEtlStatusHandler` (avoids string-escaping pain in route patches). Routes are injected via the `/api/health` anchor.
 
-Future ETL needed for SINASC, SIM, PNI, SISAGUA — those don't have JSON-per-município endpoints; they require the bulk CSV pipeline described in `attached_assets/Pasted-Perfeito-Vou-te-deixar-um-pipeline-completo-do-dado-bru_*.txt`.
+#### Bulk ETL pipeline (`dist/saude-etl/`)
+- **`runner.cjs`** — Node orchestrator. Spawns Python source modules in `.venv-saude/bin/python`, streams JSONL on stdout, batch-upserts (1000-row batches) into `saude_indicadores_municipio` with intra-batch dedup (last-write-wins on the unique key).
+- **`sources/sinasc.py`** — pysus.SINASC.download per UF/year, aggregates por CODMUNRES → 7 indicadores.
+- **`sources/sim.py`** — pysus.SIM.download(groups='CID10') por UF/year → 6 indicadores (CID10 chapters: V01–Y98 externos, B34.2/U07 covid, capítulo XV maternos, etc.).
+- **`sources/pni.py`** — pysus.PNI.download (CPNI files, formato pré-agregado) → cobertura vacinal por imuno. Decimais BR (vírgula) parseados pelo helper.
+- **`sources/sisagua.cjs`** — STUB (portal opendatasus.saude.gov.br/dataset/sisagua é SPA com auth Bearer; CSVs históricos não acessíveis sem API token).
+
+#### Conversão IBGE6 → IBGE7
+DataSUS usa código IBGE de 6 dígitos (`CODMUNRES`); aplicação usa 7 dígitos. Função `ibge6_to_ibge7` no Python: dígito verificador via Módulo 10 com pesos `[1,2,1,2,1,2]`, subtrai 9 se produto > 9, `chk = (10 - (sum % 10)) % 10`. Validado em Pirapora (`315120` → `3151206`) e capitais.
+
+#### Endpoints admin ETL
+- `POST/GET /api/saude-etl/run?source=sinasc|sim|pni&states=ALL|MG,SP&years=2020-2024&co_municipio=3151206` — dispara runner em processo detached, retorna `jobId`/`pid`/`logFile`. Token opcional via `ADMIN_TOKEN` env (header `x-admin-token` ou query `token`).
+- `GET /api/saude-etl/status` — lista jobs ativos (com tail do log), counts por fonte, e últimas 30 entradas de `saude_etl_runs`.
+
+#### Operational runbook
+1. Smoke test município único: `node dist/saude-etl/runner.cjs --source sinasc --states MG --years 2022 --co-municipio 3151206`
+2. Backfill UF: omitir `--co-municipio`. Backfill nacional: `--states ALL`.
+3. Logs ficam em `/tmp/etl-<jobId>.log` quando disparado pelo endpoint.
+4. Consulta direta: `SELECT fonte, COUNT(*) FROM saude_indicadores_municipio GROUP BY fonte;`
+
+Python env: `.venv-saude/` (Python 3.11 + pysus). Sistema bloqueado por NixOS read-only; venv local é a única forma. Dependência `pg` no node_modules raiz para o runner conectar ao Railway.
 
 ---
 
