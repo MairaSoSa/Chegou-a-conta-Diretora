@@ -591,6 +591,44 @@ if (source.indexOf(_ONDH_API_ANCHOR) !== -1) {
   console.warn('[bootstrap] /api/ondh-municipio patch NOT applied — anchor not found');
 }
 
+// ── 3c5b. Patch: /api/contexto-suas/:coMunicipio endpoint ────────────────────
+// Fetches mapa-social data and returns {ok, total, contagens} for ctxSuasData UI block.
+(function _patchContextoSuas() {
+  const _SUAS_ANCHOR = _ONGS_API_ANCHOR;
+  const _TIPO_LABELS = {
+    CRAS: 'CRAS', CREAS: 'CREAS', CAPS: 'CAPS',
+    CONSELHO_TUTELAR: 'Conselho Tutelar',
+    CONSELHO_ASSISTENCIA: 'Conselho de Assist. Social',
+    ACOLHIMENTO: 'Acolhimento', CONVIVENCIA: 'Convivência',
+    CENTRO_POP: 'Centro Pop', CENTRO_DIA: 'Centro-Dia',
+    CMDCA: 'CMDCA', REPUBLICA: 'República', REDE_PARCERIA: 'Rede de Parceria'
+  };
+  const _SUAS_ROUTE =
+    'e.get("/api/contexto-suas/:coMunicipio",async(A,g)=>{' +
+      'try{' +
+        'const co=A.params.coMunicipio;' +
+        'if(!co||!/^\\d{6,7}$/.test(co))return g.status(400).json({ok:false,erro:"C\\xF3digo inv\\xE1lido"});' +
+        'const _port=process.env.PORT||5000;' +
+        'const _ms=await fetch("http://localhost:"+_port+"/api/mapa-social/"+co,{signal:AbortSignal.timeout(12000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});' +
+        'if(!_ms||!_ms.ok)return g.json({ok:false,erro:"Dados n\\xE3o dispon\\xEDveis"});' +
+        'const _LABELS={CRAS:"CRAS",CREAS:"CREAS",CAPS:"CAPS",CONSELHO_TUTELAR:"Conselho Tutelar",CONSELHO_ASSISTENCIA:"Conselho de Assist. Social",ACOLHIMENTO:"Acolhimento",CONVIVENCIA:"Conviv\\xEAncia",CENTRO_POP:"Centro Pop",CENTRO_DIA:"Centro-Dia",CMDCA:"CMDCA",REPUBLICA:"Rep\\xFAblica",REDE_PARCERIA:"Rede de Parceria"};' +
+        'const _counts={};' +
+        '(_ms.equipamentos||[]).forEach(function(eq){var t=eq.tipo||"OUTRO";_counts[t]=(_counts[t]||0)+1;});' +
+        'const contagens=Object.keys(_counts).map(function(t){return{tipo:t,label:_LABELS[t]||t,total:_counts[t]};}).sort(function(a,b){return b.total-a.total;});' +
+        'return g.json({ok:true,co_municipio:co,total:_ms.total||0,contagens:contagens,fonte:_ms.fonte||"Mapa Social / MDS",atualizado_em:_ms.atualizado_em||new Date().toISOString()});' +
+      '}catch(_e){console.error("[ctx-suas] erro:",_e.message);return g.status(500).json({ok:false,erro:"Erro interno"});}' +
+    '}),';
+
+  if (source.indexOf(_SUAS_ANCHOR) !== -1 && !source.includes('/api/contexto-suas/')) {
+    source = source.replace(_SUAS_ANCHOR, _SUAS_ANCHOR + _SUAS_ROUTE);
+    console.log('[bootstrap] /api/contexto-suas/:coMunicipio endpoint patch applied');
+  } else if (source.includes('/api/contexto-suas/')) {
+    console.log('[bootstrap] /api/contexto-suas already applied');
+  } else {
+    console.warn('[bootstrap] /api/contexto-suas patch NOT applied — anchor not found');
+  }
+})();
+
 // ── 3c6. Patch: /api/escola/:inep/funai endpoint ──────────────────────────────
 // Returns FUNAI CTL/CR data for the escola's municipality + escola indigenous flags.
 // Conditions for "presença indígena": IN_EDUCACAO_INDIGENA=1, TP_LOCALIZACAO_DIFERENCIADA>0,
