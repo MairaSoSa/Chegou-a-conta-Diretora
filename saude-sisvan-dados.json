@@ -1,0 +1,63 @@
+{
+  "gerado_em": "2026-04-17T23:34:11.006Z",
+  "municipio": {
+    "codigo": "355030",
+    "nome": "Não configurado"
+  },
+  "resumo": {
+    "total_registros": 80,
+    "fases_coletadas": 4,
+    "categorias_gerais": {
+      "Sem dado": 20,
+      "Magreza": 48,
+      "Adequado": 12
+    }
+  },
+  "fases": [
+    {
+      "fase_vida": 1,
+      "fase_label": "Crianças (< 5 anos)",
+      "total_registros": 20,
+      "categorias": {
+        "Sem dado": 20
+      },
+      "data_mais_recente": null,
+      "icone": "👶"
+    },
+    {
+      "fase_vida": 2,
+      "fase_label": "Adolescentes (5-19 anos)",
+      "total_registros": 20,
+      "categorias": {
+        "Magreza": 14,
+        "Adequado": 6
+      },
+      "data_mais_recente": null,
+      "icone": "👦"
+    },
+    {
+      "fase_vida": 3,
+      "fase_label": "Adultos (20-59 anos)",
+      "total_registros": 20,
+      "categorias": {
+        "Magreza": 16,
+        "Adequado": 4
+      },
+      "data_mais_recente": null,
+      "icone": "👤"
+    },
+    {
+      "fase_vida": 4,
+      "fase_label": "Idosos (≥ 60 anos)",
+      "total_registros": 20,
+      "categorias": {
+        "Magreza": 18,
+        "Adequado": 2
+      },
+      "data_mais_recente": null,
+      "icone": "👴"
+    }
+  ],
+  "fonte": "SISVAN - Sistema de Vigilância Alimentar e Nutricional",
+  "endpoint_api": "https://apidadosabertos.saude.gov.br/sisvan/estado-nutricional"
+}

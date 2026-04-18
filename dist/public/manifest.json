@@ -1,0 +1,24 @@
+{
+  "name": "Caderno da Diretora",
+  "short_name": "Caderno",
+  "description": "Dashboard de gestão financeira para escolas públicas brasileiras",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1d4ed8",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

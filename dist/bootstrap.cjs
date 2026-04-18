@@ -40,6 +40,18 @@ function loadDotEnvFile() {
 
 loadDotEnvFile();
 
+// Prefer PostgreSQL in all environments when a DB URL is available.
+if (!process.env.RAILWAY_DATABASE_URL && process.env.DATABASE_URL) {
+  process.env.RAILWAY_DATABASE_URL = process.env.DATABASE_URL;
+}
+if (!process.env.DATABASE_URL && process.env.RAILWAY_DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.RAILWAY_DATABASE_URL;
+}
+if ((process.env.RAILWAY_DATABASE_URL || process.env.DATABASE_URL) && process.env.SQLITE_DATABASE_URL && !process.env.ALLOW_SQLITE_FALLBACK) {
+  delete process.env.SQLITE_DATABASE_URL;
+  console.log('[bootstrap] SQLite fallback env disabled (PostgreSQL configured)');
+}
+
 const distDir = __dirname;
 const tmpDir = os.tmpdir();
 
@@ -114,6 +126,18 @@ if (_reqPatched === source) {
   console.warn('[bootstrap] createRequire guard patch NOT applied — pattern not found');
 } else {
   source = _reqPatched;
+}
+
+// ── 3a1. Patch: inject dados.gov.br/SIGPC API key headers in OLINDA fetches ─
+// Supports multiple env names so deployment can use whichever is already set.
+const _SIGPC_HEADERS_OLD = 'Xhe={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",Accept:"application/json","Accept-Language":"pt-BR,pt;q=0.9"},';
+const _SIGPC_HEADERS_NEW = 'Xhe=(()=>{let h={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",Accept:"application/json","Accept-Language":"pt-BR,pt;q=0.9"},k=process.env.DADOS_GOV_API_KEY||process.env.SIGPC_API_KEY||process.env.OLINDA_API_KEY||process.env.DADOSGOVBR_API_KEY||"";if(k){h["x-api-key"]=k,h["X-API-Key"]=k,h["chave-api-dados-abertos"]=k,h.app_token=k,h.Authorization=/^Bearer\\s/i.test(k)?k:`Bearer ${k}`;}return h})(),';
+const _sigpcHeaderPatched = source.replace(_SIGPC_HEADERS_OLD, _SIGPC_HEADERS_NEW);
+if (_sigpcHeaderPatched !== source) {
+  source = _sigpcHeaderPatched;
+  console.log('[bootstrap] SIGPC API key header patch applied');
+} else {
+  console.warn('[bootstrap] SIGPC API key header patch NOT applied — anchor not found');
 }
 
 // ── 3b. Clear-Site-Data patch — fires for first 3 HTML requests after restart ──
@@ -408,6 +432,29 @@ if (source.indexOf(_RAW_JS_ANCHOR) !== -1) {
   console.log('[bootstrap] /api/raw-js endpoint patch applied');
 } else {
   console.warn('[bootstrap] /api/raw-js patch NOT applied — anchor not found (dashboard-redirect not present)');
+}
+
+// ── 3c2b. Patch: /sw.js route — Service Worker com header Service-Worker-Allowed ──
+// O Service Worker precisa ser servido com o header Service-Worker-Allowed: /
+// para que seu scope cubra a raiz do site. O middleware estático não adiciona esse header.
+const _SW_ANCHOR = 't.use("/dashboard",(n,i)=>i.redirect(302,"/")),';
+const _swPublicDir = JSON.stringify(path.join(distDir, 'public'));
+const _SW_ROUTE = `t.get("/sw.js",function(_rq,_rs){` +
+  `var _swp=require("path").join(${_swPublicDir},"sw.js");` +
+  `_rs.setHeader("Content-Type","application/javascript");` +
+  `_rs.setHeader("Service-Worker-Allowed","/");` +
+  `_rs.setHeader("Cache-Control","no-store, no-cache, must-revalidate");` +
+  `try{_rs.send(require("fs").readFileSync(_swp,"utf8"));}` +
+  `catch(_e){_rs.status(500).end("sw not found");}` +
+`}),`;
+const _swPatched = source.indexOf(_SW_ANCHOR) !== -1
+  ? source.replace(_SW_ANCHOR, _SW_ROUTE + _SW_ANCHOR)
+  : null;
+if (_swPatched) {
+  source = _swPatched;
+  console.log('[bootstrap] /sw.js route patch applied');
+} else {
+  console.warn('[bootstrap] /sw.js patch NOT applied — anchor not found');
 }
 
 // ── 3c3. Patch: /api/mec-streams endpoint — scrapes YouTube MEC streams ─────
@@ -2582,6 +2629,65 @@ e.get("/api/noticias-extras",async(A,g)=>{
 
   source = source.replace(MARKER, routeCtx + MARKER);
   console.log('[bootstrap] contexto-municipal route applied (pre-compile)');
+})();
+
+// ── Usage Analytics (runtime patch on index.cjs.gz source) ───────────────────
+(function _patchUsageAnalytics() {
+  const TRACK_MARKER = 'e.post("/api/analytics/track",';
+  const ADMIN_MARKER = 'e.get("/api/admin/usage-analytics",Hr,';
+  if (source.includes(TRACK_MARKER) && source.includes(ADMIN_MARKER)) {
+    console.log('[bootstrap] usage analytics routes already present');
+    return;
+  }
+
+  const HELPER_ANCHOR = 'function Tn(t,e){';
+  if (!source.includes(HELPER_ANCHOR)) {
+    console.warn('[bootstrap] usage analytics helper patch NOT applied — anchor not found');
+    return;
+  }
+
+  const HELPERS =
+    'const adminUsageEvents=[];'+
+    'const MAX_ADMIN_USAGE_EVENTS=5000;'+
+    'function normalizeUsageEvent(A,g){'+
+      'if(!g||typeof g!=="object")throw new Error("evento invalido");'+
+      'let E=typeof g.path==="string"&&g.path?g.path:String(A&&A.path||"/").slice(0,200),v=Number(g.hourLocal);'+
+      'isNaN(v)&&(v=new Date().getHours());'+
+      'return{ts:Date.now(),eventType:String(g.eventType||"interaction").slice(0,32),action:String(g.action||"click").slice(0,24),path:E,label:String(g.label||"").slice(0,120),targetType:String(g.targetType||"geral").slice(0,40),targetId:String(g.targetId||"").slice(0,120),section:String(g.section||"").slice(0,120),hourLocal:Math.max(0,Math.min(23,Math.floor(v))),timezone:String(g.timezone||"").slice(0,64),locationText:String(g.locationText||"nao informado").slice(0,64)}'+
+    '}'+
+    'function pushUsageEvent(A){adminUsageEvents.push(A);adminUsageEvents.length>MAX_ADMIN_USAGE_EVENTS&&adminUsageEvents.splice(0,adminUsageEvents.length-MAX_ADMIN_USAGE_EVENTS)}'+
+    'function aggregateUsageEvents(A){'+
+      'let g=Date.now()-(Number(A)||7)*864e5,E=adminUsageEvents.filter(c=>c.ts>=g),v=E.length,x={},w={},T={},I={},D={},B={click:0,view:0,download:0,search:0,other:0};'+
+      'for(let c of E){'+
+        'let d=c.path||"(sem rota)",f=String(c.hourLocal);x[d]=(x[d]||0)+1,w[f]=(w[f]||0)+1;'+
+        'let m=c.locationText||"nao informado";T[m]=(T[m]||0)+1;'+
+        'let AKey=c.label||c.targetId||"(sem item)",gKey=c.targetType||"geral";I[gKey]||(I[gKey]={}),I[gKey][AKey]=(I[gKey][AKey]||0)+1;'+
+        'let aKey=c.action||"click";aKey==="download"?B.download++:aKey==="view"?B.view++:aKey==="search"?B.search++:aKey==="click"?B.click++:B.other++;'+
+        'let sKey=(c.targetType||"geral")+"::"+AKey;D[sKey]||(D[sKey]={targetType:c.targetType||"geral",label:AKey,total:0}),D[sKey].total++'+
+      '}'+
+      'let N=M=>Object.entries(M).map(([L,te])=>({key:L,total:te})).sort((L,te)=>te.total-L.total);'+
+      'let R={};for(let[M,L]of Object.entries(I))R[M]=N(L).slice(0,10).map(te=>({label:te.key,total:te.total}));'+
+      'return{totalEvents:v,actions:B,topRoutes:N(x).slice(0,10).map(M=>({path:M.key,total:M.total})),topHours:N(w).slice(0,24).map(M=>({hour:Number(M.key),total:M.total})),topLocations:N(T).slice(0,10).map(M=>({location:M.key,total:M.total})),byTargetType:R,topTargets:Object.values(D).sort((M,L)=>L.total-M.total).slice(0,20)}'+
+    '}';
+
+  source = source.replace(HELPER_ANCHOR, HELPERS + HELPER_ANCHOR);
+
+  const LOGIN_ANCHOR = 'e.post("/api/admin/login",(A,g)=>{';
+  if (!source.includes(LOGIN_ANCHOR)) {
+    console.warn('[bootstrap] usage analytics route patch NOT applied — login anchor not found');
+    return;
+  }
+
+  const ROUTES =
+    'e.post("/api/analytics/track",(A,g)=>{'+
+      'try{let E=normalizeUsageEvent(A,A.body);pushUsageEvent(E),g.status(202).json({ok:!0})}catch(E){g.status(400).json({ok:!1,message:E&&E.message||"evento invalido"})}'+
+    '}),'+
+    'e.get("/api/admin/usage-analytics",Hr,(A,g)=>{'+
+      'try{let E=Math.min(Math.max(parseInt(String(A.query.days||"7"),10)||7,1),90),v=aggregateUsageEvents(E);g.json(v)}catch(E){g.status(500).json({message:E&&E.message||"Erro ao carregar analytics"})}'+
+    '}),';
+
+  source = source.replace(LOGIN_ANCHOR, ROUTES + LOGIN_ANCHOR);
+  console.log('[bootstrap] usage analytics patch applied');
 })();
 
 // ── PATCH: inject vaccination calendar events into prazos-educacionais ────────
