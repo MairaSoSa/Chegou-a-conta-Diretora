@@ -1360,12 +1360,97 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
           ]}, ci);
         })})
       ]}),
+      ctxSuasData.bf && e.jsxs("div", { style: { background: "#e8f5e9", border: "1px solid #a5d6a7", borderRadius: 10, padding: "10px 12px", marginBottom: 10 }, children: [
+        e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 8px 0", textTransform: "uppercase", letterSpacing: "0.05em" }, children: "Bolsa Fam\xEDlia \u2014 Fam\xEDlias Benefici\xE1rias" }),
+        e.jsxs("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 6 }, children: [
+          e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 22, fontWeight: 800, color: "#2e7d32", margin: 0, lineHeight: 1 }, children: ctxSuasData.bf.familias.toLocaleString("pt-BR") }),
+            e.jsx("p", { style: { fontSize: 10, color: "#388e3c", margin: "2px 0 0" }, children: "fam\xEDlias benefici\xE1rias" })
+          ]}),
+          e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: "#1b5e20", margin: 0, lineHeight: 1 }, children: "R$\xA0" + (ctxSuasData.bf.valor >= 1e6 ? (ctxSuasData.bf.valor / 1e6).toFixed(2).replace(".", ",") + "\xA0mi" : (ctxSuasData.bf.valor / 1e3).toFixed(0) + "\xA0mil") }),
+            e.jsx("p", { style: { fontSize: 10, color: "#388e3c", margin: "2px 0 0" }, children: "valor total/m\xEAs" })
+          ]}),
+          e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: "#1b5e20", margin: 0, lineHeight: 1 }, children: "R$\xA0" + ctxSuasData.bf.media.toLocaleString("pt-BR") }),
+            e.jsx("p", { style: { fontSize: 10, color: "#388e3c", margin: "2px 0 0" }, children: "m\xE9dia/fam\xEDlia" })
+          ]})
+        ]}),
+        ctxSuasData.bf.serie && ctxSuasData.bf.serie.length > 1 && e.jsxs("div", { style: { display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }, children: [
+          e.jsx("span", { style: { fontSize: 10, color: "#555", fontWeight: 600, marginRight: 2 }, children: "Tend\xEAncia:" }),
+          ctxSuasData.bf.serie.map(function(s, si) {
+            var mes = s.mes.slice(0, 4) + "/" + s.mes.slice(4, 6);
+            var next = ctxSuasData.bf.serie[si + 1];
+            var arrow = next ? (next.familias > s.familias ? "\u2191" : next.familias < s.familias ? "\u2193" : "\u2192") : null;
+            var arrowColor = arrow === "\u2191" ? "#c62828" : arrow === "\u2193" ? "#2e7d32" : "#888";
+            return e.jsxs("span", { style: { fontSize: 10, color: "#444", display: "flex", alignItems: "center", gap: 2 }, children: [
+              e.jsx("span", { style: { color: "#555" }, children: mes + ": " + s.familias.toLocaleString("pt-BR") }),
+              arrow && e.jsx("span", { style: { fontSize: 12, color: arrowColor, fontWeight: 700, margin: "0 2px" }, children: arrow })
+            ]}, si);
+          })
+        ]}),
+        e.jsx("p", { style: { fontSize: 9, color: "#888", margin: "4px 0 0" }, children: "Fonte: Portal da Transpar\xEAncia \u2022 " + (ctxSuasData.bf.mes ? ctxSuasData.bf.mes.slice(0, 4) + "/" + ctxSuasData.bf.mes.slice(4, 6) : "") })
+      ]}),
+      ctxSuasData.bpc && e.jsxs("div", { style: { background: "#f3e5f5", border: "1px solid #ce93d8", borderRadius: 10, padding: "10px 12px", marginBottom: 10 }, children: [
+        e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#4a148c", margin: "0 0 8px 0", textTransform: "uppercase", letterSpacing: "0.05em" }, children: "BPC \u2014 Benef\xEDcio de Presta\xE7\xE3o Continuada (LOAS / INSS)" }),
+        e.jsxs("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 6 }, children: [
+          e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 20, fontWeight: 800, color: "#6a1b9a", margin: 0, lineHeight: 1 }, children: ctxSuasData.bpc.beneficiados.toLocaleString("pt-BR") }),
+            e.jsx("p", { style: { fontSize: 10, color: "#7b1fa2", margin: "2px 0 0" }, children: "benefici\xE1rios (def. ou idosos)" })
+          ]}),
+          e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: "#4a148c", margin: 0, lineHeight: 1 }, children: "R$\xA0" + (ctxSuasData.bpc.valor >= 1e6 ? (ctxSuasData.bpc.valor / 1e6).toFixed(2).replace(".", ",") + "\xA0mi" : (ctxSuasData.bpc.valor / 1e3).toFixed(0) + "\xA0mil") }),
+            e.jsx("p", { style: { fontSize: 10, color: "#7b1fa2", margin: "2px 0 0" }, children: "valor total/m\xEAs" })
+          ]}),
+          e.jsxs("div", { children: [
+            e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: "#4a148c", margin: 0, lineHeight: 1 }, children: "R$\xA0" + ctxSuasData.bpc.media.toLocaleString("pt-BR") }),
+            e.jsx("p", { style: { fontSize: 10, color: "#7b1fa2", margin: "2px 0 0" }, children: "m\xE9dia/benef." })
+          ]})
+        ]}),
+        ctxSuasData.bpc.serie && ctxSuasData.bpc.serie.length > 1 && e.jsxs("div", { style: { display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }, children: [
+          e.jsx("span", { style: { fontSize: 10, color: "#555", fontWeight: 600, marginRight: 2 }, children: "Tend\xEAncia:" }),
+          ctxSuasData.bpc.serie.map(function(s, si) {
+            var mes = s.mes.slice(0, 4) + "/" + s.mes.slice(4, 6);
+            var next = ctxSuasData.bpc.serie[si + 1];
+            var arrow = next ? (next.beneficiados > s.beneficiados ? "\u2191" : next.beneficiados < s.beneficiados ? "\u2193" : "\u2192") : null;
+            var arrowColor = arrow === "\u2191" ? "#c62828" : arrow === "\u2193" ? "#2e7d32" : "#888";
+            return e.jsxs("span", { style: { fontSize: 10, color: "#444", display: "flex", alignItems: "center", gap: 2 }, children: [
+              e.jsx("span", { style: { color: "#555" }, children: mes + ": " + s.beneficiados.toLocaleString("pt-BR") }),
+              arrow && e.jsx("span", { style: { fontSize: 12, color: arrowColor, fontWeight: 700, margin: "0 2px" }, children: arrow })
+            ]}, si);
+          })
+        ]}),
+        e.jsx("p", { style: { fontSize: 9, color: "#888", margin: "4px 0 0" }, children: "Fonte: Portal da Transpar\xEAncia \u2022 " + (ctxSuasData.bpc.mes ? ctxSuasData.bpc.mes.slice(0, 4) + "/" + ctxSuasData.bpc.mes.slice(4, 6) : "") })
+      ]}),
+      ctxSuasData.equipamentos && ctxSuasData.equipamentos.length > 0 && (function() {
+        var _priority = ["CRAS", "CREAS", "CAPS", "CONSELHO_TUTELAR", "CONSELHO_ASSISTENCIA", "CENTRO_POP"];
+        var _shown = ctxSuasData.equipamentos.filter(function(eq) { return _priority.indexOf(eq.tipo) !== -1; }).slice(0, 8);
+        if (_shown.length === 0) return null;
+        var _tipoCor = { CRAS: { bg: "#e8f5ee", border: "#b8dfc8", txt: "#1f6b45" }, CREAS: { bg: "#e6eef8", border: "#b8cfe8", txt: "#1e4a78" }, CAPS: { bg: "#fff8e1", border: "#ffe082", txt: "#5f4200" }, CONSELHO_TUTELAR: { bg: "#fff3e0", border: "#ffd180", txt: "#7a3f00" }, CONSELHO_ASSISTENCIA: { bg: "#f0f4ff", border: "#b8c8f0", txt: "#1a3060" }, CENTRO_POP: { bg: "#fdf3e0", border: "#f0ddb5", txt: "#7a4a10" } };
+        return e.jsxs("div", { style: { marginBottom: 10 }, children: [
+          e.jsx("p", { style: { fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#004d40", margin: "0 0 8px" }, children: "Unidades \u2014 Mapa Social / MDS" }),
+          e.jsx("div", { style: { display: "flex", flexDirection: "column", gap: 6 }, children:
+            _shown.map(function(eq, ei) {
+              var _cor = _tipoCor[eq.tipo] || { bg: "#f5f5f5", border: "#e0e0e0", txt: "#555" };
+              return e.jsxs("div", { style: { background: _cor.bg, border: "1px solid " + _cor.border, borderRadius: 8, padding: "7px 10px" }, children: [
+                e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }, children: [
+                  e.jsx("span", { style: { fontSize: 9, fontWeight: 700, color: _cor.txt, background: "rgba(255,255,255,0.6)", borderRadius: 4, padding: "1px 5px", textTransform: "uppercase" }, children: eq.tipo_label || eq.tipo }),
+                  e.jsx("span", { style: { fontSize: 11, fontWeight: 700, color: _cor.txt, flex: 1, lineHeight: 1.2 }, children: eq.nome })
+                ]}),
+                eq.endereco && e.jsxs("p", { style: { fontSize: 10, color: _cor.txt, opacity: 0.85, margin: "2px 0 0", lineHeight: 1.3 }, children: ["\uD83D\uDCCD\xA0", eq.endereco + (eq.bairro ? ", " + eq.bairro : ""), eq.cep ? " \u2022 CEP " + eq.cep : ""] }),
+                eq.telefone && e.jsxs("p", { style: { fontSize: 10, color: _cor.txt, opacity: 0.85, margin: "2px 0 0" }, children: ["\uD83D\uDCDE\xA0", eq.telefone] }),
+                eq.email && e.jsxs("p", { style: { fontSize: 10, color: _cor.txt, opacity: 0.85, margin: "2px 0 0" }, children: ["\u2709\uFE0F\xA0", eq.email] })
+              ]}, ei);
+            })
+          })
+        ]});
+      })(),
       e.jsxs("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }, children: [
         e.jsx("a", { href: "https://cadsuas.mds.gov.br/", target: "_blank", rel: "noopener noreferrer", style: { fontSize: 11, fontWeight: 700, color: "#004d40", background: "#b2dfdb", padding: "4px 12px", borderRadius: 20, border: "1px solid #80cbc4", textDecoration: "none" }, children: "CadSUAS \u2197" }),
         e.jsx("a", { href: "https://mapas.mds.gov.br/mapas/app/painel-suas/", target: "_blank", rel: "noopener noreferrer", style: { fontSize: 11, fontWeight: 700, color: "#004d40", background: "#b2dfdb", padding: "4px 12px", borderRadius: 20, border: "1px solid #80cbc4", textDecoration: "none" }, children: "Mapa SUAS \u2197" }),
         e.jsx("a", { href: "https://dados.gov.br/dados/conjuntos-dados/cadsuas---sistema-de-cadastro-do-sistema-unico-de-assistencia-social-suas", target: "_blank", rel: "noopener noreferrer", style: { fontSize: 11, fontWeight: 700, color: "#004d40", background: "#b2dfdb", padding: "4px 12px", borderRadius: 20, border: "1px solid #80cbc4", textDecoration: "none" }, children: "Dados Abertos \u2197" })
       ]}),
-      e.jsx("p", { style: { fontSize: 10, color: "#00695c", margin: "8px 0 0", lineHeight: 1.4 }, children: "Fonte: Mapa Social / Minist\xE9rio do Desenvolvimento Social. Dados podem estar desatualizados." })
+      e.jsx("p", { style: { fontSize: 10, color: "#00695c", margin: "8px 0 0", lineHeight: 1.4 }, children: "Fontes: Mapa Social / MDS \u2022 Portal da Transpar\xEAncia (BF e BPC). Dados podem estar desatualizados." })
     ]}),
     !ctxSuasLoading && ctxSuasData && !ctxSuasData.ok && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: "Dados de assist\xEAncia social n\xE3o dispon\xEDveis para este munic\xEDpio." }),
     !ctxSuasLoading && !ctxSuasData && !a && e.jsx("p", { style: { fontSize: 12, color: "#888", padding: "12px 0" }, children: "C\xF3digo IBGE n\xE3o dispon\xEDvel para esta escola." })

@@ -609,13 +609,46 @@ if (source.indexOf(_ONDH_API_ANCHOR) !== -1) {
         'const co=A.params.coMunicipio;' +
         'if(!co||!/^\\d{6,7}$/.test(co))return g.status(400).json({ok:false,erro:"C\\xF3digo inv\\xE1lido"});' +
         'const _port=process.env.PORT||5000;' +
+        // Mapa Social — equipamentos SUAS
         'const _ms=await fetch("http://localhost:"+_port+"/api/mapa-social/"+co,{signal:AbortSignal.timeout(12000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});' +
-        'if(!_ms||!_ms.ok)return g.json({ok:false,erro:"Dados n\\xE3o dispon\\xEDveis"});' +
         'const _LABELS={CRAS:"CRAS",CREAS:"CREAS",CAPS:"CAPS",CONSELHO_TUTELAR:"Conselho Tutelar",CONSELHO_ASSISTENCIA:"Conselho de Assist. Social",ACOLHIMENTO:"Acolhimento",CONVIVENCIA:"Conviv\\xEAncia",CENTRO_POP:"Centro Pop",CENTRO_DIA:"Centro-Dia",CMDCA:"CMDCA",REPUBLICA:"Rep\\xFAblica",REDE_PARCERIA:"Rede de Parceria"};' +
         'const _counts={};' +
-        '(_ms.equipamentos||[]).forEach(function(eq){var t=eq.tipo||"OUTRO";_counts[t]=(_counts[t]||0)+1;});' +
+        '((_ms&&_ms.equipamentos)||[]).forEach(function(eq){var t=eq.tipo||"OUTRO";_counts[t]=(_counts[t]||0)+1;});' +
         'const contagens=Object.keys(_counts).map(function(t){return{tipo:t,label:_LABELS[t]||t,total:_counts[t]};}).sort(function(a,b){return b.total-a.total;});' +
-        'return g.json({ok:true,co_municipio:co,total:_ms.total||0,contagens:contagens,fonte:_ms.fonte||"Mapa Social / MDS",atualizado_em:_ms.atualizado_em||new Date().toISOString()});' +
+        // Bolsa Familia
+        'let bf=null;' +
+        'try{' +
+          'const _bfKey=process.env.PORTAL_TRANSPARENCIA_KEY||"";' +
+          'if(_bfKey&&co.length===7){' +
+            'const _now=new Date();const _months=[];' +
+            'for(let _i=1;_i<=6;_i++){const _d=new Date(_now.getFullYear(),_now.getMonth()-_i,1);_months.push(String(_d.getFullYear())+String(_d.getMonth()+1).padStart(2,"0"));}' +
+            'const _bfRes=await Promise.all(_months.map(function(_m){return fetch("https://api.portaldatransparencia.gov.br/api-de-dados/novo-bolsa-familia-por-municipio?mesAno="+_m+"&codigoIbge="+co+"&pagina=1",{headers:{"chave-api-dados":_bfKey},signal:AbortSignal.timeout(8000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})}));' +
+            'const _bfSerie=_bfRes.map(function(r,i){const rec=Array.isArray(r)&&r[0]?r[0]:null;return rec?{mes:_months[i],familias:rec.quantidadeBeneficiados,valor:rec.valor}:null;}).filter(Boolean).reverse();' +
+            'if(_bfSerie.length>0){const _last=_bfSerie[_bfSerie.length-1];bf={familias:_last.familias,valor:_last.valor,media:Math.round(_last.valor/_last.familias),mes:_last.mes,serie:_bfSerie};}' +
+          '}' +
+        '}catch(_bfe){}' +
+        // BPC
+        'let bpc=null;' +
+        'try{' +
+          'const _bpcKey=process.env.PORTAL_TRANSPARENCIA_KEY||"";' +
+          'if(_bpcKey&&co.length===7){' +
+            'const _now2=new Date();const _months2=[];' +
+            'for(let _i=1;_i<=5;_i++){const _d=new Date(_now2.getFullYear(),_now2.getMonth()-_i,1);_months2.push(String(_d.getFullYear())+String(_d.getMonth()+1).padStart(2,"0"));}' +
+            'const _bpcRes=await Promise.all(_months2.map(function(_m){return fetch("https://api.portaldatransparencia.gov.br/api-de-dados/bpc-por-municipio?mesAno="+_m+"&codigoIbge="+co+"&pagina=1",{headers:{"chave-api-dados":_bpcKey},signal:AbortSignal.timeout(8000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})}));' +
+            'const _bpcSerie=_bpcRes.map(function(r,i){const rec=Array.isArray(r)&&r[0]?r[0]:null;return rec?{mes:_months2[i],beneficiados:rec.quantidadeBeneficiados,valor:rec.valor}:null;}).filter(Boolean).reverse();' +
+            'if(_bpcSerie.length>0){const _last=_bpcSerie[_bpcSerie.length-1];bpc={beneficiados:_last.beneficiados,valor:_last.valor,media:Math.round(_last.valor/_last.beneficiados),mes:_last.mes,serie:_bpcSerie};}' +
+          '}' +
+        '}catch(_bpce){}' +
+        // CadSUAS — unidades detalhadas via API pública MDS
+        'let cadsuas=null;' +
+        'try{' +
+          'const _ibge6=co.length===7?co.slice(0,6):co;' +
+          'const _crasRes=await fetch("https://aplicacoes.mds.gov.br/sagi/servicos/misocial?q_ibge="+_ibge6+"&tipo_equip=1&output=json",{headers:{"Accept":"application/json"},signal:AbortSignal.timeout(8000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});' +
+          'if(Array.isArray(_crasRes)&&_crasRes.length>0){' +
+            'cadsuas={unidades:_crasRes.slice(0,10).map(function(u){return{tipo:u.tipo_equip_label||"CRAS",nome:u.nom_unidade||u.nom_municipio||"",endereco:u.dsc_endereco||"",bairro:u.nom_bairro||"",telefone:u.num_telefone||"",email:u.dsc_email||"",horario:u.dsc_horario||"",status:u.dsc_situacao||""};})};' +
+          '}' +
+        '}catch(_cse){}' +
+        'return g.json({ok:true,co_municipio:co,total:(_ms&&_ms.total)||0,contagens:contagens,equipamentos:(_ms&&_ms.equipamentos)||[],bf:bf,bpc:bpc,cadsuas:cadsuas,fonte:(_ms&&_ms.fonte)||"Mapa Social / MDS",atualizado_em:(_ms&&_ms.atualizado_em)||new Date().toISOString()});' +
       '}catch(_e){console.error("[ctx-suas] erro:",_e.message);return g.status(500).json({ok:false,erro:"Erro interno"});}' +
     '}),';
 
