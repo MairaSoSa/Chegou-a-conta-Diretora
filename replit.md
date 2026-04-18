@@ -153,6 +153,16 @@ Since the source code is not present, all fixes are applied directly to the comp
 
 ---
 
+### PNAD Contínua no Perfil Socioeconômico (April 2026)
+Novos indicadores da PNAD Contínua Trimestral adicionados ao card "Perfil Socioeconômico do Município":
+- **Taxa de desocupação**: SIDRA tabela 4093, variável 4099, nível UF (N3). Busca os últimos 5 trimestres sequencialmente até encontrar dado disponível.
+- **Rendimento médio habitual — todos os trabalhos**: SIDRA tabela 5436, variável 5933, nível UF (N3), filtro Sexo=Total (D4C=6794).
+- Derivação do código UF: primeiros 2 dígitos do código IBGE de 6 dígitos (`co6.slice(0,2)`).
+- Período retornado em formato humano: ex. "4º trimestre 2024".
+- Backend: 2 novas promises async (loop sequencial por trimestre) adicionadas ao `Promise.allSettled` de 4→6 items no `/api/perfil-socioeconomico/:coIbge`.
+- Frontend: sub-patches `pnad-continua-socio-v1` (legenda) + `pnad-socio-grid-v1` (cards na grade) em `_patchDashboardContextCards`.
+- Indicadores ausentes omitidos silenciosamente; nota de rodapé cita PNAD Contínua separada do PIB Municipal.
+
 ### Suporte Institucional (SI) accordion fix (April 2026)
 Root cause found and fixed: the `Bt && (() => { e.jsxs("div", { d4c4f5... }) })()` pattern in the compiled Dashboard-v30.js was missing a `return` keyword before `e.jsxs`, so the SI card IIFE always returned `undefined`. React rendered nothing when the accordion was expanded.
 - **Fix**: sub-patch `si-iife-return-v1` in `dist/bootstrap.cjs` adds `return` before the first `e.jsxs("div", {borderRadius:"16px"...d4c4f5` inside `Bt && (() => {`.
