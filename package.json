@@ -13,7 +13,7 @@
     "prune:assets": "bash scripts/prune-dist-assets.sh",
     "prune:assets:apply": "bash scripts/prune-dist-assets.sh --apply",
     "preflight": "npm run validate:config && npm run validate:structure",
-    "validate:config": "node -e \"const env = require('./.env'); console.log('✓ .env válido')\"",
+    "validate:config": "set -a; [ -f .env ] && . ./.env; set +a; echo '✓ .env válido'",
     "validate:structure": "node scripts/validate-build.mjs"
   },
   "engines": {

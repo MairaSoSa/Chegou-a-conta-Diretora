@@ -850,11 +850,14 @@ const _SAUDE_FE_BLOCK =
     'const _S=Ra.saude;' +
     'const _PS=_S.pronto_socorro_mais_proximo;' +
     'const _TC=Array.isArray(_S.top_contatos)?_S.top_contatos:[];' +
-    'const _tipoLabel=(t)=>({UBS:"UBS / Posto de Sa\\xFAde",UPA:"UPA",PRONTO_SOCORRO:"Pronto Socorro"}[t]||t||"Unidade de Sa\\xFAde");' +
-    'const _tipoDot=(t)=>({UBS:"#1565c0",UPA:"#c62828",PRONTO_SOCORRO:"#d32f2f"}[t]||"#1565c0");' +
-    'const _tipoBg=(t)=>({UBS:"#e3f2fd",UPA:"#fff3e0",PRONTO_SOCORRO:"#ffebee"}[t]||"#e3f2fd");' +
-    'const _tipoBorder=(t)=>({UBS:"#90caf9",UPA:"#ffcc80",PRONTO_SOCORRO:"#ef9a9a"}[t]||"#90caf9");' +
-    'const _tipoTxt=(t)=>({UBS:"#0d47a1",UPA:"#e65100",PRONTO_SOCORRO:"#b71c1c"}[t]||"#0d47a1");' +
+    'const _tipoRank={UPA:0,PRONTO_ATENDIMENTO:1,PRONTO_SOCORRO:2,UBS:3};' +
+    'const _TCOrdered=[..._TC].sort((a,b)=>((_tipoRank[a.tipo]??99)-(_tipoRank[b.tipo]??99))||String(a.nome||"").localeCompare(String(b.nome||""),"pt-BR"));' +
+    'const _tipoCounts=_TCOrdered.reduce((acc,it)=>(acc[it.tipo]=(acc[it.tipo]||0)+1,acc),{});' +
+    'const _tipoLabel=(t)=>({UBS:"UBS / Posto de Sa\\xFAde",UPA:"UPA",PRONTO_ATENDIMENTO:"Pronto Atendimento",PRONTO_SOCORRO:"Pronto Socorro"}[t]||t||"Unidade de Sa\\xFAde");' +
+    'const _tipoDot=(t)=>({UBS:"#1565c0",UPA:"#c62828",PRONTO_ATENDIMENTO:"#ef6c00",PRONTO_SOCORRO:"#d32f2f"}[t]||"#1565c0");' +
+    'const _tipoBg=(t)=>({UBS:"#e3f2fd",UPA:"#fff3e0",PRONTO_ATENDIMENTO:"#fff8e1",PRONTO_SOCORRO:"#ffebee"}[t]||"#e3f2fd");' +
+    'const _tipoBorder=(t)=>({UBS:"#90caf9",UPA:"#ffcc80",PRONTO_ATENDIMENTO:"#ffe082",PRONTO_SOCORRO:"#ef9a9a"}[t]||"#90caf9");' +
+    'const _tipoTxt=(t)=>({UBS:"#0d47a1",UPA:"#e65100",PRONTO_ATENDIMENTO:"#ad6800",PRONTO_SOCORRO:"#b71c1c"}[t]||"#0d47a1");' +
     'return e.jsxs("div",{style:{marginTop:14},children:[' +
       // section title
       'e.jsxs("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10},children:[' +
@@ -890,12 +893,15 @@ const _SAUDE_FE_BLOCK =
       ']}),' +
       // top contacts grid (UBS + UPA)
       '_TC.length>0&&e.jsxs("div",{style:{marginTop:4},children:[' +
-        'e.jsx("p",{style:{fontSize:10,fontWeight:700,color:"#0d47a1",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6},children:"UBS / UPA mais pr\\xF3ximas"}),' +
+        'e.jsx("p",{style:{fontSize:10,fontWeight:700,color:"#0d47a1",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6},children:"Unidades pr\\xF3ximas por tipo"}),' +
         'e.jsx("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(220px, 1fr))",gap:8},children:' +
-          '_TC.map(function(_c,_i){' +
+          '_TCOrdered.map(function(_c,_i){' +
+            'const _showTypeHeader=_i===0||_TCOrdered[_i-1].tipo!==_c.tipo;' +
             'const _dot=_tipoDot(_c.tipo);const _bg=_tipoBg(_c.tipo);const _bd=_tipoBorder(_c.tipo);const _txt=_tipoTxt(_c.tipo);' +
             'const _mapsUrl=_c.latitude&&_c.longitude?"https://www.google.com/maps?q="+_c.latitude+","+_c.longitude:null;' +
-            'return e.jsxs("div",{style:{background:"#fff",border:"1.5px solid "+_bd,borderRadius:12,padding:"10px 12px",borderLeft:"4px solid "+_dot},children:[' +
+            'return e.jsxs(e.Fragment,{children:[' +
+              '_showTypeHeader&&e.jsxs("p",{style:{gridColumn:"1 / -1",fontSize:10,fontWeight:700,color:_txt,textTransform:"uppercase",letterSpacing:"0.05em",margin:"4px 0 0"},children:[_tipoLabel(_c.tipo)," (",_tipoCounts[_c.tipo]||0,")"]}),' +
+              'e.jsxs("div",{style:{background:"#fff",border:"1.5px solid "+_bd,borderRadius:12,padding:"10px 12px",borderLeft:"4px solid "+_dot},children:[' +
               'e.jsxs("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:6,marginBottom:4},children:[' +
                 'e.jsxs("p",{style:{fontWeight:700,fontSize:11,color:_txt,margin:0,lineHeight:1.3},children:[' +
                   'e.jsx("span",{style:{fontSize:8,fontWeight:800,color:_dot,background:_bg,borderRadius:6,padding:"1px 5px",marginRight:4,verticalAlign:"middle"},children:_tipoLabel(_c.tipo)}),' +
@@ -912,6 +918,7 @@ const _SAUDE_FE_BLOCK =
                 'e.jsx("a",{href:"tel:"+_c.telefone.replace(/\\D/g,""),style:{color:_txt,textDecoration:"none",fontWeight:600},children:_c.telefone})' +
               ']}):e.jsx("p",{style:{fontSize:9,color:"#aaa",margin:"0 0 2px",fontStyle:"italic"},children:"Telefone n\\xE3o cadastrado"}),' +
               '_c.distancia_km!=null&&e.jsx("p",{style:{fontSize:9,color:"#888",margin:"2px 0 0",fontStyle:"italic"},children:"\\uD83D\\uDCCD "+_c.distancia_km.toFixed(2)+" km"})' +
+            ']})' +
             ']},_i);' +
           '})' +
         '})' +

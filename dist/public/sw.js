@@ -1,7 +1,7 @@
 // Service Worker — Caderno da Diretora
 // Estratégia: Cache-First para assets estáticos, Network-First para API
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v9';
 const STATIC_CACHE = 'caderno-static-' + CACHE_VERSION;
 const API_CACHE    = 'caderno-api-' + CACHE_VERSION;
 

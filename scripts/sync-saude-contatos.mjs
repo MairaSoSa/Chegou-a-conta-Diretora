@@ -152,7 +152,29 @@ function buildTipoConfig() {
   ];
 }
 
+function normalizeText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim();
+}
+
+function resolveTipoByName(defaultTipo, item) {
+  if (defaultTipo !== "UPA") return defaultTipo;
+
+  const nome = normalizeText(item.nome_fantasia || item.nome_razao_social || "");
+  const isUpaByName = /\bUPA\b/.test(nome) || nome.includes("UNIDADE DE PRONTO ATENDIMENTO");
+  const isProntoSocorroByName = /\bPRONTO\s*SOCORRO\b/.test(nome) || /\bPS\b/.test(nome);
+
+  // codigo 73 inclui pronto atendimento em geral; separar UPA, pronto atendimento e pronto socorro por nome.
+  if (isUpaByName) return "UPA";
+  if (isProntoSocorroByName) return "PRONTO_SOCORRO";
+  return "PRONTO_ATENDIMENTO";
+}
+
 function mapEstabelecimento(item, tipo, referencePoint) {
+  const resolvedTipo = resolveTipoByName(tipo, item);
   const latitude = toNumber(item.latitude_estabelecimento_decimo_grau);
   const longitude = toNumber(item.longitude_estabelecimento_decimo_grau);
   const hasCoords = latitude !== null && longitude !== null;
@@ -166,7 +188,7 @@ function mapEstabelecimento(item, tipo, referencePoint) {
   }
 
   return {
-    tipo,
+    tipo: resolvedTipo,
     codigo_cnes: item.codigo_cnes,
     nome: item.nome_fantasia || item.nome_razao_social || null,
     codigo_tipo_unidade: item.codigo_tipo_unidade,
@@ -280,9 +302,16 @@ async function main() {
 
   const topN = Math.max(Number(process.env.SAUDE_PRIORIZACAO_TOP_N || 15), 1);
 
-  const byTipo = activeTipoConfig.reduce((acc, cfg) => {
-    const group = prioritizedAll.filter((item) => item.tipo === cfg.tipo);
-    acc[cfg.tipo] = {
+  const tipoOrder = ["UBS", "UPA", "PRONTO_ATENDIMENTO", "PRONTO_SOCORRO"];
+  const foundTipos = [...new Set(prioritizedAll.map((item) => item.tipo).filter(Boolean))];
+  const orderedTipos = [
+    ...tipoOrder.filter((tipo) => foundTipos.includes(tipo)),
+    ...foundTipos.filter((tipo) => !tipoOrder.includes(tipo)),
+  ];
+
+  const byTipo = orderedTipos.reduce((acc, tipo) => {
+    const group = prioritizedAll.filter((item) => item.tipo === tipo);
+    acc[tipo] = {
       total: group.length,
       priorizados: group.slice(0, topN),
       itens: group,

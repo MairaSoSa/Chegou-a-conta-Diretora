@@ -27,7 +27,8 @@ echo "🔍 PROBLEMAS DETECTADOS" >> "$REPORT_FILE"
 LEGACY_COUNT=0
 
 # Verificar versões antigas
-for pattern in "*-v[0-9].js" "*-v[0-9].css" "*-final.*" "*-fix-r*" "*.bak"; do
+# Observacao: index-v2.css permanece como asset ativo na build atual.
+for pattern in "*-v[0-9].js" "*-final.*" "*-fix-r*" "*.bak"; do
   COUNT=$(find "$PROJECT_ROOT/dist" -name "$pattern" 2>/dev/null | wc -l)
   if [ "$COUNT" -gt 0 ]; then
     echo "   ❌ $pattern: $COUNT arquivo(s)" >> "$REPORT_FILE"

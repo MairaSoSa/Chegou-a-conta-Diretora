@@ -11,8 +11,8 @@ echo "🧹 Limpando código legado..."
 
 # 1. Remover backups da raiz dist/
 echo "  → Removendo backups em dist/"
-rm -f "$PROJ_ROOT/dist/index.cjs.gz.bak2" && echo "    ✓ Removido: index.cjs.gz.bak2" && ((REMOVED++))
-rm -f "$PROJ_ROOT/dist/public/index.html.bak" && echo "    ✓ Removido: index.html.bak" && ((REMOVED++))
+rm -f "$PROJ_ROOT/dist/index.cjs.gz.bak2" && echo "    ✓ Removido: index.cjs.gz.bak2" && ((REMOVED+=1))
+rm -f "$PROJ_ROOT/dist/public/index.html.bak" && echo "    ✓ Removido: index.html.bak" && ((REMOVED+=1))
 
 # 2. Remover versões antigas de componentes (manter apenas v4 e hash final)
 # Padrão: remover tudo exceto versões que NÃO têm sufixos de patch (v2, v3, final, fix)
@@ -34,15 +34,13 @@ OLD_DASHBOARDS=(
 for file in "${OLD_DASHBOARDS[@]}"; do
   if [ -f "$PROJ_ROOT/dist/public/assets/$file" ]; then
     rm -f "$PROJ_ROOT/dist/public/assets/$file"
-    echo "    ✓ Removido: $file" && ((REMOVED++))
+    echo "    ✓ Removido: $file" && ((REMOVED+=1))
   fi
 done
 
 echo ""
 echo "  → Removendo versões antigas de index"
 OLD_INDEX=(
-  "index-v2.css"
-  "index-v2.css.gz"
   "index-v2patch-Af.js"
   "index-v2patch-Af.js.gz"
   "index-v3r1.js"
@@ -60,7 +58,7 @@ OLD_INDEX=(
 for file in "${OLD_INDEX[@]}"; do
   if [ -f "$PROJ_ROOT/dist/public/assets/$file" ]; then
     rm -f "$PROJ_ROOT/dist/public/assets/$file"
-    echo "    ✓ Removido: $file" && ((REMOVED++))
+    echo "    ✓ Removido: $file" && ((REMOVED+=1))
   fi
 done
 

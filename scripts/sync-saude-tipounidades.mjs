@@ -113,13 +113,12 @@ function classifyTipos(tipos) {
   const upa = normalized.filter((item) =>
     includesAny(item._descricaoNormalizada, [
       "UPA",
-      "PRONTO ATENDIMENTO",
       "UNIDADE DE PRONTO ATENDIMENTO",
     ])
   );
 
   const prontoSocorro = normalized.filter((item) =>
-    includesAny(item._descricaoNormalizada, ["PRONTO SOCORRO"])
+    includesAny(item._descricaoNormalizada, ["PRONTO SOCORRO", "PRONTO ATENDIMENTO"])
   );
 
   return { ubs, upa, prontoSocorro };
