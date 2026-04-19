@@ -375,6 +375,7 @@ const _EQUIP_ROUTE =
       '}'+
       'const _ccData=globalThis._funaiContatos;'+
       '_funaiResult.ouvidoria_nacional=_ccData&&_ccData.ouvidoria_nacional||null;'+
+      '_funaiResult.contatos_atualizado_em=_ccData&&_ccData.generated_at||null;'+
       'if(_funaiResult.cr&&_funaiResult.cr.sigla&&_ccData&&_ccData.by_sigla){'+
         'const _ccCr=_ccData.by_sigla[_funaiResult.cr.sigla];'+
         'if(_ccCr&&typeof _ccCr==="object"){'+
@@ -1171,15 +1172,27 @@ if (fs.existsSync(dashboardV30AssetPath)) {
                 'e.jsx("span",{style:{fontWeight:600},children:"\\u260E\\uFE0F Telefone"+(_cr.contato.telefones.length>1?"s":"")+": "}),' +
                 '_cr.contato.telefones.map(function(t,i){return e.jsxs("span",{children:[i>0?" \\u00B7 ":"",e.jsx("a",{href:"tel:+55"+t.replace(/\\D/g,""),style:{color:"#7b3f00",textDecoration:"none",fontWeight:500},children:t})]},i);})' +
               ']}),' +
-              '_cr.contato.emails&&_cr.contato.emails.length>0&&e.jsxs("p",{style:{fontSize:11,color:"#4e342e",margin:"0",lineHeight:1.5,wordBreak:"break-all"},children:[' +
+              '_cr.contato.emails&&_cr.contato.emails.length>0&&e.jsxs("p",{style:{fontSize:11,color:"#4e342e",margin:"0 0 6px",lineHeight:1.5,wordBreak:"break-all"},children:[' +
                 'e.jsx("span",{style:{fontWeight:600},children:"\\u2709\\uFE0F E-mail: "}),' +
                 '_cr.contato.emails.map(function(em,i){return e.jsxs("span",{children:[i>0?" \\u00B7 ":"",e.jsx("a",{href:"mailto:"+em,style:{color:"#7b3f00",textDecoration:"underline",fontWeight:500},children:em})]},i);})' +
+              ']}),' +
+              // metadata: atualizado em + link reportar contato desatualizado
+              'e.jsxs("p",{style:{fontSize:9,color:"#8d6e63",fontStyle:"italic",margin:"6px 0 0",lineHeight:1.45,display:"flex",flexWrap:"wrap",gap:"4px 10px",alignItems:"center"},children:[' +
+                '_F.contatos_atualizado_em&&e.jsxs("span",{children:["\\uD83D\\uDD52 Atualizado em ",new Date(_F.contatos_atualizado_em).toLocaleDateString("pt-BR")," \\u2014 coleta manual em fontes p\\xFAblicas"]}),' +
+                'e.jsx("a",{href:"mailto:"+((_F.ouvidoria_nacional&&_F.ouvidoria_nacional.email)||"ouvidoria@funai.gov.br")+"?subject="+encodeURIComponent("Atualiza\\xE7\\xE3o de contato \\u2014 "+(_cr.sigla||"CR FUNAI"))+"&body="+encodeURIComponent("Ol\\xE1, gostaria de reportar que o contato da "+(_cr.nome||"Coordena\\xE7\\xE3o Regional")+" (sigla "+(_cr.sigla||"")+") parece desatualizado.\\n\\nFonte do contato divergente: \\n"),style:{color:"#7b3f00",textDecoration:"underline"},children:"\\u270F\\uFE0F Reportar contato desatualizado"})' +
               ']})' +
             ']}),' +
-            // sem contato curado para esta CR — mostra link de busca no portal
-            '_cr&&!(_cr.contato&&(_cr.contato.endereco||(_cr.contato.telefones&&_cr.contato.telefones.length)||(_cr.contato.emails&&_cr.contato.emails.length)))&&e.jsxs("p",{style:{fontSize:10,color:"#8d6e63",fontStyle:"italic",margin:"10px 0 0",paddingTop:8,borderTop:"1px dashed #d7ccc8",lineHeight:1.45},children:[' +
-              '"Contato direto desta CR n\\xE3o catalogado. ",' +
-              'e.jsx("a",{href:"https://www.gov.br/funai/pt-br/search?SearchableText="+encodeURIComponent(_cr.nome||""),target:"_blank",rel:"noopener noreferrer",style:{color:"#7b3f00",textDecoration:"underline"},children:"Buscar no portal FUNAI \\u2197"})' +
+            // sem contato curado para esta CR — mostra link de busca + ouvidoria como fallback
+            '_cr&&!(_cr.contato&&(_cr.contato.endereco||(_cr.contato.telefones&&_cr.contato.telefones.length)||(_cr.contato.emails&&_cr.contato.emails.length)))&&e.jsxs("div",{style:{margin:"10px 0 0",paddingTop:8,borderTop:"1px dashed #d7ccc8"},children:[' +
+              'e.jsxs("p",{style:{fontSize:10,color:"#8d6e63",fontStyle:"italic",margin:"0 0 4px",lineHeight:1.45},children:[' +
+                '"Contato direto desta CR n\\xE3o catalogado. ",' +
+                'e.jsx("a",{href:"https://www.gov.br/funai/pt-br/search?SearchableText="+encodeURIComponent(_cr.nome||""),target:"_blank",rel:"noopener noreferrer",style:{color:"#7b3f00",textDecoration:"underline"},children:"Buscar no portal FUNAI \\u2197"})' +
+              ']}),' +
+              '_F.ouvidoria_nacional&&e.jsxs("p",{style:{fontSize:10,color:"#6d4c41",margin:"0",lineHeight:1.45},children:[' +
+                '"Em \\xFAltimo caso, fale com a Ouvidoria FUNAI: ",' +
+                'e.jsx("a",{href:"tel:"+(_F.ouvidoria_nacional.telefone||"").replace(/\\D/g,""),style:{color:"#7b3f00",textDecoration:"underline",fontWeight:500},children:_F.ouvidoria_nacional.telefone})," \\u00B7 ",' +
+                'e.jsx("a",{href:"mailto:"+_F.ouvidoria_nacional.email,style:{color:"#7b3f00",textDecoration:"underline",fontWeight:500},children:_F.ouvidoria_nacional.email})' +
+              ']})' +
             ']})' +
           ']})' +
         ']}),' +
