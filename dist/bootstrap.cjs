@@ -4,6 +4,7 @@ const fs = require('fs');
 const zlib = require('zlib');
 const os = require('os');
 const Module = require('module');
+const { spawn } = require('child_process');
 
 function loadDotEnvFile() {
   const envPath = path.join(process.cwd(), '.env');
@@ -39,6 +40,61 @@ function loadDotEnvFile() {
 }
 
 loadDotEnvFile();
+
+function startDailyFunaiSync() {
+  const scriptPath = path.join(process.cwd(), 'scripts', 'sync-funai.mjs');
+  if (!fs.existsSync(scriptPath)) {
+    console.warn('[bootstrap] Daily FUNAI sync skipped: scripts/sync-funai.mjs not found');
+    return;
+  }
+
+  if (String(process.env.FUNAI_DAILY_SYNC_DISABLED || '').toLowerCase() === 'true') {
+    console.log('[bootstrap] Daily FUNAI sync disabled via FUNAI_DAILY_SYNC_DISABLED=true');
+    return;
+  }
+
+  const runSync = (reason) => {
+    try {
+      console.log(`[bootstrap] FUNAI sync started (${reason})`);
+      const child = spawn(process.execPath, [scriptPath], {
+        cwd: process.cwd(),
+        env: process.env,
+        stdio: 'pipe',
+      });
+
+      child.stdout.on('data', (buf) => {
+        const out = String(buf || '').trim();
+        if (out) console.log(`[bootstrap] FUNAI sync: ${out}`);
+      });
+
+      child.stderr.on('data', (buf) => {
+        const err = String(buf || '').trim();
+        if (err) console.warn(`[bootstrap] FUNAI sync stderr: ${err}`);
+      });
+
+      child.on('exit', (code) => {
+        if (code === 0) console.log('[bootstrap] FUNAI sync finished successfully');
+        else console.warn(`[bootstrap] FUNAI sync finished with code ${code}`);
+      });
+
+      child.on('error', (err) => {
+        console.warn('[bootstrap] FUNAI sync process error:', err.message);
+      });
+    } catch (err) {
+      console.warn('[bootstrap] FUNAI sync failed to start:', err.message);
+    }
+  };
+
+  // Primeira atualização logo após subir o servidor.
+  setTimeout(() => runSync('startup'), 15 * 1000);
+
+  // Atualização diária (24h).
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  setInterval(() => runSync('daily'), oneDayMs);
+  console.log('[bootstrap] Daily FUNAI sync scheduled every 24h');
+}
+
+startDailyFunaiSync();
 
 // Prefer PostgreSQL in all environments when a DB URL is available.
 if (!process.env.RAILWAY_DATABASE_URL && process.env.DATABASE_URL) {
@@ -1113,13 +1169,15 @@ if (fs.existsSync(dashboardV30AssetPath)) {
       'const _ctlsAtende=_ctls.filter(function(c){return c&&c.atende_municipio_atual;});' +
       'const _ctlsOutras=_ctls.filter(function(c){return c&&!c.atende_municipio_atual;});' +
       'const _fmtMun=function(r){return r&&r.nome?(r.nome+(r.uf?(" \\u2014 "+r.uf):"")):(r&&r.co?("IBGE "+r.co):"");};' +
+      'const _ctlDisplayNome=function(c){const _nome=String((c&&c.nome)||"").trim();const _end=String((c&&c.endereco)||"").trim();if(!_nome)return _end||"Coordena\\xE7\\xE3o T\\xE9cnica Local";const _m=_nome.match(/LOCALIZADA EM\s+(.+)$/i);if(_m&&_end){const _fromNome=String(_m[1]||"").trim().toUpperCase();const _fromEnd=_end.toUpperCase();if(_fromNome&&_fromEnd&&_fromNome!==_fromEnd){return _nome.replace(/LOCALIZADA EM\s+.+$/i,"LOCALIZADA EM "+_end);}}return _nome;};' +
       'const _renderCtlCard=function(c,key,destacar){return e.jsxs("div",{style:{background:destacar?"#fff8e1":"#fff",border:destacar?"1.5px solid #f57c00":"1px solid #d7ccc8",borderRadius:12,padding:"10px 12px",borderLeft:destacar?"4px solid #e65100":"3px solid #a1887f"},children:[' +
         'e.jsxs("p",{style:{fontWeight:700,fontSize:11,color:destacar?"#bf360c":"#5d4037",margin:"0 0 4px",lineHeight:1.3,display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"},children:[' +
           'e.jsx("span",{style:{fontSize:8,fontWeight:800,color:"#fff",background:destacar?"#e65100":"#8d6e63",borderRadius:6,padding:"2px 6px"},children:"CTL"}),' +
-          'e.jsx("span",{children:c.nome||"Coordena\\xE7\\xE3o T\\xE9cnica Local"}),' +
+          'e.jsx("span",{children:_ctlDisplayNome(c)||"Coordena\\xE7\\xE3o T\\xE9cnica Local"}),' +
           'destacar&&e.jsx("span",{style:{fontSize:8,fontWeight:700,color:"#1b5e20",background:"#c8e6c9",borderRadius:10,padding:"1px 6px"},children:"\\u2713 atende este munic\\xEDpio"})' +
         ']}),' +
-        'c.endereco&&e.jsxs("p",{style:{fontSize:10,color:"#5d4037",margin:"0 0 2px"},children:["\\uD83D\\uDCCD Sede: ",c.endereco,c.uf?(" \\u2014 "+c.uf):""]}),' +
+        '(c.endereco||(_cr&&_cr.contato&&_cr.contato.endereco))&&e.jsxs("p",{style:{fontSize:10,color:"#5d4037",margin:"0 0 2px",lineHeight:1.35},children:["\\uD83D\\uDCCD Endere\\xE7o: ",(c.endereco&&String(c.endereco).trim())||(_cr&&_cr.contato&&_cr.contato.endereco)||"",c.uf?(" \\u2014 "+c.uf):""]}),' +
+        '((Array.isArray(c.telefones)&&c.telefones.length>0)||c.telefone||(_cr&&_cr.contato&&Array.isArray(_cr.contato.telefones)&&_cr.contato.telefones.length>0))&&e.jsxs("p",{style:{fontSize:10,color:"#5d4037",margin:"0 0 2px",display:"flex",alignItems:"center",gap:4,lineHeight:1.35},children:["\\u260E\\uFE0F ",(Array.isArray(c.telefones)&&c.telefones.length>0)||c.telefone?"Telefone: ":"Telefone (CR): ",e.jsx("a",{href:"tel:+55"+String((Array.isArray(c.telefones)&&c.telefones.length>0?c.telefones[0]:(c.telefone||((_cr&&_cr.contato&&Array.isArray(_cr.contato.telefones)&&_cr.contato.telefones[0])||"")))).replace(/\\\\D/g,""),style:{color:"#7b3f00",textDecoration:"none",fontWeight:600},children:(Array.isArray(c.telefones)&&c.telefones.length>0?c.telefones[0]:(c.telefone||((_cr&&_cr.contato&&Array.isArray(_cr.contato.telefones)&&_cr.contato.telefones[0])||"")))})]}),' +
         'c.municipios_atendidos_resolved&&c.municipios_atendidos_resolved.length>0&&e.jsxs("p",{style:{fontSize:10,color:"#6d4c41",margin:"3px 0 0",lineHeight:1.4},children:[' +
           'e.jsxs("span",{style:{fontWeight:600,color:"#5d4037"},children:["Atende ",c.municipios_atendidos_resolved.length," munic\\xEDpio",c.municipios_atendidos_resolved.length===1?"":"s",": "]}),' +
           'c.municipios_atendidos_resolved.slice(0,8).map(function(r,i){return e.jsxs("span",{children:[i>0?", ":"",e.jsx("span",{style:{fontWeight:r.eh_o_municipio_atual?700:400,color:r.eh_o_municipio_atual?"#bf360c":"#6d4c41"},children:_fmtMun(r)})]},i);}),' +
@@ -1130,7 +1188,7 @@ if (fs.existsSync(dashboardV30AssetPath)) {
         // section header
         'e.jsxs("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,gap:8,flexWrap:"wrap"},children:[' +
           'e.jsx("p",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:"#7b3f00",margin:0},children:"\\uD83E\\uDEB6 Presen\\xE7a Ind\\xEDgena \\u2014 apoio territorial da FUNAI"}),' +
-          'e.jsx("span",{style:{fontSize:9,color:"#7b3f00",background:"#fef3e2",borderRadius:20,padding:"2px 8px",fontWeight:600},children:"Censo INEP + FUNAI"})' +
+          '' +
         ']}),' +
         // intro line — explica o que é CTL/CR e por que aparece
         'e.jsx("p",{style:{fontSize:10,color:"#6d4c41",margin:"0 0 10px",lineHeight:1.45,fontStyle:"italic"},children:"A FUNAI mant\\xE9m duas estruturas no territ\\xF3rio: a Coordena\\xE7\\xE3o T\\xE9cnica Local (CTL), pr\\xF3xima das comunidades, e a Coordena\\xE7\\xE3o Regional (CR), que articula uma regi\\xE3o maior. Este bloco mostra quem atende este munic\\xEDpio."}),' +
@@ -1138,7 +1196,7 @@ if (fs.existsSync(dashboardV30AssetPath)) {
         '(_edInd===1||_tpLoc===2||_qtInd>0)&&e.jsxs("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12},children:[' +
           '_edInd===1&&e.jsx("span",{style:{fontSize:10,fontWeight:700,color:"#7b3f00",background:"#fef3e2",border:"1px solid #f4c06c",borderRadius:20,padding:"3px 10px"},children:"Escola Ind\\xEDgena (Censo)"}),' +
           '_tpLoc===2&&e.jsx("span",{style:{fontSize:10,fontWeight:700,color:"#5d4037",background:"#efebe9",border:"1px solid #bcaaa4",borderRadius:20,padding:"3px 10px"},children:"Em Terra Ind\\xEDgena"}),' +
-          '_qtInd>0&&e.jsxs("span",{style:{fontSize:10,fontWeight:700,color:"#4e342e",background:"#efebe9",border:"1px solid #bcaaa4",borderRadius:20,padding:"3px 10px"},children:[_qtInd.toLocaleString("pt-BR")," matr\\xEDcula",_qtInd===1?"":"s"," ind\\xEDgena",_qtInd===1?"":"s",_pctInd!=null?(" (\\u2248"+(_pctInd<1?_pctInd.toFixed(1):Math.round(_pctInd))+"% das matr\\xEDculas)"):""]})' +
+          '_qtInd>0&&e.jsxs("span",{style:{fontSize:10,fontWeight:700,color:"#4e342e",background:"#efebe9",border:"1px solid #bcaaa4",borderRadius:20,padding:"3px 10px"},children:["Esta escola registrou ",_qtInd.toLocaleString("pt-BR")," estudante",_qtInd===1?"":"s"," ind\xEDgena",_qtInd===1?"":"s"," no Censo Escolar"]})' +
         ']}),' +
         // Quem atende este município (CTLs em destaque)
         '(_ctls.length>0||_cr)&&e.jsxs("div",{style:{marginBottom:12},children:[' +
@@ -1204,11 +1262,10 @@ if (fs.existsSync(dashboardV30AssetPath)) {
         ']}),' +
         // sem CTL/CR mas escola tem flags indígenas
         '!_ctls.length&&!_cr&&(_edInd===1||_tpLoc===2||_qtInd>0)&&e.jsx("p",{style:{fontSize:10,color:"#8d6e63",fontStyle:"italic",margin:"0 0 6px",lineHeight:1.4},children:"Coordena\\xE7\\xF5es da FUNAI n\\xE3o mapeadas para este munic\\xEDpio na base atual."}),' +
-        // footer com fonte + caveat de contato + links portais
+        // footer com fonte + link oficial único
         'e.jsxs("p",{style:{fontSize:10,color:"#8d6e63",margin:"8px 0 0",lineHeight:1.45},children:[' +
-          '"Fonte: Censo Escolar INEP",_F.disponivel&&_F.atualizado_em&&e.jsxs("span",{children:[" + GeoServer FUNAI (atualizado em ",new Date(_F.atualizado_em).toLocaleDateString("pt-BR"),")"]}),". Esta base n\\xE3o inclui telefone/e-mail das CTLs/CRs \\u2014 use os portais oficiais para contato. ",' +
-          'e.jsx("a",{href:"https://www.gov.br/funai/pt-br/acesso-a-informacao/institucional/coordenacoes-regionais",target:"_blank",rel:"noopener noreferrer",style:{color:"#7b3f00",marginRight:8,textDecoration:"underline"},children:"Coordena\\xE7\\xF5es Regionais (FUNAI) \\u2197"}),' +
-          'e.jsx("a",{href:"https://www.gov.br/funai/pt-br/atuacao/presenca-indigena",target:"_blank",rel:"noopener noreferrer",style:{color:"#7b3f00",textDecoration:"underline"},children:"Presen\\xE7a Ind\\xEDgena \\u2197"})' +
+          '"Fonte: Censo Escolar INEP",_F.disponivel&&_F.atualizado_em&&e.jsxs("span",{children:[" + GeoServer FUNAI (atualizado em ",new Date(_F.atualizado_em).toLocaleDateString("pt-BR"),")"]}),". Use os portais oficiais para contato. (",' +
+          'e.jsx("a",{href:"https://www.gov.br/funai/pt-br",target:"_blank",rel:"noopener noreferrer",style:{color:"#7b3f00",textDecoration:"underline"},children:"Portal da FUNAI"}),")"' +
         ']})' +
       ']});' +
     '})()'
@@ -3768,7 +3825,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   const _CNES_FIELDS_MARKER = 'O.latitude_estabelecimento_decimo_grau';
   if (!dashSrc.includes(_CNES_FIELDS_MARKER)) {
     const _CNES_OLD = 'const M = O.latitude ? parseFloat(O.latitude) : null, K = O.longitude ? parseFloat(O.longitude) : null, Se = [[O.logradouro, O.numero].filter(Boolean).join(", "), O.bairro, O.municipio, O.cep ? `CEP ${O.cep}` : ""].filter(Boolean).join(" \\u2014 ");\n              r[$].push({ source: "cnes", nome: O.nome_fantasia || O.nome_razao_social || null, endereco: Se || null, telefone: O.telefone || null, lat: M, lon: K, mapsUrl: M && K ? `https://www.google.com/maps?q=${M},${K}` : null });';
-    const _CNES_NEW = 'const M = O.latitude_estabelecimento_decimo_grau ? parseFloat(String(O.latitude_estabelecimento_decimo_grau).replace(",", ".")) : null, K = O.longitude_estabelecimento_decimo_grau ? parseFloat(String(O.longitude_estabelecimento_decimo_grau).replace(",", ".")) : null, Se = [[O.endereco_estabelecimento, O.numero_estabelecimento].filter(Boolean).join(", "), O.bairro_estabelecimento, O.municipio_estabelecimento, O.cep_estabelecimento ? `CEP ${O.cep_estabelecimento}` : ""].filter(Boolean).join(" \\u2014 ");\n              r[$].push({ source: "cnes", nome: O.nome_fantasia || O.nome_razao_social || null, endereco: Se || null, telefone: O.numero_telefone_estabelecimento || null, lat: M, lon: K, mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps?q=${encodeURIComponent(_q)}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
+    const _CNES_NEW = 'const M = O.latitude_estabelecimento_decimo_grau ? parseFloat(String(O.latitude_estabelecimento_decimo_grau).replace(",", ".")) : null, K = O.longitude_estabelecimento_decimo_grau ? parseFloat(String(O.longitude_estabelecimento_decimo_grau).replace(",", ".")) : null, Se = [[O.endereco_estabelecimento, O.numero_estabelecimento].filter(Boolean).join(", "), O.bairro_estabelecimento, O.municipio_estabelecimento, O.cep_estabelecimento ? `CEP ${O.cep_estabelecimento}` : ""].filter(Boolean).join(" \\u2014 ");\n              r[$].push({ source: "cnes", nome: O.nome_fantasia || O.nome_razao_social || null, endereco: Se || null, telefone: O.numero_telefone_estabelecimento || null, lat: M, lon: K, mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps/place/${encodeURIComponent(_q).replace(/%20/g, "+")}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
     if (dashSrc.includes(_CNES_OLD)) {
       dashSrc = dashSrc.replace(_CNES_OLD, _CNES_NEW);
       changed = true;
@@ -3782,7 +3839,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   // Applied separately from cnes-fields-v1 because dashSrc may already have the field fix
   // but still uses the old ?q=LAT,LON format without the establishment name.
   const _CNES_MAPS_OLD = 'mapsUrl: M && K ? `https://www.google.com/maps?q=${M},${K}` : null });';
-  const _CNES_MAPS_NEW = 'mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps?q=${encodeURIComponent(_q)}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
+  const _CNES_MAPS_NEW = 'mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps/place/${encodeURIComponent(_q).replace(/%20/g, "+")}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
   if (dashSrc.includes(_CNES_MAPS_OLD)) {
     dashSrc = dashSrc.replace(_CNES_MAPS_OLD, _CNES_MAPS_NEW);
     changed = true;
@@ -3793,7 +3850,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   // Replaces the intermediate /search/NAME/@LAT,LON,17z format (from cnes-maps-name-v1)
   // with a full text query (name + full address) so Google resolves the establishment correctly.
   const _CNES_ADDR_OLD = 'mapsUrl: M && K ? `https://www.google.com/maps/search/${encodeURIComponent((O.nome_fantasia || O.nome_razao_social || "").trim()).replace(/%20/g, "+")}/@${M},${K},17z` : null });';
-  const _CNES_ADDR_NEW = 'mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps?q=${encodeURIComponent(_q)}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
+  const _CNES_ADDR_NEW = 'mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps/place/${encodeURIComponent(_q).replace(/%20/g, "+")}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
   if (dashSrc.includes(_CNES_ADDR_OLD)) {
     dashSrc = dashSrc.replace(_CNES_ADDR_OLD, _CNES_ADDR_NEW);
     changed = true;
@@ -3811,6 +3868,35 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 OSM name sanitization applied (drops opening_hours-like names)');
   }
 
+  // ── Sub-patch: OSM mapsUrl by text query (osm-maps-query-v1) ──
+  // In Equipamentos do Município, prefer Google Maps text search (name + address)
+  // so links open the place by name instead of only coordinates.
+  const _OSM_MAPS_OLD = 'mapsUrl: Se && We ? `https://www.google.com/maps?q=${Se},${We}` : null });';
+  const _OSM_MAPS_NEW = 'mapsUrl: (() => { const _q = [((ee["name:pt"] || ee.name || ee["official_name"] || ee["short_name"] || "").trim()), $a].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps/place/${encodeURIComponent(_q).replace(/%20/g, "+")}` : Se && We ? `https://www.google.com/maps?q=${Se},${We}` : null; })() });';
+  if (dashSrc.includes(_OSM_MAPS_OLD) && !dashSrc.includes('maps/search/?api=1&query=${encodeURIComponent(_q)}')) {
+    dashSrc = dashSrc.replace(_OSM_MAPS_OLD, _OSM_MAPS_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 OSM Maps URL switched to name/address search');
+  }
+
+  // ── Sub-patch: remove coordinate fallback in equipment card link (equip-card-text-maps-v1) ──
+  // In card renderer `l`, keep maps links textual (name/address) and avoid raw lat/lon URL.
+  const _CARD_MAPS_COORD_OLD = 'y = n.mapsUrl || (u && v ? `https://www.google.com/maps?q=${u},${v}` : null), B2 = W2 ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(W2)}` : n.nome ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(n.nome + (n.municipio ? " " + n.municipio : ""))}` : null;';
+  const _CARD_MAPS_TEXT_NEW = 'Q2 = [String(n.nome || h.label || "").trim(), W2 || [n.municipio, n.uf].filter(Boolean).join(", ")].filter(Boolean).join(", "), U2 = String(n.mapsUrl || "").trim(), V2 = /\\/maps\\/place\\/[^/?#]+/i.test(U2) || /\\/maps\\/search\\/[^/?#]+/i.test(U2) || /[?&](q|query|destination)=[^&#]+/i.test(U2), y = U2 && V2 && !/https?:\\/\\/www\\.google\\.com\\/maps\\?q=-?\\d+(?:\\.\\d+)?,\\s*-?\\d+(?:\\.\\d+)?$/i.test(U2) && !/(undefined|null|nan)/i.test(U2) ? U2 : null, B2 = Q2 ? `https://www.google.com/maps/place/${encodeURIComponent(Q2).replace(/%20/g, "+")}` : u && v ? `https://www.google.com/maps?q=${u},${v}` : null;';
+  if (dashSrc.includes(_CARD_MAPS_COORD_OLD)) {
+    dashSrc = dashSrc.replace(_CARD_MAPS_COORD_OLD, _CARD_MAPS_TEXT_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 equipment card map link now avoids coordinate fallback');
+  }
+
+  const _CARD_MAPS_URL_COORD_OLD = 'y = n.mapsUrl || null, B2 = W2 ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(W2)}` : n.nome ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(n.nome + (n.municipio ? " " + n.municipio : ""))}` : null;';
+  const _CARD_MAPS_URL_COORD_NEW = 'Q2 = [String(n.nome || h.label || "").trim(), W2 || [n.municipio, n.uf].filter(Boolean).join(", ")].filter(Boolean).join(", "), U2 = String(n.mapsUrl || "").trim(), V2 = /\\/maps\\/place\\/[^/?#]+/i.test(U2) || /\\/maps\\/search\\/[^/?#]+/i.test(U2) || /[?&](q|query|destination)=[^&#]+/i.test(U2), y = U2 && V2 && !/https?:\\/\\/www\\.google\\.com\\/maps\\?q=-?\\d+(?:\\.\\d+)?,\\s*-?\\d+(?:\\.\\d+)?$/i.test(U2) && !/(undefined|null|nan)/i.test(U2) ? U2 : null, B2 = Q2 ? `https://www.google.com/maps/place/${encodeURIComponent(Q2).replace(/%20/g, "+")}` : u && v ? `https://www.google.com/maps?q=${u},${v}` : null;';
+  if (dashSrc.includes(_CARD_MAPS_URL_COORD_OLD)) {
+    dashSrc = dashSrc.replace(_CARD_MAPS_URL_COORD_OLD, _CARD_MAPS_URL_COORD_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 equipment card now ignores mapsUrl with raw lat/lon');
+  }
+
   // ── Sub-patch: sanitize CadUnico CRAS/CREAS nome (same rule as OSM) (cadunico-name-clean-v1) ──
   // The CadUnico-sourced items can also have operating-hours junk in the `nome` field
   // (e.g. Sobral CRAS: "Horário de Funcionamento (Dias Úteis): 8h às 12h e 14h às 18h").
@@ -3826,7 +3912,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   // ── Sub-patch: pass school INEP to /api/equipamentos-publicos so the saude
   //              referencia_proximidade is the school itself (not the centroid). (equip-fetch-inep-v1) ──
   const _EQUIP_FETCH_OLD = 'fetch(`/api/equipamentos-publicos/${a}`)';
-  const _EQUIP_FETCH_NEW = 'fetch(`/api/equipamentos-publicos/${a}` + (N && N.escola && N.escola.co_entidade ? `?inep=${encodeURIComponent(N.escola.co_entidade)}` : ``))';
+  const _EQUIP_FETCH_NEW = 'fetch(`/api/equipamentos-publicos/${a}` + `?refresh=${Date.now()}` + (N && N.escola && N.escola.co_entidade ? `&inep=${encodeURIComponent(N.escola.co_entidade)}` : ``))';
   if (dashSrc.includes(_EQUIP_FETCH_OLD) && !dashSrc.includes(_EQUIP_FETCH_NEW)) {
     dashSrc = dashSrc.replace(_EQUIP_FETCH_OLD, _EQUIP_FETCH_NEW);
     changed = true;
@@ -3858,7 +3944,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
 
   // ── Sub-patch: remove "Rede socioassistencial / fontes / desatualizados" footer (mds-fonte-removed-v1) ──
   // User requested removal of the whole sources/footer paragraph below the equipment block.
-  const _MDS_FOOTER_OLD = ', e.jsxs("p", { style: { fontSize: "10px", color: "#6b8a74", marginTop: 10, marginBottom: 6 }, children: [Ke?.ok && Ke.total > 0 && e.jsx("span", { children: "Rede socioassistencial: Mapa Social MDS. " }), Ra.ibge_fonte && e.jsxs("span", { children: ["Contagens hist\\xF3ricas: ", Ra.ibge_fonte, ". "] }), ca && n > 0 && e.jsx("span", { children: "Sa\\xFAde: CNES/Min. Sa\\xFAde e OpenStreetMap. " }), Pe && (Pe.cras?.length > 0 || Pe.creas?.length > 0) && e.jsx("span", { children: "CRAS/CREAS: CadUnico Brasil. " }), "Dados podem estar desatualizados."] })';
+  const _MDS_FOOTER_OLD = ', e.jsxs("p", { style: { fontSize: "10px", color: "#6b8a74", marginTop: 10, marginBottom: 6 }, children: [Ke?.ok && Ke.total > 0 && e.jsx("span", { children: "Rede socioassistencial: Mapa Social MDS. " }), Ra.ibge_fonte && e.jsxs("span", { children: ["Contagens hist\\xF3ricas: ", Ra.ibge_fonte, ". "] }), ca && n > 0 && e.jsx("span", { children: "Sa\\xFAde: CNES/Min. Sa\\xFAde e OpenStreetMap. " }), false, "Dados podem estar desatualizados."] })';
   if (dashSrc.includes(_MDS_FOOTER_OLD)) {
     dashSrc = dashSrc.replace(_MDS_FOOTER_OLD, '');
     changed = true;
