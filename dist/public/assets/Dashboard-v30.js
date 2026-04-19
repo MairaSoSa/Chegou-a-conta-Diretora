@@ -948,12 +948,12 @@ out center tags 100;`, B2 = fetch("https://overpass-api.de/api/interpreter", { m
         });
       }, x = () => {
         const n = !st;
-        Ft(n), n && a && (!Ra && !Ta && (Da(true), fetch(`/api/equipamentos-publicos/${a}` + `?refresh=${Date.now()}` + (N && N.escola && N.escola.co_entidade ? `&inep=${encodeURIComponent(N.escola.co_entidade)}` : ``)).then((g) => g.json()).then((g) => {
-          it(g), Da(false);
+        Ft(n), n && a && ((!Ra || Ra.__co !== String(a)) && !Ta && (Da(true), fetch(`/api/equipamentos-publicos/${a}` + `?refresh=${Date.now()}` + (N && N.escola && N.escola.co_entidade ? `&inep=${encodeURIComponent(N.escola.co_entidade)}` : ``)).then((g) => g.json()).then((g) => {
+          it({ ...(g || {}), __co: String(a) }), Da(false);
         }).catch(() => {
-          it({ ok: false }), Da(false);
-        })), a && S(String(a)), a && !Ke && !pt && (ft(true), fetch(`/api/mapa-social/${a}`).then((g) => g.json()).then((g) => {
-          $t(g), ft(false);
+          it({ ok: false, __co: String(a) }), Da(false);
+        })), a && S(String(a)), a && (!Ke || Ke.__co !== String(a)) && !pt && (ft(true), fetch(`/api/mapa-social/${a}`).then((g) => g.json()).then((g) => {
+          $t({ ...(g || {}), __co: String(a) }), ft(false);
         }).catch(() => {
           $t({ ok: false, equipamentos: [], grouped: {} }), ft(false);
         })), t && s && !Pe && !dt && (ct(true), Promise.all([fetch(`/api/busca-cras?municipio=${encodeURIComponent(t)}&uf=${s}&tipo=cras`).then((g) => g.json()).catch(() => ({ ok: false, units: [] })), fetch(`/api/busca-cras?municipio=${encodeURIComponent(t)}&uf=${s}&tipo=creas`).then((g) => g.json()).catch(() => ({ ok: false, units: [] }))]).then(([g, r]) => {

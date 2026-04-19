@@ -3897,6 +3897,43 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 equipment card now ignores mapsUrl with raw lat/lon');
   }
 
+  // ── Sub-patch: refetch equipamentos when município changes (equip-cache-municipio-v1) ──
+  // The toggle handler `x` only fetches /api/equipamentos-publicos when `!Ra && !Ta` (no cached
+  // result and not loading). When the user navigates from school A (município 1) to school B
+  // (município 2) within the same session, `Ra` still holds município 1's data, so the next
+  // expand never refetches and the equipamentos section shows the wrong municipality.
+  // Fix: stamp the fetched data with the município code (`__co`) and add `Ra.__co !== String(a)`
+  // to the guard, so a different município forces a refresh.
+  const _EQ_CACHE_OLD = 'n && a && (!Ra && !Ta && (Da(true), fetch(`/api/equipamentos-publicos/${a}`';
+  const _EQ_CACHE_NEW = 'n && a && ((!Ra || Ra.__co !== String(a)) && !Ta && (Da(true), fetch(`/api/equipamentos-publicos/${a}`';
+  if (dashSrc.includes(_EQ_CACHE_OLD)) {
+    dashSrc = dashSrc.replace(_EQ_CACHE_OLD, _EQ_CACHE_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 equipamentos guard now refetches on município change');
+  }
+  const _EQ_STAMP_OLD = '.then((g) => {\n          it(g), Da(false);\n        }).catch(() => {\n          it({ ok: false }), Da(false);\n        }))';
+  const _EQ_STAMP_NEW = '.then((g) => {\n          it({ ...(g || {}), __co: String(a) }), Da(false);\n        }).catch(() => {\n          it({ ok: false, __co: String(a) }), Da(false);\n        }))';
+  if (dashSrc.includes(_EQ_STAMP_OLD)) {
+    dashSrc = dashSrc.replace(_EQ_STAMP_OLD, _EQ_STAMP_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 equipamentos result now stamped with __co for cache invalidation');
+  }
+  // Same problem for mapa-social (Ke state, $t setter, ft loading): refetch when a changes
+  const _MS_CACHE_OLD = 'a && !Ke && !pt && (ft(true), fetch(`/api/mapa-social/${a}`)';
+  const _MS_CACHE_NEW = 'a && (!Ke || Ke.__co !== String(a)) && !pt && (ft(true), fetch(`/api/mapa-social/${a}`)';
+  if (dashSrc.includes(_MS_CACHE_OLD)) {
+    dashSrc = dashSrc.replace(_MS_CACHE_OLD, _MS_CACHE_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 mapa-social guard now refetches on município change');
+  }
+  const _MS_STAMP_OLD = '$t(g), ft(false);';
+  const _MS_STAMP_NEW = '$t({ ...(g || {}), __co: String(a) }), ft(false);';
+  if (dashSrc.includes(_MS_STAMP_OLD)) {
+    dashSrc = dashSrc.replace(_MS_STAMP_OLD, _MS_STAMP_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 mapa-social result now stamped with __co');
+  }
+
   // ── Sub-patch: heal legacy /maps/place/ URLs to documented /maps/search/?api=1&query= (equip-maps-search-api-v1) ──
   // Older patcher runs produced `https://www.google.com/maps/place/${encodeURIComponent(VAR).replace(/%20/g, "+")}`
   // which is undocumented and frequently lands on the "We couldn't find" page (especially when the query
