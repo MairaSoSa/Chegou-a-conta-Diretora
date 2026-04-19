@@ -4013,6 +4013,16 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     changed = true;
     console.log('[bootstrap] Dashboard-v30 Atenção Primária header now prefixes SISAB and adds source tooltip');
   }
+  // Heal V3→V4: trocar o quadrimestre ("2024Q3") por MM/AAAA ("12/2024") pra ficar consistente
+  // com o formato de data exibido nas linhas de equipes_saude logo abaixo. Usa o campo
+  // cobertura_competencia.competencia (YYYYMM) já presente no payload.
+  const _AP_HDR_V3_QUAD = '" (SISAB \\u00b7 " + ctxMunData.cobertura_competencia.quadrimestre + ")"';
+  const _AP_HDR_V4_MMAAAA = '" (SISAB \\u00b7 " + (function(c){var s=String(c||"");return s.length===6?(s.slice(4,6)+"/"+s.slice(0,4)):s;})(ctxMunData.cobertura_competencia.competencia) + ")"';
+  if (dashSrc.includes(_AP_HDR_V3_QUAD)) {
+    dashSrc = dashSrc.replace(_AP_HDR_V3_QUAD, _AP_HDR_V4_MMAAAA);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 Atenção Primária header now formats competência as MM/AAAA (consistent with equipes rows)');
+  }
   // Patch C: Hospitais CNES → "· CNES/MS · atualização mensal"
   const _HOSP_OLD = 'children:["Hospitais do Munic\\xEDpio (CNES) ",e.jsxs("span",{style:{opacity:0.8},children:["(",ctxMunData.hospitais.length,")"]})]})';
   const _HOSP_NEW = 'children:["Hospitais do Munic\\xEDpio (CNES) ",e.jsxs("span",{style:{opacity:0.8},children:["(",ctxMunData.hospitais.length,")"]}),e.jsx("span",{style:{fontSize:9,color:"#888",fontWeight:400,marginLeft:6,textTransform:"none",letterSpacing:0},children:" \\u00b7 CNES/MS \\u00b7 atualiza\\xE7\\xE3o mensal"})]})';
