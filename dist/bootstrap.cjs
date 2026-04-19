@@ -3638,6 +3638,15 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 CNES Maps URL upgraded to text-search (name+address)');
   }
 
+  // ── Sub-patch: remove "Rede socioassistencial / fontes / desatualizados" footer (mds-fonte-removed-v1) ──
+  // User requested removal of the whole sources/footer paragraph below the equipment block.
+  const _MDS_FOOTER_OLD = ', e.jsxs("p", { style: { fontSize: "10px", color: "#6b8a74", marginTop: 10, marginBottom: 6 }, children: [Ke?.ok && Ke.total > 0 && e.jsx("span", { children: "Rede socioassistencial: Mapa Social MDS. " }), Ra.ibge_fonte && e.jsxs("span", { children: ["Contagens hist\\xF3ricas: ", Ra.ibge_fonte, ". "] }), ca && n > 0 && e.jsx("span", { children: "Sa\\xFAde: CNES/Min. Sa\\xFAde e OpenStreetMap. " }), Pe && (Pe.cras?.length > 0 || Pe.creas?.length > 0) && e.jsx("span", { children: "CRAS/CREAS: CadUnico Brasil. " }), "Dados podem estar desatualizados."] })';
+  if (dashSrc.includes(_MDS_FOOTER_OLD)) {
+    dashSrc = dashSrc.replace(_MDS_FOOTER_OLD, '');
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 MDS/fontes footer removed');
+  }
+
   // ── Sub-patch 3k-i: update segurança card UI for SINAN/SIM data (not SINESP-only) ──
   // Updates subtitle, section header, natureza cards to reflect municipal-level data.
   // ── Sub-patch: clean up "/* segui-v2-sinan */" text that renders visibly in subtitle ──
