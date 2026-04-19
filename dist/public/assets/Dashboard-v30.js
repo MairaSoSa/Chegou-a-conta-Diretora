@@ -1010,7 +1010,7 @@ out center tags 100;`, B2 = fetch("https://overpass-api.de/api/interpreter", { m
                 }
               }
             }
-            const E2 = String(h?.nome || "").trim() || B2;
+            const _rawNome = String(h?.nome || "").trim(); const E2 = (_rawNome && !/hor[\u00e1a]rio|funcionamento|\d{1,2}\s*h\s*[\u00e0a]s|\d{1,2}:\d{2}/i.test(_rawNome)) ? _rawNome : B2;
             const Z2 = [u || h?.endereco || "", h?.bairro || "", t || "", s || "", h?.cep ? `CEP ${h.cep}` : ""].filter(Boolean).join(", ") || E2;
             return { ...h, nome: E2, horario: y, endereco: u || h?.endereco || "", source: "cadunico", mapsUrl: Z2 ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(Z2)}` : null };
           }, g = (Pe.cras || []).map((h) => S2(h)), r = (Pe.creas || []).map((h) => S2(h));

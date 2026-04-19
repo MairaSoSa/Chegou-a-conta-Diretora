@@ -3649,6 +3649,18 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 OSM name sanitization applied (drops opening_hours-like names)');
   }
 
+  // ── Sub-patch: sanitize CadUnico CRAS/CREAS nome (same rule as OSM) (cadunico-name-clean-v1) ──
+  // The CadUnico-sourced items can also have operating-hours junk in the `nome` field
+  // (e.g. Sobral CRAS: "Horário de Funcionamento (Dias Úteis): 8h às 12h e 14h às 18h").
+  // Reject those and fall back to the schedule-extracted name (B2).
+  const _CADU_NAME_OLD = 'const E2 = String(h?.nome || "").trim() || B2;';
+  const _CADU_NAME_NEW = 'const _rawNome = String(h?.nome || "").trim(); const E2 = (_rawNome && !/hor[\\u00e1a]rio|funcionamento|\\d{1,2}\\s*h\\s*[\\u00e0a]s|\\d{1,2}:\\d{2}/i.test(_rawNome)) ? _rawNome : B2;';
+  if (dashSrc.includes(_CADU_NAME_OLD)) {
+    dashSrc = dashSrc.replace(_CADU_NAME_OLD, _CADU_NAME_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 CadUnico nome sanitization applied');
+  }
+
   // ── Sub-patch: remove CRAS/CREAS from OSM equipamentos to avoid duplication with CadUnico block (cras-dedup-v1) ──
   // CRAS and CREAS were appearing twice: once in the generic OSM/CNES equipamentos block and once in the
   // dedicated CadUnico-sourced "CRAS e CREAS" block below. Strip them from the OSM block so the dedicated
