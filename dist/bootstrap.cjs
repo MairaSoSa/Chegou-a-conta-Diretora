@@ -2740,11 +2740,14 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '    const teamMap={};\n' +
 '    for(const c of cadastroAll){const k=c.sigla_equipe+":"+c.situacao_equipe;if(!teamMap[k]||c.competencia_referencia>teamMap[k].competencia_referencia)teamMap[k]=c;}\n' +
 '    const equipes=Object.values(teamMap).map(function(c){return{tipo:c.sigla_equipe,situacao:c.situacao_equipe,pessoas:c.pessoas_vinculadas_equipe_municipio,competencia:c.competencia_referencia};});\n' +
-'    // Populacao e cobertura\n' +
-'    const firstInd=indicadores[0];\n' +
-'    const populacao=(firstInd&&previneValidas[0]&&previneValidas[0].populacao)||(macro&&macro.populacao_estimada_ibge_2022)||null;\n' +
-'    const cadastrosTotal=(firstInd&&previneValidas[0]&&previneValidas[0].cadastro)||null;\n' +
+'    // Populacao e cobertura — usar SEMPRE o registro de competência mais recente\n' +
+'    // (a API SISAB nao garante ordem; pegar [0] pode trazer competencia antiga e dessincronizar do header).\n' +
+'    const previneValidasByComp=previneValidas.slice().sort(function(a,b){return (b.competencia||0)-(a.competencia||0);});\n' +
+'    const previneLatest=previneValidasByComp[0]||null;\n' +
+'    const populacao=(previneLatest&&previneLatest.populacao)||(macro&&macro.populacao_estimada_ibge_2022)||null;\n' +
+'    const cadastrosTotal=(previneLatest&&previneLatest.cadastro)||null;\n' +
 '    const coberturaAP=populacao&&cadastrosTotal?Math.round(cadastrosTotal/populacao*100):null;\n' +
+'    const coberturaCompetencia=previneLatest?{competencia:previneLatest.competencia,quadrimestre:previneLatest.quadrimestre}:null;\n' +
 '    // CNES hospitais — infraestrutura e especialidades\n' +
 '    const CAPS_LABELS={"centro_cirurgico":"Cirurgia","centro_obstetrico":"Obstetricia","centro_neonatal":"Neonatal/UTI Neo","atendimento_hospitalar":"Internacao","servico_apoio":"Servicos de Apoio","atendimento_ambulatorial":"Ambulatorio"};\n' +
 '    const hospitais=cnesHospArr.map(function(h){\n' +
@@ -2850,7 +2853,7 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '        }\n' +
 '      }\n' +
 '    }catch(_dbErr){console.warn("[ctx-mun] saude_db erro:",String(_dbErr));}\n' +
-'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,censo2022:censo2022,dengue:dengue,saude_db:saude_db});\n' +
+'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,cobertura_competencia:coberturaCompetencia,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,censo2022:censo2022,dengue:dengue,saude_db:saude_db});\n' +
 '  }catch(err){console.error("[ctx-mun] erro:",String(err));g.json({ok:false,erro:String(err)});}\n' +
 '}),\n';
 
@@ -3978,13 +3981,26 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     changed = true;
     console.log('[bootstrap] Dashboard-v30 Perfil Regional now shows DataSUS source label');
   }
-  // Patch B: Atenção Primária subtitle → competência do Previne Brasil
+  // Patch B: Atenção Primária subtitle → competência do registro Previne usado para cobertura
+  // Usa ctxMunData.cobertura_competencia (vem do backend, garantidamente sincronizado com
+  // cadastros_atencao_primaria e populacao). NUNCA usar indicadores_previne[0].quadrimestre,
+  // que é o latest do indicador de menor código e pode divergir.
   const _AP_OLD_HDR = 'children: "Aten\\xE7\\xE3o Prim\\xE1ria" }), e.jsx("p", { style: { fontSize: 18, fontWeight: 800,';
-  const _AP_NEW_HDR = 'children: ["Aten\\xE7\\xE3o Prim\\xE1ria", ctxMunData.indicadores_previne && ctxMunData.indicadores_previne[0] && ctxMunData.indicadores_previne[0].quadrimestre ? e.jsx("span", { style: { fontSize: 9, color: "#558b2f", fontWeight: 400, marginLeft: 4, textTransform: "none", letterSpacing: 0 }, children: " (" + ctxMunData.indicadores_previne[0].quadrimestre + ")" }) : null] }), e.jsx("p", { style: { fontSize: 18, fontWeight: 800,';
+  const _AP_NEW_HDR = 'children: ["Aten\\xE7\\xE3o Prim\\xE1ria", ctxMunData.cobertura_competencia && ctxMunData.cobertura_competencia.quadrimestre ? e.jsx("span", { style: { fontSize: 9, color: "#558b2f", fontWeight: 400, marginLeft: 4, textTransform: "none", letterSpacing: 0 }, children: " (" + ctxMunData.cobertura_competencia.quadrimestre + ")" }) : null] }), e.jsx("p", { style: { fontSize: 18, fontWeight: 800,';
   if (dashSrc.includes(_AP_OLD_HDR)) {
     dashSrc = dashSrc.replace(_AP_OLD_HDR, _AP_NEW_HDR);
     changed = true;
-    console.log('[bootstrap] Dashboard-v30 Atenção Primária header now shows competência');
+    console.log('[bootstrap] Dashboard-v30 Atenção Primária header now shows competência (from cobertura_competencia)');
+  }
+  // Heal: previous version (saude-ctx-dates-v1 first iteration) used indicadores_previne[0].quadrimestre,
+  // which can be from a different indicador than the one feeding cadastros/populacao. Switch to
+  // cobertura_competencia so header always matches the cadastro/populacao numbers below it.
+  const _AP_HDR_OLD_INDPREV = 'ctxMunData.indicadores_previne && ctxMunData.indicadores_previne[0] && ctxMunData.indicadores_previne[0].quadrimestre ? e.jsx("span", { style: { fontSize: 9, color: "#558b2f", fontWeight: 400, marginLeft: 4, textTransform: "none", letterSpacing: 0 }, children: " (" + ctxMunData.indicadores_previne[0].quadrimestre + ")" }) : null';
+  const _AP_HDR_NEW_INDPREV = 'ctxMunData.cobertura_competencia && ctxMunData.cobertura_competencia.quadrimestre ? e.jsx("span", { style: { fontSize: 9, color: "#558b2f", fontWeight: 400, marginLeft: 4, textTransform: "none", letterSpacing: 0 }, children: " (" + ctxMunData.cobertura_competencia.quadrimestre + ")" }) : null';
+  if (dashSrc.includes(_AP_HDR_OLD_INDPREV)) {
+    dashSrc = dashSrc.replace(_AP_HDR_OLD_INDPREV, _AP_HDR_NEW_INDPREV);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 Atenção Primária header switched from indicadores_previne[0] to cobertura_competencia (sync with cadastros)');
   }
   // Patch C: Hospitais CNES → "· CNES/MS · atualização mensal"
   const _HOSP_OLD = 'children:["Hospitais do Munic\\xEDpio (CNES) ",e.jsxs("span",{style:{opacity:0.8},children:["(",ctxMunData.hospitais.length,")"]})]})';
