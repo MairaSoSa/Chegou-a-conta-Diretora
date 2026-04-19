@@ -236,7 +236,7 @@ const _EQUIP_ROUTE =
       // reset so we build fresh from CNES for this municipality
       'T={disponivel:!1,fonte:"CNES-API",atualizado_em:null,referencia_proximidade:null,resumo:null,pronto_socorro_mais_proximo:null,top_contatos:[],dados_correspondem_municipio:!1};'+
       'try{'+
-        // fetch UBS (tipo 1=Posto Saúde, 2=Centro Saúde), UPA (tipo 73), Hospital (tipo 5) in parallel
+        // fetch UBS (tipo 1=Posto Saúde, 2=Centro Saúde), Pronto Atendimento (tipo 73 — UPAs são subset), Hospital (tipo 5) in parallel
         'let _base="https://apidadosabertos.saude.gov.br/cnes/estabelecimentos?codigo_municipio="+v;'+
         'let _sig=AbortSignal.timeout(14e3);'+
         'let _hdrs={"User-Agent":"ChegoAContaDiretora/1.0","Accept":"application/json"};'+
@@ -249,7 +249,8 @@ const _EQUIP_ROUTE =
         // nome_fantasia = nome real da unidade (ex: "UBS CENTRO"), nome_razao_social = entidade mantenedora (ex: "Prefeitura de...")
         'let _mapEst=(arr,tipo)=>(Array.isArray(arr)?arr:[]).map(_est=>({tipo,nome:_est.nome_fantasia||_est.nome_razao_social,bairro:_est.bairro_estabelecimento||null,endereco:(_est.endereco_estabelecimento&&_est.numero_estabelecimento)?_est.endereco_estabelecimento+", "+_est.numero_estabelecimento:(_est.endereco_estabelecimento||null),telefone:_est.numero_telefone_estabelecimento||null,latitude:_est.latitude_estabelecimento_decimo_grau?parseFloat(_est.latitude_estabelecimento_decimo_grau):null,longitude:_est.longitude_estabelecimento_decimo_grau?parseFloat(_est.longitude_estabelecimento_decimo_grau):null,distancia_km:null}));'+
         'let _ubs=[..._mapEst((_r1&&_r1.estabelecimentos)||[],"UBS"),..._mapEst((_r2&&_r2.estabelecimentos)||[],"UBS")];'+
-        'let _upa=_mapEst((_r3&&_r3.estabelecimentos)||[],"UPA");'+
+        // Tipo 73 do CNES = "Pronto Atendimento" (categoria ampla). UPA é um subtipo: só rotular como UPA quando o nome realmente contém "UPA" como palavra
+        'let _upa=(Array.isArray(_r3&&_r3.estabelecimentos)?_r3.estabelecimentos:[]).map(_est=>{var _n=String(_est.nome_fantasia||_est.nome_razao_social||"").toUpperCase();var _isUpa=/\\bUPA\\b/.test(_n)&&!/PRONTO[- ]ATENDIMENTO/.test(_n);return {tipo:_isUpa?"UPA":"PRONTO_ATENDIMENTO",nome:_est.nome_fantasia||_est.nome_razao_social,bairro:_est.bairro_estabelecimento||null,endereco:(_est.endereco_estabelecimento&&_est.numero_estabelecimento)?_est.endereco_estabelecimento+", "+_est.numero_estabelecimento:(_est.endereco_estabelecimento||null),telefone:_est.numero_telefone_estabelecimento||null,latitude:_est.latitude_estabelecimento_decimo_grau?parseFloat(_est.latitude_estabelecimento_decimo_grau):null,longitude:_est.longitude_estabelecimento_decimo_grau?parseFloat(_est.longitude_estabelecimento_decimo_grau):null,distancia_km:null};});'+
         // filter hospitals by name: only those with "pronto socorro" count as PS
         'let _hosp=((_r4&&_r4.estabelecimentos)||[]);'+
         'let _ps=_hosp.filter(h=>/pronto[- ]socorro/.test(String(h.nome_fantasia||h.nome_razao_social||"").toLowerCase())).map(h=>({tipo:"PRONTO_SOCORRO",nome:h.nome_fantasia||h.nome_razao_social,bairro:h.bairro_estabelecimento||null,endereco:(h.endereco_estabelecimento&&h.numero_estabelecimento)?h.endereco_estabelecimento+", "+h.numero_estabelecimento:(h.endereco_estabelecimento||null),telefone:h.numero_telefone_estabelecimento||null,latitude:h.latitude_estabelecimento_decimo_grau?parseFloat(h.latitude_estabelecimento_decimo_grau):null,longitude:h.longitude_estabelecimento_decimo_grau?parseFloat(h.longitude_estabelecimento_decimo_grau):null,distancia_km:null}));'+
