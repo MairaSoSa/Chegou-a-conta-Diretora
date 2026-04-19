@@ -1006,7 +1006,7 @@ const _SAUDE_FE_BLOCK =
             'children:"PRONTO SOCORRO"}),' +
             '_PS.nome' +
           ']}),' +
-          '_PS.latitude&&_PS.longitude&&e.jsxs("a",{href:"https://www.google.com/maps?q="+_PS.latitude+","+_PS.longitude,' +
+          '_PS.latitude&&_PS.longitude&&e.jsxs("a",{href:"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent([_PS.nome,_PS.endereco,_PS.bairro].filter(Boolean).join(" ")||(_PS.latitude+","+_PS.longitude)),' +
             'target:"_blank",rel:"noopener noreferrer",' +
             'style:{fontSize:10,color:"#1a73e8",textDecoration:"none",fontWeight:600,whiteSpace:"nowrap",flexShrink:0,display:"flex",alignItems:"center",gap:2},' +
             'children:[' +
@@ -1032,7 +1032,7 @@ const _SAUDE_FE_BLOCK =
           '_TCOrdered.map(function(_c,_i){' +
             'const _showTypeHeader=_i===0||_TCOrdered[_i-1].tipo!==_c.tipo;' +
             'const _dot=_tipoDot(_c.tipo);const _bg=_tipoBg(_c.tipo);const _bd=_tipoBorder(_c.tipo);const _txt=_tipoTxt(_c.tipo);' +
-            'const _mapsUrl=_c.latitude&&_c.longitude?"https://www.google.com/maps?q="+_c.latitude+","+_c.longitude:null;' +
+            'const _mapsUrl=_c.latitude&&_c.longitude?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent([_c.nome,_c.endereco,_c.bairro].filter(Boolean).join(" ")||(_c.latitude+","+_c.longitude)):null;' +
             'return e.jsxs(e.Fragment,{children:[' +
               '_showTypeHeader&&e.jsxs("p",{style:{gridColumn:"1 / -1",fontSize:10,fontWeight:700,color:_txt,textTransform:"uppercase",letterSpacing:"0.05em",margin:"4px 0 0"},children:[_tipoLabel(_c.tipo)," (",_tipoCounts[_c.tipo]||0,")"]}),' +
               'e.jsxs("div",{style:{background:"#fff",border:"1.5px solid "+_bd,borderRadius:12,padding:"10px 12px",borderLeft:"4px solid "+_dot},children:[' +
@@ -3932,6 +3932,26 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     dashSrc = dashSrc.replace(_MS_STAMP_OLD, _MS_STAMP_NEW);
     changed = true;
     console.log('[bootstrap] Dashboard-v30 mapa-social result now stamped with __co');
+  }
+
+  // ── Sub-patch: heal _PS pronto-socorro coord-only Maps URL → named search (saude-ps-maps-v1) ──
+  // Same rationale as equip-maps-search-api-v1: the raw `?q=lat,lon` form opens a generic
+  // pin without the place card. Switch to `/maps/search/?api=1&query=<name + endereco + bairro>`
+  // (falling back to coords) so the card with reviews opens when the match is unambiguous.
+  const _PS_OLD = '"https://www.google.com/maps?q="+_PS.latitude+","+_PS.longitude';
+  const _PS_NEW = '"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent([_PS.nome,_PS.endereco,_PS.bairro].filter(Boolean).join(" ")||(_PS.latitude+","+_PS.longitude))';
+  if (dashSrc.includes(_PS_OLD)) {
+    dashSrc = dashSrc.replace(_PS_OLD, _PS_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 saude pronto-socorro Maps URL switched to named search');
+  }
+  // ── Sub-patch: heal _c (UBS/UPA top-contacts) Maps URL → named search (saude-tc-maps-v1) ──
+  const _C_OLD = '_c.latitude&&_c.longitude?"https://www.google.com/maps?q="+_c.latitude+","+_c.longitude:null';
+  const _C_NEW = '_c.latitude&&_c.longitude?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent([_c.nome,_c.endereco,_c.bairro].filter(Boolean).join(" ")||(_c.latitude+","+_c.longitude)):null';
+  if (dashSrc.includes(_C_OLD)) {
+    dashSrc = dashSrc.replace(_C_OLD, _C_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 saude top-contacts (UBS/UPA) Maps URL switched to named search');
   }
 
   // ── Sub-patch: heal legacy /maps/place/ URLs to documented /maps/search/?api=1&query= (equip-maps-search-api-v1) ──
