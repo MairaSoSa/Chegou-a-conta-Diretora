@@ -1,0 +1,573 @@
+{
+  "generated_at": "2026-04-19T01:26:12.060Z",
+  "fonte": "Pesquisa web em fontes públicas (gov.br/funai e portais governamentais) — coleta curada manual",
+  "observacao": "Contatos das 39 Coordenações Regionais (CR) da FUNAI. As Coordenações Técnicas Locais (CTL) não possuem canais de contato direto publicados — usar a CR articuladora ou os canais nacionais da FUNAI (Ouvidoria 0800-208-0399, ouvidoria@funai.gov.br).",
+  "resumo": {
+    "total_crs": 39,
+    "com_telefone": 36,
+    "com_email": 38,
+    "com_endereco": 32,
+    "com_cep": 20
+  },
+  "ouvidoria_nacional": {
+    "telefone": "0800-208-0399",
+    "email": "ouvidoria@funai.gov.br",
+    "site": "https://www.gov.br/funai/pt-br/canais_atendimento"
+  },
+  "by_sigla": {
+    "CR-CAC": {
+      "nome": "COORDENACAO REGIONAL DE CACOAL",
+      "uf": "RO",
+      "municipio_nome": "Cacoal",
+      "endereco": "Av. Coronel Noronha, nº 620 – Novo Horizonte, Cacoal-RO, CEP 78976-345",
+      "cep": "78976-345",
+      "telefones": [
+        "(69) 3441-6127",
+        "(69) 8412-4556"
+      ],
+      "emails": [
+        "cr.cacoal@funai.gov.br"
+      ]
+    },
+    "CR-GJM": {
+      "nome": "COORDENACAO REGIONAL DE GUAJARA MIRIM",
+      "uf": "RO",
+      "municipio_nome": "Guajará-Mirim",
+      "endereco": "Avenida Constituição, 542 — Centro, Guajará-Mirim — RO, CEP 78.957-000",
+      "cep": "78957-000",
+      "telefones": [
+        "(69) 3541-8647",
+        "(69) 8482-6319"
+      ],
+      "emails": [
+        "cr.guajaramirim@funai.gov.br"
+      ]
+    },
+    "CR-JUR": {
+      "nome": "COORDENACAO REGIONAL DO JURUÁ",
+      "uf": "AC",
+      "municipio_nome": "Cruzeiro do Sul",
+      "endereco": "Rua Floriano Peixoto, 234 – Centro, Cruzeiro do Sul – AC, CEP 69.980-000",
+      "cep": null,
+      "telefones": [
+        "(61) 3247-6524"
+      ],
+      "emails": [
+        "cr.jurua@funai.gov.br",
+        "cr.altopurus@funai.gov.br",
+        "cr.altosolimoes@funai.gov.br"
+      ]
+    },
+    "CR-Apur": {
+      "nome": "COORDENACAO REGIONAL ALTO PURUS",
+      "uf": "AC",
+      "municipio_nome": "Rio Branco",
+      "endereco": "Estrada Dias Martins, Km 01, nº 2.111 – Bairro Estação Experimental / Residencial Ipê",
+      "cep": "69912-470",
+      "telefones": [
+        "(68) 3227-7970"
+      ],
+      "emails": [
+        "cr.altopurus@funai.gov.br",
+        "ouvidoria@funai.gov.br"
+      ]
+    },
+    "CR-LISE": {
+      "nome": "COORDENACAO REGIONAL LITORAL SUDESTE",
+      "uf": "SP",
+      "municipio_nome": "Itanhaém",
+      "endereco": "Avenida Harry Forssell, 1505 – Jardim Belas Artes, Itanhaém/SP",
+      "cep": null,
+      "telefones": [
+        "(13) 3426-4069",
+        "(13) 3426-8447"
+      ],
+      "emails": [
+        "cr.litoralsudeste@funai.gov.br"
+      ]
+    },
+    "CR-VJ": {
+      "nome": "COORDENACAO REGIONAL DO VALE DO JAVARI",
+      "uf": "AM",
+      "municipio_nome": "Atalaia do Norte",
+      "endereco": null,
+      "cep": "69650-000",
+      "telefones": [
+        "(61) 3247-6000"
+      ],
+      "emails": [
+        "cr.valedojavari@funai.gov.br",
+        "ouvidoria@funai.gov.br"
+      ]
+    },
+    "CR-MAO": {
+      "nome": "COORDENACAO REGIONAL DE MANAUS",
+      "uf": "AM",
+      "municipio_nome": "Manaus",
+      "endereco": "Rua Maceió, nº 224 — Bairro Adrianópolis",
+      "cep": "69057-010",
+      "telefones": [
+        "(92) 98402-5410"
+      ],
+      "emails": [
+        "cr.manaus@funai.gov.br",
+        "sead.crmanaus@funai.gov.br"
+      ]
+    },
+    "CR-MAD": {
+      "nome": "COORDENACAO REGIONAL MADEIRA",
+      "uf": "AM",
+      "municipio_nome": "Humaitá",
+      "endereco": "BR 230, Km 01, nº 1957, Bairro São Cristóvão",
+      "cep": "69800-000",
+      "telefones": [
+        "(97) 3373-3566",
+        "(97) 3373-3692"
+      ],
+      "emails": [
+        "cr.madeira@funai.gov.br"
+      ]
+    },
+    "CR-AS": {
+      "nome": "COORDENACAO REGIONAL DO ALTO SOLIMOES",
+      "uf": "AM",
+      "municipio_nome": "Tabatinga",
+      "endereco": "Av. da Amizade, nº 789, Bairro Brilhante (Centro)",
+      "cep": "69640-000",
+      "telefones": [
+        "(97) 3412-4633",
+        "(97) 3412-2542",
+        "(61) 3247-6000"
+      ],
+      "emails": [
+        "cr.altosolimoes@funai.gov.br"
+      ]
+    },
+    "CR-RR": {
+      "nome": "COORDENACAO REGIONAL RORAIMA",
+      "uf": "RR",
+      "municipio_nome": "Boa Vista",
+      "endereco": null,
+      "cep": null,
+      "telefones": [
+        "(61) 3247-6002"
+      ],
+      "emails": [
+        "cr.roraima@funai.gov.br",
+        "ouvidoria@funai.gov.br"
+      ]
+    },
+    "CR-CLPA": {
+      "nome": "COORDENACAO REGIONAL CENTRO-LESTE DO PARÁ",
+      "uf": "PA",
+      "municipio_nome": "Altamira",
+      "endereco": "Travessa Pedro Lemos, 1003, Centro — Altamira/PA — CEP 68371-060",
+      "cep": "68371-060",
+      "telefones": [
+        "(93) 3515-4026",
+        "(93) 3515-2361",
+        "(93) 3515-2956"
+      ],
+      "emails": [
+        "cr.centrolestepara@funai.gov.br",
+        "cr.tapajos@funai.gov.br",
+        "cr.araguaiatocantins@funai.gov.br"
+      ]
+    },
+    "CR-TPJ": {
+      "nome": "COORDENACAO REGIONAL DE TAPAJOS",
+      "uf": "PA",
+      "municipio_nome": "Itaituba",
+      "endereco": "Área Especial da FUNAI, S/N",
+      "cep": null,
+      "telefones": [],
+      "emails": []
+    },
+    "CR-ATO": {
+      "nome": "COORDENACAO REGIONAL ARAGUAIA TOCANTINS",
+      "uf": "TO",
+      "municipio_nome": "Palmas",
+      "endereco": "Rua QD 104 Norte, Conjunto 01, NE 01, Lote 10 — S/N",
+      "cep": null,
+      "telefones": [
+        "(63) 3228-3601",
+        "(63) 3232-9410",
+        "(63) 9952-8778"
+      ],
+      "emails": [
+        "cr.araguaiatocantins@funai.gov.br"
+      ]
+    },
+    "CR-MA": {
+      "nome": "COORDENACAO REGIONAL MARANHÃO",
+      "uf": "MA",
+      "municipio_nome": "Imperatriz",
+      "endereco": "Rua Simplício Moreira, nº 1.115, Centro, Imperatriz/MA — CEP: 65.907-190",
+      "cep": "65907-190",
+      "telefones": [],
+      "emails": [
+        "cr.maranhao@funai.gov.br"
+      ]
+    },
+    "CR-INTS": {
+      "nome": "COORDENACAO REGIONAL INTERIOR SUL",
+      "uf": "SC",
+      "municipio_nome": "Chapecó",
+      "endereco": "Rua Marechal Mascarenhas de Moraes, nº 230-E",
+      "cep": "89803-600",
+      "telefones": [
+        "(61) 3247-6000"
+      ],
+      "emails": [
+        "cr.litoralsul@funai.gov.br",
+        "cr.passofundo@funai.gov.br",
+        "cr.campogrande@funai.gov.br"
+      ]
+    },
+    "CR-LIS": {
+      "nome": "COORDENACAO REGIONAL LITORAL SUL",
+      "uf": "SC",
+      "municipio_nome": "Florianópolis",
+      "endereco": "Travessa Acelino de Carvalho, nº 21, 12º andar, Centro, Porto Alegre/RS",
+      "cep": null,
+      "telefones": [
+        "(48) 3244-0469",
+        "(48) 3240-8646",
+        "(51) 3225-2232",
+        "(48) 3242-5670",
+        "(47) 3467-1306"
+      ],
+      "emails": [
+        "cr.litoralsul@funai.gov.br"
+      ]
+    },
+    "CR-NE-II": {
+      "nome": "COORDENACAO REGIONAL NORDESTE II",
+      "uf": "CE",
+      "municipio_nome": "Fortaleza",
+      "endereco": "Av. Pontes Vieira, 832 – São João do Tauape, CEP 60.130-240 – Fortaleza/CE",
+      "cep": "60130-240",
+      "telefones": [],
+      "emails": [
+        "cr.nordeste2@funai.gov.br"
+      ]
+    },
+    "CR-PP": {
+      "nome": "COORDENACAO REGIONAL DE PONTA PORA",
+      "uf": "MS",
+      "municipio_nome": "Ponta Porã",
+      "endereco": "Rua Guia Lopes, 1671 – Centro, Ponta Porã – MS",
+      "cep": null,
+      "telefones": [
+        "(67) 3431-9121"
+      ],
+      "emails": [
+        "crpontapora@funai.gov.br"
+      ]
+    },
+    "CR-XAV": {
+      "nome": "COORDENACAO REGIONAL XAVANTE",
+      "uf": "MT",
+      "municipio_nome": "Barra do Garças",
+      "endereco": "Rua Coronel Antônio Cristino Cortes, Lote 04, Quadra 15",
+      "cep": null,
+      "telefones": [
+        "(66) 3401-2124"
+      ],
+      "emails": [
+        "cr.xavante@funai.gov.br"
+      ]
+    },
+    "CR-NMT": {
+      "nome": "COORDENACAO REGIONAL NORTE DO MATO GROSSO",
+      "uf": "MT",
+      "municipio_nome": "Colíder",
+      "endereco": "78.500-000. O endereço da Av. Colonizador Roque Guedes consta no portal oficial da FUNAI e deve ser considerado prioritário.",
+      "cep": null,
+      "telefones": [
+        "(66) 3541-2285",
+        "(66) 3541-1171",
+        "(66) 3541-4561"
+      ],
+      "emails": [
+        "cr.pontapora@funai.gov.br",
+        "cr.xavante@funai.gov.br",
+        "cr.cuiaba@funai.gov.br"
+      ]
+    },
+    "CR-CGB": {
+      "nome": "COORDENACAO REGIONAL DE CUIABA",
+      "uf": "MT",
+      "municipio_nome": "Cuiabá",
+      "endereco": "Rua E, Quadra 15, S/N – Bairro Centro Político Administrativo",
+      "cep": "78049-900",
+      "telefones": [
+        "(65) 3644-1719",
+        "(65) 3644-1850"
+      ],
+      "emails": [
+        "cr.cuiaba@funai.gov.br"
+      ]
+    },
+    "CR-NOMT": {
+      "nome": "COORDENACAO REGIONAL NOROESTE DO MATO GROSSO",
+      "uf": "MT",
+      "municipio_nome": "Juína",
+      "endereco": "Av. JK, nº 781 N – Setor Esporte, Juína/MT",
+      "cep": "78320-000",
+      "telefones": [
+        "(61) 3247-6000"
+      ],
+      "emails": [
+        "cr.noroestemt@funai.gov.br"
+      ]
+    },
+    "CR-RC": {
+      "nome": "COORDENACAO REGIONAL RIBEIRAO CASCALHEIRA",
+      "uf": "MT",
+      "municipio_nome": "Ribeirão Cascalheira",
+      "endereco": "Avenida dos Expedicionários, 316 – Centro, Ribeirão Cascalheira – MT, CEP: 78.675-000",
+      "cep": "78675-000",
+      "telefones": [
+        "(61) 3247-6000"
+      ],
+      "emails": [
+        "cr.cuiaba@funai.gov.br",
+        "cr.noroestemt@funai.gov.br",
+        "cr.ribeirocascalheira@funai.gov.br"
+      ]
+    },
+    "CR-BSF": {
+      "nome": "COORDENACAO REGIONAL BAIXO SÃO FRANCISCO",
+      "uf": "BA",
+      "municipio_nome": "Paulo Afonso",
+      "endereco": "Rua Marechal Floriano Peixoto, 75 – Centro, Paulo Afonso – BA, CEP 48.601-210",
+      "cep": "48601-210",
+      "telefones": [
+        "(61) 3247-6800"
+      ],
+      "emails": [
+        "cr.baixosaofransisco@funai.gov.br"
+      ]
+    },
+    "CR-SBA": {
+      "nome": "COORDENACAO REGIONAL SUL DA BAHIA",
+      "uf": "BA",
+      "municipio_nome": "Porto Seguro",
+      "endereco": "Rua dos Mamoeiros, nº 25 — Taperapuan (Itaperapuan), Porto Seguro — BA, CEP 45.810-000.",
+      "cep": null,
+      "telefones": [
+        "(73) 3288-2565"
+      ],
+      "emails": [
+        "cr.sulbahia@funai.gov.br"
+      ]
+    },
+    "CR-MGES": {
+      "nome": "COORDENACAO REGIONAL DE MINAS GERAIS E ESPIRITO SANTO",
+      "uf": "MG",
+      "municipio_nome": "Governador Valadares",
+      "endereco": null,
+      "cep": null,
+      "telefones": [
+        "(61) 3247-6138"
+      ],
+      "emails": [
+        "cr.mges@funai.gov.br",
+        "cgab@funai.gov.br"
+      ]
+    },
+    "CR-GPV": {
+      "nome": "COORDENACAO REGIONAL DE GUARAPUAVA",
+      "uf": "PR",
+      "municipio_nome": null,
+      "endereco": "Rua Pedro Alves, nº 1212, Centro — Guarapuava/PR — CEP: 85010-080",
+      "cep": "85010-080",
+      "telefones": [
+        "(42) 3623-7899"
+      ],
+      "emails": [
+        "cr.guarapuava@funai.gov.br"
+      ]
+    },
+    "CR-PFD": {
+      "nome": "COORDENACAO REGIONAL DE PASSO FUNDO",
+      "uf": "RS",
+      "municipio_nome": "Passo Fundo",
+      "endereco": "Rua Uruguai, 2648 – Boqueirão, Passo Fundo/RS – CEP 99010-112",
+      "cep": null,
+      "telefones": [
+        "(54) 3311-4233",
+        "(54) 3313-9373",
+        "(54) 9905-3663"
+      ],
+      "emails": [
+        "cr.passofundo@funai.gov.br"
+      ]
+    },
+    "CR-CGR": {
+      "nome": "COORDENACAO REGIONAL CAMPO GRANDE",
+      "uf": "MS",
+      "municipio_nome": "Campo Grande",
+      "endereco": null,
+      "cep": null,
+      "telefones": [
+        "(67) 3321-4166",
+        "(67) 3382-2326",
+        "(67) 9636-2545",
+        "(67) 9976-7974"
+      ],
+      "emails": [
+        "cr.campogrande@funai.gov.br"
+      ]
+    },
+    "CR-DOU": {
+      "nome": "COORDENACAO REGIONAL DOURADOS",
+      "uf": "MS",
+      "municipio_nome": "Dourados",
+      "endereco": "Rua Isidoro Pedroso, nº 120",
+      "cep": "79830-200",
+      "telefones": [
+        "(67) 3424-9463",
+        "(67) 3424-9733"
+      ],
+      "emails": [
+        "cr.dourados@funai.gov.br",
+        "cr.campogrande@funai.gov.br",
+        "cr.passofundo@funai.gov.br"
+      ]
+    },
+    "CR-XIN": {
+      "nome": "COORDENACAO REGIONAL XINGU",
+      "uf": "MT",
+      "municipio_nome": "Canarana",
+      "endereco": "Av. Mato Grosso, nº 587",
+      "cep": "78640-000",
+      "telefones": [
+        "(66) 3478-2431",
+        "(66) 3478-2419",
+        "(66) 3478-1871",
+        "(66) 3478-2346",
+        "(66) 9606-6977"
+      ],
+      "emails": [
+        "cr.xingu@funai.gov.br"
+      ]
+    },
+    "CR-JPR": {
+      "nome": "COORDENACAO REGIONAL DE JI PARANA",
+      "uf": "RO",
+      "municipio_nome": "Ji-Paraná",
+      "endereco": null,
+      "cep": null,
+      "telefones": [
+        "(69) 3424-2498",
+        "(69) 3424-5270",
+        "(69) 3424-3411",
+        "(69) 3411-9404",
+        "(69) 8402-3377"
+      ],
+      "emails": [
+        "cr.jiparana@funai.gov.br"
+      ]
+    },
+    "CR-Mpur": {
+      "nome": "COORDENACAO REGIONAL MÉDIO PURUS",
+      "uf": "AM",
+      "municipio_nome": "Lábrea",
+      "endereco": null,
+      "cep": null,
+      "telefones": [
+        "(61) 3247-6700"
+      ],
+      "emails": [
+        "cr.mediopurus@funai.gov.br",
+        "ouvidoria@funai.gov.br",
+        "cr.xingu@funai.gov.br"
+      ]
+    },
+    "CR-RNG": {
+      "nome": "COORDENACAO REGIONAL DO RIO NEGRO",
+      "uf": "AM",
+      "municipio_nome": "São Gabriel da Cachoeira",
+      "endereco": "Av. Álvaro Maia, 79 – Centro, São Gabriel da Cachoeira – AM",
+      "cep": "69750-000",
+      "telefones": [
+        "(61) 3247-6800"
+      ],
+      "emails": [
+        "cr.rionegro@funai.gov.br",
+        "ouvidoria@funai.gov.br"
+      ]
+    },
+    "CR-BTO": {
+      "nome": "COORDENACAO REGIONAL DO BAIXO TOCANTINS",
+      "uf": "PA",
+      "municipio_nome": "Marabá",
+      "endereco": "Rua Ivete Vargas, nº 2 — Cidade Nova, Marabá — PA, CEP 68.501-535",
+      "cep": null,
+      "telefones": [
+        "(61) 3247-6000"
+      ],
+      "emails": [
+        "cr.baixotocantins@funai.gov.br"
+      ]
+    },
+    "CR-KSPA": {
+      "nome": "COORDENACAO REGIONAL KAYAPÓ SUL DO PARÁ",
+      "uf": "PA",
+      "municipio_nome": "Tucumã",
+      "endereco": null,
+      "cep": "68385-000",
+      "telefones": [
+        "(94) 3433-1005",
+        "(94) 3433-3295",
+        "(61) 3247-6002"
+      ],
+      "emails": [
+        "cr.kayaposul@funai.gov.br"
+      ]
+    },
+    "CR-ANP": {
+      "nome": "COORDENACAO REGIONAL AMAPÁ E NORTE DO PARÁ",
+      "uf": "AP",
+      "municipio_nome": "Macapá",
+      "endereco": "Rua Leopoldo Machado, nº 3.445 – Bairro Beirol, Macapá/AP",
+      "cep": null,
+      "telefones": [
+        "(96) 3241-6266",
+        "(96) 3241-1533",
+        "(96) 3241-2268"
+      ],
+      "emails": [
+        "cr.amapa@funai.gov.br"
+      ]
+    },
+    "CR-JPA": {
+      "nome": "COORDENACAO REGIONAL DE JOAO PESSOA",
+      "uf": "PB",
+      "municipio_nome": null,
+      "endereco": "Avenida Paraná, 184 – Bairro Estados, João Pessoa – PB, CEP 58.030-180",
+      "cep": null,
+      "telefones": [
+        "(83) 99383-8067"
+      ],
+      "emails": [
+        "cr.joaopessoa@funai.gov.br"
+      ]
+    },
+    "CR-NE-I": {
+      "nome": "COORDENACAO REGIONAL NORDESTE I",
+      "uf": "AL",
+      "municipio_nome": "Maceió",
+      "endereco": "Rua Engenheiro Roberto Gonçalves Menezes, 56 – Centro",
+      "cep": null,
+      "telefones": [
+        "(61) 3247-6701"
+      ],
+      "emails": [
+        "cr.nordeste1@funai.gov.br"
+      ]
+    }
+  }
+}

@@ -364,6 +364,29 @@ const _EQUIP_ROUTE =
         '}'+
       '}'+
     '}catch(_fne){console.warn("[funai] enrichment erro:",_fne.message);}'+
+    // FUNAI contatos: merge curated contact data (telefone/email/endereco/cep)
+    // from funai-contatos.json into the CR object via sigla match. Cache lazy.
+    'try{'+
+      'if(!globalThis._funaiContatos){'+
+        'try{'+
+          'const _ccFs=require("fs"),_ccPath=require("path").resolve(process.cwd(),"funai-contatos.json");'+
+          'if(_ccFs.existsSync(_ccPath)){globalThis._funaiContatos=JSON.parse(_ccFs.readFileSync(_ccPath,"utf8"));}else{globalThis._funaiContatos={by_sigla:{},ouvidoria_nacional:null};}'+
+        '}catch(_cce){console.warn("[funai] contatos load erro:",_cce.message);globalThis._funaiContatos={by_sigla:{},ouvidoria_nacional:null};}'+
+      '}'+
+      'const _ccData=globalThis._funaiContatos;'+
+      '_funaiResult.ouvidoria_nacional=_ccData&&_ccData.ouvidoria_nacional||null;'+
+      'if(_funaiResult.cr&&_funaiResult.cr.sigla&&_ccData&&_ccData.by_sigla){'+
+        'const _ccCr=_ccData.by_sigla[_funaiResult.cr.sigla];'+
+        'if(_ccCr&&typeof _ccCr==="object"){'+
+          // Validate types: address+cep must be strings, telefones+emails must be arrays of strings
+          'const _ccEnd=typeof _ccCr.endereco==="string"&&_ccCr.endereco.trim()?_ccCr.endereco.trim():null;'+
+          'const _ccCep=typeof _ccCr.cep==="string"&&/^\\d{5}-\\d{3}$/.test(_ccCr.cep)?_ccCr.cep:null;'+
+          'const _ccTel=Array.isArray(_ccCr.telefones)?_ccCr.telefones.filter((_t)=>typeof _t==="string"&&/^\\(\\d{2}\\)/.test(_t)):[];'+
+          'const _ccEm=Array.isArray(_ccCr.emails)?_ccCr.emails.filter((_e)=>typeof _e==="string"&&/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(_e)):[];'+
+          '_funaiResult.cr=Object.assign({},_funaiResult.cr,{contato:{endereco:_ccEnd,cep:_ccCep,telefones:_ccTel,emails:_ccEm}});'+
+        '}'+
+      '}'+
+    '}catch(_cce2){console.warn("[funai] contatos merge erro:",_cce2.message);}'+
     'try{'+
       'let I="https://servicodados.ibge.gov.br/api/v1/pesquisas/10079/periodos/2013/indicadores/"+x+"/resultados/"+v,D=await fetch(I,{signal:AbortSignal.timeout(8e3),headers:{"User-Agent":"ChegoAContaDiretora/1.0"}});'+
       'if(!D.ok)throw new Error("IBGE HTTP "+D.status);'+
@@ -1075,7 +1098,7 @@ if (fs.existsSync(dashboardV30AssetPath)) {
   // flags (G.in_educacao_indigena, G.tp_localizacao_diferenciada) OR indigenous
   // enrollments (V.matriculas.por_raca.indigena > 0).
   const _FUNAI_FE_BLOCK =
-    '/*_FUNAI_V2_*/, (Ra&&Ra.funai&&Ra.funai.disponivel||(typeof G!=="undefined"&&G&&(Number(G.in_educacao_indigena||0)===1||Number(G.tp_localizacao_diferenciada||0)===2))||(V&&V.matriculas&&V.matriculas.por_raca&&(V.matriculas.por_raca.indigena||0)>0))&&(()=>{' +
+    '/*_FUNAI_V3_*/, (Ra&&Ra.funai&&Ra.funai.disponivel||(typeof G!=="undefined"&&G&&(Number(G.in_educacao_indigena||0)===1||Number(G.tp_localizacao_diferenciada||0)===2))||(V&&V.matriculas&&V.matriculas.por_raca&&(V.matriculas.por_raca.indigena||0)>0))&&(()=>{' +
       'const _F=Ra&&Ra.funai||{disponivel:!1,ctls:[],cr:null};' +
       'const _ctls=Array.isArray(_F.ctls)?_F.ctls:[];' +
       'const _cr=_F.cr||null;' +
@@ -1137,6 +1160,26 @@ if (fs.existsSync(dashboardV30AssetPath)) {
               'e.jsxs("p",{style:{fontWeight:600,color:"#5d4037",margin:"0 0 3px"},children:["Cobre ",_cr.abrangencia_resolved.length," munic\\xEDpio",_cr.abrangencia_resolved.length===1?"":"s",":"]}),' +
               'e.jsx("div",{style:{display:"flex",flexWrap:"wrap",gap:"3px 10px"},children:_cr.abrangencia_resolved.slice(0,30).map(function(r,i){return e.jsxs("span",{style:{fontWeight:r.eh_o_municipio_atual?700:400,color:r.eh_o_municipio_atual?"#bf360c":"#6d4c41"},children:["\\u2022 ",_fmtMun(r),r.eh_o_municipio_atual?" \\u2713":""]},i);})}),' +
               '_cr.abrangencia_resolved.length>30&&e.jsxs("p",{style:{margin:"3px 0 0",fontStyle:"italic"},children:["\\u2026 e mais ",_cr.abrangencia_resolved.length-30," munic\\xEDpios"]})' +
+            ']}),' +
+            // contato da CR (vem de funai-contatos.json, curado a partir do gov.br)
+            '_cr.contato&&(_cr.contato.endereco||(_cr.contato.telefones&&_cr.contato.telefones.length)||(_cr.contato.emails&&_cr.contato.emails.length))&&e.jsxs("div",{style:{marginTop:10,paddingTop:10,borderTop:"1px dashed #d7ccc8"},children:[' +
+              'e.jsx("p",{style:{fontSize:10,fontWeight:700,color:"#7b3f00",textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 6px"},children:"Contato"}),' +
+              '_cr.contato.endereco&&e.jsxs("p",{style:{fontSize:11,color:"#4e342e",margin:"0 0 3px",lineHeight:1.4},children:[' +
+                'e.jsx("span",{style:{fontWeight:600},children:"\\uD83C\\uDFE0 Endere\\xE7o: "}),_cr.contato.endereco,_cr.contato.cep?(" \\u2014 CEP "+_cr.contato.cep):""' +
+              ']}),' +
+              '_cr.contato.telefones&&_cr.contato.telefones.length>0&&e.jsxs("p",{style:{fontSize:11,color:"#4e342e",margin:"0 0 3px",lineHeight:1.5},children:[' +
+                'e.jsx("span",{style:{fontWeight:600},children:"\\u260E\\uFE0F Telefone"+(_cr.contato.telefones.length>1?"s":"")+": "}),' +
+                '_cr.contato.telefones.map(function(t,i){return e.jsxs("span",{children:[i>0?" \\u00B7 ":"",e.jsx("a",{href:"tel:+55"+t.replace(/\\D/g,""),style:{color:"#7b3f00",textDecoration:"none",fontWeight:500},children:t})]},i);})' +
+              ']}),' +
+              '_cr.contato.emails&&_cr.contato.emails.length>0&&e.jsxs("p",{style:{fontSize:11,color:"#4e342e",margin:"0",lineHeight:1.5,wordBreak:"break-all"},children:[' +
+                'e.jsx("span",{style:{fontWeight:600},children:"\\u2709\\uFE0F E-mail: "}),' +
+                '_cr.contato.emails.map(function(em,i){return e.jsxs("span",{children:[i>0?" \\u00B7 ":"",e.jsx("a",{href:"mailto:"+em,style:{color:"#7b3f00",textDecoration:"underline",fontWeight:500},children:em})]},i);})' +
+              ']})' +
+            ']}),' +
+            // sem contato curado para esta CR — mostra link de busca no portal
+            '_cr&&!(_cr.contato&&(_cr.contato.endereco||(_cr.contato.telefones&&_cr.contato.telefones.length)||(_cr.contato.emails&&_cr.contato.emails.length)))&&e.jsxs("p",{style:{fontSize:10,color:"#8d6e63",fontStyle:"italic",margin:"10px 0 0",paddingTop:8,borderTop:"1px dashed #d7ccc8",lineHeight:1.45},children:[' +
+              '"Contato direto desta CR n\\xE3o catalogado. ",' +
+              'e.jsx("a",{href:"https://www.gov.br/funai/pt-br/search?SearchableText="+encodeURIComponent(_cr.nome||""),target:"_blank",rel:"noopener noreferrer",style:{color:"#7b3f00",textDecoration:"underline"},children:"Buscar no portal FUNAI \\u2197"})' +
             ']})' +
           ']})' +
         ']}),' +
@@ -1157,25 +1200,37 @@ if (fs.existsSync(dashboardV30AssetPath)) {
       ']});' +
     '})()'
   ;
-  // Detect & remove V1 (older block) before injecting V2. V1 used the link text
-  // "Saiba mais sobre a FUNAI" and ended with `})()`. V2 carries the marker
-  // `_FUNAI_V2_` so we can detect it and avoid re-injecting on subsequent boots.
-  const _funaiV2Present = dashV30Source.includes('_FUNAI_V2_');
-  if (!_funaiV2Present) {
-    if (dashV30Source.includes('Saiba mais sobre a FUNAI')) {
-      const _v1Re = /,\s*\(Ra&&Ra\.funai&&Ra\.funai\.disponivel[\s\S]*?Saiba mais sobre a FUNAI[\s\S]*?\}\)\(\)/;
-      const _before = dashV30Source.length;
-      dashV30Source = dashV30Source.replace(_v1Re, '');
-      if (dashV30Source.length < _before) {
-        console.log('[bootstrap] Dashboard-v30 FUNAI V1 block removed (' + (_before - dashV30Source.length) + ' chars)');
-      } else {
-        console.warn('[bootstrap] Dashboard-v30 FUNAI V1 block found but regex did not match');
-      }
+  // FUNAI block patcher (self-healing across V1/V2/V3 states).
+  //
+  // Always purge V1 (link text "Saiba mais sobre a FUNAI") and V2 (marker
+  // `/*_FUNAI_V2_*/`) blocks if present, then inject V3 only when its marker
+  // is missing. This way an inconsistent bundle (e.g. V2+V3 both present from
+  // a previous failed transition) auto-heals on next boot.
+  if (dashV30Source.includes('Saiba mais sobre a FUNAI')) {
+    const _v1Re = /,\s*\(Ra&&Ra\.funai&&Ra\.funai\.disponivel[\s\S]*?Saiba mais sobre a FUNAI[\s\S]*?\}\)\(\)/;
+    const _before = dashV30Source.length;
+    dashV30Source = dashV30Source.replace(_v1Re, '');
+    if (dashV30Source.length < _before) {
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 FUNAI V1 block removed (' + (_before - dashV30Source.length) + ' chars)');
     }
-    // V2 anchor: the fallback that follows the FUNAI block in the rendered tree.
+  }
+  if (dashV30Source.includes('/*_FUNAI_V2_*/')) {
+    const _v2Re = /\/\*_FUNAI_V2_\*\/[\s\S]*?\}\)\(\)/;
+    const _before = dashV30Source.length;
+    dashV30Source = dashV30Source.replace(_v2Re, '');
+    if (dashV30Source.length < _before) {
+      dashV30Changed = true;
+      console.log('[bootstrap] Dashboard-v30 FUNAI V2 block removed (' + (_before - dashV30Source.length) + ' chars)');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 FUNAI V2 marker present but regex did not match');
+    }
+  }
+  if (!dashV30Source.includes('_FUNAI_V3_')) {
+    // V3 anchor: the fallback that follows the FUNAI block in the rendered tree.
     // We try the post-FUNAI fallback first, then fall back to _SAUDE_FE_ANCHOR.
-    const _FUNAI_V2_ANCHOR = ', !Ta && !a && e.jsx("p", { style: { fontSize: 12, color: "#888"';
-    let _funaiAnchorIdx = dashV30Source.indexOf(_FUNAI_V2_ANCHOR);
+    const _FUNAI_V3_ANCHOR = ', !Ta && !a && e.jsx("p", { style: { fontSize: 12, color: "#888"';
+    let _funaiAnchorIdx = dashV30Source.indexOf(_FUNAI_V3_ANCHOR);
     let _anchorUsed = 'post-funai-fallback';
     if (_funaiAnchorIdx === -1) {
       _funaiAnchorIdx = dashV30Source.indexOf(_SAUDE_FE_ANCHOR);
@@ -1184,12 +1239,12 @@ if (fs.existsSync(dashboardV30AssetPath)) {
     if (_funaiAnchorIdx !== -1) {
       dashV30Source = dashV30Source.slice(0, _funaiAnchorIdx) + _FUNAI_FE_BLOCK + dashV30Source.slice(_funaiAnchorIdx);
       dashV30Changed = true;
-      console.log('[bootstrap] Dashboard-v30 FUNAI V2 block patch applied (anchor: ' + _anchorUsed + ')');
+      console.log('[bootstrap] Dashboard-v30 FUNAI V3 block patch applied (anchor: ' + _anchorUsed + ')');
     } else {
-      console.warn('[bootstrap] Dashboard-v30 FUNAI V2 block patch NOT applied — no anchor found');
+      console.warn('[bootstrap] Dashboard-v30 FUNAI V3 block patch NOT applied — no anchor found');
     }
   } else {
-    console.log('[bootstrap] Dashboard-v30 FUNAI V2 block patch already applied');
+    console.log('[bootstrap] Dashboard-v30 FUNAI V3 block patch already applied');
   }
 
   // ── Gov.br Services tab: new "Serviços gov.br" tab in Suporte Institucional ──
