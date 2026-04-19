@@ -3966,6 +3966,31 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 healed', _mapsPlaceMatches, 'legacy /maps/place/ URLs to /maps/search/?api=1&query=');
   }
 
+  // ── Sub-patch: rewrite "Atendimento na Atenção Primária" block (atenprim-equipes-clarify-v1) ──
+  // Two problems with the original block:
+  //   1. The "82,4% / 17,6%" line was hardcoded national SISAB averages presented as if they
+  //      were município-specific. Now computed from the actual data: eSF válidas pessoas /
+  //      cadastros_atencao_primaria. Falls back to a "n\xE3o dispon\xEDvel" message when data
+  //      is missing.
+  //   2. The equipes_saude list rendered each row as just `eq.tipo` + pessoas, hiding that
+  //      the same tipo (eSF/eAP/eCR/eAPP) appears up to 3x because the SISAB API exposes
+  //      three views (válidas / homologadas / todas), each from a different competência.
+  //      Rows now show "tipo (situação — MM/YYYY)" sorted by tipo, válidas-first.
+  const _AP_OLD_PCT = 'e.jsx("div", { children: "82,4% da popula\\xE7\\xE3o \\xE9 atendida por equipes de Sa\\xFAde da Fam\\xEDlia" }), e.jsx("div", { children: "17,6% por outros modelos de Aten\\xE7\\xE3o Prim\\xE1ria" })';
+  const _AP_NEW_PCT = '(function(){var _eqs=ctxMunData.equipes_saude||[];var _esf=_eqs.filter(function(eq){return eq.tipo==="eSF"&&eq.situacao==="v\\xE1lidas";}).sort(function(a,b){return (b.competencia||0)-(a.competencia||0);})[0];var _cad=ctxMunData.cadastros_atencao_primaria;var _pct=_esf&&_cad?Math.round(_esf.pessoas/_cad*1000)/10:null;return _pct!==null?e.jsxs(e.Fragment,{children:[e.jsx("div",{children:_pct.toLocaleString("pt-BR")+"% dos cadastrados na AP est\\xE3o vinculados a equipes de Sa\\xFAde da Fam\\xEDlia (eSF)"}),_pct<100?e.jsx("div",{children:(Math.round((100-_pct)*10)/10).toLocaleString("pt-BR")+"% por outros modelos (eAP, eCR, eAPP)"}):null]}):e.jsx("div",{children:"Distribui\\xE7\\xE3o eSF vs. outros modelos n\\xE3o dispon\\xEDvel para este munic\\xEDpio"})})()';
+  if (dashSrc.includes(_AP_OLD_PCT)) {
+    dashSrc = dashSrc.replace(_AP_OLD_PCT, _AP_NEW_PCT);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 atenção primária % now computed from município data');
+  }
+  const _AP_OLD_ROW = 'ctxMunData.equipes_saude.filter(function(eq){ return eq.tipo && eq.tipo !== "-" && eq.pessoas > 0; }).map(function(eq, i){ return e.jsxs("div", { style: { display: "flex", justifyContent: "space-between", padding: "3px 0", borderBottom: "1px solid #eee" }, children: [e.jsx("span", { children: eq.tipo }), e.jsx("span", { children: eq.pessoas.toLocaleString("pt-BR") })] }, i); })';
+  const _AP_NEW_ROW = 'ctxMunData.equipes_saude.filter(function(eq){ return eq.tipo && eq.tipo !== "-" && eq.pessoas > 0; }).sort(function(a,b){var _o={"v\\xE1lidas":0,"homologadas":1,"todas":2};return a.tipo.localeCompare(b.tipo)||((_o[a.situacao]||9)-(_o[b.situacao]||9));}).map(function(eq, i){ var _comp=String(eq.competencia||""); var _compFmt=_comp.length===6?(_comp.slice(4,6)+"/"+_comp.slice(0,4)):_comp; return e.jsxs("div", { style: { display: "flex", justifyContent: "space-between", padding: "3px 0", borderBottom: "1px solid #eee" }, children: [e.jsxs("span", { children: [eq.tipo, " ", e.jsx("span", { style: { fontSize: 9, color: "#888", fontWeight: 400 }, children: "(" + eq.situacao + " \\u2014 " + _compFmt + ")" })] }), e.jsx("span", { children: eq.pessoas.toLocaleString("pt-BR") })] }, i); })';
+  if (dashSrc.includes(_AP_OLD_ROW)) {
+    dashSrc = dashSrc.replace(_AP_OLD_ROW, _AP_NEW_ROW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 equipes_saude rows now show situação + competência');
+  }
+
   // ── Sub-patch: sanitize CadUnico CRAS/CREAS nome (same rule as OSM) (cadunico-name-clean-v1) ──
   // The CadUnico-sourced items can also have operating-hours junk in the `nome` field
   // (e.g. Sobral CRAS: "Horário de Funcionamento (Dias Úteis): 8h às 12h e 14h às 18h").
