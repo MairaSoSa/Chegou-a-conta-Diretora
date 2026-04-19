@@ -3638,6 +3638,17 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 CNES Maps URL upgraded to text-search (name+address)');
   }
 
+  // ── Sub-patch: sanitize OSM name when it contains opening_hours junk (osm-name-clean-v1) ──
+  // Some OSM mappers put operating hours into the `name` tag (e.g. "Horário de Funcionamento ...").
+  // Prefer name:pt/official_name and reject name strings that look like schedules.
+  const _OSM_NAME_OLD = 'r[K].push({ source: "osm", nome: ee.name || ee["name:pt"] || null,';
+  const _OSM_NAME_NEW = 'r[K].push({ source: "osm", nome: (() => { const _n = (ee["name:pt"] || ee.name || ee["official_name"] || ee["short_name"] || "").trim(); return _n && !/hor[\\u00e1a]rio|funcionamento|\\d{1,2}\\s*h\\s*[\\u00e0a]s|\\d{1,2}:\\d{2}/i.test(_n) ? _n : null; })(),';
+  if (dashSrc.includes(_OSM_NAME_OLD)) {
+    dashSrc = dashSrc.replace(_OSM_NAME_OLD, _OSM_NAME_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 OSM name sanitization applied (drops opening_hours-like names)');
+  }
+
   // ── Sub-patch: remove "Rede socioassistencial / fontes / desatualizados" footer (mds-fonte-removed-v1) ──
   // User requested removal of the whole sources/footer paragraph below the equipment block.
   const _MDS_FOOTER_OLD = ', e.jsxs("p", { style: { fontSize: "10px", color: "#6b8a74", marginTop: 10, marginBottom: 6 }, children: [Ke?.ok && Ke.total > 0 && e.jsx("span", { children: "Rede socioassistencial: Mapa Social MDS. " }), Ra.ibge_fonte && e.jsxs("span", { children: ["Contagens hist\\xF3ricas: ", Ra.ibge_fonte, ". "] }), ca && n > 0 && e.jsx("span", { children: "Sa\\xFAde: CNES/Min. Sa\\xFAde e OpenStreetMap. " }), Pe && (Pe.cras?.length > 0 || Pe.creas?.length > 0) && e.jsx("span", { children: "CRAS/CREAS: CadUnico Brasil. " }), "Dados podem estar desatualizados."] })';

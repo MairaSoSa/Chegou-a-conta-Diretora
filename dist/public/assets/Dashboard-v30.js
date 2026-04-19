@@ -933,7 +933,7 @@ out center tags 100;`, B2 = fetch("https://overpass-api.de/api/interpreter", { m
             const K = i(M.tags || {});
             if (K && r[K]) {
               const ee = M.tags || {}, Se = M.lat ?? M.center?.lat ?? null, We = M.lon ?? M.center?.lon ?? null, pe = ee["addr:street"] || ee["addr:place"] || "", fe = ee["addr:housenumber"] || "", Ce = ee["addr:suburb"] || ee["addr:neighbourhood"] || ee["addr:district"] || "", oa = ee["addr:postcode"] || "", Fe = ee["addr:city"] || "", $a = [[pe, fe].filter(Boolean).join(", "), Ce, Fe, oa].filter(Boolean).join(" \u2014 ");
-              r[K].push({ source: "osm", nome: ee.name || ee["name:pt"] || null, endereco: $a || null, telefone: ee.phone || ee["contact:phone"] || ee["contact:mobile"] || null, horario: ee.opening_hours || null, website: ee.website || ee["contact:website"] || null, lat: Se, lon: We, mapsUrl: Se && We ? `https://www.google.com/maps?q=${Se},${We}` : null });
+              r[K].push({ source: "osm", nome: (() => { const _n = (ee["name:pt"] || ee.name || ee["official_name"] || ee["short_name"] || "").trim(); return _n && !/hor[\u00e1a]rio|funcionamento|\d{1,2}\s*h\s*[\u00e0a]s|\d{1,2}:\d{2}/i.test(_n) ? _n : null; })(), endereco: $a || null, telefone: ee.phone || ee["contact:phone"] || ee["contact:mobile"] || null, horario: ee.opening_hours || null, website: ee.website || ee["contact:website"] || null, lat: Se, lon: We, mapsUrl: Se && We ? `https://www.google.com/maps?q=${Se},${We}` : null });
             }
           }
         }).catch(() => {
