@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-04-19T01:26:12.060Z",
+  "generated_at": "2026-04-19T01:56:06.415Z",
   "fonte": "Pesquisa web em fontes públicas (gov.br/funai e portais governamentais) — coleta curada manual",
   "observacao": "Contatos das 39 Coordenações Regionais (CR) da FUNAI. As Coordenações Técnicas Locais (CTL) não possuem canais de contato direto publicados — usar a CR articuladora ou os canais nacionais da FUNAI (Ouvidoria 0800-208-0399, ouvidoria@funai.gov.br).",
   "resumo": {
     "total_crs": 39,
-    "com_telefone": 36,
-    "com_email": 38,
-    "com_endereco": 32,
-    "com_cep": 20
+    "com_telefone": 37,
+    "com_email": 39,
+    "com_endereco": 37,
+    "com_cep": 31
   },
   "ouvidoria_nacional": {
     "telefone": "0800-208-0399",
@@ -48,7 +48,7 @@
       "uf": "AC",
       "municipio_nome": "Cruzeiro do Sul",
       "endereco": "Rua Floriano Peixoto, 234 – Centro, Cruzeiro do Sul – AC, CEP 69.980-000",
-      "cep": null,
+      "cep": "69980-000",
       "telefones": [
         "(61) 3247-6524"
       ],
@@ -68,8 +68,7 @@
         "(68) 3227-7970"
       ],
       "emails": [
-        "cr.altopurus@funai.gov.br",
-        "ouvidoria@funai.gov.br"
+        "cr.altopurus@funai.gov.br"
       ]
     },
     "CR-LISE": {
@@ -77,7 +76,7 @@
       "uf": "SP",
       "municipio_nome": "Itanhaém",
       "endereco": "Avenida Harry Forssell, 1505 – Jardim Belas Artes, Itanhaém/SP",
-      "cep": null,
+      "cep": "11680-000",
       "telefones": [
         "(13) 3426-4069",
         "(13) 3426-8447"
@@ -96,8 +95,7 @@
         "(61) 3247-6000"
       ],
       "emails": [
-        "cr.valedojavari@funai.gov.br",
-        "ouvidoria@funai.gov.br"
+        "cr.valedojavari@funai.gov.br"
       ]
     },
     "CR-MAO": {
@@ -147,14 +145,13 @@
       "nome": "COORDENACAO REGIONAL RORAIMA",
       "uf": "RR",
       "municipio_nome": "Boa Vista",
-      "endereco": null,
-      "cep": null,
+      "endereco": "Avenida Bento Brasil, 536 – Centro, Boa Vista – RR, CEP 69.301-050",
+      "cep": "69301-050",
       "telefones": [
         "(61) 3247-6002"
       ],
       "emails": [
-        "cr.roraima@funai.gov.br",
-        "ouvidoria@funai.gov.br"
+        "cr.roraima@funai.gov.br"
       ]
     },
     "CR-CLPA": {
@@ -179,16 +176,22 @@
       "uf": "PA",
       "municipio_nome": "Itaituba",
       "endereco": "Área Especial da FUNAI, S/N",
-      "cep": null,
-      "telefones": [],
-      "emails": []
+      "cep": "68181-140",
+      "telefones": [
+        "(93) 3518-1403",
+        "(93) 3518-6444",
+        "(93) 9138-6769"
+      ],
+      "emails": [
+        "cr.tapajos@funai.gov.br"
+      ]
     },
     "CR-ATO": {
       "nome": "COORDENACAO REGIONAL ARAGUAIA TOCANTINS",
       "uf": "TO",
       "municipio_nome": "Palmas",
       "endereco": "Rua QD 104 Norte, Conjunto 01, NE 01, Lote 10 — S/N",
-      "cep": null,
+      "cep": "77006-016",
       "telefones": [
         "(63) 3228-3601",
         "(63) 3232-9410",
@@ -228,7 +231,7 @@
       "nome": "COORDENACAO REGIONAL LITORAL SUL",
       "uf": "SC",
       "municipio_nome": "Florianópolis",
-      "endereco": "Travessa Acelino de Carvalho, nº 21, 12º andar, Centro, Porto Alegre/RS",
+      "endereco": null,
       "cep": null,
       "telefones": [
         "(48) 3244-0469",
@@ -283,7 +286,7 @@
       "uf": "MT",
       "municipio_nome": "Colíder",
       "endereco": "78.500-000. O endereço da Av. Colonizador Roque Guedes consta no portal oficial da FUNAI e deve ser considerado prioritário.",
-      "cep": null,
+      "cep": "69980-000",
       "telefones": [
         "(66) 3541-2285",
         "(66) 3541-1171",
@@ -355,7 +358,7 @@
       "uf": "BA",
       "municipio_nome": "Porto Seguro",
       "endereco": "Rua dos Mamoeiros, nº 25 — Taperapuan (Itaperapuan), Porto Seguro — BA, CEP 45.810-000.",
-      "cep": null,
+      "cep": "68181-140",
       "telefones": [
         "(73) 3288-2565"
       ],
@@ -367,7 +370,7 @@
       "nome": "COORDENACAO REGIONAL DE MINAS GERAIS E ESPIRITO SANTO",
       "uf": "MG",
       "municipio_nome": "Governador Valadares",
-      "endereco": null,
+      "endereco": "Travessa Acelino de Carvalho, nº 21, 12º — não confirmado diretamente pelas fontes encontradas",
       "cep": null,
       "telefones": [
         "(61) 3247-6138"
@@ -395,7 +398,7 @@
       "uf": "RS",
       "municipio_nome": "Passo Fundo",
       "endereco": "Rua Uruguai, 2648 – Boqueirão, Passo Fundo/RS – CEP 99010-112",
-      "cep": null,
+      "cep": "99010-112",
       "telefones": [
         "(54) 3311-4233",
         "(54) 3313-9373",
@@ -409,8 +412,8 @@
       "nome": "COORDENACAO REGIONAL CAMPO GRANDE",
       "uf": "MS",
       "municipio_nome": "Campo Grande",
-      "endereco": null,
-      "cep": null,
+      "endereco": "Rua Coronel Antônio Cristino Cortes, Lote 04, Quadra 15 – Bairro Cidade Velha – CEP 78601-230 – Barra do Garças/MT – Tel.: (66) 3401-2124",
+      "cep": "79021-170",
       "telefones": [
         "(67) 3321-4166",
         "(67) 3382-2326",
@@ -458,8 +461,8 @@
       "nome": "COORDENACAO REGIONAL DE JI PARANA",
       "uf": "RO",
       "municipio_nome": "Ji-Paraná",
-      "endereco": null,
-      "cep": null,
+      "endereco": "Rua Maringá, 2268 – Nova Brasília, Ji-Paraná – RO, CEP 76.908-620",
+      "cep": "76908-620",
       "telefones": [
         "(69) 3424-2498",
         "(69) 3424-5270",
@@ -475,14 +478,13 @@
       "nome": "COORDENACAO REGIONAL MÉDIO PURUS",
       "uf": "AM",
       "municipio_nome": "Lábrea",
-      "endereco": null,
-      "cep": null,
+      "endereco": "Rua Marechal Deodoro, nº 2.220, Centro, Lábrea/AM, CEP 69.830-000",
+      "cep": "69830-000",
       "telefones": [
         "(61) 3247-6700"
       ],
       "emails": [
         "cr.mediopurus@funai.gov.br",
-        "ouvidoria@funai.gov.br",
         "cr.xingu@funai.gov.br"
       ]
     },
@@ -496,8 +498,7 @@
         "(61) 3247-6800"
       ],
       "emails": [
-        "cr.rionegro@funai.gov.br",
-        "ouvidoria@funai.gov.br"
+        "cr.rionegro@funai.gov.br"
       ]
     },
     "CR-BTO": {
@@ -517,7 +518,7 @@
       "nome": "COORDENACAO REGIONAL KAYAPÓ SUL DO PARÁ",
       "uf": "PA",
       "municipio_nome": "Tucumã",
-      "endereco": null,
+      "endereco": "Rua Uruguai, 2648 – Boqueirão, Passo Fundo – RS",
       "cep": "68385-000",
       "telefones": [
         "(94) 3433-1005",
