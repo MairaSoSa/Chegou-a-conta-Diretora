@@ -992,7 +992,7 @@ const _SAUDE_FE_BLOCK =
     'const _tipoBg=(t)=>({UBS:"#e3f2fd",UPA:"#fff3e0",PRONTO_ATENDIMENTO:"#fff8e1",PRONTO_SOCORRO:"#ffebee"}[t]||"#e3f2fd");' +
     'const _tipoBorder=(t)=>({UBS:"#90caf9",UPA:"#ffcc80",PRONTO_ATENDIMENTO:"#ffe082",PRONTO_SOCORRO:"#ef9a9a"}[t]||"#90caf9");' +
     'const _tipoTxt=(t)=>({UBS:"#0d47a1",UPA:"#e65100",PRONTO_ATENDIMENTO:"#ad6800",PRONTO_SOCORRO:"#b71c1c"}[t]||"#0d47a1");' +
-    'return e.jsxs("div",{style:{marginTop:14},children:[' +
+    'return e.jsxs("div",{style:{marginTop:14,maxHeight:520,overflowY:"auto",paddingRight:6,scrollbarWidth:"thin",scrollbarColor:"#d7ccc8 #f5f0eb"},children:[' +
       // section title
       'e.jsxs("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10},children:[' +
         'e.jsx("p",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:"#0d47a1",margin:0},children:"Sa\\xFAde \u2014 Unidades Pr\\xF3ximas (CNES)"}),' +
@@ -1101,7 +1101,7 @@ if (fs.existsSync(dashboardV30AssetPath)) {
         'if(s.includes("educa"))return{bg:"#fff3e0",border:"#ffcc80",txt:"#e65100",dot:"#f57c00"};' +
         'return{bg:"#f5f5f5",border:"#bdbdbd",txt:"#616161",dot:"#9e9e9e"};' +
       '};' +
-      'return e.jsxs("div",{style:{marginTop:14},children:[' +
+      'return e.jsxs("div",{style:{marginTop:14,maxHeight:520,overflowY:"auto",paddingRight:6,scrollbarWidth:"thin",scrollbarColor:"#d7ccc8 #f5f0eb"},children:[' +
         'e.jsxs("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10},children:[' +
           'e.jsx("p",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:"#2e7d32",margin:0},children:"ONGs e Entidades de Assist\\xEAncia Social (CNEAS)"}),' +
           'e.jsxs("span",{style:{fontSize:9,color:"#2e7d32",background:"#e8f5e9",borderRadius:20,padding:"2px 8px",fontWeight:600},children:[_oEnts.length," entidades"]})' +
@@ -1155,7 +1155,7 @@ if (fs.existsSync(dashboardV30AssetPath)) {
   // flags (G.in_educacao_indigena, G.tp_localizacao_diferenciada) OR indigenous
   // enrollments (V.matriculas.por_raca.indigena > 0).
   const _FUNAI_FE_BLOCK =
-    '/*_FUNAI_V3_*/, (Ra&&Ra.funai&&Ra.funai.disponivel||(typeof G!=="undefined"&&G&&(Number(G.in_educacao_indigena||0)===1||Number(G.tp_localizacao_diferenciada||0)===2))||(V&&V.matriculas&&V.matriculas.por_raca&&(V.matriculas.por_raca.indigena||0)>0))&&(()=>{' +
+    '/*_FUNAI_V3_*/, !Ta && !pt && !lt && !dt && (Ra&&Ra.funai&&Ra.funai.disponivel||(typeof G!=="undefined"&&G&&(Number(G.in_educacao_indigena||0)===1||Number(G.tp_localizacao_diferenciada||0)===2))||(V&&V.matriculas&&V.matriculas.por_raca&&(V.matriculas.por_raca.indigena||0)>0))&&(()=>{' +
       'const _F=Ra&&Ra.funai||{disponivel:!1,ctls:[],cr:null};' +
       'const _ctls=Array.isArray(_F.ctls)?_F.ctls:[];' +
       'const _cr=_F.cr||null;' +
@@ -1184,7 +1184,7 @@ if (fs.existsSync(dashboardV30AssetPath)) {
           'c.municipios_atendidos_resolved.length>8&&e.jsxs("span",{children:[" e mais ",c.municipios_atendidos_resolved.length-8]})' +
         ']})' +
       ']},key);};' +
-      'return e.jsxs("div",{style:{marginTop:14},children:[' +
+      'return e.jsxs("div",{style:{marginTop:14,maxHeight:520,overflowY:"auto",paddingRight:6,scrollbarWidth:"thin",scrollbarColor:"#d7ccc8 #f5f0eb"},children:[' +
         // section header
         'e.jsxs("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,gap:8,flexWrap:"wrap"},children:[' +
           'e.jsx("p",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:"#7b3f00",margin:0},children:"\\uD83E\\uDEB6 Presen\\xE7a Ind\\xEDgena \\u2014 apoio territorial da FUNAI"}),' +
@@ -3981,7 +3981,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   // ── Sub-patch: pass school INEP to /api/equipamentos-publicos so the saude
   //              referencia_proximidade is the school itself (not the centroid). (equip-fetch-inep-v1) ──
   const _EQUIP_FETCH_OLD = 'fetch(`/api/equipamentos-publicos/${a}`)';
-  const _EQUIP_FETCH_NEW = 'fetch(`/api/equipamentos-publicos/${a}` + `?refresh=${Date.now()}` + (N && N.escola && N.escola.co_entidade ? `&inep=${encodeURIComponent(N.escola.co_entidade)}` : ``))';
+  const _EQUIP_FETCH_NEW = 'fetch(`/api/equipamentos-publicos/${a}` + `?refresh=${Date.now()}` + (H ? `&inep=${encodeURIComponent(H)}` : ``))';
   if (dashSrc.includes(_EQUIP_FETCH_OLD) && !dashSrc.includes(_EQUIP_FETCH_NEW)) {
     dashSrc = dashSrc.replace(_EQUIP_FETCH_OLD, _EQUIP_FETCH_NEW);
     changed = true;
