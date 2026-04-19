@@ -2853,7 +2853,19 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '        }\n' +
 '      }\n' +
 '    }catch(_dbErr){console.warn("[ctx-mun] saude_db erro:",String(_dbErr));}\n' +
-'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,cobertura_competencia:coberturaCompetencia,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,censo2022:censo2022,dengue:dengue,saude_db:saude_db});\n' +
+'    // ── TRIA (Triagem para Risco de Inseguranca Alimentar) ──────────────────\n' +
+'    let tria=null;\n' +
+'    try{\n' +
+'      if(!globalThis._triaMunicipios){\n' +
+'        const _tFs=require("fs"),_tPath=require("path").resolve(process.cwd(),"tria-municipios.json");\n' +
+'        if(_tFs.existsSync(_tPath)){globalThis._triaMunicipios=JSON.parse(_tFs.readFileSync(_tPath,"utf8"));}\n' +
+'        else{globalThis._triaMunicipios={meta:{},municipios:{}};}\n' +
+'      }\n' +
+'      const _tDb=globalThis._triaMunicipios;\n' +
+'      const _tRow=_tDb&&_tDb.municipios&&_tDb.municipios[co6];\n' +
+'      if(_tRow){tria={...({},_tRow),meta:_tDb.meta||{}};}\n' +
+'    }catch(_tErr){console.warn("[ctx-mun] tria erro:",String(_tErr));}\n' +
+'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,cobertura_competencia:coberturaCompetencia,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,censo2022:censo2022,dengue:dengue,saude_db:saude_db,tria:tria});\n' +
 '  }catch(err){console.error("[ctx-mun] erro:",String(err));g.json({ok:false,erro:String(err)});}\n' +
 '}),\n';
 
@@ -4241,6 +4253,42 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     } else {
       console.warn('[bootstrap] Dashboard-v30 SI accordion IIFE return fix: anchor not found');
     }
+  }
+
+  // ── Sub-patch: inject TRIA (Triagem para Risco de Insegurança Alimentar) block ──
+  // Fonte: MDS/SAGI — TABELA_BRASIL.xlsx (snapshot competência nov/2023 a dez/2025).
+  // Indexado por código IBGE6 em tria-municipios.json. Renderiza:
+  //   - % de domicílios em risco (de domicílios com TRIA aplicada)
+  //   - Contagem absoluta de domicílios e pessoas afetadas
+  //   - Chips de recortes (deficiência, situação de rua, povos tradicionais, menores)
+  // Posicionado logo antes do bloco "Indicadores Previne Brasil" pra agrupar
+  // visualmente com os outros blocos de saúde do contexto municipal.
+  const _TRIA_MARKER = '/*tria-fe-v1*/';
+  if (!dashSrc.includes(_TRIA_MARKER)) {
+    const _TRIA_ANCHOR = 'ctxMunData.indicadores_previne && ctxMunData.indicadores_previne.length > 0 && e.jsxs("div", { style: { marginBottom: 14 }, children: [';
+    const _TRIA_INJECT = '/*tria-fe-v1*/ctxMunData.tria && ctxMunData.tria.domicilios_risco != null && e.jsxs("div", { style: { marginBottom: 14 }, children: [' +
+      'e.jsxs("p", { style: { fontSize: 10, fontWeight: 700, color: "#bf360c", margin: "0 0 8px", textTransform: "uppercase" }, children: [' +
+        '"Inseguran\\xE7a Alimentar \\u2014 TRIA",' +
+        'e.jsx("span", { style: { fontSize: 9, color: "#888", fontWeight: 400, marginLeft: 6, textTransform: "none", letterSpacing: 0 }, title: "Triagem para Risco de Inseguran\\xE7a Alimentar \\u2014 instrumento aplicado pelos CRAS/CREAS no domic\\xEDlio durante visita t\\xE9cnica. Identifica fam\\xEDlias em risco para encaminhamento a programas de seguran\\xE7a alimentar. Fonte: MDS/SAGI \\u00b7 Cadastro \\xDAnico / RMA-CRAS.", children: " \\u00b7 MDS/SAGI \\u00b7 " + (ctxMunData.tria.competencia || "") })' +
+      '] }),' +
+      'e.jsxs("div", { style: { background: "#fff3e0", border: "1px solid #ffb74d", borderRadius: 10, padding: "10px 12px" }, children: [' +
+        'e.jsxs("p", { style: { fontSize: 18, fontWeight: 800, color: "#bf360c", margin: 0 }, children: [' +
+          '(Math.round((ctxMunData.tria.pct_domicilios_risco || 0) * 10) / 10).toLocaleString("pt-BR") + "%",' +
+          'e.jsx("span", { style: { fontSize: 11, color: "#5d4037", fontWeight: 600, marginLeft: 6 }, children: "dos domic\\xEDlios triados em risco" })' +
+        '] }),' +
+        'e.jsx("p", { style: { fontSize: 12, color: "#5d4037", margin: "4px 0 0", lineHeight: 1.4 }, children: (ctxMunData.tria.domicilios_risco || 0).toLocaleString("pt-BR") + " domic\\xEDlios \\u2022 " + (ctxMunData.tria.pessoas_em_risco || 0).toLocaleString("pt-BR") + " pessoas afetadas \\u2022 base: " + (ctxMunData.tria.domicilios_tria_aplicada || 0).toLocaleString("pt-BR") + " domic\\xEDlios triados" }),' +
+        'e.jsx("div", { style: { marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6, fontSize: 11 }, children: ([["c/ pessoa com defici\\xEAncia", ctxMunData.tria.risco_pessoa_deficiencia, ctxMunData.tria.pct_risco_pessoa_deficiencia], ["c/ situa\\xE7\\xE3o de rua", ctxMunData.tria.risco_situacao_rua, ctxMunData.tria.pct_risco_situacao_rua], ["c/ povo ou comunidade tradicional", ctxMunData.tria.risco_povo_tradicional, ctxMunData.tria.pct_risco_povo_tradicional], ["c/ menores de 18", ctxMunData.tria.risco_menores_18, ctxMunData.tria.pct_risco_menores_18]]).filter(function(p) { return p[1] > 0; }).map(function(p, i) { return e.jsxs("span", { key: i, style: { background: "#ffe0b2", borderRadius: 8, padding: "3px 8px", color: "#5d4037" }, children: [p[0] + ": ", e.jsx("strong", { children: p[1].toLocaleString("pt-BR") }), p[2] ? " (" + (Math.round(p[2] * 10) / 10).toLocaleString("pt-BR") + "%)" : ""] }); }) })' +
+      '] })' +
+    '] }),';
+    if (dashSrc.includes(_TRIA_ANCHOR)) {
+      dashSrc = dashSrc.replace(_TRIA_ANCHOR, _TRIA_INJECT + _TRIA_ANCHOR);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 TRIA insegurança alimentar block injected');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 TRIA injection — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 TRIA block already present');
   }
 
   if (changed) {
