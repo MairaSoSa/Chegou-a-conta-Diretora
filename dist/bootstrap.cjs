@@ -3986,7 +3986,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   // cadastros_atencao_primaria e populacao). NUNCA usar indicadores_previne[0].quadrimestre,
   // que é o latest do indicador de menor código e pode divergir.
   const _AP_OLD_HDR = 'children: "Aten\\xE7\\xE3o Prim\\xE1ria" }), e.jsx("p", { style: { fontSize: 18, fontWeight: 800,';
-  const _AP_NEW_HDR = 'children: ["Aten\\xE7\\xE3o Prim\\xE1ria", ctxMunData.cobertura_competencia && ctxMunData.cobertura_competencia.quadrimestre ? e.jsx("span", { style: { fontSize: 9, color: "#558b2f", fontWeight: 400, marginLeft: 4, textTransform: "none", letterSpacing: 0 }, children: " (" + ctxMunData.cobertura_competencia.quadrimestre + ")" }) : null] }), e.jsx("p", { style: { fontSize: 18, fontWeight: 800,';
+  const _AP_NEW_HDR = 'children: ["Aten\\xE7\\xE3o Prim\\xE1ria", ctxMunData.cobertura_competencia && ctxMunData.cobertura_competencia.quadrimestre ? e.jsx("span", { style: { fontSize: 9, color: "#558b2f", fontWeight: 400, marginLeft: 4, textTransform: "none", letterSpacing: 0 }, title: "\\xDAltima compet\\xEAncia publicada pelo SISAB (Previne Brasil) \\u2014 dados do Minist\\xE9rio da Sa\\xFAde t\\xEAm defasagem t\\xEDpica de 4-6 meses", children: " (SISAB \\u00b7 " + ctxMunData.cobertura_competencia.quadrimestre + ")" }) : null] }), e.jsx("p", { style: { fontSize: 18, fontWeight: 800,';
   if (dashSrc.includes(_AP_OLD_HDR)) {
     dashSrc = dashSrc.replace(_AP_OLD_HDR, _AP_NEW_HDR);
     changed = true;
@@ -3996,11 +3996,22 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   // which can be from a different indicador than the one feeding cadastros/populacao. Switch to
   // cobertura_competencia so header always matches the cadastro/populacao numbers below it.
   const _AP_HDR_OLD_INDPREV = 'ctxMunData.indicadores_previne && ctxMunData.indicadores_previne[0] && ctxMunData.indicadores_previne[0].quadrimestre ? e.jsx("span", { style: { fontSize: 9, color: "#558b2f", fontWeight: 400, marginLeft: 4, textTransform: "none", letterSpacing: 0 }, children: " (" + ctxMunData.indicadores_previne[0].quadrimestre + ")" }) : null';
-  const _AP_HDR_NEW_INDPREV = 'ctxMunData.cobertura_competencia && ctxMunData.cobertura_competencia.quadrimestre ? e.jsx("span", { style: { fontSize: 9, color: "#558b2f", fontWeight: 400, marginLeft: 4, textTransform: "none", letterSpacing: 0 }, children: " (" + ctxMunData.cobertura_competencia.quadrimestre + ")" }) : null';
+  const _AP_HDR_NEW_INDPREV = 'ctxMunData.cobertura_competencia && ctxMunData.cobertura_competencia.quadrimestre ? e.jsx("span", { style: { fontSize: 9, color: "#558b2f", fontWeight: 400, marginLeft: 4, textTransform: "none", letterSpacing: 0 }, title: "\\xDAltima compet\\xEAncia publicada pelo SISAB (Previne Brasil) \\u2014 dados do Minist\\xE9rio da Sa\\xFAde t\\xEAm defasagem t\\xEDpica de 4-6 meses", children: " (SISAB \\u00b7 " + ctxMunData.cobertura_competencia.quadrimestre + ")" }) : null';
   if (dashSrc.includes(_AP_HDR_OLD_INDPREV)) {
     dashSrc = dashSrc.replace(_AP_HDR_OLD_INDPREV, _AP_HDR_NEW_INDPREV);
     changed = true;
     console.log('[bootstrap] Dashboard-v30 Atenção Primária header switched from indicadores_previne[0] to cobertura_competencia (sync with cadastros)');
+  }
+  // Heal V2→V3: bundle pode estar com versão sem o prefixo "SISAB ·" e sem o tooltip explicativo.
+  // Adiciona o prefixo "SISAB ·" antes do quadrimestre e o atributo title para deixar explícito
+  // pro gestor que o quadrimestre exibido é a competência mais recente publicada pelo SISAB
+  // (não é dado nosso desatualizado, é o que o MS divulgou).
+  const _AP_HDR_V2_NOSISAB = '{ fontSize: 9, color: "#558b2f", fontWeight: 400, marginLeft: 4, textTransform: "none", letterSpacing: 0 }, children: " (" + ctxMunData.cobertura_competencia.quadrimestre + ")" })';
+  const _AP_HDR_V3_SISAB = '{ fontSize: 9, color: "#558b2f", fontWeight: 400, marginLeft: 4, textTransform: "none", letterSpacing: 0 }, title: "\\xDAltima compet\\xEAncia publicada pelo SISAB (Previne Brasil) \\u2014 dados do Minist\\xE9rio da Sa\\xFAde t\\xEAm defasagem t\\xEDpica de 4-6 meses", children: " (SISAB \\u00b7 " + ctxMunData.cobertura_competencia.quadrimestre + ")" })';
+  if (dashSrc.includes(_AP_HDR_V2_NOSISAB)) {
+    dashSrc = dashSrc.replace(_AP_HDR_V2_NOSISAB, _AP_HDR_V3_SISAB);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 Atenção Primária header now prefixes SISAB and adds source tooltip');
   }
   // Patch C: Hospitais CNES → "· CNES/MS · atualização mensal"
   const _HOSP_OLD = 'children:["Hospitais do Munic\\xEDpio (CNES) ",e.jsxs("span",{style:{opacity:0.8},children:["(",ctxMunData.hospitais.length,")"]})]})';
