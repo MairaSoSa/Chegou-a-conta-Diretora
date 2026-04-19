@@ -2711,7 +2711,7 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '    const [macroR,previneR,cadastroR,sv1R,sv2R,sv3R,sv4R,cnesHospR]=await Promise.allSettled([\n' +
 '      _f(BASE+"/macrorregiao-e-regiao-de-saude/municipio?codigo_municipio="+co6+"&limit=1"),\n' +
 '      _f(BASE+"/atencao-primaria/indicador-desempenho-programa-previne-brasil?codigo_municipio="+co6+"&limit=60"),\n' +
-'      _f(BASE+"/atencao-primaria/cadastro-vinculado-programa-previne-brasil?codigo_municipio_ibge="+co6+"&limit=50"),\n' +
+'      _f(BASE+"/atencao-primaria/cadastro-vinculado-programa-previne-brasil?codigo_municipio_ibge="+co6+"&limit=500"),\n' +
 '      _f(BASE+"/sisvan/estado-nutricional?codigo_municipio="+co6+"&codigo_fase_vida=1&limit=100"),\n' +
 '      _f(BASE+"/sisvan/estado-nutricional?codigo_municipio="+co6+"&codigo_fase_vida=2&limit=100"),\n' +
 '      _f(BASE+"/sisvan/estado-nutricional?codigo_municipio="+co6+"&codigo_fase_vida=3&limit=80"),\n' +
