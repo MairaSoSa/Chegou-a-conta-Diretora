@@ -3825,7 +3825,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   const _CNES_FIELDS_MARKER = 'O.latitude_estabelecimento_decimo_grau';
   if (!dashSrc.includes(_CNES_FIELDS_MARKER)) {
     const _CNES_OLD = 'const M = O.latitude ? parseFloat(O.latitude) : null, K = O.longitude ? parseFloat(O.longitude) : null, Se = [[O.logradouro, O.numero].filter(Boolean).join(", "), O.bairro, O.municipio, O.cep ? `CEP ${O.cep}` : ""].filter(Boolean).join(" \\u2014 ");\n              r[$].push({ source: "cnes", nome: O.nome_fantasia || O.nome_razao_social || null, endereco: Se || null, telefone: O.telefone || null, lat: M, lon: K, mapsUrl: M && K ? `https://www.google.com/maps?q=${M},${K}` : null });';
-    const _CNES_NEW = 'const M = O.latitude_estabelecimento_decimo_grau ? parseFloat(String(O.latitude_estabelecimento_decimo_grau).replace(",", ".")) : null, K = O.longitude_estabelecimento_decimo_grau ? parseFloat(String(O.longitude_estabelecimento_decimo_grau).replace(",", ".")) : null, Se = [[O.endereco_estabelecimento, O.numero_estabelecimento].filter(Boolean).join(", "), O.bairro_estabelecimento, O.municipio_estabelecimento, O.cep_estabelecimento ? `CEP ${O.cep_estabelecimento}` : ""].filter(Boolean).join(" \\u2014 ");\n              r[$].push({ source: "cnes", nome: O.nome_fantasia || O.nome_razao_social || null, endereco: Se || null, telefone: O.numero_telefone_estabelecimento || null, lat: M, lon: K, mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps/place/${encodeURIComponent(_q).replace(/%20/g, "+")}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
+    const _CNES_NEW = 'const M = O.latitude_estabelecimento_decimo_grau ? parseFloat(String(O.latitude_estabelecimento_decimo_grau).replace(",", ".")) : null, K = O.longitude_estabelecimento_decimo_grau ? parseFloat(String(O.longitude_estabelecimento_decimo_grau).replace(",", ".")) : null, Se = [[O.endereco_estabelecimento, O.numero_estabelecimento].filter(Boolean).join(", "), O.bairro_estabelecimento, O.municipio_estabelecimento, O.cep_estabelecimento ? `CEP ${O.cep_estabelecimento}` : ""].filter(Boolean).join(" \\u2014 ");\n              r[$].push({ source: "cnes", nome: O.nome_fantasia || O.nome_razao_social || null, endereco: Se || null, telefone: O.numero_telefone_estabelecimento || null, lat: M, lon: K, mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(_q)}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
     if (dashSrc.includes(_CNES_OLD)) {
       dashSrc = dashSrc.replace(_CNES_OLD, _CNES_NEW);
       changed = true;
@@ -3839,7 +3839,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   // Applied separately from cnes-fields-v1 because dashSrc may already have the field fix
   // but still uses the old ?q=LAT,LON format without the establishment name.
   const _CNES_MAPS_OLD = 'mapsUrl: M && K ? `https://www.google.com/maps?q=${M},${K}` : null });';
-  const _CNES_MAPS_NEW = 'mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps/place/${encodeURIComponent(_q).replace(/%20/g, "+")}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
+  const _CNES_MAPS_NEW = 'mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(_q)}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
   if (dashSrc.includes(_CNES_MAPS_OLD)) {
     dashSrc = dashSrc.replace(_CNES_MAPS_OLD, _CNES_MAPS_NEW);
     changed = true;
@@ -3850,7 +3850,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   // Replaces the intermediate /search/NAME/@LAT,LON,17z format (from cnes-maps-name-v1)
   // with a full text query (name + full address) so Google resolves the establishment correctly.
   const _CNES_ADDR_OLD = 'mapsUrl: M && K ? `https://www.google.com/maps/search/${encodeURIComponent((O.nome_fantasia || O.nome_razao_social || "").trim()).replace(/%20/g, "+")}/@${M},${K},17z` : null });';
-  const _CNES_ADDR_NEW = 'mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps/place/${encodeURIComponent(_q).replace(/%20/g, "+")}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
+  const _CNES_ADDR_NEW = 'mapsUrl: (() => { const _q = [(O.nome_fantasia || O.nome_razao_social || "").trim(), Se].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(_q)}` : M && K ? `https://www.google.com/maps?q=${M},${K}` : null; })() });';
   if (dashSrc.includes(_CNES_ADDR_OLD)) {
     dashSrc = dashSrc.replace(_CNES_ADDR_OLD, _CNES_ADDR_NEW);
     changed = true;
@@ -3872,7 +3872,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   // In Equipamentos do Município, prefer Google Maps text search (name + address)
   // so links open the place by name instead of only coordinates.
   const _OSM_MAPS_OLD = 'mapsUrl: Se && We ? `https://www.google.com/maps?q=${Se},${We}` : null });';
-  const _OSM_MAPS_NEW = 'mapsUrl: (() => { const _q = [((ee["name:pt"] || ee.name || ee["official_name"] || ee["short_name"] || "").trim()), $a].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps/place/${encodeURIComponent(_q).replace(/%20/g, "+")}` : Se && We ? `https://www.google.com/maps?q=${Se},${We}` : null; })() });';
+  const _OSM_MAPS_NEW = 'mapsUrl: (() => { const _q = [((ee["name:pt"] || ee.name || ee["official_name"] || ee["short_name"] || "").trim()), $a].filter(Boolean).join(", "); return _q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(_q)}` : Se && We ? `https://www.google.com/maps?q=${Se},${We}` : null; })() });';
   if (dashSrc.includes(_OSM_MAPS_OLD) && !dashSrc.includes('maps/search/?api=1&query=${encodeURIComponent(_q)}')) {
     dashSrc = dashSrc.replace(_OSM_MAPS_OLD, _OSM_MAPS_NEW);
     changed = true;
@@ -3882,7 +3882,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   // ── Sub-patch: remove coordinate fallback in equipment card link (equip-card-text-maps-v1) ──
   // In card renderer `l`, keep maps links textual (name/address) and avoid raw lat/lon URL.
   const _CARD_MAPS_COORD_OLD = 'y = n.mapsUrl || (u && v ? `https://www.google.com/maps?q=${u},${v}` : null), B2 = W2 ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(W2)}` : n.nome ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(n.nome + (n.municipio ? " " + n.municipio : ""))}` : null;';
-  const _CARD_MAPS_TEXT_NEW = 'Q2 = [String(n.nome || h.label || "").trim(), W2 || [n.municipio, n.uf].filter(Boolean).join(", ")].filter(Boolean).join(", "), U2 = String(n.mapsUrl || "").trim(), V2 = /\\/maps\\/place\\/[^/?#]+/i.test(U2) || /\\/maps\\/search\\/[^/?#]+/i.test(U2) || /[?&](q|query|destination)=[^&#]+/i.test(U2), y = U2 && V2 && !/https?:\\/\\/www\\.google\\.com\\/maps\\?q=-?\\d+(?:\\.\\d+)?,\\s*-?\\d+(?:\\.\\d+)?$/i.test(U2) && !/(undefined|null|nan)/i.test(U2) ? U2 : null, B2 = Q2 ? `https://www.google.com/maps/place/${encodeURIComponent(Q2).replace(/%20/g, "+")}` : u && v ? `https://www.google.com/maps?q=${u},${v}` : null;';
+  const _CARD_MAPS_TEXT_NEW = 'Q2 = [String(n.nome || h.label || "").trim(), W2 || [n.municipio, n.uf].filter(Boolean).join(", ")].filter(Boolean).join(", "), U2 = String(n.mapsUrl || "").trim(), V2 = /\\/maps\\/place\\/[^/?#]+/i.test(U2) || /\\/maps\\/search\\/[^/?#]+/i.test(U2) || /[?&](q|query|destination)=[^&#]+/i.test(U2), y = U2 && V2 && !/https?:\\/\\/www\\.google\\.com\\/maps\\?q=-?\\d+(?:\\.\\d+)?,\\s*-?\\d+(?:\\.\\d+)?$/i.test(U2) && !/(undefined|null|nan)/i.test(U2) ? U2 : null, B2 = Q2 ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(Q2)}` : u && v ? `https://www.google.com/maps?q=${u},${v}` : null;';
   if (dashSrc.includes(_CARD_MAPS_COORD_OLD)) {
     dashSrc = dashSrc.replace(_CARD_MAPS_COORD_OLD, _CARD_MAPS_TEXT_NEW);
     changed = true;
@@ -3890,11 +3890,23 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   }
 
   const _CARD_MAPS_URL_COORD_OLD = 'y = n.mapsUrl || null, B2 = W2 ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(W2)}` : n.nome ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(n.nome + (n.municipio ? " " + n.municipio : ""))}` : null;';
-  const _CARD_MAPS_URL_COORD_NEW = 'Q2 = [String(n.nome || h.label || "").trim(), W2 || [n.municipio, n.uf].filter(Boolean).join(", ")].filter(Boolean).join(", "), U2 = String(n.mapsUrl || "").trim(), V2 = /\\/maps\\/place\\/[^/?#]+/i.test(U2) || /\\/maps\\/search\\/[^/?#]+/i.test(U2) || /[?&](q|query|destination)=[^&#]+/i.test(U2), y = U2 && V2 && !/https?:\\/\\/www\\.google\\.com\\/maps\\?q=-?\\d+(?:\\.\\d+)?,\\s*-?\\d+(?:\\.\\d+)?$/i.test(U2) && !/(undefined|null|nan)/i.test(U2) ? U2 : null, B2 = Q2 ? `https://www.google.com/maps/place/${encodeURIComponent(Q2).replace(/%20/g, "+")}` : u && v ? `https://www.google.com/maps?q=${u},${v}` : null;';
+  const _CARD_MAPS_URL_COORD_NEW = 'Q2 = [String(n.nome || h.label || "").trim(), W2 || [n.municipio, n.uf].filter(Boolean).join(", ")].filter(Boolean).join(", "), U2 = String(n.mapsUrl || "").trim(), V2 = /\\/maps\\/place\\/[^/?#]+/i.test(U2) || /\\/maps\\/search\\/[^/?#]+/i.test(U2) || /[?&](q|query|destination)=[^&#]+/i.test(U2), y = U2 && V2 && !/https?:\\/\\/www\\.google\\.com\\/maps\\?q=-?\\d+(?:\\.\\d+)?,\\s*-?\\d+(?:\\.\\d+)?$/i.test(U2) && !/(undefined|null|nan)/i.test(U2) ? U2 : null, B2 = Q2 ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(Q2)}` : u && v ? `https://www.google.com/maps?q=${u},${v}` : null;';
   if (dashSrc.includes(_CARD_MAPS_URL_COORD_OLD)) {
     dashSrc = dashSrc.replace(_CARD_MAPS_URL_COORD_OLD, _CARD_MAPS_URL_COORD_NEW);
     changed = true;
     console.log('[bootstrap] Dashboard-v30 equipment card now ignores mapsUrl with raw lat/lon');
+  }
+
+  // ── Sub-patch: heal legacy /maps/place/ URLs to documented /maps/search/?api=1&query= (equip-maps-search-api-v1) ──
+  // Older patcher runs produced `https://www.google.com/maps/place/${encodeURIComponent(VAR).replace(/%20/g, "+")}`
+  // which is undocumented and frequently lands on the "We couldn't find" page (especially when the query
+  // contains commas → %2C). The supported form opens the place card with reviews when the match is unambiguous.
+  const _MAPS_PLACE_RE = /google\.com\/maps\/place\/\$\{encodeURIComponent\((_q|Q2)\)\.replace\(\/%20\/g, "\+"\)\}/g;
+  const _mapsPlaceMatches = (dashSrc.match(_MAPS_PLACE_RE) || []).length;
+  if (_mapsPlaceMatches > 0) {
+    dashSrc = dashSrc.replace(_MAPS_PLACE_RE, 'google.com/maps/search/?api=1&query=${encodeURIComponent($1)}');
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 healed', _mapsPlaceMatches, 'legacy /maps/place/ URLs to /maps/search/?api=1&query=');
   }
 
   // ── Sub-patch: sanitize CadUnico CRAS/CREAS nome (same rule as OSM) (cadunico-name-clean-v1) ──
