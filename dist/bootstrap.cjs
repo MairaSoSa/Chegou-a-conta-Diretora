@@ -4064,6 +4064,15 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     changed = true;
     console.log('[bootstrap] Dashboard-v30 equipes_saude rows now show situação + competência');
   }
+  // Remove o bloco "Quem está vinculado às equipes" (lista de eSF/eAP/eCR/eAPP por situação).
+  // Pedido do usuário: a quebra eSF válidas/homologadas/todas confunde mais do que ajuda; o
+  // % de eSF já é mostrado acima ("X% dos cadastrados na AP estão vinculados a eSF").
+  const _AP_VINC_BLOCK = ',\n          e.jsxs("div", { children: [e.jsx("strong", { children: "Quem est\\xE1 vinculado \\xE0s equipes:" }), e.jsx("div", { style: { marginTop: 4 }, children: ctxMunData.equipes_saude.filter(function(eq){ return eq.tipo && eq.tipo !== "-" && eq.pessoas > 0; }).sort(function(a,b){var _o={"v\\xE1lidas":0,"homologadas":1,"todas":2};return a.tipo.localeCompare(b.tipo)||((_o[a.situacao]||9)-(_o[b.situacao]||9));}).map(function(eq, i){ var _comp=String(eq.competencia||""); var _compFmt=_comp.length===6?(_comp.slice(4,6)+"/"+_comp.slice(0,4)):_comp; return e.jsxs("div", { style: { display: "flex", justifyContent: "space-between", padding: "3px 0", borderBottom: "1px solid #eee" }, children: [e.jsxs("span", { children: [eq.tipo, " ", e.jsx("span", { style: { fontSize: 9, color: "#888", fontWeight: 400 }, children: "(" + eq.situacao + " \\u2014 " + _compFmt + ")" })] }), e.jsx("span", { children: eq.pessoas.toLocaleString("pt-BR") })] }, i); }) })] })';
+  if (dashSrc.includes(_AP_VINC_BLOCK)) {
+    dashSrc = dashSrc.replace(_AP_VINC_BLOCK, '');
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 "Quem está vinculado às equipes" block removed');
+  }
 
   // ── Sub-patch: sanitize CadUnico CRAS/CREAS nome (same rule as OSM) (cadunico-name-clean-v1) ──
   // The CadUnico-sourced items can also have operating-hours junk in the `nome` field
