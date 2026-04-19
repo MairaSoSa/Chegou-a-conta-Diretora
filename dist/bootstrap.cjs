@@ -3649,6 +3649,18 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 OSM name sanitization applied (drops opening_hours-like names)');
   }
 
+  // ── Sub-patch: remove CRAS/CREAS from OSM equipamentos to avoid duplication with CadUnico block (cras-dedup-v1) ──
+  // CRAS and CREAS were appearing twice: once in the generic OSM/CNES equipamentos block and once in the
+  // dedicated CadUnico-sourced "CRAS e CREAS" block below. Strip them from the OSM block so the dedicated
+  // section is the single source of truth.
+  const _CRAS_DEDUP_OLD = 'Pt({ ...r }), rt(false);';
+  const _CRAS_DEDUP_NEW = 'delete r.cras; delete r.creas; Pt({ ...r }), rt(false);';
+  if (dashSrc.includes(_CRAS_DEDUP_OLD) && !dashSrc.includes(_CRAS_DEDUP_NEW)) {
+    dashSrc = dashSrc.replace(_CRAS_DEDUP_OLD, _CRAS_DEDUP_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 CRAS/CREAS removed from OSM block (dedup with CadUnico)');
+  }
+
   // ── Sub-patch: remove "Rede socioassistencial / fontes / desatualizados" footer (mds-fonte-removed-v1) ──
   // User requested removal of the whole sources/footer paragraph below the equipment block.
   const _MDS_FOOTER_OLD = ', e.jsxs("p", { style: { fontSize: "10px", color: "#6b8a74", marginTop: 10, marginBottom: 6 }, children: [Ke?.ok && Ke.total > 0 && e.jsx("span", { children: "Rede socioassistencial: Mapa Social MDS. " }), Ra.ibge_fonte && e.jsxs("span", { children: ["Contagens hist\\xF3ricas: ", Ra.ibge_fonte, ". "] }), ca && n > 0 && e.jsx("span", { children: "Sa\\xFAde: CNES/Min. Sa\\xFAde e OpenStreetMap. " }), Pe && (Pe.cras?.length > 0 || Pe.creas?.length > 0) && e.jsx("span", { children: "CRAS/CREAS: CadUnico Brasil. " }), "Dados podem estar desatualizados."] })';

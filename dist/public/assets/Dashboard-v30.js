@@ -944,7 +944,7 @@ out center tags 100;`, B2 = fetch("https://overpass-api.de/api/interpreter", { m
             const O = new Set(r[A2].filter(($) => $.source === "cnes").map(($) => ($.nome || "").toLowerCase().slice(0, 20)));
             r[A2] = r[A2].filter(($) => $.source === "cnes" || !O.has(($.nome || "").toLowerCase().slice(0, 20)));
           }
-          Pt({ ...r }), rt(false);
+          delete r.cras; delete r.creas; Pt({ ...r }), rt(false);
         });
       }, x = () => {
         const n = !st;
