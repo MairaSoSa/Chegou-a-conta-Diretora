@@ -3662,6 +3662,17 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 CadUnico nome sanitization applied');
   }
 
+  // ── Sub-patch: ordenar cada subcategoria de equipamentos por proximidade (equip-sort-by-proximity-v1) ──
+  // Usa Ra.saude.referencia_proximidade (centroide do município ou escola) como ponto de referência.
+  // Itens sem lat/lon vão para o final.
+  const _SORT_OLD = '          const h = ca[g] || [];';
+  const _SORT_NEW = '          const _refPx = Ra && Ra.saude && Ra.saude.referencia_proximidade; const _haver = (n) => { const _la = n.lat != null ? n.lat : n.latitude, _lo = n.lon != null ? n.lon : n.longitude; if (_la == null || _lo == null || !_refPx || _refPx.latitude == null || _refPx.longitude == null) return Infinity; const _R = 6371, _dLa = (_la - _refPx.latitude) * Math.PI / 180, _dLo = (_lo - _refPx.longitude) * Math.PI / 180; const _aa = Math.sin(_dLa/2)*Math.sin(_dLa/2) + Math.cos(_refPx.latitude * Math.PI/180) * Math.cos(_la * Math.PI/180) * Math.sin(_dLo/2)*Math.sin(_dLo/2); return 2 * _R * Math.asin(Math.sqrt(_aa)); }; const h = (ca[g] || []).slice().sort((aa, bb) => _haver(aa) - _haver(bb));';
+  if (dashSrc.includes(_SORT_OLD) && !dashSrc.includes('_haver')) {
+    dashSrc = dashSrc.replace(_SORT_OLD, _SORT_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 equipamentos sort by proximity applied');
+  }
+
   // ── Sub-patch: remove CRAS/CREAS from OSM equipamentos to avoid duplication with CadUnico block (cras-dedup-v1) ──
   // CRAS and CREAS were appearing twice: once in the generic OSM/CNES equipamentos block and once in the
   // dedicated CadUnico-sourced "CRAS e CREAS" block below. Strip them from the OSM block so the dedicated
