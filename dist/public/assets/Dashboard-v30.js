@@ -948,7 +948,7 @@ out center tags 100;`, B2 = fetch("https://overpass-api.de/api/interpreter", { m
         });
       }, x = () => {
         const n = !st;
-        Ft(n), n && a && (!Ra && !Ta && (Da(true), fetch(`/api/equipamentos-publicos/${a}`).then((g) => g.json()).then((g) => {
+        Ft(n), n && a && (!Ra && !Ta && (Da(true), fetch(`/api/equipamentos-publicos/${a}` + (N && N.escola && N.escola.co_entidade ? `?inep=${encodeURIComponent(N.escola.co_entidade)}` : ``)).then((g) => g.json()).then((g) => {
           it(g), Da(false);
         }).catch(() => {
           it({ ok: false }), Da(false);

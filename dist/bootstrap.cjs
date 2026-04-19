@@ -298,6 +298,21 @@ const _EQUIP_ROUTE =
         '}'+
       '}catch(_onge){console.warn("[equipamentos] ONGs CNEAS erro:",_onge.message);}'+
     '}'+
+    // School-centric proximity reference: when ?inep= is provided, override
+    // referencia_proximidade with the school's coords from censo_escolas (latest year).
+    'try{'+
+      'const _epPool=globalThis._pgPool;'+
+      'if(_epPool&&A.query&&A.query.inep&&/^[0-9]{6,12}$/.test(String(A.query.inep))){'+
+        'const _ie=String(A.query.inep);'+
+        'const _ir=await _epPool.query("SELECT latitude,longitude FROM censo_escolas WHERE co_entidade=$1 AND latitude IS NOT NULL AND longitude IS NOT NULL ORDER BY ano DESC NULLS LAST LIMIT 1",[_ie]);'+
+        'if(_ir&&_ir.rows&&_ir.rows[0]){'+
+          'const _la=Number(_ir.rows[0].latitude),_lo=Number(_ir.rows[0].longitude);'+
+          'if(Number.isFinite(_la)&&Number.isFinite(_lo)){'+
+            'T.referencia_proximidade={latitude:_la,longitude:_lo,fonte:"censo_escolas",inep:_ie};'+
+          '}'+
+        '}'+
+      '}'+
+    '}catch(_se){console.warn("[equipamentos] escola coords lookup erro:",_se.message);}'+
     // FUNAI CTL/CR data from funai-coordenacoes.json
     'let _funaiResult={disponivel:!1,ctls:[],cr:null,fonte:"funai-coordenacoes.json",atualizado_em:null};'+
     'try{'+
@@ -3660,6 +3675,16 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     dashSrc = dashSrc.replace(_CADU_NAME_OLD, _CADU_NAME_NEW);
     changed = true;
     console.log('[bootstrap] Dashboard-v30 CadUnico nome sanitization applied');
+  }
+
+  // ── Sub-patch: pass school INEP to /api/equipamentos-publicos so the saude
+  //              referencia_proximidade is the school itself (not the centroid). (equip-fetch-inep-v1) ──
+  const _EQUIP_FETCH_OLD = 'fetch(`/api/equipamentos-publicos/${a}`)';
+  const _EQUIP_FETCH_NEW = 'fetch(`/api/equipamentos-publicos/${a}` + (N && N.escola && N.escola.co_entidade ? `?inep=${encodeURIComponent(N.escola.co_entidade)}` : ``))';
+  if (dashSrc.includes(_EQUIP_FETCH_OLD) && !dashSrc.includes(_EQUIP_FETCH_NEW)) {
+    dashSrc = dashSrc.replace(_EQUIP_FETCH_OLD, _EQUIP_FETCH_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 equipamentos fetch now passes ?inep= for school-centric proximity');
   }
 
   // ── Sub-patch: ordenar cada subcategoria de equipamentos por proximidade (equip-sort-by-proximity-v1) ──
