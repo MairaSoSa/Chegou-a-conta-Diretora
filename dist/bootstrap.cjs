@@ -326,6 +326,44 @@ const _EQUIP_ROUTE =
         '}else{_funaiResult.atualizado_em=_fAt;}'+
       '}'+
     '}catch(_fe){console.warn("[equipamentos] FUNAI lookup erro:",_fe.message);}'+
+    // FUNAI: resolve códigos IBGE em {nome, uf} usando cache lazy de censo_escolas.
+    // Adiciona municipios_atendidos_resolved/abrangencia_resolved/sede_resolved e flag
+    // atende_municipio_atual / eh_o_municipio_atual em cada item, e ordena CTLs.
+    'try{'+
+      'const _fnPool=globalThis._pgPool;'+
+      'if(_fnPool&&_funaiResult.disponivel){'+
+        'if(!globalThis._munNames){'+
+          'try{'+
+            'const _mr=await _fnPool.query("SELECT DISTINCT co_municipio::text AS co,no_municipio AS nome,sg_uf AS uf FROM censo_escolas WHERE no_municipio IS NOT NULL");'+
+            'const _mm=new Map();'+
+            'for(const _row of _mr.rows){_mm.set(String(_row.co),{nome:_row.nome,uf:_row.uf});}'+
+            'globalThis._munNames=_mm;'+
+            'console.log("[funai] muni names cache loaded:",_mm.size,"munic\\xEDpios");'+
+          '}catch(_mle){console.warn("[funai] muni names load erro:",_mle.message);globalThis._munNames=new Map();}'+
+        '}'+
+        'const _mn=globalThis._munNames;'+
+        'const _mAtual=String(E||"").replace(/\\D/g,"");'+
+        'const _mAtual6=_mAtual.length===7?_mAtual.slice(0,6):_mAtual;'+
+        'const _resolveMun=(c)=>{'+
+          'const _k=String(c||"").replace(/\\D/g,"");'+
+          'if(!_k)return null;'+
+          'let _e=_mn.get(_k);'+
+          'if(!_e&&_k.length===6){for(const[_kk,_vv]of _mn){if(_kk.slice(0,6)===_k){_e=_vv;break;}}}'+
+          'return{co:_k,nome:_e?_e.nome:null,uf:_e?_e.uf:null,eh_o_municipio_atual:_k===_mAtual||(_k.length>=6&&_k.slice(0,6)===_mAtual6)};'+
+        '};'+
+        '_funaiResult.ctls=(_funaiResult.ctls||[]).map((_c)=>{'+
+          'const _resolved=(_c.municipios_atendidos||[]).map(_resolveMun).filter(Boolean);'+
+          'const _atende=_resolved.some((_r)=>_r.eh_o_municipio_atual);'+
+          'return Object.assign({},_c,{municipios_atendidos_resolved:_resolved,atende_municipio_atual:_atende});'+
+        '});'+
+        '_funaiResult.ctls.sort((_a,_b)=>(_b.atende_municipio_atual?1:0)-(_a.atende_municipio_atual?1:0));'+
+        'if(_funaiResult.cr){'+
+          'const _crSede=_resolveMun(_funaiResult.cr.municipio_sede);'+
+          'const _crAbr=(_funaiResult.cr.abrangencia||[]).map(_resolveMun).filter(Boolean);'+
+          '_funaiResult.cr=Object.assign({},_funaiResult.cr,{sede_resolved:_crSede,abrangencia_resolved:_crAbr});'+
+        '}'+
+      '}'+
+    '}catch(_fne){console.warn("[funai] enrichment erro:",_fne.message);}'+
     'try{'+
       'let I="https://servicodados.ibge.gov.br/api/v1/pesquisas/10079/periodos/2013/indicadores/"+x+"/resultados/"+v,D=await fetch(I,{signal:AbortSignal.timeout(8e3),headers:{"User-Agent":"ChegoAContaDiretora/1.0"}});'+
       'if(!D.ok)throw new Error("IBGE HTTP "+D.status);'+
@@ -1028,90 +1066,130 @@ if (fs.existsSync(dashboardV30AssetPath)) {
     console.log('[bootstrap] Dashboard-v30 ONGs block patch already applied');
   }
 
-  // ── FUNAI block: Presença Indígena — injected before footnote, after ONGs ──
+  // ── FUNAI block V2: Presença Indígena — redesenhado para gestor escolar ───────
+  // Mostra: contexto da escola (matrículas indígenas + %), CTL(s) que atendem ESTE
+  // município em destaque, CR articuladora com sede e abrangência (nomes, não códigos),
+  // outras CTLs vinculadas em <details>, e link para portais oficiais (sem contato direto
+  // pois a base GeoServer FUNAI não traz telefone/e-mail).
   // Condition: municipality has CTL/CR (Ra.funai.disponivel) OR school has indigenous
   // flags (G.in_educacao_indigena, G.tp_localizacao_diferenciada) OR indigenous
   // enrollments (V.matriculas.por_raca.indigena > 0).
   const _FUNAI_FE_BLOCK =
-    ', (Ra&&Ra.funai&&Ra.funai.disponivel||(typeof G!=="undefined"&&G&&(Number(G.in_educacao_indigena||0)===1||Number(G.tp_localizacao_diferenciada||0)===2))||(V&&V.matriculas&&V.matriculas.por_raca&&(V.matriculas.por_raca.indigena||0)>0))&&(()=>{' +
+    '/*_FUNAI_V2_*/, (Ra&&Ra.funai&&Ra.funai.disponivel||(typeof G!=="undefined"&&G&&(Number(G.in_educacao_indigena||0)===1||Number(G.tp_localizacao_diferenciada||0)===2))||(V&&V.matriculas&&V.matriculas.por_raca&&(V.matriculas.por_raca.indigena||0)>0))&&(()=>{' +
       'const _F=Ra&&Ra.funai||{disponivel:!1,ctls:[],cr:null};' +
       'const _ctls=Array.isArray(_F.ctls)?_F.ctls:[];' +
       'const _cr=_F.cr||null;' +
       'const _qtInd=(V&&V.matriculas&&V.matriculas.por_raca&&V.matriculas.por_raca.indigena)||0;' +
+      'const _qtTotalRaca=(V&&V.matriculas&&V.matriculas.por_raca)?Object.values(V.matriculas.por_raca).reduce(function(s,n){return s+(Number(n)||0);},0):0;' +
+      'const _pctInd=_qtTotalRaca>0?((_qtInd/_qtTotalRaca)*100):null;' +
       'const _edInd=typeof G!=="undefined"&&G?Number(G.in_educacao_indigena||0):0;' +
       'const _tpLoc=typeof G!=="undefined"&&G?Number(G.tp_localizacao_diferenciada||0):0;' +
+      'const _muniNomeAtual=(typeof N!=="undefined"&&N&&N.escola&&N.escola.no_municipio)||"";' +
+      'const _muniUfAtual=(typeof N!=="undefined"&&N&&N.escola&&N.escola.sg_uf)||"";' +
+      'const _ctlsAtende=_ctls.filter(function(c){return c&&c.atende_municipio_atual;});' +
+      'const _ctlsOutras=_ctls.filter(function(c){return c&&!c.atende_municipio_atual;});' +
+      'const _fmtMun=function(r){return r&&r.nome?(r.nome+(r.uf?(" \\u2014 "+r.uf):"")):(r&&r.co?("IBGE "+r.co):"");};' +
+      'const _renderCtlCard=function(c,key,destacar){return e.jsxs("div",{style:{background:destacar?"#fff8e1":"#fff",border:destacar?"1.5px solid #f57c00":"1px solid #d7ccc8",borderRadius:12,padding:"10px 12px",borderLeft:destacar?"4px solid #e65100":"3px solid #a1887f"},children:[' +
+        'e.jsxs("p",{style:{fontWeight:700,fontSize:11,color:destacar?"#bf360c":"#5d4037",margin:"0 0 4px",lineHeight:1.3,display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"},children:[' +
+          'e.jsx("span",{style:{fontSize:8,fontWeight:800,color:"#fff",background:destacar?"#e65100":"#8d6e63",borderRadius:6,padding:"2px 6px"},children:"CTL"}),' +
+          'e.jsx("span",{children:c.nome||"Coordena\\xE7\\xE3o T\\xE9cnica Local"}),' +
+          'destacar&&e.jsx("span",{style:{fontSize:8,fontWeight:700,color:"#1b5e20",background:"#c8e6c9",borderRadius:10,padding:"1px 6px"},children:"\\u2713 atende este munic\\xEDpio"})' +
+        ']}),' +
+        'c.endereco&&e.jsxs("p",{style:{fontSize:10,color:"#5d4037",margin:"0 0 2px"},children:["\\uD83D\\uDCCD Sede: ",c.endereco,c.uf?(" \\u2014 "+c.uf):""]}),' +
+        'c.municipios_atendidos_resolved&&c.municipios_atendidos_resolved.length>0&&e.jsxs("p",{style:{fontSize:10,color:"#6d4c41",margin:"3px 0 0",lineHeight:1.4},children:[' +
+          'e.jsxs("span",{style:{fontWeight:600,color:"#5d4037"},children:["Atende ",c.municipios_atendidos_resolved.length," munic\\xEDpio",c.municipios_atendidos_resolved.length===1?"":"s",": "]}),' +
+          'c.municipios_atendidos_resolved.slice(0,8).map(function(r,i){return e.jsxs("span",{children:[i>0?", ":"",e.jsx("span",{style:{fontWeight:r.eh_o_municipio_atual?700:400,color:r.eh_o_municipio_atual?"#bf360c":"#6d4c41"},children:_fmtMun(r)})]},i);}),' +
+          'c.municipios_atendidos_resolved.length>8&&e.jsxs("span",{children:[" e mais ",c.municipios_atendidos_resolved.length-8]})' +
+        ']})' +
+      ']},key);};' +
       'return e.jsxs("div",{style:{marginTop:14},children:[' +
         // section header
-        'e.jsxs("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10},children:[' +
-          'e.jsx("p",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:"#7b3f00",margin:0},' +
-          'children:"Presen\\xE7a Ind\\xEDgena \\u2014 FUNAI"}),' +
-          'e.jsx("span",{style:{fontSize:9,color:"#7b3f00",background:"#fef3e2",borderRadius:20,padding:"2px 8px",fontWeight:600},' +
-          'children:"Censo Escolar / FUNAI"})' +
+        'e.jsxs("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,gap:8,flexWrap:"wrap"},children:[' +
+          'e.jsx("p",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:"#7b3f00",margin:0},children:"\\uD83E\\uDEB6 Presen\\xE7a Ind\\xEDgena \\u2014 apoio territorial da FUNAI"}),' +
+          'e.jsx("span",{style:{fontSize:9,color:"#7b3f00",background:"#fef3e2",borderRadius:20,padding:"2px 8px",fontWeight:600},children:"Censo INEP + FUNAI"})' +
         ']}),' +
-        // indigenous context badges (always show when block is visible)
-        'e.jsxs("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10},children:[' +
+        // intro line — explica o que é CTL/CR e por que aparece
+        'e.jsx("p",{style:{fontSize:10,color:"#6d4c41",margin:"0 0 10px",lineHeight:1.45,fontStyle:"italic"},children:"A FUNAI mant\\xE9m duas estruturas no territ\\xF3rio: a Coordena\\xE7\\xE3o T\\xE9cnica Local (CTL), pr\\xF3xima das comunidades, e a Coordena\\xE7\\xE3o Regional (CR), que articula uma regi\\xE3o maior. Este bloco mostra quem atende este munic\\xEDpio."}),' +
+        // context tags — escola + matrículas com %
+        '(_edInd===1||_tpLoc===2||_qtInd>0)&&e.jsxs("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12},children:[' +
           '_edInd===1&&e.jsx("span",{style:{fontSize:10,fontWeight:700,color:"#7b3f00",background:"#fef3e2",border:"1px solid #f4c06c",borderRadius:20,padding:"3px 10px"},children:"Escola Ind\\xEDgena (Censo)"}),' +
-          '_tpLoc===2&&e.jsx("span",{style:{fontSize:10,fontWeight:700,color:"#5d4037",background:"#efebe9",border:"1px solid #bcaaa4",borderRadius:20,padding:"3px 10px"},children:"Terra Ind\\xEDgena (Localiza\\xE7\\xE3o)"}),' +
-          '_qtInd>0&&e.jsxs("span",{style:{fontSize:10,fontWeight:700,color:"#4e342e",background:"#efebe9",border:"1px solid #bcaaa4",borderRadius:20,padding:"3px 10px"},children:[_qtInd.toLocaleString("pt-BR")," mat. ind\\xEDgenas"]})' +
+          '_tpLoc===2&&e.jsx("span",{style:{fontSize:10,fontWeight:700,color:"#5d4037",background:"#efebe9",border:"1px solid #bcaaa4",borderRadius:20,padding:"3px 10px"},children:"Em Terra Ind\\xEDgena"}),' +
+          '_qtInd>0&&e.jsxs("span",{style:{fontSize:10,fontWeight:700,color:"#4e342e",background:"#efebe9",border:"1px solid #bcaaa4",borderRadius:20,padding:"3px 10px"},children:[_qtInd.toLocaleString("pt-BR")," matr\\xEDcula",_qtInd===1?"":"s"," ind\\xEDgena",_qtInd===1?"":"s",_pctInd!=null?(" (\\u2248"+(_pctInd<1?_pctInd.toFixed(1):Math.round(_pctInd))+"% das matr\\xEDculas)"):""]})' +
         ']}),' +
-        // CTLs section
-        '_ctls.length>0&&e.jsxs("div",{style:{marginBottom:10},children:[' +
-          'e.jsx("p",{style:{fontSize:10,fontWeight:700,color:"#7b3f00",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6},children:"Coordena\\xE7\\xF5es T\\xE9cnicas Locais (CTL)"}),' +
-          'e.jsx("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(240px, 1fr))",gap:8},children:' +
-            '_ctls.slice(0,5).map(function(_ctl,_ci){' +
-              'return e.jsxs("div",{style:{background:"#fff",border:"1.5px solid #f4c06c",borderRadius:12,padding:"10px 12px",borderLeft:"4px solid #e65100"},children:[' +
-                'e.jsx("p",{style:{fontWeight:700,fontSize:11,color:"#bf360c",margin:"0 0 4px",lineHeight:1.3},children:[' +
-                  'e.jsx("span",{style:{fontSize:8,fontWeight:800,color:"#e65100",background:"#fbe9e7",borderRadius:6,padding:"1px 5px",marginRight:4,verticalAlign:"middle"},children:"CTL"}),' +
-                  '_ctl.nome||"CTL"' +
-                '].filter(Boolean)}),' +
-                '(_ctl.municipio_nome||_ctl.uf)&&e.jsxs("p",{style:{fontSize:10,color:"#5d4037",margin:"0 0 2px"},children:[' +
-                  '"\\uD83D\\uDCCD ",_ctl.municipio_nome||"",_ctl.municipio_nome&&_ctl.uf?" \u2014 ":"",_ctl.uf||""' +
-                ']}),' +
-                '_ctl.endereco&&e.jsx("p",{style:{fontSize:10,color:"#6d4c41",margin:"0 0 2px"},children:"\\uD83C\\uDFE2 "+_ctl.endereco}),' +
-                '_ctl.municipios_atendidos&&e.jsx("p",{style:{fontSize:9,color:"#8d6e63",margin:"2px 0 0",fontStyle:"italic",lineHeight:1.3},children:"Atende: "+_ctl.municipios_atendidos.slice(0,120)+((_ctl.municipios_atendidos.length||0)>120?"...":"")})' +
-              ']},_ci);' +
-            '})' +
-          '})' +
+        // Quem atende este município (CTLs em destaque)
+        '(_ctls.length>0||_cr)&&e.jsxs("div",{style:{marginBottom:12},children:[' +
+          'e.jsxs("p",{style:{fontSize:10,fontWeight:700,color:"#7b3f00",textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 4px"},children:["Quem atende ",_muniNomeAtual||"este munic\\xEDpio",_muniUfAtual?(" ("+_muniUfAtual+")"):""]}),' +
+          '_ctlsAtende.length>0?e.jsx("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(260px, 1fr))",gap:8},children:_ctlsAtende.map(function(c,i){return _renderCtlCard(c,"a"+i,true);})}):e.jsx("p",{style:{fontSize:10,color:"#6d4c41",margin:"4px 0 0",fontStyle:"italic",lineHeight:1.4},children:"Nenhuma CTL est\\xE1 mapeada como respons\\xE1vel direta por este munic\\xEDpio na base atual da FUNAI. A Coordena\\xE7\\xE3o Regional abaixo responde pelo territ\\xF3rio."})' +
         ']}),' +
-        // CR section
-        '_cr&&e.jsxs("div",{style:{marginBottom:10},children:[' +
-          'e.jsx("p",{style:{fontSize:10,fontWeight:700,color:"#7b3f00",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6},children:"Coordena\\xE7\\xE3o Regional (CR)"}),' +
+        // CR articuladora — sede + abrangência com nomes
+        '_cr&&e.jsxs("div",{style:{marginBottom:12},children:[' +
+          'e.jsx("p",{style:{fontSize:10,fontWeight:700,color:"#7b3f00",textTransform:"uppercase",letterSpacing:"0.05em",margin:"0 0 4px"},children:"Coordena\\xE7\\xE3o Regional (CR) que articula a regi\\xE3o"}),' +
           'e.jsxs("div",{style:{background:"#fff",border:"1.5px solid #bcaaa4",borderRadius:12,padding:"12px 14px",borderLeft:"4px solid #7b3f00"},children:[' +
-            'e.jsx("p",{style:{fontWeight:700,fontSize:12,color:"#4e342e",margin:"0 0 4px"},children:[' +
-              'e.jsx("span",{style:{fontSize:9,fontWeight:800,color:"#7b3f00",background:"#efebe9",borderRadius:6,padding:"1px 6px",marginRight:5,verticalAlign:"middle"},children:"CR"}),' +
-              '_cr.nome' +
-            '].filter(Boolean)}),' +
-            '(_cr.municipio_sede||_cr.uf)&&e.jsxs("p",{style:{fontSize:11,color:"#5d4037",margin:"0 0 3px"},children:["\\uD83D\\uDCCD Sede: ",_cr.municipio_sede||"",_cr.municipio_sede&&_cr.uf?" \u2014 ":"",_cr.uf||""]}),' +
-            '_cr.abrangencia&&e.jsx("p",{style:{fontSize:10,color:"#6d4c41",margin:"0 0 2px",lineHeight:1.4},children:"Abrang\\xEAncia: "+_cr.abrangencia.slice(0,200)+((_cr.abrangencia.length||0)>200?"...":"")})' +
+            'e.jsxs("p",{style:{fontWeight:700,fontSize:12,color:"#4e342e",margin:"0 0 4px",display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"},children:[' +
+              'e.jsx("span",{style:{fontSize:8,fontWeight:800,color:"#fff",background:"#7b3f00",borderRadius:6,padding:"2px 6px"},children:"CR"}),' +
+              'e.jsx("span",{children:_cr.nome||"Coordena\\xE7\\xE3o Regional"})' +
+            ']}),' +
+            '_cr.sede_resolved&&e.jsxs("p",{style:{fontSize:11,color:"#5d4037",margin:"0 0 4px",display:"flex",alignItems:"center",flexWrap:"wrap",gap:4},children:[' +
+              'e.jsxs("span",{children:["\\uD83D\\uDCCD Sede: ",_fmtMun(_cr.sede_resolved)]}),' +
+              '_cr.sede_resolved.eh_o_municipio_atual&&e.jsx("span",{style:{fontSize:9,fontWeight:700,color:"#1b5e20",background:"#c8e6c9",borderRadius:10,padding:"1px 6px"},children:"\\u2713 \\xE9 este munic\\xEDpio"})' +
+            ']}),' +
+            '_cr.abrangencia_resolved&&_cr.abrangencia_resolved.length>0&&e.jsxs("div",{style:{fontSize:10,color:"#6d4c41",margin:"4px 0 0",lineHeight:1.5},children:[' +
+              'e.jsxs("p",{style:{fontWeight:600,color:"#5d4037",margin:"0 0 3px"},children:["Cobre ",_cr.abrangencia_resolved.length," munic\\xEDpio",_cr.abrangencia_resolved.length===1?"":"s",":"]}),' +
+              'e.jsx("div",{style:{display:"flex",flexWrap:"wrap",gap:"3px 10px"},children:_cr.abrangencia_resolved.slice(0,30).map(function(r,i){return e.jsxs("span",{style:{fontWeight:r.eh_o_municipio_atual?700:400,color:r.eh_o_municipio_atual?"#bf360c":"#6d4c41"},children:["\\u2022 ",_fmtMun(r),r.eh_o_municipio_atual?" \\u2713":""]},i);})}),' +
+              '_cr.abrangencia_resolved.length>30&&e.jsxs("p",{style:{margin:"3px 0 0",fontStyle:"italic"},children:["\\u2026 e mais ",_cr.abrangencia_resolved.length-30," munic\\xEDpios"]})' +
+            ']})' +
           ']})' +
         ']}),' +
-        // no CTL/CR but school flags show
-        '!_ctls.length&&!_cr&&(_edInd===1||_tpLoc===2||_qtInd>0)&&e.jsx("p",{style:{fontSize:10,color:"#8d6e63",fontStyle:"italic",margin:"0 0 6px",lineHeight:1.4},' +
-        'children:"Coordena\\xE7\\xE3o T\\xE9cnica Local (CTL) e/ou Coordena\\xE7\\xE3o Regional (CR) da FUNAI n\\xE3o mapeadas para este munic\\xEDpio na base atual. Execute o script sync-funai.mjs para atualizar os dados."}),' +
-        // footer
-        'e.jsxs("p",{style:{fontSize:10,color:"#8d6e63",margin:"6px 0 0",lineHeight:1.4},children:[' +
-          '"Fonte: Censo Escolar INEP",_F.disponivel&&_F.atualizado_em&&e.jsxs("span",{children:[" / FUNAI (atualizado em ",new Date(_F.atualizado_em).toLocaleDateString("pt-BR"),")"]}),".",' +
-          'e.jsx("a",{href:"https://www.gov.br/funai/pt-br/atuacao/presenca-indigena",target:"_blank",rel:"noopener noreferrer",style:{color:"#7b3f00",marginLeft:4,textDecoration:"underline"},children:"Saiba mais sobre a FUNAI \\u2197"})' +
+        // outras CTLs em <details>
+        '_ctlsOutras.length>0&&e.jsxs("details",{style:{marginBottom:8},children:[' +
+          'e.jsxs("summary",{style:{fontSize:10,fontWeight:700,color:"#7b3f00",textTransform:"uppercase",letterSpacing:"0.05em",cursor:"pointer",margin:"0 0 4px"},children:["Outras CTLs vinculadas (",_ctlsOutras.length,")"]}),' +
+          'e.jsx("p",{style:{fontSize:10,color:"#8d6e63",fontStyle:"italic",margin:"4px 0 6px",lineHeight:1.4},children:"Unidades t\\xE9cnicas que atuam em outros munic\\xEDpios da regi\\xE3o, n\\xE3o respons\\xE1veis diretas por este munic\\xEDpio."}),' +
+          'e.jsx("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(260px, 1fr))",gap:8},children:_ctlsOutras.slice(0,10).map(function(c,i){return _renderCtlCard(c,"o"+i,false);})})' +
+        ']}),' +
+        // sem CTL/CR mas escola tem flags indígenas
+        '!_ctls.length&&!_cr&&(_edInd===1||_tpLoc===2||_qtInd>0)&&e.jsx("p",{style:{fontSize:10,color:"#8d6e63",fontStyle:"italic",margin:"0 0 6px",lineHeight:1.4},children:"Coordena\\xE7\\xF5es da FUNAI n\\xE3o mapeadas para este munic\\xEDpio na base atual."}),' +
+        // footer com fonte + caveat de contato + links portais
+        'e.jsxs("p",{style:{fontSize:10,color:"#8d6e63",margin:"8px 0 0",lineHeight:1.45},children:[' +
+          '"Fonte: Censo Escolar INEP",_F.disponivel&&_F.atualizado_em&&e.jsxs("span",{children:[" + GeoServer FUNAI (atualizado em ",new Date(_F.atualizado_em).toLocaleDateString("pt-BR"),")"]}),". Esta base n\\xE3o inclui telefone/e-mail das CTLs/CRs \\u2014 use os portais oficiais para contato. ",' +
+          'e.jsx("a",{href:"https://www.gov.br/funai/pt-br/acesso-a-informacao/institucional/coordenacoes-regionais",target:"_blank",rel:"noopener noreferrer",style:{color:"#7b3f00",marginRight:8,textDecoration:"underline"},children:"Coordena\\xE7\\xF5es Regionais (FUNAI) \\u2197"}),' +
+          'e.jsx("a",{href:"https://www.gov.br/funai/pt-br/atuacao/presenca-indigena",target:"_blank",rel:"noopener noreferrer",style:{color:"#7b3f00",textDecoration:"underline"},children:"Presen\\xE7a Ind\\xEDgena \\u2197"})' +
         ']})' +
       ']});' +
     '})()'
   ;
-  const _funaiBlockPresent = dashV30Source.includes(', (Ra&&Ra.funai&&Ra.funai.disponivel') && dashV30Source.includes('tp_localizacao_diferenciada||0)===2');
-  if (!_funaiBlockPresent) {
-    // Remove old ===1 block if present before re-injecting with ===2
-    if (dashV30Source.includes(', (Ra&&Ra.funai&&Ra.funai.disponivel')) {
-      dashV30Source = dashV30Source.replace(/, \(Ra&&Ra\.funai&&Ra\.funai\.disponivel[^)]+\)\(\)\)/s, '');
+  // Detect & remove V1 (older block) before injecting V2. V1 used the link text
+  // "Saiba mais sobre a FUNAI" and ended with `})()`. V2 carries the marker
+  // `_FUNAI_V2_` so we can detect it and avoid re-injecting on subsequent boots.
+  const _funaiV2Present = dashV30Source.includes('_FUNAI_V2_');
+  if (!_funaiV2Present) {
+    if (dashV30Source.includes('Saiba mais sobre a FUNAI')) {
+      const _v1Re = /,\s*\(Ra&&Ra\.funai&&Ra\.funai\.disponivel[\s\S]*?Saiba mais sobre a FUNAI[\s\S]*?\}\)\(\)/;
+      const _before = dashV30Source.length;
+      dashV30Source = dashV30Source.replace(_v1Re, '');
+      if (dashV30Source.length < _before) {
+        console.log('[bootstrap] Dashboard-v30 FUNAI V1 block removed (' + (_before - dashV30Source.length) + ' chars)');
+      } else {
+        console.warn('[bootstrap] Dashboard-v30 FUNAI V1 block found but regex did not match');
+      }
     }
-    const _funaiAnchorIdx = dashV30Source.indexOf(_SAUDE_FE_ANCHOR);
+    // V2 anchor: the fallback that follows the FUNAI block in the rendered tree.
+    // We try the post-FUNAI fallback first, then fall back to _SAUDE_FE_ANCHOR.
+    const _FUNAI_V2_ANCHOR = ', !Ta && !a && e.jsx("p", { style: { fontSize: 12, color: "#888"';
+    let _funaiAnchorIdx = dashV30Source.indexOf(_FUNAI_V2_ANCHOR);
+    let _anchorUsed = 'post-funai-fallback';
+    if (_funaiAnchorIdx === -1) {
+      _funaiAnchorIdx = dashV30Source.indexOf(_SAUDE_FE_ANCHOR);
+      _anchorUsed = 'saude-fe-anchor';
+    }
     if (_funaiAnchorIdx !== -1) {
       dashV30Source = dashV30Source.slice(0, _funaiAnchorIdx) + _FUNAI_FE_BLOCK + dashV30Source.slice(_funaiAnchorIdx);
       dashV30Changed = true;
-      console.log('[bootstrap] Dashboard-v30 FUNAI block patch applied');
+      console.log('[bootstrap] Dashboard-v30 FUNAI V2 block patch applied (anchor: ' + _anchorUsed + ')');
     } else {
-      console.warn('[bootstrap] Dashboard-v30 FUNAI block patch NOT applied — anchor not found');
+      console.warn('[bootstrap] Dashboard-v30 FUNAI V2 block patch NOT applied — no anchor found');
     }
   } else {
-    console.log('[bootstrap] Dashboard-v30 FUNAI block patch already applied');
+    console.log('[bootstrap] Dashboard-v30 FUNAI V2 block patch already applied');
   }
 
   // ── Gov.br Services tab: new "Serviços gov.br" tab in Suporte Institucional ──
