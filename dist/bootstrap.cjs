@@ -2865,7 +2865,20 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '      const _tRow=_tDb&&_tDb.municipios&&_tDb.municipios[co6];\n' +
 '      if(_tRow){tria={...({},_tRow),meta:_tDb.meta||{}};}\n' +
 '    }catch(_tErr){console.warn("[ctx-mun] tria erro:",String(_tErr));}\n' +
-'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,cobertura_competencia:coberturaCompetencia,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,censo2022:censo2022,dengue:dengue,saude_db:saude_db,tria:tria});\n' +
+'    // ── PSE (adesao Programa Saude na Escola, ciclo vigente) ───────────────\n' +
+'    let pse=null;\n' +
+'    try{\n' +
+'      if(!globalThis._pseMunicipios){\n' +
+'        const _pFs=require("fs"),_pPath=require("path").resolve(process.cwd(),"pse-municipios.json");\n' +
+'        if(_pFs.existsSync(_pPath)){globalThis._pseMunicipios=JSON.parse(_pFs.readFileSync(_pPath,"utf8"));}\n' +
+'        else{globalThis._pseMunicipios={meta:{},municipios:{}};}\n' +
+'      }\n' +
+'      const _pDb=globalThis._pseMunicipios;\n' +
+'      const _pRow=_pDb&&_pDb.municipios&&_pDb.municipios[co6];\n' +
+'      if(_pRow){pse={...({},_pRow),aderiu:(_pRow.escolasPactuadas||0)>0,meta:_pDb.meta||{}};}\n' +
+'      else if(_pDb&&_pDb.meta&&_pDb.meta.ciclo){pse={aderiu:false,escolasPactuadas:0,educandosPactuados:0,meta:_pDb.meta};}\n' +
+'    }catch(_pErr){console.warn("[ctx-mun] pse erro:",String(_pErr));}\n' +
+'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,cobertura_competencia:coberturaCompetencia,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,censo2022:censo2022,dengue:dengue,saude_db:saude_db,tria:tria,pse:pse});\n' +
 '  }catch(err){console.error("[ctx-mun] erro:",String(err));g.json({ok:false,erro:String(err)});}\n' +
 '}),\n';
 
@@ -4289,6 +4302,52 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     }
   } else {
     console.log('[bootstrap] Dashboard-v30 TRIA block already present');
+  }
+
+  // ── Sub-patch: inject PSE (Programa Saúde na Escola) adesão block ──────────
+  // Fonte: Relatórios APS / MS — https://relatorioaps.saude.gov.br/adesao/pse
+  // Indexado por código IBGE6 em pse-municipios.json (sync: scripts/sync-pse-municipios.mjs).
+  // Renderiza:
+  //   - Status de adesão municipal ao ciclo vigente (2025/2026)
+  //   - Nº escolas pactuadas + nº educandos pactuados
+  //   - Quando município não aderiu: mensagem "não aderiu ao ciclo"
+  // Posicionado logo depois do TRIA pra agrupar com indicadores escola/saúde.
+  const _PSE_MARKER = '/*pse-fe-v1*/';
+  if (!dashSrc.includes(_PSE_MARKER)) {
+    const _PSE_ANCHOR = '/*tria-fe-v1*/';
+    const _PSE_INJECT = '/*pse-fe-v1*/ctxMunData.pse && e.jsxs("div", { style: { marginBottom: 14 }, children: [' +
+      'e.jsxs("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 8px", textTransform: "uppercase" }, children: [' +
+        '"PSE \\u2014 Programa Sa\\xFAde na Escola",' +
+        'e.jsx("span", { style: { fontSize: 9, color: "#888", fontWeight: 400, marginLeft: 6, textTransform: "none", letterSpacing: 0 }, title: "Ades\\xE3o ao ciclo vigente do PSE \\u2014 pactua\\xE7\\xE3o entre munic\\xEDpio, escolas e Aten\\xE7\\xE3o Prim\\xE1ria \\xE0 Sa\\xFAde para a\\xE7\\xF5es de promo\\xE7\\xE3o, preven\\xE7\\xE3o e aten\\xE7\\xE3o \\xE0 sa\\xFAde de educandos. Fonte: Relat\\xF3rios APS / Minist\\xE9rio da Sa\\xFAde.", children: " \\u00b7 MS / APS \\u00b7 Ciclo " + ((ctxMunData.pse.meta && ctxMunData.pse.meta.ciclo) || "") + ((ctxMunData.pse.meta && ctxMunData.pse.meta.dataApi) ? " \\u00b7 atualizado em " + ctxMunData.pse.meta.dataApi : "") })' +
+      '] }),' +
+      'ctxMunData.pse.aderiu ? e.jsxs("div", { style: { background: "#e8f5e9", border: "1px solid #81c784", borderRadius: 10, padding: "10px 12px" }, children: [' +
+        'e.jsxs("p", { style: { fontSize: 13, fontWeight: 700, color: "#1b5e20", margin: 0, display: "flex", alignItems: "center", gap: 6 }, children: [' +
+          'e.jsx("span", { style: { fontSize: 16 }, children: "\\u2713" }),' +
+          '"Munic\\xEDpio aderiu ao ciclo " + ((ctxMunData.pse.meta && ctxMunData.pse.meta.ciclo) || "vigente")' +
+        '] }),' +
+        'e.jsxs("p", { style: { fontSize: 12, color: "#2e7d32", margin: "6px 0 0", lineHeight: 1.5 }, children: [' +
+          'e.jsx("strong", { children: (ctxMunData.pse.escolasPactuadas || 0).toLocaleString("pt-BR") }),' +
+          '" escolas pactuadas \\u2022 ",' +
+          'e.jsx("strong", { children: (ctxMunData.pse.educandosPactuados || 0).toLocaleString("pt-BR") }),' +
+          '" educandos pactuados"' +
+        '] }),' +
+        'e.jsx("div", { style: { marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6, fontSize: 11 }, children: ([["escolas priorit\\xE1rias", ctxMunData.pse.escolasPrioritarias], ["c/ maioria PBF", ctxMunData.pse.escolasMaioriaPbf], ["aderiram ao Nutrisus", ctxMunData.pse.escolasNutrisus], ["a\\xE7\\xE3o de obesidade", ctxMunData.pse.escolasObesidade], ["munic. (esfera)", ctxMunData.pse.escolasMunicipais], ["estad. (esfera)", ctxMunData.pse.escolasEstaduais]]).filter(function(p) { return p[1] > 0; }).map(function(p, i) { return e.jsxs("span", { key: i, style: { background: "#c8e6c9", borderRadius: 8, padding: "3px 8px", color: "#1b5e20" }, children: [p[0] + ": ", e.jsx("strong", { children: p[1].toLocaleString("pt-BR") })] }); }) })' +
+      '] }) : e.jsxs("div", { style: { background: "#fafafa", border: "1px dashed #bdbdbd", borderRadius: 10, padding: "10px 12px" }, children: [' +
+        'e.jsxs("p", { style: { fontSize: 12, color: "#616161", margin: 0, lineHeight: 1.5 }, children: [' +
+          'e.jsx("strong", { children: "Munic\\xEDpio n\\xE3o aderiu" }),' +
+          '" ao ciclo " + (((ctxMunData.pse.meta && ctxMunData.pse.meta.ciclo) || "vigente")) + " do PSE."' +
+        '] })' +
+      '] })' +
+    '] }),';
+    if (dashSrc.includes(_PSE_ANCHOR)) {
+      dashSrc = dashSrc.replace(_PSE_ANCHOR, _PSE_INJECT + _PSE_ANCHOR);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 PSE adesão block injected');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 PSE injection — anchor not found (TRIA marker missing)');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 PSE block already present');
   }
 
   if (changed) {
