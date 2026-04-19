@@ -2761,10 +2761,11 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '    const sv3=(sv3R.status==="fulfilled"&&sv3R.value&&sv3R.value.estados_nutricionais)||[];\n' +
 '    const sv4=(sv4R.status==="fulfilled"&&sv4R.value&&sv4R.value.estados_nutricionais)||[];\n' +
 '    const sisvan=[];\n' +
-'    if(sv1.length>0)sisvan.push({fase:"Criancas",rotulo:"Criancas",count:sv1.length,categorias:_svCat(sv1,"crianca_imc_x_idade")});\n' +
-'    if(sv2.length>0)sisvan.push({fase:"Adolescentes",rotulo:"Adolescentes",count:sv2.length,categorias:_svCat(sv2,"adolescente_imc_x_idade")});\n' +
-'    if(sv3.length>0)sisvan.push({fase:"Adultos",rotulo:"Adultos",count:sv3.length,categorias:_svImc(sv3)});\n' +
-'    if(sv4.length>0)sisvan.push({fase:"Idosos",rotulo:"Idosos",count:sv4.length,categorias:_svImc(sv4)});\n' +
+'    function _svCompMax(recs){var m="";for(const r of recs){var c=String(r.ano_mes_competencia||"");if(c.length===6&&c>m)m=c;}return m||null;}\n' +
+'    if(sv1.length>0)sisvan.push({fase:"Criancas",rotulo:"Criancas",count:sv1.length,categorias:_svCat(sv1,"crianca_imc_x_idade"),competencia_max:_svCompMax(sv1)});\n' +
+'    if(sv2.length>0)sisvan.push({fase:"Adolescentes",rotulo:"Adolescentes",count:sv2.length,categorias:_svCat(sv2,"adolescente_imc_x_idade"),competencia_max:_svCompMax(sv2)});\n' +
+'    if(sv3.length>0)sisvan.push({fase:"Adultos",rotulo:"Adultos",count:sv3.length,categorias:_svImc(sv3),competencia_max:_svCompMax(sv3)});\n' +
+'    if(sv4.length>0)sisvan.push({fase:"Idosos",rotulo:"Idosos",count:sv4.length,categorias:_svImc(sv4),competencia_max:_svCompMax(sv4)});\n' +
 '    const munNome=(macro&&macro.municipio||"").replace(/^[A-Z]{2}\\s*-\\s*/,"");\n' +
 '    // ── Bolsa Familia (Portal da Transparencia) ─────────────────────────────\n' +
 '    let bf=null;\n' +
@@ -3964,6 +3965,42 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     dashSrc = dashSrc.replace(_MAPS_PLACE_RE, 'google.com/maps/search/?api=1&query=${encodeURIComponent($1)}');
     changed = true;
     console.log('[bootstrap] Dashboard-v30 healed', _mapsPlaceMatches, 'legacy /maps/place/ URLs to /maps/search/?api=1&query=');
+  }
+
+  // ── Sub-patch: data labels on saúde context blocks (saude-ctx-dates-v1) ──
+  // Surface the data update date for every health context subsection so the user knows
+  // exactly when each block was last refreshed by the source agency.
+  // Patch A: Perfil Regional title → "(DataSUS · atualização contínua)"
+  const _PR_OLD = 'children: "Perfil Regional \\u2014 Minist\\xE9rio da Sa\\xFAde" })';
+  const _PR_NEW = 'children: ["Perfil Regional \\u2014 Minist\\xE9rio da Sa\\xFAde", e.jsx("span", { style: { fontSize: 9, color: "#888", fontWeight: 400, marginLeft: 6, textTransform: "none", letterSpacing: 0 }, children: " \\u00b7 DataSUS \\u00b7 atualiza\\xE7\\xE3o cont\\xEDnua" })] })';
+  if (dashSrc.includes(_PR_OLD)) {
+    dashSrc = dashSrc.replace(_PR_OLD, _PR_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 Perfil Regional now shows DataSUS source label');
+  }
+  // Patch B: Atenção Primária subtitle → competência do Previne Brasil
+  const _AP_OLD_HDR = 'children: "Aten\\xE7\\xE3o Prim\\xE1ria" }), e.jsx("p", { style: { fontSize: 18, fontWeight: 800,';
+  const _AP_NEW_HDR = 'children: ["Aten\\xE7\\xE3o Prim\\xE1ria", ctxMunData.indicadores_previne && ctxMunData.indicadores_previne[0] && ctxMunData.indicadores_previne[0].quadrimestre ? e.jsx("span", { style: { fontSize: 9, color: "#558b2f", fontWeight: 400, marginLeft: 4, textTransform: "none", letterSpacing: 0 }, children: " (" + ctxMunData.indicadores_previne[0].quadrimestre + ")" }) : null] }), e.jsx("p", { style: { fontSize: 18, fontWeight: 800,';
+  if (dashSrc.includes(_AP_OLD_HDR)) {
+    dashSrc = dashSrc.replace(_AP_OLD_HDR, _AP_NEW_HDR);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 Atenção Primária header now shows competência');
+  }
+  // Patch C: Hospitais CNES → "· CNES/MS · atualização mensal"
+  const _HOSP_OLD = 'children:["Hospitais do Munic\\xEDpio (CNES) ",e.jsxs("span",{style:{opacity:0.8},children:["(",ctxMunData.hospitais.length,")"]})]})';
+  const _HOSP_NEW = 'children:["Hospitais do Munic\\xEDpio (CNES) ",e.jsxs("span",{style:{opacity:0.8},children:["(",ctxMunData.hospitais.length,")"]}),e.jsx("span",{style:{fontSize:9,color:"#888",fontWeight:400,marginLeft:6,textTransform:"none",letterSpacing:0},children:" \\u00b7 CNES/MS \\u00b7 atualiza\\xE7\\xE3o mensal"})]})';
+  if (dashSrc.includes(_HOSP_OLD)) {
+    dashSrc = dashSrc.replace(_HOSP_OLD, _HOSP_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 Hospitais CNES now shows update cadence label');
+  }
+  // Patch D: SISVAN header → mostra competência mais recente entre as fases (vinda do backend)
+  const _SV_OLD = 'children: ["Estado Nutricional \\u2014 SISVAN (amostra: ", ctxMunData.sisvan.reduce(function(s, f) { return s + f.count; }, 0), " registros)"]';
+  const _SV_NEW = 'children: ["Estado Nutricional \\u2014 SISVAN (amostra: ", ctxMunData.sisvan.reduce(function(s, f) { return s + f.count; }, 0), " registros)", (function(){var _cs=ctxMunData.sisvan.map(function(f){return f.competencia_max||"";}).filter(Boolean);if(_cs.length===0)return null;var _m=_cs.sort()[_cs.length-1];return e.jsx("span",{style:{fontSize:9,color:"#6a1b9a",fontWeight:400,marginLeft:6,textTransform:"none",letterSpacing:0,opacity:0.85},children:" \\u00b7 mais recente: "+(_m.slice(4,6)+"/"+_m.slice(0,4))});})()]';
+  if (dashSrc.includes(_SV_OLD)) {
+    dashSrc = dashSrc.replace(_SV_OLD, _SV_NEW);
+    changed = true;
+    console.log('[bootstrap] Dashboard-v30 SISVAN now shows latest competência');
   }
 
   // ── Sub-patch: rewrite "Atendimento na Atenção Primária" block (atenprim-equipes-clarify-v1) ──
