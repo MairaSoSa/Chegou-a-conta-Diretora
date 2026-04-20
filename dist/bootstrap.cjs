@@ -4461,6 +4461,30 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 PSE block already present');
   }
 
+  // ── Sub-patch: hide BF/BPC duplicates from the Saúde block (bf-bpc-hide-saude-v1) ──
+  // Os blocos Bolsa Família e BPC já são renderizados na seção "Assistência Social"
+  // (via ctxSuasData.bf / ctxSuasData.bpc). Para evitar duplicação, escondemos as
+  // versões que apareciam no painel "Saúde e Violência no Município" (ctxMunData.bf / .bpc)
+  // forçando o curto-circuito da expressão condicional.
+  const _BF_HIDE_MARKER = '/*bf-bpc-hide-saude-v1*/';
+  if (!dashSrc.includes(_BF_HIDE_MARKER)) {
+    const _BF_OLD = 'ctxMunData.bf && e.jsxs("div", { style: { background: "#e8f5e9", border: "1px solid #a5d6a7", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [';
+    const _BF_NEW = '/*bf-bpc-hide-saude-v1*/false && ctxMunData.bf && e.jsxs("div", { style: { background: "#e8f5e9", border: "1px solid #a5d6a7", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [';
+    const _BPC_OLD = 'ctxMunData.bpc && e.jsxs("div", { style: { background: "#f3e5f5", border: "1px solid #ce93d8", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [';
+    const _BPC_NEW = 'false && ctxMunData.bpc && e.jsxs("div", { style: { background: "#f3e5f5", border: "1px solid #ce93d8", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [';
+    let _hidApplied = 0;
+    if (dashSrc.includes(_BF_OLD)) { dashSrc = dashSrc.replace(_BF_OLD, _BF_NEW); _hidApplied++; }
+    if (dashSrc.includes(_BPC_OLD)) { dashSrc = dashSrc.replace(_BPC_OLD, _BPC_NEW); _hidApplied++; }
+    if (_hidApplied > 0) {
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 BF/BPC hidden from Saúde block (' + _hidApplied + ' of 2)');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 BF/BPC hide patch — anchors not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 BF/BPC hide patch already applied');
+  }
+
   if (changed) {
     fs.writeFileSync(dashboardV30AssetPath, dashSrc, 'utf8');
   }

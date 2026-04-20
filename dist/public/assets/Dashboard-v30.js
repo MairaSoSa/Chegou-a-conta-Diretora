@@ -1116,7 +1116,7 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
           e.jsx("p", { style: { fontSize: 9, color: _c.col, margin: "4px 0 0", opacity: 0.75 }, children: "Fonte: InfoDengue / Fiocruz \u2022 "+_dng.semana })
         ]});
       })(),
-      ctxMunData.bf && e.jsxs("div", { style: { background: "#e8f5e9", border: "1px solid #a5d6a7", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
+      /*bf-bpc-hide-saude-v1*/false && ctxMunData.bf && e.jsxs("div", { style: { background: "#e8f5e9", border: "1px solid #a5d6a7", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
         e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 8px 0", textTransform: "uppercase", letterSpacing: "0.05em" }, children: "Bolsa Fam\xEDlia \u2014 Fam\xEDlias Benefici\xE1rias" }),
         e.jsxs("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 8 }, children: [
           e.jsxs("div", { children: [
@@ -1151,7 +1151,7 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
         ]}),
         e.jsx("p", { style: { fontSize: 9, color: "#888", margin: "4px 0 0" }, children: "Fonte: Portal da Transpar\xEAncia \u2022 " + (ctxMunData.bf.mes ? ctxMunData.bf.mes.slice(0, 4) + "/" + ctxMunData.bf.mes.slice(4, 6) : "") })
       ]}),
-      ctxMunData.bpc && e.jsxs("div", { style: { background: "#f3e5f5", border: "1px solid #ce93d8", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
+      false && ctxMunData.bpc && e.jsxs("div", { style: { background: "#f3e5f5", border: "1px solid #ce93d8", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
         e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }, children: [
           e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#4a148c", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", flex: 1 }, children: "BPC \u2014 Benef\xEDcio de Presta\xE7\xE3o Continuada" }),
           e.jsx("span", { style: { fontSize: 10, color: "#6a1b9a", background: "#e1bee7", border: "1px solid #ce93d8", borderRadius: 20, padding: "2px 10px", fontWeight: 700 }, children: "LOAS / INSS" })
