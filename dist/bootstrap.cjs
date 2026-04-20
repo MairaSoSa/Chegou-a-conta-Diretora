@@ -4509,12 +4509,16 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   // v2 (task #24): substitui badges de esfera por uma lista de escolas com selo
   // de adesão individual ("aderiu" / "não aderiu") + estado vazio quando o
   // município não tem escolas no PSE. Mantém demais badges agregados úteis.
+  // v4 (task #25): cada item da lista de escolas vira expansível e mostra a
+  // linha do tempo dos ciclos do PSE em que aquela escola aderiu (ou não),
+  // usando o campo `historico` (chave estável: coSeqPseEstabelecimento).
   const _PSE_MARKER_V1 = '/*pse-fe-v1*/';
   const _PSE_MARKER_V2 = '/*pse-fe-v2*/';
   const _PSE_MARKER_V3 = '/*pse-fe-v3*/';
+  const _PSE_MARKER_V4 = '/*pse-fe-v4*/';
   // Remove eventual bloco v1 já injetado (assets persistidos em disco)
   // v1 começa em /*pse-fe-v1*/ e termina logo antes do /*tria-fe-v1*/ (anchor)
-  if (dashSrc.includes(_PSE_MARKER_V1) && !dashSrc.includes(_PSE_MARKER_V3)) {
+  if (dashSrc.includes(_PSE_MARKER_V1) && !dashSrc.includes(_PSE_MARKER_V4)) {
     const _v1Start = dashSrc.indexOf(_PSE_MARKER_V1);
     const _v1End = dashSrc.indexOf('/*tria-fe-v1*/', _v1Start + _PSE_MARKER_V1.length);
     if (_v1Start >= 0 && _v1End > _v1Start) {
@@ -4526,8 +4530,8 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
       console.warn('[bootstrap] Dashboard-v30 PSE v1 marker present but end anchor not found');
     }
   }
-  // Remove v2 (sem empty state no ramo "não aderiu") para reinjetar v3
-  if (dashSrc.includes(_PSE_MARKER_V2) && !dashSrc.includes(_PSE_MARKER_V3)) {
+  // Remove v2 (sem empty state no ramo "não aderiu") para reinjetar versão atual
+  if (dashSrc.includes(_PSE_MARKER_V2) && !dashSrc.includes(_PSE_MARKER_V4)) {
     const _v2Start = dashSrc.indexOf(_PSE_MARKER_V2);
     const _v2End = dashSrc.indexOf(_PSE_MARKER_V2, _v2Start + _PSE_MARKER_V2.length);
     if (_v2Start >= 0 && _v2End > _v2Start) {
@@ -4539,9 +4543,22 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
       console.warn('[bootstrap] Dashboard-v30 PSE v2 marker present but end marker not found');
     }
   }
-  if (!dashSrc.includes(_PSE_MARKER_V3)) {
+  // Remove v3 (sem histórico de adesão por escola ciclo a ciclo) para reinjetar v4
+  if (dashSrc.includes(_PSE_MARKER_V3) && !dashSrc.includes(_PSE_MARKER_V4)) {
+    const _v3Start = dashSrc.indexOf(_PSE_MARKER_V3);
+    const _v3End = dashSrc.indexOf(_PSE_MARKER_V3, _v3Start + _PSE_MARKER_V3.length);
+    if (_v3Start >= 0 && _v3End > _v3Start) {
+      const _removed = _v3End + _PSE_MARKER_V3.length - _v3Start;
+      dashSrc = dashSrc.slice(0, _v3Start) + dashSrc.slice(_v3End + _PSE_MARKER_V3.length);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 PSE v3 block removed (' + _removed + ' chars)');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 PSE v3 marker present but end marker not found');
+    }
+  }
+  if (!dashSrc.includes(_PSE_MARKER_V4)) {
     const _PSE_ANCHOR = '/*tria-fe-v1*/';
-    const _PSE_INJECT = '/*pse-fe-v3*/ctxMunData.pse && e.jsxs("div", { style: { marginBottom: 14 }, children: [' +
+    const _PSE_INJECT = '/*pse-fe-v4*/ctxMunData.pse && e.jsxs("div", { style: { marginBottom: 14 }, children: [' +
       'e.jsxs("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 8px", textTransform: "uppercase" }, children: [' +
         '"PSE \\u2014 Programa Sa\\xFAde na Escola",' +
         'e.jsx("span", { style: { fontSize: 9, color: "#888", fontWeight: 400, marginLeft: 6, textTransform: "none", letterSpacing: 0 }, title: "Ades\\xE3o ao ciclo vigente do PSE \\u2014 pactua\\xE7\\xE3o entre munic\\xEDpio, escolas e Aten\\xE7\\xE3o Prim\\xE1ria \\xE0 Sa\\xFAde para a\\xE7\\xF5es de promo\\xE7\\xE3o, preven\\xE7\\xE3o e aten\\xE7\\xE3o \\xE0 sa\\xFAde de educandos. Fonte: Relat\\xF3rios APS / Minist\\xE9rio da Sa\\xFAde.", children: " \\u00b7 MS / APS \\u00b7 Ciclo " + ((ctxMunData.pse.meta && ctxMunData.pse.meta.ciclo) || "") + ((ctxMunData.pse.meta && ctxMunData.pse.meta.dataApi) ? " \\u00b7 atualizado em " + ctxMunData.pse.meta.dataApi : "") })' +
@@ -4566,12 +4583,23 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
             '[].concat(ctxMunData.pse.escolas).sort(function(a, b) { return String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR"); }).map(function(_es, _ei) {' +
               'const _esf = String(_es.esfera || "").toLowerCase();' +
               'const _esfLabel = _esf ? (_esf.charAt(0).toUpperCase() + _esf.slice(1).toLowerCase()) : "";' +
-              'return e.jsxs("li", { key: _es.id || _ei, style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 10px", borderTop: _ei === 0 ? "none" : "1px solid #e8f5e9", fontSize: 12 }, children: [' +
-                'e.jsxs("div", { style: { minWidth: 0, flex: 1 }, children: [' +
-                  'e.jsx("p", { style: { margin: 0, fontWeight: 600, color: "#1b5e20", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, title: _es.nome || "", children: _es.nome || "(sem nome)" }),' +
-                  '_esfLabel ? e.jsx("p", { style: { margin: "2px 0 0", fontSize: 10, color: "#558b2f" }, children: _esfLabel }) : null' +
+              'return e.jsxs("li", { key: _es.id || _ei, style: { padding: "6px 10px", borderTop: _ei === 0 ? "none" : "1px solid #e8f5e9", fontSize: 12 }, children: [' +
+                'e.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }, children: [' +
+                  'e.jsxs("div", { style: { minWidth: 0, flex: 1 }, children: [' +
+                    'e.jsx("p", { style: { margin: 0, fontWeight: 600, color: "#1b5e20", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, title: _es.nome || "", children: _es.nome || "(sem nome)" }),' +
+                    '_esfLabel ? e.jsx("p", { style: { margin: "2px 0 0", fontSize: 10, color: "#558b2f" }, children: _esfLabel }) : null' +
+                  '] }),' +
+                  '_es.aderiu ? e.jsx("span", { style: { background: "#c8e6c9", color: "#1b5e20", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }, children: "\\u2713 aderiu" }) : e.jsx("span", { style: { background: "#ffebee", color: "#b71c1c", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }, children: "\\u2715 n\\xE3o aderiu" })' +
                 '] }),' +
-                '_es.aderiu ? e.jsx("span", { style: { background: "#c8e6c9", color: "#1b5e20", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }, children: "\\u2713 aderiu" }) : e.jsx("span", { style: { background: "#ffebee", color: "#b71c1c", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }, children: "\\u2715 n\\xE3o aderiu" })' +
+                '(Array.isArray(_es.historico) && _es.historico.length > 0) ? e.jsxs("details", { style: { marginTop: 6 }, children: [' +
+                  'e.jsxs("summary", { style: { cursor: "pointer", fontSize: 10, color: "#558b2f", fontWeight: 600, padding: "2px 0" }, children: ["Hist\\xF3rico de ades\\xE3o (", _es.historico.length, " ciclos)"] }),' +
+                  'e.jsx("ol", { style: { listStyle: "none", padding: "4px 0 0 4px", margin: 0 }, children: _es.historico.map(function(_h, _hi) {' +
+                    'return e.jsxs("li", { key: _hi, style: { fontSize: 10, padding: "2px 0", display: "flex", alignItems: "center", gap: 6, color: _h.aderiu ? "#1b5e20" : "#9e9e9e" }, children: [' +
+                      'e.jsx("span", { style: { width: 8, height: 8, borderRadius: "50%", background: _h.aderiu ? "#43a047" : "#bdbdbd", flexShrink: 0 } }),' +
+                      'e.jsxs("span", { children: ["Ciclo ", _h.ciclo, " \\u2014 ", _h.aderiu ? ("aderiu" + ((_h.educandos > 0) ? (" (" + _h.educandos.toLocaleString("pt-BR") + " educandos)") : "")) : "n\\xE3o aderiu"] })' +
+                    '] });' +
+                  '}) })' +
+                '] }) : null' +
               '] });' +
             '}) })' +
         '] }) : e.jsx("p", { style: { marginTop: 10, fontSize: 11, color: "#558b2f", fontStyle: "italic" }, children: "Sem escolas registradas no PSE para este munic\\xEDpio." })' +
@@ -4586,26 +4614,37 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
             '[].concat(ctxMunData.pse.escolas).sort(function(a, b) { return String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR"); }).map(function(_es, _ei) {' +
               'const _esf = String(_es.esfera || "").toLowerCase();' +
               'const _esfLabel = _esf ? (_esf.charAt(0).toUpperCase() + _esf.slice(1).toLowerCase()) : "";' +
-              'return e.jsxs("li", { key: _es.id || _ei, style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 10px", borderTop: _ei === 0 ? "none" : "1px solid #f5f5f5", fontSize: 12 }, children: [' +
-                'e.jsxs("div", { style: { minWidth: 0, flex: 1 }, children: [' +
-                  'e.jsx("p", { style: { margin: 0, fontWeight: 600, color: "#424242", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, title: _es.nome || "", children: _es.nome || "(sem nome)" }),' +
-                  '_esfLabel ? e.jsx("p", { style: { margin: "2px 0 0", fontSize: 10, color: "#757575" }, children: _esfLabel }) : null' +
+              'return e.jsxs("li", { key: _es.id || _ei, style: { padding: "6px 10px", borderTop: _ei === 0 ? "none" : "1px solid #f5f5f5", fontSize: 12 }, children: [' +
+                'e.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }, children: [' +
+                  'e.jsxs("div", { style: { minWidth: 0, flex: 1 }, children: [' +
+                    'e.jsx("p", { style: { margin: 0, fontWeight: 600, color: "#424242", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, title: _es.nome || "", children: _es.nome || "(sem nome)" }),' +
+                    '_esfLabel ? e.jsx("p", { style: { margin: "2px 0 0", fontSize: 10, color: "#757575" }, children: _esfLabel }) : null' +
+                  '] }),' +
+                  '_es.aderiu ? e.jsx("span", { style: { background: "#c8e6c9", color: "#1b5e20", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }, children: "\\u2713 aderiu" }) : e.jsx("span", { style: { background: "#ffebee", color: "#b71c1c", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }, children: "\\u2715 n\\xE3o aderiu" })' +
                 '] }),' +
-                '_es.aderiu ? e.jsx("span", { style: { background: "#c8e6c9", color: "#1b5e20", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }, children: "\\u2713 aderiu" }) : e.jsx("span", { style: { background: "#ffebee", color: "#b71c1c", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }, children: "\\u2715 n\\xE3o aderiu" })' +
+                '(Array.isArray(_es.historico) && _es.historico.length > 0) ? e.jsxs("details", { style: { marginTop: 6 }, children: [' +
+                  'e.jsxs("summary", { style: { cursor: "pointer", fontSize: 10, color: "#757575", fontWeight: 600, padding: "2px 0" }, children: ["Hist\\xF3rico de ades\\xE3o (", _es.historico.length, " ciclos)"] }),' +
+                  'e.jsx("ol", { style: { listStyle: "none", padding: "4px 0 0 4px", margin: 0 }, children: _es.historico.map(function(_h, _hi) {' +
+                    'return e.jsxs("li", { key: _hi, style: { fontSize: 10, padding: "2px 0", display: "flex", alignItems: "center", gap: 6, color: _h.aderiu ? "#1b5e20" : "#9e9e9e" }, children: [' +
+                      'e.jsx("span", { style: { width: 8, height: 8, borderRadius: "50%", background: _h.aderiu ? "#43a047" : "#bdbdbd", flexShrink: 0 } }),' +
+                      'e.jsxs("span", { children: ["Ciclo ", _h.ciclo, " \\u2014 ", _h.aderiu ? ("aderiu" + ((_h.educandos > 0) ? (" (" + _h.educandos.toLocaleString("pt-BR") + " educandos)") : "")) : "n\\xE3o aderiu"] })' +
+                    '] });' +
+                  '}) })' +
+                '] }) : null' +
               '] });' +
             '}) })' +
         '] }) : e.jsx("p", { style: { marginTop: 10, fontSize: 11, color: "#9e9e9e", fontStyle: "italic" }, children: "Sem escolas registradas no PSE para este munic\\xEDpio." })' +
       '] })' +
-    '] }),/*pse-fe-v3*/';
+    '] }),/*pse-fe-v4*/';
     if (dashSrc.includes(_PSE_ANCHOR)) {
       dashSrc = dashSrc.replace(_PSE_ANCHOR, _PSE_INJECT + _PSE_ANCHOR);
       changed = true;
-      console.log('[bootstrap] Dashboard-v30 PSE adesão block v2 injected (escolas list)');
+      console.log('[bootstrap] Dashboard-v30 PSE adesão block v4 injected (escolas list + histórico ciclo a ciclo)');
     } else {
       console.warn('[bootstrap] Dashboard-v30 PSE injection — anchor not found (TRIA marker missing)');
     }
   } else {
-    console.log('[bootstrap] Dashboard-v30 PSE v2 block already present');
+    console.log('[bootstrap] Dashboard-v30 PSE v4 block already present');
   }
 
   // ── Sub-patch: hide BF/BPC duplicates from the Saúde block (bf-bpc-hide-saude-v1) ──
