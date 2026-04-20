@@ -3079,7 +3079,16 @@ const _SAUD_VIO_ROUTE =
         'const _svR=await fetch(BASE+"/sisvan/estado-nutricional?codigo_municipio="+co6+"&codigo_fase_vida=1&limit=50",{signal:AbortSignal.timeout(10000),headers:_hdr});' +
         'if(_svR.ok){const _svD=await _svR.json();const _arr=(_svD&&_svD.estados_nutricionais)||[];if(_arr.length>0){const _comp=_arr.reduce((m,x)=>(!m||x.competencia>m.competencia?x:m),null);sisvanData={competencia:_comp?.competencia,municipio:_comp?.municipio,registros:_arr.length,nota:"Vigilância alimentar e nutricional infantil — SISVAN"};}}' +
       '}catch(_sve){}' +
-      'return g.json({ok:!0,co_municipio:E,mensagem:"Dados de internações e óbitos por violência são consultados diretamente no DataSUS (TABNET). As APIs abertas do Ministério da Saúde ainda não disponibilizam esses dados em formato JSON por município.",sisvan:sisvanData,links:_links,fonte:"DataSUS / Ministério da Saúde",nota:"Use os links abaixo para acessar os dados diretamente no sistema TABNET do DataSUS."});' +
+      // PSE — Adesão ao Programa Saúde na Escola (relatorioaps.saude.gov.br)
+      'let pseData=null;' +
+      'try{' +
+        'if(!globalThis._pseAdesao){const _pf=require("fs"),_pp=require("path").resolve(process.cwd(),process.env.PSE_ADESAO_OUTPUT_JSON||"pse-adesao.json");if(_pf.existsSync(_pp)){globalThis._pseAdesao=JSON.parse(_pf.readFileSync(_pp,"utf8"));}else{globalThis._pseAdesao={ciclo_vigente:null,municipios:{}};}}' +
+        'const _pse=globalThis._pseAdesao;' +
+        'const _muni=(_pse&&_pse.municipios&&_pse.municipios[co6])||null;' +
+        'const _ciclo=_pse&&_pse.ciclo_vigente?_pse.ciclo_vigente.nome:null;' +
+        'pseData={ciclo:_ciclo,aderiu:!!(_muni&&_muni.aderiu),escolas_pactuadas:_muni?_muni.escolas_pactuadas:0,educandos_pactuados:_muni?_muni.educandos_pactuados:0,gerado_em:_pse?_pse.gerado_em:null,fonte:"Relatórios Públicos da APS — Ministério da Saúde",url:"https://relatorioaps.saude.gov.br/adesao/pse"};' +
+      '}catch(_psee){console.warn("[saude-violencia] pse:",_psee.message);}' +
+      'return g.json({ok:!0,co_municipio:E,mensagem:"Dados de internações e óbitos por violência são consultados diretamente no DataSUS (TABNET). As APIs abertas do Ministério da Saúde ainda não disponibilizam esses dados em formato JSON por município.",sisvan:sisvanData,pse:pseData,links:_links,fonte:"DataSUS / Ministério da Saúde",nota:"Use os links abaixo para acessar os dados diretamente no sistema TABNET do DataSUS."});' +
     '}catch(_ge){console.error("[saude-violencia]",_ge.message);return g.status(500).json({ok:!1,error:_ge.message,links:[],fonte:"DataSUS"});}' +
   '}),';
 if (source.indexOf(_SAUD_VIO_ANCHOR) !== -1) {
@@ -3759,6 +3768,26 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
               'e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#880e4f", margin: "0 0 4px", textTransform: "uppercase" }, children: "SISVAN \\u2014 Vigil\\xE2ncia Nutricional Infantil" }),' +
               'e.jsxs("p", { style: { fontSize: 12, color: "#c2185b", margin: 0 }, children: [saudeViolData.sisvan.registros, " registros \\u2014 compet\\xEAncia ", saudeViolData.sisvan.competencia || "n.d."] }),' +
               'e.jsx("p", { style: { fontSize: 10, color: "#888", margin: "4px 0 0" }, children: saudeViolData.sisvan.nota })' +
+            ']}),' +
+            // PSE — Adesão municipal ao Programa Saúde na Escola
+            'saudeViolData.pse && e.jsxs("div", { style: { background: "#fff", border: "1.5px solid #f48fb1", borderRadius: 10, padding: "10px 12px", marginBottom: 10 }, children: [' +
+              'e.jsxs("p", { style: { fontSize: 10, fontWeight: 700, color: "#880e4f", margin: "0 0 4px", textTransform: "uppercase" }, children: ["PSE \\u2014 Ades\\xE3o Municipal", saudeViolData.pse.ciclo ? " (Ciclo " + saudeViolData.pse.ciclo + ")" : ""] }),' +
+              'saudeViolData.pse.aderiu ? e.jsxs("p", { style: { fontSize: 13, fontWeight: 700, color: "#2e7d32", margin: 0 }, children: ["\\u2705 Munic\\xEDpio aderiu ao ciclo ", saudeViolData.pse.ciclo || "vigente", " do PSE"] }) : e.jsxs("p", { style: { fontSize: 13, fontWeight: 700, color: "#c62828", margin: 0 }, children: ["\\u26A0\\uFE0F Munic\\xEDpio n\\xE3o aderiu ao ciclo ", saudeViolData.pse.ciclo || "atual", " do PSE"] }),' +
+              'e.jsxs("p", { style: { fontSize: 10, color: "#888", margin: "4px 0 0" }, children: ["Programa Sa\\xFAde na Escola \\u2014 ", e.jsx("a", { href: saudeViolData.pse.url || "https://relatorioaps.saude.gov.br/adesao/pse", target: "_blank", rel: "noopener noreferrer", style: { color: "#880e4f", textDecoration: "underline" }, children: "relat\\xF3rio oficial APS \\u2197" })] })' +
+            ']}),' +
+            // PSE — Escolas e educandos pactuados
+            'saudeViolData.pse && e.jsxs("div", { style: { background: "#fff", border: "1.5px solid #f48fb1", borderRadius: 10, padding: "10px 12px", marginBottom: 10 }, children: [' +
+              'e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#880e4f", margin: "0 0 6px", textTransform: "uppercase" }, children: "PSE \\u2014 Escolas e Educandos Pactuados" }),' +
+              'saudeViolData.pse.aderiu ? e.jsxs("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }, children: [' +
+                'e.jsxs("div", { style: { background: "#fce4ec", border: "1px solid #f48fb1", borderRadius: 8, padding: "8px 10px" }, children: [' +
+                  'e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#880e4f", margin: "0 0 2px", textTransform: "uppercase" }, children: "Escolas pactuadas" }),' +
+                  'e.jsx("p", { style: { fontSize: 20, fontWeight: 800, color: "#c2185b", margin: 0, lineHeight: 1 }, children: (saudeViolData.pse.escolas_pactuadas || 0).toLocaleString("pt-BR") })' +
+                ']}),' +
+                'e.jsxs("div", { style: { background: "#fce4ec", border: "1px solid #f48fb1", borderRadius: 8, padding: "8px 10px" }, children: [' +
+                  'e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#880e4f", margin: "0 0 2px", textTransform: "uppercase" }, children: "Educandos pactuados" }),' +
+                  'e.jsx("p", { style: { fontSize: 20, fontWeight: 800, color: "#c2185b", margin: 0, lineHeight: 1 }, children: (saudeViolData.pse.educandos_pactuados || 0).toLocaleString("pt-BR") })' +
+                ']})' +
+              ']}) : e.jsx("p", { style: { fontSize: 12, color: "#888", margin: 0 }, children: "Sem escolas/educandos pactuados \\u2014 munic\\xEDpio n\\xE3o aderiu ao ciclo atual." })' +
             ']}),' +
             'e.jsxs("div", { style: { marginBottom: 10 }, children: [' +
               'e.jsx("p", { style: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#880e4f", marginBottom: 8 }, children: "Acesso direto ao DataSUS (TABNET)" }),' +
