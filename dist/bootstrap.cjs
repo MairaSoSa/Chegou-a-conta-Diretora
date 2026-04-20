@@ -2809,7 +2809,14 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '      var caps=[];\n' +
 '      var fields=["centro_cirurgico","centro_obstetrico","centro_neonatal","atendimento_hospitalar","servico_apoio","atendimento_ambulatorial"];\n' +
 '      for(var i=0;i<fields.length;i++){if(h["estabelecimento_possui_"+fields[i]]===1)caps.push(CAPS_LABELS[fields[i]]);}\n' +
-'      return{nome:(h.nome_fantasia||h.nome_razao_social||"").replace(/\\s+/g," ").trim(),esfera:h.descricao_esfera_administrativa||"",gestao:h.tipo_gestao||"",caps:caps};\n' +
+'      var _end=[h.endereco_estabelecimento,h.numero_estabelecimento].filter(Boolean).join(", ").trim();\n' +
+'      var _cep=h.codigo_cep_estabelecimento||null;\n' +
+'      if(_cep&&/^\\d{8}$/.test(String(_cep)))_cep=String(_cep).slice(0,5)+"-"+String(_cep).slice(5);\n' +
+'      var _lat=h.latitude_estabelecimento_decimo_grau!=null?Number(h.latitude_estabelecimento_decimo_grau):null;\n' +
+'      var _lon=h.longitude_estabelecimento_decimo_grau!=null?Number(h.longitude_estabelecimento_decimo_grau):null;\n' +
+'      var _nome=(h.nome_fantasia||h.nome_razao_social||"").replace(/\\s+/g," ").trim();\n' +
+'      var _maps=(_lat!=null&&_lon!=null)?("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent([_nome,_end,h.bairro_estabelecimento].filter(Boolean).join(", "))):null;\n' +
+'      return{nome:_nome,esfera:h.descricao_esfera_administrativa||"",gestao:h.tipo_gestao||"",caps:caps,cnes:h.codigo_cnes||null,endereco:_end||null,bairro:h.bairro_estabelecimento||null,cep:_cep,telefone:h.numero_telefone_estabelecimento||null,email:h.endereco_email_estabelecimento||null,lat:_lat,lon:_lon,maps_url:_maps,turno:h.descricao_turno_atendimento||null,data_atualizacao:h.data_atualizacao||null};\n' +
 '    });\n' +
 '    // SISVAN nutricional por faixa\n' +
 '    function _svCat(recs,campo){const cats={};for(const r of recs){const v=(r[campo]||"Sem dado").replace(/[\\u00c0-\\u024f]/g,function(c){return c.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"");});cats[v]=(cats[v]||0)+1;}return cats;}\n' +
@@ -4509,6 +4516,51 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     }
   } else {
     console.log('[bootstrap] Dashboard-v30 BF/BPC hide patch already applied');
+  }
+
+  // ── Sub-patch: enriquece cards de hospitais com email, Maps, CNES, turno, data e nota de leitos (hosp-enrich-v1) ──
+  // A API oficial /assistencia-a-saude/hospitais-e-leitos do MS está retornando
+  // 404/500. Aqui adicionamos os campos extras já disponíveis em /cnes/estabelecimentos
+  // (email, maps_url, CNES, turno, data_atualizacao) e uma nota explícita avisando
+  // que a contagem de leitos não está disponível nesta versão da API.
+  const _HOSP_CARD_MARKER = '/*hosp-enrich-card-v1*/';
+  const _HOSP_NOTE_MARKER = '/*hosp-enrich-note-v1*/';
+  let _hospApplied = 0;
+  if (!dashSrc.includes(_HOSP_CARD_MARKER)) {
+    const _HOSP_CARD_OLD = 'cadastrado"}),hosp.caps&&hosp.caps.length>0';
+    const _HOSP_CARD_NEW = 'cadastrado"})/*hosp-enrich-card-v1*/,'
+      + 'hosp.email&&e.jsxs("p",{style:{fontSize:10,color:"#555",margin:"0 0 2px",display:"flex",alignItems:"center",gap:3},children:["\u2709 ",e.jsx("a",{href:"mailto:"+hosp.email,style:{color:"#880e4f",textDecoration:"none",fontWeight:600,wordBreak:"break-all"},children:hosp.email})]}),'
+      + 'hosp.maps_url&&e.jsx("p",{style:{fontSize:10,margin:"0 0 2px"},children:e.jsxs("a",{href:hosp.maps_url,target:"_blank",rel:"noopener noreferrer",style:{color:"#1565c0",textDecoration:"none",fontWeight:600},children:["\uD83D\uDCCD Ver no Google Maps"]})}),'
+      + '(hosp.cnes||hosp.cep)&&e.jsxs("p",{style:{fontSize:9,color:"#888",margin:"2px 0 0"},children:[hosp.cnes&&("CNES "+hosp.cnes),hosp.cnes&&hosp.cep&&" \u2022 ",hosp.cep&&("CEP "+hosp.cep)]}),'
+      + 'hosp.turno&&e.jsx("p",{style:{fontSize:9,color:"#888",margin:"2px 0 0",fontStyle:"italic"},children:String(hosp.turno).length>50?String(hosp.turno).slice(0,50)+"\u2026":hosp.turno}),'
+      + 'hosp.data_atualizacao&&e.jsx("p",{style:{fontSize:9,color:"#aaa",margin:"2px 0 0"},children:"CNES atualizado em "+hosp.data_atualizacao}),'
+      + 'hosp.caps&&hosp.caps.length>0';
+    if (dashSrc.includes(_HOSP_CARD_OLD)) {
+      dashSrc = dashSrc.replace(_HOSP_CARD_OLD, _HOSP_CARD_NEW);
+      _hospApplied++;
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 hosp-enrich-card-v1 applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 hosp-enrich-card-v1 — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 hosp-enrich-card-v1 already applied');
+  }
+  if (!dashSrc.includes(_HOSP_NOTE_MARKER)) {
+    const _HOSP_NOTE_OLD = 'atualiza\\xE7\\xE3o mensal"})]}),e.jsx("div",{style:{display:"grid"';
+    const _HOSP_NOTE_NEW = 'atualiza\\xE7\\xE3o mensal"})]})/*hosp-enrich-note-v1*/,'
+      + 'e.jsxs("p",{style:{fontSize:10,color:"#b71c1c",background:"#fff3e0",border:"1px solid #ffcc80",borderRadius:6,padding:"6px 8px",margin:"0 0 8px",lineHeight:1.4},children:["\u26A0 Contagem de leitos por hospital via API oficial do Minist\xE9rio da Sa\xFAde indispon\xEDvel no momento \u2014 consulte ",e.jsx("a",{href:"http://tabnet.datasus.gov.br/cgi/deftohtm.exe?cnes/cnv/leiintbr.def",target:"_blank",rel:"noopener noreferrer",style:{color:"#1565c0",fontWeight:600},children:"TabNet / DataSUS \u2014 Leitos"})," para contagens oficiais."]}),'
+      + 'e.jsx("div",{style:{display:"grid"';
+    if (dashSrc.includes(_HOSP_NOTE_OLD)) {
+      dashSrc = dashSrc.replace(_HOSP_NOTE_OLD, _HOSP_NOTE_NEW);
+      _hospApplied++;
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 hosp-enrich-note-v1 applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 hosp-enrich-note-v1 — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 hosp-enrich-note-v1 already applied');
   }
 
   if (changed) {
