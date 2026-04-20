@@ -4563,6 +4563,41 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 hosp-enrich-note-v1 already applied');
   }
 
+  // ── Sub-patch: atualiza nomenclatura da Atenção Primária para 2026 (ap-fonte-2026-v1) ──
+  // Em 2024 o programa Previne Brasil foi reformulado pela Portaria GM/MS nº 3.493/2024
+  // (novo modelo de Cofinanciamento Federal da APS). A nomenclatura oficial atual é:
+  //   • Sistema captador: e-SUS APS
+  //   • Sistema consolidador/analítico: SISAB
+  //   • Programa de financiamento (substituiu Previne Brasil): Cofinanciamento Federal da APS
+  // Verificado em 20/04/2026: a API oficial apidadosabertos.saude.gov.br ainda só publica
+  // competências até 202412 (dez/2024). O Ministério não liberou 2025/2026 até o momento.
+  // Este patch atualiza as legendas para refletir a fonte correta e deixar explícito
+  // pro gestor que a defasagem é da publicação oficial, não do app.
+  const _AP_FONTE_MARKER = '/*ap-fonte-2026-v1*/';
+  if (!dashSrc.includes(_AP_FONTE_MARKER)) {
+    let _apFonteApplied = 0;
+    // Header tooltip: trocar texto antigo "SISAB (Previne Brasil)" por nova nomenclatura
+    const _AP_TT_OLD = 'title: "\\xDAltima compet\\xEAncia publicada pelo SISAB (Previne Brasil) \\u2014 dados do Minist\\xE9rio da Sa\\xFAde t\\xEAm defasagem t\\xEDpica de 4-6 meses"';
+    const _AP_TT_NEW = 'title: "\\xDAltima compet\\xEAncia publicada pelo Minist\\xE9rio da Sa\\xFAde via SISAB (Sistema de Informa\\xE7\\xE3o em Sa\\xFAde para a APS) / e-SUS APS. O programa Previne Brasil foi reformulado em 2024 pela Portaria GM/MS n\\xBA 3.493/2024 (novo Cofinanciamento Federal da APS). At\\xE9 a presente data o Minist\\xE9rio n\\xE3o publicou compet\\xEAncias de 2025/2026 nesta API."/*ap-fonte-2026-v1*/';
+    if (dashSrc.includes(_AP_TT_OLD)) { dashSrc = dashSrc.replace(_AP_TT_OLD, _AP_TT_NEW); _apFonteApplied++; }
+    // Header inline label: "(SISAB · MM/AAAA)" → "(MS · e-SUS APS · MM/AAAA)"
+    const _AP_LBL_OLD = 'children: " (SISAB \\u00b7 " + (function(c){var s=String(c||"");return s.length===6?(s.slice(4,6)+"/"+s.slice(0,4)):s;})(ctxMunData.cobertura_competencia.competencia) + ")"';
+    const _AP_LBL_NEW = 'children: " (MS \\u00b7 e-SUS APS \\u00b7 " + (function(c){var s=String(c||"");return s.length===6?(s.slice(4,6)+"/"+s.slice(0,4)):s;})(ctxMunData.cobertura_competencia.competencia) + ")"';
+    if (dashSrc.includes(_AP_LBL_OLD)) { dashSrc = dashSrc.replace(_AP_LBL_OLD, _AP_LBL_NEW); _apFonteApplied++; }
+    // Linha rodapé "Atualizado em MM/AAAA · SISAB/Previne Brasil" → versão 2026 com aviso de defasagem
+    const _AP_FOOT_OLD = '"Atualizado em "+_cFmt+" \\u00b7 SISAB/Previne Brasil"';
+    const _AP_FOOT_NEW = '"Atualizado em "+_cFmt+" \\u00b7 MS \\u00b7 SISAB/e-SUS APS (Cofinanciamento APS) \\u2014 \\xFAltima compet\\xEAncia publicada pelo Minist\\xE9rio"';
+    if (dashSrc.includes(_AP_FOOT_OLD)) { dashSrc = dashSrc.replace(_AP_FOOT_OLD, _AP_FOOT_NEW); _apFonteApplied++; }
+    if (_apFonteApplied > 0) {
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 ap-fonte-2026-v1 applied (' + _apFonteApplied + ' of 3)');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 ap-fonte-2026-v1 — anchors not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 ap-fonte-2026-v1 already applied');
+  }
+
   if (changed) {
     fs.writeFileSync(dashboardV30AssetPath, dashSrc, 'utf8');
   }
