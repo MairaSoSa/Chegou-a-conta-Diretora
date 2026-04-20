@@ -3814,7 +3814,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
                   '})})' +
                 ']})' +
               '}),' +
-              'e.jsx("p", { style: { fontSize: 10, color: "#888", margin: "6px 0 0" }, children: "Fonte: Relat\\xF3rios P\\xFAblicos da APS \\u2014 todos os ciclos do PSE desde 2017/2018." })' +
+              'e.jsx("p", { style: { fontSize: 10, color: "#888", margin: "6px 0 0" }, children: "Fonte: Relat\\xF3rios P\\xFAblicos da APS \\u2014 ciclos do PSE de " + ((saudeViolData.pse.historico[saudeViolData.pse.historico.length-1] && saudeViolData.pse.historico[saudeViolData.pse.historico.length-1].ciclo) || "") + " a " + ((saudeViolData.pse.historico[0] && saudeViolData.pse.historico[0].ciclo) || "") + "." })' +
             ']}),' +
             'e.jsxs("div", { style: { marginBottom: 10 }, children: [' +
               'e.jsx("p", { style: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#880e4f", marginBottom: 8 }, children: "Acesso direto ao DataSUS (TABNET)" }),' +
