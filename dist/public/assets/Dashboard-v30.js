@@ -1131,7 +1131,15 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
         };
         return e.jsx(e.Fragment, { children: _temas.map(function(t) {
           var _d = _arb[t.key];
-          if (!_d) return null;
+          if (!_d) return /*zika-placeholder-v1*/ e.jsxs("div", { style: { background: t.baseBg, border: "1px dashed "+t.baseBdr, borderRadius: 10, padding: "10px 12px", marginTop: 10, opacity: 0.85 }, children: [
+            e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }, children: [
+              e.jsx("span", { style: { fontSize: 14 }, children: t.icon }),
+              e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: t.baseCol, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", flex: 1 }, children: t.titulo }),
+              e.jsx("span", { style: { fontSize: 10, fontWeight: 700, background: "#eeeeee", color: "#616161", border: "1px solid #bdbdbd", borderRadius: 20, padding: "2px 10px", whiteSpace: "nowrap" }, children: "sem dados" })
+            ]}),
+            e.jsx("p", { style: { fontSize: 11, color: t.baseCol, margin: "0 0 4px", lineHeight: 1.4 }, children: (t.key === "zika") ? "A Fiocruz/InfoDengue descontinuou a publica\xE7\xE3o de casos de Zika a partir de fevereiro/2024 (\xFAltima semana publicada: SE 01/2024). N\xE3o significa aus\xEAncia de casos no munic\xEDpio." : "Sem dados publicados pela Fiocruz/InfoDengue para este munic\xEDpio na semana atual." }),
+            e.jsxs("p", { style: { fontSize: 10, color: t.baseCol, margin: "4px 0 0", opacity: 0.85 }, children: ["Consulte ", e.jsx("a", { href: "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sinannet/cnv/zikabr.def", target: "_blank", rel: "noopener noreferrer", style: { color: "#1565c0", fontWeight: 600 }, children: "SINAN \u2014 Casos de " + (t.key === "zika" ? "Zika" : "Chikungunya") + " (TabNet/MS)" }), " para casos notificados oficialmente."]})
+          ]}, t.key);
           var _c2 = _NIVELC[_d.nivel] || _NIVELC[2];
           return e.jsxs("div", { style: { background: t.baseBg, border: "1px solid "+t.baseBdr, borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
             e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }, children: [

@@ -4598,6 +4598,27 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 ap-fonte-2026-v1 already applied');
   }
 
+  // ── Sub-patch: placeholder de Zika quando InfoDengue não retorna dados (zika-placeholder-v1) ──
+  // A Fiocruz/InfoDengue descontinuou a publicação de casos de Zika a partir de fev/2024
+  // (última semana publicada: SE202401). Verificado em 20/04/2026: 0 semanas para 2025
+  // e 2026 em SP, RJ e Belém. Sem este patch o card de Zika simplesmente não aparece, o
+  // que pode ser confundido com bug. Aqui mostramos um card explicativo dizendo que a
+  // fonte parou de publicar e indicando o caminho oficial alternativo (SINAN/MS).
+  const _ZIKA_PH_MARKER = '/*zika-placeholder-v1*/';
+  if (!dashSrc.includes(_ZIKA_PH_MARKER)) {
+    const _ZIKA_PH_OLD = 'var _d = _arb[t.key];\n          if (!_d) return null;';
+    const _ZIKA_PH_NEW = 'var _d = _arb[t.key];\n          if (!_d) return /*zika-placeholder-v1*/ e.jsxs("div", { style: { background: t.baseBg, border: "1px dashed "+t.baseBdr, borderRadius: 10, padding: "10px 12px", marginTop: 10, opacity: 0.85 }, children: [\n            e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }, children: [\n              e.jsx("span", { style: { fontSize: 14 }, children: t.icon }),\n              e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: t.baseCol, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", flex: 1 }, children: t.titulo }),\n              e.jsx("span", { style: { fontSize: 10, fontWeight: 700, background: "#eeeeee", color: "#616161", border: "1px solid #bdbdbd", borderRadius: 20, padding: "2px 10px", whiteSpace: "nowrap" }, children: "sem dados" })\n            ]}),\n            e.jsx("p", { style: { fontSize: 11, color: t.baseCol, margin: "0 0 4px", lineHeight: 1.4 }, children: (t.key === "zika") ? "A Fiocruz/InfoDengue descontinuou a publica\\xE7\\xE3o de casos de Zika a partir de fevereiro/2024 (\\xFAltima semana publicada: SE 01/2024). N\\xE3o significa aus\\xEAncia de casos no munic\\xEDpio." : "Sem dados publicados pela Fiocruz/InfoDengue para este munic\\xEDpio na semana atual." }),\n            e.jsxs("p", { style: { fontSize: 10, color: t.baseCol, margin: "4px 0 0", opacity: 0.85 }, children: ["Consulte ", e.jsx("a", { href: "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sinannet/cnv/zikabr.def", target: "_blank", rel: "noopener noreferrer", style: { color: "#1565c0", fontWeight: 600 }, children: "SINAN \\u2014 Casos de " + (t.key === "zika" ? "Zika" : "Chikungunya") + " (TabNet/MS)" }), " para casos notificados oficialmente."]})\n          ]}, t.key);';
+    if (dashSrc.includes(_ZIKA_PH_OLD)) {
+      dashSrc = dashSrc.replace(_ZIKA_PH_OLD, _ZIKA_PH_NEW);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 zika-placeholder-v1 applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 zika-placeholder-v1 — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 zika-placeholder-v1 already applied');
+  }
+
   if (changed) {
     fs.writeFileSync(dashboardV30AssetPath, dashSrc, 'utf8');
   }
