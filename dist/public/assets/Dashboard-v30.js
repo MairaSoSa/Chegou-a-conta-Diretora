@@ -1116,6 +1116,62 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
           e.jsx("p", { style: { fontSize: 9, color: _c.col, margin: "4px 0 0", opacity: 0.75 }, children: "Fonte: InfoDengue / Fiocruz \u2022 "+_dng.semana })
         ]});
       })(),
+      ctxMunData.arboviroses && (function() {
+        var _arb = ctxMunData.arboviroses;
+        var _temas = [
+          { key: "zika", titulo: "Zika \u2014 Vigil\xE2ncia Epidemiol\xF3gica", icon: "\uD83E\uDDA0", baseBg: "#f3e5f5", baseBdr: "#ce93d8", baseCol: "#4a148c", baseBadge: "#6a1b9a" },
+          { key: "chikungunya", titulo: "Chikungunya \u2014 Vigil\xE2ncia Epidemiol\xF3gica", icon: "\uD83E\uDDBE", baseBg: "#fff3e0", baseBdr: "#ffb74d", baseCol: "#bf360c", baseBadge: "#e64a19" }
+        ];
+        var _nivelSerieA = {1:"\u{1F7E2}",2:"\u{1F7E1}",3:"\u{1F7E0}",4:"\u{1F534}"};
+        var _NIVELC = {
+          1:{bdr:"#a5d6a7",col:"#1b5e20",badge:"#2e7d32",badgeBg:"#c8e6c9",icon:"\u{1F7E2}"},
+          2:{bdr:"#f9a825",col:"#e65100",badge:"#f57f17",badgeBg:"#fff9c4",icon:"\u{1F7E1}"},
+          3:{bdr:"#ef6c00",col:"#bf360c",badge:"#e64a19",badgeBg:"#ffe0b2",icon:"\u{1F7E0}"},
+          4:{bdr:"#ef9a9a",col:"#b71c1c",badge:"#c62828",badgeBg:"#ffcdd2",icon:"\u{1F534}"}
+        };
+        return e.jsx(e.Fragment, { children: _temas.map(function(t) {
+          var _d = _arb[t.key];
+          if (!_d) return null;
+          var _c2 = _NIVELC[_d.nivel] || _NIVELC[2];
+          return e.jsxs("div", { style: { background: t.baseBg, border: "1px solid "+t.baseBdr, borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
+            e.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }, children: [
+              e.jsx("span", { style: { fontSize: 14 }, children: t.icon }),
+              e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: t.baseCol, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", flex: 1 }, children: t.titulo }),
+              e.jsxs("span", { style: { fontSize: 11, fontWeight: 800, background: _c2.badgeBg, color: _c2.badge, border: "1px solid "+_c2.bdr, borderRadius: 20, padding: "2px 10px", whiteSpace: "nowrap" }, children: [_c2.icon, "\xA0", _d.nivel_nome] })
+            ]}),
+            e.jsxs("div", { style: { display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 8 }, children: [
+              e.jsxs("div", { children: [
+                e.jsx("p", { style: { fontSize: 20, fontWeight: 800, color: t.baseBadge, margin: 0, lineHeight: 1 }, children: _d.casos_est }),
+                e.jsx("p", { style: { fontSize: 10, color: t.baseCol, margin: "2px 0 0" }, children: "casos estimados/sem." })
+              ]}),
+              e.jsxs("div", { children: [
+                e.jsx("p", { style: { fontSize: 20, fontWeight: 800, color: t.baseBadge, margin: 0, lineHeight: 1 }, children: _d.casos }),
+                e.jsx("p", { style: { fontSize: 10, color: t.baseCol, margin: "2px 0 0" }, children: "notificados/sem." })
+              ]}),
+              e.jsxs("div", { children: [
+                e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: t.baseBadge, margin: 0, lineHeight: 1 }, children: _d.inc100k }),
+                e.jsx("p", { style: { fontSize: 10, color: t.baseCol, margin: "2px 0 0" }, children: "casos/100\xA0mil hab." })
+              ]}),
+              _d.rt > 0 && e.jsxs("div", { children: [
+                e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: _d.rt >= 1 ? t.baseBadge : "#2e7d32", margin: 0, lineHeight: 1 }, children: _d.rt.toFixed(2) }),
+                e.jsx("p", { style: { fontSize: 10, color: t.baseCol, margin: "2px 0 0" }, children: "Rt (reprodu\xE7\xE3o)" })
+              ]}),
+              e.jsxs("div", { children: [
+                e.jsx("p", { style: { fontSize: 16, fontWeight: 700, color: t.baseBadge, margin: 0, lineHeight: 1 }, children: _d.accum_ano }),
+                e.jsx("p", { style: { fontSize: 10, color: t.baseCol, margin: "2px 0 0" }, children: "acum. "+_d.ano+(_d.accum_ano_ant != null ? " (ant.: "+_d.accum_ano_ant+")" : "") })
+              ]})
+            ]}),
+            _d.serie && _d.serie.length > 1 && e.jsxs("div", { style: { display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }, children: [
+              e.jsx("span", { style: { fontSize: 10, color: t.baseCol, fontWeight: 600, marginRight: 2 }, children: "\xDAlt. semanas:" }),
+              _d.serie.map(function(s, si) {
+                var ico = _nivelSerieA[s.nivel] || "\u{1F7E1}";
+                return e.jsxs("span", { style: { fontSize: 10, background: "rgba(255,255,255,0.7)", border: "1px solid "+t.baseBdr, borderRadius: 4, padding: "2px 7px", color: t.baseCol, fontWeight: 600, whiteSpace: "nowrap" }, children: [ico, "\xA0", s.se, ":\xA0", s.casos, " casos"] }, si);
+              })
+            ]}),
+            e.jsx("p", { style: { fontSize: 9, color: t.baseCol, margin: "4px 0 0", opacity: 0.75 }, children: "Fonte: InfoDengue / Fiocruz \u2022 "+_d.semana+(_d.versao_modelo ? " \u2022 atualizado em "+_d.versao_modelo : "") })
+          ]}, t.key);
+        }) });
+      })(),
       /*bf-bpc-hide-saude-v1*/false && ctxMunData.bf && e.jsxs("div", { style: { background: "#e8f5e9", border: "1px solid #a5d6a7", borderRadius: 10, padding: "10px 12px", marginTop: 10 }, children: [
         e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 8px 0", textTransform: "uppercase", letterSpacing: "0.05em" }, children: "Bolsa Fam\xEDlia \u2014 Fam\xEDlias Benefici\xE1rias" }),
         e.jsxs("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 8 }, children: [

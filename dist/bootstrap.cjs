@@ -2893,6 +2893,32 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '        }\n' +
 '      }\n' +
 '    }catch(_dngErr){console.warn("[ctx-mun] dengue erro:",String(_dngErr));}\n' +
+'    // ── Zika & Chikungunya (InfoDengue/Fiocruz) ─────────────────────────────\n' +
+'    let zika=null,chikungunya=null;\n' +
+'    try{\n' +
+'      if(co.length===7){\n' +
+'        const _yr2=new Date().getFullYear();\n' +
+'        const _NIVEL2={"1":"Verde","2":"Alerta","3":"Alto","4":"Muito Alto"};\n' +
+'        async function _arbo(_d){\n' +
+'          try{\n' +
+'            const [_curr,_prev]=await Promise.all([\n' +
+'              fetch("https://info.dengue.mat.br/api/alertcity?geocode="+co+"&disease="+_d+"&format=json&ew_start=1&ew_end=53&ey_start="+_yr2+"&ey_end="+_yr2,{signal:AbortSignal.timeout(9000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),\n' +
+'              fetch("https://info.dengue.mat.br/api/alertcity?geocode="+co+"&disease="+_d+"&format=json&ew_start=1&ew_end=53&ey_start="+(_yr2-1)+"&ey_end="+(_yr2-1),{signal:AbortSignal.timeout(9000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})\n' +
+'            ]);\n' +
+'            if(!Array.isArray(_curr)||_curr.length===0)return null;\n' +
+'            const _sorted=_curr.slice().sort(function(a,b){return b.SE-a.SE;});\n' +
+'            const _atual=_sorted[0];\n' +
+'            const _serie=_sorted.slice(0,5).reverse();\n' +
+'            const _accCurr=_curr.reduce(function(s,x){return s+(x.casos||0);},0);\n' +
+'            const _accPrev=Array.isArray(_prev)?_prev.reduce(function(s,x){return s+(x.casos||0);},0):null;\n' +
+'            return {nivel:_atual.nivel,nivel_nome:_NIVEL2[String(_atual.nivel)]||"Desconhecido",semana:"SE"+String(_atual.SE).slice(4)+"/"+String(_atual.SE).slice(0,4),casos:_atual.casos||0,casos_est:Math.round(_atual.casos_est||0),inc100k:Math.round((_atual.p_inc100k||0)*10)/10,rt:Math.round((_atual.Rt||0)*100)/100,p_rt1:Math.round((_atual.p_rt1||0)*100),accum_ano:_accCurr,accum_ano_ant:_accPrev,ano:_yr2,versao_modelo:_atual.versao_modelo||null,serie:_serie.map(function(s){return{se:"SE"+String(s.SE).slice(4),casos:s.casos||0,nivel:s.nivel,inc100k:Math.round((s.p_inc100k||0)*10)/10};})};\n' +
+'          }catch(_e){console.warn("[ctx-mun] arbo "+_d+" erro:",String(_e));return null;}\n' +
+'        }\n' +
+'        const [_z,_c]=await Promise.all([_arbo("zika"),_arbo("chikungunya")]);\n' +
+'        zika=_z;chikungunya=_c;\n' +
+'      }\n' +
+'    }catch(_arboErr){console.warn("[ctx-mun] arboviroses erro:",String(_arboErr));}\n' +
+'    const arboviroses={dengue:dengue,zika:zika,chikungunya:chikungunya};\n' +
 '    // ── Indicadores SUS bulk (saude_indicadores_municipio) ──────────────────\n' +
 '    let saude_db=null;\n' +
 '    try{\n' +
@@ -2933,7 +2959,7 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '      if(_pRow){pse={...({},_pRow),aderiu:(_pRow.escolasPactuadas||0)>0,meta:_pDb.meta||{}};}\n' +
 '      else if(_pDb&&_pDb.meta&&_pDb.meta.ciclo){pse={aderiu:false,escolasPactuadas:0,educandosPactuados:0,meta:_pDb.meta};}\n' +
 '    }catch(_pErr){console.warn("[ctx-mun] pse erro:",String(_pErr));}\n' +
-'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,cobertura_competencia:coberturaCompetencia,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,censo2022:censo2022,dengue:dengue,saude_db:saude_db,tria:tria,pse:pse});\n' +
+'    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,cobertura_competencia:coberturaCompetencia,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,censo2022:censo2022,dengue:dengue,arboviroses:arboviroses,saude_db:saude_db,tria:tria,pse:pse});\n' +
 '  }catch(err){console.error("[ctx-mun] erro:",String(err));g.json({ok:false,erro:String(err)});}\n' +
 '}),\n';
 
