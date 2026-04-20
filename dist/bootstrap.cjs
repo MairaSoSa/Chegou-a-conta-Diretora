@@ -96,6 +96,61 @@ function startDailyFunaiSync() {
 
 startDailyFunaiSync();
 
+function startDailyPseAdesaoSync() {
+  const scriptPath = path.join(process.cwd(), 'scripts', 'sync-pse-adesao.mjs');
+  if (!fs.existsSync(scriptPath)) {
+    console.warn('[bootstrap] Daily PSE adesão sync skipped: scripts/sync-pse-adesao.mjs not found');
+    return;
+  }
+
+  if (String(process.env.PSE_ADESAO_DAILY_SYNC_DISABLED || '').toLowerCase() === 'true') {
+    console.log('[bootstrap] Daily PSE adesão sync disabled via PSE_ADESAO_DAILY_SYNC_DISABLED=true');
+    return;
+  }
+
+  const runSync = (reason) => {
+    try {
+      console.log(`[bootstrap] PSE adesão sync started (${reason})`);
+      const child = spawn(process.execPath, [scriptPath], {
+        cwd: process.cwd(),
+        env: process.env,
+        stdio: 'pipe',
+      });
+
+      child.stdout.on('data', (buf) => {
+        const out = String(buf || '').trim();
+        if (out) console.log(`[bootstrap] PSE adesão sync: ${out}`);
+      });
+
+      child.stderr.on('data', (buf) => {
+        const err = String(buf || '').trim();
+        if (err) console.warn(`[bootstrap] PSE adesão sync stderr: ${err}`);
+      });
+
+      child.on('exit', (code) => {
+        if (code === 0) console.log('[bootstrap] PSE adesão sync finished successfully');
+        else console.warn(`[bootstrap] PSE adesão sync finished with code ${code}`);
+      });
+
+      child.on('error', (err) => {
+        console.warn('[bootstrap] PSE adesão sync process error:', err.message);
+      });
+    } catch (err) {
+      console.warn('[bootstrap] PSE adesão sync failed to start:', err.message);
+    }
+  };
+
+  // Primeira atualização logo após subir o servidor (offset para não competir com FUNAI).
+  setTimeout(() => runSync('startup'), 60 * 1000);
+
+  // Atualização diária (24h).
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  setInterval(() => runSync('daily'), oneDayMs);
+  console.log('[bootstrap] Daily PSE adesão sync scheduled every 24h');
+}
+
+startDailyPseAdesaoSync();
+
 // Prefer PostgreSQL in all environments when a DB URL is available.
 if (!process.env.RAILWAY_DATABASE_URL && process.env.DATABASE_URL) {
   process.env.RAILWAY_DATABASE_URL = process.env.DATABASE_URL;
