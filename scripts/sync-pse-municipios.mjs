@@ -101,6 +101,7 @@ function aggregate(rows, acc) {
         escolasEstaduais: 0,
         escolasFederais: 0,
         escolasPrivadas: 0,
+        escolas: [],
         _seen: new Set(),
       };
       acc.set(co, m);
@@ -108,19 +109,42 @@ function aggregate(rows, acc) {
     // dedup escolas (a API às vezes repete linha)
     const key = String(r.coSeqPseEstabelecimento ?? "");
     if (!key || m._seen.has(key)) continue;
-    if (r.stAdesao !== "S") continue;
     m._seen.add(key);
 
+    const aderiu = r.stAdesao === "S";
+    const esfera = String(r.dsEsferaAdministrativa ?? "").toUpperCase();
+    const prioritaria = r.stPrioritario === "S";
+    const maioriaPbf = r.stMaioriaPbf === "S";
+    const nutrisus = r.stAdesaoNutrisus === "S";
+    const obesidade = r.stObesidade === "S";
+    const sinase = r.stSinase === "S";
+    const educandos = Number(r.qtdEducandos ?? 0) || 0;
+
+    // lista de escolas do município (independente de adesão)
+    m.escolas.push({
+      id: Number(r.coSeqPseEstabelecimento) || null,
+      nome: r.noEstabelecimento ?? null,
+      esfera: esfera || null,
+      aderiu,
+      educandos,
+      prioritaria,
+      maioriaPbf,
+      nutrisus,
+      obesidade,
+    });
+
+    if (!aderiu) continue;
+
+    // contagens agregadas só para escolas que aderiram
     m.escolasPactuadas += 1;
-    m.educandosPactuados += Number(r.qtdEducandos ?? 0) || 0;
-    if (r.stPrioritario === "S") m.escolasPrioritarias += 1;
-    if (r.stMaioriaPbf === "S") m.escolasMaioriaPbf += 1;
-    if (r.stAdesaoNutrisus === "S") m.escolasNutrisus += 1;
-    if (r.stObesidade === "S") m.escolasObesidade += 1;
-    if (r.stSinase === "S") m.escolasSinase += 1;
+    m.educandosPactuados += educandos;
+    if (prioritaria) m.escolasPrioritarias += 1;
+    if (maioriaPbf) m.escolasMaioriaPbf += 1;
+    if (nutrisus) m.escolasNutrisus += 1;
+    if (obesidade) m.escolasObesidade += 1;
+    if (sinase) m.escolasSinase += 1;
     if (r.dsPseLocalizacao === "URBANA") m.escolasUrbanas += 1;
     else if (r.dsPseLocalizacao === "RURAL") m.escolasRurais += 1;
-    const esfera = String(r.dsEsferaAdministrativa ?? "").toUpperCase();
     if (esfera === "MUNICIPAL") m.escolasMunicipais += 1;
     else if (esfera === "ESTADUAL") m.escolasEstaduais += 1;
     else if (esfera === "FEDERAL") m.escolasFederais += 1;
