@@ -5,6 +5,8 @@ import { resolve } from "node:path";
 const ROOT = process.cwd();
 const API_BASE = process.env.PSE_API_BASE_URL || "https://relatorioaps-prd.saude.gov.br";
 const OUTPUT_PATH = resolve(ROOT, process.env.PSE_ADESAO_OUTPUT_JSON || "pse-adesao.json");
+const _rawLimit = Number(process.env.PSE_CICLOS_LIMIT);
+const CICLOS_LIMIT = Number.isFinite(_rawLimit) && _rawLimit >= 1 ? Math.floor(_rawLimit) : 0;
 
 async function fetchJson(url, timeoutMs = 120000) {
   const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
@@ -19,25 +21,14 @@ function normCode6(value) {
   return digits.padStart(6, "0").slice(0, 6);
 }
 
-async function main() {
-  console.log(`[sync-pse-adesao] Buscando ciclos em ${API_BASE}/adesao/pse/ciclos`);
-  const ciclos = await fetchJson(`${API_BASE}/adesao/pse/ciclos`);
-  if (!Array.isArray(ciclos) || ciclos.length === 0) {
-    throw new Error("Lista de ciclos vazia.");
-  }
-  ciclos.sort((a, b) => Number(b.coPseCiclo || 0) - Number(a.coPseCiclo || 0));
-  const cicloVigente = ciclos[0];
-  const coCiclo = cicloVigente.coPseCiclo;
-  const nuCiclo = cicloVigente.nuCiclo;
-  console.log(`[sync-pse-adesao] Ciclo vigente: ${nuCiclo} (codigo ${coCiclo})`);
-
-  console.log(`[sync-pse-adesao] Baixando histórico de adesões (pode levar alguns minutos)...`);
+async function aggregateCycle(coCiclo, nuCiclo) {
+  console.log(`[sync-pse-adesao] Baixando ciclo ${nuCiclo} (codigo ${coCiclo})...`);
   const historico = await fetchJson(
     `${API_BASE}/adesao/pse/historico?coCiclo=${coCiclo}`,
     300000,
   );
   const adesoes = Array.isArray(historico?.adesoes) ? historico.adesoes : [];
-  console.log(`[sync-pse-adesao] Registros de estabelecimentos: ${adesoes.length}`);
+  console.log(`[sync-pse-adesao]   ${adesoes.length} registros`);
 
   const porMunicipio = new Map();
   for (const item of adesoes) {
@@ -64,31 +55,113 @@ async function main() {
       if (Number.isFinite(ed)) entry.educandos_pactuados += ed;
     }
   }
+  return porMunicipio;
+}
+
+async function main() {
+  console.log(`[sync-pse-adesao] Buscando ciclos em ${API_BASE}/adesao/pse/ciclos`);
+  const ciclos = await fetchJson(`${API_BASE}/adesao/pse/ciclos`);
+  if (!Array.isArray(ciclos) || ciclos.length === 0) {
+    throw new Error("Lista de ciclos vazia.");
+  }
+  ciclos.sort((a, b) => Number(b.coPseCiclo || 0) - Number(a.coPseCiclo || 0));
+
+  // Mais recente -> mais antigo. Limita se PSE_CICLOS_LIMIT > 0.
+  const ciclosUsados = CICLOS_LIMIT > 0 ? ciclos.slice(0, CICLOS_LIMIT) : ciclos;
+  const cicloVigente = ciclosUsados[0];
+  console.log(
+    `[sync-pse-adesao] Ciclos a coletar: ${ciclosUsados.map((c) => c.nuCiclo).join(", ")}`,
+  );
+
+  // Coleta agregada por ciclo (sequencial p/ não saturar API).
+  const porCiclo = new Map();
+  for (const c of ciclosUsados) {
+    const agg = await aggregateCycle(c.coPseCiclo, c.nuCiclo);
+    porCiclo.set(c.coPseCiclo, { ciclo: c, agg });
+  }
+
+  // União de todos os municípios vistos em qualquer ciclo.
+  const todosCods = new Set();
+  for (const { agg } of porCiclo.values()) {
+    for (const k of agg.keys()) todosCods.add(k);
+  }
 
   const municipios = {};
-  for (const [co6, entry] of porMunicipio) {
-    municipios[co6] = entry;
+  for (const co6 of todosCods) {
+    let nome = null;
+    let uf = null;
+    const historico = [];
+    // Iterar ciclos do mais recente para o mais antigo.
+    for (const c of ciclosUsados) {
+      const bucket = porCiclo.get(c.coPseCiclo);
+      const e = bucket.agg.get(co6);
+      if (e) {
+        if (!nome && e.municipio) nome = e.municipio;
+        if (!uf && e.uf) uf = e.uf;
+      }
+      historico.push({
+        ciclo: c.nuCiclo,
+        codigo_ciclo: c.coPseCiclo,
+        aderiu: !!(e && e.aderiu),
+        escolas_pactuadas: e ? e.escolas_pactuadas : 0,
+        educandos_pactuados: e ? e.educandos_pactuados : 0,
+      });
+    }
+
+    // Bloco do ciclo vigente (compatibilidade reversa com FE/BE atuais).
+    const vigenteEntry = porCiclo.get(cicloVigente.coPseCiclo).agg.get(co6) || {
+      aderiu: false,
+      escolas_pactuadas: 0,
+      educandos_pactuados: 0,
+    };
+
+    municipios[co6] = {
+      codigo_municipio: co6,
+      municipio: nome,
+      uf,
+      aderiu: !!vigenteEntry.aderiu,
+      ciclo: cicloVigente.nuCiclo,
+      codigo_ciclo: cicloVigente.coPseCiclo,
+      escolas_pactuadas: vigenteEntry.escolas_pactuadas || 0,
+      educandos_pactuados: vigenteEntry.educandos_pactuados || 0,
+      historico,
+    };
   }
 
   const totais = {
     municipios_com_adesao: Object.values(municipios).filter((m) => m.aderiu).length,
     escolas_pactuadas: Object.values(municipios).reduce((s, m) => s + m.escolas_pactuadas, 0),
-    educandos_pactuados: Object.values(municipios).reduce((s, m) => s + m.educandos_pactuados, 0),
+    educandos_pactuados: Object.values(municipios).reduce(
+      (s, m) => s + m.educandos_pactuados,
+      0,
+    ),
   };
 
   const payload = {
     gerado_em: new Date().toISOString(),
     fonte: "Relatórios Públicos da APS — Adesão ao PSE (relatorioaps.saude.gov.br)",
-    endpoint: `${API_BASE}/adesao/pse/historico?coCiclo=${coCiclo}`,
-    ciclo_vigente: { codigo: coCiclo, nome: nuCiclo, ano_censo: cicloVigente.nuAnoCenso, ano_exercicio: cicloVigente.nuAnoExercicio },
+    endpoint: `${API_BASE}/adesao/pse/historico?coCiclo=<coCiclo>`,
+    ciclos: ciclosUsados.map((c) => ({
+      codigo: c.coPseCiclo,
+      nome: c.nuCiclo,
+      ano_censo: c.nuAnoCenso,
+      ano_exercicio: c.nuAnoExercicio,
+    })),
+    ciclo_vigente: {
+      codigo: cicloVigente.coPseCiclo,
+      nome: cicloVigente.nuCiclo,
+      ano_censo: cicloVigente.nuAnoCenso,
+      ano_exercicio: cicloVigente.nuAnoExercicio,
+    },
     totais,
     municipios,
   };
 
   writeFileSync(OUTPUT_PATH, `${JSON.stringify(payload)}\n`, "utf8");
-  console.log(`[sync-pse-adesao] Municípios com adesão: ${totais.municipios_com_adesao}`);
-  console.log(`[sync-pse-adesao] Escolas pactuadas: ${totais.escolas_pactuadas}`);
-  console.log(`[sync-pse-adesao] Educandos pactuados: ${totais.educandos_pactuados}`);
+  console.log(`[sync-pse-adesao] Ciclos coletados: ${ciclosUsados.length}`);
+  console.log(`[sync-pse-adesao] Municípios c/ adesão (vigente): ${totais.municipios_com_adesao}`);
+  console.log(`[sync-pse-adesao] Escolas pactuadas (vigente): ${totais.escolas_pactuadas}`);
+  console.log(`[sync-pse-adesao] Educandos pactuados (vigente): ${totais.educandos_pactuados}`);
   console.log(`[sync-pse-adesao] Arquivo gerado: ${OUTPUT_PATH}`);
 }
 
