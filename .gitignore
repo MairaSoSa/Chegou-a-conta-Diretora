@@ -70,3 +70,5 @@ tsconfig.*.json
 Dados/
 attached_assets/
 dist/dev.db.backup*
+funai-coordenacoes.json
+pse-adesao.json
