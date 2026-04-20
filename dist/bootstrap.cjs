@@ -2932,6 +2932,28 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '            return _shape(_curr,_prev,"Mosqlimate");\n' +
 '          }catch(_e){console.warn("[ctx-mun] mosq "+_dParam+" erro:",String(_e));return null;}\n' +
 '        }\n' +
+'        async function _sinan(_d){\n' +
+'          // Fallback PG: dados agregados pelo ETL scripts/sync-arboviroses-sinan.mjs\n' +
+'          // (microdados oficiais MS via apidadosabertos.saude.gov.br/arboviroses/<doenca>).\n' +
+'          // Notificações por (município residência, semana epidemiológica). Sem nivel\n' +
+'          // calculado (SINAN é dado bruto), mas com casos reais notificados.\n' +
+'          try{\n' +
+'            const _pool=globalThis._pgPool;\n' +
+'            if(!_pool||co.length<6)return null;\n' +
+'            const _co6=co.slice(0,6);\n' +
+'            const _doencaKey=(_d==="chikungunya")?"chik":_d;\n' +
+'            const _q=await _pool.query("SELECT semana,ano,notif_total,confirmados,data_atualizacao FROM arboviroses_sinan_municipio WHERE co_municipio_6=$1 AND doenca=$2 ORDER BY semana DESC LIMIT 60",[_co6,_doencaKey]);\n' +
+'            if(!_q.rows.length)return null;\n' +
+'            const _atual=_q.rows[0];\n' +
+'            const _ws=String(_atual.semana);\n' +
+'            const _anoAtual=parseInt(_ws.slice(0,4),10);\n' +
+'            const _seAtual=parseInt(_ws.slice(4),10);\n' +
+'            const _accAno=_q.rows.filter(function(r){return String(r.semana).slice(0,4)===String(_anoAtual);}).reduce(function(s,r){return s+r.notif_total;},0);\n' +
+'            const _accAnt=_q.rows.filter(function(r){return String(r.semana).slice(0,4)===String(_anoAtual-1);}).reduce(function(s,r){return s+r.notif_total;},0);\n' +
+'            const _serie=_q.rows.slice(0,5).reverse().map(function(r){return{se:"SE"+String(r.semana).slice(4),casos:r.notif_total,nivel:1,inc100k:0};});\n' +
+'            return {nivel:1,nivel_nome:"Notif. SINAN",semana:"SE"+String(_seAtual).padStart(2,"0")+"/"+_anoAtual,casos:_atual.notif_total,casos_est:_atual.notif_total,inc100k:0,rt:0,p_rt1:0,accum_ano:_accAno,accum_ano_ant:_accAnt||null,ano:_anoAtual,versao_modelo:_atual.data_atualizacao?(new Date(_atual.data_atualizacao)).toISOString().slice(0,10):null,fonte:"MS / SINAN",confirmados:_atual.confirmados,serie:_serie};\n' +
+'          }catch(_e){console.warn("[ctx-mun] sinan "+_d+" erro:",String(_e));return null;}\n' +
+'        }\n' +
 '        async function _arbo(_d){\n' +
 '          try{\n' +
 '            const [_curr,_prev]=await Promise.all([\n' +
@@ -2943,6 +2965,9 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '            // InfoDengue vazio → fallback Mosqlimate (sucessora oficial Fiocruz)\n' +
 '            const _m=await _mosq(_d);\n' +
 '            if(_m){console.log("[ctx-mun] "+_d+" via Mosqlimate (InfoDengue vazio)");return _m;}\n' +
+'            // Mosqlimate vazio → fallback SINAN (microdados MS agregados em PG)\n' +
+'            const _s=await _sinan(_d);\n' +
+'            if(_s){console.log("[ctx-mun] "+_d+" via SINAN (Mosqlimate vazio)");return _s;}\n' +
 '            return null;\n' +
 '          }catch(_e){console.warn("[ctx-mun] arbo "+_d+" erro:",String(_e));return null;}\n' +
 '        }\n' +
