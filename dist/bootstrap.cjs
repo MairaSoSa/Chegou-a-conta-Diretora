@@ -2906,19 +2906,44 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '      if(co.length===7){\n' +
 '        const _yr2=new Date().getFullYear();\n' +
 '        const _NIVEL2={"1":"Verde","2":"Alerta","3":"Alto","4":"Muito Alto"};\n' +
+'        const _mosqKey=process.env.MOSQLIMATE_UID_KEY||null;\n' +
+'        function _shape(_arr,_prev,_fonte){\n' +
+'          if(!Array.isArray(_arr)||_arr.length===0)return null;\n' +
+'          const _sorted=_arr.slice().sort(function(a,b){return b.SE-a.SE;});\n' +
+'          const _atual=_sorted[0];\n' +
+'          const _serie=_sorted.slice(0,5).reverse();\n' +
+'          const _accCurr=_arr.reduce(function(s,x){return s+(x.casos||0);},0);\n' +
+'          const _accPrev=Array.isArray(_prev)?_prev.reduce(function(s,x){return s+(x.casos||0);},0):null;\n' +
+'          return {nivel:_atual.nivel,nivel_nome:_NIVEL2[String(_atual.nivel)]||"Desconhecido",semana:"SE"+String(_atual.SE).slice(4)+"/"+String(_atual.SE).slice(0,4),casos:_atual.casos||0,casos_est:Math.round(_atual.casos_est||0),inc100k:Math.round((_atual.p_inc100k||0)*10)/10,rt:Math.round((_atual.Rt||0)*100)/100,p_rt1:Math.round((_atual.p_rt1||0)*100),accum_ano:_accCurr,accum_ano_ant:_accPrev,ano:_yr2,versao_modelo:_atual.versao_modelo||null,fonte:_fonte||"InfoDengue",serie:_serie.map(function(s){return{se:"SE"+String(s.SE).slice(4),casos:s.casos||0,nivel:s.nivel,inc100k:Math.round((s.p_inc100k||0)*10)/10};})};\n' +
+'        }\n' +
+'        async function _mosq(_d){\n' +
+'          if(!_mosqKey)return null;\n' +
+'          const _dParam=(_d==="chikungunya")?"chik":_d;\n' +
+'          try{\n' +
+'            async function _pageFetch(_year){\n' +
+'              const _url="https://api.mosqlimate.org/api/datastore/infodengue/?disease="+_dParam+"&start="+_year+"-01-01&end="+_year+"-12-31&geocode="+co+"&page=1&per_page=60";\n' +
+'              const _res=await fetch(_url,{headers:{"X-UID-Key":_mosqKey},signal:AbortSignal.timeout(9000)}).catch(function(){return null;});\n' +
+'              if(!_res||!_res.ok)return null;\n' +
+'              const _json=await _res.json().catch(function(){return null;});\n' +
+'              if(!_json||!Array.isArray(_json.items))return null;\n' +
+'              return _json.items;\n' +
+'            }\n' +
+'            const [_curr,_prev]=await Promise.all([_pageFetch(_yr2),_pageFetch(_yr2-1)]);\n' +
+'            return _shape(_curr,_prev,"Mosqlimate");\n' +
+'          }catch(_e){console.warn("[ctx-mun] mosq "+_dParam+" erro:",String(_e));return null;}\n' +
+'        }\n' +
 '        async function _arbo(_d){\n' +
 '          try{\n' +
 '            const [_curr,_prev]=await Promise.all([\n' +
 '              fetch("https://info.dengue.mat.br/api/alertcity?geocode="+co+"&disease="+_d+"&format=json&ew_start=1&ew_end=53&ey_start="+_yr2+"&ey_end="+_yr2,{signal:AbortSignal.timeout(9000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),\n' +
 '              fetch("https://info.dengue.mat.br/api/alertcity?geocode="+co+"&disease="+_d+"&format=json&ew_start=1&ew_end=53&ey_start="+(_yr2-1)+"&ey_end="+(_yr2-1),{signal:AbortSignal.timeout(9000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})\n' +
 '            ]);\n' +
-'            if(!Array.isArray(_curr)||_curr.length===0)return null;\n' +
-'            const _sorted=_curr.slice().sort(function(a,b){return b.SE-a.SE;});\n' +
-'            const _atual=_sorted[0];\n' +
-'            const _serie=_sorted.slice(0,5).reverse();\n' +
-'            const _accCurr=_curr.reduce(function(s,x){return s+(x.casos||0);},0);\n' +
-'            const _accPrev=Array.isArray(_prev)?_prev.reduce(function(s,x){return s+(x.casos||0);},0):null;\n' +
-'            return {nivel:_atual.nivel,nivel_nome:_NIVEL2[String(_atual.nivel)]||"Desconhecido",semana:"SE"+String(_atual.SE).slice(4)+"/"+String(_atual.SE).slice(0,4),casos:_atual.casos||0,casos_est:Math.round(_atual.casos_est||0),inc100k:Math.round((_atual.p_inc100k||0)*10)/10,rt:Math.round((_atual.Rt||0)*100)/100,p_rt1:Math.round((_atual.p_rt1||0)*100),accum_ano:_accCurr,accum_ano_ant:_accPrev,ano:_yr2,versao_modelo:_atual.versao_modelo||null,serie:_serie.map(function(s){return{se:"SE"+String(s.SE).slice(4),casos:s.casos||0,nivel:s.nivel,inc100k:Math.round((s.p_inc100k||0)*10)/10};})};\n' +
+'            const _shaped=_shape(_curr,_prev,"InfoDengue");\n' +
+'            if(_shaped)return _shaped;\n' +
+'            // InfoDengue vazio → fallback Mosqlimate (sucessora oficial Fiocruz)\n' +
+'            const _m=await _mosq(_d);\n' +
+'            if(_m){console.log("[ctx-mun] "+_d+" via Mosqlimate (InfoDengue vazio)");return _m;}\n' +
+'            return null;\n' +
 '          }catch(_e){console.warn("[ctx-mun] arbo "+_d+" erro:",String(_e));return null;}\n' +
 '        }\n' +
 '        const [_z,_c]=await Promise.all([_arbo("zika"),_arbo("chikungunya")]);\n' +
@@ -4596,6 +4621,43 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     }
   } else {
     console.log('[bootstrap] Dashboard-v30 ap-fonte-2026-v1 already applied');
+  }
+
+  // ── Sub-patch: rodapé arboviroses dinâmico mostrando fonte real (arbo-fonte-din-v1) ──
+  // Antes: "Fonte: InfoDengue / Fiocruz" hardcoded. Agora: usa _d.fonte que o backend
+  // popula com "InfoDengue" ou "Mosqlimate" (API sucessora oficial da Fiocruz/PUC-Rio,
+  // consultada como fallback quando InfoDengue retorna vazio).
+  const _ARBOFONTE_MARKER = '/*arbo-fonte-din-v1*/';
+  if (!dashSrc.includes(_ARBOFONTE_MARKER)) {
+    const _AF_OLD = '"Fonte: InfoDengue / Fiocruz \\u2022 "+_d.semana+(_d.versao_modelo';
+    const _AF_NEW = '/*arbo-fonte-din-v1*/"Fonte: "+(_d.fonte||"InfoDengue")+" / Fiocruz \\u2022 "+_d.semana+(_d.versao_modelo';
+    if (dashSrc.includes(_AF_OLD)) {
+      dashSrc = dashSrc.replace(_AF_OLD, _AF_NEW);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 arbo-fonte-din-v1 applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 arbo-fonte-din-v1 — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 arbo-fonte-din-v1 already applied');
+  }
+
+  // ── Sub-patch: atualiza texto do placeholder Zika para refletir verificação dupla (zika-placeholder-v2) ──
+  // Backend agora tenta InfoDengue + Mosqlimate. Quando Zika continua null, é porque
+  // ambas as APIs oficiais da Fiocruz estão sem dados. Texto atualizado para refletir.
+  const _ZPHV2_MARKER = '/*zika-placeholder-v2*/';
+  if (!dashSrc.includes(_ZPHV2_MARKER)) {
+    const _ZV2_OLD = '"A Fiocruz/InfoDengue descontinuou a publica\\xE7\\xE3o de casos de Zika a partir de fevereiro/2024 (\\xFAltima semana publicada: SE 01/2024). N\\xE3o significa aus\\xEAncia de casos no munic\\xEDpio."';
+    const _ZV2_NEW = '/*zika-placeholder-v2*/"Verificado em InfoDengue e Mosqlimate (API sucessora oficial Fiocruz/PUC-Rio): a s\\xE9rie de Zika n\\xE3o \\xE9 publicada desde fevereiro/2024 (\\xFAltima semana: SE 02/2024). N\\xE3o significa aus\\xEAncia de casos no munic\\xEDpio. Quando a Fiocruz retomar, este card ser\\xE1 preenchido automaticamente."';
+    if (dashSrc.includes(_ZV2_OLD)) {
+      dashSrc = dashSrc.replace(_ZV2_OLD, _ZV2_NEW);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 zika-placeholder-v2 applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 zika-placeholder-v2 — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 zika-placeholder-v2 already applied');
   }
 
   // ── Sub-patch: placeholder de Zika quando InfoDengue não retorna dados (zika-placeholder-v1) ──

@@ -1137,7 +1137,7 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
               e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: t.baseCol, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", flex: 1 }, children: t.titulo }),
               e.jsx("span", { style: { fontSize: 10, fontWeight: 700, background: "#eeeeee", color: "#616161", border: "1px solid #bdbdbd", borderRadius: 20, padding: "2px 10px", whiteSpace: "nowrap" }, children: "sem dados" })
             ]}),
-            e.jsx("p", { style: { fontSize: 11, color: t.baseCol, margin: "0 0 4px", lineHeight: 1.4 }, children: (t.key === "zika") ? "A Fiocruz/InfoDengue descontinuou a publica\xE7\xE3o de casos de Zika a partir de fevereiro/2024 (\xFAltima semana publicada: SE 01/2024). N\xE3o significa aus\xEAncia de casos no munic\xEDpio." : "Sem dados publicados pela Fiocruz/InfoDengue para este munic\xEDpio na semana atual." }),
+            e.jsx("p", { style: { fontSize: 11, color: t.baseCol, margin: "0 0 4px", lineHeight: 1.4 }, children: (t.key === "zika") ? /*zika-placeholder-v2*/"Verificado em InfoDengue e Mosqlimate (API sucessora oficial Fiocruz/PUC-Rio): a s\xE9rie de Zika n\xE3o \xE9 publicada desde fevereiro/2024 (\xFAltima semana: SE 02/2024). N\xE3o significa aus\xEAncia de casos no munic\xEDpio. Quando a Fiocruz retomar, este card ser\xE1 preenchido automaticamente." : "Sem dados publicados pela Fiocruz/InfoDengue para este munic\xEDpio na semana atual." }),
             e.jsxs("p", { style: { fontSize: 10, color: t.baseCol, margin: "4px 0 0", opacity: 0.85 }, children: ["Consulte ", e.jsx("a", { href: "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sinannet/cnv/zikabr.def", target: "_blank", rel: "noopener noreferrer", style: { color: "#1565c0", fontWeight: 600 }, children: "SINAN \u2014 Casos de " + (t.key === "zika" ? "Zika" : "Chikungunya") + " (TabNet/MS)" }), " para casos notificados oficialmente."]})
           ]}, t.key);
           var _c2 = _NIVELC[_d.nivel] || _NIVELC[2];
@@ -1176,7 +1176,7 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
                 return e.jsxs("span", { style: { fontSize: 10, background: "rgba(255,255,255,0.7)", border: "1px solid "+t.baseBdr, borderRadius: 4, padding: "2px 7px", color: t.baseCol, fontWeight: 600, whiteSpace: "nowrap" }, children: [ico, "\xA0", s.se, ":\xA0", s.casos, " casos"] }, si);
               })
             ]}),
-            e.jsx("p", { style: { fontSize: 9, color: t.baseCol, margin: "4px 0 0", opacity: 0.75 }, children: "Fonte: InfoDengue / Fiocruz \u2022 "+_d.semana+(_d.versao_modelo ? " \u2022 atualizado em "+_d.versao_modelo : "") })
+            e.jsx("p", { style: { fontSize: 9, color: t.baseCol, margin: "4px 0 0", opacity: 0.75 }, children: /*arbo-fonte-din-v1*/"Fonte: "+(_d.fonte||"InfoDengue")+" / Fiocruz \u2022 "+_d.semana+(_d.versao_modelo ? " \u2022 atualizado em "+_d.versao_modelo : "") })
           ]}, t.key);
         }) });
       })(),
