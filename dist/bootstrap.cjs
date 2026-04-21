@@ -4517,9 +4517,10 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   const _PSE_MARKER_V3 = '/*pse-fe-v3*/';
   const _PSE_MARKER_V4 = '/*pse-fe-v4*/';
   const _PSE_MARKER_V5 = '/*pse-fe-v5*/';
+  const _PSE_MARKER_V6 = '/*pse-fe-v6*/';
   // Remove eventual bloco v1 já injetado (assets persistidos em disco)
   // v1 começa em /*pse-fe-v1*/ e termina logo antes do /*tria-fe-v1*/ (anchor)
-  if (dashSrc.includes(_PSE_MARKER_V1) && !dashSrc.includes(_PSE_MARKER_V5)) {
+  if (dashSrc.includes(_PSE_MARKER_V1) && !dashSrc.includes(_PSE_MARKER_V6)) {
     const _v1Start = dashSrc.indexOf(_PSE_MARKER_V1);
     const _v1End = dashSrc.indexOf('/*tria-fe-v1*/', _v1Start + _PSE_MARKER_V1.length);
     if (_v1Start >= 0 && _v1End > _v1Start) {
@@ -4532,7 +4533,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     }
   }
   // Remove v2 (sem empty state no ramo "não aderiu") para reinjetar versão atual
-  if (dashSrc.includes(_PSE_MARKER_V2) && !dashSrc.includes(_PSE_MARKER_V5)) {
+  if (dashSrc.includes(_PSE_MARKER_V2) && !dashSrc.includes(_PSE_MARKER_V6)) {
     const _v2Start = dashSrc.indexOf(_PSE_MARKER_V2);
     const _v2End = dashSrc.indexOf(_PSE_MARKER_V2, _v2Start + _PSE_MARKER_V2.length);
     if (_v2Start >= 0 && _v2End > _v2Start) {
@@ -4545,7 +4546,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     }
   }
   // Remove v3 (sem histórico de adesão por escola ciclo a ciclo) para reinjetar v4/v5
-  if (dashSrc.includes(_PSE_MARKER_V3) && !dashSrc.includes(_PSE_MARKER_V5)) {
+  if (dashSrc.includes(_PSE_MARKER_V3) && !dashSrc.includes(_PSE_MARKER_V6)) {
     const _v3Start = dashSrc.indexOf(_PSE_MARKER_V3);
     const _v3End = dashSrc.indexOf(_PSE_MARKER_V3, _v3Start + _PSE_MARKER_V3.length);
     if (_v3Start >= 0 && _v3End > _v3Start) {
@@ -4558,7 +4559,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     }
   }
   // Remove v4 (sem busca/ordenação na lista de escolas) para reinjetar v5
-  if (dashSrc.includes(_PSE_MARKER_V4) && !dashSrc.includes(_PSE_MARKER_V5)) {
+  if (dashSrc.includes(_PSE_MARKER_V4) && !dashSrc.includes(_PSE_MARKER_V6)) {
     const _v4Start = dashSrc.indexOf(_PSE_MARKER_V4);
     const _v4End = dashSrc.indexOf(_PSE_MARKER_V4, _v4Start + _PSE_MARKER_V4.length);
     if (_v4Start >= 0 && _v4End > _v4Start) {
@@ -4570,15 +4571,33 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
       console.warn('[bootstrap] Dashboard-v30 PSE v4 marker present but end marker not found');
     }
   }
-  if (!dashSrc.includes(_PSE_MARKER_V5)) {
+  // Remove v5 (componente _PseList recriado a cada render do bloco pai → state resetava)
+  // para reinjetar v6 com identidade de componente estável (cache em globalThis).
+  if (dashSrc.includes(_PSE_MARKER_V5) && !dashSrc.includes(_PSE_MARKER_V6)) {
+    const _v5Start = dashSrc.indexOf(_PSE_MARKER_V5);
+    const _v5End = dashSrc.indexOf(_PSE_MARKER_V5, _v5Start + _PSE_MARKER_V5.length);
+    if (_v5Start >= 0 && _v5End > _v5Start) {
+      const _removed = _v5End + _PSE_MARKER_V5.length - _v5Start;
+      dashSrc = dashSrc.slice(0, _v5Start) + dashSrc.slice(_v5End + _PSE_MARKER_V5.length);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 PSE v5 block removed (' + _removed + ' chars)');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 PSE v5 marker present but end marker not found');
+    }
+  }
+  if (!dashSrc.includes(_PSE_MARKER_V6)) {
     const _PSE_ANCHOR = '/*tria-fe-v1*/';
-    // v5 (task #26): adiciona busca por nome e ordenação (nome/adesão/esfera/educandos)
-    // na lista de escolas. Wrap em IIFE para definir _PseList (componente com useState).
-    // _PseList recebe `escolas` e um `theme` com cores; reutilizado pelos dois ramos
-    // (município aderiu / não aderiu) para evitar duplicação de markup.
-    const _PSE_INJECT = '/*pse-fe-v5*/ctxMunData.pse && (function(){' +
-      'var _norm = function(_x){ return String(_x || "").toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, ""); };' +
-      'var _renderItem = function(_es, _ei, _theme){' +
+    // v6 (task #29): preserva busca/ordenação ao re-renderizar o painel pai.
+    // Em v5, _PseList era recriado a cada render do bloco pai (definido dentro
+    // da IIFE), o que mudava a identidade do componente e fazia o React
+    // desmontar/remontar, perdendo o useState. Em v6 cacheamos a função do
+    // componente em globalThis.__pseV6.PseList, então a referência passada para
+    // e.jsx() é estável entre renders → o estado interno é preservado.
+    const _PSE_INJECT = '/*pse-fe-v6*/ctxMunData.pse && (function(){' +
+      'var _g = (typeof globalThis !== "undefined") ? globalThis : (typeof window !== "undefined" ? window : this);' +
+      'if (!_g.__pseV6) {' +
+        'var _norm = function(_x){ return String(_x || "").toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, ""); };' +
+        'var _renderItem = function(_es, _ei, _theme){' +
         'var _esf = String(_es.esfera || "").toLowerCase();' +
         'var _esfLabel = _esf ? (_esf.charAt(0).toUpperCase() + _esf.slice(1).toLowerCase()) : "";' +
         'return e.jsxs("li", { key: _es.id || _ei, style: { padding: "6px 10px", borderTop: _ei === 0 ? "none" : ("1px solid " + _theme.borderItem), fontSize: 12 }, children: [' +
@@ -4632,6 +4651,9 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
           '})' +
         '] });' +
       '};' +
+        '_g.__pseV6 = { PseList: _PseList };' +
+      '}' +
+      'var _PseList = _g.__pseV6.PseList;' +
       'var _themeGreen = { bordList: "#c8e6c9", headerColor: "#1b5e20", borderItem: "#e8f5e9", nameColor: "#1b5e20", esfLabelColor: "#558b2f", summaryColor: "#558b2f" };' +
       'var _themeGray = { bordList: "#e0e0e0", headerColor: "#616161", borderItem: "#f5f5f5", nameColor: "#424242", esfLabelColor: "#757575", summaryColor: "#757575" };' +
       'return e.jsxs("div", { style: { marginBottom: 14 }, children: [' +
@@ -4660,16 +4682,16 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
           '(Array.isArray(ctxMunData.pse.escolas) && ctxMunData.pse.escolas.length > 0) ? e.jsx(_PseList, { escolas: ctxMunData.pse.escolas, theme: _themeGray }) : e.jsx("p", { style: { marginTop: 10, fontSize: 11, color: "#9e9e9e", fontStyle: "italic" }, children: "Sem escolas registradas no PSE para este munic\\xEDpio." })' +
         '] })' +
       '] });' +
-    '})(),/*pse-fe-v5*/';
+    '})(),/*pse-fe-v6*/';
     if (dashSrc.includes(_PSE_ANCHOR)) {
       dashSrc = dashSrc.replace(_PSE_ANCHOR, _PSE_INJECT + _PSE_ANCHOR);
       changed = true;
-      console.log('[bootstrap] Dashboard-v30 PSE adesão block v4 injected (escolas list + histórico ciclo a ciclo)');
+      console.log('[bootstrap] Dashboard-v30 PSE block v6 injected (busca/ordenação com identidade de componente estável)');
     } else {
       console.warn('[bootstrap] Dashboard-v30 PSE injection — anchor not found (TRIA marker missing)');
     }
   } else {
-    console.log('[bootstrap] Dashboard-v30 PSE v4 block already present');
+    console.log('[bootstrap] Dashboard-v30 PSE v6 block already present');
   }
 
   // ── Sub-patch: hide BF/BPC duplicates from the Saúde block (bf-bpc-hide-saude-v1) ──
