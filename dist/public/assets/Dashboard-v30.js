@@ -1002,7 +1002,7 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
     e.jsx("div", { style: { width: 38, height: 38, borderRadius: 12, background: "#b3e5fc", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }, children: e.jsx(ko, { size: 18 }) }),
     e.jsxs("div", { style: { flex: 1 }, children: [
       e.jsx("p", { style: { fontWeight: 700, fontSize: "13px", color: "#01579b", margin: 0 }, children: "Contexto de Sa\xFAde do Munic\xEDpio" }),
-      e.jsx("p", { style: { fontSize: "11px", color: "#0277bd", margin: 0 }, children: "Regi\xE3o de sa\xFAde, aten\xE7\xE3o prim\xE1ria e perfil nutricional (SISVAN)" })
+      // ...subtítulo removido a pedido do usuário...
     ]}),
     e.jsx("span", { style: { fontSize: "16px", color: "#0277bd", transform: ctxMunOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }, children: "\u25BE" })
   ]}),
@@ -1073,6 +1073,7 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
             })})
           ]}, fidx);
         })
+        ,e.jsx("p", { style: { fontSize: 9, color: "#6a1b9a", margin: "8px 0 0", opacity: 0.8 }, children: "Fonte: SISVAN / Ministério da Saúde · Atualizado conforme competência mais recente dos registros." })
       ]}),
       ctxMunData.dengue && (function() {
         var _dng = ctxMunData.dengue;
