@@ -4819,6 +4819,27 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 ap-hide-v1 already applied');
   }
 
+  // ── Sub-patch: oculta o card "Atendimento na Atenção Primária" (esf-hide-v1) ──
+  // A pedido da diretora: o bloco com a distribuição eSF/eAP/eCR/eAPP e o
+  // rodapé "Atualizado em MM/AAAA · MS · SISAB/e-SUS APS" também sai do
+  // painel. Mesmo padrão do ap-hide-v1: trocamos o guard
+  // `ctxMunData.equipes_saude && ctxMunData.equipes_saude.length > 0 &&`
+  // por `false &&` para curto-circuitar a renderização.
+  const _ESF_HIDE_MARKER = '/*esf-hide-v1*/';
+  if (!dashSrc.includes(_ESF_HIDE_MARKER)) {
+    const _ESF_HIDE_OLD = 'ctxMunData.equipes_saude && ctxMunData.equipes_saude.length > 0 && e.jsxs("div", { style: { marginBottom: 14 }, children: [\n        e.jsx("p", { style: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#01579b", marginBottom: 8 }, children: "Atendimento na Aten\\xE7\\xE3o Prim';
+    const _ESF_HIDE_NEW = '/*esf-hide-v1*/false && e.jsxs("div", { style: { marginBottom: 14 }, children: [\n        e.jsx("p", { style: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#01579b", marginBottom: 8 }, children: "Atendimento na Aten\\xE7\\xE3o Prim';
+    if (dashSrc.includes(_ESF_HIDE_OLD)) {
+      dashSrc = dashSrc.replace(_ESF_HIDE_OLD, _ESF_HIDE_NEW);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 esf-hide-v1 applied (Atendimento na AP card hidden)');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 esf-hide-v1 — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 esf-hide-v1 already applied');
+  }
+
   // ── Sub-patch: rodapé arboviroses dinâmico mostrando fonte real (arbo-fonte-din-v1) ──
   // Antes: "Fonte: InfoDengue / Fiocruz" hardcoded. Agora: usa _d.fonte que o backend
   // popula com "InfoDengue" ou "Mosqlimate" (API sucessora oficial da Fiocruz/PUC-Rio,
