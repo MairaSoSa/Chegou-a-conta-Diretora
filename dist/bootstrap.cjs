@@ -4798,6 +4798,27 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 ap-fonte-2026-v1 already applied');
   }
 
+  // ── Sub-patch: oculta o card "Atenção Primária (e-SUS APS)" (ap-hide-v1) ──
+  // A pedido da diretora: o bloco "Atenção Primária — % cadastrados / pop"
+  // não deve mais aparecer no painel da escola (dado defasado e fora do
+  // escopo educacional principal). Substituímos `ctxMunData.cobertura_ap &&`
+  // por `false &&` para que o curto-circuito esconda o JSX em runtime, sem
+  // mexer na coleta do backend (o campo continua disponível na API).
+  const _AP_HIDE_MARKER = '/*ap-hide-v1*/';
+  if (!dashSrc.includes(_AP_HIDE_MARKER)) {
+    const _AP_HIDE_OLD = 'ctxMunData.cobertura_ap && e.jsxs("div", { children: [e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 8px", textTransform: "uppercase" }, children: ["Aten\\xE7\\xE3o Prim';
+    const _AP_HIDE_NEW = '/*ap-hide-v1*/false && e.jsxs("div", { children: [e.jsx("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 8px", textTransform: "uppercase" }, children: ["Aten\\xE7\\xE3o Prim';
+    if (dashSrc.includes(_AP_HIDE_OLD)) {
+      dashSrc = dashSrc.replace(_AP_HIDE_OLD, _AP_HIDE_NEW);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 ap-hide-v1 applied (Atenção Primária card hidden)');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 ap-hide-v1 — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 ap-hide-v1 already applied');
+  }
+
   // ── Sub-patch: rodapé arboviroses dinâmico mostrando fonte real (arbo-fonte-din-v1) ──
   // Antes: "Fonte: InfoDengue / Fiocruz" hardcoded. Agora: usa _d.fonte que o backend
   // popula com "InfoDengue" ou "Mosqlimate" (API sucessora oficial da Fiocruz/PUC-Rio,
