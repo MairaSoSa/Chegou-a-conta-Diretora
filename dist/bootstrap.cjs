@@ -4667,10 +4667,9 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
             '"Munic\\xEDpio aderiu ao ciclo " + ((ctxMunData.pse.meta && ctxMunData.pse.meta.ciclo) || "vigente")' +
           '] }),' +
           'e.jsxs("p", { style: { fontSize: 12, color: "#2e7d32", margin: "6px 0 0", lineHeight: 1.5 }, children: [' +
-            'e.jsx("strong", { children: (ctxMunData.pse.escolasPactuadas || 0).toLocaleString("pt-BR") }),' +
-            '" escolas pactuadas \\u2022 ",' +
-            'e.jsx("strong", { children: (ctxMunData.pse.educandosPactuados || 0).toLocaleString("pt-BR") }),' +
-            '" educandos pactuados"' +
+            'e.jsx("strong", { children: (ctxMunData.pse.aderiu ? "✓ aderiu" : "✕ não aderiu") }),' +
+            'e.jsx("span", { children: " • " + (ctxMunData.pse.escolasPrioritarias || 0).toLocaleString("pt-BR") + " prioritárias" }),' +
+            'e.jsx("span", { children: " • " + (ctxMunData.pse.escolasMaioriaPbf || 0).toLocaleString("pt-BR") + " c/ maioria PBF" })' +
           '] })' +
         '] }) : e.jsxs("div", { style: { background: "#fafafa", border: "1px dashed #bdbdbd", borderRadius: 10, padding: "10px 12px" }, children: [' +
           'e.jsxs("p", { style: { fontSize: 12, color: "#616161", margin: 0, lineHeight: 1.5 }, children: [' +
