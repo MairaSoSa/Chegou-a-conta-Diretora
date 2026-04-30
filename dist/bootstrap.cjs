@@ -3010,11 +3010,49 @@ e.get("/api/noticias-extras",async(A,g)=>{
 '        const _pFs=require("fs"),_pPath=require("path").resolve(process.cwd(),"pse-municipios.json");\n' +
 '        if(_pFs.existsSync(_pPath)){globalThis._pseMunicipios=JSON.parse(_pFs.readFileSync(_pPath,"utf8"));}\n' +
 '        else{globalThis._pseMunicipios={meta:{},municipios:{}};}\n' +
+'        // task #30: agrega adesão por esfera × UF (rede ESTADUAL/FEDERAL/PRIVADA)\n' +
+'        // se o JSON não trouxer (compatibilidade com syncs antigos).\n' +
+'        try{\n' +
+'          const _pdb=globalThis._pseMunicipios;\n' +
+'          if(_pdb&&_pdb.municipios&&!_pdb.redes){\n' +
+'            const _ESF=["ESTADUAL","FEDERAL","PRIVADA"];\n' +
+'            const _cnt={ESTADUAL:{},FEDERAL:{},PRIVADA:{}};\n' +
+'            const _edu={ESTADUAL:{},FEDERAL:{},PRIVADA:{}};\n' +
+'            const _fb={n:0,e:0,ufs:new Set()};\n' +
+'            for(const _co of Object.keys(_pdb.municipios)){\n' +
+'              const _m=_pdb.municipios[_co];\n' +
+'              if(!_m||!_m.uf||!Array.isArray(_m.escolas))continue;\n' +
+'              for(const _esc of _m.escolas){\n' +
+'                if(!_esc||!_esc.aderiu)continue;\n' +
+'                const _esf=String(_esc.esfera||"").toUpperCase();\n' +
+'                if(!_ESF.includes(_esf))continue;\n' +
+'                _cnt[_esf][_m.uf]=(_cnt[_esf][_m.uf]||0)+1;\n' +
+'                _edu[_esf][_m.uf]=(_edu[_esf][_m.uf]||0)+(Number(_esc.educandos)||0);\n' +
+'                if(_esf==="FEDERAL"){_fb.n+=1;_fb.e+=Number(_esc.educandos)||0;_fb.ufs.add(_m.uf);}\n' +
+'              }\n' +
+'            }\n' +
+'            const _ciclo=(_pdb.meta&&_pdb.meta.ciclo)||null;\n' +
+'            const _cod=(_pdb.meta&&_pdb.meta.coPseCiclo)||null;\n' +
+'            const _map={ESTADUAL:"estadual",FEDERAL:"federal",PRIVADA:"privada"};\n' +
+'            const _redes={estadual:{},federal:{},privada:{},federal_br:null};\n' +
+'            for(const _esf of _ESF){\n' +
+'              for(const _uf of Object.keys(_cnt[_esf])){\n' +
+'                _redes[_map[_esf]][_uf]={aderiu:_cnt[_esf][_uf]>0,escolasPactuadas:_cnt[_esf][_uf],educandosPactuados:_edu[_esf][_uf]||0,ciclo:_ciclo,codigo_ciclo:_cod};\n' +
+'              }\n' +
+'            }\n' +
+'            _redes.federal_br={aderiu:_fb.n>0,escolasPactuadas:_fb.n,educandosPactuados:_fb.e,ufsComAdesao:Array.from(_fb.ufs).sort(),ciclo:_ciclo,codigo_ciclo:_cod};\n' +
+'            _pdb.redes=_redes;\n' +
+'            console.log("[ctx-mun] pse redes computado em runtime: "+Object.keys(_redes.estadual).length+" UFs estaduais, "+Object.keys(_redes.federal).length+" UFs federais");\n' +
+'          }\n' +
+'        }catch(_aggErr){console.warn("[ctx-mun] pse redes agg erro:",String(_aggErr));}\n' +
 '      }\n' +
 '      const _pDb=globalThis._pseMunicipios;\n' +
 '      const _pRow=_pDb&&_pDb.municipios&&_pDb.municipios[co6];\n' +
-'      if(_pRow){pse={...({},_pRow),aderiu:(_pRow.escolasPactuadas||0)>0,escolas:Array.isArray(_pRow.escolas)?_pRow.escolas:[],meta:_pDb.meta||{}};}\n' +
-'      else if(_pDb&&_pDb.meta&&_pDb.meta.ciclo){pse={aderiu:false,escolasPactuadas:0,educandosPactuados:0,escolas:[],meta:_pDb.meta};}\n' +
+'      const _pRedes=(_pDb&&_pDb.redes)||null;\n' +
+'      const _pUf=(_pRow&&_pRow.uf)||uf||null;\n' +
+'      const _pRedesEsfera=_pRedes?{uf:_pUf,estadual:(_pUf&&_pRedes.estadual&&_pRedes.estadual[_pUf])||null,federal:(_pUf&&_pRedes.federal&&_pRedes.federal[_pUf])||null,privada:(_pUf&&_pRedes.privada&&_pRedes.privada[_pUf])||null,federal_br:_pRedes.federal_br||null}:null;\n' +
+'      if(_pRow){pse={...({},_pRow),aderiu:(_pRow.escolasPactuadas||0)>0,escolas:Array.isArray(_pRow.escolas)?_pRow.escolas:[],meta:_pDb.meta||{},redes:_pRedesEsfera};}\n' +
+'      else if(_pDb&&_pDb.meta&&_pDb.meta.ciclo){pse={aderiu:false,escolasPactuadas:0,educandosPactuados:0,escolas:[],meta:_pDb.meta,redes:_pRedesEsfera};}\n' +
 '    }catch(_pErr){console.warn("[ctx-mun] pse erro:",String(_pErr));}\n' +
 '    g.json({ok:true,municipio:munNome,uf:uf,regiao_pais:(macro&&macro.regiao_pais)||"",regiao_saude:(macro&&macro.regiao_saude)||"",macrorregiao_saude:(macro&&macro.macrorregiao_saude)||"",populacao:populacao,cadastros_atencao_primaria:cadastrosTotal,cobertura_ap:coberturaAP,cobertura_competencia:coberturaCompetencia,equipes_saude:equipes,indicadores_previne:indicadores,hospitais:hospitais,sisvan:sisvan,bf:bf,bpc:bpc,censo2022:censo2022,dengue:dengue,arboviroses:arboviroses,saude_db:saude_db,tria:tria,pse:pse});\n' +
 '  }catch(err){console.error("[ctx-mun] erro:",String(err));g.json({ok:false,erro:String(err)});}\n' +
@@ -4522,9 +4560,10 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   const _PSE_MARKER_V8 = '/*pse-fe-v8*/';
   const _PSE_MARKER_V9 = '/*pse-fe-v9*/';
   const _PSE_MARKER_V10 = '/*pse-fe-v10*/';
+  const _PSE_MARKER_V11 = '/*pse-fe-v11*/';
   // Remove eventual bloco v1 já injetado (assets persistidos em disco)
   // v1 começa em /*pse-fe-v1*/ e termina logo antes do /*tria-fe-v1*/ (anchor)
-  if (dashSrc.includes(_PSE_MARKER_V1) && !dashSrc.includes(_PSE_MARKER_V10)) {
+  if (dashSrc.includes(_PSE_MARKER_V1) && !dashSrc.includes(_PSE_MARKER_V11)) {
     const _v1Start = dashSrc.indexOf(_PSE_MARKER_V1);
     const _v1End = dashSrc.indexOf('/*tria-fe-v1*/', _v1Start + _PSE_MARKER_V1.length);
     if (_v1Start >= 0 && _v1End > _v1Start) {
@@ -4537,7 +4576,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     }
   }
   // Remove v2 (sem empty state no ramo "não aderiu") para reinjetar versão atual
-  if (dashSrc.includes(_PSE_MARKER_V2) && !dashSrc.includes(_PSE_MARKER_V10)) {
+  if (dashSrc.includes(_PSE_MARKER_V2) && !dashSrc.includes(_PSE_MARKER_V11)) {
     const _v2Start = dashSrc.indexOf(_PSE_MARKER_V2);
     const _v2End = dashSrc.indexOf(_PSE_MARKER_V2, _v2Start + _PSE_MARKER_V2.length);
     if (_v2Start >= 0 && _v2End > _v2Start) {
@@ -4550,7 +4589,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     }
   }
   // Remove v3 (sem histórico de adesão por escola ciclo a ciclo) para reinjetar v4/v5
-  if (dashSrc.includes(_PSE_MARKER_V3) && !dashSrc.includes(_PSE_MARKER_V10)) {
+  if (dashSrc.includes(_PSE_MARKER_V3) && !dashSrc.includes(_PSE_MARKER_V11)) {
     const _v3Start = dashSrc.indexOf(_PSE_MARKER_V3);
     const _v3End = dashSrc.indexOf(_PSE_MARKER_V3, _v3Start + _PSE_MARKER_V3.length);
     if (_v3Start >= 0 && _v3End > _v3Start) {
@@ -4563,7 +4602,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     }
   }
   // Remove v4 (sem busca/ordenação na lista de escolas) para reinjetar v5
-  if (dashSrc.includes(_PSE_MARKER_V4) && !dashSrc.includes(_PSE_MARKER_V10)) {
+  if (dashSrc.includes(_PSE_MARKER_V4) && !dashSrc.includes(_PSE_MARKER_V11)) {
     const _v4Start = dashSrc.indexOf(_PSE_MARKER_V4);
     const _v4End = dashSrc.indexOf(_PSE_MARKER_V4, _v4Start + _PSE_MARKER_V4.length);
     if (_v4Start >= 0 && _v4End > _v4Start) {
@@ -4577,7 +4616,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   }
   // Remove v5 (componente _PseList recriado a cada render do bloco pai → state resetava)
   // para reinjetar v6 com identidade de componente estável (cache em globalThis).
-  if (dashSrc.includes(_PSE_MARKER_V5) && !dashSrc.includes(_PSE_MARKER_V10)) {
+  if (dashSrc.includes(_PSE_MARKER_V5) && !dashSrc.includes(_PSE_MARKER_V11)) {
     const _v5Start = dashSrc.indexOf(_PSE_MARKER_V5);
     const _v5End = dashSrc.indexOf(_PSE_MARKER_V5, _v5Start + _PSE_MARKER_V5.length);
     if (_v5Start >= 0 && _v5End > _v5Start) {
@@ -4591,7 +4630,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   }
   // Remove v6 (mostrava lista de escolas e totais municipais) para reinjetar
   // v7 — versão simplificada, somente status agregado sem lista nem contadores extras.
-  if (dashSrc.includes(_PSE_MARKER_V6) && !dashSrc.includes(_PSE_MARKER_V10)) {
+  if (dashSrc.includes(_PSE_MARKER_V6) && !dashSrc.includes(_PSE_MARKER_V11)) {
     const _v6Start = dashSrc.indexOf(_PSE_MARKER_V6);
     const _v6End = dashSrc.indexOf(_PSE_MARKER_V6, _v6Start + _PSE_MARKER_V6.length);
     if (_v6Start >= 0 && _v6End > _v6Start) {
@@ -4605,7 +4644,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   }
   // Remove v7 (mostrava só os totais municipais) para reinjetar v8 — versão
   // por escola: município + status da escola atual (aderiu, prioritária, PBF).
-  if (dashSrc.includes(_PSE_MARKER_V7) && !dashSrc.includes(_PSE_MARKER_V10)) {
+  if (dashSrc.includes(_PSE_MARKER_V7) && !dashSrc.includes(_PSE_MARKER_V11)) {
     const _v7Start = dashSrc.indexOf(_PSE_MARKER_V7);
     const _v7End = dashSrc.indexOf(_PSE_MARKER_V7, _v7Start + _PSE_MARKER_V7.length);
     if (_v7Start >= 0 && _v7End > _v7Start) {
@@ -4619,7 +4658,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   }
   // Remove v8 (rotulava sempre como "Município aderiu") para reinjetar v9 —
   // que troca o rótulo conforme a esfera da escola (estadual/federal/privada).
-  if (dashSrc.includes(_PSE_MARKER_V8) && !dashSrc.includes(_PSE_MARKER_V10)) {
+  if (dashSrc.includes(_PSE_MARKER_V8) && !dashSrc.includes(_PSE_MARKER_V11)) {
     const _v8Start = dashSrc.indexOf(_PSE_MARKER_V8);
     const _v8End = dashSrc.indexOf(_PSE_MARKER_V8, _v8Start + _PSE_MARKER_V8.length);
     if (_v8Start >= 0 && _v8End > _v8Start) {
@@ -4631,10 +4670,9 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
       console.warn('[bootstrap] Dashboard-v30 PSE v8 marker present but end marker not found');
     }
   }
-  // Remove v9 (rotulava esfera-a-esfera com nota italicizada) para reinjetar v10 —
-  // volta para "Município aderiu" sempre, com pequena legenda explicativa para
-  // escolas não-municipais, e casa a escola atual por INEP em vez de nome.
-  if (dashSrc.includes(_PSE_MARKER_V9) && !dashSrc.includes(_PSE_MARKER_V10)) {
+  // v10/v11 — que mostra selo verde/vermelho de adesão por rede (estado/federal),
+  // mantendo o casamento da escola atual por INEP (com fallback por nome).
+  if (dashSrc.includes(_PSE_MARKER_V9) && !dashSrc.includes(_PSE_MARKER_V11)) {
     const _v9Start = dashSrc.indexOf(_PSE_MARKER_V9);
     const _v9End = dashSrc.indexOf(_PSE_MARKER_V9, _v9Start + _PSE_MARKER_V9.length);
     if (_v9Start >= 0 && _v9End > _v9Start) {
@@ -4646,7 +4684,19 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
       console.warn('[bootstrap] Dashboard-v30 PSE v9 marker present but end marker not found');
     }
   }
-  if (!dashSrc.includes(_PSE_MARKER_V10)) {
+  if (dashSrc.includes(_PSE_MARKER_V10) && !dashSrc.includes(_PSE_MARKER_V11)) {
+    const _v10Start = dashSrc.indexOf(_PSE_MARKER_V10);
+    const _v10End = dashSrc.indexOf(_PSE_MARKER_V10, _v10Start + _PSE_MARKER_V10.length);
+    if (_v10Start >= 0 && _v10End > _v10Start) {
+      const _removed = _v10End + _PSE_MARKER_V10.length - _v10Start;
+      dashSrc = dashSrc.slice(0, _v10Start) + dashSrc.slice(_v10End + _PSE_MARKER_V10.length);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 PSE v10 block removed (' + _removed + ' chars)');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 PSE v10 marker present but end marker not found');
+    }
+  }
+  if (!dashSrc.includes(_PSE_MARKER_V11)) {
     const _PSE_ANCHOR = '/*tria-fe-v1*/';
     // v6 (task #29): preserva busca/ordenação ao re-renderizar o painel pai.
     // Em v5, _PseList era recriado a cada render do bloco pai (definido dentro
@@ -4669,17 +4719,17 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     // responsabilidade do município — então em vez de "Município aderiu"
     // exibimos uma nota explicativa identificando a entidade responsável,
     // já que os dados do PSE neste painel são por município.
-    // v10: revisão da v9 — o PSE é estruturalmente municipal (Decreto 6.286/2007
-    // institui o PSE no âmbito da gestão municipal da AP, e a adesão é
-    // formalizada via termo do município). Por isso voltamos a exibir SEMPRE
-    // "Município aderiu" como rótulo principal — esse é o fato sobre o município.
-    // Para escolas não-municipais (ESTADUAL/FEDERAL/PRIVADA) acrescentamos uma
-    // pequena legenda esclarecendo que essas escolas só entram quando a rede
-    // delas autoriza (já refletido no campo "Escola aderiu" abaixo).
-    // Além disso, o casamento da escola atual passa a ser por INEP
-    // (escola.inep adicionado pelo enrich-pse-with-inep.mjs), com fallback por
-    // nome normalizado quando o INEP não estiver disponível.
-    const _PSE_INJECT = '/*pse-fe-v10*/ctxMunData.pse && (function(){' +
+    // v10 (task #30): para escolas ESTADUAIS e FEDERAIS troca a nota italiana
+    // por um SELO verde/vermelho de adesão da rede correspondente, agregado
+    // por esfera × UF a partir das próprias escolas pactuadas (campo
+    // `ctxMunData.pse.redes` injetado pelo backend). MUNICIPAL mantém o selo
+    // "Município aderiu". PRIVADA e quando faltar agregado mantêm a nota
+    // italiana explicativa. O casamento da escola atual continua por INEP
+    // (escola.inep adicionado pelo enrich-pse-with-inep.mjs) com fallback
+    // por nome normalizado quando o INEP não estiver disponível.
+    // v11: tornar a renderização ESTADUAL/FEDERAL robusta — sem _redeEst/_redeFedBr
+    // a UI ainda mostra o selo vermelho "não aderiu" (não cai no italic fallback).
+    const _PSE_INJECT = '/*pse-fe-v11*/ctxMunData.pse && (function(){' +
       'var _ciclo = (ctxMunData.pse.meta && ctxMunData.pse.meta.ciclo) || "vigente";' +
       'var _dataApi = (ctxMunData.pse.meta && ctxMunData.pse.meta.dataApi) || "";' +
       'var _norm = function(_x){ return String(_x || "").toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").replace(/\\s+/g, " ").trim(); };' +
@@ -4707,6 +4757,13 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
       'var _esferaRaw = (_escAtual && _escAtual.esfera) ? String(_escAtual.esfera) :' +
         '((typeof N !== "undefined" && N && N.escola && N.escola.ds_dependencia) ? String(N.escola.ds_dependencia) : "");' +
       'var _esfera = _esferaRaw.toUpperCase();' +
+      'var _esfMap = { "MUNICIPAL": "Munic\\xEDpio", "ESTADUAL": "Estado", "FEDERAL": "Governo Federal", "PRIVADA": "Rede privada" };' +
+      'var _esfLabel = _esfMap[_esfera] || "Munic\\xEDpio";' +
+      'var _redes = (ctxMunData.pse && ctxMunData.pse.redes) || null;' +
+      'var _ufRedes = (_redes && _redes.uf) || (typeof N !== "undefined" && N && N.escola && N.escola.sg_uf) || "";' +
+      'var _redeEst = _redes && _redes.estadual;' +
+      'var _redeFed = _redes && _redes.federal;' +
+      'var _redeFedBr = _redes && _redes.federal_br;' +
       'var _badge = function(_label, _ok, _colorOk, _colorNo){' +
         'return e.jsxs("span", { style: { display: "inline-flex", alignItems: "center", gap: 4, background: _ok ? _colorOk.bg : _colorNo.bg, color: _ok ? _colorOk.fg : _colorNo.fg, borderRadius: 999, padding: "3px 9px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }, children: [' +
           'e.jsx("span", { children: _ok ? "\\u2713" : "\\u2715" }), _label' +
@@ -4716,15 +4773,46 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
       'var _red = { bg: "#ffebee", fg: "#b71c1c" };' +
       'var _amber = { bg: "#fff3e0", fg: "#bf360c" };' +
       'var _gray = { bg: "#eeeeee", fg: "#616161" };' +
-      // Sempre exibe "Município aderiu" — fato puramente municipal por desenho do PSE.
-      'var _entidadeAdNode = _badge("Munic\\xEDpio aderiu", _munAd, _green, _red);' +
-      // Para escolas não-municipais, gera legenda explicando o modelo de adesão.
-      // Mapa explícito de gênero/plural — evita pluralização ingênua "estaduals" / "federals".
-      'var _legendaEsfera = null;' +
-      'var _esfPlural = { "ESTADUAL": "estaduais", "FEDERAL": "federais", "PRIVADA": "privadas" };' +
-      'var _esfRedeSing = { "ESTADUAL": "estadual", "FEDERAL": "federal", "PRIVADA": "privada" };' +
-      'if (_esfPlural[_esfera]) {' +
-        '_legendaEsfera = e.jsx("p", { style: { margin: "6px 0 0", fontSize: 10, color: "#757575", fontStyle: "italic", lineHeight: 1.45 }, children: "Em escolas " + _esfPlural[_esfera] + ", a entrada no PSE depende de a rede " + _esfRedeSing[_esfera] + " autorizar a escola \\u2014 veja \\u201CEscola aderiu\\u201D abaixo." });' +
+      // Etiqueta de adesão da entidade pactuante por esfera.
+      // - MUNICIPAL/desconhecida: usa o status do município (compat com v9).
+      // - ESTADUAL: selo da rede estadual da UF (agregado de pse-municipios.json).
+      // - FEDERAL: selo da rede federal Brasil-wide.
+      // - PRIVADA ou se faltar agregado: italic note explicativa.
+      'var _entidadeAdNode;' +
+      'var _redeNote = null;' +
+      'if (_esfera === "MUNICIPAL" || _esfera === "") {' +
+        '_entidadeAdNode = _badge(_esfLabel + " aderiu", _munAd, _green, _red);' +
+      '} else if (_esfera === "ESTADUAL") {' +
+        // Para esfera ESTADUAL sempre mostramos o selo verde/vermelho, mesmo
+        // se o agregado por UF não trouxer registro (treat null como aderiu=false).
+        'var _estLabel = _ufRedes ? ("Rede estadual de " + _ufRedes) : "Rede estadual";' +
+        'var _estAd = !!(_redeEst && _redeEst.aderiu);' +
+        'var _estCount = (_redeEst && _redeEst.escolasPactuadas) || 0;' +
+        '_entidadeAdNode = _badge(_estLabel + (_estAd ? " aderiu" : " n\\xE3o aderiu"), _estAd, _green, _red);' +
+        'if (_estAd) {' +
+          '_redeNote = e.jsxs("p", { style: { margin: "6px 0 0", fontSize: 10, color: "#558b2f", lineHeight: 1.4 }, children: [' +
+            '"" + _estCount + " escola" + ((_estCount === 1) ? "" : "s") + " estadua" + ((_estCount === 1) ? "l" : "is") + " pactuada" + ((_estCount === 1) ? "" : "s") + " no ciclo (agregado a partir das escolas)."' +
+          '] });' +
+        '} else {' +
+          '_redeNote = e.jsx("p", { style: { margin: "6px 0 0", fontSize: 10, color: "#9e9e9e", fontStyle: "italic", lineHeight: 1.4 }, children: "Nenhuma escola estadual pactuada nesta UF no ciclo vigente." });' +
+        '}' +
+      '} else if (_esfera === "FEDERAL") {' +
+        // Idem para FEDERAL: trata ausência do agregado Brasil como não aderiu.
+        'var _fedAd = !!(_redeFedBr && _redeFedBr.aderiu);' +
+        'var _fedBrCount = (_redeFedBr && _redeFedBr.escolasPactuadas) || 0;' +
+        '_entidadeAdNode = _badge("Rede federal " + (_fedAd ? "aderiu" : "n\\xE3o aderiu"), _fedAd, _green, _red);' +
+        'if (_fedAd) {' +
+          'var _fedUf = (_redeFed && _redeFed.escolasPactuadas) || 0;' +
+          '_redeNote = e.jsxs("p", { style: { margin: "6px 0 0", fontSize: 10, color: "#558b2f", lineHeight: 1.4 }, children: [' +
+            '"" + _fedBrCount + " escolas federais pactuadas no Brasil" + (_ufRedes ? (" \\xB7 " + _fedUf + " no estado " + _ufRedes) : "") + " (agregado a partir das escolas)."' +
+          '] });' +
+        '} else {' +
+          '_redeNote = e.jsx("p", { style: { margin: "6px 0 0", fontSize: 10, color: "#9e9e9e", fontStyle: "italic", lineHeight: 1.4 }, children: "Nenhuma escola federal pactuada no ciclo vigente." });' +
+        '}' +
+      '} else {' +
+        '_entidadeAdNode = e.jsxs("p", { style: { margin: 0, fontSize: 11, color: "#616161", fontStyle: "italic", lineHeight: 1.4 }, children: [' +
+          '"Ades\\xE3o ao PSE: ", e.jsx("strong", { style: { fontStyle: "normal", color: "#424242" }, children: _esfLabel }), " (n\\xE3o pactuada pelo munic\\xEDpio para esta rede)"' +
+        '] });' +
       '}' +
       'var _escolaBadges = null;' +
       'if (_escAtual) {' +
@@ -4734,8 +4822,11 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
           '_badge("Maioria PBF", !!_escAtual.maioriaPbf, _amber, _gray)' +
         '] });' +
       '}' +
-      // Fundo verde só se houver alguma "boa" indicação.
-      'var _hasAd = _munAd || (_escAtual && _escAtual.aderiu);' +
+      // Fundo verde se houver QUALQUER indicação positiva (município, escola
+      // ou rede da esfera aderiu).
+      'var _hasAd = _munAd || (_escAtual && _escAtual.aderiu) ||' +
+        '(_esfera === "ESTADUAL" && _redeEst && _redeEst.aderiu) ||' +
+        '(_esfera === "FEDERAL" && _redeFedBr && _redeFedBr.aderiu);' +
       'return e.jsxs("div", { style: { marginBottom: 14 }, children: [' +
         'e.jsxs("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 8px", textTransform: "uppercase" }, children: [' +
           '"PSE \\u2014 Programa Sa\\xFAde na Escola",' +
@@ -4743,20 +4834,20 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
         '] }),' +
         'e.jsxs("div", { style: { background: _hasAd ? "#e8f5e9" : "#fafafa", border: _hasAd ? "1px solid #81c784" : "1px dashed #bdbdbd", borderRadius: 10, padding: "10px 12px" }, children: [' +
           'e.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }, children: _entidadeAdNode }),' +
-          '_legendaEsfera,' +
+          '_redeNote,' +
           '_escolaBadges ? e.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }, children: _escolaBadges }) : (_nomeEscAtual ? e.jsx("p", { style: { margin: "8px 0 0", fontSize: 11, color: "#9e9e9e", fontStyle: "italic" }, children: "Escola n\\xE3o consta na lista do PSE deste munic\\xEDpio." }) : null)' +
         '] })' +
       '] });' +
-    '})(),/*pse-fe-v10*/';
+    '})(),/*pse-fe-v11*/';
     if (dashSrc.includes(_PSE_ANCHOR)) {
       dashSrc = dashSrc.replace(_PSE_ANCHOR, _PSE_INJECT + _PSE_ANCHOR);
       changed = true;
-      console.log('[bootstrap] Dashboard-v30 PSE block v10 injected (badge sempre "Município aderiu" + legenda por esfera + matching por INEP)');
+      console.log('[bootstrap] Dashboard-v30 PSE block v11 injected (selo verde/vermelho por rede estadual/federal + matching por INEP, null-safe)');
     } else {
       console.warn('[bootstrap] Dashboard-v30 PSE injection — anchor not found (TRIA marker missing)');
     }
   } else {
-    console.log('[bootstrap] Dashboard-v30 PSE v10 block already present');
+    console.log('[bootstrap] Dashboard-v30 PSE v11 block already present');
   }
 
   // ── Sub-patch: hide BF/BPC duplicates from the Saúde block (bf-bpc-hide-saude-v1) ──

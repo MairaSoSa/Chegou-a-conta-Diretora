@@ -238,6 +238,56 @@ function emptyMunicipio(nome, uf) {
     municipios[co] = m;
   }
 
+  // ── Agregação por ESFERA × UF (task #30) ────────────────────────────────────
+  // Para responder "o estado/governo federal aderiu ao PSE para essa escola?"
+  // sem precisar de uma fonte distinta, agregamos as escolas pactuadas no ciclo
+  // vigente por esfera (ESTADUAL/FEDERAL/PRIVADA) e por UF a partir dos próprios
+  // dados do PSE — aderência da rede = ao menos uma escola pactuada na UF/ciclo.
+  // Também produzimos um total Brasil-wide para a rede federal (decisão é única
+  // para a esfera). Mantém os dados municipais inalterados.
+  const ESFERAS_RED = ["ESTADUAL", "FEDERAL", "PRIVADA"];
+  const redes = { estadual: {}, federal: {}, privada: {}, federal_br: null };
+  const _redesCount = { ESTADUAL: {}, FEDERAL: {}, PRIVADA: {} };
+  const _redesEducandos = { ESTADUAL: {}, FEDERAL: {}, PRIVADA: {} };
+  let _federalBr = { escolasPactuadas: 0, educandosPactuados: 0, ufs: new Set() };
+  for (const m of acc.values()) {
+    if (!m.uf) continue;
+    for (const esc of m.escolas) {
+      if (!esc.aderiu) continue;
+      const esf = String(esc.esfera || "").toUpperCase();
+      if (!ESFERAS_RED.includes(esf)) continue;
+      const ufKey = m.uf;
+      _redesCount[esf][ufKey] = (_redesCount[esf][ufKey] || 0) + 1;
+      _redesEducandos[esf][ufKey] = (_redesEducandos[esf][ufKey] || 0) + (Number(esc.educandos) || 0);
+      if (esf === "FEDERAL") {
+        _federalBr.escolasPactuadas += 1;
+        _federalBr.educandosPactuados += Number(esc.educandos) || 0;
+        _federalBr.ufs.add(ufKey);
+      }
+    }
+  }
+  const _esfKeyMap = { ESTADUAL: "estadual", FEDERAL: "federal", PRIVADA: "privada" };
+  for (const esf of ESFERAS_RED) {
+    const dest = redes[_esfKeyMap[esf]];
+    for (const [uf, n] of Object.entries(_redesCount[esf])) {
+      dest[uf] = {
+        aderiu: n > 0,
+        escolasPactuadas: n,
+        educandosPactuados: _redesEducandos[esf][uf] || 0,
+        ciclo: cicloVigente.nuCiclo,
+        codigo_ciclo: cicloVigente.coPseCiclo,
+      };
+    }
+  }
+  redes.federal_br = {
+    aderiu: _federalBr.escolasPactuadas > 0,
+    escolasPactuadas: _federalBr.escolasPactuadas,
+    educandosPactuados: _federalBr.educandosPactuados,
+    ufsComAdesao: Array.from(_federalBr.ufs).sort(),
+    ciclo: cicloVigente.nuCiclo,
+    codigo_ciclo: cicloVigente.coPseCiclo,
+  };
+
   const out = {
     meta: {
       fonte: "Relatórios APS / Ministério da Saúde — adesão ao PSE",
@@ -263,6 +313,7 @@ function emptyMunicipio(nome, uf) {
       },
     },
     municipios,
+    redes,
   };
 
   writeFileSync(OUTPUT_FILE, JSON.stringify(out));
@@ -273,6 +324,11 @@ function emptyMunicipio(nome, uf) {
     `  ciclo vigente ${cicloVigente.nuCiclo} — ${muniComAdesao} municípios com adesão, ${totalEscolas} escolas, ${totalEducandos} educandos`,
   );
   console.log(`  ciclos coletados: ${ciclosUsados.length} (linhas processadas: ${totalRows})`);
+  const _ufsEst = Object.keys(redes.estadual).length;
+  const _ufsFed = Object.keys(redes.federal).length;
+  console.log(
+    `  redes: estadual em ${_ufsEst} UFs, federal em ${_ufsFed} UFs (${redes.federal_br.escolasPactuadas} escolas federais BR)`,
+  );
 
   // Enriquecimento INEP: adiciona escola.inep (= co_entidade do Censo) a cada
   // escola pactuada via casamento (município + nome normalizado + esfera) na
