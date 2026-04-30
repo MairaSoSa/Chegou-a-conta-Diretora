@@ -4818,6 +4818,64 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 sisvan-hide-v1 already applied');
   }
 
+  // ── Sub-patch: remove a seção "Imunizações (PNI)" do bloco "Indicadores SUS — Histórico Consolidado" (pni-hide-v1) ──
+  // O ETL backend (dist/saude-etl/sources/pni.py) e a tabela continuam armazenando dados PNI;
+  // só a UI deixa de exibir o card, porque os códigos crus (ex.: "Cobertura 080") sem rótulo
+  // legível são pouco úteis. Removemos a entrada PNI de _FONTES (o que já basta — o filtro
+  // _sections = _FONTES.filter(...) deixa de incluir PNI) e fazemos a limpeza de referências
+  // mortas: entrada de _LABELS, ramo if (PNI) do _display, ramo else if (PNI) do _label e
+  // ajuste do texto de fontes no rodapé.
+  // Idempotência: o marcador `/*pni-hide-v1*/` é injetado como COMENTÁRIO JS na posição
+  // onde a entrada PNI ficava no array _FONTES (não-renderizado, fora do conteúdo visível ao
+  // usuário). Para evitar aplicação parcial mascarando bugs, fazemos pré-checagem: TODOS os
+  // 5 anchors precisam estar presentes antes de aplicar qualquer substituição.
+  const _PNI_HIDE_MARKER = '/*pni-hide-v1*/';
+  if (!dashSrc.includes(_PNI_HIDE_MARKER)) {
+    var _pniReplaces = [
+      // 1) remove a entrada PNI do array _FONTES e injeta o marcador como comentário JS no lugar
+      [
+        '          { key: "PNI", label: "Imunizações (PNI)", icon: "\\u{1F489}", bg: "#fff3e0", border: "#ffcc80", color: "#e65100" },\n',
+        '          ' + _PNI_HIDE_MARKER + '\n'
+      ],
+      // 2) remove pni_cobertura_vacinal de _LABELS (e a vírgula da linha anterior, já que PNI era a última entrada)
+      [
+        '          sim_obitos_covid: "Óbitos por COVID-19",\n          pni_cobertura_vacinal: "Cobertura vacinal"\n',
+        '          sim_obitos_covid: "Óbitos por COVID-19"\n'
+      ],
+      // 3) remove o ramo if (f.key === "PNI") { _display = ... } da seleção de _display
+      [
+        '              if (f.key === "PNI") {\n                _display = _items.slice().sort(function(a, b){ return (b.valor||0) - (a.valor||0); }).slice(0, 6);\n              } else if (f.key === "SINAN") {',
+        '              if (f.key === "SINAN") {'
+      ],
+      // 4) remove o ramo else if (f.key === "PNI" && it.recorte) { _label = "Cobertura " + it.recorte; }
+      [
+        '                    } else if (f.key === "PNI" && it.recorte) {\n                      _label = "Cobertura " + it.recorte;\n                    }\n',
+        '                    }\n'
+      ],
+      // 5) ajusta o texto de fontes no rodapé (remove "PNI, ") — sem marcador embutido (não-visível)
+      [
+        'Fontes: DATASUS (SINASC, SIM, PNI, SINAN via pysus) + DEMAS API pública (SISAGUA). Valores mais recentes disponíveis por indicador.',
+        'Fontes: DATASUS (SINASC, SIM, SINAN via pysus) + DEMAS API pública (SISAGUA). Valores mais recentes disponíveis por indicador.'
+      ],
+    ];
+    // Pré-checagem: só aplica se TODOS os anchors estiverem presentes
+    var _pniMissing = [];
+    for (var _pj = 0; _pj < _pniReplaces.length; _pj++) {
+      if (!dashSrc.includes(_pniReplaces[_pj][0])) _pniMissing.push(_pj + 1);
+    }
+    if (_pniMissing.length === 0) {
+      for (var _pi = 0; _pi < _pniReplaces.length; _pi++) {
+        dashSrc = dashSrc.replace(_pniReplaces[_pi][0], _pniReplaces[_pi][1]);
+      }
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 pni-hide-v1 applied (' + _pniReplaces.length + '/' + _pniReplaces.length + ' patches)');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 pni-hide-v1 SKIPPED — anchors faltando: ' + _pniMissing.join(','));
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 pni-hide-v1 already applied');
+  }
+
   // ── Sub-patch: enriquece cards de hospitais com email, Maps, CNES, turno, data e nota de leitos (hosp-enrich-v1) ──
   // A API oficial /assistencia-a-saude/hospitais-e-leitos do MS está retornando
   // 404/500. Aqui adicionamos os campos extras já disponíveis em /cnes/estabelecimentos
