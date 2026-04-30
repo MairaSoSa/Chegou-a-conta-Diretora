@@ -4783,6 +4783,41 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 BF/BPC hide patch already applied');
   }
 
+  // ── Sub-patch: oculta os cards "Indicadores Previne Brasil" e "Estado Nutricional — SISVAN" do painel ──
+  // A pedido do usuário, as duas seções devem deixar de aparecer no painel da
+  // escola. Mesmo padrão do bf-bpc-hide-saude-v1: prefixamos `false &&` no
+  // guard condicional para curto-circuitar o JSX sem mexer na estrutura.
+  // Cada bloco tem seu próprio marker para evitar que a falha de um anchor
+  // bloqueie o retry do outro em runs futuros.
+  const _IP_HIDE_MARKER = '/*ind-previne-hide-v1*/';
+  if (!dashSrc.includes(_IP_HIDE_MARKER)) {
+    const _IP_OLD = 'ctxMunData.indicadores_previne && ctxMunData.indicadores_previne.length > 0 && e.jsxs("div", { style: { marginBottom: 14 }, children: [';
+    const _IP_NEW = _IP_HIDE_MARKER + 'false && ctxMunData.indicadores_previne && ctxMunData.indicadores_previne.length > 0 && e.jsxs("div", { style: { marginBottom: 14 }, children: [';
+    if (dashSrc.includes(_IP_OLD)) {
+      dashSrc = dashSrc.replace(_IP_OLD, _IP_NEW);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 ind-previne-hide-v1 applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 ind-previne-hide-v1 — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 ind-previne-hide-v1 already applied');
+  }
+  const _SV_HIDE_MARKER = '/*sisvan-hide-v1*/';
+  if (!dashSrc.includes(_SV_HIDE_MARKER)) {
+    const _SV_OLD2 = 'ctxMunData.sisvan && ctxMunData.sisvan.length > 0 && e.jsxs("div", { style: { background: "#f3e5f5", border: "1px solid #ce93d8", borderRadius: 10, padding: "10px 12px"';
+    const _SV_NEW2 = _SV_HIDE_MARKER + 'false && ctxMunData.sisvan && ctxMunData.sisvan.length > 0 && e.jsxs("div", { style: { background: "#f3e5f5", border: "1px solid #ce93d8", borderRadius: 10, padding: "10px 12px"';
+    if (dashSrc.includes(_SV_OLD2)) {
+      dashSrc = dashSrc.replace(_SV_OLD2, _SV_NEW2);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 sisvan-hide-v1 applied');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 sisvan-hide-v1 — anchor not found');
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 sisvan-hide-v1 already applied');
+  }
+
   // ── Sub-patch: enriquece cards de hospitais com email, Maps, CNES, turno, data e nota de leitos (hosp-enrich-v1) ──
   // A API oficial /assistencia-a-saude/hospitais-e-leitos do MS está retornando
   // 404/500. Aqui adicionamos os campos extras já disponíveis em /cnes/estabelecimentos
