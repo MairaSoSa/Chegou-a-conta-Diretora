@@ -4671,9 +4671,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
             '" escolas pactuadas \\u2022 ",' +
             'e.jsx("strong", { children: (ctxMunData.pse.educandosPactuados || 0).toLocaleString("pt-BR") }),' +
             '" educandos pactuados"' +
-          '] }),' +
-          'e.jsx("div", { style: { marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6, fontSize: 11 }, children: ([["escolas priorit\\xE1rias", ctxMunData.pse.escolasPrioritarias], ["c/ maioria PBF", ctxMunData.pse.escolasMaioriaPbf], ["aderiram ao Nutrisus", ctxMunData.pse.escolasNutrisus], ["a\\xE7\\xE3o de obesidade", ctxMunData.pse.escolasObesidade]]).filter(function(p) { return p[1] > 0; }).map(function(p, i) { return e.jsxs("span", { key: i, style: { background: "#c8e6c9", borderRadius: 8, padding: "3px 8px", color: "#1b5e20" }, children: [p[0] + ": ", e.jsx("strong", { children: p[1].toLocaleString("pt-BR") })] }); }) }),' +
-          '(Array.isArray(ctxMunData.pse.escolas) && ctxMunData.pse.escolas.length > 0) ? e.jsx(_PseList, { escolas: ctxMunData.pse.escolas, theme: _themeGreen }) : e.jsx("p", { style: { marginTop: 10, fontSize: 11, color: "#558b2f", fontStyle: "italic" }, children: "Sem escolas registradas no PSE para este munic\\xEDpio." })' +
+          '] })' +
         '] }) : e.jsxs("div", { style: { background: "#fafafa", border: "1px dashed #bdbdbd", borderRadius: 10, padding: "10px 12px" }, children: [' +
           'e.jsxs("p", { style: { fontSize: 12, color: "#616161", margin: 0, lineHeight: 1.5 }, children: [' +
             'e.jsx("strong", { children: "Munic\\xEDpio n\\xE3o aderiu" }),' +
