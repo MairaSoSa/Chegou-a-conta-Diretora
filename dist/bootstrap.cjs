@@ -4519,9 +4519,10 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   const _PSE_MARKER_V5 = '/*pse-fe-v5*/';
   const _PSE_MARKER_V6 = '/*pse-fe-v6*/';
   const _PSE_MARKER_V7 = '/*pse-fe-v7*/';
+  const _PSE_MARKER_V8 = '/*pse-fe-v8*/';
   // Remove eventual bloco v1 já injetado (assets persistidos em disco)
   // v1 começa em /*pse-fe-v1*/ e termina logo antes do /*tria-fe-v1*/ (anchor)
-  if (dashSrc.includes(_PSE_MARKER_V1) && !dashSrc.includes(_PSE_MARKER_V7)) {
+  if (dashSrc.includes(_PSE_MARKER_V1) && !dashSrc.includes(_PSE_MARKER_V8)) {
     const _v1Start = dashSrc.indexOf(_PSE_MARKER_V1);
     const _v1End = dashSrc.indexOf('/*tria-fe-v1*/', _v1Start + _PSE_MARKER_V1.length);
     if (_v1Start >= 0 && _v1End > _v1Start) {
@@ -4534,7 +4535,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     }
   }
   // Remove v2 (sem empty state no ramo "não aderiu") para reinjetar versão atual
-  if (dashSrc.includes(_PSE_MARKER_V2) && !dashSrc.includes(_PSE_MARKER_V7)) {
+  if (dashSrc.includes(_PSE_MARKER_V2) && !dashSrc.includes(_PSE_MARKER_V8)) {
     const _v2Start = dashSrc.indexOf(_PSE_MARKER_V2);
     const _v2End = dashSrc.indexOf(_PSE_MARKER_V2, _v2Start + _PSE_MARKER_V2.length);
     if (_v2Start >= 0 && _v2End > _v2Start) {
@@ -4547,7 +4548,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     }
   }
   // Remove v3 (sem histórico de adesão por escola ciclo a ciclo) para reinjetar v4/v5
-  if (dashSrc.includes(_PSE_MARKER_V3) && !dashSrc.includes(_PSE_MARKER_V7)) {
+  if (dashSrc.includes(_PSE_MARKER_V3) && !dashSrc.includes(_PSE_MARKER_V8)) {
     const _v3Start = dashSrc.indexOf(_PSE_MARKER_V3);
     const _v3End = dashSrc.indexOf(_PSE_MARKER_V3, _v3Start + _PSE_MARKER_V3.length);
     if (_v3Start >= 0 && _v3End > _v3Start) {
@@ -4560,7 +4561,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     }
   }
   // Remove v4 (sem busca/ordenação na lista de escolas) para reinjetar v5
-  if (dashSrc.includes(_PSE_MARKER_V4) && !dashSrc.includes(_PSE_MARKER_V7)) {
+  if (dashSrc.includes(_PSE_MARKER_V4) && !dashSrc.includes(_PSE_MARKER_V8)) {
     const _v4Start = dashSrc.indexOf(_PSE_MARKER_V4);
     const _v4End = dashSrc.indexOf(_PSE_MARKER_V4, _v4Start + _PSE_MARKER_V4.length);
     if (_v4Start >= 0 && _v4End > _v4Start) {
@@ -4574,7 +4575,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   }
   // Remove v5 (componente _PseList recriado a cada render do bloco pai → state resetava)
   // para reinjetar v6 com identidade de componente estável (cache em globalThis).
-  if (dashSrc.includes(_PSE_MARKER_V5) && !dashSrc.includes(_PSE_MARKER_V7)) {
+  if (dashSrc.includes(_PSE_MARKER_V5) && !dashSrc.includes(_PSE_MARKER_V8)) {
     const _v5Start = dashSrc.indexOf(_PSE_MARKER_V5);
     const _v5End = dashSrc.indexOf(_PSE_MARKER_V5, _v5Start + _PSE_MARKER_V5.length);
     if (_v5Start >= 0 && _v5End > _v5Start) {
@@ -4588,7 +4589,7 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
   }
   // Remove v6 (mostrava lista de escolas e totais municipais) para reinjetar
   // v7 — versão simplificada, somente status agregado sem lista nem contadores extras.
-  if (dashSrc.includes(_PSE_MARKER_V6) && !dashSrc.includes(_PSE_MARKER_V7)) {
+  if (dashSrc.includes(_PSE_MARKER_V6) && !dashSrc.includes(_PSE_MARKER_V8)) {
     const _v6Start = dashSrc.indexOf(_PSE_MARKER_V6);
     const _v6End = dashSrc.indexOf(_PSE_MARKER_V6, _v6Start + _PSE_MARKER_V6.length);
     if (_v6Start >= 0 && _v6End > _v6Start) {
@@ -4600,7 +4601,21 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
       console.warn('[bootstrap] Dashboard-v30 PSE v6 marker present but end marker not found');
     }
   }
-  if (!dashSrc.includes(_PSE_MARKER_V7)) {
+  // Remove v7 (mostrava só os totais municipais) para reinjetar v8 — versão
+  // por escola: município + status da escola atual (aderiu, prioritária, PBF).
+  if (dashSrc.includes(_PSE_MARKER_V7) && !dashSrc.includes(_PSE_MARKER_V8)) {
+    const _v7Start = dashSrc.indexOf(_PSE_MARKER_V7);
+    const _v7End = dashSrc.indexOf(_PSE_MARKER_V7, _v7Start + _PSE_MARKER_V7.length);
+    if (_v7Start >= 0 && _v7End > _v7Start) {
+      const _removed = _v7End + _PSE_MARKER_V7.length - _v7Start;
+      dashSrc = dashSrc.slice(0, _v7Start) + dashSrc.slice(_v7End + _PSE_MARKER_V7.length);
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 PSE v7 block removed (' + _removed + ' chars)');
+    } else {
+      console.warn('[bootstrap] Dashboard-v30 PSE v7 marker present but end marker not found');
+    }
+  }
+  if (!dashSrc.includes(_PSE_MARKER_V8)) {
     const _PSE_ANCHOR = '/*tria-fe-v1*/';
     // v6 (task #29): preserva busca/ordenação ao re-renderizar o painel pai.
     // Em v5, _PseList era recriado a cada render do bloco pai (definido dentro
@@ -4612,42 +4627,63 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     // pactuadas \u2022 Y educandos pactuados". Mostra apenas o status agregado:
     // ades\u00E3o do munic\u00EDpio, n\u00BA de escolas priorit\u00E1rias e n\u00BA com
     // maioria PBF. Sem dependencia de _PseList / globalThis cache.
-    const _PSE_INJECT = '/*pse-fe-v7*/ctxMunData.pse && (function(){' +
+    // v8: card do PSE focado na ESCOLA atual.
+    // Mostra: município aderiu? + escola aderiu? + prioritária? + maioria PBF?
+    // A escola atual é identificada por N.escola.no_entidade (mesma fonte usada
+    // pelos blocos FUNAI/Censo logo acima). Como os registros do PSE não trazem
+    // INEP, o casamento é feito por nome normalizado (sem acento, lowercase) —
+    // suficiente porque os nomes são únicos dentro do mesmo município.
+    const _PSE_INJECT = '/*pse-fe-v8*/ctxMunData.pse && (function(){' +
       'var _ciclo = (ctxMunData.pse.meta && ctxMunData.pse.meta.ciclo) || "vigente";' +
       'var _dataApi = (ctxMunData.pse.meta && ctxMunData.pse.meta.dataApi) || "";' +
-      'var _prio = (ctxMunData.pse.escolasPrioritarias || 0).toLocaleString("pt-BR");' +
-      'var _pbf = (ctxMunData.pse.escolasMaioriaPbf || 0).toLocaleString("pt-BR");' +
+      'var _norm = function(_x){ return String(_x || "").toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").replace(/\\s+/g, " ").trim(); };' +
+      'var _nomeEscAtual = (typeof N !== "undefined" && N && N.escola && N.escola.no_entidade) ? N.escola.no_entidade : "";' +
+      'var _nomeNorm = _norm(_nomeEscAtual);' +
+      'var _escAtual = null;' +
+      'if (_nomeNorm && Array.isArray(ctxMunData.pse.escolas)) {' +
+        'for (var _i = 0; _i < ctxMunData.pse.escolas.length; _i++) {' +
+          'if (_norm(ctxMunData.pse.escolas[_i].nome) === _nomeNorm) { _escAtual = ctxMunData.pse.escolas[_i]; break; }' +
+        '}' +
+      '}' +
+      'var _munAd = !!ctxMunData.pse.aderiu;' +
+      'var _badge = function(_label, _ok, _colorOk, _colorNo){' +
+        'return e.jsxs("span", { style: { display: "inline-flex", alignItems: "center", gap: 4, background: _ok ? _colorOk.bg : _colorNo.bg, color: _ok ? _colorOk.fg : _colorNo.fg, borderRadius: 999, padding: "3px 9px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }, children: [' +
+          'e.jsx("span", { children: _ok ? "\\u2713" : "\\u2715" }), _label' +
+        '] });' +
+      '};' +
+      'var _green = { bg: "#c8e6c9", fg: "#1b5e20" };' +
+      'var _red = { bg: "#ffebee", fg: "#b71c1c" };' +
+      'var _amber = { bg: "#fff3e0", fg: "#bf360c" };' +
+      'var _gray = { bg: "#eeeeee", fg: "#616161" };' +
+      'var _munBadge = _badge("Munic\\xEDpio aderiu", _munAd, _green, _red);' +
+      'var _escolaBadges = null;' +
+      'if (_escAtual) {' +
+        '_escolaBadges = e.jsxs(e.Fragment, { children: [' +
+          '_badge("Escola aderiu", !!_escAtual.aderiu, _green, _red),' +
+          '_badge("Priorit\\xE1ria", !!_escAtual.prioritaria, _amber, _gray),' +
+          '_badge("Maioria PBF", !!_escAtual.maioriaPbf, _amber, _gray)' +
+        '] });' +
+      '}' +
       'return e.jsxs("div", { style: { marginBottom: 14 }, children: [' +
         'e.jsxs("p", { style: { fontSize: 10, fontWeight: 700, color: "#1b5e20", margin: "0 0 8px", textTransform: "uppercase" }, children: [' +
           '"PSE \\u2014 Programa Sa\\xFAde na Escola",' +
           'e.jsx("span", { style: { fontSize: 9, color: "#888", fontWeight: 400, marginLeft: 6, textTransform: "none", letterSpacing: 0 }, title: "Ades\\xE3o ao ciclo vigente do PSE \\u2014 pactua\\xE7\\xE3o entre munic\\xEDpio, escolas e Aten\\xE7\\xE3o Prim\\xE1ria \\xE0 Sa\\xFAde para a\\xE7\\xF5es de promo\\xE7\\xE3o, preven\\xE7\\xE3o e aten\\xE7\\xE3o \\xE0 sa\\xFAde de educandos. Fonte: Relat\\xF3rios APS / Minist\\xE9rio da Sa\\xFAde.", children: " \\u00b7 MS / APS \\u00b7 Ciclo " + _ciclo + (_dataApi ? " \\u00b7 atualizado em " + _dataApi : "") })' +
         '] }),' +
-        'ctxMunData.pse.aderiu ? e.jsxs("div", { style: { background: "#e8f5e9", border: "1px solid #81c784", borderRadius: 10, padding: "10px 12px" }, children: [' +
-          'e.jsxs("p", { style: { fontSize: 13, fontWeight: 700, color: "#1b5e20", margin: 0, display: "flex", alignItems: "center", gap: 6 }, children: [' +
-            'e.jsx("span", { style: { fontSize: 16 }, children: "\\u2713" }),' +
-            '"Munic\\xEDpio aderiu ao ciclo " + _ciclo' +
-          '] }),' +
-          'e.jsxs("p", { style: { fontSize: 12, color: "#2e7d32", margin: "6px 0 0", lineHeight: 1.5 }, children: [' +
-            'e.jsx("strong", { children: _prio }), " escolas priorit\\xE1rias \\u2022 ",' +
-            'e.jsx("strong", { children: _pbf }), " com maioria PBF"' +
-          '] })' +
-        '] }) : e.jsx("div", { style: { background: "#fafafa", border: "1px dashed #bdbdbd", borderRadius: 10, padding: "10px 12px" }, children: ' +
-          'e.jsxs("p", { style: { fontSize: 12, color: "#616161", margin: 0, lineHeight: 1.5 }, children: [' +
-            'e.jsx("strong", { children: "Munic\\xEDpio n\\xE3o aderiu" }),' +
-            '" ao ciclo " + _ciclo + " do PSE."' +
-          '] })' +
-        '})' +
+        'e.jsxs("div", { style: { background: _munAd ? "#e8f5e9" : "#fafafa", border: _munAd ? "1px solid #81c784" : "1px dashed #bdbdbd", borderRadius: 10, padding: "10px 12px" }, children: [' +
+          'e.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: 6 }, children: _munBadge }),' +
+          '_escolaBadges ? e.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }, children: _escolaBadges }) : (_nomeEscAtual ? e.jsx("p", { style: { margin: "8px 0 0", fontSize: 11, color: "#9e9e9e", fontStyle: "italic" }, children: "Escola n\\xE3o consta na lista do PSE deste munic\\xEDpio." }) : null)' +
+        '] })' +
       '] });' +
-    '})(),/*pse-fe-v7*/';
+    '})(),/*pse-fe-v8*/';
     if (dashSrc.includes(_PSE_ANCHOR)) {
       dashSrc = dashSrc.replace(_PSE_ANCHOR, _PSE_INJECT + _PSE_ANCHOR);
       changed = true;
-      console.log('[bootstrap] Dashboard-v30 PSE block v7 injected (versão simplificada — sem lista de escolas / sem totais pactuados)');
+      console.log('[bootstrap] Dashboard-v30 PSE block v8 injected (foco na escola atual: município + escola aderiu, prioritária, maioria PBF)');
     } else {
       console.warn('[bootstrap] Dashboard-v30 PSE injection — anchor not found (TRIA marker missing)');
     }
   } else {
-    console.log('[bootstrap] Dashboard-v30 PSE v7 block already present');
+    console.log('[bootstrap] Dashboard-v30 PSE v8 block already present');
   }
 
   // ── Sub-patch: hide BF/BPC duplicates from the Saúde block (bf-bpc-hide-saude-v1) ──
