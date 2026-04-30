@@ -273,6 +273,29 @@ function emptyMunicipio(nome, uf) {
     `  ciclo vigente ${cicloVigente.nuCiclo} — ${muniComAdesao} municípios com adesão, ${totalEscolas} escolas, ${totalEducandos} educandos`,
   );
   console.log(`  ciclos coletados: ${ciclosUsados.length} (linhas processadas: ${totalRows})`);
+
+  // Enriquecimento INEP: adiciona escola.inep (= co_entidade do Censo) a cada
+  // escola pactuada via casamento (município + nome normalizado + esfera) na
+  // tabela censo_escolas. Roda automaticamente se DB estiver disponível;
+  // caso contrário, o script enrich-pse-with-inep.mjs pode ser invocado depois.
+  if (process.env.RAILWAY_DATABASE_URL || process.env.DATABASE_URL) {
+    console.log("");
+    console.log("Enriquecendo escolas com INEP (censo_escolas)...");
+    try {
+      const { spawnSync } = await import("node:child_process");
+      const r = spawnSync(
+        process.execPath,
+        [resolve(ROOT, "scripts/enrich-pse-with-inep.mjs")],
+        { stdio: "inherit", env: { ...process.env, PSE_INPUT: OUTPUT_FILE, PSE_OUTPUT: OUTPUT_FILE } },
+      );
+      if (r.status !== 0) console.warn(`[enrich-pse] saiu com código ${r.status} (não-fatal)`);
+    } catch (e) {
+      console.warn("[enrich-pse] falhou (não-fatal):", e?.message || e);
+    }
+  } else {
+    console.log("");
+    console.log("[sync-pse] RAILWAY_DATABASE_URL ausente — pulando enriquecimento INEP.");
+  }
 })().catch((err) => {
   console.error("ERRO:", err);
   process.exit(1);
