@@ -1279,8 +1279,8 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
         };
         var _FONTES = [
           { key: "SISAGUA", label: "Qualidade da Água (SISAGUA)", icon: "\u{1F4A7}", bg: "#e0f7fa", border: "#80deea", color: "#006064" },
-          { key: "SINASC", label: "Nascimentos (SINASC)", icon: "\u{1F476}", bg: "#fce4ec", border: "#f48fb1", color: "#880e4f" },
-          { key: "SIM", label: "Mortalidade (SIM)", icon: "\u26B0\uFE0F", bg: "#eceff1", border: "#b0bec5", color: "#37474f" },
+          /*sinasc-hide-v1*/
+          /*sim-hide-v1*/
           /*pni-hide-v1*/
           { key: "SINAN", label: "Doenças Notificáveis (SINAN)", icon: "\u{1F9A0}", bg: "#f3e5f5", border: "#ce93d8", color: "#4a148c" }
         ];
@@ -1330,7 +1330,7 @@ e.jsxs("div", { style: { borderRadius: "16px", overflow: "hidden", border: "1.5p
               ]}, fi);
             })
           }),
-          e.jsx("p", { style: { fontSize: 9, color: "#888", margin: "8px 0 0", lineHeight: 1.4 }, children: "Fontes: DATASUS (SINASC, SIM, SINAN via pysus) + DEMAS API pública (SISAGUA). Valores mais recentes disponíveis por indicador." })
+          e.jsx("p", { style: { fontSize: 9, color: "#888", margin: "8px 0 0", lineHeight: 1.4 }, children: "Fontes: DATASUS (SINAN via pysus) + DEMAS API pública (SISAGUA). Valores mais recentes disponíveis por indicador." })
         ]});
       })()
     ]}),

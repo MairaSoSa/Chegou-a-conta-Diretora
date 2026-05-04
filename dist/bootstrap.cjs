@@ -4967,6 +4967,84 @@ if (source.indexOf(_IBGE_SOCIO_ANCHOR) !== -1) {
     console.log('[bootstrap] Dashboard-v30 pni-hide-v1 already applied');
   }
 
+  // ── Sub-patch: remove a seção "Nascimentos (SINASC)" do bloco "Indicadores SUS — Histórico Consolidado" (sinasc-hide-v1) ──
+  // A pedido do usuário, o card SINASC deve deixar de aparecer no painel da escola.
+  // O ETL backend (dist/saude-etl/sources/sinasc.py) e os dados na tabela
+  // saude_indicadores_municipio CONTINUAM intactos — só a UI deixa de exibir.
+  // Padrão: marker `/*sinasc-hide-v1*/` injetado como comentário JS na posição
+  // do _FONTES (não-renderizado), com pré-checagem dos anchors antes de aplicar.
+  // O ajuste do rodapé suporta dois estados (com ou sem "SIM" presente) para
+  // ser robusto à ordem de execução em relação ao sim-hide-v1.
+  const _SINASC_HIDE_MARKER = '/*sinasc-hide-v1*/';
+  if (!dashSrc.includes(_SINASC_HIDE_MARKER)) {
+    const _SINASC_FONTES_OLD = '          { key: "SINASC", label: "Nascimentos (SINASC)", icon: "\\u{1F476}", bg: "#fce4ec", border: "#f48fb1", color: "#880e4f" },\n';
+    const _SINASC_FONTES_NEW = '          ' + _SINASC_HIDE_MARKER + '\n';
+    const _SINASC_FOOTER_OLD_A = 'Fontes: DATASUS (SINASC, SIM, SINAN via pysus)';
+    const _SINASC_FOOTER_NEW_A = 'Fontes: DATASUS (SIM, SINAN via pysus)';
+    const _SINASC_FOOTER_OLD_B = 'Fontes: DATASUS (SINASC, SINAN via pysus)';
+    const _SINASC_FOOTER_NEW_B = 'Fontes: DATASUS (SINAN via pysus)';
+    var _sinascHasFontes = dashSrc.includes(_SINASC_FONTES_OLD);
+    var _sinascHasFooterA = dashSrc.includes(_SINASC_FOOTER_OLD_A);
+    var _sinascHasFooterB = dashSrc.includes(_SINASC_FOOTER_OLD_B);
+    if (_sinascHasFontes && (_sinascHasFooterA || _sinascHasFooterB)) {
+      dashSrc = dashSrc.replace(_SINASC_FONTES_OLD, _SINASC_FONTES_NEW);
+      if (_sinascHasFooterA) {
+        dashSrc = dashSrc.replace(_SINASC_FOOTER_OLD_A, _SINASC_FOOTER_NEW_A);
+      } else {
+        dashSrc = dashSrc.replace(_SINASC_FOOTER_OLD_B, _SINASC_FOOTER_NEW_B);
+      }
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 sinasc-hide-v1 applied');
+    } else {
+      var _sinascMissing = [];
+      if (!_sinascHasFontes) _sinascMissing.push('_FONTES');
+      if (!_sinascHasFooterA && !_sinascHasFooterB) _sinascMissing.push('footer');
+      console.warn('[bootstrap] Dashboard-v30 sinasc-hide-v1 SKIPPED — anchors faltando: ' + _sinascMissing.join(','));
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 sinasc-hide-v1 already applied');
+  }
+
+  // ── Sub-patch: remove a seção "Mortalidade (SIM)" do bloco "Indicadores SUS — Histórico Consolidado" (sim-hide-v1) ──
+  // A pedido do usuário, o card SIM deve deixar de aparecer no painel da escola.
+  // ATENÇÃO: o ETL backend (dist/saude-etl/sources/sim.py) e os dados na tabela
+  // saude_indicadores_municipio CONTINUAM intactos porque o card de "Violência e
+  // segurança" também consome dados SIM (sim_obitos_externos, sim_obitos_total).
+  // Só a UI do bloco SUS Histórico deixa de exibir.
+  // Padrão: marker `/*sim-hide-v1*/` injetado como comentário JS na posição do
+  // _FONTES, com pré-checagem dos anchors. O ajuste do rodapé suporta dois
+  // estados (com ou sem "SINASC" presente) para ser robusto à ordem em relação
+  // ao sinasc-hide-v1.
+  const _SIM_HIDE_MARKER = '/*sim-hide-v1*/';
+  if (!dashSrc.includes(_SIM_HIDE_MARKER)) {
+    const _SIM_FONTES_OLD = '          { key: "SIM", label: "Mortalidade (SIM)", icon: "\\u26B0\\uFE0F", bg: "#eceff1", border: "#b0bec5", color: "#37474f" },\n';
+    const _SIM_FONTES_NEW = '          ' + _SIM_HIDE_MARKER + '\n';
+    const _SIM_FOOTER_OLD_A = 'Fontes: DATASUS (SINASC, SIM, SINAN via pysus)';
+    const _SIM_FOOTER_NEW_A = 'Fontes: DATASUS (SINASC, SINAN via pysus)';
+    const _SIM_FOOTER_OLD_B = 'Fontes: DATASUS (SIM, SINAN via pysus)';
+    const _SIM_FOOTER_NEW_B = 'Fontes: DATASUS (SINAN via pysus)';
+    var _simHasFontes = dashSrc.includes(_SIM_FONTES_OLD);
+    var _simHasFooterA = dashSrc.includes(_SIM_FOOTER_OLD_A);
+    var _simHasFooterB = dashSrc.includes(_SIM_FOOTER_OLD_B);
+    if (_simHasFontes && (_simHasFooterA || _simHasFooterB)) {
+      dashSrc = dashSrc.replace(_SIM_FONTES_OLD, _SIM_FONTES_NEW);
+      if (_simHasFooterA) {
+        dashSrc = dashSrc.replace(_SIM_FOOTER_OLD_A, _SIM_FOOTER_NEW_A);
+      } else {
+        dashSrc = dashSrc.replace(_SIM_FOOTER_OLD_B, _SIM_FOOTER_NEW_B);
+      }
+      changed = true;
+      console.log('[bootstrap] Dashboard-v30 sim-hide-v1 applied');
+    } else {
+      var _simMissing = [];
+      if (!_simHasFontes) _simMissing.push('_FONTES');
+      if (!_simHasFooterA && !_simHasFooterB) _simMissing.push('footer');
+      console.warn('[bootstrap] Dashboard-v30 sim-hide-v1 SKIPPED — anchors faltando: ' + _simMissing.join(','));
+    }
+  } else {
+    console.log('[bootstrap] Dashboard-v30 sim-hide-v1 already applied');
+  }
+
   // ── Sub-patch: enriquece cards de hospitais com email, Maps, CNES, turno, data e nota de leitos (hosp-enrich-v1) ──
   // A API oficial /assistencia-a-saude/hospitais-e-leitos do MS está retornando
   // 404/500. Aqui adicionamos os campos extras já disponíveis em /cnes/estabelecimentos
